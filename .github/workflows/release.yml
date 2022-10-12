@@ -2,171 +2,171 @@ name: Release Build
 on:
   push:
     tags:
-    - v.*
+    - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
 jobs:
-  # checks-and-tests:
-    # runs-on: [self-hosted, Linux, X64]
-    # steps:
-    # - name: Free disk space
-      # run: |
-        # sudo rm -rf /usr/share/dotnet
-        # sudo rm -rf /opt/ghc
-        # sudo rm -rf "/usr/local/share/boost"
-        # sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-        # df -h
+  checks-and-tests:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        df -h
 
-    # - name: Checkout the source code
-      # uses: actions/checkout@v3
-      # with:
-        # submodules: true
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
 
-    # - name: Install & display rust toolchain
-      # run: rustup show
+    - name: Install & display rust toolchain
+      run: rustup show
 
-    # - name: Check targets are installed correctly
-      # run: rustup target list --installed
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
 
-    # - name: Check all features compilation
-      # run: cargo check --verbose --all-features
+    - name: Check all features compilation
+      run: cargo check --verbose --all-features
 
-    # - name: Run all tests
-      # run: cargo test --all-features
+    - name: Run all tests
+      run: cargo test --all-features
 
-  # native-linux:
-    # needs: checks-and-tests
-    # runs-on: [self-hosted, Linux, X64]
-    # steps:
-    # - name: Checkout the source code
-      # uses: actions/checkout@v3
-      # with:
-        # submodules: true
+  native-linux:
+    needs: checks-and-tests
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
 
-    # - name: Install & display rust toolchain
-      # run: rustup show
+    - name: Install & display rust toolchain
+      run: rustup show
 
-    # - name: Check targets are installed correctly
-      # run: rustup target list --installed
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
 
-    # - name: Build optimized binary
-      # run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+    - name: Build optimized binary
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
 
-    # - uses: actions/upload-artifact@v3
-      # with:
-        # name: astar-ubuntu-latest-x86_64
-        # path: target/release/astar-collator
+    - uses: actions/upload-artifact@v3
+      with:
+        name: astar-ubuntu-latest-x86_64
+        path: target/release/astar-collator
 
-  # rpc-tests:
-    # needs: native-linux
-    # runs-on: [self-hosted, Linux, X64]
-    # strategy:
-      # matrix:
-        # network: [astar, shiden]
+  rpc-tests:
+    needs: native-linux
+    runs-on: [self-hosted, Linux, X64]
+    strategy:
+      matrix:
+        network: [astar, shiden]
 
-    # steps:
-    # - name: Checkout the source code
-      # uses: actions/checkout@v3
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
 
-    # - run: mkdir -p rpc-tests/bin
+    - run: mkdir -p rpc-tests/bin
 
-    # - name: Download pre-built linux collator binary
-      # uses: actions/download-artifact@v3
-      # with:
-        # name: astar-ubuntu-latest-x86_64
+    - name: Download pre-built linux collator binary
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-ubuntu-latest-x86_64
 
-    # - name: Make binary executable and copy it to rpc tests folder
-      # run: chmod +x astar-collator && cp astar-collator rpc-tests/bin/astar-collator
+    - name: Make binary executable and copy it to rpc tests folder
+      run: chmod +x astar-collator && cp astar-collator rpc-tests/bin/astar-collator
 
-    # - name: Copy polkadot relay chain binary
-      # run: |
-        # wget https://github.com/paritytech/polkadot/releases/download/v0.9.25/polkadot
-        # chmod +x ./polkadot
-        # mv polkadot rpc-tests/bin/polkadot
+    - name: Copy polkadot relay chain binary
+      run: |
+        wget https://github.com/paritytech/polkadot/releases/download/v0.9.25/polkadot
+        chmod +x ./polkadot
+        mv polkadot rpc-tests/bin/polkadot
 
-    # - name: Use Node.js 16.x
-      # uses: actions/setup-node@v2
-      # with:
-        # node-version: 16.x
-    # - name: Install yarn
-      # run: |
-        # npm install -g yarn
-        # yarn install
-      # working-directory: ./rpc-tests
-    # - name: Run tests
-      # run: yarn test:${{ matrix.network }}
-      # working-directory: ./rpc-tests
+    - name: Use Node.js 16.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+    - name: Install yarn
+      run: |
+        npm install -g yarn
+        yarn install
+      working-directory: ./rpc-tests
+    - name: Run tests
+      run: yarn test:${{ matrix.network }}
+      working-directory: ./rpc-tests
 
 
-  # native-macos:
-    # needs: checks-and-tests
-    # runs-on: macos-latest
-    # steps:
-    # - name: Checkout the source code
-      # uses: actions/checkout@v3
-      # with:
-        # submodules: true
+  native-macos:
+    needs: checks-and-tests
+    runs-on: macos-latest
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
 
-    # - name: Install & display rust toolchain
-      # run: rustup show
+    - name: Install & display rust toolchain
+      run: rustup show
 
-    # - name: Check targets are installed correctly
-      # run: rustup target list --installed
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
 
-    # - name: Build optimized binary
-      # run: cargo build --release --verbose
+    - name: Build optimized binary
+      run: cargo build --release --verbose
 
-    # - uses: actions/upload-artifact@v3
-      # with:
-        # name: astar-macOS-latest-x86_64
-        # path: target/release/astar-collator
+    - uses: actions/upload-artifact@v3
+      with:
+        name: astar-macOS-latest-x86_64
+        path: target/release/astar-collator
 
-  # docker:
-    # needs: native-linux
-    # runs-on: ubuntu-latest
-    # steps:
-    # - name: Checkout the source code
-      # uses: actions/checkout@v3
-      # with:
-        # submodules: true
+  docker:
+    needs: native-linux
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
 
-    # - name: Set up Docker Buildx
-      # uses: docker/setup-buildx-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
 
-    # - name: Login to DockerHub
-      # uses: docker/login-action@v1
-      # with:
-        # username: ${{ secrets.DOCKER_USERNAME }}
-        # password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # - name: Docker meta
-      # id: docker_meta
-      # uses: crazy-max/ghaction-docker-meta@v1
-      # with:
-        # images: staketechnologies/astar-collator
-        # tag-custom: shiden
-        # tag-sha: true # add git short SHA as Docker tag
+    - name: Docker meta
+      id: docker_meta
+      uses: crazy-max/ghaction-docker-meta@v1
+      with:
+        images: staketechnologies/astar-collator
+        tag-custom: shiden
+        tag-sha: true # add git short SHA as Docker tag
 
-    # - name: Download pre-built linux collator binary
-      # uses: actions/download-artifact@v3
-      # with:
-        # name: astar-ubuntu-latest-x86_64
+    - name: Download pre-built linux collator binary
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-ubuntu-latest-x86_64
 
-    # - name: Make binary executable and copy it to docker folder
-      # run: chmod +x astar-collator && cp astar-collator third-party/docker
+    - name: Make binary executable and copy it to docker folder
+      run: chmod +x astar-collator && cp astar-collator third-party/docker
 
-    # - name: Build & Push docker image
-      # uses: docker/build-push-action@v2
-      # with:
-        # context: third-party/docker
-        # platforms: linux/amd64
-        # labels: ${{ steps.docker_meta.outputs.labels }}
-        # tags: ${{ steps.docker_meta.outputs.tags }}
-        # push: true
+    - name: Build & Push docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: third-party/docker
+        platforms: linux/amd64
+        labels: ${{ steps.docker_meta.outputs.labels }}
+        tags: ${{ steps.docker_meta.outputs.tags }}
+        push: true
 
   srtool:
-    # needs: checks-and-tests
+    needs: checks-and-tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -242,8 +242,7 @@ jobs:
           ${{ matrix.chain }}-diff.txt
 
   publish-release-draft:
-    # needs: [native-linux, native-macOS, docker, srtool]
-    needs: srtool
+    needs: [native-linux, native-macOS, docker, srtool]
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -303,38 +302,38 @@ jobs:
         body_path: body.md
         draft: true
 
-  # upload-binaries:
-    # needs: publish-release-draft
-    # runs-on: ubuntu-latest
-    # strategy:
-      # matrix:
-        # os: ["ubuntu", "macOS"]
-    # steps:
-    # - name: Create download folder
-      # run: |
-        # mkdir -p ${{ matrix.os }}-bin
+  upload-binaries:
+    needs: publish-release-draft
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ["ubuntu", "macOS"]
+    steps:
+    - name: Create download folder
+      run: |
+        mkdir -p ${{ matrix.os }}-bin
 
-    # - name: Download pre-built collator binary
-      # uses: actions/download-artifact@v3
-      # with:
-        # name: astar-${{ matrix.os }}-latest-x86_64
-        # path: ${{ matrix.os }}-bin
+    - name: Download pre-built collator binary
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-${{ matrix.os }}-latest-x86_64
+        path: ${{ matrix.os }}-bin
 
-    # - name: Make binary executable and tar gzip
-      # run: |
-        # cd ${{ matrix.os }}-bin
-        # chmod +x astar-collator
-        # tar zcvf astar-collator.tar.gz astar-collator
+    - name: Make binary executable and tar gzip
+      run: |
+        cd ${{ matrix.os }}-bin
+        chmod +x astar-collator
+        tar zcvf astar-collator.tar.gz astar-collator
 
-    # - name: Upload binary artifact
-      # uses: actions/upload-release-asset@v1
-      # env:
-        # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # with:
-        # upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        # asset_path: ${{ matrix.os }}-bin/astar-collator.tar.gz
-        # asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-x86_64.tar.gz
-        # asset_content_type: application/gzip
+    - name: Upload binary artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+        asset_path: ${{ matrix.os }}-bin/astar-collator.tar.gz
+        asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_content_type: application/gzip
 
   upload-runtimes:
     needs: publish-release-draft
