@@ -2,7 +2,7 @@ name: Release Build
 on:
   push:
     tags:
-    - dynamic-release-draft-test
+    - dynamic-draft-test
   workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
