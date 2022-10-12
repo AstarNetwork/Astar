@@ -3,8 +3,8 @@
   "id": "rococo_tokyo_relay",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/20.74.71.22/tcp/30333/p2p/12D3KooWFq1d4jffdi3hwTWNoozj8LryX3NyFmGUDEeamxMgqPRt",
-    "/ip4/20.74.70.252/tcp/30333/p2p/12D3KooWADoW4BXczuxvSnP6kJ2sNtP8WQgF57XaNXwPwAwcmLY8"
+    "/ip4/34.168.90.8/tcp/30333/p2p/12D3KooWHqpSy92BavdpqpiRihKc1wHXkWTwXV1h2Q3ySjbhPa5P",
+    "/ip4/34.146.227.254/tcp/30333/p2p/12D3KooWKjVm9GbN9wzUZRU8tup3p2wZ8GWDNQFvy7AyJvVjxQy6"
   ],
   "telemetryEndpoints": null,
   "protocolId": "tky",

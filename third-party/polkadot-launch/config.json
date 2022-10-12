@@ -40,7 +40,7 @@
 	"parachains": [
 		{
 			"bin": "./bin/astar-collator",
-			"id": "2007",
+			"id": "2000",
  			"chain": "shibuya-dev",
 			"balance": "1000000000000000000000",
 			"nodes": [

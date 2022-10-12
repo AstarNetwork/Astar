@@ -4,13 +4,13 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_pallet_parachain_system::AnyRelayNumber;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get,
-        Imbalance, Nothing, OnUnbalanced,
+        ConstU128, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor,
+        Get, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -38,19 +38,27 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, DispatchError, FixedPointNumber, Perbill, Permill, Perquintill,
+    RuntimeDebug,
 };
 use sp_std::prelude::*;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use xcm_primitives::AssetLocationIdConverter;
 
+use chain_extension_trait::ChainExtensionExec;
+use dapps_staking_chain_extension::DappsStakingExtension;
+
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use pallet_balances::Call as BalancesCall;
+use pallet_contracts::chain_extension::{
+    ChainExtension, Environment, Ext, InitState, RegisteredChainExtension, RetVal, SysConfig,
+};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::crypto::UncheckedFrom;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
@@ -128,7 +136,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 63,
+    spec_version: 69,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -157,7 +165,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -376,26 +384,6 @@ impl<AccountId> Default for SmartContract<AccountId> {
     }
 }
 
-#[cfg(not(feature = "runtime-benchmarks"))]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
-        }
-    }
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(_account) => true,
-        }
-    }
-}
-
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -404,8 +392,8 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -628,7 +616,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ();
+    type ChainExtension = DappsStakingChainExtension;
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -663,7 +651,7 @@ impl WeightToFeePolynomial for WeightToFee {
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
         // in Shiden, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mSDN:
         let p = MILLISDN;
-        let q = 10 * Balance::from(ExtrinsicBaseWeight::get());
+        let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
@@ -702,9 +690,23 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
+    pub EvmId: u8 = 0x0F;
+    pub WasmId: u8 = 0x1F;
+}
+
+use pallet_xvm::{evm, wasm};
+impl pallet_xvm::Config for Runtime {
+    type Event = Event;
+    type VmId = u8;
+    type SyncVM = (evm::EVM<EvmId, Self, ()>, wasm::WASM<WasmId, Self, ()>);
+    type AsyncVM = ();
+}
+
+parameter_types! {
     // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
-    pub IsActive: bool = false;
     pub DefaultBaseFeePerGas: U256 = (MILLISDN / 1_000_000).into();
+    // At the moment, we don't use dynamic fee calculation for Shibuya by default
+    pub DefaultElasticity: Permill = Permill::zero();
 }
 
 pub struct BaseFeeThreshold;
@@ -723,8 +725,8 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 impl pallet_base_fee::Config for Runtime {
     type Event = Event;
     type Threshold = BaseFeeThreshold;
-    type IsActive = IsActive;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+    type DefaultElasticity = DefaultElasticity;
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -735,16 +737,16 @@ pub const GAS_PER_SECOND: u64 = 40_000_000;
 
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
-pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND / GAS_PER_SECOND;
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND.saturating_div(GAS_PER_SECOND).ref_time();
 
 pub struct ShidenGasWeightMapping;
 impl pallet_evm::GasWeightMapping for ShidenGasWeightMapping {
     fn gas_to_weight(gas: u64) -> Weight {
-        gas.saturating_mul(WEIGHT_PER_GAS)
+        Weight::from_ref_time(gas.saturating_mul(WEIGHT_PER_GAS))
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        weight.wrapping_div(WEIGHT_PER_GAS)
+        weight.ref_time().wrapping_div(WEIGHT_PER_GAS)
     }
 }
 
@@ -764,14 +766,9 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 }
 
 parameter_types! {
-    /// Ethereum-compatible chain_id:
-    /// * Dusty:   80
-    /// * Shibuya: 81
-    /// * Shiden: 336
-    pub ChainId: u64 = 0x51;
     /// EVM gas limit
     pub BlockGasLimit: U256 = U256::from(
-        NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS
+        NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = ShibuyaNetworkPrecompiles::<_, _>::new();
 }
@@ -788,11 +785,15 @@ impl pallet_evm::Config for Runtime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
-    type ChainId = ChainId;
+    // Ethereum-compatible chain_id:
+    // * Shibuya: 81
+    type ChainId = EVMChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
     type FindAuthor = FindAuthorTruncated<Aura>;
 }
+
+impl pallet_evm_chain_id::Config for Runtime {}
 
 impl pallet_ethereum::Config for Runtime {
     type Event = Event;
@@ -943,6 +944,56 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    MaxEncodedLen,
+    scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+    Any,
+}
+
+impl Default for ProxyType {
+    fn default() -> Self {
+        Self::Any
+    }
+}
+impl InstanceFilter<Call> for ProxyType {
+    fn filter(&self, _c: &Call) -> bool {
+        match self {
+            ProxyType::Any => true,
+        }
+    }
+}
+
+impl pallet_proxy::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type Currency = Balances;
+    type ProxyType = ProxyType;
+    // One storage item; key size 32, value size 8; .
+    type ProxyDepositBase = ConstU128<{ SDN * 1 }>;
+    // Additional storage item size of 33 bytes.
+    type ProxyDepositFactor = ConstU128<{ MILLISDN * 330 }>;
+    type MaxProxies = ConstU32<32>;
+    type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+    type MaxPending = ConstU32<32>;
+    type CallHasher = BlakeTwo256;
+    // Key size 32 + 1 item
+    type AnnouncementDepositBase = ConstU128<{ SDN * 1 }>;
+    // Acc Id + Hash + block number
+    type AnnouncementDepositFactor = ConstU128<{ MILLISDN * 660 }>;
+}
+
 pub struct EvmRevertCodeHandler;
 impl pallet_xc_asset_config::XcAssetChanged<Runtime> for EvmRevertCodeHandler {
     fn xc_asset_registered(asset_id: AssetId) {
@@ -964,7 +1015,7 @@ impl pallet_xc_asset_config::Config for Runtime {
 }
 
 construct_runtime!(
-    pub enum Runtime where
+    pub struct Runtime where
         Block = Block,
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
@@ -977,6 +1028,7 @@ construct_runtime!(
         EthCall: pallet_custom_signatures = 15,
         RandomnessCollectiveFlip: pallet_randomness_collective_flip = 16,
         Scheduler: pallet_scheduler = 17,
+        Proxy: pallet_proxy = 18,
 
         ParachainSystem: cumulus_pallet_parachain_system = 20,
         ParachainInfo: parachain_info = 21,
@@ -1003,6 +1055,7 @@ construct_runtime!(
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
         BaseFee: pallet_base_fee = 62,
+        EVMChainId: pallet_evm_chain_id = 63,
 
         Contracts: pallet_contracts = 70,
 
@@ -1010,6 +1063,8 @@ construct_runtime!(
         Council: pallet_collective::<Instance1> = 81,
         TechnicalCommittee: pallet_collective::<Instance2> = 82,
         Treasury: pallet_treasury = 83,
+
+        Xvm: pallet_xvm = 90,
 
         Sudo: pallet_sudo = 99,
     }
@@ -1063,6 +1118,22 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
 >;
+
+#[derive(Default)]
+pub struct DappsStakingChainExtension;
+impl RegisteredChainExtension<Runtime> for DappsStakingChainExtension {
+    const ID: u16 = 00;
+}
+
+impl ChainExtension<Runtime> for DappsStakingChainExtension {
+    fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
+    where
+        E: Ext<T = Runtime>,
+        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
+    {
+        DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
@@ -1201,6 +1272,23 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+        for Runtime
+    {
+        fn query_call_info(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
+        }
+        fn query_call_fee_details(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
+        }
+    }
+
     impl sp_session::SessionKeys<Block> for Runtime {
         fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
             SessionKeys::generate(seed)
@@ -1221,7 +1309,7 @@ impl_runtime_apis! {
 
     impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
         fn chain_id() -> u64 {
-            ChainId::get()
+            EVMChainId::get()
         }
 
         fn account_basic(address: H160) -> pallet_evm::Account {
@@ -1390,7 +1478,7 @@ impl_runtime_apis! {
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
+            Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true)
         }
 
         fn instantiate(
@@ -1403,7 +1491,7 @@ impl_runtime_apis! {
             salt: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
-            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+            Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
         }
 
         fn upload_code(
@@ -1480,12 +1568,24 @@ impl_runtime_apis! {
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
+            log::info!("try-runtime::on_runtime_upgrade");
             let weight = Executive::try_runtime_upgrade().unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
 
-        fn execute_block_no_check(block: Block) -> Weight {
-            Executive::execute_block_no_check(block)
+        fn execute_block(
+            block: Block,
+            state_root_check: bool,
+            select: frame_try_runtime::TryStateSelect
+        ) -> Weight {
+            log::info!(
+                "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
+                block.header.number,
+                block.header.hash(),
+                state_root_check,
+                select,
+            );
+            Executive::try_execute_block(block, state_root_check, select).expect("execute-block failed")
         }
     }
 }

@@ -13,9 +13,3 @@ exclude = ["vendor"]
 [profile.release]
 # Astar runtime requires unwinding.
 panic = "unwind"
-
-[patch."https://github.com/paritytech/substrate"]
-sc-executor-wasmtime = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.27" }
-sc-executor-common = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.27" }
-sp-wasm-interface = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.27" }
-sc-executor-wasmi = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.27" }

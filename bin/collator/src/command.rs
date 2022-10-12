@@ -11,7 +11,7 @@ use crate::{
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
-use log::info;
+use log::{error, info, warn};
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -27,6 +27,8 @@ use std::net::SocketAddr;
 
 #[cfg(feature = "frame-benchmarking")]
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
+
+const DEFAULT_PARACHAIN_ID: u32 = 2000;
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
@@ -67,23 +69,17 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 
 fn load_spec(
     id: &str,
-    para_id: Option<u32>,
+    para_id: u32,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
         "dev" => Box::new(development_config()),
-        "astar-dev" => Box::new(chain_spec::astar::get_chain_spec(
-            para_id.ok_or::<String>("parachain id is missing".into())?,
-        )),
-        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(
-            para_id.ok_or::<String>("parachain id is missing".into())?,
-        )),
-        "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(
-            para_id.ok_or::<String>("parachain id is missing".into())?,
-        )),
+        "astar-dev" => Box::new(chain_spec::astar::get_chain_spec(para_id)),
+        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
+        "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(para_id)),
         "astar" => Box::new(chain_spec::AstarChainSpec::from_json_bytes(
             &include_bytes!("../res/astar.raw.json")[..],
         )?),
-        "" | "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
+        "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shiden.raw.json")[..],
         )?),
         "shibuya" => Box::new(chain_spec::ShibuyaChainSpec::from_json_bytes(
@@ -95,8 +91,10 @@ fn load_spec(
                 Box::new(chain_spec::AstarChainSpec::from_json_file(path.into())?)
             } else if chain_spec.is_shiden() {
                 Box::new(chain_spec::ShidenChainSpec::from_json_file(path.into())?)
-            } else {
+            } else if chain_spec.is_shibuya() {
                 Box::new(chain_spec)
+            } else {
+                Err("Unclear which chain spec to base this chain on. Name should start with astar, shiden or shibuya if custom name is used")?
             }
         }
     })
@@ -134,7 +132,7 @@ impl SubstrateCli for Cli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        load_spec(id, self.run.parachain_id)
+        load_spec(id, self.run.parachain_id.unwrap_or(DEFAULT_PARACHAIN_ID))
     }
 
     fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -656,9 +654,21 @@ pub fn run() -> Result<()> {
                         .chain(cli.relaychain_args.iter()),
                 );
 
-                let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
-				let para_id = extension.map(|e| e.para_id);
-				let id = ParaId::from(cli.run.parachain_id.clone().or(para_id).ok_or::<String>("parachain id is missing".into())?);
+                // Parachain id evaluation order
+                // para id passed by cli arg -> para id in chainspec
+                let cli_arg_para_id = cli.run.parachain_id;
+                let chain_spec_para_id = chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+                let id = ParaId::from(match (cli_arg_para_id, chain_spec_para_id) {
+                    (Some(cli_arg_para_id), Some(chain_spec_para_id)) => {
+                        if cli_arg_para_id != chain_spec_para_id {
+                            warn!("Specified parachain id doesn't match the one defined in chainspec");
+                        }
+                        cli_arg_para_id
+                    },
+                    (Some(para_id), None) => para_id,
+                    (None, Some(para_id)) => para_id,
+                    _ => Err("Parachain id is missing")?,
+                });
 
                 let parachain_account =
                     AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
@@ -697,11 +707,15 @@ pub fn run() -> Result<()> {
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
-                } else {
+                } else if config.chain_spec.is_shibuya() {
                     start_shibuya_node(config, polkadot_config, collator_options, id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
+                } else {
+                    let err_msg = "Unrecognized chain spec - name should start with one of: astar or shiden or shibuya";
+                    error!("{}", err_msg);
+                    Err(err_msg.into())
                 }
             })
         }
@@ -746,7 +760,7 @@ impl CliConfiguration<Self> for RelayChainCli {
     fn base_path(&self) -> Result<Option<BasePath>> {
         Ok(self
             .shared_params()
-            .base_path()
+            .base_path()?
             .or_else(|| self.base_path.clone().map(Into::into)))
     }
 
@@ -803,8 +817,8 @@ impl CliConfiguration<Self> for RelayChainCli {
         self.base.base.transaction_pool(is_dev)
     }
 
-    fn state_cache_child_ratio(&self) -> Result<Option<usize>> {
-        self.base.base.state_cache_child_ratio()
+    fn trie_cache_maximum_size(&self) -> Result<Option<usize>> {
+        self.base.base.trie_cache_maximum_size()
     }
 
     fn rpc_methods(&self) -> Result<sc_service::config::RpcMethods> {

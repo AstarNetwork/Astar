@@ -40,7 +40,7 @@ const config = (network) => ({
 	"parachains": [
 		{
 			"bin": "./bin/astar-collator",
-			"id": "2007",
+			"id": "2000",
  			"chain": `${network}-dev`,
 			"balance": "1000000000000000000000",
 			"nodes": [
@@ -49,7 +49,6 @@ const config = (network) => ({
 					"port": 31200,
 					"name": "alice",
 					"flags": [
-						"--parachain-id=2007",
 						"--unsafe-ws-external",
 						"--unsafe-rpc-external",
 						"--rpc-port=8545",
@@ -62,7 +61,7 @@ const config = (network) => ({
 					"wsPort": 9989,
 					"port": 31201,
 					"name": "bob",
-					"flags": ["--parachain-id=2007", "--", "--execution=wasm"]
+					"flags": ["--", "--execution=wasm"]
 				}
 			]
 		}

@@ -173,6 +173,8 @@ where
             block_data_cache.clone(),
             fee_history_cache,
             fee_history_limit,
+            // Allow 10x max allowed weight for non-transactional calls
+            10,
         )
         .into_rpc(),
     )?;

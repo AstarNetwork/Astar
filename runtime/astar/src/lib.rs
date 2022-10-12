@@ -95,7 +95,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 32,
+    spec_version: 36,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -124,7 +124,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -323,26 +323,6 @@ impl<AccountId> Default for SmartContract<AccountId> {
     }
 }
 
-#[cfg(not(feature = "runtime-benchmarks"))]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
-        }
-    }
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(_account) => true,
-        }
-    }
-}
-
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -351,8 +331,8 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -599,7 +579,7 @@ impl WeightToFeePolynomial for WeightToFee {
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
         // in Astar, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mASTR:
         let p = MILLIASTR;
-        let q = 10 * Balance::from(ExtrinsicBaseWeight::get());
+        let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
@@ -633,9 +613,9 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-    // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
-    pub IsActive: bool = false;
     pub DefaultBaseFeePerGas: U256 = (MILLIASTR / 1_000_000).into();
+    // At the moment, we don't use dynamic fee calculation for Astar by default
+    pub DefaultElasticity: Permill = Permill::zero();
 }
 
 pub struct BaseFeeThreshold;
@@ -654,8 +634,8 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 impl pallet_base_fee::Config for Runtime {
     type Event = Event;
     type Threshold = BaseFeeThreshold;
-    type IsActive = IsActive;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+    type DefaultElasticity = DefaultElasticity;
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -666,16 +646,16 @@ pub const GAS_PER_SECOND: u64 = 40_000_000;
 
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
-pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND / GAS_PER_SECOND;
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND.saturating_div(GAS_PER_SECOND).ref_time();
 
 pub struct GasWeightMapping;
 impl pallet_evm::GasWeightMapping for GasWeightMapping {
     fn gas_to_weight(gas: u64) -> Weight {
-        gas.saturating_mul(WEIGHT_PER_GAS)
+        Weight::from_ref_time(gas.saturating_mul(WEIGHT_PER_GAS))
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        weight.wrapping_div(WEIGHT_PER_GAS)
+        weight.ref_time().wrapping_div(WEIGHT_PER_GAS)
     }
 }
 
@@ -703,7 +683,7 @@ parameter_types! {
     pub ChainId: u64 = 0x250;
     /// EVM gas limit
     pub BlockGasLimit: U256 = U256::from(
-        NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS
+        NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = AstarNetworkPrecompiles::<_, _>::new();
 }
@@ -757,7 +737,7 @@ impl pallet_xc_asset_config::Config for Runtime {
 }
 
 construct_runtime!(
-    pub enum Runtime where
+    pub struct Runtime where
         Block = Block,
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
@@ -982,6 +962,23 @@ impl_runtime_apis! {
         }
         fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
+        }
+    }
+
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+        for Runtime
+    {
+        fn query_call_info(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
+        }
+        fn query_call_fee_details(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
         }
     }
 
@@ -1218,12 +1215,24 @@ impl_runtime_apis! {
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
+            log::info!("try-runtime::on_runtime_upgrade");
             let weight = Executive::try_runtime_upgrade().unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
 
-        fn execute_block_no_check(block: Block) -> Weight {
-            Executive::execute_block_no_check(block)
+        fn execute_block(
+            block: Block,
+            state_root_check: bool,
+            select: frame_try_runtime::TryStateSelect
+        ) -> Weight {
+            log::info!(
+                "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
+                block.header.number,
+                block.header.hash(),
+                state_root_check,
+                select,
+            );
+            Executive::try_execute_block(block, state_root_check, select).expect("execute-block failed")
         }
     }
 }
