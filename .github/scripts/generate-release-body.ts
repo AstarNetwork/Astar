@@ -213,12 +213,10 @@ async function main() {
   const emptyLabelPRs = prByLabels[''] || [];
 
   const printPr = (pr) => {
-    if (pr.labels !== undefined) {
-        if (pr.labels.includes(BREAKING_CHANGES_LABEL)) {
-            return "⚠️ " + pr.title + " (#" + pr.number + ")";
-        }
+    if (pr.data.labels.includes(BREAKING_CHANGES_LABEL)) {
+        return "⚠️ " + pr.data.title + " (#" + pr.data.number + ")";
     }
-    return pr.title + " (#" + pr.number + ")";
+    return pr.data.title + " (#" + pr.data.number + ")";
   };
 
   const template = `
