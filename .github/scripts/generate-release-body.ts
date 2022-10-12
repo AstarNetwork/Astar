@@ -41,7 +41,6 @@ function getCompareLink(packageName: string, previousTag: string, newTag: string
     return ""
   }
   const newRepo = newRepoTmp[1];
-  console.log(newRepo)
   const newRepoOrganization = /github.com\/([^\/]*)/g.exec(newRepo)[1];
 
   const diffLink =
@@ -209,19 +208,24 @@ async function main() {
     newTag
   );
 
-  const filteredClientPRs = prByLabels[CLIENT_CHANGES_LABEL] || [];
-  const filteredRuntimePRs = prByLabels[RUNTIME_CHANGES_LABEL] || [];
+  const clientPRs = prByLabels[CLIENT_CHANGES_LABEL] || [];
+  const runtimePRs = prByLabels[RUNTIME_CHANGES_LABEL] || [];
+  const emptyLabelPRs = prByLabels[''] || [];
 
   const printPr = (pr) => {
-    if (pr.labels.includes(BREAKING_CHANGES_LABEL)) {
-      return "⚠️ " + pr.title + " (#" + pr.number + ")";
-    } else {
-      return pr.title + " (#" + pr.number + ")";
+    if (pr.labels !== undefined) {
+        if (pr.labels.includes(BREAKING_CHANGES_LABEL)) {
+            return "⚠️ " + pr.title + " (#" + pr.number + ")";
+        }
     }
+    return pr.title + " (#" + pr.number + ")";
   };
 
-  const template = `${
-    runtimes.length > 0 ? `## Runtimes
+  const template = `
+## Description
+(Place holder for release description, please freely write explanation for this release here.)
+
+${runtimes.length > 0 ? `## Runtimes
 ${runtimes
   .map(
     (runtime) => `### ${capitalize(runtime.name)}
@@ -235,22 +239,32 @@ ${runtimes
 🗳️ proposal (authorizeUpgrade): ${runtime.srtool.runtimes.compressed.subwasm.parachain_authorize_upgrade_hash}
 📦 IPFS:                        ${runtime.srtool.runtimes.compressed.subwasm.ipfs_hash}
 \`\`\`
-`).join(`\n\n`)}` : ""}
+`).join(`\n`)}` : ""}
 
 ## Build Info
 WASM runtime built using \`${runtimes[0]?.srtool.info.rustc}\`
 
 ## Changes
-${filteredClientPRs.length > 0 ? `### Client
-${filteredClientPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
+${clientPRs.length > 0 ? `### Client
+${clientPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : ""}
-${filteredRuntimePRs.length > 0 ? `### Runtime
-${filteredRuntimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
+${runtimePRs.length > 0 ? `### Runtime
+${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
+` : ""}
+${emptyLabelPRs.length > 0 ? `### Others
+${emptyLabelPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : ""}
 
 ## Dependency Changes
 Astar: https://github.com/${argv.owner}/${argv.repo}/compare/${previousTag}...${newTag}
 ${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).join("\n")}
+
+| Arch |  Link  |
+| ----------- | ------- |
+|  \`MacOS\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-macOS-x86_64.tar.gz) |
+| \`Ubuntu\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-ubuntu-x86_64.tar.gz) |
+
+[<img src="https://www.docker.com/sites/default/files/d8/2019-07/vertical-logo-monochromatic.png" height="200px">](https://hub.docker.com/r/staketechnologies/astar-collator/tags) 
 `
 
   console.log(template);

@@ -275,8 +275,12 @@ jobs:
       with:
         node-version: 16.x
 
-    # TODO!! Get last release
     - name: Get the last release
+      id: last-release
+      uses: pozetroninc/github-action-get-latest-release@master
+      with:
+        repository: AstarNetwork/Astar
+        excludes: "prerelease, draft"
     
     - name: Generate Release Body
       env:
@@ -285,7 +289,7 @@ jobs:
       run: |
         cd .github/scripts
         yarn .github/scripts
-        yarn -s run ts-node generate --owner "${{ github.repository_owner }}" --repo "$(basename ${{ github.repository }})" --from "${{ github.event.inputs.from }}" --to "${{ github.event.inputs.to }}" --srtool-report-folder '../../runtime-artifacts/' > body.md
+        yarn -s run ts-node generate --owner "${{ github.repository_owner }}" --repo "$(basename ${{ github.repository }})" --from "${{ steps.last-release.outputs.release }}" --to "${{ github.ref_name }}" --srtool-report-folder '../../runtime-artifacts/' > body.md
 
     - name: Create Release Draft
       id: create-release
