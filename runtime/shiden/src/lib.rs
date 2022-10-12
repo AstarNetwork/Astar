@@ -779,6 +779,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type Event = Event;
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
