@@ -24,7 +24,7 @@ function getCompareLink(packageName: string, previousTag: string, newTag: string
   if (previousRepoTmp == null) {
     return ""
   };
-  const previousRepo = previousCommitTmp[1];
+  const previousRepo = previousRepoTmp[1];
 
   // New
   const newPackage = execSync(
@@ -223,7 +223,7 @@ async function main() {
 ## Description
 (Place holder for release description, please freely write explanation for this release here.)
 
-Upgrade priority: LOW/MID/HIGH
+\*\*Upgrade priority: LOW/MID/HIGH\*\*
 
 ${runtimes.length > 0 ? `## Runtimes
 ${runtimes
@@ -259,6 +259,7 @@ ${emptyLabelPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 Astar: https://github.com/${argv.owner}/${argv.repo}/compare/${previousTag}...${newTag}
 ${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).join("\n")}
 
+## Download Links
 | Arch |  Link  |
 | ----------- | ------- |
 |  \`MacOS\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-macOS-x86_64.tar.gz) |
