@@ -221,7 +221,7 @@ async function main() {
 
   const template = `
 ## Description
-(Place holder for release description, please freely write explanation for this release here.)
+(Placeholder for release descriptions, please freely write explanations for this release here.)
 
 \*\*Upgrade priority: LOW/MID/HIGH\*\*
 
