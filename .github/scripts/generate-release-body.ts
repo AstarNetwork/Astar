@@ -223,6 +223,8 @@ async function main() {
 ## Description
 (Place holder for release description, please freely write explanation for this release here.)
 
+Upgrade priority: LOW/MID/HIGH
+
 ${runtimes.length > 0 ? `## Runtimes
 ${runtimes
   .map(
