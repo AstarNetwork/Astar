@@ -213,12 +213,10 @@ async function main() {
   const emptyLabelPRs = prByLabels[''] || [];
 
   const printPr = (pr) => {
-    if (pr.labels !== undefined) {
-        if (pr.labels.includes(BREAKING_CHANGES_LABEL)) {
-            return "⚠️ " + pr.title + " (#" + pr.number + ")";
-        }
+    if (pr.data.labels.includes(BREAKING_CHANGES_LABEL)) {
+      return "⚠️ " + pr.data.title + " (#" + pr.data.number + ")";
     }
-    return pr.title + " (#" + pr.number + ")";
+    return pr.data.title + " (#" + pr.data.number + ")";
   };
 
   const template = `
@@ -245,15 +243,18 @@ ${runtimes
 WASM runtime built using \`${runtimes[0]?.srtool.info.rustc}\`
 
 ## Changes
-${clientPRs.length > 0 ? `### Client
+### Client
+${clientPRs.length > 0 ? `
 ${clientPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
-` : ""}
-${runtimePRs.length > 0 ? `### Runtime
+` : "None"}
+### Runtime
+${runtimePRs.length > 0 ? `
 ${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
-` : ""}
-${emptyLabelPRs.length > 0 ? `### Others
+` : "None"}
+### Others
+${emptyLabelPRs.length > 0 ? `
 ${emptyLabelPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
-` : ""}
+` : "None"}
 
 ## Dependency Changes
 Astar: https://github.com/${argv.owner}/${argv.repo}/compare/${previousTag}...${newTag}
