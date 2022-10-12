@@ -98,7 +98,6 @@ jobs:
       run: yarn test:${{ matrix.network }}
       working-directory: ./rpc-tests
 
-
   native-macos:
     needs: checks-and-tests
     runs-on: macos-latest
@@ -277,7 +276,7 @@ jobs:
 
     - name: Get the last release
       id: last-release
-      uses: pozetroninc/github-action-get-latest-release@master
+      uses: pozetroninc/github-action-get-latest-release@v0.5.0
       with:
         repository: AstarNetwork/Astar
         excludes: "prerelease, draft"
