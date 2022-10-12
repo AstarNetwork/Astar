@@ -274,8 +274,8 @@ jobs:
       with:
         node-version: 16.x
 
-    - name: Get the last release
-      id: last-release
+    - name: Get the latest release
+      id: latest-release
       uses: pozetroninc/github-action-get-latest-release@v0.5.0
       with:
         repository: AstarNetwork/Astar
@@ -288,7 +288,7 @@ jobs:
       run: |
         cd .github/scripts
         yarn .github/scripts
-        yarn -s run ts-node generate-release-body.ts generate --owner "${{ github.repository_owner }}" --repo "$(basename ${{ github.repository }})" --from "${{ steps.last-release.outputs.release }}" --to "${{ github.ref_name }}" --srtool-report-folder '../../runtime-artifacts/' > ../../body.md
+        yarn -s run ts-node generate-release-body.ts generate --owner "${{ github.repository_owner }}" --repo "$(basename ${{ github.repository }})" --from "${{ steps.latest-release.outputs.release }}" --to "${{ github.ref_name }}" --srtool-report-folder '../../runtime-artifacts/' > ../../body.md
 
     - name: Create Release Draft
       id: create-release
