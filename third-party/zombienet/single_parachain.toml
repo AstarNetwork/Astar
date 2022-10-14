@@ -40,4 +40,3 @@ cumulus_based = true
   [[parachains.collators]]
   name = "collator2"
   command = "./astar-collator"
-  
