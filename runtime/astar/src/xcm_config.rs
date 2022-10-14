@@ -12,7 +12,7 @@ use frame_support::{
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
     LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
@@ -42,6 +42,8 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<polkadot_parachain::primitives::Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
+    // Derives a private `Account32` by hashing `("multiloc", received multilocation)`
+    Account32Hash<RelayNetwork, AccountId>,
 );
 
 /// Means for transacting the native currency on this chain.
