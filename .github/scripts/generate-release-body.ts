@@ -157,7 +157,7 @@ const BREAKING_CHANGES_LABEL = "breaksapi";
 
 async function main() {
   const argv = yargs(process.argv.slice(2))
-    .usage("Usage: npm run ts-node generate-release-body.ts [args]")
+    .usage("npm run ts-node generate-release-body.ts [args]")
     .version("1.0.0")
     .options({
       from: {
