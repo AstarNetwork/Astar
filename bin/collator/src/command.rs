@@ -11,7 +11,7 @@ use crate::{
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
-use log::{error, info, warn};
+use log::{error, info};
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -27,8 +27,6 @@ use std::net::SocketAddr;
 
 #[cfg(feature = "frame-benchmarking")]
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-
-const DEFAULT_PARACHAIN_ID: u32 = 2000;
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
@@ -67,15 +65,12 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
     }
 }
 
-fn load_spec(
-    id: &str,
-    para_id: u32,
-) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
         "dev" => Box::new(development_config()),
-        "astar-dev" => Box::new(chain_spec::astar::get_chain_spec(para_id)),
-        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
-        "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(para_id)),
+        "astar-dev" => Box::new(chain_spec::astar::get_chain_spec()),
+        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec()),
+        "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec()),
         "astar" => Box::new(chain_spec::AstarChainSpec::from_json_bytes(
             &include_bytes!("../res/astar.raw.json")[..],
         )?),
@@ -132,7 +127,7 @@ impl SubstrateCli for Cli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        load_spec(id, self.run.parachain_id.unwrap_or(DEFAULT_PARACHAIN_ID))
+        load_spec(id)
     }
 
     fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -654,24 +649,14 @@ pub fn run() -> Result<()> {
                         .chain(cli.relaychain_args.iter()),
                 );
 
-                // Parachain id evaluation order
-                // para id passed by cli arg -> para id in chainspec
-                let cli_arg_para_id = cli.run.parachain_id;
-                let chain_spec_para_id = chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
-                let id = ParaId::from(match (cli_arg_para_id, chain_spec_para_id) {
-                    (Some(cli_arg_para_id), Some(chain_spec_para_id)) => {
-                        if cli_arg_para_id != chain_spec_para_id {
-                            warn!("Specified parachain id doesn't match the one defined in chainspec");
-                        }
-                        cli_arg_para_id
-                    },
-                    (Some(para_id), None) => para_id,
-                    (None, Some(para_id)) => para_id,
-                    _ => Err("Parachain id is missing")?,
-                });
+                let para_id = ParaId::from(
+                    chain_spec::Extensions::try_get(&*config.chain_spec)
+                        .map(|e| e.para_id)
+                        .ok_or("ParaId not found in chain spec extension")?
+                );
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
+                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&para_id);
 
                 let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
                 let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
@@ -685,7 +670,7 @@ pub fn run() -> Result<()> {
                 )
                 .map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-                info!("Parachain id: {:?}", id);
+                info!("Parachain id: {:?}", para_id);
                 info!("Parachain Account: {}", parachain_account);
                 info!("Parachain genesis state: {}", genesis_state);
                 info!(
@@ -698,17 +683,17 @@ pub fn run() -> Result<()> {
                 );
 
                 if config.chain_spec.is_astar() {
-                    start_astar_node(config, polkadot_config, collator_options, id)
+                    start_astar_node(config, polkadot_config, collator_options, para_id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shiden() {
-                    start_shiden_node(config, polkadot_config, collator_options, id)
+                    start_shiden_node(config, polkadot_config, collator_options, para_id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shibuya() {
-                    start_shibuya_node(config, polkadot_config, collator_options, id)
+                    start_shibuya_node(config, polkadot_config, collator_options, para_id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)

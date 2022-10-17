@@ -18,11 +18,13 @@ use sp_runtime::{
 
 use super::{get_from_seed, Extensions};
 
+const PARA_ID: u32 = 1000;
+
 /// Specialized `ChainSpec` for Shibuya testnet.
 pub type ShibuyaChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 /// Gen Shibuya chain specification for given parachain id.
-pub fn get_chain_spec(para_id: u32) -> ShibuyaChainSpec {
+pub fn get_chain_spec() -> ShibuyaChainSpec {
     // Alice as default
     let sudo_key = get_account_id_from_seed::<sr25519::Public>("Alice");
     let endowned = vec![
@@ -40,7 +42,7 @@ pub fn get_chain_spec(para_id: u32) -> ShibuyaChainSpec {
         "Shibuya Testnet",
         "shibuya",
         ChainType::Development,
-        move || make_genesis(endowned.clone(), sudo_key.clone(), para_id.into()),
+        move || make_genesis(endowned.clone(), sudo_key.clone(), PARA_ID.into()),
         vec![],
         None,
         None,
@@ -49,7 +51,7 @@ pub fn get_chain_spec(para_id: u32) -> ShibuyaChainSpec {
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
-            para_id,
+            para_id: PARA_ID,
         },
     )
 }
