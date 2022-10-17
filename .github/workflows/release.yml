@@ -88,7 +88,7 @@ jobs:
     - name: Use Node.js 16.x
       uses: actions/setup-node@v2
       with:
-        node-version: 16.x
+        node-version: 18.x
     - name: Install yarn
       run: |
         npm install -g yarn
@@ -97,7 +97,6 @@ jobs:
     - name: Run tests
       run: yarn test:${{ matrix.network }}
       working-directory: ./rpc-tests
-
 
   native-macos:
     needs: checks-and-tests
@@ -252,6 +251,45 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Download astar runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-runtime
+        path: runtime-artifacts
+
+    - name: Download shiden runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: shiden-runtime
+        path: runtime-artifacts
+
+    - name: Download shibuya runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: shibuya-runtime
+        path: runtime-artifacts
+
+    - name: Use Node.js 16.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+
+    - name: Get the latest release
+      id: latest-release
+      uses: pozetroninc/github-action-get-latest-release@v0.5.0
+      with:
+        repository: AstarNetwork/Astar
+        excludes: "prerelease, draft"
+    
+    - name: Generate Release Body
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      id: generate-release-body
+      run: |
+        cd .github/scripts
+        yarn
+        yarn -s run ts-node generate-release-body.ts generate --owner "${{ github.repository_owner }}" --repo "$(basename ${{ github.repository }})" --from "${{ steps.latest-release.outputs.release }}" --to "${{ github.ref_name }}" --srtool-report-folder '../../runtime-artifacts/' > ../../body.md
+
     - name: Create Release Draft
       id: create-release
       uses: actions/create-release@v1
@@ -260,7 +298,7 @@ jobs:
       with:
         tag_name: ${{ github.ref_name }}
         release_name: ${{ github.ref_name }}
-        body_path: .github/release-draft.md
+        body_path: body.md
         draft: true
 
   upload-binaries:
@@ -345,4 +383,14 @@ jobs:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
         asset_path: ${{ matrix.chain }}-compressed-info.json
         asset_name: ${{ matrix.chain }}-compressed-info.json
+        asset_content_type: application/json
+
+    - name: Upload ${{ matrix.chain }} Srtool Digest
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+        asset_path: ${{ matrix.chain }}-srtool-digest.json
+        asset_name: ${{ matrix.chain }}-srtool-digest.json
         asset_content_type: application/json
