@@ -45,12 +45,10 @@ pub struct AssetIdCmd {
 #[derive(Debug, clap::Parser)]
 pub struct Account32HashCmd {
     /// Parachain id in case sender is from a sibling parachain.
-    #[clap(short, long)]
-    #[arg(default_value = None)]
+    #[clap(short, long, default_value = None)]
     pub parachain_id: Option<u32>,
     /// AccountId32 (SS58 scheme, public key) of the sender account.
-    #[clap(short, long)]
-    #[arg(value_parser = account_id_32_parser)]
+    #[clap(short, long, value_parser = account_id_32_parser)]
     pub account_id_32: [u8; 32],
 }
 
