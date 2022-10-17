@@ -17,6 +17,8 @@ pub enum Subcommand {
     /// Prints AssetId for desired parachain asset.
     AssetId(AssetIdCmd),
     /// Prints Account32Hash for the derived multilocation.
+    /// In case parachain-id is provided, multilocation is in format { parents: 1, X2(Parachain, AccountId32) }.
+    /// In case parachain-id is omitted, multilocation is in format  { parents: 1, X1(AccountId32) }.
     Account32Hash(Account32HashCmd),
 }
 
@@ -43,11 +45,11 @@ pub struct AssetIdCmd {
 #[derive(Debug, clap::Parser)]
 pub struct Account32HashCmd {
     /// Parachain id in case sender is from a sibling parachain.
-    #[clap(short)]
+    #[clap(short, long)]
     #[arg(default_value = None)]
     pub parachain_id: Option<u32>,
     /// AccountId32 (SS58 scheme, public key) of the sender account.
-    #[clap(short)]
+    #[clap(short, long)]
     #[arg(value_parser = account_id_32_parser)]
     pub account_id_32: [u8; 32],
 }
