@@ -34,28 +34,29 @@ cumulus_based = true
   [[parachains.collators]]
   name = "collator1"
   command = "./astar-collator"
+  rpc_port = 8545
   args = [ "-l=xcm=trace" ]
 
 # For this one you can download or build some other para and run it.
-# In this example, `cumulus-collator` was built and we're runing `westmint-dev` chain
+# In this example, `astar-collator` is reused but `shiden-dev` chain is used
 [[parachains]]
-id = 1000
-chain = "westmint-dev"
+id = 2007
+chain = "shiden-dev"
 cumulus_based = true
 
   [[parachains.collators]]
   name = "collator2"
-  command = "./cumulus-collator"
+  command = "./astar-collator"
   args = [ "-l=xcm=trace" ]
 
-[[hrmpChannels]]
-sender = 2000
-recipient = 1000
-maxCapacity = 8
-maxMessageSize = 512
-
-[[hrmpChannels]]
-sender = 1000
-recipient = 2000
-maxCapacity = 8
-maxMessageSize = 512
+[[hrmp_channels]]
+  sender = 2000
+  recipient = 2007
+  max_capacity = 8
+  max_message_size = 512
+  
+[[hrmp_channels]]
+  sender = 2007
+  recipient = 2000
+  max_capacity = 8
+  max_message_size = 512
