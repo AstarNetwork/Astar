@@ -54,7 +54,7 @@ pub struct Account32HashCmd {
 
 /// Used to parse AccountId32 as [u8; 32] from the received string.
 fn account_id_32_parser(account_str: &str) -> Result<[u8; 32], String> {
-    let re = Regex::new(r"^0x([0-9a-fA-F]{64})$").unwrap();
+    let re = Regex::new(r"^0x([0-9a-fA-F]{64})$").map_err(|e| e.to_string())?;
     if !re.is_match(account_str) {
         return Err(
             "Invalid AccountId32 received. Expected format is '0x1234...4321' (64 hex digits)."
@@ -62,7 +62,12 @@ fn account_id_32_parser(account_str: &str) -> Result<[u8; 32], String> {
         );
     }
 
-    let hex_acc = re.captures(account_str).unwrap().get(1).unwrap().as_str();
+    let hex_acc = re
+        .captures(account_str)
+        .expect("Regex match confirmed above.")
+        .get(1)
+        .expect("Group 1 confirmed in match above.")
+        .as_str();
     let decoded_hex = hex::decode(hex_acc).expect("Regex ensures correctness; infallible.");
 
     TryInto::<[u8; 32]>::try_into(decoded_hex)
