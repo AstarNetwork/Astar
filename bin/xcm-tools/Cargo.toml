@@ -21,8 +21,8 @@ xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.2
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.29" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.29" }
 
-regex = "1.6.0"
 hex = "0.4.3"
+regex = "1.6.0"
 
 [build-dependencies]
 build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.29" }
