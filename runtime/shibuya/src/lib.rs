@@ -136,7 +136,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 69,
+    spec_version: 71,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -201,6 +201,12 @@ impl Contains<Call> for BaseFilter {
                 pallet_assets::Call::create { id, .. } => *id < u32::MAX.into(),
                 pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(),
                 _ => true,
+            },
+            // Filter cross-chain asset config, only allow registration for non-root users
+            Call::XcAssetConfig(method) => match method {
+                pallet_xc_asset_config::Call::register_asset_location { .. } => true,
+                // registering the asset location should be good enough for users, any change can be handled via issue ticket or help request
+                _ => false,
             },
             // These modules are not allowed to be called by transactions:
             // Other modules should works:
@@ -1011,6 +1017,8 @@ impl pallet_xc_asset_config::Config for Runtime {
     type Event = Event;
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
+    // Good enough for testnet since we lack pallet-assets hooks for now
+    type ManagerOrigin = frame_system::EnsureSigned<AccountId>;
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 

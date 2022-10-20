@@ -142,3 +142,5 @@ Temporary Items
 .keys
 
 .vscode
+
+**/node_modules
