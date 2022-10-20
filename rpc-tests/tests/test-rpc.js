@@ -14,8 +14,8 @@ const CHARLIE = 'ZD39yAE4W4RiXCyk1gv6CD2tSaVjQU5KoKfujyft4Xa2GAz';
 const DAVE = 'X2mE9hCGX771c3zzV6tPa8U2cDz4U4zkqUdmBrQn83M3cm7';
 
 const evmAccount = {
-    privateKey: 'YOUR-PRIVATE-KEY-HERE',
-    address: 'PUBLIC-ADDRESS-OF-PK-HERE',
+    privateKey: '0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391',
+    address: '0xaaafB3972B05630fCceE866eC69CdADd9baC2771',
 };
 
 export const getAddressEnum = (address) => ({ Evm: address });
