@@ -1,8 +1,8 @@
 //!
+use super::Runtime;
 /// Registered WASM contracts chain extensions.
 ///
 use pallet_contracts::chain_extension::RegisteredChainExtension;
-use super::Runtime;
 
 pub use pallet_chain_extension_dapps_staking::DappsStakingExtension;
 
