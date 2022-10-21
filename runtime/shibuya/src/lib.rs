@@ -38,27 +38,19 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, DispatchError, FixedPointNumber, Perbill, Permill, Perquintill,
-    RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use xcm_primitives::AssetLocationIdConverter;
 
-use chain_extension_trait::ChainExtensionExec;
-use dapps_staking_chain_extension::DappsStakingExtension;
-
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use pallet_balances::Call as BalancesCall;
-use pallet_contracts::chain_extension::{
-    ChainExtension, Environment, Ext, InitState, RetVal, SysConfig,
-};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::crypto::UncheckedFrom;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
@@ -633,7 +625,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = (DappsStakingExtension,);
+    type ChainExtension = (DappsStakingExtension<Self>,);
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
