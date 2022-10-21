@@ -21,7 +21,7 @@ contract Hello {
 }
 `;
 
-var input = {
+const input = {
     language: 'Solidity',
     sources: {
       'hello.sol': {
