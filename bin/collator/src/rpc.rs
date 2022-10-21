@@ -34,7 +34,7 @@ pub fn open_frontier_backend<C>(
     config: &sc_service::Configuration,
 ) -> Result<Arc<fc_db::Backend<Block>>, String>
 where
-	C: sp_blockchain::HeaderBackend<Block>,
+    C: sp_blockchain::HeaderBackend<Block>,
 {
     let config_dir = config
         .base_path
