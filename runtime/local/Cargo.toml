@@ -149,7 +149,7 @@ std = [
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
-	"frame-system-benchmarking",
+	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"hex-literal",
 	"sp-runtime/runtime-benchmarks",
@@ -187,6 +187,6 @@ try-runtime = [
 	"pallet-collective/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-treasury/try-runtime",
-	# "pallet-evm/try-runtime",
-	# "pallet-base-fee/try-runtime",
+	"pallet-evm/try-runtime",
+	"pallet-base-fee/try-runtime",
 ]

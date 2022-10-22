@@ -595,9 +595,9 @@ checksum = "6107fe1be6682a68940da878d9e9f5e90ca5745b3dec9fd1bb393c8777d4f581"
 
 [[package]]
 name = "base64"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
+checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
 name = "base64ct"
@@ -1038,7 +1038,7 @@ dependencies = [
 [[package]]
 name = "chain-extension-trait"
 version = "1.0.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "pallet-contracts",
  "sp-runtime",
@@ -2045,9 +2045,9 @@ dependencies = [
 
 [[package]]
 name = "cxx"
-version = "1.0.79"
+version = "1.0.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f83d0ebf42c6eafb8d7c52f7e5f2d3003b89c7aa4fd2b79229209459a849af8"
+checksum = "6b7d4e43b25d3c994662706a1d4fcfc32aaa6afd287502c111b237093bb23f3a"
 dependencies = [
  "cc",
  "cxxbridge-flags",
@@ -2057,9 +2057,9 @@ dependencies = [
 
 [[package]]
 name = "cxx-build"
-version = "1.0.79"
+version = "1.0.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07d050484b55975889284352b0ffc2ecbda25c0c55978017c132b29ba0818a86"
+checksum = "84f8829ddc213e2c1368e51a2564c552b65a8cb6a28f31e576270ac81d5e5827"
 dependencies = [
  "cc",
  "codespan-reporting",
@@ -2072,15 +2072,15 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-flags"
-version = "1.0.79"
+version = "1.0.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99d2199b00553eda8012dfec8d3b1c75fce747cf27c169a270b3b99e3448ab78"
+checksum = "e72537424b474af1460806647c41d4b6d35d09ef7fe031c5c2fa5766047cc56a"
 
 [[package]]
 name = "cxxbridge-macro"
-version = "1.0.79"
+version = "1.0.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcb67a6de1f602736dd7eaead0080cf3435df806c61b24b13328db128c58868f"
+checksum = "309e4fb93eed90e1e14bea0da16b209f81813ba9fc7830c20ed151dd7bc0a4d7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2090,7 +2090,7 @@ dependencies = [
 [[package]]
 name = "dapps-staking-chain-extension"
 version = "1.0.4"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "chain-extension-trait",
  "dapps-staking-chain-extension-types",
@@ -2112,7 +2112,7 @@ dependencies = [
 [[package]]
 name = "dapps-staking-chain-extension-types"
 version = "1.0.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -2654,7 +2654,7 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "async-trait",
  "fc-db",
@@ -2673,7 +2673,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "fp-storage",
  "kvdb-rocksdb",
@@ -2691,7 +2691,7 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "fc-db",
  "fp-consensus",
@@ -2708,7 +2708,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2751,7 +2751,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2874,7 +2874,7 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -2886,7 +2886,7 @@ dependencies = [
 [[package]]
 name = "fp-ethereum"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2901,7 +2901,7 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "evm",
  "frame-support",
@@ -2914,7 +2914,7 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2931,7 +2931,7 @@ dependencies = [
 [[package]]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "ethereum",
  "frame-support",
@@ -2945,7 +2945,7 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -5774,7 +5774,7 @@ dependencies = [
 [[package]]
 name = "pallet-base-fee"
 version = "1.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -5828,7 +5828,7 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "2.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5884,7 +5884,7 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.3.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6003,7 +6003,7 @@ dependencies = [
 [[package]]
 name = "pallet-custom-signatures"
 version = "4.5.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6019,7 +6019,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "3.7.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6113,7 +6113,7 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -6140,7 +6140,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "environmental",
  "evm",
@@ -6165,7 +6165,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-chain-id"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6177,7 +6177,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-assets-erc20"
 version = "0.5.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6199,7 +6199,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "fp-evm",
 ]
@@ -6207,7 +6207,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -6217,7 +6217,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6227,7 +6227,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "ed25519-dalek",
  "fp-evm",
@@ -6236,7 +6236,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "fp-evm",
  "num",
@@ -6245,7 +6245,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "fp-evm",
  "tiny-keccak",
@@ -6254,7 +6254,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#ade0ef79bc3ae21d709c93f4271ba928e0ae5ee7"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.30#5831340633c39ea226f33455372d818f4402f068"
 dependencies = [
  "fp-evm",
  "ripemd",
@@ -6264,7 +6264,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sr25519"
 version = "1.2.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "fp-evm",
  "log",
@@ -6280,7 +6280,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-substrate-ecdsa"
 version = "1.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "fp-evm",
  "log",
@@ -6296,7 +6296,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xcm"
 version = "0.7.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6319,7 +6319,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6602,7 +6602,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.6.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6933,7 +6933,7 @@ dependencies = [
 [[package]]
 name = "pallet-xc-asset-config"
 version = "1.3.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6951,7 +6951,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm"
 version = "0.9.28"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7004,7 +7004,7 @@ dependencies = [
 [[package]]
 name = "pallet-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8508,7 +8508,7 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "precompile-utils"
 version = "0.4.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "evm",
  "fp-evm",
@@ -8531,7 +8531,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -8615,9 +8615,9 @@ dependencies = [
 
 [[package]]
 name = "prometheus"
-version = "0.13.2"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45c8babc29389186697fe5a2a4859d697825496b83db5d0b65271cdc0488e88c"
+checksum = "449811d15fbdf5ceb5c1144416066429cf82316e2ec8ce0c1f6f8a02e7bbcf8c"
 dependencies = [
  "cfg-if 1.0.0",
  "fnv",
@@ -9106,9 +9106,9 @@ dependencies = [
 
 [[package]]
 name = "rlp"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "999508abb0ae792aabed2460c45b89106d97fe4adac593bdaef433c2605847b5"
+checksum = "bb919243f34364b6bd2fc10ef797edbfa75f33c252e7998527479c6d6b47e1ec"
 dependencies = [
  "bytes",
  "rustc-hex",
@@ -10618,18 +10618,18 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.145"
+version = "1.0.147"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "728eb6351430bccb993660dfffc5a72f91ccc1295abaa8ce19b27ebe4f75568b"
+checksum = "d193d69bae983fc11a79df82342761dfbf28a99fc8d203dca4c3c1b590948965"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.145"
+version = "1.0.147"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81fa1584d3d1bcacd84c277a0dfe21f5b0f6accf4a23d04d4c6d61f1af522b4c"
+checksum = "4f1d362ca8fc9c3e3a7484440752472d68a6caa98f1ab81d99b5dfe517cec852"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -13525,7 +13525,7 @@ dependencies = [
 [[package]]
 name = "xcm-primitives"
 version = "0.3.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#ad3343b1200169a523f4a970d2ca1b78233fbb7e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#3a11a2ff3fad68f31bc31619d91338dcad419276"
 dependencies = [
  "frame-support",
  "log",
