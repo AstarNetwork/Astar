@@ -600,8 +600,14 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
             if let Some(tips) = fees_then_tips.next() {
                 tips.merge_into(&mut fees);
             }
+
+            let (to_burn, collators) = fees.ration(20, 80);
+
+            // burn part of fees
+            let _ = Balances::burn(to_burn.peek());
+
             // pay fees to collators
-            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(fees);
+            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);
         }
     }
 }
