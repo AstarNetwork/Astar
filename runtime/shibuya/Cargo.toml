@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "4.26.0"
+version = "4.27.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -89,9 +89,8 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.29" }
 
 # Astar pallets
-chain-extension-trait = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.29", default-features = false }
-dapps-staking-chain-extension = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.29", default-features = false }
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.29", default-features = false }
+pallet-chain-extension-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.29", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.29", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.29", default-features = false }
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.29", default-features = false }
@@ -120,8 +119,6 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 default = ["std"]
 std = [
 	"codec/std",
-	"chain-extension-trait/std",
-	"dapps-staking-chain-extension/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
 	"sp-std/std",
@@ -147,6 +144,7 @@ std = [
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
 	"pallet-contracts-rpc-runtime-api/std",
+	"pallet-chain-extension-dapps-staking/std",
 	"pallet-custom-signatures/std",
 	"pallet-base-fee/std",
 	"pallet-ethereum/std",

@@ -38,30 +38,23 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, DispatchError, FixedPointNumber, Perbill, Permill, Perquintill,
-    RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use xcm_primitives::AssetLocationIdConverter;
 
-use chain_extension_trait::ChainExtensionExec;
-use dapps_staking_chain_extension::DappsStakingExtension;
-
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use pallet_balances::Call as BalancesCall;
-use pallet_contracts::chain_extension::{
-    ChainExtension, Environment, Ext, InitState, RegisteredChainExtension, RetVal, SysConfig,
-};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::crypto::UncheckedFrom;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+mod chain_extensions;
 mod precompiles;
 mod weights;
 mod xcm_config;
@@ -70,6 +63,8 @@ pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcA
 
 pub use precompiles::{ShibuyaNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime, ShibuyaAssetLocationIdConverter>;
+
+use chain_extensions::*;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -136,7 +131,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 71,
+    spec_version: 72,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -376,7 +371,9 @@ impl pallet_dapps_staking::Config for Runtime {
 }
 
 /// Multi-VM pointer to smart contract instance.
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
+#[derive(
+    PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, MaxEncodedLen, scale_info::TypeInfo,
+)]
 pub enum SmartContract<AccountId> {
     /// EVM smart contract instance.
     Evm(sp_core::H160),
@@ -387,6 +384,12 @@ pub enum SmartContract<AccountId> {
 impl<AccountId> Default for SmartContract<AccountId> {
     fn default() -> Self {
         SmartContract::Evm(H160::repeat_byte(0x00))
+    }
+}
+
+impl<AccountId: From<[u8; 32]>> From<[u8; 32]> for SmartContract<AccountId> {
+    fn from(input: [u8; 32]) -> Self {
+        SmartContract::Wasm(input.into())
     }
 }
 
@@ -622,7 +625,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = DappsStakingChainExtension;
+    type ChainExtension = (DappsStakingExtension<Self>,);
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -1126,22 +1129,6 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
 >;
-
-#[derive(Default)]
-pub struct DappsStakingChainExtension;
-impl RegisteredChainExtension<Runtime> for DappsStakingChainExtension {
-    const ID: u16 = 00;
-}
-
-impl ChainExtension<Runtime> for DappsStakingChainExtension {
-    fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
-    where
-        E: Ext<T = Runtime>,
-        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-    {
-        DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
