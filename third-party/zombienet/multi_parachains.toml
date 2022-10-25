@@ -1,0 +1,62 @@
+# Used to start 4 validator nodes and 2 collator nodes - 1 per parachain
+
+[settings]
+timeout = 1000
+
+[relaychain]
+default_command = "./polkadot"
+default_args = [ "-l=parachain=debug,xcm=trace" ]
+chain = "rococo-local"
+
+  [[relaychain.nodes]]
+  name = "alice"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "bob"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "charlie"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "dave"
+  validator = true
+
+[[parachains]]
+# Right now this has to be 2000 but soon we might be able to use arbitrary para-id
+id = 2000
+# Replace this with whichever chain you need to run, e.g. `astar-dev` if you need Astar
+chain = "shibuya-dev"
+cumulus_based = true
+
+  [[parachains.collators]]
+  name = "collator1"
+  command = "./astar-collator"
+  rpc_port = 8545
+  args = [ "-l=xcm=trace" ]
+
+# For this one you can download or build some other para and run it.
+# In this example, `astar-collator` is reused but `shiden-dev` chain is used
+[[parachains]]
+id = 2007
+chain = "shiden-dev"
+cumulus_based = true
+
+  [[parachains.collators]]
+  name = "collator2"
+  command = "./astar-collator"
+  args = [ "-l=xcm=trace" ]
+
+[[hrmp_channels]]
+  sender = 2000
+  recipient = 2007
+  max_capacity = 8
+  max_message_size = 512
+  
+[[hrmp_channels]]
+  sender = 2007
+  recipient = 2000
+  max_capacity = 8
+  max_message_size = 512

@@ -38,30 +38,23 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, DispatchError, FixedPointNumber, Perbill, Permill, Perquintill,
-    RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use xcm_primitives::AssetLocationIdConverter;
 
-use chain_extension_trait::ChainExtensionExec;
-use dapps_staking_chain_extension::DappsStakingExtension;
-
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use pallet_balances::Call as BalancesCall;
-use pallet_contracts::chain_extension::{
-    ChainExtension, Environment, Ext, InitState, RegisteredChainExtension, RetVal, SysConfig,
-};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::crypto::UncheckedFrom;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+mod chain_extensions;
 mod precompiles;
 mod weights;
 mod xcm_config;
@@ -70,6 +63,8 @@ pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcA
 
 pub use precompiles::{ShibuyaNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime, ShibuyaAssetLocationIdConverter>;
+
+use chain_extensions::*;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -136,7 +131,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 68,
+    spec_version: 72,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -165,7 +160,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -201,6 +196,12 @@ impl Contains<Call> for BaseFilter {
                 pallet_assets::Call::create { id, .. } => *id < u32::MAX.into(),
                 pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(),
                 _ => true,
+            },
+            // Filter cross-chain asset config, only allow registration for non-root users
+            Call::XcAssetConfig(method) => match method {
+                pallet_xc_asset_config::Call::register_asset_location { .. } => true,
+                // registering the asset location should be good enough for users, any change can be handled via issue ticket or help request
+                _ => false,
             },
             // These modules are not allowed to be called by transactions:
             // Other modules should works:
@@ -370,7 +371,9 @@ impl pallet_dapps_staking::Config for Runtime {
 }
 
 /// Multi-VM pointer to smart contract instance.
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
+#[derive(
+    PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, MaxEncodedLen, scale_info::TypeInfo,
+)]
 pub enum SmartContract<AccountId> {
     /// EVM smart contract instance.
     Evm(sp_core::H160),
@@ -384,6 +387,12 @@ impl<AccountId> Default for SmartContract<AccountId> {
     }
 }
 
+impl<AccountId: From<[u8; 32]>> From<[u8; 32]> for SmartContract<AccountId> {
+    fn from(input: [u8; 32]) -> Self {
+        SmartContract::Wasm(input.into())
+    }
+}
+
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -392,8 +401,8 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -616,7 +625,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = DappsStakingChainExtension;
+    type ChainExtension = (DappsStakingExtension<Self>,);
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -651,7 +660,7 @@ impl WeightToFeePolynomial for WeightToFee {
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
         // in Shiden, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mSDN:
         let p = MILLISDN;
-        let q = 10 * Balance::from(ExtrinsicBaseWeight::get());
+        let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
@@ -737,16 +746,16 @@ pub const GAS_PER_SECOND: u64 = 40_000_000;
 
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
-pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND / GAS_PER_SECOND;
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND.saturating_div(GAS_PER_SECOND).ref_time();
 
 pub struct ShidenGasWeightMapping;
 impl pallet_evm::GasWeightMapping for ShidenGasWeightMapping {
     fn gas_to_weight(gas: u64) -> Weight {
-        gas.saturating_mul(WEIGHT_PER_GAS)
+        Weight::from_ref_time(gas.saturating_mul(WEIGHT_PER_GAS))
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        weight.wrapping_div(WEIGHT_PER_GAS)
+        weight.ref_time().wrapping_div(WEIGHT_PER_GAS)
     }
 }
 
@@ -768,7 +777,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 parameter_types! {
     /// EVM gas limit
     pub BlockGasLimit: U256 = U256::from(
-        NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS
+        NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = ShibuyaNetworkPrecompiles::<_, _>::new();
 }
@@ -1011,6 +1020,8 @@ impl pallet_xc_asset_config::Config for Runtime {
     type Event = Event;
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
+    // Good enough for testnet since we lack pallet-assets hooks for now
+    type ManagerOrigin = frame_system::EnsureSigned<AccountId>;
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
@@ -1117,43 +1128,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (EvmChainIdSetting,),
 >;
-
-use frame_support::traits::OnRuntimeUpgrade;
-pub struct EvmChainIdSetting;
-const SHIBUYA_EVM_CHAIN_ID: u64 = 0x51;
-impl OnRuntimeUpgrade for EvmChainIdSetting {
-    fn on_runtime_upgrade() -> Weight {
-        pallet_evm_chain_id::ChainId::<Runtime>::put(SHIBUYA_EVM_CHAIN_ID);
-        <Runtime as frame_system::Config>::DbWeight::get().writes(1)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        assert_eq!(
-            pallet_evm_chain_id::ChainId::<Runtime>::get(),
-            SHIBUYA_EVM_CHAIN_ID
-        );
-        Ok(())
-    }
-}
-
-#[derive(Default)]
-pub struct DappsStakingChainExtension;
-impl RegisteredChainExtension<Runtime> for DappsStakingChainExtension {
-    const ID: u16 = 00;
-}
-
-impl ChainExtension<Runtime> for DappsStakingChainExtension {
-    fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
-    where
-        E: Ext<T = Runtime>,
-        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-    {
-        DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
@@ -1498,7 +1473,7 @@ impl_runtime_apis! {
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
+            Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true)
         }
 
         fn instantiate(
@@ -1511,7 +1486,7 @@ impl_runtime_apis! {
             salt: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
-            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+            Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
         }
 
         fn upload_code(
@@ -1588,12 +1563,24 @@ impl_runtime_apis! {
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
+            log::info!("try-runtime::on_runtime_upgrade");
             let weight = Executive::try_runtime_upgrade().unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
 
-        fn execute_block_no_check(block: Block) -> Weight {
-            Executive::execute_block_no_check(block)
+        fn execute_block(
+            block: Block,
+            state_root_check: bool,
+            select: frame_try_runtime::TryStateSelect
+        ) -> Weight {
+            log::info!(
+                "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
+                block.header.number,
+                block.header.hash(),
+                state_root_check,
+                select,
+            );
+            Executive::try_execute_block(block, state_root_check, select).expect("execute-block failed")
         }
     }
 }

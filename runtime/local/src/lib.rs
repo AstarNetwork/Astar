@@ -6,10 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use chain_extension_trait::ChainExtensionExec;
 use codec::{Decode, Encode, MaxEncodedLen};
-use dapps_staking_chain_extension::DappsStakingExtension;
-use xvm_chain_extension::XvmExtension;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
@@ -39,7 +36,7 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, DispatchError, MultiSignature, RuntimeDebug,
+    ApplyExtrinsicResult, MultiSignature, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -48,14 +45,10 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use pallet_balances::Call as BalancesCall;
-use pallet_contracts::chain_extension::{
-    ChainExtension, Environment, Ext, InitState, RegisteredChainExtension, RetVal, SysConfig,
-};
 pub use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::crypto::UncheckedFrom;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -94,6 +87,9 @@ impl_opaque_keys! {
 mod precompiles;
 pub use precompiles::{LocalNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = LocalNetworkPrecompiles<Runtime>;
+
+mod chain_extensions;
+pub use chain_extensions::*;
 
 /// Constant values used within the runtime.
 pub const MILLIAST: Balance = 1_000_000_000_000_000;
@@ -396,7 +392,9 @@ impl pallet_dapps_staking::Config for Runtime {
 }
 
 /// Multi-VM pointer to smart contract instance.
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
+#[derive(
+    PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, MaxEncodedLen, scale_info::TypeInfo,
+)]
 pub enum SmartContract<AccountId> {
     /// EVM smart contract instance.
     Evm(sp_core::H160),
@@ -407,6 +405,12 @@ pub enum SmartContract<AccountId> {
 impl<AccountId> Default for SmartContract<AccountId> {
     fn default() -> Self {
         SmartContract::Evm(H160::repeat_byte(0x00))
+    }
+}
+
+impl<AccountId: From<[u8; 32]>> From<[u8; 32]> for SmartContract<AccountId> {
+    fn from(input: [u8; 32]) -> Self {
+        SmartContract::Wasm(input.into())
     }
 }
 
@@ -464,16 +468,16 @@ pub const GAS_PER_SECOND: u64 = 40_000_000;
 
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
-pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND / GAS_PER_SECOND;
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND.saturating_div(GAS_PER_SECOND).ref_time();
 
 pub struct LocalGasWeightMapping;
 impl pallet_evm::GasWeightMapping for LocalGasWeightMapping {
     fn gas_to_weight(gas: u64) -> Weight {
-        gas.saturating_mul(WEIGHT_PER_GAS)
+        Weight::from_ref_time(gas.saturating_mul(WEIGHT_PER_GAS))
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        weight.wrapping_div(WEIGHT_PER_GAS)
+        weight.ref_time().wrapping_div(WEIGHT_PER_GAS)
     }
 }
 
@@ -501,7 +505,7 @@ parameter_types! {
     pub ChainId: u64 = 0x1111;
     /// EVM gas limit
     pub BlockGasLimit: U256 = U256::from(
-        NORMAL_DISPATCH_RATIO * WEIGHT_PER_SECOND / WEIGHT_PER_GAS
+        NORMAL_DISPATCH_RATIO * WEIGHT_PER_SECOND.ref_time() / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = LocalNetworkPrecompiles::<_>::new();
 }
@@ -749,7 +753,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = (DappsStakingChainExtension, XvmChainExtension);
+    type ChainExtension = (DappsStakingExtension<Self>, XvmExtension<Self>);
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -900,40 +904,6 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
 >;
-
-#[derive(Default)]
-pub struct DappsStakingChainExtension;
-
-impl RegisteredChainExtension<Runtime> for DappsStakingChainExtension {
-    const ID: u16 = 00;
-}
-
-impl ChainExtension<Runtime> for DappsStakingChainExtension {
-    fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
-    where
-        E: Ext<T = Runtime>,
-        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-    {
-        DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)
-    }
-}
-
-#[derive(Default)]
-pub struct XvmChainExtension;
-
-impl RegisteredChainExtension<Runtime> for XvmChainExtension {
-    const ID: u16 = 01;
-}
-
-impl ChainExtension<Runtime> for XvmChainExtension {
-    fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
-    where
-        E: Ext<T = Runtime>,
-        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-    {
-        XvmExtension::execute_func::<E>(env.func_id().into(), env)
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
@@ -1308,7 +1278,7 @@ impl_runtime_apis! {
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
+            Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true)
         }
 
         fn instantiate(
@@ -1321,7 +1291,7 @@ impl_runtime_apis! {
             salt: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
-            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+            Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
         }
 
         fn upload_code(
@@ -1397,12 +1367,24 @@ impl_runtime_apis! {
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
+            log::info!("try-runtime::on_runtime_upgrade");
             let weight = Executive::try_runtime_upgrade().unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
 
-        fn execute_block_no_check(block: Block) -> Weight {
-            Executive::execute_block_no_check(block)
+        fn execute_block(
+            block: Block,
+            state_root_check: bool,
+            select: frame_try_runtime::TryStateSelect
+        ) -> Weight {
+            log::info!(
+                "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
+                block.header.number,
+                block.header.hash(),
+                state_root_check,
+                select,
+            );
+            Executive::try_execute_block(block, state_root_check, select).expect("execute-block failed")
         }
     }
 }

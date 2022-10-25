@@ -1,8 +1,5 @@
 use clap::Parser;
-use cumulus_client_cli::CollatorOptions;
-use sc_cli::{KeySubcommand, SignCmd, VanityCmd, VerifyCmd};
 use std::path::PathBuf;
-use url::Url;
 
 /// An overarching CLI command definition.
 #[derive(Debug, clap::Parser)]
@@ -13,7 +10,7 @@ pub struct Cli {
 
     #[allow(missing_docs)]
     #[clap(flatten)]
-    pub run: RunCmd,
+    pub run: cumulus_client_cli::RunCmd,
 
     /// Relaychain arguments
     #[clap(raw = true)]
@@ -25,16 +22,16 @@ pub struct Cli {
 pub enum Subcommand {
     /// Key management cli utilities
     #[clap(subcommand)]
-    Key(KeySubcommand),
+    Key(sc_cli::KeySubcommand),
 
     /// Verify a signature for a message, provided on STDIN, with a given (public or secret) key.
-    Verify(VerifyCmd),
+    Verify(sc_cli::VerifyCmd),
 
     /// Generate a seed that provides a vanity address.
-    Vanity(VanityCmd),
+    Vanity(sc_cli::VanityCmd),
 
     /// Sign a message, with a given (secret) key.
-    Sign(SignCmd),
+    Sign(sc_cli::SignCmd),
 
     /// Build a chain specification.
     BuildSpec(sc_cli::BuildSpecCmd),
@@ -72,56 +69,6 @@ pub enum Subcommand {
     /// Try some command against runtime state.
     #[cfg(feature = "try-runtime")]
     TryRuntime(try_runtime_cli::TryRuntimeCmd),
-}
-
-fn validate_relay_chain_url(arg: &str) -> Result<Url, String> {
-    let url = Url::parse(arg).map_err(|e| e.to_string())?;
-
-    if url.scheme() == "ws" {
-        Ok(url)
-    } else {
-        Err(format!(
-            "'{}' URL scheme not supported. Only websocket RPC is currently supported",
-            url.scheme()
-        ))
-    }
-}
-
-#[allow(missing_docs)]
-#[derive(Debug, clap::Parser)]
-pub struct RunCmd {
-    #[allow(missing_docs)]
-    #[clap(flatten)]
-    pub base: cumulus_client_cli::RunCmd,
-
-    /// Id of the parachain this collator collates for.
-    #[clap(long)]
-    pub parachain_id: Option<u32>,
-
-    /// EXPERIMENTAL: Specify an URL to a relay chain full node to communicate with.
-    #[clap(
-		long,
-		value_parser = validate_relay_chain_url,
-		conflicts_with_all = &["alice", "bob", "charlie", "dave", "eve", "ferdie", "one", "two"]	)
-	]
-    pub relay_chain_rpc_url: Option<Url>,
-}
-
-impl std::ops::Deref for RunCmd {
-    type Target = cumulus_client_cli::RunCmd;
-
-    fn deref(&self) -> &Self::Target {
-        &self.base
-    }
-}
-
-impl RunCmd {
-    /// Create [`CollatorOptions`] representing options only relevant to parachain collator nodes
-    pub fn collator_options(&self) -> CollatorOptions {
-        CollatorOptions {
-            relay_chain_rpc_url: self.relay_chain_rpc_url.clone(),
-        }
-    }
 }
 
 #[derive(Debug)]

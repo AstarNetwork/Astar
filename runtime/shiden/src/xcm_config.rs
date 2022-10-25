@@ -12,7 +12,7 @@ use frame_support::{
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
     LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
@@ -42,6 +42,8 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<polkadot_parachain::primitives::Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
+    // Derives a private `Account32` by hashing `("multiloc", received multilocation)`
+    Account32Hash<RelayNetwork, AccountId>,
 );
 
 /// Means for transacting the native currency on this chain.
@@ -103,7 +105,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: Weight = 1_000_000_000;
+    pub UnitWeightCost: u64 = 1_000_000_000;
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -155,7 +157,7 @@ impl Config for XcmConfig {
 }
 
 parameter_types! {
-    pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 10;
+    pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(10);
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
