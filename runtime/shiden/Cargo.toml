@@ -42,8 +42,8 @@ pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", branch = "
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", default-features = false }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", default-features = false }
 pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", default-features = false }
-pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.30", default-features = false }
-pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.30", default-features = false }
+pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.30", default-features = false, features = ["forbid-evm-reentrancy"] }
+pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.30", default-features = false, features = ["forbid-evm-reentrancy"] }
 pallet-evm-precompile-blake2 = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.30", default-features = false }
 pallet-evm-precompile-bn128 = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.30", default-features = false }
 pallet-evm-precompile-dispatch = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.30", default-features = false }
@@ -82,9 +82,9 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.30" }
 
 # benchmarking
+array-bytes = "4.1"
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", default-features = false, optional = true }
 frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", default-features = false, optional = true }
-hex-literal = { version = "0.3.1", optional = true }
 pallet-collective = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", default-features = false, optional = true }
 
 # try-runtime
@@ -192,7 +192,6 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"hex-literal",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-dapps-staking/runtime-benchmarks",
