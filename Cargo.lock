@@ -5869,7 +5869,7 @@ dependencies = [
 [[package]]
 name = "pallet-chain-extension-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#5d72e25e28504b11814d28386dfaaca003acfff1"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#f8e19ed3efe7d3f8f5b468e6415e208666d58e6b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6342,7 +6342,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#5d72e25e28504b11814d28386dfaaca003acfff1"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#f8e19ed3efe7d3f8f5b468e6415e208666d58e6b"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -7043,7 +7043,7 @@ dependencies = [
 [[package]]
 name = "pallet-xvm"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#5d72e25e28504b11814d28386dfaaca003acfff1"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#f8e19ed3efe7d3f8f5b468e6415e208666d58e6b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8534,7 +8534,7 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "precompile-utils"
 version = "0.4.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#5d72e25e28504b11814d28386dfaaca003acfff1"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#f8e19ed3efe7d3f8f5b468e6415e208666d58e6b"
 dependencies = [
  "evm",
  "fp-evm",
@@ -8580,7 +8580,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#5d72e25e28504b11814d28386dfaaca003acfff1"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#f8e19ed3efe7d3f8f5b468e6415e208666d58e6b"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -13478,12 +13478,10 @@ dependencies = [
 [[package]]
 name = "xvm-chain-extension-types"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#5d72e25e28504b11814d28386dfaaca003acfff1"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#f8e19ed3efe7d3f8f5b468e6415e208666d58e6b"
 dependencies = [
- "frame-support",
  "parity-scale-codec",
  "scale-info",
- "sp-core",
  "sp-runtime",
  "sp-std",
 ]
