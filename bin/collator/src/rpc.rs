@@ -29,9 +29,13 @@ use crate::primitives::*;
 
 // TODO This is copied from frontier. It should be imported instead after
 // https://github.com/paritytech/frontier/issues/333 is solved
-pub fn open_frontier_backend(
+pub fn open_frontier_backend<C>(
+    client: Arc<C>,
     config: &sc_service::Configuration,
-) -> Result<Arc<fc_db::Backend<Block>>, String> {
+) -> Result<Arc<fc_db::Backend<Block>>, String>
+where
+    C: sp_blockchain::HeaderBackend<Block>,
+{
     let config_dir = config
         .base_path
         .as_ref()
@@ -42,6 +46,7 @@ pub fn open_frontier_backend(
     let path = config_dir.join("frontier").join("db");
 
     Ok(Arc::new(fc_db::Backend::<Block>::new(
+        client,
         &fc_db::DatabaseSettings {
             source: fc_db::DatabaseSource::RocksDb {
                 path,
