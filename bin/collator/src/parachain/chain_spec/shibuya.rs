@@ -38,6 +38,10 @@ pub fn get_chain_spec() -> ShibuyaChainSpec {
         ),
     ];
 
+    let mut properties = serde_json::map::Map::new();
+    properties.insert("tokenSymbol".into(), "SBY".into());
+    properties.insert("tokenDecimals".into(), 18.into());
+
     ShibuyaChainSpec::from_genesis(
         "Shibuya Testnet",
         "shibuya",
@@ -47,7 +51,7 @@ pub fn get_chain_spec() -> ShibuyaChainSpec {
         None,
         None,
         None,
-        None,
+        Some(properties),
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
