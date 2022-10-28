@@ -34,6 +34,10 @@ pub fn get_chain_spec() -> AstarChainSpec {
         ),
     ];
 
+    let mut properties = serde_json::map::Map::new();
+    properties.insert("tokenSymbol".into(), "ASTR".into());
+    properties.insert("tokenDecimals".into(), 18.into());
+
     AstarChainSpec::from_genesis(
         "Astar Testnet",
         "astar",
@@ -43,7 +47,7 @@ pub fn get_chain_spec() -> AstarChainSpec {
         None,
         None,
         None,
-        None,
+        Some(properties),
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),

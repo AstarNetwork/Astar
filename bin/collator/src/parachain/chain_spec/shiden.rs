@@ -35,6 +35,10 @@ pub fn get_chain_spec() -> ShidenChainSpec {
         ),
     ];
 
+    let mut properties = serde_json::map::Map::new();
+    properties.insert("tokenSymbol".into(), "SDN".into());
+    properties.insert("tokenDecimals".into(), 18.into());
+
     ShidenChainSpec::from_genesis(
         "Shiden Testnet",
         "shiden",
@@ -44,7 +48,7 @@ pub fn get_chain_spec() -> ShidenChainSpec {
         None,
         None,
         None,
-        None,
+        Some(properties),
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
