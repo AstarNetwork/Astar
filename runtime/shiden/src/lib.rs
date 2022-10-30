@@ -52,10 +52,10 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+mod migration;
 mod precompiles;
 mod weights;
 mod xcm_config;
-mod migration;
 
 use migration::*;
 
@@ -874,7 +874,10 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (ContractsStorageVersionMigration<Runtime>, pallet_contracts::Migration<Runtime>),
+    (
+        ContractsStorageVersionMigration<Runtime>,
+        pallet_contracts::Migration<Runtime>,
+    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {

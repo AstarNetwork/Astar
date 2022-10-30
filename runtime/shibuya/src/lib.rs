@@ -57,10 +57,10 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod chain_extensions;
+mod migration;
 mod precompiles;
 mod weights;
 mod xcm_config;
-mod migration;
 
 pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -1123,7 +1123,10 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (ContractsStorageVersionMigration<Runtime>, pallet_contracts::Migration<Runtime>),
+    (
+        ContractsStorageVersionMigration<Runtime>,
+        pallet_contracts::Migration<Runtime>,
+    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
