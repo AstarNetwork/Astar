@@ -60,6 +60,7 @@ mod chain_extensions;
 mod precompiles;
 mod weights;
 mod xcm_config;
+mod migration;
 
 pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -67,6 +68,7 @@ pub use precompiles::{ShibuyaNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX
 pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime, ShibuyaAssetLocationIdConverter>;
 
 use chain_extensions::*;
+use migration::*;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -1121,7 +1123,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    pallet_contracts::Migration<Runtime>,
+    (ContractsStorageVersionMigration<Runtime>, pallet_contracts::Migration<Runtime>),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {

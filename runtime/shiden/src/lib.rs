@@ -55,6 +55,9 @@ pub use sp_runtime::BuildStorage;
 mod precompiles;
 mod weights;
 mod xcm_config;
+mod migration;
+
+use migration::*;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -871,7 +874,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    pallet_contracts::Migration<Runtime>,
+    (ContractsStorageVersionMigration<Runtime>, pallet_contracts::Migration<Runtime>),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
