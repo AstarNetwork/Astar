@@ -26,7 +26,8 @@ cargo build --release
 Copy the binary in rpc-tests/bin folder.
 
 ```
-cp target/release/astar-collator tests/bin/astar-collator
+mkdir -p rpc-tests/bin
+cp target/release/astar-collator rpc-tests/bin/astar-collator
 ```
 
 Download and copy latest polkadot binary from https://github.com/paritytech/polkadot/releases to rpc-tests/bin folder
