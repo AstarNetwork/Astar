@@ -158,7 +158,6 @@ runtime-benchmarks = [
 	"pallet-collective/runtime-benchmarks",
 ]
 try-runtime = [
-	"log",
 	"frame-try-runtime",
 	"frame-executive/try-runtime",
 	"frame-support/try-runtime",
