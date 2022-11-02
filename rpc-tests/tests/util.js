@@ -72,10 +72,11 @@ export async function sendTransaction(transaction, sender) {
  * describeWithNetwork: special mocha describe which has global setup and teardown steps for spawning and taking down local network
  *
  * @param {string} network [astar | shiden | shibuya]
+ * @param {number} paraId [2006 | 2007 | 1000]
  * @param {*} title title of the test suite
  * @param {*} cb callback function which take a context object which will be available in tests
  */
-export function describeWithNetwork(network, title, cb) {
+export function describeWithNetwork(network, paraId, title, cb) {
 	describe(title, () => {
 		let context = {
 			api: null,
@@ -91,7 +92,7 @@ export function describeWithNetwork(network, title, cb) {
 		before('Starting Astar Test Node', async function () {
 			this.timeout(SPAWNING_TIME);
 
-			await run(process.cwd(), config(network));
+			await run(process.cwd(), config(network, paraId));
 
 			const api = await ApiPromise.create({
 				provider: new WsProvider(`ws://localhost:${WS_PORT}`)

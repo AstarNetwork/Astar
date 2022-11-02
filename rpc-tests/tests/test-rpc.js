@@ -21,12 +21,13 @@ const evmAccount = {
 export const getAddressEnum = (address) => ({ Evm: address });
 
 const network = process.env.NETWORK;
+const paraId = process.env.PARA_ID;
 
 if (['astar', 'shiden', 'shibuya'].includes(network) === false) {
     throw new Error('Please set valid network in NETWORK env variable');
 }
 
-describeWithNetwork(network, `${network} RPC`, function(context) {
+describeWithNetwork(network, paraId, `${network} RPC`, function(context) {
     let deployedContract;
 
 	it('should fetch chain from rpc node', async function () {

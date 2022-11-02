@@ -4,8 +4,8 @@
   "description": "tests for rpc node",
   "type": "module",
   "scripts": {
-    "test:astar": "export NETWORK=astar && export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js",
-    "test:shiden": "export NETWORK=shiden && export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js"
+    "test:astar": "export NETWORK=astar && export PARA_ID=2006 && export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js",
+    "test:shiden": "export NETWORK=shiden && export PARA_ID=2007 && export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js"
   },
   "author": "AstarNetwork",
   "license": "ISC",
