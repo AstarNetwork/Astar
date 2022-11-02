@@ -195,6 +195,7 @@ runtime-benchmarks = [
 	"pallet-xc-asset-config/runtime-benchmarks",
 ]
 try-runtime = [
+	"log",
 	"frame-try-runtime",
 	"frame-executive/try-runtime",
 	"frame-support/try-runtime",
