@@ -817,27 +817,26 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::Proxy(..)
                         | RuntimeCall::Xvm(..)
                 )
-            },
+            }
             ProxyType::Governance => {
                 matches!(
                     c,
                     RuntimeCall::Democracy(..)
-					    | RuntimeCall::Council(..)
-					    | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
                         | RuntimeCall::Treasury(..)
-					    | RuntimeCall::Utility(..)
-                )
-            },
-            ProxyType::CancelProxy => {
-                matches!(c, RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. }))
-            },
-            ProxyType::DappsStaking => {
-                matches!(
-                    c,
-                    RuntimeCall::DappsStaking(..)
                         | RuntimeCall::Utility(..)
                 )
-            },
+            }
+            ProxyType::CancelProxy => {
+                matches!(
+                    c,
+                    RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::DappsStaking => {
+                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            }
         }
     }
 

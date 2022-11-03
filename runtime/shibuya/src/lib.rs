@@ -1017,34 +1017,33 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::Treasury(..)
                         | RuntimeCall::Xvm(..)
                 )
-            },
+            }
             ProxyType::Governance => {
                 matches!(
                     c,
                     RuntimeCall::Democracy(..)
-					    | RuntimeCall::Council(..)
-					    | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
                         | RuntimeCall::Treasury(..)
-					    | RuntimeCall::Utility(..)
+                        | RuntimeCall::Utility(..)
                 )
-            },
+            }
             ProxyType::IdentityJudgement => {
                 matches!(
                     c,
-                    RuntimeCall::Identity(pallet_identity::Call::provide_judgement { .. }) |
-                        RuntimeCall::Utility(..)
-                )
-            },
-            ProxyType::CancelProxy => {
-                matches!(c, RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. }))
-            },
-            ProxyType::DappsStaking => {
-                matches!(
-                    c,
-                    RuntimeCall::DappsStaking(..)
+                    RuntimeCall::Identity(pallet_identity::Call::provide_judgement { .. })
                         | RuntimeCall::Utility(..)
                 )
-            },
+            }
+            ProxyType::CancelProxy => {
+                matches!(
+                    c,
+                    RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::DappsStaking => {
+                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            }
         }
     }
 
