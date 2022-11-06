@@ -135,7 +135,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 74,
+    spec_version: 75,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -963,6 +963,11 @@ impl pallet_sudo::Config for Runtime {
 )]
 pub enum ProxyType {
     Any,
+    NonTransfer,
+    Governance,
+    IdentityJudgement,
+    CancelProxy,
+    DappsStaking,
 }
 
 impl Default for ProxyType {
@@ -970,10 +975,85 @@ impl Default for ProxyType {
         Self::Any
     }
 }
+
 impl InstanceFilter<RuntimeCall> for ProxyType {
-    fn filter(&self, _c: &RuntimeCall) -> bool {
+    fn filter(&self, c: &RuntimeCall) -> bool {
         match self {
             ProxyType::Any => true,
+            ProxyType::NonTransfer => {
+                matches!(
+                    c,
+                    RuntimeCall::System(..)
+                        | RuntimeCall::Utility(..)
+                        | RuntimeCall::Identity(..)
+                        | RuntimeCall::Timestamp(..)
+                        | RuntimeCall::Multisig(..)
+                        | RuntimeCall::Scheduler(..)
+                        | RuntimeCall::Proxy(..)
+                        | RuntimeCall::ParachainSystem(..)
+                        | RuntimeCall::ParachainInfo(..)
+                        // Skip entire Balances pallet
+                        | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
+				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
+				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
+                        | RuntimeCall::DappsStaking(..)
+                        // Skip entire Assets pallet
+                        | RuntimeCall::Authorship(..)
+                        | RuntimeCall::CollatorSelection(..)
+                        | RuntimeCall::Session(..)
+                        | RuntimeCall::XcmpQueue(..)
+                        | RuntimeCall::PolkadotXcm(..)
+                        | RuntimeCall::CumulusXcm(..)
+                        | RuntimeCall::DmpQueue(..)
+                        | RuntimeCall::XcAssetConfig(..)
+                        // Skip entire EVM pallet
+                        // Skip entire Ethereum pallet
+                        // Skip entire EthCall pallet
+                        | RuntimeCall::BaseFee(..)
+                        // Skip entire Contracts pallet
+                        | RuntimeCall::Democracy(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::Treasury(..)
+                        | RuntimeCall::Xvm(..)
+                )
+            }
+            ProxyType::Governance => {
+                matches!(
+                    c,
+                    RuntimeCall::Democracy(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::Treasury(..)
+                        | RuntimeCall::Utility(..)
+                )
+            }
+            ProxyType::IdentityJudgement => {
+                matches!(
+                    c,
+                    RuntimeCall::Identity(pallet_identity::Call::provide_judgement { .. })
+                        | RuntimeCall::Utility(..)
+                )
+            }
+            ProxyType::CancelProxy => {
+                matches!(
+                    c,
+                    RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::DappsStaking => {
+                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            }
+        }
+    }
+
+    fn is_superset(&self, o: &Self) -> bool {
+        match (self, o) {
+            (x, y) if x == y => true,
+            (ProxyType::Any, _) => true,
+            (_, ProxyType::Any) => false,
+            (ProxyType::NonTransfer, _) => true,
+            _ => false,
         }
     }
 }

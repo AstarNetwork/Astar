@@ -775,6 +775,10 @@ impl pallet_sudo::Config for Runtime {
 )]
 pub enum ProxyType {
     Any,
+    NonTransfer,
+    Governance,
+    CancelProxy,
+    DappsStaking,
 }
 
 impl Default for ProxyType {
@@ -782,10 +786,67 @@ impl Default for ProxyType {
         Self::Any
     }
 }
+
 impl InstanceFilter<RuntimeCall> for ProxyType {
-    fn filter(&self, _c: &RuntimeCall) -> bool {
+    fn filter(&self, c: &RuntimeCall) -> bool {
         match self {
             ProxyType::Any => true,
+            ProxyType::NonTransfer => {
+                matches!(
+                    c,
+                    RuntimeCall::System(..)
+                        | RuntimeCall::Utility(..)
+                        | RuntimeCall::Timestamp(..)
+                        | RuntimeCall::Grandpa(..)
+                        // Skip entire Balances pallet
+                        | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
+				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
+				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
+                        | RuntimeCall::DappsStaking(..)
+                        // Skip entire EVM pallet
+                        // Skip entire Ethereum pallet
+                        // Skip entire EthCall pallet
+                        | RuntimeCall::BaseFee(..)
+                        // Skip entire Contracts pallet
+                        // Skip entire Assets pallet
+                        | RuntimeCall::Scheduler(..)
+                        | RuntimeCall::Democracy(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::Treasury(..)
+                        | RuntimeCall::Proxy(..)
+                        | RuntimeCall::Xvm(..)
+                )
+            }
+            ProxyType::Governance => {
+                matches!(
+                    c,
+                    RuntimeCall::Democracy(..)
+                        | RuntimeCall::Council(..)
+                        | RuntimeCall::TechnicalCommittee(..)
+                        | RuntimeCall::Treasury(..)
+                        | RuntimeCall::Utility(..)
+                )
+            }
+            ProxyType::CancelProxy => {
+                matches!(
+                    c,
+                    RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::DappsStaking => {
+                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            }
+        }
+    }
+
+    fn is_superset(&self, o: &Self) -> bool {
+        match (self, o) {
+            (x, y) if x == y => true,
+            (ProxyType::Any, _) => true,
+            (_, ProxyType::Any) => false,
+            (ProxyType::NonTransfer, _) => true,
+            _ => false,
         }
     }
 }
