@@ -2082,7 +2082,7 @@ dependencies = [
 [[package]]
 name = "dapps-staking-chain-extension-types"
 version = "1.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -5798,7 +5798,7 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "2.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5835,7 +5835,7 @@ dependencies = [
 [[package]]
 name = "pallet-chain-extension-dapps-staking"
 version = "1.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "dapps-staking-chain-extension-types",
  "frame-support",
@@ -5856,7 +5856,7 @@ dependencies = [
 [[package]]
 name = "pallet-chain-extension-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5896,7 +5896,7 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.3.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6015,7 +6015,7 @@ dependencies = [
 [[package]]
 name = "pallet-custom-signatures"
 version = "4.5.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6031,7 +6031,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "3.7.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6189,7 +6189,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-assets-erc20"
 version = "0.5.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6276,7 +6276,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sr25519"
 version = "1.2.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "fp-evm",
  "log",
@@ -6292,7 +6292,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-substrate-ecdsa"
 version = "1.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "fp-evm",
  "log",
@@ -6308,7 +6308,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xcm"
 version = "0.7.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6331,7 +6331,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6614,7 +6614,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.6.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6945,7 +6945,7 @@ dependencies = [
 [[package]]
 name = "pallet-xc-asset-config"
 version = "1.3.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6963,7 +6963,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm"
 version = "0.9.28"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7015,8 +7015,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-xvm"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+version = "0.2.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8520,7 +8520,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "precompile-utils"
 version = "0.4.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "evm",
  "fp-evm",
@@ -8543,7 +8543,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -13549,7 +13549,7 @@ dependencies = [
 [[package]]
 name = "xcm-primitives"
 version = "0.3.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
  "frame-support",
  "log",
@@ -13593,12 +13593,10 @@ dependencies = [
 [[package]]
 name = "xvm-chain-extension-types"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#677ba53bc20a2bc7ac0b6238eb5ba8ecb88643fa"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.30#772d63c9ae92786a5f5db5c981e560d1fa26a40b"
 dependencies = [
- "frame-support",
  "parity-scale-codec",
  "scale-info",
- "sp-core",
  "sp-runtime",
  "sp-std",
 ]
