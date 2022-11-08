@@ -21,6 +21,11 @@ jobs:
     - name: Checkout the source code
       uses: actions/checkout@v3
 
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v1
+      with:
+        version: '3.x'
+
     - name: Install & display rust toolchain
       run: rustup show
 

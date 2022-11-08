@@ -41,7 +41,7 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 /// Development config (single validator Alice)
 pub fn development_config() -> ChainSpec {
     let mut properties = serde_json::map::Map::new();
-    properties.insert("tokenSymbol".into(), "ASTL".into());
+    properties.insert("tokenSymbol".into(), "LOC".into());
     properties.insert("tokenDecimals".into(), 18.into());
     ChainSpec::from_genesis(
         "Development",
