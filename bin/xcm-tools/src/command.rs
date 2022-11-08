@@ -9,7 +9,7 @@ use polkadot_primitives::v2::AccountId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Get};
 use xcm::latest::prelude::*;
-use xcm_builder::{Account32Hash, SiblingParachainConvertsVia};
+use xcm_builder::{Account32Hash, ParentIsPreset, SiblingParachainConvertsVia};
 use xcm_executor::traits::Convert;
 
 /// CLI error type.
@@ -20,6 +20,11 @@ pub fn run() -> Result<(), Error> {
     let cli = Cli::parse();
 
     match &cli.subcommand {
+        Some(Subcommand::RelayChainAccount) => {
+            let relay_account =
+                ParentIsPreset::<AccountId>::convert_ref(&MultiLocation::parent()).unwrap();
+            println!("{}", relay_account);
+        }
         Some(Subcommand::ParachainAccount(cmd)) => {
             let parachain_account = if cmd.sibling {
                 let location = MultiLocation {

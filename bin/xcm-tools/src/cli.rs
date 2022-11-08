@@ -12,6 +12,8 @@ pub struct Cli {
 /// Possible subcommands of the main binary.
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
+    /// Prints relay-chain AccountId
+    RelayChainAccount,
     /// Prints parachain AccountId.
     ParachainAccount(ParachainAccountCmd),
     /// Prints AssetId for desired parachain asset.

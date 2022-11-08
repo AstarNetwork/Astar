@@ -1,4 +1,4 @@
-const config = (network) => ({
+const config = (network, paraId) => ({
 	"relaychain": {
 		"bin": "./bin/polkadot",
 		"chain": "rococo-local",
@@ -40,7 +40,7 @@ const config = (network) => ({
 	"parachains": [
 		{
 			"bin": "./bin/astar-collator",
-			"id": "2000",
+			"id": `${paraId}`,
  			"chain": `${network}-dev`,
 			"balance": "1000000000000000000000",
 			"nodes": [

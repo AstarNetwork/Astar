@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "4.29.1"
+version = "4.30.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -204,6 +204,7 @@ runtime-benchmarks = [
 	"pallet-xc-asset-config/runtime-benchmarks",
 ]
 try-runtime = [
+	"log",
 	"frame-try-runtime",
 	"frame-executive/try-runtime",
 	"frame-support/try-runtime",
