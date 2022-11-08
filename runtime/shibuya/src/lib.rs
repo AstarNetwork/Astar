@@ -709,8 +709,7 @@ parameter_types! {
 use pallet_xvm::{evm, wasm};
 impl pallet_xvm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type VmId = u8;
-    type SyncVM = (evm::EVM<EvmId, Self, ()>, wasm::WASM<WasmId, Self, ()>);
+    type SyncVM = (evm::EVM<EvmId, Self>, wasm::WASM<WasmId, Self>);
     type AsyncVM = ();
 }
 
