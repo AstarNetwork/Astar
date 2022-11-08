@@ -1202,10 +1202,6 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (
-        ContractsStorageVersionMigration<Runtime>,
-        pallet_contracts::Migration<Runtime>,
-    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
