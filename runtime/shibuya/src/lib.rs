@@ -57,7 +57,6 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod chain_extensions;
-mod migration;
 mod precompiles;
 mod weights;
 mod xcm_config;
@@ -68,7 +67,6 @@ pub use precompiles::{ShibuyaNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX
 pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime, ShibuyaAssetLocationIdConverter>;
 
 use chain_extensions::*;
-use migration::*;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -135,7 +133,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 75,
+    spec_version: 76,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -629,7 +627,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = (DappsStakingExtension<Self>,);
+    type ChainExtension = (DappsStakingExtension<Self>, XvmExtension<Self>);
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -709,8 +707,7 @@ parameter_types! {
 use pallet_xvm::{evm, wasm};
 impl pallet_xvm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type VmId = u8;
-    type SyncVM = (evm::EVM<EvmId, Self, ()>, wasm::WASM<WasmId, Self, ()>);
+    type SyncVM = (evm::EVM<EvmId, Self>, wasm::WASM<WasmId, Self>);
     type AsyncVM = ();
 }
 
@@ -1203,10 +1200,6 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (
-        ContractsStorageVersionMigration<Runtime>,
-        pallet_contracts::Migration<Runtime>,
-    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
