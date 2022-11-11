@@ -427,10 +427,9 @@ parameter_types! {
 
 use pallet_xvm::{evm, wasm};
 impl pallet_xvm::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type VmId = u8;
-    type SyncVM = (evm::EVM<EvmId, Self, ()>, wasm::WASM<WasmId, Self, ()>);
+    type SyncVM = (evm::EVM<EvmId, Self>, wasm::WASM<WasmId, Self>);
     type AsyncVM = ();
+    type RuntimeEvent = RuntimeEvent;
 }
 
 parameter_types! {
@@ -744,7 +743,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = (DappsStakingExtension<Self>,);
+    type ChainExtension = (DappsStakingExtension<Self>, XvmExtension<Self>);
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;

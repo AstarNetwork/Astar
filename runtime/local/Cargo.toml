@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "4.30.0"
+version = "4.31.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -62,6 +62,7 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 # Astar pallets
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.30", default-features = false }
 pallet-chain-extension-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.30", default-features = false }
+pallet-chain-extension-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.30", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.30", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.30", default-features = false }
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.30", default-features = false }
@@ -100,6 +101,7 @@ std = [
 	"pallet-contracts-primitives/std",
 	"pallet-contracts-rpc-runtime-api/std",
 	"pallet-chain-extension-dapps-staking/std",
+	"pallet-chain-extension-xvm/std",
 	"pallet-custom-signatures/std",
 	"pallet-dapps-staking/std",
 	"pallet-base-fee/std",
