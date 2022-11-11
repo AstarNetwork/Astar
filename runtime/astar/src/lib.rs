@@ -399,7 +399,7 @@ parameter_types! {
     pub const MinCandidates: u32 = 5;
     pub const MaxInvulnerables: u32 = 48;
     pub const SlashRatio: Perbill = Perbill::from_percent(1);
-    pub const KickThreshold: BlockNumber = 2 * SessionPeriod;
+    pub const KickThreshold: BlockNumber = 2 * HOURS; // 2 SessionPeriod
 }
 
 impl pallet_collator_selection::Config for Runtime {
