@@ -100,7 +100,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 77,
+    spec_version: 78,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -400,10 +400,11 @@ impl pallet_session::Config for Runtime {
 
 parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
-    pub const MaxCandidates: u32 = 200;
+    pub const MaxCandidates: u32 = 148;
     pub const MinCandidates: u32 = 5;
-    pub const MaxInvulnerables: u32 = 20;
+    pub const MaxInvulnerables: u32 = 48;
     pub const SlashRatio: Perbill = Perbill::from_percent(1);
+    pub const KickThreshold: BlockNumber = 2 * HOURS; // 2 SessionPeriod
 }
 
 impl pallet_collator_selection::Config for Runtime {
@@ -415,7 +416,7 @@ impl pallet_collator_selection::Config for Runtime {
     type MinCandidates = MinCandidates;
     type MaxInvulnerables = MaxInvulnerables;
     // should be a multiple of session or things will get inconsistent
-    type KickThreshold = SessionPeriod;
+    type KickThreshold = KickThreshold;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
