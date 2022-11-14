@@ -10,7 +10,10 @@ use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
     parameter_types,
-    traits::{ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnUnbalanced},
+    traits::{
+        ConstU128, ConstU32, Contains, Currency, FindAuthor, Get,
+        InstanceFilter, Imbalance, Nothing, OnUnbalanced
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -100,7 +103,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 78,
+    spec_version: 79,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -781,6 +784,109 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    MaxEncodedLen,
+    scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+    Any,
+    NonTransfer,
+    CancelProxy,
+    DappsStaking,
+}
+
+impl Default for ProxyType {
+    fn default() -> Self {
+        Self::Any
+    }
+}
+impl InstanceFilter<Call> for ProxyType {
+    fn filter(&self, _c: &Call) -> bool {
+        match self {
+            ProxyType::Any => true,
+        }
+    }
+}
+
+impl InstanceFilter<RuntimeCall> for ProxyType {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        match self {
+            ProxyType::Any => true,
+            ProxyType::NonTransfer => {
+                matches!(
+                    c,
+                    RuntimeCall::System(..)
+                        | RuntimeCall::Utility(..)
+                        | RuntimeCall::Timestamp(..)
+                        | RuntimeCall::Grandpa(..)
+                        // Skip entire Balances pallet
+                        | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
+				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
+				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
+                        | RuntimeCall::DappsStaking(..)
+                        // Skip entire EVM pallet
+                        // Skip entire Ethereum pallet
+                        // Skip entire EthCall pallet
+                        | RuntimeCall::BaseFee(..)
+                        // Skip entire Contracts pallet
+                        // Skip entire Assets pallet
+                        | RuntimeCall::Scheduler(..)
+                        | RuntimeCall::Proxy(..)
+                        | RuntimeCall::Xvm(..)
+                )
+            }
+            ProxyType::CancelProxy => {
+                matches!(
+                    c,
+                    RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::DappsStaking => {
+                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            }
+        }
+    }
+
+    fn is_superset(&self, o: &Self) -> bool {
+        match (self, o) {
+            (x, y) if x == y => true,
+            (ProxyType::Any, _) => true,
+            (_, ProxyType::Any) => false,
+            (ProxyType::NonTransfer, _) => true,
+            _ => false,
+        }
+    }
+}
+
+impl pallet_proxy::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type Currency = Balances;
+    type ProxyType = ProxyType;
+    // One storage item; key size 32, value size 8; .
+    type ProxyDepositBase = ConstU128<{ AST * 10 }>;
+    // Additional storage item size of 33 bytes.
+    type ProxyDepositFactor = ConstU128<{ MILLIAST * 330 }>;
+    type MaxProxies = ConstU32<32>;
+    type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+    type MaxPending = ConstU32<32>;
+    type CallHasher = BlakeTwo256;
+    // Key size 32 + 1 item
+    type AnnouncementDepositBase = ConstU128<{ AST * 10 }>;
+    // Acc Id + Hash + block number
+    type AnnouncementDepositFactor = ConstU128<{ MILLIAST * 660 }>;
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -792,6 +898,7 @@ construct_runtime!(
         Identity: pallet_identity = 12,
         Timestamp: pallet_timestamp = 13,
         Multisig: pallet_multisig = 14,
+        Proxy: pallet_proxy = 18,
 
         ParachainSystem: cumulus_pallet_parachain_system = 20,
         ParachainInfo: parachain_info = 21,
