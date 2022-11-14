@@ -840,9 +840,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::BaseFee(..)
                         // Skip entire Contracts pallet
                         // Skip entire Assets pallet
-                        | RuntimeCall::Scheduler(..)
                         | RuntimeCall::Proxy(..)
-                        | RuntimeCall::Xvm(..)
                 )
             }
             ProxyType::CancelProxy => {
