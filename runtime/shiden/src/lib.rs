@@ -11,7 +11,7 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        ConstU128, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, InstanceFilter
+        ConstU128, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, InstanceFilter,
         Nothing, OnUnbalanced
     },
     weights::{
