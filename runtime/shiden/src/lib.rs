@@ -810,13 +810,6 @@ impl Default for ProxyType {
         Self::Any
     }
 }
-impl InstanceFilter<Call> for ProxyType {
-    fn filter(&self, _c: &Call) -> bool {
-        match self {
-            ProxyType::Any => true,
-        }
-    }
-}
 
 impl InstanceFilter<RuntimeCall> for ProxyType {
     fn filter(&self, c: &RuntimeCall) -> bool {
@@ -828,7 +821,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                     RuntimeCall::System(..)
                         | RuntimeCall::Utility(..)
                         | RuntimeCall::Timestamp(..)
-                        | RuntimeCall::Grandpa(..)
                         // Skip entire Balances pallet
                         | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
 				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
