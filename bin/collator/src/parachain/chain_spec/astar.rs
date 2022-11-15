@@ -115,7 +115,7 @@ fn make_genesis(
         },
         aura_ext: Default::default(),
         collator_selection: astar_runtime::CollatorSelectionConfig {
-            desired_candidates: 200,
+            desired_candidates: 32,
             candidacy_bond: 3_200_000 * ASTR,
             invulnerables: authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
         },
