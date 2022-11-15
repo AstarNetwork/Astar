@@ -868,7 +868,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 
 impl pallet_proxy::Config for Runtime {
     type Event = Event;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type ProxyType = ProxyType;
     // One storage item; key size 32, value size 8; .
