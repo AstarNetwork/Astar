@@ -1267,7 +1267,7 @@ extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
-	define_benchmark!(
+    define_benchmark!(
         [frame_benchmarking, BaselineBench::<Runtime>]
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
@@ -1275,7 +1275,7 @@ mod benches {
         [pallet_dapps_staking, DappsStaking]
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
-	);
+    );
 }
 
 impl_runtime_apis! {
