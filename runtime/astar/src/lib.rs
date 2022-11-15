@@ -395,7 +395,7 @@ impl pallet_session::Config for Runtime {
 
 parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
-    pub const MaxCandidates: u32 = 300; // temporary
+    pub const MaxCandidates: u32 = 148;
     pub const MinCandidates: u32 = 5;
     pub const MaxInvulnerables: u32 = 48;
     pub const SlashRatio: Perbill = Perbill::from_percent(1);
