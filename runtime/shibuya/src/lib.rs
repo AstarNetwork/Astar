@@ -464,7 +464,7 @@ impl pallet_session::Config for Runtime {
 
 parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
-    pub const MaxCandidates: u32 = 300;
+    pub const MaxCandidates: u32 = 300; // temporary
     pub const MinCandidates: u32 = 5;
     pub const MaxInvulnerables: u32 = 48;
     pub const SlashRatio: Perbill = Perbill::from_percent(1);
@@ -1261,6 +1261,23 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
     }
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benches {
+	define_benchmark!(
+        [frame_benchmarking, BaselineBench::<Runtime>]
+        [frame_system, SystemBench::<Runtime>]
+        [pallet_balances, Balances]
+        [pallet_timestamp, Timestamp]
+        [pallet_dapps_staking, DappsStaking]
+        [pallet_block_reward, BlockReward]
+        [pallet_xc_asset_config, XcAssetConfig]
+	);
+}
+
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
         fn version() -> RuntimeVersion {
@@ -1589,14 +1606,13 @@ impl_runtime_apis! {
             Vec<frame_benchmarking::BenchmarkList>,
             Vec<frame_support::traits::StorageInfo>,
         ) {
-            use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
+            use frame_system_benchmarking::Pallet as SystemBench;
+            use baseline::Pallet as BaselineBench;
 
             let mut list = Vec::<BenchmarkList>::new();
-
-            list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
-            list_benchmark!(list, extra, pallet_block_reward, BlockReward);
-            list_benchmark!(list, extra, pallet_xc_asset_config, XcAssetConfig);
+            list_benchmarks!(list, extra);
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1606,23 +1622,19 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
-
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
             use frame_system_benchmarking::Pallet as SystemBench;
+            use baseline::Pallet as BaselineBench;
+
             impl frame_system_benchmarking::Config for Runtime {}
+            impl baseline::Config for Runtime {}
 
             use frame_support::traits::WhitelistedStorageKeys;
             let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);
-
-            add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-            add_benchmark!(params, batches, pallet_balances, Balances);
-            add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-            add_benchmark!(params, batches, pallet_dapps_staking, DappsStaking);
-            add_benchmark!(params, batches, pallet_block_reward, BlockReward);
-            add_benchmark!(params, batches, pallet_xc_asset_config, XcAssetConfig);
+            add_benchmarks!(params, batches);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
