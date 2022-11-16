@@ -13613,7 +13613,7 @@ dependencies = [
 
 [[package]]
 name = "xcm-tools"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "clap 4.0.22",
  "cumulus-primitives-core",

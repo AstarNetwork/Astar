@@ -52,6 +52,9 @@ pub struct Account32HashCmd {
     /// AccountId32 (SS58 scheme, public key) of the sender account.
     #[clap(short, long, value_parser = account_id_32_parser)]
     pub account_id_32: [u8; 32],
+    /// NetworkId of the AccountId32 - if not provided, will be set to `Any`
+    #[clap(short, long)]
+    pub network_id: Option<String>,
 }
 
 /// Used to parse AccountId32 as [u8; 32] from the received string.
