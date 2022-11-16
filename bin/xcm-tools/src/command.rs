@@ -47,13 +47,24 @@ pub fn run() -> Result<(), Error> {
             println!("EVM XC20: 0x{}", HexDisplay::from(&data));
         }
         Some(Subcommand::Account32Hash(cmd)) => {
+            let network_id = if let Some(id) = cmd.network_id.clone() {
+                match id.to_lowercase().as_str() {
+                    "any" => NetworkId::Any,
+                    "polkadot" => NetworkId::Polkadot,
+                    "kusama" => NetworkId::Kusama,
+                    _ => return Err("Unexpected network Id value.".into()),
+                }
+            } else {
+                NetworkId::Any
+            };
+
             let sender_multilocation = if let Some(parachain_id) = cmd.parachain_id {
                 MultiLocation {
                     parents: 1,
                     interior: X2(
                         Parachain(parachain_id),
                         AccountId32 {
-                            network: NetworkId::Any,
+                            network: network_id,
                             id: cmd.account_id_32,
                         },
                     ),
@@ -62,7 +73,7 @@ pub fn run() -> Result<(), Error> {
                 MultiLocation {
                     parents: 1,
                     interior: X1(AccountId32 {
-                        network: NetworkId::Any,
+                        network: network_id,
                         id: cmd.account_id_32,
                     }),
                 }

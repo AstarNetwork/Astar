@@ -1,6 +1,6 @@
 [package]
 name = "xcm-tools"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar XCM tools."
 edition = "2021"
