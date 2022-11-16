@@ -47,7 +47,7 @@ pub fn run() -> Result<(), Error> {
             println!("EVM XC20: 0x{}", HexDisplay::from(&data));
         }
         Some(Subcommand::Account32Hash(cmd)) => {
-            let network_id = if let Some(ref id) = cmd.network_id {
+            let network = if let Some(ref id) = cmd.network_id {
                 match id.to_lowercase().as_str() {
                     "any" => NetworkId::Any,
                     "polkadot" => NetworkId::Polkadot,
@@ -58,26 +58,20 @@ pub fn run() -> Result<(), Error> {
                 NetworkId::Any
             };
 
-            let sender_multilocation = if let Some(parachain_id) = cmd.parachain_id {
-                MultiLocation {
-                    parents: 1,
-                    interior: X2(
-                        Parachain(parachain_id),
-                        AccountId32 {
-                            network: network_id,
-                            id: cmd.account_id_32,
-                        },
-                    ),
-                }
-            } else {
-                MultiLocation {
-                    parents: 1,
-                    interior: X1(AccountId32 {
-                        network: network_id,
-                        id: cmd.account_id_32,
-                    }),
-                }
-            };
+            let mut sender_multilocation = MultiLocation::parent();
+
+            if let Some(parachain_id) = cmd.parachain_id {
+                sender_multilocation
+                    .append_with(X1(Parachain(parachain_id)))
+                    .expect("infallible");
+            }
+
+            sender_multilocation
+                .append_with(X1(AccountId32 {
+                    network,
+                    id: cmd.account_id_32,
+                }))
+                .expect("infallible");
 
             // Not important for the functionality, totally redundant
             struct AnyNetwork;
