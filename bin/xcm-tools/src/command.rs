@@ -63,7 +63,7 @@ pub fn run() -> Result<(), Error> {
             if let Some(parachain_id) = cmd.parachain_id {
                 sender_multilocation
                     .append_with(X1(Parachain(parachain_id)))
-                    .expect("infallible");
+                    .expect("infallible, short sequence");
             }
 
             sender_multilocation
@@ -71,7 +71,7 @@ pub fn run() -> Result<(), Error> {
                     network,
                     id: cmd.account_id_32,
                 }))
-                .expect("infallible");
+                .expect("infallible, short sequence");
 
             // Not important for the functionality, totally redundant
             struct AnyNetwork;
