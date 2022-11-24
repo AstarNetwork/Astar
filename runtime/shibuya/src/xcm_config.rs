@@ -23,7 +23,10 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
 // Astar imports
-use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
+use xcm_primitives::{
+    AllowPaidExecWithDescendOriginFrom, FixedRateOfForeignAsset, ReserveAssetFilter,
+    XcmFungibleFeeHandler,
+};
 
 parameter_types! {
     pub RelayNetwork: NetworkId = NetworkId::Any;
@@ -120,6 +123,7 @@ match_types! {
 pub type XcmBarrier = (
     TakeWeightCredit,
     AllowTopLevelPaidExecutionFrom<Everything>,
+    AllowPaidExecWithDescendOriginFrom<Everything>,
     // Parent and its plurality get free execution
     AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
     // Expected responses are OK.
