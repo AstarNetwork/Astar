@@ -52,12 +52,9 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-mod migration;
 mod precompiles;
 mod weights;
 mod xcm_config;
-
-use migration::*;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -100,7 +97,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 79,
+    spec_version: 80,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -875,10 +872,6 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (
-        ContractsStorageVersionMigration<Runtime>,
-        pallet_contracts::Migration<Runtime>,
-    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
