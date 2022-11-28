@@ -133,7 +133,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 79,
+    spec_version: 80,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1093,7 +1093,8 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
     // Good enough for testnet since we lack pallet-assets hooks for now
-    type ManagerOrigin = frame_system::EnsureSigned<AccountId>;
+    type ManagerOrigin =
+        EitherOfDiverse<frame_system::EnsureRoot<AccountId>, frame_system::EnsureSigned<AccountId>>;
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
