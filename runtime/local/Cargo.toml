@@ -22,7 +22,6 @@ pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", branch = "
 pallet-collective = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, features = ["unstable-interface"] }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
-pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 pallet-democracy = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.33", default-features = false, features = ["forbid-evm-reentrancy"] }
 pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.33", default-features = false, features = ["forbid-evm-reentrancy"] }
@@ -99,7 +98,6 @@ std = [
 	"pallet-block-reward/std",
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
-	"pallet-contracts-rpc-runtime-api/std",
 	"pallet-chain-extension-dapps-staking/std",
 	"pallet-chain-extension-xvm/std",
 	"pallet-custom-signatures/std",
@@ -186,6 +184,4 @@ try-runtime = [
 	"pallet-collective/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-treasury/try-runtime",
-	"pallet-evm/try-runtime",
-	"pallet-base-fee/try-runtime",
 ]

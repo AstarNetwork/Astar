@@ -214,8 +214,6 @@ try-runtime = [
 	"pallet-xc-asset-config/try-runtime",
 	"pallet-ethereum/try-runtime",
 	"pallet-assets/try-runtime",
-	"pallet-evm/try-runtime",
-	"pallet-base-fee/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-collator-selection/try-runtime",
 	"pallet-session/try-runtime",
