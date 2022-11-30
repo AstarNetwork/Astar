@@ -14,7 +14,6 @@ use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayCha
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::{lock::Mutex, StreamExt};
-use pallet_contracts_rpc::ContractsApiServer;
 use polkadot_service::CollatorPair;
 use sc_client_api::BlockchainEvents;
 use sc_consensus::import_queue::BasicQueue;
@@ -522,6 +521,8 @@ where
     Ok((task_manager, client))
 }
 
+// TODO: This can be deleted now that contracts_rpc has been removed?
+
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
@@ -556,7 +557,6 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
-        + pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
@@ -710,15 +710,7 @@ where
                 overrides: overrides.clone(),
             };
 
-            let mut io = crate::rpc::create_full(deps, subscription)?;
-
-            // This node support WASM contracts
-            io.merge(pallet_contracts_rpc::Contracts::new(Arc::clone(&client)).into_rpc())
-                .map_err(|_| {
-                    sc_service::Error::Other(
-                        "Failed to register pallet-contracts RPC methods.".into(),
-                    )
-                })?;
+            let io = crate::rpc::create_full(deps, subscription)?;
 
             Ok(io)
         })
