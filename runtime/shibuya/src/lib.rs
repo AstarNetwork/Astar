@@ -1224,6 +1224,11 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    (
+        pallet_scheduler::migration::v3::MigrateToV4<Runtime>,
+        pallet_democracy::migrations::v1::Migration<Runtime>,
+        pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
+    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
