@@ -33,6 +33,7 @@ pallet-evm-precompile-modexp = { git = "https://github.com/AstarNetwork/frontier
 pallet-evm-precompile-sha3fips = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.33", default-features = false }
 pallet-evm-precompile-simple = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.33", default-features = false }
 pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+pallet-preimage = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 pallet-proxy = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
@@ -72,7 +73,7 @@ pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar
 pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false, features = ["evm", "wasm"] }
 
 # benchmarking
-array-bytes = "4.1"
+array-bytes = "6.0.0"
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
 frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
 
@@ -118,6 +119,7 @@ std = [
 	"pallet-evm-precompile-xvm/std",
 	"pallet-grandpa/std",
 	"pallet-randomness-collective-flip/std",
+	"pallet-preimage/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
@@ -156,6 +158,7 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
+	"pallet-preimage/std",
 ]
 try-runtime = [
 	"frame-try-runtime",
@@ -184,4 +187,5 @@ try-runtime = [
 	"pallet-collective/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-treasury/try-runtime",
+	"pallet-preimage/std",
 ]

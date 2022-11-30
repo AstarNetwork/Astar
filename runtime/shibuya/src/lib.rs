@@ -22,7 +22,10 @@ use frame_support::{
     },
     ConsensusEngineId, PalletId,
 };
-use frame_system::limits::{BlockLength, BlockWeights};
+use frame_system::{
+    limits::{BlockLength, BlockWeights},
+    EnsureRoot, EnsureSigned,
+};
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -285,8 +288,8 @@ impl pallet_identity::Config for Runtime {
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type Slashed = Treasury;
-    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-    type RegistrarOrigin = frame_system::EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type RegistrarOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
@@ -327,7 +330,6 @@ impl pallet_custom_signatures::Config for Runtime {
 
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = NORMAL_DISPATCH_RATIO * RuntimeBlockWeights::get().max_block;
-    pub const MaxScheduledPerBlock: u32 = 50;
 }
 
 impl pallet_scheduler::Config for Runtime {
@@ -336,12 +338,25 @@ impl pallet_scheduler::Config for Runtime {
     type PalletsOrigin = OriginCaller;
     type RuntimeCall = RuntimeCall;
     type MaximumWeight = MaximumSchedulerWeight;
-    type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
-    type MaxScheduledPerBlock = MaxScheduledPerBlock;
+    type ScheduleOrigin = EnsureRoot<AccountId>;
+    type MaxScheduledPerBlock = ConstU32<50>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
-    type PreimageProvider = ();
-    type NoPreimagePostponement = ();
+    type Preimages = Preimage;
+}
+
+parameter_types! {
+    pub const PreimageBaseDeposit: Balance = deposit(1, 0);
+    pub const PreimageByteDeposit: Balance = deposit(0, 1);
+}
+
+impl pallet_preimage::Config for Runtime {
+    type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type ManagerOrigin = EnsureRoot<AccountId>;
+    type BaseDeposit = PreimageBaseDeposit;
+    type ByteDeposit = PreimageByteDeposit;
 }
 
 parameter_types! {
@@ -473,7 +488,7 @@ parameter_types! {
 impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type UpdateOrigin = frame_system::EnsureRoot<AccountId>;
+    type UpdateOrigin = EnsureRoot<AccountId>;
     type PotId = PotId;
     type MaxCandidates = MaxCandidates;
     type MinCandidates = MinCandidates;
@@ -573,7 +588,7 @@ impl pallet_assets::Config for Runtime {
     type AssetId = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -778,7 +793,7 @@ parameter_types! {
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = ShibuyaNetworkPrecompiles::<_, _>::new();
-    pub WeightPerGas: u64 = WEIGHT_PER_GAS;
+    pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
 }
 
 impl pallet_evm::Config for Runtime {
@@ -851,11 +866,11 @@ impl pallet_treasury::Config for Runtime {
     type PalletId = TreasuryPalletId;
     type Currency = Balances;
     type ApproveOrigin = EitherOfDiverse<
-        frame_system::EnsureRoot<AccountId>,
+        EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
     >;
     type RejectOrigin = EitherOfDiverse<
-        frame_system::EnsureRoot<AccountId>,
+        EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
     >;
     type RuntimeEvent = RuntimeEvent;
@@ -881,11 +896,9 @@ parameter_types! {
     pub VoteLockingPeriod: BlockNumber = 7 * DAYS;
     pub CooloffPeriod: BlockNumber = 7 * DAYS;
     pub const InstantAllowed: bool = true;
-    pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 
 impl pallet_democracy::Config for Runtime {
-    type Proposal = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type EnactmentPeriod = EnactmentPeriod;
@@ -896,56 +909,57 @@ impl pallet_democracy::Config for Runtime {
     /// A straight majority of the council can decide what their next motion is.
     type ExternalOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
-        frame_system::EnsureRoot<AccountId>,
+        EnsureRoot<AccountId>,
     >;
     /// A 60% super-majority can have the next scheduled referendum be a straight majority-carries vote.
     type ExternalMajorityOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
-        frame_system::EnsureRoot<AccountId>,
+        EnsureRoot<AccountId>,
     >;
     /// A unanimous council can have the next scheduled referendum be a straight default-carries
     /// (NTB) vote.
     type ExternalDefaultOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
-        frame_system::EnsureRoot<AccountId>,
+        EnsureRoot<AccountId>,
     >;
     /// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
     /// be tabled immediately and with a shorter voting/enactment period.
     type FastTrackOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
-        frame_system::EnsureRoot<AccountId>,
+        EnsureRoot<AccountId>,
     >;
     type InstantOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
-        frame_system::EnsureRoot<AccountId>,
+        EnsureRoot<AccountId>,
     >;
     type InstantAllowed = InstantAllowed;
     type FastTrackVotingPeriod = FastTrackVotingPeriod;
     // To cancel a proposal which has been passed, 2/3 of the council must agree to it.
     type CancellationOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
-        frame_system::EnsureRoot<AccountId>,
+        EnsureRoot<AccountId>,
     >;
     // To cancel a proposal before it has been passed, the technical committee must be unanimous or
     // Root must agree.
     type CancelProposalOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
-        frame_system::EnsureRoot<AccountId>,
+        EnsureRoot<AccountId>,
     >;
-    type BlacklistOrigin = frame_system::EnsureRoot<AccountId>;
+    type BlacklistOrigin = EnsureRoot<AccountId>;
     // Any single technical committee member may veto a coming council proposal, however they can
     // only do it once and it lasts only for the cooloff period.
     type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>;
     type CooloffPeriod = CooloffPeriod;
     // The amount of balance that must be deposited per byte of preimage stored.
-    type PreimageByteDeposit = PreimageByteDeposit;
     type Slash = Treasury;
     type Scheduler = Scheduler;
     type MaxVotes = ConstU32<100>;
-    type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
     type MaxProposals = ConstU32<100>;
+    type Preimages = Preimage;
+    type MaxDeposits = ConstU32<100>;
+    type MaxBlacklisted = ConstU32<100>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -1101,8 +1115,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
     // Good enough for testnet since we lack pallet-assets hooks for now
-    type ManagerOrigin =
-        EitherOfDiverse<frame_system::EnsureRoot<AccountId>, frame_system::EnsureSigned<AccountId>>;
+    type ManagerOrigin = EitherOfDiverse<EnsureRoot<AccountId>, EnsureSigned<AccountId>>;
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
@@ -1155,6 +1168,7 @@ construct_runtime!(
         Council: pallet_collective::<Instance1> = 81,
         TechnicalCommittee: pallet_collective::<Instance2> = 82,
         Treasury: pallet_treasury = 83,
+        Preimage: pallet_preimage = 84,
 
         Xvm: pallet_xvm = 90,
 
@@ -1572,24 +1586,26 @@ impl_runtime_apis! {
             origin: AccountId,
             dest: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
+            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
         }
 
         fn instantiate(
             origin: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             code: pallet_contracts_primitives::Code<Hash>,
             data: Vec<u8>,
             salt: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
-            Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
+            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
         }
 
         fn upload_code(

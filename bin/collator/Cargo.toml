@@ -60,6 +60,7 @@ sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polk
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 
 # RPC related dependencies
 jsonrpsee = { version = "0.15.1", features = ["server"] }
@@ -106,8 +107,8 @@ cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branc
 cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
 cumulus-relay-chain-inprocess-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
 cumulus-relay-chain-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
+cumulus-relay-chain-minimal-node = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
 cumulus-relay-chain-rpc-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 
 # polkadot dependencies
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33", optional = true }

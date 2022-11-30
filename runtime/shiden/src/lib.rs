@@ -21,7 +21,10 @@ use frame_support::{
     },
     ConsensusEngineId, PalletId,
 };
-use frame_system::limits::{BlockLength, BlockWeights};
+use frame_system::{
+    limits::{BlockLength, BlockWeights},
+    EnsureSigned,
+};
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -735,7 +738,7 @@ parameter_types! {
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = ShidenNetworkPrecompiles::<_, _>::new();
-    pub WeightPerGas: u64 = WEIGHT_PER_GAS;
+    pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
 }
 
 impl pallet_evm::Config for Runtime {
@@ -1244,24 +1247,26 @@ impl_runtime_apis! {
             origin: AccountId,
             dest: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
+            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
         }
 
         fn instantiate(
             origin: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             code: pallet_contracts_primitives::Code<Hash>,
             data: Vec<u8>,
             salt: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
-            Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
+            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
         }
 
         fn upload_code(

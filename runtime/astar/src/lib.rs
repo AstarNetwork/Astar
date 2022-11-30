@@ -10,8 +10,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, Contains, Currency, FindAuthor, Get, Imbalance, OnUnbalanced,
-        WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -20,7 +20,10 @@ use frame_support::{
     },
     ConsensusEngineId, PalletId,
 };
-use frame_system::limits::{BlockLength, BlockWeights};
+use frame_system::{
+    limits::{BlockLength, BlockWeights},
+    EnsureRoot, EnsureSigned,
+};
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -245,8 +248,8 @@ impl pallet_identity::Config for Runtime {
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type Slashed = ();
-    type ForceOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
-    type RegistrarOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type ForceOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type RegistrarOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
@@ -407,7 +410,7 @@ parameter_types! {
 impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type UpdateOrigin = frame_system::EnsureRoot<AccountId>;
+    type UpdateOrigin = EnsureRoot<AccountId>;
     type PotId = PotId;
     type MaxCandidates = MaxCandidates;
     type MinCandidates = MinCandidates;
@@ -536,7 +539,7 @@ impl pallet_assets::Config for Runtime {
     type AssetId = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -698,7 +701,7 @@ parameter_types! {
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = AstarNetworkPrecompiles::<_, _>::new();
-    pub WeightPerGas: u64 = WEIGHT_PER_GAS;
+    pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
 }
 
 impl pallet_evm::Config for Runtime {
@@ -747,7 +750,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 

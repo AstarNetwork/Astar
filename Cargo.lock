@@ -180,6 +180,7 @@ dependencies = [
  "cumulus-primitives-parachain-inherent",
  "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-minimal-node",
  "cumulus-relay-chain-rpc-interface",
  "fc-consensus",
  "fc-db",
@@ -1841,6 +1842,50 @@ dependencies = [
  "sp-blockchain",
  "sp-state-machine",
  "thiserror",
+]
+
+[[package]]
+name = "cumulus-relay-chain-minimal-node"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
+dependencies = [
+ "array-bytes 4.1.0",
+ "async-trait",
+ "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-rpc-interface",
+ "futures",
+ "lru",
+ "polkadot-availability-distribution",
+ "polkadot-core-primitives",
+ "polkadot-network-bridge",
+ "polkadot-node-core-av-store",
+ "polkadot-node-network-protocol",
+ "polkadot-node-subsystem-util",
+ "polkadot-overseer",
+ "polkadot-primitives",
+ "polkadot-service",
+ "sc-authority-discovery",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-keystore",
+ "sc-network",
+ "sc-network-common",
+ "sc-network-light",
+ "sc-network-sync",
+ "sc-service",
+ "sc-telemetry",
+ "sc-tracing",
+ "sc-transaction-pool",
+ "sc-transaction-pool-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-babe",
+ "sp-runtime",
+ "tokio",
+ "tracing",
+ "url",
 ]
 
 [[package]]
@@ -4637,7 +4682,7 @@ checksum = "bb68f22743a3fb35785f1e7f844ca5a3de2dde5bd0c0ef5b372065814699b121"
 name = "local-runtime"
 version = "4.38.0"
 dependencies = [
- "array-bytes 4.1.0",
+ "array-bytes 6.0.0",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -4676,6 +4721,7 @@ dependencies = [
  "pallet-evm-precompile-xvm",
  "pallet-grandpa",
  "pallet-precompile-dapps-staking",
+ "pallet-preimage",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
@@ -10623,6 +10669,7 @@ dependencies = [
  "pallet-identity",
  "pallet-multisig",
  "pallet-precompile-dapps-staking",
+ "pallet-preimage",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
