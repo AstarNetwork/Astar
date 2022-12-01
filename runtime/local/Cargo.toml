@@ -158,10 +158,10 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
-	"pallet-preimage/std",
+	"pallet-preimage/runtime-benchmarks",
 ]
 try-runtime = [
-	"frame-try-runtime",
+	"frame-try-runtime/try-runtime",
 	"frame-executive/try-runtime",
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
@@ -187,5 +187,5 @@ try-runtime = [
 	"pallet-collective/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-treasury/try-runtime",
-	"pallet-preimage/std",
+	"pallet-preimage/try-runtime",
 ]
