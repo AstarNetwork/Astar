@@ -161,6 +161,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 ]
 try-runtime = [
+	"log",
 	"frame-try-runtime/try-runtime",
 	"frame-executive/try-runtime",
 	"frame-support/try-runtime",
@@ -180,7 +181,6 @@ try-runtime = [
 	"pallet-vesting/try-runtime",
 	"pallet-xvm/try-runtime",
 	"pallet-ethereum/try-runtime",
-	"pallet-contracts/try-runtime",
 	"pallet-assets/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-democracy/try-runtime",
@@ -188,4 +188,6 @@ try-runtime = [
 	"pallet-proxy/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-preimage/try-runtime",
+	"pallet-base-fee/try-runtime",
+	"pallet-evm/try-runtime",
 ]

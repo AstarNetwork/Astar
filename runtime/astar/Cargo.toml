@@ -196,7 +196,7 @@ runtime-benchmarks = [
 ]
 try-runtime = [
 	"log",
-	"frame-try-runtime",
+	"frame-try-runtime/try-runtime",
 	"frame-executive/try-runtime",
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
@@ -226,4 +226,6 @@ try-runtime = [
 	"cumulus-pallet-xcm/try-runtime",
 	"cumulus-pallet-xcmp-queue/try-runtime",
 	"parachain-info/try-runtime",
+	"pallet-base-fee/try-runtime",
+	"pallet-evm/try-runtime",
 ]

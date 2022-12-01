@@ -141,4 +141,4 @@ runtime-benchmarks = [
 	"polkadot-cli/runtime-benchmarks",
 ]
 cli = ['try-runtime-cli']
-try-runtime = ["local-runtime/try-runtime", "try-runtime-cli"]
+try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]
