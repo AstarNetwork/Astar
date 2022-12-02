@@ -327,6 +327,7 @@ where
         sc_service::Error,
     >,
     BIC: FnOnce(
+        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         ParachainBlockImport<
             FrontierBlockImport<
                 Block,
@@ -334,7 +335,6 @@ where
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
         >,
-        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         Option<&Registry>,
         Option<TelemetryHandle>,
         &TaskManager,
@@ -496,8 +496,8 @@ where
 
     if is_authority {
         let parachain_consensus = build_consensus(
-            parachain_block_import,
             client.clone(),
+            parachain_block_import,
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|t| t.handle()),
             &task_manager,
@@ -682,8 +682,8 @@ pub async fn start_astar_node(
             })
             .map_err(Into::into)
         },
-        | block_import,
-         client,
+        |client,
+         block_import,
          prometheus_registry,
          telemetry,
          task_manager,
@@ -810,8 +810,8 @@ pub async fn start_shiden_node(
             })
             .map_err(Into::into)
         },
-        | block_import,
-         client,
+        |client,
+         block_import,
          prometheus_registry,
          telemetry,
          task_manager,
@@ -938,8 +938,8 @@ pub async fn start_shibuya_node(
             })
             .map_err(Into::into)
         },
-        |block_import,
-         client,
+        |client,
+         block_import,
          prometheus_registry,
          telemetry,
          task_manager,
