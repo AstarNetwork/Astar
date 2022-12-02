@@ -1227,11 +1227,32 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
     (
+        SchedulerStorageVersionMigration<Runtime>,
         pallet_scheduler::migration::v3::MigrateToV4<Runtime>,
         pallet_democracy::migrations::v1::Migration<Runtime>,
         pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
     ),
 >;
+
+use frame_support::traits::StorageVersion;
+use sp_std::marker::PhantomData;
+
+// Required beucase current scheduler version is 0.
+pub struct SchedulerStorageVersionMigration<T: pallet_scheduler::Config>(PhantomData<T>);
+impl<T: pallet_scheduler::Config> frame_support::traits::OnRuntimeUpgrade
+    for SchedulerStorageVersionMigration<T>
+{
+    fn on_runtime_upgrade() -> Weight {
+        let version = StorageVersion::get::<pallet_scheduler::Pallet<T>>();
+
+        if version < 3 {
+            StorageVersion::new(3).put::<pallet_scheduler::Pallet<T>>();
+            T::DbWeight::get().reads_writes(1, 1)
+        } else {
+            T::DbWeight::get().reads(1)
+        }
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
