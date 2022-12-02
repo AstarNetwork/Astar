@@ -289,10 +289,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 overrides: overrides.clone(),
             };
 
-            let io = crate::rpc::create_full(deps, subscription)
-                .map_err::<ServiceError, _>(Into::into)?;
-
-            Ok(io)
+            crate::rpc::create_full(deps, subscription).map_err::<ServiceError, _>(Into::into)
         })
     };
 
