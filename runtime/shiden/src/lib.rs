@@ -557,7 +557,7 @@ impl pallet_assets::Config for Runtime {
 parameter_types! {
     pub const MinVestedTransfer: Balance = SDN;
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
-    WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
+        WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
 
 impl pallet_vesting::Config for Runtime {

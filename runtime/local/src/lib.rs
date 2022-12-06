@@ -727,7 +727,7 @@ parameter_types! {
 parameter_types! {
     pub const MinVestedTransfer: Balance = AST;
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
-    WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
+        WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
 
 impl pallet_vesting::Config for Runtime {
