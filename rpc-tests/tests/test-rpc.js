@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import BN from 'bn.js';
 import {
     capitalize,
     describeWithNetwork,
@@ -103,5 +104,93 @@ describeWithNetwork(network, paraId, `${network} RPC`, function(context) {
         const message = await sayMessage(deployedContract);
 
         expect(message).to.equals('Hi');
+    });
+
+    it('should be able to Bond & stake minimum staking amount on registered contract using Bob account', async () => {
+        const staked = new BN("5000000000000000000");
+        const finalised = await sendTransaction(
+            context.api.tx.dappsStaking.bondAndStake(getAddressEnum(CONTRACT), staked),
+            context.bob
+        );
+        const stakerInfo = await context.api.query.dappsStaking.generalStakerInfo(BOB, getAddressEnum(CONTRACT));
+
+        expect(finalised).to.be.true;
+        expect(stakerInfo.stakes[0].staked).to.equals(staked);
+    });
+
+    it('should be able to Bond & stake an additional 500 tokens on the same contract using Bob account', async () => {
+        const staked = new BN("500000000000000000000");
+        const finalised = await sendTransaction(
+            context.api.tx.dappsStaking.bondAndStake(getAddressEnum(CONTRACT), staked),
+            context.bob
+        );
+        const stakerInfo = await context.api.query.dappsStaking.generalStakerInfo(BOB, getAddressEnum(CONTRACT));
+
+        expect(finalised).to.be.true;
+        expect(stakerInfo.stakes[0].staked).to.equals(staked);
+    });
+
+    it('should be able to Bond & stake an additional 500 tokens on the same contract using Bob account', async () => {
+        const staked = new BN("505000000000000000000");
+        const unbond = new BN("250000000000000000000");
+        const finalised = await sendTransaction(
+            context.api.tx.dappsStaking.unbondAndUnstake(getAddressEnum(CONTRACT), unbond),
+            context.bob
+        );
+        const stakerInfo = await context.api.query.dappsStaking.generalStakerInfo(BOB, getAddressEnum(CONTRACT));
+
+        expect(finalised).to.be.true;
+        expect(stakerInfo.stakes[0].staked).to.equals(staked.sub(unbond));
+    });
+
+    it('should be able to Unbond 250 tokens', async () => {
+        const staked = new BN("505000000000000000000");
+        const unbond = new BN("250000000000000000000");
+        const finalised = await sendTransaction(
+            context.api.tx.dappsStaking.unbondAndUnstake(getAddressEnum(CONTRACT), unbond),
+            context.bob
+        );
+        const stakerInfo = await context.api.query.dappsStaking.generalStakerInfo(BOB, getAddressEnum(CONTRACT));
+
+        expect(finalised).to.be.true;
+        expect(stakerInfo.stakes[0].staked).to.equals(staked.sub(unbond));
+    });
+
+    it('Forcing a new era using a sudo call.', async () => {
+        const finalised = await sendTransaction(
+            context.api.tx.dappsStaking.forceNewEra(),
+            context.bob
+        );
+
+        expect(finalised).to.be.true;
+    });
+
+    it('should be able to Claim dapp rewards for registered contract', async () => {
+        const currentEra = await context.api.query.dappsStaking.currentEra();
+        const finalised = await sendTransaction(
+            context.api.tx.dappsStaking.claimDapp(getAddressEnum(CONTRACT), currentEra),
+            context.bob
+        );
+
+        expect(finalised).to.be.true;
+    });
+
+    it('should be able to Claim Claim staker rewards for registered contract', async () => {
+        const finalised = await sendTransaction(
+            context.api.tx.dappsStaking.claimStaker(getAddressEnum(CONTRACT)),
+            context.bob
+        );
+
+        expect(finalised).to.be.true;
+    });
+
+    it('should be able to Unbond 250 tokens', async () => {
+        const unbond = new BN("250000000000000000000");
+        const finalised = await sendTransaction(
+            context.api.tx.dappsStaking.unbondAndUnstake(getAddressEnum(CONTRACT), unbond),
+            context.bob
+        );
+
+        expect(finalised).to.be.true;
     });
 });
