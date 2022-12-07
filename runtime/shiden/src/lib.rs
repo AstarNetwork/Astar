@@ -11,8 +11,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        ConstU128, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, InstanceFilter,
-        Nothing, OnUnbalanced
+        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -21,8 +21,10 @@ use frame_support::{
     },
     ConsensusEngineId, PalletId,
 };
-use frame_system::limits::{BlockLength, BlockWeights};
-use pallet_contracts::DefaultContractAccessWeight;
+use frame_system::{
+    limits::{BlockLength, BlockWeights},
+    EnsureSigned,
+};
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -34,7 +36,7 @@ use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
-        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Bounded, ConvertInto,
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
     },
     transaction_validity::{
@@ -55,12 +57,9 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-mod migration;
 mod precompiles;
 mod weights;
 mod xcm_config;
-
-use migration::*;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -103,7 +102,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 79,
+    spec_version: 84,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -132,7 +131,9 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND
+    .saturating_div(2)
+    .set_proof_size(polkadot_primitives::v2::MAX_POV_SIZE as u64);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -209,7 +210,7 @@ impl frame_system::Config for Runtime {
     type OnKilledAccount = ();
     type DbWeight = RocksDbWeight;
     type BaseCallFilter = BaseFilter;
-    type SystemWeightInfo = ();
+    type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = RuntimeBlockLength;
     type SS58Prefix = SS58Prefix;
@@ -226,7 +227,7 @@ impl pallet_timestamp::Config for Runtime {
     type Moment = u64;
     type OnTimestampSet = BlockReward;
     type MinimumPeriod = MinimumPeriod;
-    type WeightInfo = ();
+    type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -252,7 +253,7 @@ impl pallet_identity::Config for Runtime {
     type Slashed = ();
     type ForceOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
     type RegistrarOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
-    type WeightInfo = ();
+    type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -260,7 +261,6 @@ parameter_types! {
     pub const DepositBase: Balance = deposit(1, 88);
     // Additional storage item size of 32 bytes.
     pub const DepositFactor: Balance = deposit(0, 32);
-    pub const MaxSignatories: u16 = 100;
 }
 
 impl pallet_multisig::Config for Runtime {
@@ -269,8 +269,8 @@ impl pallet_multisig::Config for Runtime {
     type Currency = Balances;
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
-    type MaxSignatories = MaxSignatories;
-    type WeightInfo = ();
+    type MaxSignatories = ConstU32<100>;
+    type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -339,7 +339,7 @@ impl pallet_utility::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type PalletsOrigin = OriginCaller;
-    type WeightInfo = ();
+    type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -424,7 +424,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type SlashRatio = SlashRatio;
-    type WeightInfo = ();
+    type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -493,7 +493,7 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = [u8; 8];
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
-    type WeightInfo = ();
+    type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
 /// Id used for identifying assets.
@@ -541,6 +541,7 @@ impl pallet_assets::Config for Runtime {
     type Balance = Balance;
     type AssetId = AssetId;
     type Currency = Balances;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type ForceOrigin = frame_system::EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
     type MetadataDepositBase = MetadataDepositBase;
@@ -555,6 +556,8 @@ impl pallet_assets::Config for Runtime {
 
 parameter_types! {
     pub const MinVestedTransfer: Balance = SDN;
+    pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
+        WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
 
 impl pallet_vesting::Config for Runtime {
@@ -562,7 +565,8 @@ impl pallet_vesting::Config for Runtime {
     type Currency = Balances;
     type BlockNumberToBalance = ConvertInto;
     type MinVestedTransfer = MinVestedTransfer;
-    type WeightInfo = ();
+    type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+    type UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
     // `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
     // highest number of schedules that encodes less than 2^10.
     const MAX_VESTING_SCHEDULES: u32 = 28;
@@ -601,7 +605,6 @@ impl pallet_contracts::Config for Runtime {
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-    type ContractAccessWeight = DefaultContractAccessWeight<RuntimeBlockWeights>;
     type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
 }
@@ -612,6 +615,7 @@ parameter_types! {
     pub const OperationalFeeMultiplier: u8 = 5;
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
     pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
+    pub MaximumMultiplier: Multiplier = Bounded::max_value();
 }
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -664,8 +668,13 @@ impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
-    type FeeMultiplierUpdate =
-        TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
+    type FeeMultiplierUpdate = TargetedFeeAdjustment<
+        Self,
+        TargetBlockFullness,
+        AdjustmentVariable,
+        MinimumMultiplier,
+        MaximumMultiplier,
+    >;
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 }
 
@@ -731,7 +740,7 @@ parameter_types! {
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = ShidenNetworkPrecompiles::<_, _>::new();
-    pub WeightPerGas: u64 = WEIGHT_PER_GAS;
+    pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
 }
 
 impl pallet_evm::Config for Runtime {
@@ -972,10 +981,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (
-        ContractsStorageVersionMigration<Runtime>,
-        pallet_contracts::Migration<Runtime>,
-    ),
+    (pallet_multisig::migrations::v1::MigrateToV1<Runtime>,),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
@@ -1034,6 +1040,23 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
             _ => None,
         }
     }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benches {
+    define_benchmarks!(
+        [frame_benchmarking, BaselineBench::<Runtime>]
+        [frame_system, SystemBench::<Runtime>]
+        [pallet_balances, Balances]
+        [pallet_timestamp, Timestamp]
+        [pallet_dapps_staking, DappsStaking]
+        [pallet_block_reward, BlockReward]
+        [pallet_xc_asset_config, XcAssetConfig]
+    );
 }
 
 impl_runtime_apis! {
@@ -1312,7 +1335,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_contracts_rpc_runtime_api::ContractsApi<
+    impl pallet_contracts::ContractsApi<
         Block, AccountId, Balance, BlockNumber, Hash,
     >
         for Runtime
@@ -1321,33 +1344,36 @@ impl_runtime_apis! {
             origin: AccountId,
             dest: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true)
+            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
         }
 
         fn instantiate(
             origin: AccountId,
             value: Balance,
-            gas_limit: u64,
+            gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             code: pallet_contracts_primitives::Code<Hash>,
             data: Vec<u8>,
             salt: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
-            Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
+            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
         }
 
         fn upload_code(
             origin: AccountId,
             code: Vec<u8>,
             storage_deposit_limit: Option<Balance>,
+            determinism: pallet_contracts::Determinism,
         ) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
         {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
         }
 
         fn get_storage(
@@ -1364,14 +1390,13 @@ impl_runtime_apis! {
             Vec<frame_benchmarking::BenchmarkList>,
             Vec<frame_support::traits::StorageInfo>,
         ) {
-            use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
+            use frame_system_benchmarking::Pallet as SystemBench;
+            use baseline::Pallet as BaselineBench;
 
             let mut list = Vec::<BenchmarkList>::new();
-
-            list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
-            list_benchmark!(list, extra, pallet_block_reward, BlockReward);
-            list_benchmark!(list, extra, pallet_xc_asset_config, XcAssetConfig);
+            list_benchmarks!(list, extra);
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1381,31 +1406,20 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
-
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
             use frame_system_benchmarking::Pallet as SystemBench;
-            impl frame_system_benchmarking::Config for Runtime {}
+            use baseline::Pallet as BaselineBench;
 
-            let whitelist: Vec<TrackedStorageKey> = vec![
-                // Block Number
-                array_bytes::hex_into_unchecked("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac"),
-                // Execution Phase
-                array_bytes::hex_into_unchecked("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a"),
-                // Event Count
-                array_bytes::hex_into_unchecked("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850"),
-                // System Events
-                array_bytes::hex_into_unchecked("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7"),
-            ];
+            impl frame_system_benchmarking::Config for Runtime {}
+            impl baseline::Config for Runtime {}
+
+            use frame_support::traits::WhitelistedStorageKeys;
+            let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);
 
-            add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-            add_benchmark!(params, batches, pallet_balances, Balances);
-            add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-            add_benchmark!(params, batches, pallet_dapps_staking, DappsStaking);
-            add_benchmark!(params, batches, pallet_block_reward, BlockReward);
-            add_benchmark!(params, batches, pallet_xc_asset_config, XcAssetConfig);
+            add_benchmarks!(params, batches);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)

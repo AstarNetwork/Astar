@@ -119,7 +119,7 @@ fn make_genesis(
         },
         aura_ext: Default::default(),
         collator_selection: CollatorSelectionConfig {
-            desired_candidates: 200,
+            desired_candidates: 32,
             candidacy_bond: 32_000 * SDN,
             invulnerables: authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
         },
