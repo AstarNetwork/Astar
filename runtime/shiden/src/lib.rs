@@ -257,6 +257,16 @@ impl pallet_identity::Config for Runtime {
 }
 
 parameter_types! {
+    // One storage item; key size 32, value size 8; .
+    pub const ProxyDepositBase: Balance = deposit(1, 8);
+    // Additional storage item size of 33 bytes.
+    pub const ProxyDepositFactor: Balance = deposit(0, 33);
+    pub const MaxProxies: u16 = 32;
+    // Key size 32 + 1 item
+    pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+    // Acc Id + Hash + block number
+    pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
+    pub const MaxPending: u16 = 32;
     // One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
     pub const DepositBase: Balance = deposit(1, 88);
     // Additional storage item size of 32 bytes.
@@ -872,18 +882,15 @@ impl pallet_proxy::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type ProxyType = ProxyType;
-    // One storage item; key size 32, value size 8; .
-    type ProxyDepositBase = ConstU128<{ SDN * 1 }>;
-    // Additional storage item size of 33 bytes.
-    type ProxyDepositFactor = ConstU128<{ MILLISDN * 330 }>;
-    type MaxProxies = ConstU32<32>;
-    type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
-    type MaxPending = ConstU32<32>;
+    type ProxyDepositBase = ProxyDepositBase;
+    type ProxyDepositFactor = ProxyDepositFactor;
+    type MaxProxies = MaxProxies;
+    type WeightInfo = weights::pallet_proxy::WeightInfo<Runtime>;
+    type MaxPending = MaxPending;
     type CallHasher = BlakeTwo256;
     // Key size 32 + 1 item
-    type AnnouncementDepositBase = ConstU128<{ SDN * 1 }>;
-    // Acc Id + Hash + block number
-    type AnnouncementDepositFactor = ConstU128<{ MILLISDN * 660 }>;
+    type AnnouncementDepositBase = AnnouncementDepositBase;
+    type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
 construct_runtime!(
