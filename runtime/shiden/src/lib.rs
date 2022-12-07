@@ -11,7 +11,7 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
         InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
@@ -885,7 +885,7 @@ impl pallet_proxy::Config for Runtime {
     type ProxyDepositBase = ProxyDepositBase;
     type ProxyDepositFactor = ProxyDepositFactor;
     type MaxProxies = MaxProxies;
-    type WeightInfo = weights::pallet_proxy::WeightInfo<Runtime>;
+    type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
     type MaxPending = MaxPending;
     type CallHasher = BlakeTwo256;
     // Key size 32 + 1 item
