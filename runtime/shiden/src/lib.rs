@@ -873,7 +873,7 @@ impl pallet_proxy::Config for Runtime {
     type Currency = Balances;
     type ProxyType = ProxyType;
     // One storage item; key size 32, value size 8; .
-    type ProxyDepositBase = ConstU128<{ SDN * 10 }>;
+    type ProxyDepositBase = ConstU128<{ SDN * 1 }>;
     // Additional storage item size of 33 bytes.
     type ProxyDepositFactor = ConstU128<{ MILLISDN * 330 }>;
     type MaxProxies = ConstU32<32>;
@@ -881,7 +881,7 @@ impl pallet_proxy::Config for Runtime {
     type MaxPending = ConstU32<32>;
     type CallHasher = BlakeTwo256;
     // Key size 32 + 1 item
-    type AnnouncementDepositBase = ConstU128<{ SDN * 10 }>;
+    type AnnouncementDepositBase = ConstU128<{ SDN * 1 }>;
     // Acc Id + Hash + block number
     type AnnouncementDepositFactor = ConstU128<{ MILLISDN * 660 }>;
 }
