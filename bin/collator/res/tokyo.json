@@ -3,10 +3,10 @@
   "id": "rococo_tokyo_relay",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/34.168.90.8/tcp/30333/p2p/12D3KooWNyPqiViXSgTZyrRkaBaTazaCVbD6HEdKKhwP2XMGuRkb",
-    "/ip4/34.146.227.254/tcp/30333/p2p/12D3KooWLMQgQP4gVZq6UzAPTetSE51yt5ayxxapkJK4Nn4WsqiQ",
+    "/ip4/34.168.90.8/tcp/30333/ws/p2p/12D3KooWNyPqiViXSgTZyrRkaBaTazaCVbD6HEdKKhwP2XMGuRkb",
+    "/ip4/34.146.227.254/tcp/30333/ws/p2p/12D3KooWHhTGgvTVKHiyuJdubYVvJSCAFu6uXoNk7H5X7xrQDHCJ",
     "/dns/tokyo-01.wss-bootnode.astar.network/tcp/443/wss/p2p/12D3KooWNyPqiViXSgTZyrRkaBaTazaCVbD6HEdKKhwP2XMGuRkb",
-    "/dns/tokyo-02.wss-bootnode.astar.network/tcp/443/wss/p2p/12D3KooWLMQgQP4gVZq6UzAPTetSE51yt5ayxxapkJK4Nn4WsqiQ"
+    "/dns/tokyo-02.wss-bootnode.astar.network/tcp/443/wss/p2p/12D3KooWHhTGgvTVKHiyuJdubYVvJSCAFu6uXoNk7H5X7xrQDHCJ"
   ],
   "telemetryEndpoints": null,
   "protocolId": "tky",
