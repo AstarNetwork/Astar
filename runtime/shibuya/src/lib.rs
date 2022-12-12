@@ -136,7 +136,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 83,
+    spec_version: 84,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1226,12 +1226,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (
-        SchedulerStorageVersionMigration<Runtime>,
-        pallet_scheduler::migration::v3::MigrateToV4<Runtime>,
-        pallet_democracy::migrations::v1::Migration<Runtime>,
-        pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
-    ),
+    (pallet_contracts::Migration<Runtime>,),
 >;
 
 use frame_support::traits::StorageVersion;
