@@ -15,7 +15,7 @@ use codec::{Decode, Encode, FullCodec};
 use frame_system::pallet_prelude::*;
 use pallet_contracts::Determinism;
 use sp_runtime::Saturating;
-use sp_std::vec;
+use sp_std::vec::Vec;
 
 const LOG_TARGET: &str = "pallet-contracts-migration";
 
@@ -249,7 +249,7 @@ pub mod pallet {
         }
 
         #[cfg(feature = "try-runtime")]
-        fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+        fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
             for value in CodeStorage::<T>::iter_values() {
                 ensure!(
                     value.determinism == Determinism::Deterministic,

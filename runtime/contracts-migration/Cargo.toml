@@ -15,9 +15,9 @@ frame-system = { git = "https://github.com/paritytech/substrate", branch = "polk
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, features = ["unstable-interface"] }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
 
 [features]
 default = ["std"]
