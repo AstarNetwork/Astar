@@ -159,7 +159,7 @@ pub mod pallet {
                     if consumed_weight.any_gt(weight_limit) {
                         log::trace!(
                             target: LOG_TARGET,
-                            "CodeStorage migration stopped after consuming {:?} weight and after processing {:?} DB entires.",
+                            "CodeStorage migration stopped after consuming {:?} weight and after processing {:?} DB entries.",
                             consumed_weight, counter,
                         );
                         MigrationStateStorage::<T>::put(MigrationState::CodeStorage(Some(
