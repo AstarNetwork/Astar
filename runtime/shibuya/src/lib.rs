@@ -9,7 +9,7 @@ use cumulus_pallet_parachain_system::AnyRelayNumber;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
-    ensure, parameter_types, storage_alias,
+    parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EitherOfDiverse,
         EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
@@ -26,7 +26,6 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot, EnsureSigned,
 };
-use pallet_contracts::Determinism;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -1227,79 +1226,8 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (CustomMigration<Runtime>,),
+    (),
 >;
-
-use frame_support::traits::StorageVersion;
-use sp_std::marker::PhantomData;
-
-#[derive(Encode, Decode, MaxEncodedLen)]
-pub struct OldPrefabWasmModule {
-    #[codec(compact)]
-    pub instruction_weights_version: u32,
-    #[codec(compact)]
-    pub initial: u32,
-    #[codec(compact)]
-    pub maximum: u32,
-    pub code: Vec<u8>,
-}
-
-#[derive(Encode, Decode, MaxEncodedLen)]
-pub struct PrefabWasmModule {
-    #[codec(compact)]
-    pub instruction_weights_version: u32,
-    #[codec(compact)]
-    pub initial: u32,
-    #[codec(compact)]
-    pub maximum: u32,
-    pub code: Vec<u8>,
-    pub determinism: Determinism,
-}
-
-#[storage_alias]
-type CodeStorage<T: pallet_contracts::Config> =
-    StorageMap<pallet_contracts::Pallet<T>, frame_support::Identity, CodeHash<T>, PrefabWasmModule>;
-
-type CodeHash<T> = <T as frame_system::Config>::Hash;
-
-// Required beucase current scheduler version is 0.
-pub struct CustomMigration<T: pallet_contracts::Config>(PhantomData<T>);
-impl<T: pallet_contracts::Config> frame_support::traits::OnRuntimeUpgrade for CustomMigration<T> {
-    fn on_runtime_upgrade() -> Weight {
-        let mut weight = Weight::zero();
-        let mut counter = 0_u32;
-        <CodeStorage<T>>::translate_values(|old: OldPrefabWasmModule| {
-            weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
-            weight.saturating_accrue(Weight::from_proof_size(
-                OldPrefabWasmModule::max_encoded_len(),
-            ));
-            weight.saturating_accrue(Weight::from_proof_size(PrefabWasmModule::max_encoded_len()));
-            counter += 1;
-            Some(PrefabWasmModule {
-                instruction_weights_version: old.instruction_weights_version,
-                initial: old.initial,
-                maximum: old.maximum,
-                code: old.code,
-                determinism: Determinism::Deterministic,
-            })
-        });
-
-        log::info!("Number of DB entries for migration: {:?}", counter);
-
-        weight
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
-        for value in CodeStorage::<T>::iter_values() {
-            ensure!(
-                value.determinism == Determinism::Deterministic,
-                "All pre-existing codes need to be deterministic."
-            );
-        }
-        Ok(())
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;

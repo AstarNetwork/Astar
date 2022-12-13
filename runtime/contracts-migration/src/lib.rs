@@ -177,7 +177,8 @@ pub mod pallet {
 
                 // Clean up storage value so we can safely remove the pallet later
                 MigrationStateStorage::<T>::kill();
-                consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
+                StorageVersion::new(9).put::<pallet_contracts::Pallet<T>>();
+                consumed_weight.saturating_accrue(T::DbWeight::get().writes(2));
             }
 
             consumed_weight
@@ -238,6 +239,24 @@ pub mod pallet {
     impl Default for MigrationState {
         fn default() -> Self {
             MigrationState::NotInProgress
+        }
+    }
+
+    pub struct CustomMigration<T: Config>(PhantomData<T>);
+    impl<T: Config> frame_support::traits::OnRuntimeUpgrade for CustomMigration<T> {
+        fn on_runtime_upgrade() -> Weight {
+            Pallet::<T>::do_migrate(None)
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+            for value in CodeStorage::<T>::iter_values() {
+                ensure!(
+                    value.determinism == Determinism::Deterministic,
+                    "All pre-existing codes need to be deterministic."
+                );
+            }
+            Ok(())
         }
     }
 }
