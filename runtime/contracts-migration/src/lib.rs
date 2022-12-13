@@ -1,5 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+/// Purpose of this pallet is to provide multi-stage migration features for pallet-contracts v9 migration.
+/// Once it's finished for both `Shibuya` and `Shiden`, it should be deleted.
+
 pub use pallet::*;
 
 use frame_support::{
@@ -193,6 +196,8 @@ pub mod pallet {
             T::BlockWeights::get().max_block / 2
         }
 
+        /// Used to translate a single value in the DB
+        /// Returns conservative weight estimate of the operation
         fn translate<O: FullCodec, V: FullCodec, F: FnMut(O) -> Option<V>>(
             key: &[u8],
             mut f: F,
@@ -224,12 +229,14 @@ pub mod pallet {
 
     #[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
     pub enum MigrationState {
+        /// No migration in progress
         NotInProgress,
         /// In the middle of `CodeStorage` migration. The const for max size is an overestimate but that's fine.
         CodeStorage(Option<WeakBoundedVec<u8, ConstU32<1000>>>),
     }
 
     impl MigrationState {
+        /// Convert `self` into value applicable for iteration
         fn for_iteration(self) -> Self {
             if self == Self::NotInProgress {
                 Self::CodeStorage(None)
@@ -259,10 +266,17 @@ pub mod pallet {
                     "All pre-existing codes need to be deterministic."
                 );
             }
+
             ensure!(
                 !MigrationStateStorage::<T>::exists(),
                 "MigrationStateStorage has to be killed at the end of migration."
             );
+
+            ensure!(
+                <pallet_contracts::Pallet<T>>::on_chain_storage_version() == 9,
+                "pallet-contracts storage version must be 9 at the end of migration"
+            );
+
             Ok(())
         }
     }
