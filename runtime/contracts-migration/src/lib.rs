@@ -42,12 +42,13 @@ pub mod pallet {
         ContractsMigrated(u32),
     }
 
+    // The following structs & types were taken from `pallet-contracts` since they aren't exposed outside of the `pallet-contracts` crate.
+
     #[storage_alias]
     type CodeStorage<T: pallet_contracts::Config> =
         StorageMap<pallet_contracts::Pallet<T>, Identity, CodeHash<T>, PrefabWasmModule<T>>;
 
     type CodeHash<T> = <T as frame_system::Config>::Hash;
-
     type RelaxedCodeVec<T> = WeakBoundedVec<u8, <T as pallet_contracts::Config>::MaxCodeLen>;
 
     #[derive(Encode, Decode, RuntimeDebug, MaxEncodedLen)]
@@ -112,6 +113,11 @@ pub mod pallet {
             let weight_limit = requested_weight_limit
                 .unwrap_or(max_allowed_call_weight)
                 .min(max_allowed_call_weight);
+            log::trace!(
+                target: LOG_TARGET,
+                "CodeStorage migration weight limit will be {:?}.",
+                weight_limit,
+            );
 
             let migration_state = MigrationStateStorage::<T>::get().for_iteration();
 
@@ -158,7 +164,8 @@ pub mod pallet {
 
                         // we want try-runtime to execute the entire migration
                         if cfg!(feature = "try-runtime") {
-                            return Self::do_migrate(Some(weight_limit));
+                            return Self::do_migrate(Some(weight_limit))
+                                .saturating_add(consumed_weight);
                         } else {
                             return consumed_weight;
                         }
@@ -176,9 +183,10 @@ pub mod pallet {
             consumed_weight
         }
 
-        /// Max allowed weight that migration shoudl be allowed to consume
+        /// Max allowed weight that migration should be allowed to consume
         fn max_call_weight() -> Weight {
-            T::BlockWeights::get().max_block / 5 * 3
+            // 50% of block should be fine
+            T::BlockWeights::get().max_block / 2
         }
 
         fn translate<O: FullCodec, V: FullCodec, F: FnMut(O) -> Option<V>>(
