@@ -15,7 +15,10 @@ use codec::{Decode, Encode, FullCodec};
 use frame_system::pallet_prelude::*;
 use pallet_contracts::Determinism;
 use sp_runtime::Saturating;
+#[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
+
+pub use crate::pallet::CustomMigration;
 
 const LOG_TARGET: &str = "pallet-contracts-migration";
 
@@ -256,6 +259,10 @@ pub mod pallet {
                     "All pre-existing codes need to be deterministic."
                 );
             }
+            ensure!(
+                !MigrationStateStorage::<T>::exists(),
+                "MigrationStateStorage has to be killed at the end of migration."
+            );
             Ok(())
         }
     }
