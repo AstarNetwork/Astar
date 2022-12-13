@@ -12,16 +12,11 @@ description = "FRAME pallet for managing multi-block pallet contracts storage mi
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, features = ["unstable-interface"] }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
-pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, features = ["unstable-interface"] }
-
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.33', default-features = false, optional = true }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
-serde = { version = "1.0.136", optional = true }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
 
 [features]
@@ -31,11 +26,8 @@ std = [
 	"sp-core/std",
 	"scale-info/std",
 	"sp-std/std",
-	"serde/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-timestamp/std",
-	"pallet-balances/std",
-    "pallet-contracts/std",
+	"pallet-contracts/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

@@ -5745,15 +5745,11 @@ dependencies = [
 name = "pallet-contracts-migration"
 version = "1.0.0"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-balances",
  "pallet-contracts",
- "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-arithmetic",
  "sp-core",
  "sp-runtime",

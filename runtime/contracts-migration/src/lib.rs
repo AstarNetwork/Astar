@@ -5,23 +5,17 @@ pub use pallet::*;
 use frame_support::{
     log,
     pallet_prelude::*,
-    storage::{
-        generator::{StorageDoubleMap, StorageMap},
-        unhashed,
-    },
+    storage::{generator::StorageMap, unhashed},
     storage_alias,
-    traits::{Currency, Get, Imbalance, OnTimestampSet},
+    traits::Get,
     WeakBoundedVec,
 };
 
 use codec::{Decode, Encode, FullCodec};
-use frame_system::{limits::BlockWeights, pallet_prelude::*};
+use frame_system::pallet_prelude::*;
 use pallet_contracts::Determinism;
-use sp_runtime::{
-    traits::{CheckedAdd, Zero},
-    Perbill, Saturating,
-};
-use sp_std::{fmt::Debug, vec};
+use sp_runtime::Saturating;
+use sp_std::vec;
 
 const LOG_TARGET: &str = "pallet-contracts-migration";
 
@@ -45,12 +39,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        SomeEvent,
-    }
-
-    #[pallet::error]
-    pub enum Error<T> {
-        SomeError,
+        ContractsMigrated(u32),
     }
 
     #[storage_alias]
@@ -86,13 +75,26 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(1_000_000)]
+        #[pallet::weight({
+            let max_allowed_call_weight = Pallet::<T>::max_call_weight();
+            weight_limit
+                .unwrap_or(max_allowed_call_weight)
+                .min(max_allowed_call_weight)
+        })]
         pub fn migrate(
             origin: OriginFor<T>,
             weight_limit: Option<Weight>,
         ) -> DispatchResultWithPostInfo {
             ensure_signed(origin)?;
 
+            let consumed_weight = Self::do_migrate(weight_limit);
+
+            Ok(Some(consumed_weight).into())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        fn do_migrate(requested_weight_limit: Option<Weight>) -> Weight {
             let version = <pallet_contracts::Pallet<T>>::on_chain_storage_version();
             let mut consumed_weight = T::DbWeight::get().reads(1);
 
@@ -102,11 +104,12 @@ pub mod pallet {
                     "Version is {:?} so skipping migration procedures.",
                     version,
                 );
-                return Ok(Some(consumed_weight).into());
+                Self::deposit_event(Event::<T>::ContractsMigrated(0));
+                return consumed_weight;
             }
 
             let max_allowed_call_weight = Self::max_call_weight();
-            let weight_limit = weight_limit
+            let weight_limit = requested_weight_limit
                 .unwrap_or(max_allowed_call_weight)
                 .min(max_allowed_call_weight);
 
@@ -120,54 +123,59 @@ pub mod pallet {
                     CodeStorage::<T>::iter_keys()
                 };
 
+                let mut counter = 0_u32;
+
                 for key in key_iter {
-                    // TODO: need function from map that will only translate ONE value!
                     let key_as_vec = CodeStorage::<T>::storage_map_final_key(key);
-                    let mut proof_size = 0_u64;
-                    Self::translate(&key_as_vec, |old: OldPrefabWasmModule<T>| {
-                        proof_size = old.using_encoded(|o| o.len() as u64);
-                        Some(PrefabWasmModule::<T> {
-                            instruction_weights_version: old.instruction_weights_version,
-                            initial: old.initial,
-                            maximum: old.maximum,
-                            code: old.code,
-                            determinism: Determinism::Deterministic,
-                        })
-                    });
+                    let used_weight =
+                        Self::translate(&key_as_vec, |old: OldPrefabWasmModule<T>| {
+                            Some(PrefabWasmModule::<T> {
+                                instruction_weights_version: old.instruction_weights_version,
+                                initial: old.initial,
+                                maximum: old.maximum,
+                                code: old.code,
+                                determinism: Determinism::Deterministic,
+                            })
+                        });
 
                     // Increment total consumed weight.
-                    consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
-                    // consumed_weight.saturating_accrue(Weight::from_proof_size())
+                    consumed_weight.saturating_accrue(used_weight);
+                    counter += 1;
 
-                    // // Check if we've consumed enough weight already.
-                    // if consumed_weight >= weight_limit {
-                    //     log::info!(
-                    //         ">>> Ledger migration stopped after consuming {:?} weight.",
-                    //         consumed_weight
-                    //     );
-                    //     MigrationStateV2::<T>::put(MigrationState::Ledger(Some(key_as_vec)));
-                    //     consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().writes(1));
+                    // Check if we've consumed enough weight already.
+                    if consumed_weight.any_gt(weight_limit) {
+                        log::trace!(
+                            target: LOG_TARGET,
+                            "CodeStorage migration stopped after consuming {:?} weight and after processing {:?} DB entires.",
+                            consumed_weight, counter,
+                        );
+                        MigrationStateStorage::<T>::put(MigrationState::CodeStorage(Some(
+                            WeakBoundedVec::force_from(key_as_vec, None),
+                        )));
+                        consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
 
-                    //     // we want try-runtime to execute the entire migration
-                    //     if cfg!(feature = "try-runtime") {
-                    //         return stateful_migrate::<T>(weight_limit);
-                    //     } else {
-                    //         return consumed_weight;
-                    //     }
-                    // }
+                        Self::deposit_event(Event::<T>::ContractsMigrated(counter));
+
+                        // we want try-runtime to execute the entire migration
+                        if cfg!(feature = "try-runtime") {
+                            return Self::do_migrate(Some(weight_limit));
+                        } else {
+                            return consumed_weight;
+                        }
+                    }
                 }
 
-                // log::info!(">>> Ledger migration finished.");
-                // // This means we're finished with migration of the Ledger. Hooray!
-                // // Next step of the migration should be configured.
-                // migration_state = MigrationState::StakingInfo(None);
+                log::trace!(target: LOG_TARGET, "CodeStorage migration finished.",);
+                Self::deposit_event(Event::<T>::ContractsMigrated(counter));
+
+                // Clean up storage value so we can safely remove the pallet later
+                MigrationStateStorage::<T>::kill();
+                consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
             }
 
-            Ok(().into())
+            consumed_weight
         }
-    }
 
-    impl<T: Config> Pallet<T> {
         /// Max allowed weight that migration shoudl be allowed to consume
         fn max_call_weight() -> Weight {
             T::BlockWeights::get().max_block / 5 * 3
@@ -205,7 +213,7 @@ pub mod pallet {
     #[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
     pub enum MigrationState {
         NotInProgress,
-        /// In the middle of `CodeStorage` migration.
+        /// In the middle of `CodeStorage` migration. The const for max size is an overestimate but that's fine.
         CodeStorage(Option<WeakBoundedVec<u8, ConstU32<1000>>>),
     }
 
