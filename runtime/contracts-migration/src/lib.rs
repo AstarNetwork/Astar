@@ -44,6 +44,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// Number of contracts that were migrated in the migration call
         ContractsMigrated(u32),
     }
 
@@ -135,7 +136,7 @@ pub mod pallet {
 
             let migration_state = MigrationStateStorage::<T>::get().for_iteration();
 
-            if let MigrationState::CodeStorage(last_processed_key) = migration_state.clone() {
+            if let MigrationState::CodeStorage(last_processed_key) = migration_state {
                 // First, get correct iterator.
                 let key_iter = if let Some(previous_key) = last_processed_key {
                     CodeStorage::<T>::iter_keys_from(previous_key.into_inner())
