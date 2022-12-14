@@ -212,7 +212,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             },
             RuntimeCall::Contracts(_) => {
                 // We block the calls until storage migration has been finished.
-                // The DB read is already accounted for in the migration pallet's `on_initialize` function.
+                // The DB read weight is already accounted for in the migration pallet's `on_initialize` function.
                 <pallet_contracts::Pallet<Runtime>>::on_chain_storage_version() == 9
             }
             // These modules are not allowed to be called by transactions:

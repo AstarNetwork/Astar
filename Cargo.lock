@@ -10759,6 +10759,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
+ "pallet-contracts-migration",
  "pallet-contracts-primitives",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
