@@ -12,8 +12,8 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
-        WithdrawReasons,
+        EqualPrivilegeOnly, FindAuthor, Get, GetStorageVersion, Imbalance, InstanceFilter, Nothing,
+        OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -210,6 +210,11 @@ impl Contains<RuntimeCall> for BaseFilter {
                 // registering the asset location should be good enough for users, any change can be handled via issue ticket or help request
                 _ => false,
             },
+            RuntimeCall::Contracts(_) => {
+                // We block the calls until storage migration has been finished.
+                // The DB read is already accounted for in the migration pallet's `on_initialize` function.
+                <pallet_contracts::Pallet<Runtime>>::on_chain_storage_version() == 9
+            }
             // These modules are not allowed to be called by transactions:
             // Other modules should works:
             _ => true,

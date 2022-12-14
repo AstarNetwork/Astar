@@ -81,6 +81,15 @@ pub mod pallet {
         pub determinism: Determinism,
     }
 
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
+            // This is done in order to account for the read in call filter
+            <pallet_contracts::Pallet<T>>::on_chain_storage_version();
+            T::DbWeight::get().reads(1)
+        }
+    }
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight({
@@ -256,7 +265,14 @@ pub mod pallet {
     pub struct CustomMigration<T: Config>(PhantomData<T>);
     impl<T: Config> frame_support::traits::OnRuntimeUpgrade for CustomMigration<T> {
         fn on_runtime_upgrade() -> Weight {
-            Pallet::<T>::do_migrate(None)
+            // Ensures that first step only starts the migration with minimal changes in case of production build.
+            // In case of `try-runtime`, we want predefined limit.
+            let limit = if cfg!(feature = "try-runtime") {
+                None
+            } else {
+                Some(Weight::zero())
+            };
+            Pallet::<T>::do_migrate(limit)
         }
 
         #[cfg(feature = "try-runtime")]
