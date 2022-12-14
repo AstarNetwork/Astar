@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "4.39.1"
+version = "4.40.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -105,6 +105,9 @@ pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "po
 pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false, features = ["evm", "wasm"] }
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 
+# Remove after migration is done
+pallet-contracts-migration = { path = "../contracts-migration", default-features = false }
+
 # benchmarking
 array-bytes = "6.0.0"
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
@@ -205,6 +208,7 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm-primitives/std",
+	"pallet-contracts-migration/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -266,4 +270,5 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
+	"pallet-contracts-migration/try-runtime",
 ]

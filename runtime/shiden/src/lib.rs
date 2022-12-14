@@ -11,8 +11,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, Nothing,
-        OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, GetStorageVersion,
+        Imbalance, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -102,7 +102,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 83,
+    spec_version: 84,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -170,6 +170,11 @@ impl Contains<RuntimeCall> for BaseFilter {
                 pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(),
                 _ => true,
             },
+            RuntimeCall::Contracts(_) => {
+                // We block the calls until storage migration has been finished.
+                // The DB read weight is already accounted for in the migration pallet's `on_initialize` function.
+                <pallet_contracts::Pallet<Runtime>>::on_chain_storage_version() == 9
+            }
             // These modules are not allowed to be called by transactions:
             // To leave collator just shutdown it, next session funds will be released
             // Other modules should works:
@@ -609,6 +614,10 @@ impl pallet_contracts::Config for Runtime {
     type MaxStorageKeyLen = ConstU32<128>;
 }
 
+impl pallet_contracts_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+}
+
 parameter_types! {
     pub const TransactionByteFee: Balance = MILLISDN / 100;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
@@ -836,6 +845,9 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_randomness_collective_flip = 71,
 
         Sudo: pallet_sudo = 99,
+
+        // This will be removed after migration is finished
+        ContractsMigration: pallet_contracts_migration = 200,
     }
 );
 
@@ -887,7 +899,10 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (pallet_multisig::migrations::v1::MigrateToV1<Runtime>,),
+    (
+        pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
+        pallet_contracts_migration::CustomMigration<Runtime>,
+    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
