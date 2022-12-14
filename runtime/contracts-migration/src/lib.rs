@@ -2,8 +2,6 @@
 
 /// Purpose of this pallet is to provide multi-stage migration features for pallet-contracts v9 migration.
 /// Once it's finished for both `Shibuya` and `Shiden`, it should be deleted.
-///
-/// We don't need to disable pallet-contract calls since translation will only work for types that are encoded using the old storage type.
 pub use pallet::*;
 
 use frame_support::{
