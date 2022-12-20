@@ -104,6 +104,9 @@ pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", 
 pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", default-features = false, branch = "polkadot-v0.9.33" }
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 
+# Remove after migration is done
+pallet-contracts-migration = { path = "../contracts-migration", default-features = false }
+
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 
@@ -186,6 +189,7 @@ std = [
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
 	"xcm-primitives/std",
+	"pallet-contracts-migration/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -239,4 +243,5 @@ try-runtime = [
 	"parachain-info/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
+	"pallet-contracts-migration/try-runtime",
 ]

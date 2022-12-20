@@ -5742,6 +5742,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-contracts-migration"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-contracts",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-contracts-primitives"
 version = "6.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33#2dff067e9f7f6f3cc4dbfdaaa97753eccc407689"
@@ -10647,6 +10662,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
+ "pallet-contracts-migration",
  "pallet-contracts-primitives",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
@@ -10743,6 +10759,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
+ "pallet-contracts-migration",
  "pallet-contracts-primitives",
  "pallet-custom-signatures",
  "pallet-dapps-staking",

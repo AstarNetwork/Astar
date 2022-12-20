@@ -11,8 +11,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
-        InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, GetStorageVersion,
+        Imbalance, InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -170,6 +170,11 @@ impl Contains<RuntimeCall> for BaseFilter {
                 pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(),
                 _ => true,
             },
+            RuntimeCall::Contracts(_) => {
+                // We block the calls until storage migration has been finished.
+                // The DB read weight is already accounted for in the migration pallet's `on_initialize` function.
+                <pallet_contracts::Pallet<Runtime>>::on_chain_storage_version() == 9
+            }
             // These modules are not allowed to be called by transactions:
             // To leave collator just shutdown it, next session funds will be released
             // Other modules should works:
@@ -609,6 +614,10 @@ impl pallet_contracts::Config for Runtime {
     type MaxStorageKeyLen = ConstU32<128>;
 }
 
+impl pallet_contracts_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+}
+
 parameter_types! {
     pub const TransactionByteFee: Balance = MILLISDN / 100;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
@@ -808,42 +817,19 @@ impl pallet_xc_asset_config::Config for Runtime {
     scale_info::TypeInfo,
 )]
 pub enum ProxyType {
-    Any,
-    NonTransfer,
     CancelProxy,
     DappsStaking,
 }
 
 impl Default for ProxyType {
     fn default() -> Self {
-        Self::Any
+        Self::CancelProxy
     }
 }
 
 impl InstanceFilter<RuntimeCall> for ProxyType {
     fn filter(&self, c: &RuntimeCall) -> bool {
         match self {
-            ProxyType::Any => true,
-            ProxyType::NonTransfer => {
-                matches!(
-                    c,
-                    RuntimeCall::System(..)
-                        | RuntimeCall::Utility(..)
-                        | RuntimeCall::Timestamp(..)
-                        // Skip entire Balances pallet
-                        | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
-				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
-				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
-                        | RuntimeCall::DappsStaking(..)
-                        // Skip entire EVM pallet
-                        // Skip entire Ethereum pallet
-                        // Skip entire EthCall pallet
-                        | RuntimeCall::BaseFee(..)
-                        // Skip entire Contracts pallet
-                        // Skip entire Assets pallet
-                        | RuntimeCall::Proxy(..)
-                )
-            }
             ProxyType::CancelProxy => {
                 matches!(
                     c,
@@ -859,9 +845,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
     fn is_superset(&self, o: &Self) -> bool {
         match (self, o) {
             (x, y) if x == y => true,
-            (ProxyType::Any, _) => true,
-            (_, ProxyType::Any) => false,
-            (ProxyType::NonTransfer, _) => true,
             _ => false,
         }
     }
@@ -940,6 +923,9 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_randomness_collective_flip = 71,
 
         Sudo: pallet_sudo = 99,
+
+        // This will be removed after migration is finished
+        ContractsMigration: pallet_contracts_migration = 200,
     }
 );
 
@@ -991,7 +977,10 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (pallet_multisig::migrations::v1::MigrateToV1<Runtime>,),
+    (
+        pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
+        pallet_contracts_migration::CustomMigration<Runtime>,
+    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {

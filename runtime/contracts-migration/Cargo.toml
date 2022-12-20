@@ -1,0 +1,33 @@
+[package]
+name = "pallet-contracts-migration"
+version = "1.0.0"
+authors = ["Stake  Technologies <devops@stake.co.jp>"]
+edition = "2021"
+license = "Apache-2.0"
+homepage = "https://astar.network"
+repository = "https://github.com/AstarNetwork/Astar"
+description = "FRAME pallet for managing multi-block pallet contracts storage migration"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, features = ["unstable-interface"] }
+scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"sp-core/std",
+	"scale-info/std",
+	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-contracts/std",
+]
+try-runtime = ["frame-support/try-runtime"]

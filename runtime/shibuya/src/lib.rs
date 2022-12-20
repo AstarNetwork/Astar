@@ -12,8 +12,8 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
-        WithdrawReasons,
+        EqualPrivilegeOnly, FindAuthor, Get, GetStorageVersion, Imbalance, InstanceFilter, Nothing,
+        OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -136,7 +136,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 83,
+    spec_version: 84,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -210,6 +210,11 @@ impl Contains<RuntimeCall> for BaseFilter {
                 // registering the asset location should be good enough for users, any change can be handled via issue ticket or help request
                 _ => false,
             },
+            RuntimeCall::Contracts(_) => {
+                // We block the calls until storage migration has been finished.
+                // The DB read weight is already accounted for in the migration pallet's `on_initialize` function.
+                <pallet_contracts::Pallet<Runtime>>::on_chain_storage_version() == 9
+            }
             // These modules are not allowed to be called by transactions:
             // Other modules should works:
             _ => true,
@@ -655,6 +660,10 @@ impl pallet_contracts::Config for Runtime {
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
+}
+
+impl pallet_contracts_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
 }
 
 parameter_types! {
@@ -1175,6 +1184,9 @@ construct_runtime!(
         Xvm: pallet_xvm = 90,
 
         Sudo: pallet_sudo = 99,
+
+        // This will be removed after migration is finished
+        ContractsMigration: pallet_contracts_migration = 200,
     }
 );
 
@@ -1226,33 +1238,8 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (
-        SchedulerStorageVersionMigration<Runtime>,
-        pallet_scheduler::migration::v3::MigrateToV4<Runtime>,
-        pallet_democracy::migrations::v1::Migration<Runtime>,
-        pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
-    ),
+    pallet_contracts_migration::CustomMigration<Runtime>,
 >;
-
-use frame_support::traits::StorageVersion;
-use sp_std::marker::PhantomData;
-
-// Required beucase current scheduler version is 0.
-pub struct SchedulerStorageVersionMigration<T: pallet_scheduler::Config>(PhantomData<T>);
-impl<T: pallet_scheduler::Config> frame_support::traits::OnRuntimeUpgrade
-    for SchedulerStorageVersionMigration<T>
-{
-    fn on_runtime_upgrade() -> Weight {
-        let version = StorageVersion::get::<pallet_scheduler::Pallet<T>>();
-
-        if version < 3 {
-            StorageVersion::new(3).put::<pallet_scheduler::Pallet<T>>();
-            T::DbWeight::get().reads_writes(1, 1)
-        } else {
-            T::DbWeight::get().reads(1)
-        }
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
