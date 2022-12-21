@@ -103,7 +103,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 47,
+    spec_version: 48,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -315,6 +315,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type UnbondingPeriod = UnbondingPeriod;
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type MaxEraStakeValues = MaxEraStakeValues;
+    // Not allowed on Astar yet
+    type UnregisteredDappRewardRetention = ConstU32<{ u32::MAX }>;
 }
 
 /// Multi-VM pointer to smart contract instance.

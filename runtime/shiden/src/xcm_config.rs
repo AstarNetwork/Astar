@@ -1,5 +1,5 @@
 use super::{
-    AccountId, AssetId, Assets, Balance, Balances, DealWithFees, ParachainInfo, ParachainSystem,
+    AccountId, AssetId, Assets, Balance, Balances, BurnFees, ParachainInfo, ParachainSystem,
     PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, ShidenAssetLocationIdConverter,
     TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
@@ -147,7 +147,7 @@ impl Config for XcmConfig {
     type Barrier = XcmBarrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type Trader = (
-        UsingComponents<WeightToFee, ShidenLocation, AccountId, Balances, DealWithFees>,
+        UsingComponents<WeightToFee, ShidenLocation, AccountId, Balances, BurnFees>,
         FixedRateOfForeignAsset<XcAssetConfig, ShidenXcmFungibleFeeHandler>,
     );
     type ResponseHandler = PolkadotXcm;
