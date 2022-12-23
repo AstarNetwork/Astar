@@ -15,6 +15,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 pub use local_runtime::RuntimeApi;
 
 use crate::primitives::*;
+use crate::cli::TracingConfig;
 
 /// Local runtime native executor.
 pub struct Executor;
@@ -123,6 +124,26 @@ pub fn new_partial(
         client.clone(),
         frontier_backend.clone(),
     );
+	let ethapi_cmd = rpc_config.ethapi.clone();
+	let tracing_requesters =
+		if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
+			crate::rpc::tracing::spawn_tracing_tasks(
+				&rpc_config,
+				crate::rpc::SpawnTasksParams {
+					task_manager: &task_manager,
+					client: client.clone(),
+					substrate_backend: backend.clone(),
+					frontier_backend: frontier_backend.clone(),
+					filter_pool: filter_pool.clone(),
+					overrides: overrides.clone(),
+				},
+			)
+		} else {
+			rpc::tracing::RpcRequesters {
+				debug: None,
+				trace: None,
+			}
+		};
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
     let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
         ImportQueueParams {
@@ -164,7 +185,7 @@ pub fn new_partial(
 }
 
 /// Builds a new service.
-pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
+pub fn start_node(config: Configuration, tracing_config: TracingConfig) -> Result<TaskManager, ServiceError> {
     let sc_service::PartialComponents {
         client,
         backend,

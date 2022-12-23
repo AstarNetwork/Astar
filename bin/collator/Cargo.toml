@@ -124,6 +124,11 @@ frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", bran
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", optional = true }
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", optional = true }
 
+# evm-tracing
+moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing" }
+moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing" }
+moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing" }
+
 [build-dependencies]
 build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33", optional = true }
