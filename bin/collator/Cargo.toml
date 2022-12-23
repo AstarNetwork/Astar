@@ -22,6 +22,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = { version = "0.3.21" }
 log = "0.4.17"
 parity-util-mem = { version = "0.12.0", default-features = false, features = ["jemalloc-global"] }
+tokio = { version = "1.13.0", features = [ "macros", "sync" ] }
 serde = { version = "1.0.140", features = ["derive"] }
 serde_json = "1.0"
 url = "2.2.2"
@@ -80,7 +81,7 @@ pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polka
 
 # astar-specific dependencies
 astar-runtime = { path = "../../runtime/astar" }
-local-runtime = { path = "../../runtime/local" }
+local-runtime = { path = "../../runtime/local", features = ["evm-tracing"] }
 shibuya-runtime = { path = "../../runtime/shibuya" }
 shiden-runtime = { path = "../../runtime/shiden" }
 

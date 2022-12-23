@@ -14,10 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-use super::*;
+use crate::cli::EthApi as EthApiCmd;
 
+use fc_rpc::OverrideHandle;
+use fc_rpc_core::types::FilterPool;
+use fp_rpc::EthereumRuntimeRPCApi;
 use moonbeam_rpc_debug::{DebugHandler, DebugRequester};
 use moonbeam_rpc_trace::{CacheRequester as TraceFilterCacheRequester, CacheTask};
+use sc_client_api::{
+    Backend, BlockOf, BlockchainEvents, HeaderBackend, StateBackend, StorageProvider,
+};
+use sc_service::TaskManager;
+use sp_api::{BlockT, HeaderT, ProvideRuntimeApi};
+use sp_block_builder::BlockBuilder;
+use sp_blockchain::{Error as BlockChainError, HeaderMetadata};
+use sp_core::H256;
+use sp_runtime::traits::BlakeTwo256;
+use std::sync::Arc;
 use tokio::sync::Semaphore;
 
 #[derive(Clone)]
@@ -27,17 +40,17 @@ pub struct RpcRequesters {
 }
 
 pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
-	pub task_manager: &'a TaskManager,
-	pub client: Arc<C>,
-	pub substrate_backend: Arc<BE>,
-	pub frontier_backend: Arc<fc_db::Backend<B>>,
-	pub filter_pool: Option<FilterPool>,
-	pub overrides: Arc<OverrideHandle<B>>,
+    pub task_manager: &'a TaskManager,
+    pub client: Arc<C>,
+    pub substrate_backend: Arc<BE>,
+    pub frontier_backend: Arc<fc_db::Backend<B>>,
+    pub filter_pool: Option<FilterPool>,
+    pub overrides: Arc<OverrideHandle<B>>,
 }
 
 // Spawn the tasks that are required to run a Moonbeam tracing node.
 pub fn spawn_tracing_tasks<B, C, BE>(
-    rpc_config: &cli_opt::RpcConfig,
+    rpc_config: &crate::cli::TracingConfig,
     params: SpawnTasksParams<B, C, BE>,
 ) -> RpcRequesters
 where
@@ -60,7 +73,7 @@ where
             let (trace_filter_task, trace_filter_requester) = CacheTask::create(
                 Arc::clone(&params.client),
                 Arc::clone(&params.substrate_backend),
-                Duration::from_secs(rpc_config.ethapi_trace_cache_duration),
+                core::time::Duration::from_secs(rpc_config.ethapi_trace_cache_duration),
                 Arc::clone(&permit_pool),
                 Arc::clone(&params.overrides),
             );
@@ -108,4 +121,3 @@ where
         trace: trace_filter_requester,
     }
 }
-

@@ -637,19 +637,16 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
-			let tracing_config = TracingConfig {
-				ethapi: cli.run.ethapi,
-				ethapi_max_permits: cli.run.ethapi_max_permits,
-				ethapi_trace_max_count: cli.run.ethapi_trace_max_count,
-				ethapi_trace_cache_duration: cli.run.ethapi_trace_cache_duration,
-				eth_log_block_cache: cli.run.eth_log_block_cache,
-				eth_statuses_cache: cli.run.eth_statuses_cache,
-				fee_history_limit: cli.run.fee_history_limit,
-				max_past_logs: cli.run.max_past_logs,
-				relay_chain_rpc_url: cli.run.base.relay_chain_rpc_url,
-				tracing_raw_max_memory_usage: cli.run.tracing_raw_max_memory_usage,
-			};
-
+            let tracing_config = crate::cli::TracingConfig {
+                ethapi: cli.ethapi,
+                ethapi_max_permits: cli.ethapi_max_permits,
+                ethapi_trace_max_count: cli.ethapi_trace_max_count,
+                ethapi_trace_cache_duration: cli.ethapi_trace_cache_duration,
+                eth_log_block_cache: cli.eth_log_block_cache,
+                eth_statuses_cache: cli.eth_statuses_cache,
+                max_past_logs: cli.max_past_logs,
+                tracing_raw_max_memory_usage: cli.tracing_raw_max_memory_usage,
+            };
 
             runner.run_node_until_exit(|config| async move {
                 if config.chain_spec.is_dev() {

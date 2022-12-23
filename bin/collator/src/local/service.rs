@@ -14,8 +14,9 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 pub use local_runtime::RuntimeApi;
 
+use crate::cli::{EthApi as EthApiCmd, TracingConfig};
 use crate::primitives::*;
-use crate::cli::TracingConfig;
+use crate::rpc::tracing;
 
 /// Local runtime native executor.
 pub struct Executor;
@@ -124,26 +125,6 @@ pub fn new_partial(
         client.clone(),
         frontier_backend.clone(),
     );
-	let ethapi_cmd = rpc_config.ethapi.clone();
-	let tracing_requesters =
-		if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
-			crate::rpc::tracing::spawn_tracing_tasks(
-				&rpc_config,
-				crate::rpc::SpawnTasksParams {
-					task_manager: &task_manager,
-					client: client.clone(),
-					substrate_backend: backend.clone(),
-					frontier_backend: frontier_backend.clone(),
-					filter_pool: filter_pool.clone(),
-					overrides: overrides.clone(),
-				},
-			)
-		} else {
-			rpc::tracing::RpcRequesters {
-				debug: None,
-				trace: None,
-			}
-		};
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
     let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
         ImportQueueParams {
@@ -185,7 +166,10 @@ pub fn new_partial(
 }
 
 /// Builds a new service.
-pub fn start_node(config: Configuration, tracing_config: TracingConfig) -> Result<TaskManager, ServiceError> {
+pub fn start_node(
+    config: Configuration,
+    tracing_config: TracingConfig,
+) -> Result<TaskManager, ServiceError> {
     let sc_service::PartialComponents {
         client,
         backend,
@@ -229,6 +213,27 @@ pub fn start_node(config: Configuration, tracing_config: TracingConfig) -> Resul
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let overrides = crate::rpc::overrides_handle(client.clone());
+
+    let ethapi_cmd = tracing_config.ethapi.clone();
+    let tracing_requesters =
+        if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
+            tracing::spawn_tracing_tasks(
+                &tracing_config,
+                tracing::SpawnTasksParams {
+                    task_manager: &task_manager,
+                    client: client.clone(),
+                    substrate_backend: backend.clone(),
+                    frontier_backend: frontier_backend.clone(),
+                    filter_pool: Some(filter_pool.clone()),
+                    overrides: overrides.clone(),
+                },
+            )
+        } else {
+            tracing::RpcRequesters {
+                debug: None,
+                trace: None,
+            }
+        };
 
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
@@ -293,6 +298,10 @@ pub fn start_node(config: Configuration, tracing_config: TracingConfig) -> Resul
         let client = client.clone();
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
+        let rpc_config = crate::rpc::TracingConfig {
+            tracing_requesters: tracing_requesters.clone(),
+            trace_filter_max_count: tracing_config.ethapi_trace_max_count,
+        };
 
         Box::new(move |deny_unsafe, subscription| {
             let deps = crate::rpc::FullDeps {
@@ -310,7 +319,8 @@ pub fn start_node(config: Configuration, tracing_config: TracingConfig) -> Resul
                 overrides: overrides.clone(),
             };
 
-            crate::rpc::create_full(deps, subscription).map_err::<ServiceError, _>(Into::into)
+            crate::rpc::create_full_tracing(deps, subscription, rpc_config.clone())
+                .map_err::<ServiceError, _>(Into::into)
         })
     };
 

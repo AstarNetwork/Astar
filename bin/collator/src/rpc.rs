@@ -32,9 +32,10 @@ use crate::primitives::*;
 
 pub mod tracing;
 
+#[derive(Clone)]
 pub struct TracingConfig {
-	pub tracing_requesters: tracing::RpcRequesters,
-	pub trace_filter_max_count: u32,
+    pub tracing_requesters: tracing::RpcRequesters,
+    pub trace_filter_max_count: u32,
 }
 
 // TODO This is copied from frontier. It should be imported instead after
@@ -130,7 +131,6 @@ pub struct FullDeps<C, P, A: ChainApi> {
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
-	maybe_tracing_config: Option<TracingConfig>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -145,7 +145,6 @@ where
     C: sc_client_api::BlockBackend<Block>,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-	    + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>,
@@ -220,22 +219,124 @@ where
         EthPubSub::new(pool, client, network, subscription_task_executor, overrides).into_rpc(),
     )?;
 
-	if let Some(tracing_config) = maybe_tracing_config {
-		if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
-			io.merge(
-				Trace::new(
-					client,
-					trace_filter_requester,
-					tracing_config.trace_filter_max_count,
-				)
-				.into_rpc(),
-			)?;
-		}
+    Ok(io)
+}
 
-		if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
-			io.merge(Debug::new(debug_requester).into_rpc())?;
-		}
-	}
+/// Instantiate all RPC extensions with EVM tracing.
+pub fn create_full_tracing<C, P, BE, A>(
+    deps: FullDeps<C, P, A>,
+    subscription_task_executor: SubscriptionTaskExecutor,
+    tracing_config: TracingConfig,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + AuxStore
+        + StorageProvider<Block, BE>
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + BlockchainEvents<Block>
+        + Send
+        + Sync
+        + 'static,
+    C: sc_client_api::BlockBackend<Block>,
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + BlockBuilder<Block>,
+    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
+    BE::Blockchain: BlockchainBackend<Block>,
+    A: ChainApi<Block = Block> + 'static,
+{
+    let mut io = RpcModule::new(());
+    let FullDeps {
+        client,
+        pool,
+        graph,
+        network,
+        deny_unsafe,
+        is_authority,
+        frontier_backend,
+        filter_pool,
+        fee_history_limit,
+        fee_history_cache,
+        overrides,
+        block_data_cache,
+    } = deps;
+
+    io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+    io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+
+    let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
+
+    io.merge(
+        Eth::new(
+            client.clone(),
+            pool.clone(),
+            graph,
+            no_tx_converter,
+            network.clone(),
+            Default::default(),
+            overrides.clone(),
+            frontier_backend.clone(),
+            is_authority,
+            block_data_cache.clone(),
+            fee_history_cache,
+            fee_history_limit,
+            // Allow 10x max allowed weight for non-transactional calls
+            10,
+        )
+        .into_rpc(),
+    )?;
+
+    let max_past_logs: u32 = 10_000;
+    let max_stored_filters: usize = 500;
+    io.merge(
+        EthFilter::new(
+            client.clone(),
+            frontier_backend,
+            filter_pool,
+            max_stored_filters,
+            max_past_logs,
+            block_data_cache,
+        )
+        .into_rpc(),
+    )?;
+
+    io.merge(Net::new(client.clone(), network.clone(), true).into_rpc())?;
+
+    io.merge(Web3::new(client.clone()).into_rpc())?;
+
+    io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
+
+    io.merge(
+        EthPubSub::new(
+            pool,
+            client.clone(),
+            network,
+            subscription_task_executor,
+            overrides,
+        )
+        .into_rpc(),
+    )?;
+
+    if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
+        io.merge(
+            Trace::new(
+                client,
+                trace_filter_requester,
+                tracing_config.trace_filter_max_count,
+            )
+            .into_rpc(),
+        )?;
+    }
+
+    if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
+        io.merge(Debug::new(debug_requester).into_rpc())?;
+    }
 
     Ok(io)
 }
