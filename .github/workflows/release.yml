@@ -93,7 +93,7 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: astar-ubuntu-latest-x86_64
+        name: astar-ubuntu-latest-$( echo ${{ matrix.target }} | cut -d '-' -f 1 )
         path: target/release/astar-collator
 
   rpc-tests:
@@ -147,7 +147,7 @@ jobs:
         submodules: true
 
     - name: Install deps
-      run: sudo brew install protobuf
+      run: brew install protobuf
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -349,20 +349,24 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu", "macOS"]
+        arch: ["x86_64", "aarch64"]
+        exclude:
+        - os: macos
+          version: x86_64
     steps:
     - name: Create download folder
       run: |
-        mkdir -p ${{ matrix.os }}-bin
+        mkdir -p ${{ matrix.os }}-${{ matrix.arch }}-bin
 
     - name: Download pre-built collator binary
       uses: actions/download-artifact@v3
       with:
-        name: astar-${{ matrix.os }}-latest-x86_64
-        path: ${{ matrix.os }}-bin
+        name: astar-${{ matrix.os }}-latest-${{ matrix.arch }}
+        path: ${{ matrix.os }}-${{ matrix.arch }}-bin
 
     - name: Make binary executable and tar gzip
       run: |
-        cd ${{ matrix.os }}-bin
+        cd ${{ matrix.os }}-${{ matrix.arch }}-bin
         chmod +x astar-collator
         tar zcvf astar-collator.tar.gz astar-collator
 
@@ -372,8 +376,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ${{ matrix.os }}-bin/astar-collator.tar.gz
-        asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_path: ${{ matrix.os }}-${{ matrix.arch }}-bin/astar-collator.tar.gz
+        asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
         asset_content_type: application/gzip
 
   upload-runtimes:
