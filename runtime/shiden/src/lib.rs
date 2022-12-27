@@ -840,15 +840,11 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 }
 
 parameter_types! {
-    // One storage item; key size 32, value size 8; .
     pub const ProxyDepositBase: Balance = 100 * SDN;
-    // Additional storage item size of 33 bytes.
     pub const ProxyDepositFactor: Balance = 500 * MILLISDN;
     pub const MaxProxies: u16 = 32;
     pub const MaxPending: u16 = 32;
-    // Key size 32 + 1 item
     pub const AnnouncementDepositBase: Balance = 100 * SDN;
-    // Acc Id + Hash + block number
     pub const AnnouncementDepositFactor: Balance = 1 * SDN;
 }
 
@@ -863,7 +859,6 @@ impl pallet_proxy::Config for Runtime {
     type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
     type MaxPending = MaxPending;
     type CallHasher = BlakeTwo256;
-    // Key size 32 + 1 item
     type AnnouncementDepositBase = AnnouncementDepositBase;
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
