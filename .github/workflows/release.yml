@@ -352,7 +352,7 @@ jobs:
         arch: ["x86_64", "aarch64"]
         exclude:
         - os: macos
-          version: x86_64
+          arch: x86_64
     steps:
     - name: Create download folder
       run: |
