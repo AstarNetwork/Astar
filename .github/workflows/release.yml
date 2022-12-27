@@ -23,10 +23,8 @@ jobs:
       with:
         submodules: true
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
+    - name: Install deps
+      run: sudo apt-get -y install protobuf-compiler
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -49,10 +47,8 @@ jobs:
       with:
         submodules: true
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
+    - name: Install deps
+      run: sudo apt-get -y install protobuf-compiler
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -117,10 +113,8 @@ jobs:
       with:
         submodules: true
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
+    - name: Install deps
+      run: sudo brew install protobuf
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -133,7 +127,7 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: astar-macOS-latest-x86_64
+        name: astar-macOS-latest-aarch64
         path: target/release/astar-collator
 
   docker:
