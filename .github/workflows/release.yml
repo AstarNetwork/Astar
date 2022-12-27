@@ -78,12 +78,9 @@ jobs:
     - name: Install & display rust toolchain
       run: rustup show
 
-    - name: Add rust target
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly
-        target: ${{ matrix.target }}
-        components: rustfmt, clippy
+    - name: Add aarch64 target
+      if: contains(matrix.target, 'aarch64')
+      run: rustup target add ${{ matrix.target }}
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
