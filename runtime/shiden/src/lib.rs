@@ -12,7 +12,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, GetStorageVersion,
-        Imbalance, InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
+        InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -321,6 +321,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxUnlockingChunks = MaxUnlockingChunks;
     type UnbondingPeriod = UnbondingPeriod;
     type MaxEraStakeValues = MaxEraStakeValues;
+    type UnregisteredDappRewardRetention = ConstU32<7>;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -653,28 +654,16 @@ impl WeightToFeePolynomial for WeightToFee {
     }
 }
 
-pub struct DealWithFees;
-impl OnUnbalanced<NegativeImbalance> for DealWithFees {
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
-        if let Some(mut fees) = fees_then_tips.next() {
-            if let Some(tips) = fees_then_tips.next() {
-                tips.merge_into(&mut fees);
-            }
-
-            let (to_burn, collators) = fees.ration(20, 80);
-
-            // burn part of fees
-            let _ = Balances::burn(to_burn.peek());
-
-            // pay fees to collators
-            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);
-        }
+pub struct BurnFees;
+impl OnUnbalanced<NegativeImbalance> for BurnFees {
+    fn on_unbalanceds<B>(_: impl Iterator<Item = NegativeImbalance>) {
+        // burns the fees
     }
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
+    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, BurnFees>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate = TargetedFeeAdjustment<
@@ -852,15 +841,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 
 parameter_types! {
     // One storage item; key size 32, value size 8; .
-    pub const ProxyDepositBase: Balance = deposit(1, 8);
+    pub const ProxyDepositBase: Balance = 100 * SDN;
     // Additional storage item size of 33 bytes.
-    pub const ProxyDepositFactor: Balance = deposit(0, 33);
+    pub const ProxyDepositFactor: Balance = 500 * MILLISDN;
     pub const MaxProxies: u16 = 32;
     pub const MaxPending: u16 = 32;
     // Key size 32 + 1 item
-    pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+    pub const AnnouncementDepositBase: Balance = 100 * SDN;
     // Acc Id + Hash + block number
-    pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
+    pub const AnnouncementDepositFactor: Balance = 1 * SDN;
 }
 
 impl pallet_proxy::Config for Runtime {
