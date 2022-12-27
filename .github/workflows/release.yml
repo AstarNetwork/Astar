@@ -24,7 +24,7 @@ jobs:
         submodules: true
 
     - name: Install deps
-      run: sudo apt-get -y install protobuf-compiler
+      run: sudo apt -y install protobuf-compiler
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -41,6 +41,12 @@ jobs:
   native-linux:
     needs: checks-and-tests
     runs-on: [self-hosted, Linux, X64]
+    strategy:
+      matrix:
+        target:
+        - x86_64-unknown-linux-gnu
+        - aarch64-unknown-linux-gnu
+
     steps:
     - name: Checkout the source code
       uses: actions/checkout@v3
@@ -48,16 +54,42 @@ jobs:
         submodules: true
 
     - name: Install deps
-      run: sudo apt-get -y install protobuf-compiler
+      run: sudo apt -y install protobuf-compiler
+
+    - name: aarch64 setup
+      if: contains(matrix.target, 'aarch64')
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install -y gcc-multilib g++-multilib
+        sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+        mkdir -p .cargo
+        touch .cargo/config
+        printf '[target.aarch64-unknown-linux-gnu]\nlinker = "aarch64-linux-gnu-gcc"' >> .cargo/config
+
+    - name: x86_64 setup
+      if: contains(matrix.target, 'x86_64')
+      run: |
+        mkdir -p .cargo
+        touch .cargo/config
+        printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-Clink-arg=-fuse-ld=lld"]' >> .cargo/config
 
     - name: Install & display rust toolchain
       run: rustup show
+
+    - name: Add rust target
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        target: ${{ matrix.target }}
+        components: rustfmt, clippy
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
     - name: Build optimized binary
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.target }} --verbose
 
     - uses: actions/upload-artifact@v3
       with:
@@ -91,10 +123,11 @@ jobs:
         chmod +x ./polkadot
         mv polkadot rpc-tests/bin/polkadot
 
-    - name: Use Node.js 16.x
+    - name: Use Node.js 18.x
       uses: actions/setup-node@v2
       with:
         node-version: 18.x
+
     - name: Install yarn
       run: |
         npm install -g yarn
