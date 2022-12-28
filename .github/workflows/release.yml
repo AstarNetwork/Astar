@@ -91,7 +91,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: astar-ubuntu-latest-$( echo ${{ matrix.target }} | cut -d '-' -f 1 )
-        path: target/release/astar-collator
+        path: target/${{ matrix.target }}/release/astar-collator
 
   rpc-tests:
     needs: native-linux
