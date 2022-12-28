@@ -840,12 +840,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 }
 
 parameter_types! {
-    pub const ProxyDepositBase: Balance = 100 * SDN;
-    pub const ProxyDepositFactor: Balance = 500 * MILLISDN;
+    pub const ProxyDepositBase: Balance = 1800 * MILLISDN;
+    pub const ProxyDepositFactor: Balance = 3300 * MILLISDN;
     pub const MaxProxies: u16 = 32;
     pub const MaxPending: u16 = 32;
-    pub const AnnouncementDepositBase: Balance = 100 * SDN;
-    pub const AnnouncementDepositFactor: Balance = 1 * SDN;
+    pub const AnnouncementDepositBase: Balance = 1800 * MILLISDN;
+    pub const AnnouncementDepositFactor: Balance = 6600 * MILLISDN;
 }
 
 impl pallet_proxy::Config for Runtime {
