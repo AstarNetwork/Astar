@@ -89,10 +89,10 @@ jobs:
       run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.target }} --verbose
 
     - name: Set artifact name
-        env:
-          TARGET: ${{ matrix.target }}
-        id: artifact-name
-        run: echo "::set-output name=name::astar-ubuntu-latest-${TARGET##*-}"
+      env:
+        TARGET: ${{ matrix.target }}
+      id: artifact-name
+      run: echo "::set-output name=name::astar-ubuntu-latest-${TARGET##*-}"
 
     - uses: actions/upload-artifact@v3
       with:
