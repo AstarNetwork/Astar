@@ -208,6 +208,7 @@ dependencies = [
  "jsonrpsee",
  "local-runtime",
  "log",
+ "moonbeam-primitives-ext",
  "moonbeam-rpc-debug",
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-trace",

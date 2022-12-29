@@ -150,9 +150,9 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-treasury/std",
 	"pallet-xvm/std",
-    "evm-tracing-events/std",
-    "moonbeam-evm-tracer/std",
-    "moonbeam-rpc-primitives-debug/std",
+	"evm-tracing-events/std",
+	"moonbeam-evm-tracer/std",
+	"moonbeam-rpc-primitives-debug/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -200,6 +200,6 @@ try-runtime = [
 	"pallet-evm/try-runtime",
 ]
 evm-tracing = [
-    "evm-tracing-events",
-    "moonbeam-evm-tracer",
+	"evm-tracing-events",
+	"moonbeam-evm-tracer",
 ]
