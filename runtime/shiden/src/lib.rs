@@ -12,7 +12,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, GetStorageVersion,
-        Nothing, OnUnbalanced, WithdrawReasons,
+        InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -102,7 +102,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 85,
+    spec_version: 86,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -791,6 +791,78 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    MaxEncodedLen,
+    scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+    CancelProxy,
+    DappsStaking,
+}
+
+impl Default for ProxyType {
+    fn default() -> Self {
+        Self::CancelProxy
+    }
+}
+
+impl InstanceFilter<RuntimeCall> for ProxyType {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        match self {
+            ProxyType::CancelProxy => {
+                matches!(
+                    c,
+                    RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::DappsStaking => {
+                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            }
+        }
+    }
+
+    fn is_superset(&self, o: &Self) -> bool {
+        match (self, o) {
+            (x, y) if x == y => true,
+            _ => false,
+        }
+    }
+}
+
+parameter_types! {
+    pub const ProxyDepositBase: Balance = 1800 * MILLISDN;
+    pub const ProxyDepositFactor: Balance = 3300 * MILLISDN;
+    pub const MaxProxies: u16 = 32;
+    pub const MaxPending: u16 = 32;
+    pub const AnnouncementDepositBase: Balance = 1800 * MILLISDN;
+    pub const AnnouncementDepositFactor: Balance = 6600 * MILLISDN;
+}
+
+impl pallet_proxy::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type Currency = Balances;
+    type ProxyType = ProxyType;
+    type ProxyDepositBase = ProxyDepositBase;
+    type ProxyDepositFactor = ProxyDepositFactor;
+    type MaxProxies = MaxProxies;
+    type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+    type MaxPending = MaxPending;
+    type CallHasher = BlakeTwo256;
+    type AnnouncementDepositBase = AnnouncementDepositBase;
+    type AnnouncementDepositFactor = AnnouncementDepositFactor;
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -802,6 +874,7 @@ construct_runtime!(
         Identity: pallet_identity = 12,
         Timestamp: pallet_timestamp = 13,
         Multisig: pallet_multisig = 14,
+        Proxy: pallet_proxy = 15,
 
         ParachainSystem: cumulus_pallet_parachain_system = 20,
         ParachainInfo: parachain_info = 21,
