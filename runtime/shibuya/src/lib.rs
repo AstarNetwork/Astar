@@ -1313,6 +1313,7 @@ mod benches {
         [pallet_dapps_staking, DappsStaking]
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
+        [pallet_collator_selection, CollatorSelection]
     );
 }
 

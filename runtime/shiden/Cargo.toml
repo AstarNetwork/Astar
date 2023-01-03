@@ -206,6 +206,7 @@ runtime-benchmarks = [
 	"pallet-xcm/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
+	"pallet-collator-selection/runtime-benchmarks",
 ]
 try-runtime = [
 	"log",
