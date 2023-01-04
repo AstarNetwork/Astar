@@ -94,7 +94,7 @@ rm -f $ERR_FILE
 
 # Benchmark each pallet.
 for PALLET in "${PALLETS[@]}"; do
-  NAME="$(echo "${PALLET#*_}" | tr '_' '-')";
+  NAME=${PALLET#*_};
   # WEIGHT_FILE="./weights/${FOLDER}/weights.rs"
   WEIGHT_FILE="./${NAME}_weights.rs"
   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
