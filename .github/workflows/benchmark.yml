@@ -34,7 +34,7 @@ jobs:
     - name: Execute benchmarking
       run: |
         mkdir -p ./benchmark-results
-        ./scripts/run_benchmark -o ./benchmark-results -p ${{ inputs.pallets }}
+        ./scripts/run_benchmark.sh -o ./benchmark-results -p ${{ inputs.pallets }}
 
     - uses: actions/upload-artifact@v3
       with:
