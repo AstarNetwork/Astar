@@ -391,6 +391,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type UnbondingPeriod = UnbondingPeriod;
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type MaxEraStakeValues = MaxEraStakeValues;
+    type UnregisteredDappRewardRetention = ConstU32<3>;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -760,7 +761,11 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = (DappsStakingExtension<Self>, XvmExtension<Self>);
+    type ChainExtension = (
+        DappsStakingExtension<Self>,
+        XvmExtension<Self>,
+        pallet_assets_chain_extension::substrate::AssetsExtension,
+    );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
