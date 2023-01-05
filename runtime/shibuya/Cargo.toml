@@ -106,7 +106,7 @@ pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "po
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 
 # chain-extensions
-pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.33", default-features = false, features = ["substrate"]  }
+pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.33", default-features = false, features = ["substrate"] }
 
 # Remove after migration is done
 pallet-contracts-migration = { path = "../contracts-migration", default-features = false }

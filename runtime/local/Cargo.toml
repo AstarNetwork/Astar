@@ -73,7 +73,7 @@ pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar
 pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false, features = ["evm", "wasm"] }
 
 # chain-extensions
-pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.33", default-features = false, features = ["substrate"]  }
+pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.33", default-features = false, features = ["substrate"] }
 
 # benchmarking
 array-bytes = "6.0.0"
