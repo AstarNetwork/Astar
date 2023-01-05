@@ -32,7 +32,7 @@ jobs:
       run: rustup target list --installed
 
     - name: Execute benchmarking
-      run:
+      run: |
         mkdir -p ./benchmark-results
         ./scripts/run_benchmark -o ./benchmark-results -p ${{ inputs.pallets }}
 
