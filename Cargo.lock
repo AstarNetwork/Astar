@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "4.39.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -4680,7 +4680,7 @@ checksum = "bb68f22743a3fb35785f1e7f844ca5a3de2dde5bd0c0ef5b372065814699b121"
 
 [[package]]
 name = "local-runtime"
-version = "4.39.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "fp-rpc",
@@ -10630,7 +10630,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "4.39.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -10662,7 +10662,6 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
- "pallet-contracts-migration",
  "pallet-contracts-primitives",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
@@ -10729,7 +10728,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.39.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
