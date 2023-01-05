@@ -1,9 +1,10 @@
 name: Benchmarks
-on: workflow_dispatch
-inputs:
-  pallets:
-    description: 'Pallets to benchmark. Select "all" to execute all pallets, Use "," to choose multiple pallets to execute (e.g. pallet_balances,pallet_dapps_staking).'
-    required: true
+on:
+  workflow_dispatch:
+    inputs:
+      pallets:
+        description: 'Pallets to benchmark. Select "all" to execute all pallets, Use "," to choose multiple pallets to execute (e.g. pallet_balances,pallet_dapps_staking).'
+        required: true
 jobs:
   benchmarks:
     runs-on: ubuntu-latest # For now. Use dedicated benchmark machine once it is ready.
