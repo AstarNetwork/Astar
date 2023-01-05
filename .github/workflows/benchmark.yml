@@ -1,7 +1,5 @@
 name: Benchmarks
-on:
-  push:
-  workflow_dispatch:
+on: workflow_dispatch
 inputs:
   pallets:
     description: 'Pallets to benchmark. Select "all" to execute all pallets, Use "," to choose multiple pallets to execute (e.g. pallet_balances,pallet_dapps_staking).'
