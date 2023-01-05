@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "4.42.0"
+version = "4.43.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -72,6 +72,9 @@ pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame
 pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false, features = ["evm", "wasm"] }
 
+# chain-extensions
+pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.33", default-features = false, features = ["substrate"] }
+
 # benchmarking
 array-bytes = "6.0.0"
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
@@ -94,6 +97,7 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"pallet-assets/std",
+	"pallet-assets-chain-extension/substrate-std",
 	"pallet-aura/std",
 	"pallet-balances/std",
 	"pallet-block-reward/std",

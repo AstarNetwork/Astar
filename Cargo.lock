@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "4.42.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -4680,7 +4680,7 @@ checksum = "bb68f22743a3fb35785f1e7f844ca5a3de2dde5bd0c0ef5b372065814699b121"
 
 [[package]]
 name = "local-runtime"
-version = "4.42.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "fp-rpc",
@@ -4694,6 +4694,7 @@ dependencies = [
  "frame-try-runtime",
  "log",
  "pallet-assets",
+ "pallet-assets-chain-extension",
  "pallet-aura",
  "pallet-balances",
  "pallet-base-fee",
@@ -5324,6 +5325,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "obce"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.33#88c1ef1c694b45c3e36f4b0b9f87eb9190a799c0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "obce-macro",
+ "pallet-contracts",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "obce-codegen"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.33#88c1ef1c694b45c3e36f4b0b9f87eb9190a799c0"
+dependencies = [
+ "blake2",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "obce-macro"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.33#88c1ef1c694b45c3e36f4b0b9f87eb9190a799c0"
+dependencies = [
+ "obce-codegen",
+ "proc-macro2",
+ "syn",
+ "synstructure",
+]
+
+[[package]]
 name = "object"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5418,6 +5457,17 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-assets-chain-extension"
+version = "0.1.1"
+source = "git+https://github.com/AstarNetwork/pallet-assets-chain-extension?branch=polkadot-v0.9.33#2f166d4cf1f233114e5b4a5a7fd71d04193abb1e"
+dependencies = [
+ "obce",
+ "pallet-assets",
+ "parity-scale-codec",
+ "scale-info",
 ]
 
 [[package]]
@@ -10630,7 +10680,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "4.42.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -10652,6 +10702,7 @@ dependencies = [
  "frame-try-runtime",
  "log",
  "pallet-assets",
+ "pallet-assets-chain-extension",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -10729,7 +10780,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.42.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",

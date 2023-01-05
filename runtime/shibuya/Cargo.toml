@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "4.42.0"
+version = "4.43.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -105,6 +105,9 @@ pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "po
 pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false, features = ["evm", "wasm"] }
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 
+# chain-extensions
+pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.33", default-features = false, features = ["substrate"] }
+
 # Remove after migration is done
 pallet-contracts-migration = { path = "../contracts-migration", default-features = false }
 
@@ -143,6 +146,7 @@ std = [
 	"pallet-authorship/std",
 	"pallet-aura/std",
 	"pallet-assets/std",
+	"pallet-assets-chain-extension/substrate-std",
 	"pallet-balances/std",
 	"pallet-block-reward/std",
 	"pallet-contracts/std",
