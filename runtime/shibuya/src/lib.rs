@@ -136,7 +136,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 85,
+    spec_version: 86,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -654,7 +654,11 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = (DappsStakingExtension<Self>, XvmExtension<Self>);
+    type ChainExtension = (
+        DappsStakingExtension<Self>,
+        XvmExtension<Self>,
+        pallet_assets_chain_extension::substrate::AssetsExtension,
+    );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
