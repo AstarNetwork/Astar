@@ -11,8 +11,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, Nothing,
-        OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, GetStorageVersion,
+        InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -102,7 +102,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 83,
+    spec_version: 86,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -170,6 +170,11 @@ impl Contains<RuntimeCall> for BaseFilter {
                 pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(),
                 _ => true,
             },
+            RuntimeCall::Contracts(_) => {
+                // We block the calls until storage migration has been finished.
+                // The DB read weight is already accounted for in the migration pallet's `on_initialize` function.
+                <pallet_contracts::Pallet<Runtime>>::on_chain_storage_version() == 9
+            }
             // These modules are not allowed to be called by transactions:
             // To leave collator just shutdown it, next session funds will be released
             // Other modules should works:
@@ -316,6 +321,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxUnlockingChunks = MaxUnlockingChunks;
     type UnbondingPeriod = UnbondingPeriod;
     type MaxEraStakeValues = MaxEraStakeValues;
+    type UnregisteredDappRewardRetention = ConstU32<7>;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -609,6 +615,10 @@ impl pallet_contracts::Config for Runtime {
     type MaxStorageKeyLen = ConstU32<128>;
 }
 
+impl pallet_contracts_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+}
+
 parameter_types! {
     pub const TransactionByteFee: Balance = MILLISDN / 100;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
@@ -644,28 +654,16 @@ impl WeightToFeePolynomial for WeightToFee {
     }
 }
 
-pub struct DealWithFees;
-impl OnUnbalanced<NegativeImbalance> for DealWithFees {
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
-        if let Some(mut fees) = fees_then_tips.next() {
-            if let Some(tips) = fees_then_tips.next() {
-                tips.merge_into(&mut fees);
-            }
-
-            let (to_burn, collators) = fees.ration(20, 80);
-
-            // burn part of fees
-            let _ = Balances::burn(to_burn.peek());
-
-            // pay fees to collators
-            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);
-        }
+pub struct BurnFees;
+impl OnUnbalanced<NegativeImbalance> for BurnFees {
+    fn on_unbalanceds<B>(_: impl Iterator<Item = NegativeImbalance>) {
+        // burns the fees
     }
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
+    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, BurnFees>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate = TargetedFeeAdjustment<
@@ -793,6 +791,78 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    MaxEncodedLen,
+    scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+    CancelProxy,
+    DappsStaking,
+}
+
+impl Default for ProxyType {
+    fn default() -> Self {
+        Self::CancelProxy
+    }
+}
+
+impl InstanceFilter<RuntimeCall> for ProxyType {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        match self {
+            ProxyType::CancelProxy => {
+                matches!(
+                    c,
+                    RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::DappsStaking => {
+                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            }
+        }
+    }
+
+    fn is_superset(&self, o: &Self) -> bool {
+        match (self, o) {
+            (x, y) if x == y => true,
+            _ => false,
+        }
+    }
+}
+
+parameter_types! {
+    pub const ProxyDepositBase: Balance = 1800 * MILLISDN;
+    pub const ProxyDepositFactor: Balance = 3300 * MILLISDN;
+    pub const MaxProxies: u16 = 32;
+    pub const MaxPending: u16 = 32;
+    pub const AnnouncementDepositBase: Balance = 1800 * MILLISDN;
+    pub const AnnouncementDepositFactor: Balance = 6600 * MILLISDN;
+}
+
+impl pallet_proxy::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type Currency = Balances;
+    type ProxyType = ProxyType;
+    type ProxyDepositBase = ProxyDepositBase;
+    type ProxyDepositFactor = ProxyDepositFactor;
+    type MaxProxies = MaxProxies;
+    type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+    type MaxPending = MaxPending;
+    type CallHasher = BlakeTwo256;
+    type AnnouncementDepositBase = AnnouncementDepositBase;
+    type AnnouncementDepositFactor = AnnouncementDepositFactor;
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -804,6 +874,7 @@ construct_runtime!(
         Identity: pallet_identity = 12,
         Timestamp: pallet_timestamp = 13,
         Multisig: pallet_multisig = 14,
+        Proxy: pallet_proxy = 15,
 
         ParachainSystem: cumulus_pallet_parachain_system = 20,
         ParachainInfo: parachain_info = 21,
@@ -836,6 +907,9 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_randomness_collective_flip = 71,
 
         Sudo: pallet_sudo = 99,
+
+        // This will be removed after migration is finished
+        ContractsMigration: pallet_contracts_migration = 200,
     }
 );
 
@@ -887,7 +961,10 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (pallet_multisig::migrations::v1::MigrateToV1<Runtime>,),
+    (
+        pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
+        pallet_contracts_migration::CustomMigration<Runtime>,
+    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {

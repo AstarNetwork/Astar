@@ -21,7 +21,8 @@
   "consensusEngine": null,
   "codeSubstitutes": {},
   "badBlocks": [
-   "0xc5c531c16010027fcfd11bdfd237fc295763b2ed75459ac7c4087c58f6bd1d50"
+    "0xc5c531c16010027fcfd11bdfd237fc295763b2ed75459ac7c4087c58f6bd1d50",
+    "0xbd101496475d0836fb3ddd8d9f737aee858df395f41a5b13a08d67e0b9368da8"
   ],
   "genesis": {
     "runtime": {
