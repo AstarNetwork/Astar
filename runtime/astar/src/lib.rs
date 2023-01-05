@@ -68,12 +68,17 @@ pub use precompiles::{AstarNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = AstarNetworkPrecompiles<Runtime, AstarAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
-pub const MILLIASTR: Balance = 1_000_000_000_000_000;
+pub const MICROASTR: Balance = 1_000_000_000_000;
+pub const MILLIASTR: Balance = 1_000 * MICROASTR;
 pub const ASTR: Balance = 1_000 * MILLIASTR;
+
+pub const INIT_SUPPLY_FACTOR: Balance = 100;
+
+pub const STORAGE_BYTE_FEE: Balance = 100 * MILLIASTR * INIT_SUPPLY_FACTOR;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    (items as Balance + bytes as Balance) * MILLIASTR / 1_000_000
+    items as Balance * 1 * ASTR * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.

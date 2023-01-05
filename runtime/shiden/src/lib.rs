@@ -67,12 +67,17 @@ pub use precompiles::{ShidenNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX}
 pub type Precompiles = ShidenNetworkPrecompiles<Runtime, ShidenAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
-pub const MILLISDN: Balance = 1_000_000_000_000_000;
+pub const MICROSDN: Balance = 1_000_000_000_000;
+pub const MILLISDN: Balance = 1_000 * MICROSDN;
 pub const SDN: Balance = 1_000 * MILLISDN;
+
+pub const INIT_SUPPLY_FACTOR: Balance = 1;
+
+pub const STORAGE_BYTE_FEE: Balance = 100 * MICROSDN * INIT_SUPPLY_FACTOR;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    (items as Balance + bytes as Balance) * MILLISDN / 1_000_000
+    items as Balance * 1 * SDN * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.
@@ -840,12 +845,14 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 }
 
 parameter_types! {
-    pub const ProxyDepositBase: Balance = 1800 * MILLISDN;
-    pub const ProxyDepositFactor: Balance = 3300 * MILLISDN;
+    // One storage item; key size 32, value size 8; .
+    pub const ProxyDepositBase: Balance = deposit(1, 8);
+    // Additional storage item size of 33 bytes.
+    pub const ProxyDepositFactor: Balance = deposit(0, 33);
     pub const MaxProxies: u16 = 32;
     pub const MaxPending: u16 = 32;
-    pub const AnnouncementDepositBase: Balance = 1800 * MILLISDN;
-    pub const AnnouncementDepositFactor: Balance = 6600 * MILLISDN;
+    pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+    pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
 }
 
 impl pallet_proxy::Config for Runtime {

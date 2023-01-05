@@ -94,12 +94,15 @@ mod chain_extensions;
 pub use chain_extensions::*;
 
 /// Constant values used within the runtime.
-pub const MILLIAST: Balance = 1_000_000_000_000_000;
+pub const MICROAST: Balance = 1_000_000_000_000;
+pub const MILLIAST: Balance = 1_000 * MICROAST;
 pub const AST: Balance = 1_000 * MILLIAST;
+
+pub const STORAGE_BYTE_FEE: Balance = 100 * MICROAST;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    (items as Balance + bytes as Balance) * MILLIAST / 1_000_000
+    items as Balance * 1 * AST + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// This determines the average expected block time that we are targeting.
