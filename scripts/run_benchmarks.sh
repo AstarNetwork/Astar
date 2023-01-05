@@ -22,7 +22,7 @@
 # - Pallet benchmarking to update the pallet weights
 # - Machine benchmarking
 
-while getopts 'bfp:v' flag; do
+while getopts 'bfo:p:v' flag; do
   case "${flag}" in
     b)
       # Skip build.
@@ -38,6 +38,10 @@ while getopts 'bfp:v' flag; do
       # Fail on traps.
       set -E
       ;;
+    o)
+      # output folder path
+      output_path="${OPTARG}"
+      ;;
     p)
       # pallet to execute. separated by ",". use "all" or no input to execute all pallets
       target_pallets="${OPTARG}"
@@ -49,6 +53,7 @@ while getopts 'bfp:v' flag; do
     *)
       # Exit early.
       echo "Bad options. Check Script."
+      echo ${flag}
       exit 1
       ;;
   esac
@@ -88,7 +93,7 @@ fi
 echo "[+] Benchmarking ${#PALLETS[@]} Astar collator pallets."
 
 # Define the error file.
-ERR_FILE="benchmarking_errors.txt"
+ERR_FILE="$output_path/bench_errors.txt"
 # Delete the error file before each run.
 rm -f $ERR_FILE
 
@@ -96,7 +101,7 @@ rm -f $ERR_FILE
 for PALLET in "${PALLETS[@]}"; do
   NAME=${PALLET#*_};
   # WEIGHT_FILE="./weights/${FOLDER}/weights.rs"
-  WEIGHT_FILE="./${NAME}_weights.rs"
+  WEIGHT_FILE="$output_path/${NAME}_weights.rs"
   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
   OUTPUT=$(
@@ -124,7 +129,10 @@ OUTPUT=$(
 )
 if [ $? -ne 0 ]; then
   # Do not write the error to the error file since it is not a benchmarking error.
-  echo "[-] Failed the machine benchmark:\n$OUTPUT"
+  echo "[-] Failed the machine benchmark"
+  echo "$OUTPUT" >> "$ERR_FILE"
+else
+  echo "$OUTPUT" >> "$output_path/machine-bench.txt"
 fi
 
 # Check if the error file exists.
