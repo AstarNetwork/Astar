@@ -1,0 +1,142 @@
+name: Benchmarks
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  benchmarks:
+    # run only when PR comments start with '/bench'.
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, "/bench")
+    runs-on: ubuntu-latest # For now. Use dedicated benchmark machine once it is ready.
+    steps:
+    - name: Check permission
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const response = await github.rest.repos.getCollaboratorPermissionLevel({
+            ...context.repo,
+            username: context.actor
+          });
+
+          const actorPermissionLevel = response.data.permission;
+
+          # <- lower higher ->
+          # ["none", "read", "write", "admin"]
+          if !(actorPermissionLevel == "admin" || actorPermissionLevel == "write") {
+            console.log("Permission denied.")
+            process.exit(1);
+          }
+
+    - name: Validate and set inputs
+      id: bench-input
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const command = github.event.comment.body.split(" ");
+
+          # command should be '/bench chain_name pallets'
+          if (command.length != 3) {
+            console.log("Invalid input. It should be '/bench [chain_name] [pallets]'")
+            exit(1)
+          }
+
+          core.setOutput("chain", command[1])
+          core.setOutput("pallets", command[2])
+
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        df -h
+
+    - name: Get branch and sha
+      id: get_branch_sha
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const pull_request = await github.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number
+          })
+
+          core.setOutput("branch", pull_request.data.head.ref)
+          core.setOutput("sha", pull_request.data.head.sha)
+
+    - name: Post starting comment
+      uses: actions/github-script@v3
+      env:
+        MESSAGE: |
+          Benchmarks job is scheduled at ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}.
+          Please wait for a while.
+          Branch: ${{ steps.get_branch_sha.outputs.branch }}
+          SHA: ${{ steps.get_branch_sha.outputs.sha }}
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.issues.createComment({
+            issue_number: ${{ context.issue_number }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: process.env.MESSAGE
+          })
+
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ steps.get_branch_sha.outputs.sha }}
+        submodules: true
+
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Execute benchmarking
+      run: |
+        mkdir -p ./benchmark-results
+        ./scripts/run_benchmarks.sh -o ./benchmark-results -c ${{ steps.bench_inputs.outputs.chain }} -p ${{ steps.bench_inputs.outputs.pallets }}
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: ./benchmark-results
+
+    - name: Post success comment
+      if: ${{ success() }}
+      uses: actions/github-script@v3
+      env:
+        MESSAGE: |
+          Benchmarks have been finished.
+          You can download artifacts if exists ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}.
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.issues.createComment({
+            issue_number: ${{ context.issue_number }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: process.env.MESSAGE
+          })
+
+    - name: Post failure comment
+      if: ${{ failure() }}
+      uses: actions/github-script@v3
+      env:
+        MESSAGE: |
+          Job failed.
+          Please check ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID.
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.issues.createComment({
+            issue_number: ${{ context.issue_number }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: process.env.MESSAGE
+          })
