@@ -12,7 +12,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, GetStorageVersion,
-        InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
+        Imbalance, InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -656,8 +656,16 @@ impl WeightToFeePolynomial for WeightToFee {
 
 pub struct BurnFees;
 impl OnUnbalanced<NegativeImbalance> for BurnFees {
-    fn on_unbalanceds<B>(_: impl Iterator<Item = NegativeImbalance>) {
-        // burns the fees
+    /// Payout tips but burn all the fees
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+        if let Some(fees) = fees_then_tips.next() {
+            if let Some(tips) = fees_then_tips.next() {
+                <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(tips);
+            }
+
+            // burn fees
+            let _ = Balances::burn(fees.peek());
+        }
     }
 }
 
