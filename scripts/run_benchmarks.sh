@@ -22,11 +22,19 @@
 # - Pallet benchmarking to update the pallet weights
 # - Machine benchmarking
 
-while getopts 'bfo:p:v' flag; do
+while getopts 'bc:fo:p:v' flag; do
   case "${flag}" in
     b)
       # Skip build.
       skip_build='true'
+      ;;
+    c)
+      chain=$(echo ${OPTARG} | tr '[:upper:]' '[:lower:]')
+      chains=("astar-dev" "shiden-dev" "shibuya-dev" "dev")
+      if [[ ! " ${chains[*]} " =~ " ${chain} " ]]; then
+        echo "Chain input is invalid. not included in ${chains[*]}"
+        exit 1
+      fi
       ;;
     f)
       # Fail if any sub-command in a pipe fails, not just the last one.
@@ -63,11 +71,11 @@ done
 if [ "$skip_build" != true ]
 then
   echo "[+] Compiling astar-collator benchmarks..."
-  cargo build --release --features=runtime-benchmarks
+  cargo build --features=runtime-benchmarks # TODO: Use optimized options
 fi
 
 # The executable to use.
-ASTAR_COLLATOR=./target/release/astar-collator
+ASTAR_COLLATOR=./target/debug/astar-collator # TODO: change release bin path
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
@@ -76,7 +84,7 @@ EXCLUDED_PALLETS=(
 
 # Load all pallet names in an array.
 ALL_PALLETS=($(
-  $ASTAR_COLLATOR benchmark pallet --list --chain=astar-dev |\
+  $ASTAR_COLLATOR benchmark pallet --list --chain=$chain |\
     tail -n+2 |\
     cut -d',' -f1 |\
     sort |\
@@ -106,7 +114,7 @@ for PALLET in "${PALLETS[@]}"; do
 
   OUTPUT=$(
     $ASTAR_COLLATOR benchmark pallet \
-    --chain=astar-dev \
+    --chain=$chain \
     --steps=50 \
     --repeat=20 \
     --pallet="$PALLET" \
@@ -125,7 +133,7 @@ done
 
 echo "[+] Benchmarking the machine..."
 OUTPUT=$(
-  $ASTAR_COLLATOR benchmark machine --chain=astar-dev 2>&1
+  $ASTAR_COLLATOR benchmark machine --chain=$chain 2>&1
 )
 if [ $? -ne 0 ]; then
   # Do not write the error to the error file since it is not a benchmarking error.
