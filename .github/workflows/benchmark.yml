@@ -3,10 +3,9 @@ on:
   issue_comment:
     types: [created]
 jobs:
-  benchmarks:
-    # run only when PR comments start with '/bench'.
+  check-permission:
     if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/bench')
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     steps:
     - name: Check permission
       uses: actions/github-script@v6
@@ -28,6 +27,12 @@ jobs:
             core.setFailed("Permission denied.");
           }
 
+  benchmarks:
+    # run only when PR comments start with '/bench'.
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/bench')
+    needs: check-permission
+    runs-on: [self-hosted, Linux, X64]
+    steps:
     - name: Validate and set inputs
       id: bench-input
       uses: actions/github-script@v6
