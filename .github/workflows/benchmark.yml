@@ -5,42 +5,45 @@ on:
 jobs:
   benchmarks:
     # run only when PR comments start with '/bench'.
-    if: github.event.issue.pull_request && startsWith(github.event.comment.body, "/bench")
-    runs-on: ubuntu-latest # For now. Use dedicated benchmark machine once it is ready.
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/bench')
+    runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Check permission
       uses: actions/github-script@v6
       with:
+        result-encoding: string
         script: |
           const response = await github.rest.repos.getCollaboratorPermissionLevel({
-            ...context.repo,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
             username: context.actor
           });
 
           const actorPermissionLevel = response.data.permission;
+          console.log(actorPermissionLevel);
 
-          # <- lower higher ->
-          # ["none", "read", "write", "admin"]
-          if !(actorPermissionLevel == "admin" || actorPermissionLevel == "write") {
-            console.log("Permission denied.")
-            process.exit(1);
+          // <- lower higher ->
+          // ["none", "read", "write", "admin"]
+          if (!(actorPermissionLevel == "admin" || actorPermissionLevel == "write")) {
+            core.setFailed("Permission denied.");
           }
 
     - name: Validate and set inputs
       id: bench-input
       uses: actions/github-script@v6
       with:
+        result-encoding: string
         script: |
-          const command = github.event.comment.body.split(" ");
+          const command = `${{ github.event.comment.body }}`.split(" ");
+          console.log(command);
 
-          # command should be '/bench chain_name pallets'
+          // command should be '/bench chain_name pallets'
           if (command.length != 3) {
-            console.log("Invalid input. It should be '/bench [chain_name] [pallets]'")
-            exit(1)
+            core.setFailed("Invalid input. It should be '/bench [chain_name] [pallets]'");
           }
 
-          core.setOutput("chain", command[1])
-          core.setOutput("pallets", command[2])
+          core.setOutput("chain", command[1]);
+          core.setOutput("pallets", command[2]);
 
     - name: Free disk space
       run: |
@@ -52,10 +55,12 @@ jobs:
 
     - name: Get branch and sha
       id: get_branch_sha
+      uses: actions/github-script@v6
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
+        result-encoding: string
         script: |
-          const pull_request = await github.pulls.get({
+          const pull_request = await github.rest.pulls.get({
             owner: context.repo.owner,
             repo: context.repo.repo,
             pull_number: context.issue.number
@@ -65,18 +70,19 @@ jobs:
           core.setOutput("sha", pull_request.data.head.sha)
 
     - name: Post starting comment
-      uses: actions/github-script@v3
+      uses: actions/github-script@v6
       env:
         MESSAGE: |
-          Benchmarks job is scheduled at ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}.
+          Benchmarks job is scheduled at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}.
           Please wait for a while.
           Branch: ${{ steps.get_branch_sha.outputs.branch }}
           SHA: ${{ steps.get_branch_sha.outputs.sha }}
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
+        result-encoding: string
         script: |
-          github.issues.createComment({
-            issue_number: ${{ context.issue_number }},
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: process.env.MESSAGE
@@ -100,7 +106,8 @@ jobs:
     - name: Execute benchmarking
       run: |
         mkdir -p ./benchmark-results
-        ./scripts/run_benchmarks.sh -o ./benchmark-results -c ${{ steps.bench_inputs.outputs.chain }} -p ${{ steps.bench_inputs.outputs.pallets }}
+        chmod +x ./scripts/run_benchmarks.sh
+        ./scripts/run_benchmarks.sh -o ./benchmark-results -c ${{ steps.bench-input.outputs.chain }} -p ${{ steps.bench-input.outputs.pallets }}
 
     - uses: actions/upload-artifact@v3
       with:
@@ -109,16 +116,17 @@ jobs:
 
     - name: Post success comment
       if: ${{ success() }}
-      uses: actions/github-script@v3
+      uses: actions/github-script@v6
       env:
         MESSAGE: |
           Benchmarks have been finished.
-          You can download artifacts if exists ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}.
+          You can download artifacts if exists ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}.
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
+        result-encoding: string
         script: |
-          github.issues.createComment({
-            issue_number: ${{ context.issue_number }},
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: process.env.MESSAGE
@@ -126,16 +134,17 @@ jobs:
 
     - name: Post failure comment
       if: ${{ failure() }}
-      uses: actions/github-script@v3
+      uses: actions/github-script@v6
       env:
         MESSAGE: |
           Job failed.
-          Please check ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID.
+          Please check ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}.
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
+        result-encoding: string
         script: |
-          github.issues.createComment({
-            issue_number: ${{ context.issue_number }},
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: process.env.MESSAGE

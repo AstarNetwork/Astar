@@ -71,11 +71,11 @@ done
 if [ "$skip_build" != true ]
 then
   echo "[+] Compiling astar-collator benchmarks..."
-  cargo build --features=runtime-benchmarks # TODO: Use optimized options
+  CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
 fi
 
 # The executable to use.
-ASTAR_COLLATOR=./target/debug/astar-collator # TODO: change release bin path
+ASTAR_COLLATOR=./target/release/astar-collator
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
