@@ -136,7 +136,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 86,
+    spec_version: 87,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -549,7 +549,7 @@ impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPa
 }
 
 parameter_types! {
-    pub const RewardAmount: Balance = 2_664 * MILLISDN;
+    pub const RewardAmount: Balance = 2_530 * MILLISDN;
 }
 
 impl pallet_block_reward::Config for Runtime {
