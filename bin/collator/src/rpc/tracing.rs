@@ -50,7 +50,7 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
 
 // Spawn the tasks that are required to run a Moonbeam tracing node.
 pub fn spawn_tracing_tasks<B, C, BE>(
-    rpc_config: &crate::cli::TracingConfig,
+    rpc_config: &crate::cli::EvmTracingConfig,
     params: SpawnTasksParams<B, C, BE>,
 ) -> RpcRequesters
 where

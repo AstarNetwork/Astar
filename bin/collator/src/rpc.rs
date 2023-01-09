@@ -146,6 +146,7 @@ where
     C: sc_client_api::BlockBackend<Block>,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>,
@@ -217,7 +218,7 @@ where
     io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
     io.merge(
-        EthPubSub::new(pool, client, network, subscription_task_executor, overrides).into_rpc(),
+        EthPubSub::new(pool, client.clone(), network, subscription_task_executor, overrides).into_rpc(),
     )?;
 
     if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {

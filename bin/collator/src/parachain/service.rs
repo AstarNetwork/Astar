@@ -314,6 +314,7 @@ where
         + sp_block_builder::BlockBuilder<Block>
         + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
@@ -944,6 +945,7 @@ pub async fn start_shibuya_node(
     start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
         parachain_config,
         polkadot_config,
+        tracing_config,
         collator_options,
         id,
         |client,

@@ -637,7 +637,7 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
-            let tracing_config = crate::cli::TracingConfig {
+            let tracing_config = crate::cli::EvmTracingConfig {
                 ethapi: cli.ethapi,
                 ethapi_max_permits: cli.ethapi_max_permits,
                 ethapi_trace_max_count: cli.ethapi_trace_max_count,
