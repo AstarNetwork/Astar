@@ -23,10 +23,8 @@ jobs:
       with:
         submodules: true
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -43,30 +41,63 @@ jobs:
   native-linux:
     needs: checks-and-tests
     runs-on: [self-hosted, Linux, X64]
+    strategy:
+      matrix:
+        target:
+        - x86_64-unknown-linux-gnu
+        - aarch64-unknown-linux-gnu
+
     steps:
     - name: Checkout the source code
       uses: actions/checkout@v3
       with:
         submodules: true
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
+
+    - name: aarch64 setup
+      if: contains(matrix.target, 'aarch64')
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install -y gcc-multilib g++-multilib
+        sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+        mkdir -p .cargo
+        touch .cargo/config
+        printf '[target.aarch64-unknown-linux-gnu]\nlinker = "aarch64-linux-gnu-gcc"' >> .cargo/config
+
+    - name: x86_64 setup
+      if: contains(matrix.target, 'x86_64')
+      run: |
+        mkdir -p .cargo
+        touch .cargo/config
+        printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-Clink-arg=-fuse-ld=lld"]' >> .cargo/config
 
     - name: Install & display rust toolchain
       run: rustup show
+
+    - name: Add aarch64 target
+      if: contains(matrix.target, 'aarch64')
+      run: rustup target add ${{ matrix.target }}
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
     - name: Build optimized binary
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.target }} --verbose
+
+    - name: Set artifact name
+      env:
+        TARGET: ${{ matrix.target }}
+      id: artifact-name
+      run: echo "::set-output name=name::astar-ubuntu-latest-${TARGET%%-*}"
 
     - uses: actions/upload-artifact@v3
       with:
-        name: astar-ubuntu-latest-x86_64
-        path: target/release/astar-collator
+        name: ${{ steps.artifact-name.outputs.name }}
+        path: target/${{ matrix.target }}/release/astar-collator
 
   rpc-tests:
     needs: native-linux
@@ -95,10 +126,11 @@ jobs:
         chmod +x ./polkadot
         mv polkadot rpc-tests/bin/polkadot
 
-    - name: Use Node.js 16.x
+    - name: Use Node.js 18.x
       uses: actions/setup-node@v2
       with:
         node-version: 18.x
+
     - name: Install yarn
       run: |
         npm install -g yarn
@@ -117,10 +149,8 @@ jobs:
       with:
         submodules: true
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
+    - name: Install deps
+      run: brew install protobuf
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -133,7 +163,7 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: astar-macOS-latest-x86_64
+        name: astar-macOS-latest-aarch64
         path: target/release/astar-collator
 
   docker:
@@ -322,20 +352,24 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu", "macOS"]
+        arch: ["x86_64", "aarch64"]
+        exclude:
+        - os: macos
+          arch: x86_64
     steps:
     - name: Create download folder
       run: |
-        mkdir -p ${{ matrix.os }}-bin
+        mkdir -p ${{ matrix.os }}-${{ matrix.arch }}-bin
 
     - name: Download pre-built collator binary
       uses: actions/download-artifact@v3
       with:
-        name: astar-${{ matrix.os }}-latest-x86_64
-        path: ${{ matrix.os }}-bin
+        name: astar-${{ matrix.os }}-latest-${{ matrix.arch }}
+        path: ${{ matrix.os }}-${{ matrix.arch }}-bin
 
     - name: Make binary executable and tar gzip
       run: |
-        cd ${{ matrix.os }}-bin
+        cd ${{ matrix.os }}-${{ matrix.arch }}-bin
         chmod +x astar-collator
         tar zcvf astar-collator.tar.gz astar-collator
 
@@ -345,8 +379,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ${{ matrix.os }}-bin/astar-collator.tar.gz
-        asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_path: ${{ matrix.os }}-${{ matrix.arch }}-bin/astar-collator.tar.gz
+        asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
         asset_content_type: application/gzip
 
   upload-runtimes:

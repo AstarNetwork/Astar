@@ -174,7 +174,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "4.41.0"
+version = "4.42.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -269,7 +269,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "4.41.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -4735,7 +4735,7 @@ checksum = "f051f77a7c8e6957c0696eac88f26b0117e54f52d3fc682ab19397a8812846a4"
 
 [[package]]
 name = "local-runtime"
-version = "4.41.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "evm-tracing-events",
@@ -4752,6 +4752,7 @@ dependencies = [
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
  "pallet-assets",
+ "pallet-assets-chain-extension",
  "pallet-aura",
  "pallet-balances",
  "pallet-base-fee",
@@ -5559,6 +5560,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "obce"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.33#88c1ef1c694b45c3e36f4b0b9f87eb9190a799c0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "obce-macro",
+ "pallet-contracts",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "obce-codegen"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.33#88c1ef1c694b45c3e36f4b0b9f87eb9190a799c0"
+dependencies = [
+ "blake2",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "obce-macro"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.33#88c1ef1c694b45c3e36f4b0b9f87eb9190a799c0"
+dependencies = [
+ "obce-codegen",
+ "proc-macro2",
+ "syn",
+ "synstructure",
+]
+
+[[package]]
 name = "object"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5672,6 +5711,17 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-assets-chain-extension"
+version = "0.1.1"
+source = "git+https://github.com/AstarNetwork/pallet-assets-chain-extension?branch=polkadot-v0.9.33#2f166d4cf1f233114e5b4a5a7fd71d04193abb1e"
+dependencies = [
+ "obce",
+ "pallet-assets",
+ "parity-scale-codec",
+ "scale-info",
 ]
 
 [[package]]
@@ -10899,7 +10949,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "4.41.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -10924,6 +10974,7 @@ dependencies = [
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
  "pallet-assets",
+ "pallet-assets-chain-extension",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -11001,7 +11052,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.41.0"
+version = "4.43.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -11054,6 +11105,7 @@ dependencies = [
  "pallet-identity",
  "pallet-multisig",
  "pallet-precompile-dapps-staking",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-sudo",
