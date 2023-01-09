@@ -14,7 +14,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 pub use local_runtime::RuntimeApi;
 
-use crate::cli::{EthApi as EthApiCmd, TracingConfig};
+use crate::cli::{EthApi as EthApiCmd, EvmTracingConfig};
 use crate::primitives::*;
 use crate::rpc::tracing;
 
@@ -171,7 +171,7 @@ pub fn new_partial(
 /// Builds a new service.
 pub fn start_node(
     config: Configuration,
-    tracing_config: TracingConfig,
+    tracing_config: EvmTracingConfig,
 ) -> Result<TaskManager, ServiceError> {
     let sc_service::PartialComponents {
         client,
@@ -301,7 +301,7 @@ pub fn start_node(
         let client = client.clone();
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
-        let rpc_config = crate::rpc::TracingConfig {
+        let rpc_config = crate::rpc::EvmTracingConfig {
             tracing_requesters: tracing_requesters.clone(),
             trace_filter_max_count: tracing_config.ethapi_trace_max_count,
         };

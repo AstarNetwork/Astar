@@ -168,7 +168,7 @@ impl std::str::FromStr for EthApi {
     }
 }
 
-pub struct TracingConfig {
+pub struct EvmTracingConfig {
     pub ethapi: Vec<EthApi>,
     pub ethapi_max_permits: u32,
     pub ethapi_trace_max_count: u32,

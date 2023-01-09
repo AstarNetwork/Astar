@@ -33,7 +33,7 @@ use crate::primitives::*;
 pub mod tracing;
 
 #[derive(Clone)]
-pub struct TracingConfig {
+pub struct EvmTracingConfig {
     pub tracing_requesters: tracing::RpcRequesters,
     pub trace_filter_max_count: u32,
 }
@@ -131,7 +131,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
-    tracing_config: TracingConfig,
+    tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>

@@ -29,7 +29,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
 use super::shell_upgrade::*;
-use crate::cli::{EthApi as EthApiCmd, TracingConfig};
+use crate::cli::{EthApi as EthApiCmd, EvmTracingConfig};
 use crate::primitives::*;
 use crate::rpc::tracing;
 
@@ -290,7 +290,7 @@ async fn build_relay_chain_interface(
 async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
-    tracing_config: TracingConfig,
+    tracing_config: EvmTracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
     build_import_queue: BIQ,
@@ -484,7 +484,7 @@ where
         let client = client.clone();
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
-        let rpc_config = crate::rpc::TracingConfig {
+        let rpc_config = crate::rpc::EvmTracingConfig {
             tracing_requesters: tracing_requesters.clone(),
             trace_filter_max_count: tracing_config.ethapi_trace_max_count,
         };
@@ -674,7 +674,7 @@ where
 pub async fn start_astar_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
-    tracing_config: TracingConfig,
+    tracing_config: EvmTracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
 ) -> sc_service::error::Result<(
@@ -804,7 +804,7 @@ pub async fn start_astar_node(
 pub async fn start_shiden_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
-    tracing_config: TracingConfig,
+    tracing_config: EvmTracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
 ) -> sc_service::error::Result<(
@@ -934,7 +934,7 @@ pub async fn start_shiden_node(
 pub async fn start_shibuya_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
-    tracing_config: TracingConfig,
+    tracing_config: EvmTracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
 ) -> sc_service::error::Result<(
