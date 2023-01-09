@@ -145,9 +145,12 @@ impl RelayChainCli {
     }
 }
 
+/// EVM tracing CLI flags.
 #[derive(Debug, PartialEq, Clone)]
 pub enum EthApi {
+    /// Enable EVM debug RPC methods.
     Debug,
+    /// Enable EVM trace RPC methods.
     Trace,
 }
 
@@ -168,13 +171,26 @@ impl std::str::FromStr for EthApi {
     }
 }
 
+/// EVM tracing CLI config.
 pub struct EvmTracingConfig {
+    /// Enabled EVM tracing flags.
     pub ethapi: Vec<EthApi>,
+    /// Number of concurrent tracing tasks.
     pub ethapi_max_permits: u32,
+    /// Maximum number of trace entries a single request of `trace_filter` is allowed to return.
+    /// A request asking for more or an unbounded one going over this limit will both return an
+    /// error.
     pub ethapi_trace_max_count: u32,
+    /// Duration (in seconds) after which the cache of `trace_filter` for a given block will be
+    /// discarded.
     pub ethapi_trace_cache_duration: u64,
+    /// Size in bytes of the LRU cache for block data.
     pub eth_log_block_cache: usize,
+    /// Size in bytes of the LRU cache for transactions statuses data.
     pub eth_statuses_cache: usize,
+    /// Maximum number of logs in a query.
     pub max_past_logs: u32,
+    /// Size in bytes of data a raw tracing request is allowed to use.
+    /// Bound the size of memory, stack and storage data.
     pub tracing_raw_max_memory_usage: usize,
 }
