@@ -218,7 +218,14 @@ where
     io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
     io.merge(
-        EthPubSub::new(pool, client.clone(), network, subscription_task_executor, overrides).into_rpc(),
+        EthPubSub::new(
+            pool,
+            client.clone(),
+            network,
+            subscription_task_executor,
+            overrides,
+        )
+        .into_rpc(),
     )?;
 
     if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
