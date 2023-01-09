@@ -29,7 +29,9 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
 use super::shell_upgrade::*;
+use crate::cli::{EthApi as EthApiCmd, TracingConfig};
 use crate::primitives::*;
+use crate::rpc::tracing;
 
 /// Astar network runtime executor.
 pub mod astar {
@@ -39,10 +41,13 @@ pub mod astar {
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
         #[cfg(not(feature = "runtime-benchmarks"))]
-        type ExtendHostFunctions = ();
+        type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
 
         #[cfg(feature = "runtime-benchmarks")]
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+        type ExtendHostFunctions = (
+            frame_benchmarking::benchmarking::HostFunctions,
+            moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+        );
 
         fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
             astar_runtime::api::dispatch(method, data)
@@ -62,10 +67,13 @@ pub mod shiden {
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
         #[cfg(not(feature = "runtime-benchmarks"))]
-        type ExtendHostFunctions = ();
+        type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
 
         #[cfg(feature = "runtime-benchmarks")]
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+        type ExtendHostFunctions = (
+            frame_benchmarking::benchmarking::HostFunctions,
+            moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+        );
 
         fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
             shiden_runtime::api::dispatch(method, data)
@@ -85,10 +93,13 @@ pub mod shibuya {
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
         #[cfg(not(feature = "runtime-benchmarks"))]
-        type ExtendHostFunctions = ();
+        type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
 
         #[cfg(feature = "runtime-benchmarks")]
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+        type ExtendHostFunctions = (
+            frame_benchmarking::benchmarking::HostFunctions,
+            moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+        );
 
         fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
             shibuya_runtime::api::dispatch(method, data)
@@ -279,6 +290,7 @@ async fn build_relay_chain_interface(
 async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
+    tracing_config: TracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
     build_import_queue: BIQ,
@@ -396,6 +408,27 @@ where
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let overrides = crate::rpc::overrides_handle(client.clone());
 
+    let ethapi_cmd = tracing_config.ethapi.clone();
+    let tracing_requesters =
+        if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
+            tracing::spawn_tracing_tasks(
+                &tracing_config,
+                tracing::SpawnTasksParams {
+                    task_manager: &task_manager,
+                    client: client.clone(),
+                    substrate_backend: backend.clone(),
+                    frontier_backend: frontier_backend.clone(),
+                    filter_pool: Some(filter_pool.clone()),
+                    overrides: overrides.clone(),
+                },
+            )
+        } else {
+            tracing::RpcRequesters {
+                debug: None,
+                trace: None,
+            }
+        };
+
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
     task_manager.spawn_essential_handle().spawn(
@@ -451,6 +484,10 @@ where
         let client = client.clone();
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
+        let rpc_config = crate::rpc::TracingConfig {
+            tracing_requesters: tracing_requesters.clone(),
+            trace_filter_max_count: tracing_config.ethapi_trace_max_count,
+        };
 
         Box::new(move |deny_unsafe, subscription| {
             let deps = crate::rpc::FullDeps {
@@ -468,7 +505,7 @@ where
                 overrides: overrides.clone(),
             };
 
-            crate::rpc::create_full(deps, subscription).map_err(Into::into)
+            crate::rpc::create_full(deps, subscription, rpc_config.clone()).map_err(Into::into)
         })
     };
 
@@ -637,6 +674,7 @@ where
 pub async fn start_astar_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
+    tracing_config: TracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
 ) -> sc_service::error::Result<(
@@ -646,6 +684,7 @@ pub async fn start_astar_node(
     start_node_impl::<astar::RuntimeApi, astar::Executor, _, _>(
         parachain_config,
         polkadot_config,
+        tracing_config,
         collator_options,
         id,
         |client,
@@ -765,6 +804,7 @@ pub async fn start_astar_node(
 pub async fn start_shiden_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
+    tracing_config: TracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
 ) -> sc_service::error::Result<(
@@ -774,6 +814,7 @@ pub async fn start_shiden_node(
     start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
         parachain_config,
         polkadot_config,
+        tracing_config,
         collator_options,
         id,
         |client,
@@ -893,6 +934,7 @@ pub async fn start_shiden_node(
 pub async fn start_shibuya_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
+    tracing_config: TracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
 ) -> sc_service::error::Result<(

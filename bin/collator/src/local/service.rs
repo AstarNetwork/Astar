@@ -322,7 +322,7 @@ pub fn start_node(
                 overrides: overrides.clone(),
             };
 
-            crate::rpc::create_full_tracing(deps, subscription, rpc_config.clone())
+            crate::rpc::create_full(deps, subscription, rpc_config.clone())
                 .map_err::<ServiceError, _>(Into::into)
         })
     };

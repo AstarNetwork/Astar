@@ -73,8 +73,8 @@ pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar
 pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false, features = ["evm", "wasm"] }
 
 # Moonbeam tracing
-evm-tracing-events = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing", optional = true, default-features = false }
-moonbeam-evm-tracer = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing", optional = true, default-features = false }
+evm-tracing-events = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing", default-features = false }
+moonbeam-evm-tracer = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing", default-features = false }
 moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing", default-features = false }
 
 # benchmarking
@@ -198,8 +198,4 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
-]
-evm-tracing = [
-	"evm-tracing-events",
-	"moonbeam-evm-tracer",
 ]

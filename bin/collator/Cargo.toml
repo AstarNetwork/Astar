@@ -81,7 +81,7 @@ pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polka
 
 # astar-specific dependencies
 astar-runtime = { path = "../../runtime/astar" }
-local-runtime = { path = "../../runtime/local", features = ["evm-tracing"] }
+local-runtime = { path = "../../runtime/local" }
 shibuya-runtime = { path = "../../runtime/shibuya" }
 shiden-runtime = { path = "../../runtime/shiden" }
 
