@@ -619,7 +619,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
             let (to_burn, collators) = fees.ration(20, 80);
 
             // burn part of fees
-            let _ = Balances::burn(to_burn.peek());
+            drop(to_burn);
 
             // pay fees to collators
             <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);

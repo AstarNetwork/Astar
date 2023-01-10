@@ -656,8 +656,16 @@ impl WeightToFeePolynomial for WeightToFee {
 
 pub struct BurnFees;
 impl OnUnbalanced<NegativeImbalance> for BurnFees {
-    fn on_unbalanceds<B>(_: impl Iterator<Item = NegativeImbalance>) {
-        // burns the fees
+    /// Payout tips but burn all the fees
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+        if let Some(fees_to_burn) = fees_then_tips.next() {
+            if let Some(tips) = fees_then_tips.next() {
+                <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(tips);
+            }
+
+            // burn fees
+            drop(fees_to_burn);
+        }
     }
 }
 
