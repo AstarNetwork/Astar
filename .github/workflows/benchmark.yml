@@ -50,14 +50,6 @@ jobs:
           core.setOutput("chain", command[1]);
           core.setOutput("pallets", command[2]);
 
-    - name: Free disk space
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /opt/ghc
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-        df -h
-
     - name: Get branch and sha
       id: get_branch_sha
       uses: actions/github-script@v6
