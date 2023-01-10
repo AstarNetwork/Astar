@@ -71,7 +71,7 @@ done
 if [ "$skip_build" != true ]
 then
   echo "[+] Compiling astar-collator benchmarks..."
-  CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+  CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose --features=runtime-benchmarks
 fi
 
 # The executable to use.
