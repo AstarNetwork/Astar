@@ -8,7 +8,7 @@ env:
   SUBWASM_VERSION: 0.16.1
 jobs:
   checks-and-tests:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     steps:
     - name: Free disk space
       run: |
