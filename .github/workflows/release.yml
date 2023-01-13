@@ -40,7 +40,7 @@ jobs:
 
   native-linux:
     needs: checks-and-tests
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     strategy:
       matrix:
         target:
@@ -101,7 +101,7 @@ jobs:
 
   rpc-tests:
     needs: native-linux
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, build]
     strategy:
       matrix:
         network: [astar, shiden]
