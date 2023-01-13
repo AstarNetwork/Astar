@@ -302,7 +302,7 @@ pub fn start_node(
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
         let rpc_config = crate::rpc::EvmTracingConfig {
-            tracing_requesters: tracing_requesters.clone(),
+            tracing_requesters,
             trace_filter_max_count: tracing_config.ethapi_trace_max_count,
         };
 
