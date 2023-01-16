@@ -174,7 +174,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "4.43.0"
+version = "5.0.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -269,7 +269,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "4.44.0"
+version = "5.0.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -528,9 +528,9 @@ dependencies = [
 
 [[package]]
 name = "atomic-waker"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "065374052e7df7ee4047b1160cca5e1467a12351a40b3da123c870ba0b8eda2a"
+checksum = "debc29dde2e69f9e47506b525f639ed42300fc014a3e007832592448fa8e4599"
 
 [[package]]
 name = "atty"
@@ -586,7 +586,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "miniz_oxide",
- "object 0.30.1",
+ "object 0.30.2",
  "rustc-demangle",
 ]
 
@@ -1092,9 +1092,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.0.32"
+version = "4.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7db700bc935f9e43e88d00b0850dae18a63773cfbec6d8e070fccf7fef89a39"
+checksum = "4ec7a4128863c188deefe750ac1d1dfe66c236909f845af04beed823638dc1b2"
 dependencies = [
  "bitflags",
  "clap_derive",
@@ -1107,9 +1107,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.0.21"
+version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0177313f9f02afc995627906bbd8967e2be069f5261954222dac78290c2b9014"
+checksum = "684a277d672e91966334af371f1a7b5833f9aa00b07c84e92fbce95e00208ce8"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -1120,9 +1120,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d4198f73e42b4936b35b5bb248d81d2b595ecb170da0bac7655c54eedfa8da8"
+checksum = "783fe232adfca04f90f56201b26d79682d4cd2625e0bc7290b95123afe558ade"
 dependencies = [
  "os_str_bytes",
 ]
@@ -1162,9 +1162,9 @@ dependencies = [
 
 [[package]]
 name = "concurrent-queue"
-version = "2.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd7bef69dc86e3c610e4e7aed41035e2a7ed12e72dd7530f61327a6579a4390b"
+checksum = "c278839b831783b70278b14df4d45e1beb1aad306c07bb796637de9a0e323e8e"
 dependencies = [
  "crossbeam-utils",
 ]
@@ -2031,7 +2031,7 @@ dependencies = [
 [[package]]
 name = "dapps-staking-chain-extension-types"
 version = "1.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -2245,9 +2245,9 @@ dependencies = [
 
 [[package]]
 name = "ed25519"
-version = "1.5.2"
+version = "1.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e9c280362032ea4203659fc489832d0204ef09f247a0506f170dafcac08c369"
+checksum = "91cff35c70bba8a626e3185d8cd48cc11b5437e1a5bcd15b9b5fa3c64b6dfee7"
 dependencies = [
  "signature",
 ]
@@ -2517,7 +2517,7 @@ dependencies = [
 [[package]]
 name = "evm-tracing-events"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "environmental",
  "ethereum",
@@ -3858,9 +3858,9 @@ checksum = "59ce5ef949d49ee85593fc4d3f3f95ad61657076395cbbce23e2121fc5542074"
 
 [[package]]
 name = "io-lifetimes"
-version = "1.0.3"
+version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46112a93252b123d31a119a8d1a1ac19deac4fac6e0e8b0df58f0d4e5870e63c"
+checksum = "e7d6c6f8c91b4b9ed43484ad1a938e393caf35960fce7f82a040497207bd8e9e"
 dependencies = [
  "libc",
  "windows-sys 0.42.0",
@@ -3897,7 +3897,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28dfb6c8100ccc63462345b67d1bbc3679177c75ee4bf59bf29c8b1d110b8189"
 dependencies = [
  "hermit-abi 0.2.6",
- "io-lifetimes 1.0.3",
+ "io-lifetimes 1.0.4",
  "rustix 0.36.6",
  "windows-sys 0.42.0",
 ]
@@ -4755,7 +4755,7 @@ checksum = "f051f77a7c8e6957c0696eac88f26b0117e54f52d3fc682ab19397a8812846a4"
 
 [[package]]
 name = "local-runtime"
-version = "4.44.0"
+version = "5.0.0"
 dependencies = [
  "array-bytes 6.0.0",
  "evm-tracing-events",
@@ -5073,7 +5073,7 @@ dependencies = [
 [[package]]
 name = "moonbeam-client-evm-tracing"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "ethereum-types",
  "evm-tracing-events",
@@ -5088,7 +5088,7 @@ dependencies = [
 [[package]]
 name = "moonbeam-evm-tracer"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "ethereum-types",
  "evm",
@@ -5108,7 +5108,7 @@ dependencies = [
 [[package]]
 name = "moonbeam-primitives-ext"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "ethereum-types",
  "evm-tracing-events",
@@ -5121,7 +5121,7 @@ dependencies = [
 [[package]]
 name = "moonbeam-rpc-core-debug"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "ethereum-types",
  "futures 0.3.25",
@@ -5136,7 +5136,7 @@ dependencies = [
 [[package]]
 name = "moonbeam-rpc-core-trace"
 version = "0.6.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "ethereum-types",
  "futures 0.3.25",
@@ -5150,7 +5150,7 @@ dependencies = [
 [[package]]
 name = "moonbeam-rpc-core-types"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "ethereum-types",
  "serde",
@@ -5160,7 +5160,7 @@ dependencies = [
 [[package]]
 name = "moonbeam-rpc-debug"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -5189,7 +5189,7 @@ dependencies = [
 [[package]]
 name = "moonbeam-rpc-primitives-debug"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "environmental",
  "ethereum",
@@ -5208,7 +5208,7 @@ dependencies = [
 [[package]]
 name = "moonbeam-rpc-trace"
 version = "0.6.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/evm-tracing#6ad92ae4c63bbbe11b36e5c13dbbd4cf228f9a35"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -5447,9 +5447,9 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "nom"
-version = "7.1.2"
+version = "7.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5507769c4919c998e69e49c839d9dc6e693ede4cc4290d6ad8b41d4f09c548c"
+checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
 dependencies = [
  "memchr",
  "minimal-lexical",
@@ -5631,9 +5631,9 @@ dependencies = [
 
 [[package]]
 name = "object"
-version = "0.30.1"
+version = "0.30.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d864c91689fdc196779b98dba0aceac6118594c2df6ee5d943eb6a8df4d107a"
+checksum = "2b8c786513eb403643f2a88c244c2aaa270ef2153f55094587d0c48a3cf22a83"
 dependencies = [
  "memchr",
 ]
@@ -5907,7 +5907,7 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "2.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5944,7 +5944,7 @@ dependencies = [
 [[package]]
 name = "pallet-chain-extension-dapps-staking"
 version = "1.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "dapps-staking-chain-extension-types",
  "frame-support",
@@ -5964,7 +5964,7 @@ dependencies = [
 [[package]]
 name = "pallet-chain-extension-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6003,7 +6003,7 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.3.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6122,7 +6122,7 @@ dependencies = [
 [[package]]
 name = "pallet-custom-signatures"
 version = "4.6.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6138,7 +6138,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "3.9.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6298,7 +6298,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-assets-erc20"
 version = "0.5.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6385,7 +6385,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sr25519"
 version = "1.2.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "fp-evm",
  "log",
@@ -6401,7 +6401,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-substrate-ecdsa"
 version = "1.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "fp-evm",
  "log",
@@ -6417,7 +6417,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xcm"
 version = "0.9.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6440,7 +6440,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6722,7 +6722,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.6.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -7124,7 +7124,7 @@ dependencies = [
 [[package]]
 name = "pallet-xc-asset-config"
 version = "1.3.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7142,7 +7142,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm"
 version = "0.9.28"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7195,7 +7195,7 @@ dependencies = [
 [[package]]
 name = "pallet-xvm"
 version = "0.2.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7336,7 +7336,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3742b2c103b9f06bc9fff0a37ff4912935851bee6d36f3c02bcc755bcfec228f"
 dependencies = [
  "lock_api",
- "parking_lot_core 0.9.5",
+ "parking_lot_core 0.9.6",
 ]
 
 [[package]]
@@ -7355,9 +7355,9 @@ dependencies = [
 
 [[package]]
 name = "parking_lot_core"
-version = "0.9.5"
+version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ff9f3fef3968a3ec5945535ed654cb38ff72d7495a25619e2247fb15a2ed9ba"
+checksum = "ba1ef8814b5c993410bb3adfad7a5ed269563e4a2f90c41f5d85be7fb47133bf"
 dependencies = [
  "cfg-if",
  "libc",
@@ -7404,9 +7404,9 @@ checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 
 [[package]]
 name = "pest"
-version = "2.5.2"
+version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f6e86fb9e7026527a0d46bc308b841d73170ef8f443e1807f6ef88526a816d4"
+checksum = "4257b4a04d91f7e9e6290be5d3da4804dd5784fafde3a497d73eb2b4a158c30a"
 dependencies = [
  "thiserror",
  "ucd-trie",
@@ -7414,9 +7414,9 @@ dependencies = [
 
 [[package]]
 name = "pest_derive"
-version = "2.5.2"
+version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96504449aa860c8dcde14f9fba5c58dc6658688ca1fe363589d6327b8662c603"
+checksum = "241cda393b0cdd65e62e07e12454f1f25d57017dcc514b1514cd3c4645e3a0a6"
 dependencies = [
  "pest",
  "pest_generator",
@@ -7424,9 +7424,9 @@ dependencies = [
 
 [[package]]
 name = "pest_generator"
-version = "2.5.2"
+version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "798e0220d1111ae63d66cb66a5dcb3fc2d986d520b98e49e1852bfdb11d7c5e7"
+checksum = "46b53634d8c8196302953c74d5352f33d0c512a9499bd2ce468fc9f4128fa27c"
 dependencies = [
  "pest",
  "pest_meta",
@@ -7437,13 +7437,13 @@ dependencies = [
 
 [[package]]
 name = "pest_meta"
-version = "2.5.2"
+version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "984298b75898e30a843e278a9f2452c31e349a073a0ce6fd950a12a74464e065"
+checksum = "0ef4f1332a8d4678b41966bb4cc1d0676880e84183a1ecc3f4b69f03e99c7a51"
 dependencies = [
  "once_cell",
  "pest",
- "sha1",
+ "sha2 0.10.6",
 ]
 
 [[package]]
@@ -8698,7 +8698,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "precompile-utils"
 version = "0.4.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "evm",
  "fp-evm",
@@ -8721,7 +8721,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -8883,9 +8883,9 @@ dependencies = [
 
 [[package]]
 name = "prost"
-version = "0.11.5"
+version = "0.11.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c01db6702aa05baa3f57dec92b8eeeeb4cb19e894e73996b32a4093289e54592"
+checksum = "21dc42e00223fc37204bd4aa177e69420c604ca4a183209a8f9de30c6d934698"
 dependencies = [
  "bytes",
  "prost-derive",
@@ -8893,9 +8893,9 @@ dependencies = [
 
 [[package]]
 name = "prost-build"
-version = "0.11.5"
+version = "0.11.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb5320c680de74ba083512704acb90fe00f28f79207286a848e730c45dd73ed6"
+checksum = "a3f8ad728fb08fe212df3c05169e940fbb6d9d16a877ddde14644a983ba2012e"
 dependencies = [
  "bytes",
  "heck",
@@ -8928,9 +8928,9 @@ dependencies = [
 
 [[package]]
 name = "prost-derive"
-version = "0.11.5"
+version = "0.11.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8842bad1a5419bca14eac663ba798f6bc19c413c2fdceb5f3ba3b0932d96720"
+checksum = "8bda8c0881ea9f722eb9629376db3d0b903b462477c1aafcb0566610ac28ac5d"
 dependencies = [
  "anyhow",
  "itertools",
@@ -8941,9 +8941,9 @@ dependencies = [
 
 [[package]]
 name = "prost-types"
-version = "0.11.5"
+version = "0.11.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "017f79637768cde62820bc2d4fe0e45daaa027755c323ad077767c6c5f173091"
+checksum = "a5e0526209433e96d83d750dd81a99118edbc55739e7e61a46764fd2ad537788"
 dependencies = [
  "bytes",
  "prost",
@@ -9505,7 +9505,7 @@ checksum = "4feacf7db682c6c329c4ede12649cd36ecab0f3be5b7d74e6a20304725db4549"
 dependencies = [
  "bitflags",
  "errno",
- "io-lifetimes 1.0.3",
+ "io-lifetimes 1.0.4",
  "libc",
  "linux-raw-sys 0.1.4",
  "windows-sys 0.42.0",
@@ -9513,9 +9513,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.20.7"
+version = "0.20.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "539a2bfe908f471bfa933876bd1eb6a19cf2176d375f82ef7f99530a40e48c2c"
+checksum = "fff78fc74d175294f4e83b28343315ffcfb114b156f0185e9741cb5570f50e2f"
 dependencies = [
  "log",
  "ring",
@@ -10753,9 +10753,9 @@ dependencies = [
 
 [[package]]
 name = "secp256k1"
-version = "0.24.2"
+version = "0.24.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9512ffd81e3a3503ed401f79c33168b9148c75038956039166cd750eaa037c3"
+checksum = "6b1629c9c557ef9b293568b338dddfc8208c98a18c59d722a9d53f859d9c9b62"
 dependencies = [
  "secp256k1-sys",
 ]
@@ -10888,17 +10888,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha1"
-version = "0.10.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f04293dc80c3993519f2d7f6f511707ee7094fe0c6d3406feb330cdb3540eba3"
-dependencies = [
- "cfg-if",
- "cpufeatures",
- "digest 0.10.6",
-]
-
-[[package]]
 name = "sha2"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10968,7 +10957,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "4.44.0"
+version = "5.0.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -11071,7 +11060,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.44.0"
+version = "5.0.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -12367,9 +12356,9 @@ dependencies = [
 
 [[package]]
 name = "termcolor"
-version = "1.1.3"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bab24d30b911b2376f3a13cc2cd443142f0c81dda04c118693e35b3835757755"
+checksum = "be55cf8942feac5c765c2c993422806843c9a9a45d4d5c407ad6dd2ea95eb9b6"
 dependencies = [
  "winapi-util",
 ]
@@ -13592,19 +13581,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a3e1820f08b8513f676f7ab6c1f99ff312fb97b553d30ff4dd86f9f15728aa7"
 dependencies = [
  "windows_aarch64_gnullvm",
- "windows_aarch64_msvc 0.42.0",
- "windows_i686_gnu 0.42.0",
- "windows_i686_msvc 0.42.0",
- "windows_x86_64_gnu 0.42.0",
+ "windows_aarch64_msvc 0.42.1",
+ "windows_i686_gnu 0.42.1",
+ "windows_i686_msvc 0.42.1",
+ "windows_x86_64_gnu 0.42.1",
  "windows_x86_64_gnullvm",
- "windows_x86_64_msvc 0.42.0",
+ "windows_x86_64_msvc 0.42.1",
 ]
 
 [[package]]
 name = "windows_aarch64_gnullvm"
-version = "0.42.0"
+version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41d2aa71f6f0cbe00ae5167d90ef3cfe66527d6f613ca78ac8024c3ccab9a19e"
+checksum = "8c9864e83243fdec7fc9c5444389dcbbfd258f745e7853198f365e3c4968a608"
 
 [[package]]
 name = "windows_aarch64_msvc"
@@ -13620,9 +13609,9 @@ checksum = "9bb8c3fd39ade2d67e9874ac4f3db21f0d710bee00fe7cab16949ec184eeaa47"
 
 [[package]]
 name = "windows_aarch64_msvc"
-version = "0.42.0"
+version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd0f252f5a35cac83d6311b2e795981f5ee6e67eb1f9a7f64eb4500fbc4dcdb4"
+checksum = "4c8b1b673ffc16c47a9ff48570a9d85e25d265735c503681332589af6253c6c7"
 
 [[package]]
 name = "windows_i686_gnu"
@@ -13638,9 +13627,9 @@ checksum = "180e6ccf01daf4c426b846dfc66db1fc518f074baa793aa7d9b9aaeffad6a3b6"
 
 [[package]]
 name = "windows_i686_gnu"
-version = "0.42.0"
+version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbeae19f6716841636c28d695375df17562ca208b2b7d0dc47635a50ae6c5de7"
+checksum = "de3887528ad530ba7bdbb1faa8275ec7a1155a45ffa57c37993960277145d640"
 
 [[package]]
 name = "windows_i686_msvc"
@@ -13656,9 +13645,9 @@ checksum = "e2e7917148b2812d1eeafaeb22a97e4813dfa60a3f8f78ebe204bcc88f12f024"
 
 [[package]]
 name = "windows_i686_msvc"
-version = "0.42.0"
+version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84c12f65daa39dd2babe6e442988fc329d6243fdce47d7d2d155b8d874862246"
+checksum = "bf4d1122317eddd6ff351aa852118a2418ad4214e6613a50e0191f7004372605"
 
 [[package]]
 name = "windows_x86_64_gnu"
@@ -13674,15 +13663,15 @@ checksum = "4dcd171b8776c41b97521e5da127a2d86ad280114807d0b2ab1e462bc764d9e1"
 
 [[package]]
 name = "windows_x86_64_gnu"
-version = "0.42.0"
+version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf7b1b21b5362cbc318f686150e5bcea75ecedc74dd157d874d754a2ca44b0ed"
+checksum = "c1040f221285e17ebccbc2591ffdc2d44ee1f9186324dd3e84e99ac68d699c45"
 
 [[package]]
 name = "windows_x86_64_gnullvm"
-version = "0.42.0"
+version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09d525d2ba30eeb3297665bd434a54297e4170c7f1a44cad4ef58095b4cd2028"
+checksum = "628bfdf232daa22b0d64fdb62b09fcc36bb01f05a3939e20ab73aaf9470d0463"
 
 [[package]]
 name = "windows_x86_64_msvc"
@@ -13698,9 +13687,9 @@ checksum = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680"
 
 [[package]]
 name = "windows_x86_64_msvc"
-version = "0.42.0"
+version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f40009d85759725a34da6d89a94e63d7bdc50a862acf0dbc7c8e488f1edcb6f5"
+checksum = "447660ad36a13288b1db4d4248e857b510e8c3a225c822ba4fb748c0aafecffd"
 
 [[package]]
 name = "winreg"
@@ -13786,7 +13775,7 @@ dependencies = [
 [[package]]
 name = "xcm-primitives"
 version = "0.4.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "frame-support",
  "log",
@@ -13830,7 +13819,7 @@ dependencies = [
 [[package]]
 name = "xvm-chain-extension-types"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#f26ede17d7b063db12cb5520fce9c5e59e4384f5"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -13894,10 +13883,11 @@ dependencies = [
 
 [[package]]
 name = "zstd-sys"
-version = "2.0.4+zstd.1.5.2"
+version = "2.0.5+zstd.1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fa202f2ef00074143e219d15b62ffc317d17cc33909feac471c044087cad7b0"
+checksum = "edc50ffce891ad571e9f9afe5039c4837bede781ac4bb13052ed7ae695518596"
 dependencies = [
  "cc",
  "libc",
+ "pkg-config",
 ]

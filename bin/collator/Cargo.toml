@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "4.43.0"
+version = "5.0.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar collator implementation in Rust."
 build = "build.rs"
@@ -126,10 +126,10 @@ frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = 
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", optional = true }
 
 # evm-tracing
-moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing" }
-moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing" }
-moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing" }
-moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/evm-tracing" }
+moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
+moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
+moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
+moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
 
 [build-dependencies]
 build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
