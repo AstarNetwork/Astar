@@ -9,7 +9,7 @@ build = "build.rs"
 # third-party dependencies
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 log = { version = "0.4.17", optional = true }
-scale-info = { version = "2.1.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 smallvec = "1.9.0"
 
 # primitives

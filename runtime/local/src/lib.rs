@@ -14,7 +14,7 @@ use frame_support::{
         FindAuthor, Get, InstanceFilter, KeyOwnerProofSystem, Nothing, WithdrawReasons,
     },
     weights::{
-        constants::{RocksDbWeight, WEIGHT_PER_SECOND},
+        constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
         ConstantMultiplier, IdentityFee, Weight,
     },
     ConsensusEngineId, PalletId,
@@ -27,7 +27,7 @@ use pallet_evm::{FeeCalculator, Runner};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256, ConstBool};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
@@ -159,7 +159,7 @@ parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 1 seconds of compute with a 2 second average block time.
     pub RuntimeBlockWeights: BlockWeights = BlockWeights
-        ::with_sensible_defaults(WEIGHT_PER_SECOND.set_proof_size(u64::MAX), NORMAL_DISPATCH_RATIO);
+        ::with_sensible_defaults(Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND, u64::MAX), NORMAL_DISPATCH_RATIO);
     pub RuntimeBlockLength: BlockLength = BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
     pub const SS58Prefix: u8 = 5;
@@ -308,6 +308,8 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1>; // TODO
+    type AssetIdParameter = AssetId;
 }
 
 parameter_types! {
@@ -471,7 +473,7 @@ pub const GAS_PER_SECOND: u64 = 40_000_000;
 
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
-pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND.saturating_div(GAS_PER_SECOND).ref_time();
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_REF_TIME_PER_SECOND.saturating_div(GAS_PER_SECOND);
 
 pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
@@ -497,7 +499,7 @@ parameter_types! {
     pub ChainId: u64 = 0x1111;
     /// EVM gas limit
     pub BlockGasLimit: U256 = U256::from(
-        NORMAL_DISPATCH_RATIO * WEIGHT_PER_SECOND.ref_time() / WEIGHT_PER_GAS
+        NORMAL_DISPATCH_RATIO * WEIGHT_REF_TIME_PER_SECOND / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = LocalNetworkPrecompiles::<_>::new();
     pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
@@ -772,6 +774,8 @@ impl pallet_contracts::Config for Runtime {
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
+    type UnsafeUnstableInterface = ConstBool<false>;
+    type MaxDebugBufferLen = ConstU32<0>; // TODO
 }
 
 impl pallet_sudo::Config for Runtime {
