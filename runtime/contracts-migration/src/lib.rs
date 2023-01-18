@@ -91,6 +91,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        #[pallet::call_index(0)]
         #[pallet::weight({
             let max_allowed_call_weight = Pallet::<T>::max_call_weight();
             weight_limit
