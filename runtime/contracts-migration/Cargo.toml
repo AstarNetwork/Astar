@@ -10,14 +10,14 @@ description = "FRAME pallet for managing multi-block pallet contracts storage mi
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
-pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, features = ["unstable-interface"] }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false, optional = true }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 
 [features]
 default = ["std"]

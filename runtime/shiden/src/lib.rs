@@ -15,7 +15,7 @@ use frame_support::{
         InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
         ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
@@ -31,7 +31,7 @@ use pallet_transaction_payment::{
 };
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_core::{OpaqueMetadata, H160, H256, U256};
+use sp_core::{OpaqueMetadata, H160, H256, U256, ConstBool};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -131,9 +131,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND
-    .saturating_div(2)
-    .set_proof_size(polkadot_primitives::v2::MAX_POV_SIZE as u64);
+const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_div(2), polkadot_primitives::v2::MAX_POV_SIZE);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -558,6 +556,8 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1>; // TODO
+    type AssetIdParameter = AssetId;
 }
 
 parameter_types! {
@@ -613,6 +613,8 @@ impl pallet_contracts::Config for Runtime {
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
+    type UnsafeUnstableInterface = ConstBool<false>;
+    type MaxDebugBufferLen = ConstU32<0>; // TODO
 }
 
 impl pallet_contracts_migration::Config for Runtime {
