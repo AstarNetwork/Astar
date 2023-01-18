@@ -14,7 +14,7 @@ use frame_support::{
         OnUnbalanced, WithdrawReasons,
     },
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
         ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
@@ -132,9 +132,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND
-    .saturating_div(2)
-    .set_proof_size(polkadot_primitives::v2::MAX_POV_SIZE as u64);
+const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_div(2), polkadot_primitives::v2::MAX_POV_SIZE as u64);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -168,7 +166,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             // Filter permission-less assets creation/destroying
             RuntimeCall::Assets(method) => match method {
                 pallet_assets::Call::create { id, .. } => *id < u32::MAX.into(),
-                pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(),
+                // pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(), // TODO
                 _ => true,
             },
             // These modules are not allowed to be called by transactions:
@@ -553,6 +551,8 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1>; // TODO
+    type AssetIdParameter = AssetId;
 }
 
 parameter_types! {
@@ -676,7 +676,7 @@ pub const GAS_PER_SECOND: u64 = 40_000_000;
 
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
-pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND.saturating_div(GAS_PER_SECOND).ref_time();
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_REF_TIME_PER_SECOND.saturating_div(GAS_PER_SECOND);
 
 pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {

@@ -258,84 +258,84 @@ name = "astar-runtime"
 version = "4.44.0"
 dependencies = [
  "array-bytes 6.0.0",
- "cumulus-pallet-aura-ext 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "cumulus-pallet-dmp-queue 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "cumulus-pallet-parachain-system 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "cumulus-pallet-xcm 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "cumulus-pallet-xcmp-queue 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "cumulus-primitives-timestamp 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "cumulus-primitives-utility 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "fp-rpc 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "fp-self-contained 1.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-executive 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system-rpc-runtime-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-try-runtime 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
+ "fp-rpc 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
+ "fp-self-contained 1.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
+ "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "frame-executive 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "frame-system-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "frame-system-rpc-runtime-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "frame-try-runtime 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "log",
- "pallet-assets 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-aura 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-authorship 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-base-fee 1.0.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-block-reward 2.2.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-collator-selection 3.3.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-collective 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-custom-signatures 4.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-dapps-staking 3.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-ethereum 4.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-assets-erc20 0.5.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-blake2 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-bn128 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-dispatch 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-ed25519 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-modexp 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-sha3fips 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-simple 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-sr25519 1.2.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-substrate-ecdsa 1.2.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-xcm 0.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-identity 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-multisig 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-precompile-dapps-staking 3.6.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-session 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-sudo 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-transaction-payment 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-transaction-payment-rpc-runtime-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-utility 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-vesting 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-xc-asset-config 1.3.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-xcm 0.9.28 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "parachain-info 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
+ "pallet-assets",
+ "pallet-aura",
+ "pallet-authorship 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-base-fee",
+ "pallet-block-reward 2.2.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-collator-selection",
+ "pallet-collective 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-custom-signatures",
+ "pallet-dapps-staking",
+ "pallet-ethereum 4.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
+ "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
+ "pallet-evm-precompile-assets-erc20",
+ "pallet-evm-precompile-blake2",
+ "pallet-evm-precompile-bn128",
+ "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-ed25519",
+ "pallet-evm-precompile-modexp",
+ "pallet-evm-precompile-sha3fips",
+ "pallet-evm-precompile-simple",
+ "pallet-evm-precompile-sr25519",
+ "pallet-evm-precompile-substrate-ecdsa",
+ "pallet-evm-precompile-xcm",
+ "pallet-identity 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-multisig 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-precompile-dapps-staking",
+ "pallet-session 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-sudo 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-transaction-payment 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-transaction-payment-rpc-runtime-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-utility 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-vesting 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-xc-asset-config",
+ "pallet-xcm 0.9.28",
+ "parachain-info",
  "parity-scale-codec",
- "polkadot-parachain 0.9.33",
- "polkadot-primitives 0.9.33",
- "polkadot-runtime-common 0.9.33",
+ "polkadot-parachain 0.9.36",
+ "polkadot-primitives 0.9.36",
+ "polkadot-runtime-common 0.9.36",
  "scale-info",
  "smallvec",
- "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-block-builder 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-consensus-aura 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-core 6.0.0",
- "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-io 6.0.0",
- "sp-offchain 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-runtime 6.0.0",
- "sp-runtime-interface 6.0.0",
- "sp-session 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-std 4.0.0",
- "sp-transaction-pool 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-version 5.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "substrate-wasm-builder 5.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "xcm 0.9.33",
- "xcm-builder 0.9.33",
- "xcm-executor 0.9.33",
- "xcm-primitives 0.4.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
+ "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "sp-block-builder 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "sp-consensus-aura 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "sp-core 7.0.0",
+ "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "sp-io 7.0.0",
+ "sp-offchain 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "sp-runtime 7.0.0",
+ "sp-runtime-interface 7.0.0",
+ "sp-session 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "sp-std 5.0.0",
+ "sp-transaction-pool 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "sp-version 5.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "substrate-wasm-builder 5.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "xcm 0.9.36",
+ "xcm-builder 0.9.36",
+ "xcm-executor 0.9.36",
+ "xcm-primitives",
 ]
 
 [[package]]
@@ -1707,50 +1707,17 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-aura-ext"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
-dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-aura 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "scale-info",
- "sp-application-crypto 6.0.0",
- "sp-consensus-aura 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
-]
-
-[[package]]
-name = "cumulus-pallet-aura-ext"
-version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36#afe528af891f464b318293f183f6d3eefbc979b0"
 dependencies = [
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-aura 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-aura",
  "parity-scale-codec",
  "scale-info",
  "sp-application-crypto 7.0.0",
  "sp-consensus-aura 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
-]
-
-[[package]]
-name = "cumulus-pallet-dmp-queue"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-io 6.0.0",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
- "xcm 0.9.33",
 ]
 
 [[package]]
@@ -1773,38 +1740,10 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
-dependencies = [
- "bytes",
- "cumulus-pallet-parachain-system-proc-macro 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "environmental",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "impl-trait-for-tuples",
- "log",
- "parity-scale-codec",
- "polkadot-parachain 0.9.33",
- "scale-info",
- "sp-core 6.0.0",
- "sp-externalities 0.12.0",
- "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-io 6.0.0",
- "sp-runtime 6.0.0",
- "sp-state-machine 0.12.0",
- "sp-std 4.0.0",
- "sp-trie 6.0.0",
- "sp-version 5.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
-]
-
-[[package]]
-name = "cumulus-pallet-parachain-system"
-version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36#afe528af891f464b318293f183f6d3eefbc979b0"
 dependencies = [
  "bytes",
- "cumulus-pallet-parachain-system-proc-macro 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
+ "cumulus-pallet-parachain-system-proc-macro",
  "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
  "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
  "environmental",
@@ -1829,39 +1768,12 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-parachain-system-proc-macro"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
-dependencies = [
- "proc-macro-crate",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "cumulus-pallet-parachain-system-proc-macro"
-version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36#afe528af891f464b318293f183f6d3eefbc979b0"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "cumulus-pallet-xcm"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "scale-info",
- "sp-io 6.0.0",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
- "xcm 0.9.33",
 ]
 
 [[package]]
@@ -1878,24 +1790,6 @@ dependencies = [
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
  "xcm 0.9.36",
-]
-
-[[package]]
-name = "cumulus-pallet-xcmp-queue"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "parity-scale-codec",
- "rand_chacha 0.3.1",
- "scale-info",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
- "xcm 0.9.33",
- "xcm-executor 0.9.33",
 ]
 
 [[package]]
@@ -1995,19 +1889,6 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-timestamp"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "futures",
- "parity-scale-codec",
- "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-std 4.0.0",
- "sp-timestamp 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
-]
-
-[[package]]
-name = "cumulus-primitives-timestamp"
-version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36#afe528af891f464b318293f183f6d3eefbc979b0"
 dependencies = [
  "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
@@ -2016,22 +1897,6 @@ dependencies = [
  "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "sp-std 5.0.0",
  "sp-timestamp 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
-]
-
-[[package]]
-name = "cumulus-primitives-utility"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "parity-scale-codec",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
- "xcm 0.9.33",
- "xcm-builder 0.9.33",
- "xcm-executor 0.9.33",
 ]
 
 [[package]]
@@ -3470,7 +3335,6 @@ source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33#2d
 dependencies = [
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-try-runtime 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
  "parity-scale-codec",
  "scale-info",
  "sp-core 6.0.0",
@@ -5441,35 +5305,35 @@ dependencies = [
  "frame-system-rpc-runtime-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "frame-try-runtime 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "log",
- "pallet-assets 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-assets",
  "pallet-assets-chain-extension",
- "pallet-aura 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-aura",
  "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-base-fee 1.0.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
+ "pallet-base-fee",
  "pallet-block-reward 2.2.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-xvm",
  "pallet-collective 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-custom-signatures 4.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-dapps-staking 3.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-democracy 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-ethereum 4.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-assets-erc20 0.5.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-blake2 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-bn128 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-dispatch 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-ed25519 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-modexp 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-sha3fips 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-simple 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-sr25519 1.2.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-substrate-ecdsa 1.2.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-evm-precompile-assets-erc20",
+ "pallet-evm-precompile-blake2",
+ "pallet-evm-precompile-bn128",
+ "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-ed25519",
+ "pallet-evm-precompile-modexp",
+ "pallet-evm-precompile-sha3fips",
+ "pallet-evm-precompile-simple",
+ "pallet-evm-precompile-sr25519",
+ "pallet-evm-precompile-substrate-ecdsa",
  "pallet-evm-precompile-xvm",
  "pallet-grandpa 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-precompile-dapps-staking 3.6.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-precompile-dapps-staking",
  "pallet-preimage 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-proxy 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-randomness-collective-flip",
@@ -6242,20 +6106,6 @@ checksum = "7b5bf27447411e9ee3ff51186bf7a08e16c341efdde93f4d823e8844429bed7e"
 [[package]]
 name = "pallet-assets"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33#2dff067e9f7f6f3cc4dbfdaaa97753eccc407689"
-dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
-]
-
-[[package]]
-name = "pallet-assets"
-version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36#cb4f2491b00af7d7817f3a54209c26b20faa1f51"
 dependencies = [
  "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
@@ -6274,25 +6124,9 @@ version = "0.1.1"
 source = "git+https://github.com/AstarNetwork/pallet-assets-chain-extension?branch=polkadot-v0.9.36#6e067d3ee78fcf65adda64a152813010f32db1f2"
 dependencies = [
  "obce",
- "pallet-assets 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-assets",
  "parity-scale-codec",
  "scale-info",
-]
-
-[[package]]
-name = "pallet-aura"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33#2dff067e9f7f6f3cc4dbfdaaa97753eccc407689"
-dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "scale-info",
- "sp-application-crypto 6.0.0",
- "sp-consensus-aura 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
 ]
 
 [[package]]
@@ -6494,21 +6328,6 @@ dependencies = [
 [[package]]
 name = "pallet-base-fee"
 version = "1.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33#1e6ea2f2958c6a264db7495d86feeae8de4d9354"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core 6.0.0",
- "sp-runtime 6.0.0",
-]
-
-[[package]]
-name = "pallet-base-fee"
-version = "1.0.0"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36#3eef66369711c7de85d1a139b240e969eb136c71"
 dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
@@ -6604,16 +6423,11 @@ name = "pallet-block-reward"
 version = "2.2.2"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-arithmetic 5.0.0",
- "sp-core 6.0.0",
  "sp-runtime 6.0.0",
  "sp-std 4.0.0",
 ]
@@ -6685,7 +6499,7 @@ dependencies = [
  "num-traits",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-dapps-staking 3.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-dapps-staking",
  "parity-scale-codec",
  "scale-info",
  "sp-core 7.0.0",
@@ -6749,26 +6563,6 @@ dependencies = [
  "sp-io 7.0.0",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
-]
-
-[[package]]
-name = "pallet-collator-selection"
-version = "3.3.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "pallet-authorship 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-session 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "rand 0.8.5",
- "scale-info",
- "serde",
- "sp-runtime 6.0.0",
- "sp-staking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-std 4.0.0",
 ]
 
 [[package]]
@@ -6910,22 +6704,6 @@ dependencies = [
 [[package]]
 name = "pallet-custom-signatures"
 version = "4.6.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core 6.0.0",
- "sp-io 6.0.0",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
-]
-
-[[package]]
-name = "pallet-custom-signatures"
-version = "4.6.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36#61873c713f6820047a8df672c4ed1ac8a2780851"
 dependencies = [
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
@@ -6937,29 +6715,6 @@ dependencies = [
  "sp-io 7.0.0",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
-]
-
-[[package]]
-name = "pallet-dapps-staking"
-version = "3.9.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "num-traits",
- "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-session 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic 5.0.0",
- "sp-core 6.0.0",
- "sp-io 6.0.0",
- "sp-runtime 6.0.0",
- "sp-staking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "sp-std 4.0.0",
 ]
 
 [[package]]
@@ -7250,28 +7005,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-assets-erc20"
 version = "0.5.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "num_enum",
- "pallet-assets 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "slices",
- "sp-core 6.0.0",
- "sp-io 6.0.0",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
-]
-
-[[package]]
-name = "pallet-evm-precompile-assets-erc20"
-version = "0.5.2"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36#61873c713f6820047a8df672c4ed1ac8a2780851"
 dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
@@ -7279,11 +7012,11 @@ dependencies = [
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "log",
  "num_enum",
- "pallet-assets 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-assets",
  "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "precompile-utils",
  "slices",
  "sp-core 7.0.0",
  "sp-io 7.0.0",
@@ -7294,27 +7027,9 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33#1e6ea2f2958c6a264db7495d86feeae8de4d9354"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
-]
-
-[[package]]
-name = "pallet-evm-precompile-blake2"
-version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36#3eef66369711c7de85d1a139b240e969eb136c71"
 dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
-]
-
-[[package]]
-name = "pallet-evm-precompile-bn128"
-version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33#1e6ea2f2958c6a264db7495d86feeae8de4d9354"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "sp-core 6.0.0",
- "substrate-bn",
 ]
 
 [[package]]
@@ -7325,16 +7040,6 @@ dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "sp-core 7.0.0",
  "substrate-bn",
-]
-
-[[package]]
-name = "pallet-evm-precompile-dispatch"
-version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33#1e6ea2f2958c6a264db7495d86feeae8de4d9354"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
 ]
 
 [[package]]
@@ -7350,28 +7055,10 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33#1e6ea2f2958c6a264db7495d86feeae8de4d9354"
-dependencies = [
- "ed25519-dalek",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
-]
-
-[[package]]
-name = "pallet-evm-precompile-ed25519"
-version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36#3eef66369711c7de85d1a139b240e969eb136c71"
 dependencies = [
  "ed25519-dalek",
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
-]
-
-[[package]]
-name = "pallet-evm-precompile-modexp"
-version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33#1e6ea2f2958c6a264db7495d86feeae8de4d9354"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "num",
 ]
 
 [[package]]
@@ -7386,29 +7073,10 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33#1e6ea2f2958c6a264db7495d86feeae8de4d9354"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "tiny-keccak",
-]
-
-[[package]]
-name = "pallet-evm-precompile-sha3fips"
-version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36#3eef66369711c7de85d1a139b240e969eb136c71"
 dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "tiny-keccak",
-]
-
-[[package]]
-name = "pallet-evm-precompile-simple"
-version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33#1e6ea2f2958c6a264db7495d86feeae8de4d9354"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "ripemd",
- "sp-io 6.0.0",
 ]
 
 [[package]]
@@ -7424,22 +7092,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sr25519"
 version = "1.2.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "log",
- "num_enum",
- "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "sp-core 6.0.0",
- "sp-io 6.0.0",
- "sp-std 4.0.0",
-]
-
-[[package]]
-name = "pallet-evm-precompile-sr25519"
-version = "1.2.1"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36#61873c713f6820047a8df672c4ed1ac8a2780851"
 dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
@@ -7447,26 +7099,10 @@ dependencies = [
  "num_enum",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "precompile-utils",
  "sp-core 7.0.0",
  "sp-io 7.0.0",
  "sp-std 5.0.0",
-]
-
-[[package]]
-name = "pallet-evm-precompile-substrate-ecdsa"
-version = "1.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "log",
- "num_enum",
- "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "sp-core 6.0.0",
- "sp-io 6.0.0",
- "sp-std 4.0.0",
 ]
 
 [[package]]
@@ -7479,33 +7115,10 @@ dependencies = [
  "num_enum",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "precompile-utils",
  "sp-core 7.0.0",
  "sp-io 7.0.0",
  "sp-std 5.0.0",
-]
-
-[[package]]
-name = "pallet-evm-precompile-xcm"
-version = "0.9.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "num_enum",
- "pallet-assets 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "pallet-evm-precompile-assets-erc20 0.5.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-xcm 0.9.28 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "sp-core 6.0.0",
- "sp-io 6.0.0",
- "sp-std 4.0.0",
- "xcm 0.9.33",
- "xcm-executor 0.9.33",
 ]
 
 [[package]]
@@ -7518,12 +7131,12 @@ dependencies = [
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "log",
  "num_enum",
- "pallet-assets 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-assets",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-assets-erc20 0.5.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-xcm 0.9.28 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-evm-precompile-assets-erc20",
+ "pallet-xcm 0.9.28",
  "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "precompile-utils",
  "sp-core 7.0.0",
  "sp-io 7.0.0",
  "sp-std 5.0.0",
@@ -7544,7 +7157,7 @@ dependencies = [
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "pallet-xvm",
  "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "precompile-utils",
  "sp-core 7.0.0",
  "sp-io 7.0.0",
  "sp-std 5.0.0",
@@ -8004,26 +7617,6 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.6.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "num_enum",
- "pallet-dapps-staking 3.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "scale-info",
- "sp-core 6.0.0",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
-]
-
-[[package]]
-name = "pallet-precompile-dapps-staking"
-version = "3.6.3"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36#61873c713f6820047a8df672c4ed1ac8a2780851"
 dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
@@ -8031,10 +7624,10 @@ dependencies = [
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "log",
  "num_enum",
- "pallet-dapps-staking 3.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-dapps-staking",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "parity-scale-codec",
- "precompile-utils 0.4.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "precompile-utils",
  "scale-info",
  "sp-core 7.0.0",
  "sp-runtime 7.0.0",
@@ -8681,24 +8274,6 @@ dependencies = [
 [[package]]
 name = "pallet-xc-asset-config"
 version = "1.3.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-io 6.0.0",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
- "xcm 0.9.33",
-]
-
-[[package]]
-name = "pallet-xc-asset-config"
-version = "1.3.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36#61873c713f6820047a8df672c4ed1ac8a2780851"
 dependencies = [
  "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
@@ -8712,24 +8287,6 @@ dependencies = [
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
  "xcm 0.9.36",
-]
-
-[[package]]
-name = "pallet-xcm"
-version = "0.9.28"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core 6.0.0",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
- "xcm 0.9.33",
- "xcm-executor 0.9.33",
 ]
 
 [[package]]
@@ -8820,18 +8377,6 @@ dependencies = [
  "sp-core 7.0.0",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
-]
-
-[[package]]
-name = "parachain-info"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33#eb044b17ef24e7f10fa3408ffbd900f8a9da837f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "scale-info",
 ]
 
 [[package]]
@@ -11390,29 +10935,6 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "precompile-utils"
 version = "0.4.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "impl-trait-for-tuples",
- "log",
- "num_enum",
- "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.33)",
- "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "sha3 0.10.6",
- "sp-core 6.0.0",
- "sp-io 6.0.0",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
- "xcm 0.9.33",
-]
-
-[[package]]
-name = "precompile-utils"
-version = "0.4.3"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36#61873c713f6820047a8df672c4ed1ac8a2780851"
 dependencies = [
  "evm",
@@ -11424,25 +10946,13 @@ dependencies = [
  "num_enum",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "precompile-utils-macro",
  "sha3 0.10.6",
  "sp-core 7.0.0",
  "sp-io 7.0.0",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
  "xcm 0.9.36",
-]
-
-[[package]]
-name = "precompile-utils-macro"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "num_enum",
- "proc-macro2",
- "quote",
- "sha3 0.8.2",
- "syn",
 ]
 
 [[package]]
@@ -14729,14 +14239,14 @@ name = "shibuya-runtime"
 version = "4.44.0"
 dependencies = [
  "array-bytes 6.0.0",
- "cumulus-pallet-aura-ext 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-pallet-dmp-queue 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-pallet-parachain-system 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-pallet-xcm 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-pallet-xcmp-queue 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-primitives-timestamp 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-primitives-utility 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
  "fp-rpc 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "fp-self-contained 1.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
@@ -14747,41 +14257,41 @@ dependencies = [
  "frame-system-rpc-runtime-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "frame-try-runtime 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "log",
- "pallet-assets 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-assets",
  "pallet-assets-chain-extension",
- "pallet-aura 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-aura",
  "pallet-authorship 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-base-fee 1.0.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
+ "pallet-base-fee",
  "pallet-block-reward 2.2.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-xvm",
- "pallet-collator-selection 3.3.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-collator-selection",
  "pallet-collective 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-contracts",
  "pallet-contracts-migration",
  "pallet-contracts-primitives",
- "pallet-custom-signatures 4.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-dapps-staking 3.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-democracy 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-ethereum 4.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "pallet-evm-chain-id",
- "pallet-evm-precompile-assets-erc20 0.5.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-blake2 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-bn128 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-dispatch 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-ed25519 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-modexp 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-sha3fips 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-simple 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-sr25519 1.2.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-substrate-ecdsa 1.2.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-xcm 0.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-evm-precompile-assets-erc20",
+ "pallet-evm-precompile-blake2",
+ "pallet-evm-precompile-bn128",
+ "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-ed25519",
+ "pallet-evm-precompile-modexp",
+ "pallet-evm-precompile-sha3fips",
+ "pallet-evm-precompile-simple",
+ "pallet-evm-precompile-sr25519",
+ "pallet-evm-precompile-substrate-ecdsa",
+ "pallet-evm-precompile-xcm",
  "pallet-evm-precompile-xvm",
  "pallet-identity 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-multisig 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-precompile-dapps-staking 3.6.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-precompile-dapps-staking",
  "pallet-preimage 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-proxy 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-randomness-collective-flip",
@@ -14794,10 +14304,10 @@ dependencies = [
  "pallet-treasury 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-utility 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-vesting 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-xc-asset-config 1.3.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-xcm 0.9.28 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-xc-asset-config",
+ "pallet-xcm 0.9.28",
  "pallet-xvm",
- "parachain-info 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
+ "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain 0.9.36",
  "polkadot-primitives 0.9.36",
@@ -14821,7 +14331,7 @@ dependencies = [
  "xcm 0.9.36",
  "xcm-builder 0.9.36",
  "xcm-executor 0.9.36",
- "xcm-primitives 0.4.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "xcm-primitives",
 ]
 
 [[package]]
@@ -14829,14 +14339,14 @@ name = "shiden-runtime"
 version = "4.44.0"
 dependencies = [
  "array-bytes 6.0.0",
- "cumulus-pallet-aura-ext 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-pallet-dmp-queue 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-pallet-parachain-system 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-pallet-xcm 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-pallet-xcmp-queue 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-primitives-timestamp 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
- "cumulus-primitives-utility 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
  "fp-rpc 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "fp-self-contained 1.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
@@ -14847,35 +14357,35 @@ dependencies = [
  "frame-system-rpc-runtime-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "frame-try-runtime 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "log",
- "pallet-assets 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-aura 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
+ "pallet-assets",
+ "pallet-aura",
  "pallet-authorship 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-balances 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-base-fee 1.0.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
+ "pallet-base-fee",
  "pallet-block-reward 2.2.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-collator-selection 3.3.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-collator-selection",
  "pallet-collective 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-contracts",
  "pallet-contracts-migration",
  "pallet-contracts-primitives",
- "pallet-custom-signatures 4.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-dapps-staking 3.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-ethereum 4.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-assets-erc20 0.5.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-blake2 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-bn128 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-dispatch 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-ed25519 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-modexp 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-sha3fips 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-simple 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-sr25519 1.2.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-substrate-ecdsa 1.2.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-evm-precompile-xcm 0.9.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-evm-precompile-assets-erc20",
+ "pallet-evm-precompile-blake2",
+ "pallet-evm-precompile-bn128",
+ "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-ed25519",
+ "pallet-evm-precompile-modexp",
+ "pallet-evm-precompile-sha3fips",
+ "pallet-evm-precompile-simple",
+ "pallet-evm-precompile-sr25519",
+ "pallet-evm-precompile-substrate-ecdsa",
+ "pallet-evm-precompile-xcm",
  "pallet-identity 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-multisig 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-precompile-dapps-staking 3.6.3 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-precompile-dapps-staking",
  "pallet-proxy 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-randomness-collective-flip",
  "pallet-session 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
@@ -14885,9 +14395,9 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-utility 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "pallet-vesting 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
- "pallet-xc-asset-config 1.3.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "pallet-xcm 0.9.28 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
- "parachain-info 0.1.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.36)",
+ "pallet-xc-asset-config",
+ "pallet-xcm 0.9.28",
+ "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain 0.9.36",
  "polkadot-primitives 0.9.36",
@@ -14911,7 +14421,7 @@ dependencies = [
  "xcm 0.9.36",
  "xcm-builder 0.9.36",
  "xcm-executor 0.9.36",
- "xcm-primitives 0.4.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "xcm-primitives",
 ]
 
 [[package]]
@@ -18514,26 +18024,11 @@ dependencies = [
 [[package]]
 name = "xcm-primitives"
 version = "0.4.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33#ce772ccec91d1a26a482acdf99a6a7638601b85a"
-dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.33)",
- "log",
- "pallet-xc-asset-config 1.3.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.33)",
- "sp-runtime 6.0.0",
- "sp-std 4.0.0",
- "xcm 0.9.33",
- "xcm-builder 0.9.33",
- "xcm-executor 0.9.33",
-]
-
-[[package]]
-name = "xcm-primitives"
-version = "0.4.1"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36#61873c713f6820047a8df672c4ed1ac8a2780851"
 dependencies = [
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.36)",
  "log",
- "pallet-xc-asset-config 1.3.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.36)",
+ "pallet-xc-asset-config",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
  "xcm 0.9.36",
