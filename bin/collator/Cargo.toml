@@ -35,6 +35,7 @@ sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = 
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
@@ -131,7 +132,7 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", optional = true }
 
 [features]
-default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/rocksdb"]
+default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/rocksdb", "runtime-benchmarks"]
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-benchmarking-cli",

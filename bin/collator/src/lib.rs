@@ -8,6 +8,7 @@ pub mod local;
 /// Parachain node support.
 pub mod parachain;
 
+mod benchmarking;
 mod cli;
 mod command;
 mod primitives;

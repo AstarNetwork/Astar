@@ -1,4 +1,6 @@
 //! Astar collator CLI handlers.
+#[cfg(feature = "runtime-benchmarks")]
+use crate::benchmarking::*;
 use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
     local::{self, development_config},
@@ -583,7 +585,85 @@ pub fn run() -> Result<()> {
                         })
                     }
                 }
-                BenchmarkCmd::Overhead(_) => Err("Benchmark overhead not supported.".into()),
+                BenchmarkCmd::Overhead(cmd) => {
+                    if chain_spec.is_astar() {
+                        runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            let ext_builder = RemarkBuilder::new(params.client.clone());
+                            let inherent_data = benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(
+                                config,
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_builder,
+                            )
+                        })
+                    } else if chain_spec.is_shiden() {
+                        runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+
+                            let ext_builder = RemarkBuilder::new(params.client.clone());
+                            let inherent_data = benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(
+                                config,
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_builder,
+                            )
+                        })
+                    } else if chain_spec.is_shibuya() {
+                        runner.sync_run(|config| {
+                            let params = parachain::new_partial::<
+                                shibuya::RuntimeApi,
+                                shibuya::Executor,
+                                _,
+                            >(
+                                &config, parachain::build_import_queue
+                            )?;
+
+                            let ext_builder = RemarkBuilder::new(params.client.clone());
+                            let inherent_data = benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(
+                                config,
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_builder,
+                            )
+                        })
+                    } else {
+                        runner.sync_run(|config| {
+                            let params = local::new_partial(&config)?;
+                            let ext_builder = RemarkBuilder::new(params.client.clone());
+                            let inherent_data = benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(
+                                config,
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_builder,
+                            )
+                        })
+                    }
+                }
                 BenchmarkCmd::Extrinsic(_) => Err("Benchmark extrinsic not supported.".into()),
                 BenchmarkCmd::Machine(cmd) => {
                     runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
