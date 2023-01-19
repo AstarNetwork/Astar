@@ -701,17 +701,17 @@ pub fn run() -> Result<()> {
                 );
 
                 if config.chain_spec.is_astar() {
-                    start_astar_node(config, polkadot_config, collator_options, para_id)
+                    start_astar_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shiden() {
-                    start_shiden_node(config, polkadot_config, collator_options, para_id)
+                    start_shiden_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shibuya() {
-                    start_shibuya_node(config, polkadot_config, collator_options, para_id)
+                    start_shibuya_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)

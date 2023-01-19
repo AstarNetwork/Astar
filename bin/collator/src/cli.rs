@@ -30,6 +30,9 @@ pub struct Cli {
     #[clap(flatten)]
     pub run: cumulus_client_cli::RunCmd,
 
+    /// Enable Ethereum compatible JSON-RPC servers (disabled by default).
+    pub enable_evm_rpc: bool,
+
     /// Relaychain arguments
     #[clap(raw = true)]
     pub relaychain_args: Vec<String>,
