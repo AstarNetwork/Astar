@@ -305,6 +305,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
+                enable_evm_rpc: true, // enable EVM RPC for dev node by default
             };
 
             crate::rpc::create_full(deps, subscription).map_err::<ServiceError, _>(Into::into)
