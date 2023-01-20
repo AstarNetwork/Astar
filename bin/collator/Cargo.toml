@@ -63,7 +63,7 @@ sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", bra
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 
 # RPC related dependencies
-jsonrpsee = { version = "0.15.1", features = ["server"] }
+jsonrpsee = { version = "0.16.2", features = ["server"] }
 
 # Frontier dependencies
 fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.36" }
