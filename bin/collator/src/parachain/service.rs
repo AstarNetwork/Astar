@@ -820,14 +820,91 @@ pub async fn start_shiden_node(
          sync_oracle,
          keystore,
          force_authoring| {
+            let client2 = client.clone();
             let spawn_handle = task_manager.spawn_handle();
+            let transaction_pool2 = transaction_pool.clone();
+            let telemetry2 = telemetry.clone();
+            let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
+            let relay_chain_for_aura = relay_chain_interface.clone();
+            let block_import2 = block_import.clone();
+            let sync_oracle2 = sync_oracle.clone();
+            let keystore2 = keystore.clone();
+
+            let aura_consensus = BuildOnAccess::Uninitialized(Some(
+                Box::new(move || {
+                    let slot_duration =
+                        cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
+
+                    let proposer_factory =
+                        sc_basic_authorship::ProposerFactory::with_proof_recording(
+                            spawn_handle,
+                            client2.clone(),
+                            transaction_pool2,
+                            prometheus_registry2.as_ref(),
+                            telemetry2.clone(),
+                        );
+
+                    AuraConsensus::build::<
+                        sp_consensus_aura::sr25519::AuthorityPair,
+                        _,
+                        _,
+                        _,
+                        _,
+                        _,
+                        _,
+                    >(BuildAuraConsensusParams {
+                        proposer_factory,
+                        create_inherent_data_providers:
+                            move |_, (relay_parent, validation_data)| {
+                                let relay_chain_for_aura = relay_chain_for_aura.clone();
+                                async move {
+                                    let parachain_inherent =
+                                        cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+                                            relay_parent,
+                                            &relay_chain_for_aura,
+                                            &validation_data,
+                                            id,
+                                        ).await;
+                                    let timestamp =
+                                        sp_timestamp::InherentDataProvider::from_system_time();
+
+                                    let slot =
+                                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                                        *timestamp,
+                                        slot_duration,
+                                    );
+
+                                    let parachain_inherent =
+                                        parachain_inherent.ok_or_else(|| {
+                                            Box::<dyn std::error::Error + Send + Sync>::from(
+                                                "Failed to create parachain inherent",
+                                            )
+                                        })?;
+                                    Ok((slot, timestamp, parachain_inherent))
+                                }
+                            },
+                        block_import: block_import2,
+                        para_client: client2.clone(),
+                        backoff_authoring_blocks: Option::<()>::None,
+                        sync_oracle: sync_oracle2,
+                        keystore: keystore2,
+                        force_authoring,
+                        slot_duration,
+                        // We got around 500ms for proposing
+                        block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+                        // And a maximum of 750ms if slots are skipped
+                        max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
+                        telemetry: telemetry2,
+                    })
+                }),
+            ));
 
             let slot_duration =
                 cumulus_client_consensus_aura::slot_duration(&*client).unwrap();
 
             let proposer_factory =
                 sc_basic_authorship::ProposerFactory::with_proof_recording(
-                    spawn_handle,
+                    task_manager.spawn_handle(),
                     client.clone(),
                     transaction_pool,
                     prometheus_registry,
