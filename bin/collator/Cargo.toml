@@ -120,6 +120,7 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "r
 # benchmark dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", optional = true }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", optional = true }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.33" }
 
 # try-runtime
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", optional = true }
@@ -140,6 +141,7 @@ runtime-benchmarks = [
 	"shibuya-runtime/runtime-benchmarks",
 	"shiden-runtime/runtime-benchmarks",
 	"polkadot-cli/runtime-benchmarks",
+	"polkadot-runtime-common/std",
 ]
 cli = ['try-runtime-cli']
 try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]

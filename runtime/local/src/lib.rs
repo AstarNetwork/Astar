@@ -69,8 +69,8 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("astar-local"),
-    impl_name: create_runtime_str!("astar-local"),
+    spec_name: create_runtime_str!("local"),
+    impl_name: create_runtime_str!("local"),
     authoring_version: 1,
     spec_version: 1,
     impl_version: 1,

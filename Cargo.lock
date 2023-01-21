@@ -209,6 +209,7 @@ dependencies = [
  "polkadot-cli",
  "polkadot-parachain",
  "polkadot-primitives",
+ "polkadot-runtime-common",
  "polkadot-service",
  "sc-basic-authorship",
  "sc-chain-spec",
