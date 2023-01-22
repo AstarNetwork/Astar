@@ -1,4 +1,4 @@
-use crate::primitives::{BlockId, Block};
+use crate::primitives::{AccountId, Balance, Block, BlockId};
 use codec::Encode;
 use sc_executor::NativeElseWasmExecutor;
 use sc_service::TFullClient;
@@ -61,7 +61,7 @@ where
                 use runtime::{RuntimeCall};
                 use sc_client_api::UsageProvider;
                 use polkadot_runtime_common::BlockHashCount;
-        
+
                 let call = RuntimeCall::System(frame_system::Call::remark { remark: vec![] });
                 let signer = Sr25519Keyring::Bob.pair();
                 let period = BlockHashCount::get()
@@ -76,28 +76,104 @@ where
     }
 }
 
+/// Generates `Balances::TransferKeepAlive` extrinsics for the benchmarks.
+///
+/// Note: Should only be used for benchmarking.
+pub struct TransferKeepAliveBuilder<RuntimeApi, Executor>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+        + Send
+        + Sync
+        + 'static,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+{
+    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+    dest: AccountId,
+    value: Balance,
+}
+
+impl<RuntimeApi, Executor> TransferKeepAliveBuilder<RuntimeApi, Executor>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+        + Send
+        + Sync
+        + 'static,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+{
+    /// Creates a new [`Self`] from the given client.
+    pub fn new(
+        client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        dest: AccountId,
+        value: Balance,
+    ) -> Self {
+        Self {
+            client,
+            dest,
+            value,
+        }
+    }
+}
+
+impl<RuntimeApi, Executor> frame_benchmarking_cli::ExtrinsicBuilder
+    for TransferKeepAliveBuilder<RuntimeApi, Executor>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+        + Send
+        + Sync
+        + 'static,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+{
+    fn pallet(&self) -> &str {
+        "balances"
+    }
+
+    fn extrinsic(&self) -> &str {
+        "transfer_keep_alive"
+    }
+
+    fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
+        with_runtime! {
+            self.client.as_ref(), {
+                use runtime::RuntimeCall;
+                use sc_client_api::UsageProvider;
+
+                let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
+                    dest: self.dest.clone().into(),
+                    value: self.value.into(),
+                });
+                let signer = Sr25519Keyring::Bob.pair();
+
+                let period = polkadot_runtime_common::BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+                let genesis = self.client.usage_info().chain.best_hash;
+
+                Ok(self.client.sign_call(call, nonce, 0, period, genesis, signer))
+            }
+        }
+    }
+}
+
 /// Helper trait to implement [`frame_benchmarking_cli::ExtrinsicBuilder`].
 ///
 /// Should only be used for benchmarking since it makes strong assumptions
 /// about the chain state that these calls will be valid for.
 trait BenchmarkCallSigner<RuntimeCall: Encode + Clone, Signer: Pair> {
-	/// Signs a call together with the signed extensions of the specific runtime.
-	///
-	/// Only works if the current block is the genesis block since the
-	/// `CheckMortality` check is mocked by using the genesis block.
-	fn sign_call(
-		&self,
-		call: RuntimeCall,
-		nonce: u32,
-		current_block: u64,
-		period: u64,
-		genesis: H256,
-		acc: Signer,
-	) -> OpaqueExtrinsic;
+    /// Signs a call together with the signed extensions of the specific runtime.
+    ///
+    /// Only works if the current block is the genesis block since the
+    /// `CheckMortality` check is mocked by using the genesis block.
+    fn sign_call(
+        &self,
+        call: RuntimeCall,
+        nonce: u32,
+        current_block: u64,
+        period: u64,
+        genesis: H256,
+        acc: Signer,
+    ) -> OpaqueExtrinsic;
 }
 
 impl<RuntimeApi, Executor> BenchmarkCallSigner<local_runtime::RuntimeCall, sp_core::sr25519::Pair>
-	for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -105,18 +181,18 @@ where
         + 'static,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-	fn sign_call(
-		&self,
-		call: local_runtime::RuntimeCall,
-		nonce: u32,
-		current_block: u64,
-		period: u64,
-		genesis: H256,
-		acc: sp_core::sr25519::Pair,
-	) -> OpaqueExtrinsic {
-		use local_runtime as runtime;
+    fn sign_call(
+        &self,
+        call: local_runtime::RuntimeCall,
+        nonce: u32,
+        current_block: u64,
+        period: u64,
+        genesis: H256,
+        acc: sp_core::sr25519::Pair,
+    ) -> OpaqueExtrinsic {
+        use local_runtime as runtime;
 
-		let extra: runtime::SignedExtra = (
+        let extra: runtime::SignedExtra = (
             frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
             frame_system::CheckTxVersion::<runtime::Runtime>::new(),
             frame_system::CheckGenesis::<runtime::Runtime>::new(),
@@ -150,11 +226,11 @@ where
             extra,
         )
         .into()
-	}
+    }
 }
 
 impl<RuntimeApi, Executor> BenchmarkCallSigner<astar_runtime::RuntimeCall, sp_core::sr25519::Pair>
-	for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -162,18 +238,18 @@ where
         + 'static,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-	fn sign_call(
-		&self,
-		call: astar_runtime::RuntimeCall,
-		nonce: u32,
-		current_block: u64,
-		period: u64,
-		genesis: H256,
-		acc: sp_core::sr25519::Pair,
-	) -> OpaqueExtrinsic {
-		use astar_runtime as runtime;
+    fn sign_call(
+        &self,
+        call: astar_runtime::RuntimeCall,
+        nonce: u32,
+        current_block: u64,
+        period: u64,
+        genesis: H256,
+        acc: sp_core::sr25519::Pair,
+    ) -> OpaqueExtrinsic {
+        use astar_runtime as runtime;
 
-		let extra: runtime::SignedExtra = (
+        let extra: runtime::SignedExtra = (
             frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
             frame_system::CheckTxVersion::<runtime::Runtime>::new(),
             frame_system::CheckGenesis::<runtime::Runtime>::new(),
@@ -207,11 +283,11 @@ where
             extra,
         )
         .into()
-	}
+    }
 }
 
 impl<RuntimeApi, Executor> BenchmarkCallSigner<shiden_runtime::RuntimeCall, sp_core::sr25519::Pair>
-	for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -219,18 +295,18 @@ where
         + 'static,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-	fn sign_call(
-		&self,
-		call: shiden_runtime::RuntimeCall,
-		nonce: u32,
-		current_block: u64,
-		period: u64,
-		genesis: H256,
-		acc: sp_core::sr25519::Pair,
-	) -> OpaqueExtrinsic {
-		use shiden_runtime as runtime;
+    fn sign_call(
+        &self,
+        call: shiden_runtime::RuntimeCall,
+        nonce: u32,
+        current_block: u64,
+        period: u64,
+        genesis: H256,
+        acc: sp_core::sr25519::Pair,
+    ) -> OpaqueExtrinsic {
+        use shiden_runtime as runtime;
 
-		let extra: runtime::SignedExtra = (
+        let extra: runtime::SignedExtra = (
             frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
             frame_system::CheckTxVersion::<runtime::Runtime>::new(),
             frame_system::CheckGenesis::<runtime::Runtime>::new(),
@@ -264,11 +340,11 @@ where
             extra,
         )
         .into()
-	}
+    }
 }
 
 impl<RuntimeApi, Executor> BenchmarkCallSigner<shibuya_runtime::RuntimeCall, sp_core::sr25519::Pair>
-	for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -276,18 +352,18 @@ where
         + 'static,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-	fn sign_call(
-		&self,
-		call: shibuya_runtime::RuntimeCall,
-		nonce: u32,
-		current_block: u64,
-		period: u64,
-		genesis: H256,
-		acc: sp_core::sr25519::Pair,
-	) -> OpaqueExtrinsic {
-		use shibuya_runtime as runtime;
+    fn sign_call(
+        &self,
+        call: shibuya_runtime::RuntimeCall,
+        nonce: u32,
+        current_block: u64,
+        period: u64,
+        genesis: H256,
+        acc: sp_core::sr25519::Pair,
+    ) -> OpaqueExtrinsic {
+        use shibuya_runtime as runtime;
 
-		let extra: runtime::SignedExtra = (
+        let extra: runtime::SignedExtra = (
             frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
             frame_system::CheckTxVersion::<runtime::Runtime>::new(),
             frame_system::CheckGenesis::<runtime::Runtime>::new(),
@@ -321,6 +397,29 @@ where
             extra,
         )
         .into()
+    }
+}
+
+/// Provides the existential deposit that is only needed for benchmarking.
+pub trait ExistentialDepositProvider {
+	/// Returns the existential deposit.
+	fn existential_deposit(&self) -> Balance;
+}
+
+impl<RuntimeApi, Executor> ExistentialDepositProvider
+    for TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+        + Send
+        + Sync
+        + 'static,
+    Executor: sc_executor::NativeExecutionDispatch + 'static
+{
+	fn existential_deposit(&self) -> Balance {
+		with_runtime! {
+			self,
+			runtime::ExistentialDeposit::get()
+		}
 	}
 }
 
@@ -346,8 +445,6 @@ macro_rules! with_runtime {
 	{
 		// The client instance that should be unwrapped.
 		$client:expr,
-		// The name that the unwrapped client will have.
-		// $client:ident,
 		// NOTE: Using an expression here is fine since blocks are also expressions.
 		$code:expr
 	} => {

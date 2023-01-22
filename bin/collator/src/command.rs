@@ -1,6 +1,4 @@
 //! Astar collator CLI handlers.
-#[cfg(feature = "runtime-benchmarks")]
-use crate::benchmarking::*;
 use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
     local::{self, development_config},
@@ -26,9 +24,13 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::Block as BlockT;
 use std::net::SocketAddr;
+use sp_keyring::Sr25519Keyring;
 
 #[cfg(feature = "frame-benchmarking")]
-use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
+use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE, ExtrinsicFactory};
+
+#[cfg(feature = "runtime-benchmarks")]
+use crate::benchmarking::*;
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
@@ -664,7 +666,113 @@ pub fn run() -> Result<()> {
                         })
                     }
                 }
-                BenchmarkCmd::Extrinsic(_) => Err("Benchmark extrinsic not supported.".into()),
+                BenchmarkCmd::Extrinsic(cmd) => {
+                    if chain_spec.is_astar() {
+                        runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            let remark_builder = RemarkBuilder::new(params.client.clone());
+                            let tka_builder = TransferKeepAliveBuilder::new(
+                                params.client.clone(),
+                                Sr25519Keyring::Alice.to_account_id(),
+                                params.client.existential_deposit(),
+                            );
+                            let ext_factory = ExtrinsicFactory(vec![
+                                Box::new(remark_builder),
+                                Box::new(tka_builder),
+                            ]);
+                            let inherent_data = benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+        
+                            cmd.run(
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_factory
+                            )
+                        })
+                    } else if chain_spec.is_shiden() {
+                        runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            let remark_builder = RemarkBuilder::new(params.client.clone());
+                            let tka_builder = TransferKeepAliveBuilder::new(
+                                params.client.clone(),
+                                Sr25519Keyring::Alice.to_account_id(),
+                                params.client.existential_deposit(),
+                            );
+                            let ext_factory = ExtrinsicFactory(vec![
+                                Box::new(remark_builder),
+                                Box::new(tka_builder),
+                            ]);
+                            let inherent_data = benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+        
+                            cmd.run(
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_factory
+                            )
+                        })
+                    } else if chain_spec.is_shibuya() {
+                        runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            let remark_builder = RemarkBuilder::new(params.client.clone());
+                            let tka_builder = TransferKeepAliveBuilder::new(
+                                params.client.clone(),
+                                Sr25519Keyring::Alice.to_account_id(),
+                                params.client.existential_deposit(),
+                            );
+                            let ext_factory = ExtrinsicFactory(vec![
+                                Box::new(remark_builder),
+                                Box::new(tka_builder),
+                            ]);
+                            let inherent_data = benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+        
+                            cmd.run(
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_factory
+                            )
+                        })
+                    } else {
+                        runner.sync_run(|config| {
+                            let params = local::new_partial(&config)?;
+                            let remark_builder = RemarkBuilder::new(params.client.clone());
+                            let tka_builder = TransferKeepAliveBuilder::new(
+                                params.client.clone(),
+                                Sr25519Keyring::Alice.to_account_id(),
+                                params.client.existential_deposit(),
+                            );
+                            let ext_factory = ExtrinsicFactory(vec![
+                                Box::new(remark_builder),
+                                Box::new(tka_builder),
+                            ]);
+                            let inherent_data = benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+    
+                            cmd.run(
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_factory
+                            )
+                        })
+                    }
+                },
                 BenchmarkCmd::Machine(cmd) => {
                     runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
                 }

@@ -199,6 +199,7 @@ dependencies = [
  "jsonrpsee",
  "local-runtime",
  "log",
+ "pallet-balances",
  "pallet-block-reward",
  "pallet-ethereum",
  "pallet-evm",
