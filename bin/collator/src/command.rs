@@ -21,13 +21,13 @@ use sc_service::{
     PartialComponents,
 };
 use sp_core::hexdisplay::HexDisplay;
+use sp_keyring::Sr25519Keyring;
 use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::Block as BlockT;
 use std::net::SocketAddr;
-use sp_keyring::Sr25519Keyring;
 
 #[cfg(feature = "frame-benchmarking")]
-use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE, ExtrinsicFactory};
+use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
 #[cfg(feature = "runtime-benchmarks")]
 use crate::benchmarking::*;
@@ -686,13 +686,8 @@ pub fn run() -> Result<()> {
                             ]);
                             let inherent_data = benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
-        
-                            cmd.run(
-                                params.client,
-                                inherent_data,
-                                Vec::new(),
-                                &ext_factory
-                            )
+
+                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
                         })
                     } else if chain_spec.is_shiden() {
                         runner.sync_run(|config| {
@@ -713,21 +708,18 @@ pub fn run() -> Result<()> {
                             ]);
                             let inherent_data = benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
-        
-                            cmd.run(
-                                params.client,
-                                inherent_data,
-                                Vec::new(),
-                                &ext_factory
-                            )
+
+                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
                         })
                     } else if chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            let params =
-                                parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
-                                    &config,
-                                    parachain::build_import_queue,
-                                )?;
+                            let params = parachain::new_partial::<
+                                shibuya::RuntimeApi,
+                                shibuya::Executor,
+                                _,
+                            >(
+                                &config, parachain::build_import_queue
+                            )?;
                             let remark_builder = RemarkBuilder::new(params.client.clone());
                             let tka_builder = TransferKeepAliveBuilder::new(
                                 params.client.clone(),
@@ -740,13 +732,8 @@ pub fn run() -> Result<()> {
                             ]);
                             let inherent_data = benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
-        
-                            cmd.run(
-                                params.client,
-                                inherent_data,
-                                Vec::new(),
-                                &ext_factory
-                            )
+
+                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
                         })
                     } else {
                         runner.sync_run(|config| {
@@ -763,16 +750,11 @@ pub fn run() -> Result<()> {
                             ]);
                             let inherent_data = benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
-    
-                            cmd.run(
-                                params.client,
-                                inherent_data,
-                                Vec::new(),
-                                &ext_factory
-                            )
+
+                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
                         })
                     }
-                },
+                }
                 BenchmarkCmd::Machine(cmd) => {
                     runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
                 }

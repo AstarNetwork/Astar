@@ -402,8 +402,8 @@ where
 
 /// Provides the existential deposit that is only needed for benchmarking.
 pub trait ExistentialDepositProvider {
-	/// Returns the existential deposit.
-	fn existential_deposit(&self) -> Balance;
+    /// Returns the existential deposit.
+    fn existential_deposit(&self) -> Balance;
 }
 
 impl<RuntimeApi, Executor> ExistentialDepositProvider
@@ -413,14 +413,14 @@ where
         + Send
         + Sync
         + 'static,
-    Executor: sc_executor::NativeExecutionDispatch + 'static
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-	fn existential_deposit(&self) -> Balance {
-		with_runtime! {
-			self,
-			runtime::ExistentialDeposit::get()
-		}
-	}
+    fn existential_deposit(&self) -> Balance {
+        with_runtime! {
+            self,
+            runtime::ExistentialDeposit::get()
+        }
+    }
 }
 
 /// Generates inherent data for benchmarking Astar, Shiden and Shibuya.
