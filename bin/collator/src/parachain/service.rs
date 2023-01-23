@@ -776,40 +776,7 @@ pub async fn start_shiden_node(
         polkadot_config,
         collator_options,
         id,
-        |client,
-         block_import,
-         config,
-         telemetry,
-         task_manager| {
-            let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
-
-            cumulus_client_consensus_aura::import_queue::<
-                sp_consensus_aura::sr25519::AuthorityPair,
-                _,
-                _,
-                _,
-                _,
-                _,
-            >(cumulus_client_consensus_aura::ImportQueueParams {
-                block_import,
-                client,
-                create_inherent_data_providers: move |_, _| async move {
-                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-                    let slot =
-                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                            *timestamp,
-                            slot_duration,
-                        );
-
-                    Ok((slot, timestamp))
-                },
-                registry: config.prometheus_registry(),
-                spawner: &task_manager.spawn_essential_handle(),
-                telemetry,
-            })
-            .map_err(Into::into)
-        },
+        build_import_queue,
         |client,
          block_import,
          prometheus_registry,
@@ -898,9 +865,6 @@ pub async fn start_shiden_node(
                     })
                 }),
             ));
-
-            let slot_duration =
-                cumulus_client_consensus_aura::slot_duration(&*client).unwrap();
 
             let proposer_factory =
                 sc_basic_authorship::ProposerFactory::with_proof_recording(
