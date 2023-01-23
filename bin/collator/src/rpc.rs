@@ -132,6 +132,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub overrides: Arc<OverrideHandle<Block>>,
     /// Cache for Ethereum block data.
     pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
+    /// Enable EVM RPC servers
+    pub enable_evm_rpc: bool,
 }
 
 /// Instantiate all RPC extensions.
@@ -175,10 +177,16 @@ where
         fee_history_cache,
         overrides,
         block_data_cache,
+        enable_evm_rpc,
     } = deps;
 
     io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+    io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
+
+    if !enable_evm_rpc {
+        return Ok(io);
+    }
 
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
@@ -219,8 +227,6 @@ where
     io.merge(Net::new(client.clone(), network.clone(), true).into_rpc())?;
 
     io.merge(Web3::new(client.clone()).into_rpc())?;
-
-    io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
     io.merge(
         EthPubSub::new(pool, client, network, subscription_task_executor, overrides).into_rpc(),

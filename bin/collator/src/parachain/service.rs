@@ -299,6 +299,7 @@ async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC>(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
+    enable_evm_rpc: bool,
     build_import_queue: BIQ,
     build_consensus: BIC,
 ) -> sc_service::error::Result<(
@@ -484,6 +485,7 @@ where
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
+                enable_evm_rpc,
             };
 
             crate::rpc::create_full(deps, subscription).map_err(Into::into)
@@ -657,6 +659,7 @@ pub async fn start_astar_node(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
+    enable_evm_rpc: bool,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
@@ -666,6 +669,7 @@ pub async fn start_astar_node(
         polkadot_config,
         collator_options,
         id,
+        enable_evm_rpc,
         |client,
          block_import,
          config,
@@ -785,6 +789,7 @@ pub async fn start_shiden_node(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
+    enable_evm_rpc: bool,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
@@ -794,6 +799,7 @@ pub async fn start_shiden_node(
         polkadot_config,
         collator_options,
         id,
+        enable_evm_rpc,
         |client,
          block_import,
          config,
@@ -913,6 +919,7 @@ pub async fn start_shibuya_node(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
+    enable_evm_rpc: bool,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
@@ -922,6 +929,7 @@ pub async fn start_shibuya_node(
         polkadot_config,
         collator_options,
         id,
+        enable_evm_rpc,
         |client,
          block_import,
          config,
