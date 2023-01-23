@@ -116,6 +116,8 @@ array-bytes = "6.0.0"
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
 frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
 
+pallet-contracts-xcm = { version = "0.1.1", git = "https://github.com/AstarNetwork/pallet-contracts-xcm", default-features = false, branch = "polkadot-v0.9.33" }
+
 # try-runtime
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false, optional = true }
 
@@ -213,6 +215,7 @@ std = [
 	"xcm-executor/std",
 	"xcm-primitives/std",
 	"pallet-contracts-migration/std",
+	"pallet-contracts-xcm/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

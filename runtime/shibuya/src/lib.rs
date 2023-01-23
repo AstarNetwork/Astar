@@ -6,6 +6,7 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_pallet_parachain_system::AnyRelayNumber;
+use pallet_contracts_xcm::Extension as XCMContractExtension;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
@@ -658,6 +659,7 @@ impl pallet_contracts::Config for Runtime {
         DappsStakingExtension<Self>,
         XvmExtension<Self>,
         pallet_assets_chain_extension::substrate::AssetsExtension,
+        XCMContractExtension<Self>,
     );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
@@ -666,6 +668,8 @@ impl pallet_contracts::Config for Runtime {
     type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
 }
+
+impl pallet_contracts_xcm::Config for Runtime {}
 
 impl pallet_contracts_migration::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -1187,6 +1191,8 @@ construct_runtime!(
         Preimage: pallet_preimage = 84,
 
         Xvm: pallet_xvm = 90,
+
+        ContractsXCM: pallet_contracts_xcm = 91,
 
         Sudo: pallet_sudo = 99,
 
