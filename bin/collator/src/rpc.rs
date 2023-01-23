@@ -1,3 +1,21 @@
+// This file is part of Astar.
+
+// Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+
 //! Astar RPCs implementation.
 
 use fc_rpc::{
@@ -114,6 +132,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub overrides: Arc<OverrideHandle<Block>>,
     /// Cache for Ethereum block data.
     pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
+    /// Enable EVM RPC servers
+    pub enable_evm_rpc: bool,
 }
 
 /// Instantiate all RPC extensions.
@@ -157,10 +177,16 @@ where
         fee_history_cache,
         overrides,
         block_data_cache,
+        enable_evm_rpc,
     } = deps;
 
     io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+    io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
+
+    if !enable_evm_rpc {
+        return Ok(io);
+    }
 
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
@@ -201,8 +227,6 @@ where
     io.merge(Net::new(client.clone(), network.clone(), true).into_rpc())?;
 
     io.merge(Web3::new(client.clone()).into_rpc())?;
-
-    io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
     io.merge(
         EthPubSub::new(pool, client, network, subscription_task_executor, overrides).into_rpc(),

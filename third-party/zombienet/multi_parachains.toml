@@ -35,7 +35,7 @@ cumulus_based = true
   name = "collator1"
   command = "./astar-collator"
   rpc_port = 8545
-  args = [ "-l=xcm=trace" ]
+  args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
 
 # For this one you can download or build some other para and run it.
 # In this example, `astar-collator` is reused but `shiden-dev` chain is used
@@ -47,7 +47,7 @@ cumulus_based = true
   [[parachains.collators]]
   name = "collator2"
   command = "./astar-collator"
-  args = [ "-l=xcm=trace" ]
+  args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
 
 [[hrmp_channels]]
   sender = 2000
