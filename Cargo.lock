@@ -280,7 +280,6 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm-tracing-events",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -4758,7 +4757,6 @@ name = "local-runtime"
 version = "5.0.0"
 dependencies = [
  "array-bytes 6.0.0",
- "evm-tracing-events",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -10968,7 +10966,6 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm-tracing-events",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -11071,7 +11068,6 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm-tracing-events",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",

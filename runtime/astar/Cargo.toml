@@ -101,7 +101,6 @@ pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "po
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 
 # Moonbeam tracing
-evm-tracing-events = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 moonbeam-evm-tracer = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 
@@ -177,6 +176,8 @@ std = [
 	"cumulus-pallet-xcm/std",
 	"pallet-collator-selection/std",
 	"frame-benchmarking/std",
+	"moonbeam-evm-tracer/std",
+	"moonbeam-rpc-primitives-debug/std",
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
