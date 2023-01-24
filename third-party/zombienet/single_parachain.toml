@@ -34,9 +34,10 @@ cumulus_based = true
   [[parachains.collators]]
   name = "collator1"
   command = "./astar-collator"
-  args = [ "-l=xcm=trace" ]
+  args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
   
 
   [[parachains.collators]]
   name = "collator2"
   command = "./astar-collator"
+  args = [ "--enable-evm-rpc" ]

@@ -1,3 +1,21 @@
+// This file is part of Astar.
+
+// Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+
 //! The Astar Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -103,7 +121,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 48,
+    spec_version: 49,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -467,7 +485,7 @@ impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPa
 }
 
 parameter_types! {
-    pub const RewardAmount: Balance = 266_400 * MILLIASTR;
+    pub const RewardAmount: Balance = 253_080 * MILLIASTR;
 }
 
 impl pallet_block_reward::Config for Runtime {
@@ -619,7 +637,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
             let (to_burn, collators) = fees.ration(20, 80);
 
             // burn part of fees
-            let _ = Balances::burn(to_burn.peek());
+            drop(to_burn);
 
             // pay fees to collators
             <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);
@@ -924,6 +942,7 @@ mod benches {
         [pallet_dapps_staking, DappsStaking]
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
+        [pallet_collator_selection, CollatorSelection]
     );
 }
 

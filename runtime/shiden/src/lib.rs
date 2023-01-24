@@ -1,3 +1,21 @@
+// This file is part of Astar.
+
+// Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+
 //! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -656,8 +674,16 @@ impl WeightToFeePolynomial for WeightToFee {
 
 pub struct BurnFees;
 impl OnUnbalanced<NegativeImbalance> for BurnFees {
-    fn on_unbalanceds<B>(_: impl Iterator<Item = NegativeImbalance>) {
-        // burns the fees
+    /// Payout tips but burn all the fees
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+        if let Some(fees_to_burn) = fees_then_tips.next() {
+            if let Some(tips) = fees_then_tips.next() {
+                <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(tips);
+            }
+
+            // burn fees
+            drop(fees_to_burn);
+        }
     }
 }
 
@@ -1039,6 +1065,7 @@ mod benches {
         [pallet_dapps_staking, DappsStaking]
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
+        [pallet_collator_selection, CollatorSelection]
     );
 }
 

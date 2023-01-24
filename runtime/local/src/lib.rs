@@ -1,3 +1,21 @@
+// This file is part of Astar.
+
+// Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
@@ -761,7 +779,11 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = (DappsStakingExtension<Self>, XvmExtension<Self>);
+    type ChainExtension = (
+        DappsStakingExtension<Self>,
+        XvmExtension<Self>,
+        pallet_assets_chain_extension::substrate::AssetsExtension,
+    );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;

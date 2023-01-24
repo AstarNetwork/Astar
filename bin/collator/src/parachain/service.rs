@@ -1,3 +1,21 @@
+// This file is part of Astar.
+
+// Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+
 //! Parachain Service and ServiceFactory implementation.
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
@@ -281,6 +299,7 @@ async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC>(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
+    enable_evm_rpc: bool,
     build_import_queue: BIQ,
     build_consensus: BIC,
 ) -> sc_service::error::Result<(
@@ -466,6 +485,7 @@ where
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
+                enable_evm_rpc,
             };
 
             crate::rpc::create_full(deps, subscription).map_err(Into::into)
@@ -639,6 +659,7 @@ pub async fn start_astar_node(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
+    enable_evm_rpc: bool,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
@@ -648,6 +669,7 @@ pub async fn start_astar_node(
         polkadot_config,
         collator_options,
         id,
+        enable_evm_rpc,
         |client,
          block_import,
          config,
@@ -767,6 +789,7 @@ pub async fn start_shiden_node(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
+    enable_evm_rpc: bool,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
@@ -776,6 +799,7 @@ pub async fn start_shiden_node(
         polkadot_config,
         collator_options,
         id,
+        enable_evm_rpc,
         |client,
          block_import,
          config,
@@ -895,6 +919,7 @@ pub async fn start_shibuya_node(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
+    enable_evm_rpc: bool,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
@@ -904,6 +929,7 @@ pub async fn start_shibuya_node(
         polkadot_config,
         collator_options,
         id,
+        enable_evm_rpc,
         |client,
          block_import,
          config,
