@@ -120,7 +120,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 87,
+    spec_version: 86,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -832,7 +832,6 @@ impl pallet_xc_asset_config::Config for Runtime {
     scale_info::TypeInfo,
 )]
 pub enum ProxyType {
-    Any,
     CancelProxy,
     DappsStaking,
 }
@@ -846,7 +845,6 @@ impl Default for ProxyType {
 impl InstanceFilter<RuntimeCall> for ProxyType {
     fn filter(&self, c: &RuntimeCall) -> bool {
         match self {
-            ProxyType::Any => true,
             ProxyType::CancelProxy => {
                 matches!(
                     c,
@@ -862,8 +860,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
     fn is_superset(&self, o: &Self) -> bool {
         match (self, o) {
             (x, y) if x == y => true,
-            (ProxyType::Any, _) => true,
-            (_, ProxyType::Any) => false,
             _ => false,
         }
     }
