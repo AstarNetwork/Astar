@@ -40,6 +40,7 @@ jobs:
     - run: mv astar-collator rpc-tests/bin/astar-collator
     - run: mv polkadot rpc-tests/bin/polkadot
     - run: mv zombienet-linux-x64 rpc-tests/bin/zombienet-linux-x64
+    - run: ./bin/zombienet-linux-x64 spawn --provider native astar-dev.toml
 
     - name: Use Node.js 18.x
       uses: actions/setup-node@v2
