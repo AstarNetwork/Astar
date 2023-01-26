@@ -596,7 +596,7 @@ pub fn run() -> Result<()> {
                                     parachain::build_import_queue,
                                 )?;
                             let ext_builder = RemarkBuilder::new(params.client.clone());
-                            let inherent_data = benchmark_inherent_data()
+                            let inherent_data = para_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(
@@ -616,7 +616,7 @@ pub fn run() -> Result<()> {
                                 )?;
 
                             let ext_builder = RemarkBuilder::new(params.client.clone());
-                            let inherent_data = benchmark_inherent_data()
+                            let inherent_data = para_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(
@@ -638,7 +638,7 @@ pub fn run() -> Result<()> {
                             )?;
 
                             let ext_builder = RemarkBuilder::new(params.client.clone());
-                            let inherent_data = benchmark_inherent_data()
+                            let inherent_data = para_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(
@@ -653,7 +653,7 @@ pub fn run() -> Result<()> {
                         runner.sync_run(|config| {
                             let params = local::new_partial(&config)?;
                             let ext_builder = RemarkBuilder::new(params.client.clone());
-                            let inherent_data = benchmark_inherent_data()
+                            let inherent_data = local_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(
@@ -684,7 +684,7 @@ pub fn run() -> Result<()> {
                                 Box::new(remark_builder),
                                 Box::new(tka_builder),
                             ]);
-                            let inherent_data = benchmark_inherent_data()
+                            let inherent_data = para_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
@@ -706,7 +706,7 @@ pub fn run() -> Result<()> {
                                 Box::new(remark_builder),
                                 Box::new(tka_builder),
                             ]);
-                            let inherent_data = benchmark_inherent_data()
+                            let inherent_data = para_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
@@ -730,7 +730,7 @@ pub fn run() -> Result<()> {
                                 Box::new(remark_builder),
                                 Box::new(tka_builder),
                             ]);
-                            let inherent_data = benchmark_inherent_data()
+                            let inherent_data = para_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
@@ -748,7 +748,7 @@ pub fn run() -> Result<()> {
                                 Box::new(remark_builder),
                                 Box::new(tka_builder),
                             ]);
-                            let inherent_data = benchmark_inherent_data()
+                            let inherent_data = local_benchmark_inherent_data()
                                 .map_err(|e| format!("generating inherent data: {:?}", e))?;
 
                             cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)

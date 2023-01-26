@@ -1,5 +1,8 @@
 use crate::primitives::{AccountId, Balance, Block, BlockId};
 use codec::Encode;
+use cumulus_primitives_core::PersistedValidationData;
+use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use sc_executor::NativeElseWasmExecutor;
 use sc_service::TFullClient;
 use sp_api::ConstructRuntimeApi;
@@ -426,7 +429,7 @@ where
 /// Generates inherent data for benchmarking Astar, Shiden and Shibuya.
 ///
 /// Not to be used outside of benchmarking since it returns mocked values.
-pub fn benchmark_inherent_data(
+pub fn local_benchmark_inherent_data(
 ) -> std::result::Result<sp_inherents::InherentData, sp_inherents::Error> {
     use sp_inherents::InherentDataProvider;
     let mut inherent_data = sp_inherents::InherentData::new();
@@ -435,6 +438,39 @@ pub fn benchmark_inherent_data(
     let d = std::time::Duration::from_millis(0);
     let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
     timestamp.provide_inherent_data(&mut inherent_data)?;
+
+    Ok(inherent_data)
+}
+
+/// Generates inherent data for benchmarking Astar, Shiden and Shibuya.
+///
+/// Not to be used outside of benchmarking since it returns mocked values.
+pub fn para_benchmark_inherent_data(
+) -> std::result::Result<sp_inherents::InherentData, sp_inherents::Error> {
+    use sp_inherents::InherentDataProvider;
+    let mut inherent_data = sp_inherents::InherentData::new();
+
+    // Assume that all runtimes have the `timestamp` pallet.
+    let d = std::time::Duration::from_millis(0);
+    let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
+    timestamp.provide_inherent_data(&mut inherent_data)?;
+
+    let sproof_builder = RelayStateSproofBuilder::default();
+    let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();
+    let validation_data = PersistedValidationData {
+        relay_parent_number: 1,
+        relay_parent_storage_root,
+        ..Default::default()
+    };
+
+    let para_data = ParachainInherentData {
+        validation_data,
+        relay_chain_state,
+        downward_messages: Default::default(),
+        horizontal_messages: Default::default(),
+    };
+
+    inherent_data.put_data(INHERENT_IDENTIFIER, &para_data)?;
 
     Ok(inherent_data)
 }

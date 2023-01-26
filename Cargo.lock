@@ -182,6 +182,7 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "cumulus-relay-chain-minimal-node",
  "cumulus-relay-chain-rpc-interface",
+ "cumulus-test-relay-sproof-builder",
  "fc-consensus",
  "fc-db",
  "fc-mapping-sync",
