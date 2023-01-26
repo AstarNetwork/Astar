@@ -6,7 +6,7 @@ import chai from 'chai';
 chai.use(chaiAsPromised);
 
 export const SPAWNING_TIME = 500000;
-const WS_PORT = 9988;
+export const WS_PORT = process.env.WS_PORT;
 
 /**
  * capitalize: capitalize first letter of a string
@@ -134,7 +134,6 @@ export function describeWithNetwork(network, paraId, title, cb) {
 
 		after(async function () {
 			await context.api.disconnect()
-			killAll();
 			process.exit(0);
 		});
 
