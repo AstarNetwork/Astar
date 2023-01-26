@@ -31,7 +31,7 @@ jobs:
     # run only when PR comments start with '/bench'.
     if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/bench')
     needs: check-permission
-    runs-on: [self-hosted, Linux, X64, bench]
+    runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Validate and set inputs
       id: bench-input
