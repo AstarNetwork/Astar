@@ -3,6 +3,7 @@ use codec::Encode;
 use cumulus_primitives_core::PersistedValidationData;
 use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+use polkadot_runtime_common::BlockHashCount;
 use sc_executor::NativeElseWasmExecutor;
 use sc_service::TFullClient;
 use sp_api::ConstructRuntimeApi;
@@ -61,11 +62,10 @@ where
     fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
         with_runtime! {
             self.client.as_ref(), {
-                use runtime::{RuntimeCall};
+                use runtime::{RuntimeCall, SystemCall};
                 use sc_client_api::UsageProvider;
-                use polkadot_runtime_common::BlockHashCount;
 
-                let call = RuntimeCall::System(frame_system::Call::remark { remark: vec![] });
+                let call = RuntimeCall::System(SystemCall::remark { remark: vec![] });
                 let signer = Sr25519Keyring::Bob.pair();
                 let period = BlockHashCount::get()
                     .checked_next_power_of_two()
@@ -137,16 +137,16 @@ where
     fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
         with_runtime! {
             self.client.as_ref(), {
-                use runtime::RuntimeCall;
+                use runtime::{RuntimeCall, BalancesCall};
                 use sc_client_api::UsageProvider;
 
-                let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
+                let call = RuntimeCall::Balances(BalancesCall::transfer_keep_alive {
                     dest: self.dest.clone().into(),
                     value: self.value.into(),
                 });
                 let signer = Sr25519Keyring::Bob.pair();
 
-                let period = polkadot_runtime_common::BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+                let period = BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
                 let genesis = self.client.usage_info().chain.best_hash;
 
                 Ok(self.client.sign_call(call, nonce, 0, period, genesis, signer))
