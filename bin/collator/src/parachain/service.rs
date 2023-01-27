@@ -161,7 +161,7 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
                     Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
                     TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
                 >,
-                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+                TFullBackend<Block>,
             >,
             Option<Telemetry>,
             Option<TelemetryWorkerHandle>,
@@ -195,7 +195,7 @@ where
                 Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+            TFullBackend<Block>,
         >,
         &Configuration,
         Option<TelemetryHandle>,
@@ -253,13 +253,10 @@ where
 
     let frontier_backend = crate::rpc::open_frontier_backend(client.clone(), config)?;
     let frontier_block_import =
-        Arc::new(FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone()));
+        FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
 
-    let parachain_block_import: ParachainBlockImport<_> =
+    let parachain_block_import: ParachainBlockImport<_, _, _> =
         ParachainBlockImport::new(frontier_block_import, backend.clone());
-
-    // let parachain_block_import: ParachainBlockImport<_> =
-    //     ParachainBlockImport::new(client.clone(), backend.clone());
 
     let import_queue = build_import_queue(
         client.clone(),
@@ -356,7 +353,7 @@ where
                 Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+            TFullBackend<Block>,
         >,
         &Configuration,
         Option<TelemetryHandle>,
@@ -377,7 +374,7 @@ where
                 Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+            TFullBackend<Block>
         >,
         Option<&Registry>,
         Option<TelemetryHandle>,
@@ -600,7 +597,7 @@ pub fn build_import_queue<RuntimeApi, Executor>(
             Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
             TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
         >,
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        TFullBackend<Block>,
     >,
     config: &Configuration,
     telemetry_handle: Option<TelemetryHandle>,
