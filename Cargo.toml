@@ -7,6 +7,7 @@ members = [
 	"runtime/shiden",
 	"runtime/shibuya",
 	"runtime/contracts-migration",
+	"tests/xcm-simulator",
 ]
 
 exclude = ["vendor"]
