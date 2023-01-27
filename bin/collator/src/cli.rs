@@ -71,6 +71,10 @@ pub struct Cli {
     #[clap(long, default_value = "10000")]
     pub max_past_logs: u32,
 
+    /// Enable Ethereum compatible JSON-RPC servers (disabled by default).
+    #[clap(name = "enable-evm-rpc", long)]
+    pub enable_evm_rpc: bool,
+
     /// Relaychain arguments
     #[clap(raw = true)]
     pub relaychain_args: Vec<String>,
