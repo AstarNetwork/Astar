@@ -134,7 +134,7 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", optional = true }
 
 [features]
-default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/rocksdb", "runtime-benchmarks"]
+default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/rocksdb"]
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-benchmarking-cli",
