@@ -9,6 +9,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0" }
 scale-info = { version = "2.1.2", features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
 
+# Base functionality
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
@@ -18,6 +19,9 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 
+# Custom Astar inclusions
+
+# XCM
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33", default-features = false }
 xcm-simulator = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33", default-features = false }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33", default-features = false }
@@ -29,24 +33,18 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = 
 
 [features]
 default = []
-# std = [
-#     "frame-system/std",
-# "frame-support/std",
-# "pallet-balances/std",
-# "sp-std/std",
-# "sp-core/std",
-# "sp-runtime/std",
-# "sp-io/std",
-# "sp-tracing/std",
-
-# "xcm/std",
-# "xcm-executor/std",
-# "xcm-builder/std",
-# "pallet-xcm/std",
-# "polkadot-core-primitives/std",
-# "polkadot-runtime-parachains/std",
-# "polkadot-parachain/std",
-# ]
+std = [
+	"codec/std",
+	"sp-std/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+    "sp-tracing/std",
+	"frame-support/std",
+	"frame-system/std",
+    "pallet-balances/std",
+    "pallet-xcm/std",
+]
 runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",

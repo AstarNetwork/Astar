@@ -16,4 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+#[cfg(test)]
 mod mocks;
+
+#[cfg(test)]
+mod basic_tests;
