@@ -19,7 +19,7 @@
 //! Parachain Service and ServiceFactory implementation.
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
-use cumulus_client_consensus_common::{ParachainBlockImport as TParachainBlockImport, ParachainConsensus};
+use cumulus_client_consensus_common::{ParachainBlockImport, ParachainConsensus};
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
@@ -35,7 +35,7 @@ use futures::{lock::Mutex, StreamExt};
 use polkadot_service::CollatorPair;
 use sc_client_api::BlockchainEvents;
 use sc_consensus::{import_queue::BasicQueue, ImportQueue};
-use sc_executor::{NativeElseWasmExecutor, WasmExecutor};
+use sc_executor::NativeElseWasmExecutor;
 use sc_network::{NetworkBlock, NetworkService};
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -50,19 +50,19 @@ use super::shell_upgrade::*;
 use crate::primitives::*;
 
 
-#[cfg(not(feature = "runtime-benchmarks"))]
-type HostFunctions = ();
+// #[cfg(not(feature = "runtime-benchmarks"))]
+// type HostFunctions = ();
 
-#[cfg(feature = "runtime-benchmarks")]
-type HostFunctions =
-	frame_benchmarking::benchmarking::HostFunctions;
+// #[cfg(feature = "runtime-benchmarks")]
+// type HostFunctions =
+// 	frame_benchmarking::benchmarking::HostFunctions;
 
-type ParachainClient<RuntimeApi> = TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>;
+// type ParachainClient<RuntimeApi> = TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>;
 
-type ParachainBackend = TFullBackend<Block>;
+// type ParachainBackend = TFullBackend<Block>;
 
-type ParachainBlockImport<RuntimeApi> =
-	TParachainBlockImport<Block, Arc<ParachainClient<RuntimeApi>>, ParachainBackend>;
+// type ParachainBlockImport<RuntimeApi> =
+// 	TParachainBlockImport<Block, Arc<ParachainClient<RuntimeApi>>, ParachainBackend>;
 
 /// Astar network runtime executor.
 pub mod astar {
@@ -155,11 +155,13 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
         >,
         (
             ParachainBlockImport<
+                Block,
                 FrontierBlockImport<
                     Block,
                     Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
                     TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
                 >,
+                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
             Option<Telemetry>,
             Option<TelemetryWorkerHandle>,
@@ -187,11 +189,13 @@ where
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         ParachainBlockImport<
+            Block,
             FrontierBlockImport<
                 Block,
                 Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
         >,
         &Configuration,
         Option<TelemetryHandle>,
@@ -251,11 +255,11 @@ where
     let frontier_block_import =
         Arc::new(FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone()));
 
-    // let parachain_block_import: ParachainBlockImport<_> =
-    //     ParachainBlockImport::new(frontier_block_import, backend.clone());
-
     let parachain_block_import: ParachainBlockImport<_> =
-        ParachainBlockImport::new(client.clone(), backend.clone());
+        ParachainBlockImport::new(frontier_block_import, backend.clone());
+
+    // let parachain_block_import: ParachainBlockImport<_> =
+    //     ParachainBlockImport::new(client.clone(), backend.clone());
 
     let import_queue = build_import_queue(
         client.clone(),
@@ -346,11 +350,13 @@ where
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         ParachainBlockImport<
+            Block,
             FrontierBlockImport<
                 Block,
                 Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
         >,
         &Configuration,
         Option<TelemetryHandle>,
@@ -365,11 +371,13 @@ where
     BIC: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         ParachainBlockImport<
+            Block,
             FrontierBlockImport<
                 Block,
                 Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
         >,
         Option<&Registry>,
         Option<TelemetryHandle>,
@@ -586,11 +594,13 @@ where
 pub fn build_import_queue<RuntimeApi, Executor>(
     client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
     block_import: ParachainBlockImport<
+        Block,
         FrontierBlockImport<
             Block,
             Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
             TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
         >,
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
     >,
     config: &Configuration,
     telemetry_handle: Option<TelemetryHandle>,
