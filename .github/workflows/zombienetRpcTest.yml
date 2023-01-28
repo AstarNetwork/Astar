@@ -38,6 +38,7 @@ jobs:
     - run: mv polkadot rpc-tests/bin/polkadot
     - run: mv zombienet-linux-x64 rpc-tests/bin/zombienet-linux-x64
     - run: ./bin/zombienet-linux-x64 spawn --provider native astar-dev.toml
+      working-directory: ./rpc-tests
   tests:
     runs-on: ubuntu-latest
     strategy:
