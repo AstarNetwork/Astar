@@ -1,4 +1,5 @@
-name: RPC test
+
+name: Zombienet RPC test
 
 on:
   workflow_dispatch:
@@ -6,14 +7,38 @@ on:
       astar_tag:
         description: 'Release tag version for astar collator'
         required: true
-        default: '4.9.0'
+        default: '4.44.0'
       polkadot_tag:
         description: 'Release tag version for polkadot relay chain'
         required: true
-        default: '0.9.25'
+        default: '0.9.37'
+      zombienet_tag:
+        description: 'Release tag version for zombinet tool'
+        required: true
+        default: '1.3.29'
 
 jobs:
-  test:
+  network:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - run: wget https://github.com/AstarNetwork/Astar/releases/download/v${{ github.event.inputs.astar_tag }}/astar-collator-v${{ github.event.inputs.astar_tag }}-ubuntu-x86_64.tar.gz
+    - run: tar -xvf astar-collator-*-ubuntu-x86_64.tar.gz
+    - run: chmod +x ./astar-collator
+
+    - run: wget https://github.com/paritytech/polkadot/releases/download/v${{ github.event.inputs.polkadot_tag }}/polkadot
+    - run: chmod +x ./polkadot
+    
+    - run: wget https://github.com/paritytech/zombienet/releases/download/v${{ github.event.inputs.zombienet_tag }}/zombienet-linux-x64
+    - run: chmod +x ./zombienet-linux-x64
+
+    - run: mkdir -p rpc-tests/bin
+    - run: mv astar-collator rpc-tests/bin/astar-collator
+    - run: mv polkadot rpc-tests/bin/polkadot
+    - run: mv zombienet-linux-x64 rpc-tests/bin/zombienet-linux-x64
+    - run: ./bin/zombienet-linux-x64 spawn --provider native astar-dev.toml
+  tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -21,24 +46,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - run: wget https://github.com/AstarNetwork/Astar/releases/download/v${{ github.event.inputs.astar_tag }}/astar-collator-v${{ github.event.inputs.astar_tag }}-ubuntu-x86_64.tar.gz
-
-    - run: tar -xvf astar-collator-*-ubuntu-x86_64.tar.gz
-
-    - run: chmod +x ./astar-collator
-
-    - run: wget https://github.com/paritytech/polkadot/releases/download/v${{ github.event.inputs.polkadot_tag }}/polkadot
-
-    - run: chmod +x ./polkadot
-
-    - run: mkdir -p rpc-tests/bin
-    - run: mv astar-collator rpc-tests/bin/astar-collator
-    - run: mv polkadot rpc-tests/bin/polkadot
-
-    - name: Use Node.js 16.x
+    - name: Use Node.js 18.x
       uses: actions/setup-node@v2
       with:
-        node-version: 16.x
+        node-version: 18.x
     - run: npm install -g yarn
     - run: yarn install
       working-directory: ./rpc-tests
