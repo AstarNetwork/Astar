@@ -100,6 +100,7 @@ fn xcmp() {
             remark: vec![1, 2, 3],
         },
     );
+
     ParaA::execute_with(|| {
         assert_ok!(ParachainPalletXcm::send_xcm(
             Here,

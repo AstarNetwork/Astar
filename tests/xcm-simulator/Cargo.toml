@@ -8,6 +8,7 @@ description = "Examples of xcm-simulator usage."
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 scale-info = { version = "2.1.2", features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
+smallvec = "1.9.0"
 
 # Base functionality
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
@@ -18,8 +19,11 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33", default-features = false }
 
 # Custom Astar inclusions
+xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
+pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33", default-features = false }
 
 # XCM
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33", default-features = false }
@@ -30,9 +34,10 @@ pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33", default-features = false }
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33", default-features = false }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.33", default-features = false }
+cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.33", default-features = false }
 
 [features]
-default = []
+default = ["std"]
 std = [
 	"codec/std",
 	"sp-std/std",
@@ -44,6 +49,9 @@ std = [
 	"frame-system/std",
     "pallet-balances/std",
     "pallet-xcm/std",
+	"cumulus-pallet-xcm/std",
+	"pallet-assets/std",
+	"xcm-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",

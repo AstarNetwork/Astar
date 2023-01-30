@@ -13601,16 +13601,20 @@ dependencies = [
 name = "xcm-simulator-tests"
 version = "0.1.0"
 dependencies = [
+ "cumulus-pallet-xcm",
  "frame-support",
  "frame-system",
  "log",
+ "pallet-assets",
  "pallet-balances",
+ "pallet-xc-asset-config",
  "pallet-xcm 0.9.33",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime-parachains",
  "scale-info",
+ "smallvec",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -13619,6 +13623,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-primitives",
  "xcm-simulator",
 ]
 
