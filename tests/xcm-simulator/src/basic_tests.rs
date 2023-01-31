@@ -32,7 +32,7 @@ use xcm_simulator::TestExt;
 // }
 
 #[test]
-fn dmp() {
+fn basic_dmp() {
     MockNet::reset();
 
     let remark = parachain::RuntimeCall::System(
@@ -46,7 +46,7 @@ fn dmp() {
             Parachain(1),
             Xcm(vec![Transact {
                 origin_type: OriginKind::SovereignAccount,
-                require_weight_at_most: INITIAL_BALANCE as u64,
+                require_weight_at_most: 1_000_000_000 as u64,
                 call: remark.encode().into(),
             }]),
         ));
@@ -62,7 +62,7 @@ fn dmp() {
 }
 
 #[test]
-fn ump() {
+fn basic_ump() {
     MockNet::reset();
 
     let remark = relay_chain::RuntimeCall::System(
@@ -76,7 +76,7 @@ fn ump() {
             Parent,
             Xcm(vec![Transact {
                 origin_type: OriginKind::SovereignAccount,
-                require_weight_at_most: INITIAL_BALANCE as u64,
+                require_weight_at_most: 1_000_000_000 as u64,
                 call: remark.encode().into(),
             }]),
         ));
@@ -92,7 +92,7 @@ fn ump() {
 }
 
 #[test]
-fn xcmp() {
+fn basic_xcmp() {
     MockNet::reset();
 
     let remark = parachain::RuntimeCall::System(
@@ -105,11 +105,18 @@ fn xcmp() {
         assert_ok!(ParachainPalletXcm::send_xcm(
             Here,
             (Parent, Parachain(2)),
-            Xcm(vec![Transact {
-                origin_type: OriginKind::SovereignAccount,
-                require_weight_at_most: INITIAL_BALANCE as u64,
-                call: remark.encode().into(),
-            }]),
+            Xcm(vec![
+                WithdrawAsset((Here, 11).into()),
+                BuyExecution {
+                    fees: (Here, 11).into(),
+                    weight_limit: Unlimited,
+                },
+                Transact {
+                    origin_type: OriginKind::SovereignAccount,
+                    require_weight_at_most: INITIAL_BALANCE as u64,
+                    call: remark.encode().into(),
+                }
+            ]),
         ));
     });
 

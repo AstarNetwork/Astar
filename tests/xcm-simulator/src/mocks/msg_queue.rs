@@ -101,13 +101,17 @@ pub mod mock_msg_queue {
                 Ok(xcm) => {
                     let location = (1, Parachain(sender.into()));
                     match T::XcmExecutor::execute_xcm(location, xcm, max_weight.ref_time()) {
-                        Outcome::Error(e) => (Err(e.clone()), Event::Fail(Some(hash), e)),
+                        Outcome::Error(e) => {
+                            println!("Error in XCMP handling: {:?}", e);
+                            (Err(e.clone()), Event::Fail(Some(hash), e))
+                        }
                         Outcome::Complete(w) => {
                             (Ok(Weight::from_ref_time(w)), Event::Success(Some(hash)))
                         }
                         // As far as the caller is concerned, this was dispatched without error, so
                         // we just report the weight used.
                         Outcome::Incomplete(w, e) => {
+                            println!("Incomplete XCMP handling: {:?}", e);
                             (Ok(Weight::from_ref_time(w)), Event::Fail(Some(hash), e))
                         }
                     }
