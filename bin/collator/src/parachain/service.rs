@@ -49,7 +49,6 @@ use substrate_prometheus_endpoint::Registry;
 use super::shell_upgrade::*;
 use crate::primitives::*;
 
-
 // #[cfg(not(feature = "runtime-benchmarks"))]
 // type HostFunctions = ();
 
@@ -296,7 +295,12 @@ async fn build_relay_chain_interface(
     Option<CollatorPair>,
 )> {
     if !collator_options.relay_chain_rpc_urls.is_empty() {
-        build_minimal_relay_chain_node(polkadot_config, task_manager, collator_options.relay_chain_rpc_urls).await
+        build_minimal_relay_chain_node(
+            polkadot_config,
+            task_manager,
+            collator_options.relay_chain_rpc_urls,
+        )
+        .await
     } else {
         build_inprocess_relay_chain(
             polkadot_config,
@@ -374,7 +378,7 @@ where
                 Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
-            TFullBackend<Block>
+            TFullBackend<Block>,
         >,
         Option<&Registry>,
         Option<TelemetryHandle>,
