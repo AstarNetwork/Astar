@@ -92,39 +92,67 @@ fn basic_ump() {
 }
 
 #[test]
-fn basic_xcmp() {
+fn para_to_para_reserve_transfer() {
     MockNet::reset();
 
-    let remark = parachain::RuntimeCall::System(
-        frame_system::Call::<parachain::Runtime>::remark_with_event {
-            remark: vec![1, 2, 3],
-        },
-    );
+    let sibling_asset_id = 123 as u128;
+    let para_a_multiloc = Box::new(MultiLocation::new(1, X1(Parachain(1))).versioned());
 
-    ParaA::execute_with(|| {
-        assert_ok!(ParachainPalletXcm::send_xcm(
-            Here,
-            (Parent, Parachain(2)),
-            Xcm(vec![
-                WithdrawAsset((Here, 11).into()),
-                BuyExecution {
-                    fees: (Here, 11).into(),
-                    weight_limit: Unlimited,
-                },
-                Transact {
-                    origin_type: OriginKind::SovereignAccount,
-                    require_weight_at_most: INITIAL_BALANCE as u64,
-                    call: remark.encode().into(),
-                }
-            ]),
+    // Create asset and register it as cross-chain & payable
+    ParaB::execute_with(|| {
+        assert_ok!(parachain::Assets::force_create(
+            parachain::RuntimeOrigin::root(),
+            sibling_asset_id,
+            sibling_para_account_id(1),
+            true,
+            1
+        ));
+        assert_ok!(ParachainXcAssetConfig::register_asset_location(
+            parachain::RuntimeOrigin::root(),
+            para_a_multiloc.clone(),
+            sibling_asset_id
+        ));
+        assert_ok!(ParachainXcAssetConfig::set_asset_units_per_second(
+            parachain::RuntimeOrigin::root(),
+            para_a_multiloc,
+            1_000_000_000_000, // each unit of weight charged exactly 1 TODO: make this common & document it
         ));
     });
 
+    let withdraw_amount = 567;
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
+            parachain::RuntimeOrigin::signed(ALICE),
+            Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
+            Box::new(
+                X1(AccountId32 {
+                    network: Any,
+                    id: ALICE.into()
+                })
+                .into()
+                .into()
+            ),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+        ));
+
+        // Parachain 2 sovereign account should have it's balance increased, while Alice balance should be decreased.
+        assert_eq!(
+            parachain::Balances::free_balance(&sibling_para_account_id(2)),
+            INITIAL_BALANCE + withdraw_amount
+        );
+        assert_eq!(
+            parachain::Balances::free_balance(&ALICE),
+            INITIAL_BALANCE - withdraw_amount
+        );
+    });
+
     ParaB::execute_with(|| {
-        use parachain::{RuntimeEvent, System};
-        assert!(System::events().iter().any(|r| matches!(
-            r.event,
-            RuntimeEvent::System(frame_system::Event::Remarked { .. })
-        )));
+        // Ensure Alice received assets on ParaB (sent amount minus expenses)
+        let four_instructions_execution_cost = 4 * parachain::UnitWeightCost::get() as u128;
+        assert_eq!(
+            parachain::Assets::balance(sibling_asset_id, ALICE),
+            withdraw_amount - four_instructions_execution_cost
+        );
     });
 }

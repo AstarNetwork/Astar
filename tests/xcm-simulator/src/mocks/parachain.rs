@@ -45,13 +45,15 @@ use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
-    LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+    LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
     SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
-use xcm_primitives::{AssetLocationIdConverter, FixedRateOfForeignAsset, XcmFungibleFeeHandler};
+use xcm_primitives::{
+    AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
+};
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -128,6 +130,7 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
+// TODO: change this to something constant, maybe 1 wei per 1 weight
 pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
@@ -265,7 +268,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-    pub const UnitWeightCost: u64 = 1;
+    pub const UnitWeightCost: u64 = 10;
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -303,7 +306,7 @@ impl Config for XcmConfig {
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = NativeAsset;
+    type IsReserve = ReserveAssetFilter;
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = XcmBarrier;

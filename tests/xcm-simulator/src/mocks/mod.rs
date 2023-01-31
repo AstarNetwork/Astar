@@ -20,10 +20,10 @@ pub(crate) mod msg_queue;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
 
-use polkadot_parachain::primitives::Id as ParaId;
+use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use sp_runtime::traits::{AccountIdConversion, Get};
 use xcm::latest::prelude::*;
-use xcm_builder::Account32Hash;
+use xcm_builder::{Account32Hash, SiblingParachainConvertsVia};
 use xcm_executor::traits::Convert;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
@@ -68,15 +68,25 @@ decl_test_network! {
 
 pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
+pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
 
-/// Derive parachain sovereign account from parachain Id
-pub fn para_account_id(id: u32) -> relay_chain::AccountId {
+/// Derive parachain sovereign account on relay chain, from parachain Id
+pub fn para_account_id_on_relay(id: u32) -> relay_chain::AccountId {
     ParaId::from(id).into_account_truncating()
+}
+
+/// Derive parachain sovereign account on a sibling parachain, from parachain Id
+pub fn sibling_para_account_id(id: u32) -> parachain::AccountId {
+    SiblingParachainConvertsVia::<Sibling, parachain::AccountId>::convert_ref(MultiLocation::new(
+        1,
+        X1(Parachain(id)),
+    ))
+    .unwrap()
 }
 
 /// Derive account32 hash for parachain Id
 /// TODO: improve or change this later
-fn derive_account32_hash(para_id: u32) -> relay_chain::AccountId {
+fn _derive_account32_hash(para_id: u32) -> relay_chain::AccountId {
     struct AnyNetwork;
     impl Get<NetworkId> for AnyNetwork {
         fn get() -> NetworkId {
@@ -100,10 +110,10 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
     pallet_balances::GenesisConfig::<Runtime> {
         balances: vec![
             (ALICE, INITIAL_BALANCE),
-            (para_account_id(1), INITIAL_BALANCE),
-            (para_account_id(2), INITIAL_BALANCE),
-            (derive_account32_hash(1), INITIAL_BALANCE),
-            (derive_account32_hash(2), INITIAL_BALANCE),
+            (sibling_para_account_id(1), INITIAL_BALANCE),
+            (sibling_para_account_id(2), INITIAL_BALANCE),
+            // (derive_account32_hash(1), INITIAL_BALANCE),
+            // (derive_account32_hash(2), INITIAL_BALANCE), TODO
         ],
     }
     .assimilate_storage(&mut t)
@@ -128,8 +138,8 @@ pub fn relay_ext() -> sp_io::TestExternalities {
     pallet_balances::GenesisConfig::<Runtime> {
         balances: vec![
             (ALICE, INITIAL_BALANCE),
-            (para_account_id(1), INITIAL_BALANCE),
-            (para_account_id(2), INITIAL_BALANCE),
+            (para_account_id_on_relay(1), INITIAL_BALANCE),
+            (para_account_id_on_relay(2), INITIAL_BALANCE),
         ],
     }
     .assimilate_storage(&mut t)
