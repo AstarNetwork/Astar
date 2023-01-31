@@ -265,10 +265,10 @@ ${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).j
 ## Download Links
 | Arch |  Link  |
 | ----------- | ------- |
-|  \`MacOS\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-macOS-x86_64.tar.gz) |
+|  \`MacOS\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-macOS-aarch64.tar.gz) |
 | \`Ubuntu\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-ubuntu-x86_64.tar.gz) |
 
-[<img src="https://www.docker.com/sites/default/files/d8/2019-07/vertical-logo-monochromatic.png" height="200px">](https://hub.docker.com/r/staketechnologies/astar-collator/tags) 
+[<img src="https://github.com/AstarNetwork/Astar/tree/master/.github/images/docker.webp" height="200px">](https://hub.docker.com/r/staketechnologies/astar-collator/tags) 
 `
 
   console.log(template);
