@@ -165,6 +165,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 ]
 try-runtime = [
+	"fp-self-contained/try-runtime",
 	"log",
 	"frame-try-runtime/try-runtime",
 	"frame-executive/try-runtime",

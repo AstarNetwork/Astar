@@ -196,6 +196,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 ]
 try-runtime = [
+	"fp-self-contained/try-runtime",
 	"log",
 	"frame-try-runtime/try-runtime",
 	"frame-executive/try-runtime",
