@@ -614,10 +614,8 @@ pub fn run() -> Result<()> {
             let chain_spec = &runner.config().chain_spec;
 
             use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
-            type HostFunctionsOf<E> = ExtendedHostFunctions<
-                (),
-                <E as NativeExecutionDispatch>::ExtendHostFunctions,
-            >;
+            type HostFunctionsOf<E> =
+                ExtendedHostFunctions<(), <E as NativeExecutionDispatch>::ExtendHostFunctions>;
 
             if chain_spec.is_shiden() {
                 runner.async_run(|config| {
@@ -653,7 +651,10 @@ pub fn run() -> Result<()> {
                             .map_err(|e| {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
-                    Ok((cmd.run::<Block, HostFunctionsOf<local::Executor>>(), task_manager))
+                    Ok((
+                        cmd.run::<Block, HostFunctionsOf<local::Executor>>(),
+                        task_manager,
+                    ))
                 })
             }
         }
