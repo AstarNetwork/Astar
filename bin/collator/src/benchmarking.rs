@@ -157,8 +157,7 @@ where
 
 /// Helper trait to implement [`frame_benchmarking_cli::ExtrinsicBuilder`].
 ///
-/// Should only be used for benchmarking since it makes strong assumptions
-/// about the chain state that these calls will be valid for.
+/// Should only be used for benchmarking.
 trait BenchmarkCallSigner<RuntimeCall: Encode + Clone, Signer: Pair> {
     /// Signs a call together with the signed extensions of the specific runtime.
     ///
@@ -426,7 +425,7 @@ where
     }
 }
 
-/// Generates inherent data for benchmarking Astar, Shiden and Shibuya.
+/// Generates inherent data for benchmarking local node.
 ///
 /// Not to be used outside of benchmarking since it returns mocked values.
 pub fn local_benchmark_inherent_data(
@@ -457,12 +456,15 @@ pub fn para_benchmark_inherent_data(
 
     let sproof_builder = RelayStateSproofBuilder::default();
     let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();
+    // `relay_parent_number` should be bigger than 0 for benchmarking.
+    // It is mocked value, any number except 0 is valid.
     let validation_data = PersistedValidationData {
         relay_parent_number: 1,
         relay_parent_storage_root,
         ..Default::default()
     };
 
+    // Parachain blocks needs to include ParachainInherentData, otherwise block is invalid.
     let para_data = ParachainInherentData {
         validation_data,
         relay_chain_state,
@@ -475,13 +477,11 @@ pub fn para_benchmark_inherent_data(
     Ok(inherent_data)
 }
 
-/// Interpret client's native untime version name (at genesis block).
+/// Interpret client's native runtime version name (at genesis block).
 /// This is valid only for benchmarking, since genesis block is alreways refered to.
 macro_rules! with_runtime {
 	{
-		// The client instance that should be unwrapped.
 		$client:expr,
-		// NOTE: Using an expression here is fine since blocks are also expressions.
 		$code:expr
 	} => {
         match $client.runtime_version_at(&BlockId::Number(0)).unwrap().spec_name.to_string().as_str() {
