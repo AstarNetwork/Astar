@@ -6,6 +6,7 @@ import {
 } from './util.js';
 import deploy from './deploy.js';
 import { sayMessage, setMessage } from './contract.js';
+import * as polkadotCryptoUtils from "@polkadot/util-crypto";
 
 const CONTRACT = '0x0000000000000000000000000000000000000001'; //0x01
 const ALICE = 'ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8';
@@ -23,6 +24,9 @@ export const getAddressEnum = (address) => ({ Evm: address });
 const network = process.env.NETWORK;
 const paraId = process.env.PARA_ID;
 
+const addressPrefix = 5;
+const mappedEvmAccount = polkadotCryptoUtils.evmToAddress(evmAccount.address, addressPrefix);
+
 if (['astar', 'shiden', 'shibuya'].includes(network) === false) {
     throw new Error('Please set valid network in NETWORK env variable');
 }
@@ -32,19 +36,24 @@ describeWithNetwork(network, paraId, `${network} RPC`, function(context) {
 
 	it('should fetch chain from rpc node', async function () {
 		const chain = await context.api.rpc.system.chain();
+        console.log(`The current network is: ${chain.toString()}`);
 
 		expect(chain.toString()).to.equal(`${capitalize(network)} Testnet`);
 	});
 
 	it('should fetch chain name from rpc node', async () => {
 		const name = await context.api.rpc.system.name();
+        console.log(`The current system name is: ${name.toString()}`);
 
 		expect(name.toString()).to.equal('Astar Collator');
 	});
 
 	it('should be able to Register contract on H160 address 0x01 using Alice account', async () => {
+
+        const tx = await context.api.tx.dappsStaking.register(ALICE, getAddressEnum(CONTRACT))
+
         const finalised = await sendTransaction(
-            context.api.tx.dappsStaking.register(getAddressEnum(CONTRACT)),
+            context.api.tx.sudo.sudo(tx),
             context.alice
         );
 
@@ -59,28 +68,28 @@ describeWithNetwork(network, paraId, `${network} RPC`, function(context) {
         expect(dappInfo.state.toString()).to.equals('Registered');
     });
 
-	it('should be able to transfer tokens from alice to charlie', async () => {
-        const originalBalance = await context.api.query.system.account(CHARLIE);
+	it('should be able to transfer tokens from alice to evm mapped account of alice', async () => {
+        const originalBalance = await context.api.query.system.account(mappedEvmAccount);
         const finalised = await sendTransaction(
-            context.api.tx.balances.transfer({ Id: CHARLIE }, 100),
+            context.api.tx.balances.transfer({ Id: mappedEvmAccount }, 1000000000000000),
             context.alice
         );
-        const newBalance = await context.api.query.system.account(CHARLIE);
+        const newBalance = await context.api.query.system.account(mappedEvmAccount);
 
         expect(finalised).to.be.true;
-        expect(newBalance.data.free.sub(originalBalance.data.free).toNumber()).to.equal(100);
+        expect(newBalance.data.free.sub(originalBalance.data.free).toNumber()).to.equal(1000000000000000);
     });
 
     it('should be able to transfer tokens from bob to dave', async () => {
         const originalBalance = await context.api.query.system.account(DAVE);
         const finalised = await sendTransaction(
-            context.api.tx.balances.transfer({ Id: DAVE }, 200),
+            context.api.tx.balances.transfer({ Id: DAVE }, 2000000000000000),
             context.bob
         );
         const newBalance = await context.api.query.system.account(DAVE);
 
         expect(finalised).to.be.true;
-        expect(newBalance.data.free.sub(originalBalance.data.free).toNumber()).to.equal(200);
+        expect(newBalance.data.free.sub(originalBalance.data.free).toNumber()).to.equal(2000000000000000);
     });
 
     it('should be able to deploy an evm contract', async () => {
