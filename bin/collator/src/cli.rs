@@ -174,6 +174,8 @@ pub enum EthApi {
     Debug,
     /// Enable EVM trace RPC methods.
     Trace,
+    /// Enable pending transactions RPC methods.
+    TxPool,
 }
 
 impl std::str::FromStr for EthApi {
@@ -183,6 +185,7 @@ impl std::str::FromStr for EthApi {
         Ok(match s {
             "debug" => Self::Debug,
             "trace" => Self::Trace,
+            "txpool" => Self::TxPool,
             _ => {
                 return Err(format!(
                     "`{}` is not recognized as a supported Ethereum Api",

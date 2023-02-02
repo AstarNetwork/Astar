@@ -322,6 +322,7 @@ pub fn start_node(
         let rpc_config = crate::rpc::EvmTracingConfig {
             tracing_requesters,
             trace_filter_max_count: tracing_config.ethapi_trace_max_count,
+            enable_txpool: true,
         };
 
         Box::new(move |deny_unsafe, subscription| {
