@@ -157,6 +157,8 @@ pub fn relay_ext() -> sp_io::TestExternalities {
     ext
 }
 
+/// Advance parachain blocks until `block_number`.
+/// No effect if parachain is already at that number or exceeds it.
 pub fn advance_parachain_block_to(block_number: u64) {
     while parachain::System::block_number() < block_number {
         // On Finalize

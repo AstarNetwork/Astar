@@ -172,7 +172,7 @@ fn remote_dapps_staking_staker_claim() {
     let stake_amount = 100_000_000;
 
     // 1st step
-    // Register contract & stake on it. Advance a few blocks until new era is triggered.
+    // Register contract & stake on it. Advance a few blocks until at least two new eras are triggered.
     // Enable parachain A sovereign account to claim on Alice's behalf.
     ParaB::execute_with(|| {
         assert_ok!(parachain::DappsStaking::register(
@@ -194,7 +194,7 @@ fn remote_dapps_staking_staker_claim() {
         assert_ok!(parachain::Proxy::add_proxy(
             parachain::RuntimeOrigin::signed(ALICE),
             sibling_para_account_id(1),
-            parachain::ProxyType::DappsStaking,
+            parachain::ProxyType::StakerRewardClaim,
             0
         ));
     });

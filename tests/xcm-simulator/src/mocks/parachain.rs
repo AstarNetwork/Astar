@@ -202,6 +202,7 @@ impl pallet_dapps_staking::Config for Runtime {
 pub enum ProxyType {
     CancelProxy,
     DappsStaking,
+    StakerRewardClaim,
 }
 
 impl Default for ProxyType {
@@ -220,14 +221,20 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 )
             }
             ProxyType::DappsStaking => {
-                // matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..)) TODO: return this back
-                matches!(c, RuntimeCall::DappsStaking(..))
+                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            }
+            ProxyType::StakerRewardClaim => {
+                matches!(
+                    c,
+                    RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
+                )
             }
         }
     }
 
     fn is_superset(&self, o: &Self) -> bool {
         match (self, o) {
+            (Self::StakerRewardClaim, Self::DappsStaking) => true,
             (x, y) if x == y => true,
             _ => false,
         }
