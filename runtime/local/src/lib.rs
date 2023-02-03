@@ -817,6 +817,7 @@ pub enum ProxyType {
     Governance,
     CancelProxy,
     DappsStaking,
+    StakerRewardClaim,
 }
 
 impl Default for ProxyType {
@@ -875,6 +876,13 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             ProxyType::DappsStaking => {
                 matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
             }
+            ProxyType::StakerRewardClaim => {
+                matches!(
+                    c,
+                    RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
+                        | RuntimeCall::Utility(..)
+                )
+            }
         }
     }
 
@@ -884,6 +892,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             (ProxyType::Any, _) => true,
             (_, ProxyType::Any) => false,
             (ProxyType::NonTransfer, _) => true,
+            (ProxyType::StakerRewardClaim, ProxyType::DappsStaking) => true,
             _ => false,
         }
     }
