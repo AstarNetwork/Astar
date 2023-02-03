@@ -20,6 +20,7 @@ pub(crate) mod msg_queue;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
 
+use frame_support::traits::{Currency, OnFinalize, OnInitialize};
 use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use sp_runtime::traits::{AccountIdConversion, Get};
 use xcm::latest::prelude::*;
@@ -29,6 +30,8 @@ use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chai
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFAu8; 32]);
 pub const INITIAL_BALANCE: u128 = 1_000_000_000_000_000_000_000_000;
+pub const DAPP_STAKER_REWARD_PER_BLOCK: parachain::Balance = 1_000;
+pub const DAPP_STAKER_DEV_PER_BLOCK: parachain::Balance = 250;
 
 decl_test_parachain! {
     pub struct ParaA {
@@ -123,6 +126,10 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
     ext.execute_with(|| {
         System::set_block_number(1);
         MsgQueue::set_para_id(para_id.into());
+
+        parachain::DappsStaking::on_initialize(1);
+        let (staker_rewards, dev_rewards) = issue_dapps_staking_rewards();
+        parachain::DappsStaking::rewards(staker_rewards, dev_rewards);
     });
     ext
 }
@@ -148,4 +155,37 @@ pub fn relay_ext() -> sp_io::TestExternalities {
     let mut ext = sp_io::TestExternalities::new(t);
     ext.execute_with(|| System::set_block_number(1));
     ext
+}
+
+pub fn advance_parachain_block_to(block_number: u64) {
+    while parachain::System::block_number() < block_number {
+        // On Finalize
+        let current_block_number = parachain::System::block_number();
+        parachain::PolkadotXcm::on_finalize(current_block_number);
+        parachain::Balances::on_finalize(current_block_number);
+        parachain::DappsStaking::on_finalize(current_block_number);
+        parachain::System::on_finalize(current_block_number);
+
+        // Forward 1 block
+        let current_block_number = current_block_number + 1;
+        parachain::System::set_block_number(current_block_number);
+
+        // On Initialize
+        parachain::System::on_initialize(current_block_number);
+        {
+            parachain::DappsStaking::on_initialize(current_block_number);
+            let (staker_rewards, dev_rewards) = issue_dapps_staking_rewards();
+            parachain::DappsStaking::rewards(staker_rewards, dev_rewards);
+        }
+        parachain::Balances::on_initialize(current_block_number);
+        parachain::PolkadotXcm::on_initialize(current_block_number);
+    }
+}
+
+/// Issues and returns negative imbalances of (staker rewards, developer rewards)
+fn issue_dapps_staking_rewards() -> (parachain::NegativeImbalance, parachain::NegativeImbalance) {
+    (
+        parachain::Balances::issue(DAPP_STAKER_REWARD_PER_BLOCK),
+        parachain::Balances::issue(DAPP_STAKER_DEV_PER_BLOCK),
+    )
 }

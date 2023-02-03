@@ -18,16 +18,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
     construct_runtime, match_types, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, Currency, Everything, Imbalance, Nothing,
-        OnUnbalanced,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance,
+        InstanceFilter, Nothing, OnUnbalanced,
     },
-    weights::{
-        constants::{ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
-        Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
-    },
+    weights::{constants::WEIGHT_PER_SECOND, Weight},
     PalletId,
 };
 use frame_system::EnsureSigned;
@@ -35,19 +33,19 @@ use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{AccountIdConversion, IdentityLookup},
-    AccountId32, Perbill,
+    AccountId32, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
 use super::msg_queue::*;
-use xcm::latest::prelude::*;
+use xcm::latest::prelude::{AssetId as XcmAssetId, *};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
-    LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+    CurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter,
+    IsConcrete, LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -59,7 +57,7 @@ pub type AccountId = AccountId32;
 pub type Balance = u128;
 pub type AssetId = u128;
 
-type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
+pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
@@ -73,7 +71,7 @@ impl frame_system::Config for Runtime {
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
-    type Hashing = ::sp_runtime::traits::BlakeTwo256;
+    type Hashing = sp_runtime::traits::BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
@@ -112,6 +110,13 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = [u8; 8];
 }
 
+impl pallet_utility::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type PalletsOrigin = OriginCaller;
+    type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
@@ -130,23 +135,6 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
-// TODO: change this to something constant, maybe 1 wei per 1 weight
-pub struct WeightToFee;
-impl WeightToFeePolynomial for WeightToFee {
-    type Balance = Balance;
-    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        // in Shiden, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mSDN:
-        let p = 1_000_000_000_000_000;
-        let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
-        smallvec::smallvec![WeightToFeeCoefficient {
-            degree: 1,
-            negative: false,
-            coeff_frac: Perbill::from_rational(p % q, q),
-            coeff_integer: p / q,
-        }]
-    }
-}
-
 pub struct BurnFees;
 impl OnUnbalanced<NegativeImbalance> for BurnFees {
     /// Payout tips but burn all the fees
@@ -160,9 +148,109 @@ impl OnUnbalanced<NegativeImbalance> for BurnFees {
     }
 }
 
+#[derive(
+    PartialEq, Eq, Copy, Clone, Encode, Decode, MaxEncodedLen, RuntimeDebug, scale_info::TypeInfo,
+)]
+pub enum SmartContract {
+    Wasm(u32),
+}
+
+impl Default for SmartContract {
+    fn default() -> Self {
+        SmartContract::Wasm(0)
+    }
+}
+
+parameter_types! {
+    pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
+    pub const MaxUnlockingChunks: u32 = 5;
+    pub const UnbondingPeriod: u32 = 5;
+    pub const MaxEraStakeValues: u32 = 5;
+}
+
+impl pallet_dapps_staking::Config for Runtime {
+    type Currency = Balances;
+    type BlockPerEra = ConstU64<5>;
+    type SmartContract = SmartContract;
+    type RegisterDeposit = ConstU128<1>;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
+    type MaxNumberOfStakersPerContract = ConstU32<8>;
+    type MinimumStakingAmount = ConstU128<1>;
+    type PalletId = DappsStakingPalletId;
+    type MinimumRemainingAmount = ConstU128<0>;
+    type MaxUnlockingChunks = ConstU32<4>;
+    type UnbondingPeriod = ConstU32<2>;
+    type MaxEraStakeValues = ConstU32<4>;
+    type UnregisteredDappRewardRetention = ConstU32<7>;
+}
+
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    MaxEncodedLen,
+    scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+    CancelProxy,
+    DappsStaking,
+}
+
+impl Default for ProxyType {
+    fn default() -> Self {
+        Self::CancelProxy
+    }
+}
+
+impl InstanceFilter<RuntimeCall> for ProxyType {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        match self {
+            ProxyType::CancelProxy => {
+                matches!(
+                    c,
+                    RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
+                )
+            }
+            ProxyType::DappsStaking => {
+                // matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..)) TODO: return this back
+                matches!(c, RuntimeCall::DappsStaking(..))
+            }
+        }
+    }
+
+    fn is_superset(&self, o: &Self) -> bool {
+        match (self, o) {
+            (x, y) if x == y => true,
+            _ => false,
+        }
+    }
+}
+
+impl pallet_proxy::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type Currency = Balances;
+    type ProxyType = ProxyType;
+    type ProxyDepositBase = ConstU128<100>;
+    type ProxyDepositFactor = ConstU128<200>;
+    type MaxProxies = ConstU32<16>;
+    type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+    type MaxPending = ConstU32<16>;
+    type CallHasher = sp_runtime::traits::BlakeTwo256;
+    type AnnouncementDepositBase = ConstU128<100>;
+    type AnnouncementDepositFactor = ConstU128<400>;
+}
+
 parameter_types! {
     pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
-    pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
@@ -270,6 +358,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
     pub const UnitWeightCost: u64 = 10;
     pub const MaxInstructions: u32 = 100;
+    pub NativePerSecond: (XcmAssetId, u128) = (Concrete(ShidenLocation::get()), 1_000_000_000_000);
 }
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
@@ -312,7 +401,7 @@ impl Config for XcmConfig {
     type Barrier = XcmBarrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type Trader = (
-        UsingComponents<WeightToFee, ShidenLocation, AccountId, Balances, BurnFees>,
+        FixedRateOfFungible<NativePerSecond, ()>,
         FixedRateOfForeignAsset<XcAssetConfig, ShidenXcmFungibleFeeHandler>,
     );
     type ResponseHandler = ();
@@ -361,5 +450,8 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
         XcAssetConfig: pallet_xc_asset_config::{Pallet, Call, Storage, Event<T>},
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Event<T>},
+        Proxy: pallet_proxy::{Pallet, Call, Event<T>},
+        Utility: pallet_utility::{Pallet, Call, Event},
     }
 );

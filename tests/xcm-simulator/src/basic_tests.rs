@@ -23,14 +23,6 @@ use frame_support::assert_ok;
 use xcm::latest::prelude::*;
 use xcm_simulator::TestExt;
 
-// // Helper function for forming buy execution message
-// fn buy_execution<C>(fees: impl Into<MultiAsset>) -> Instruction<C> {
-//     BuyExecution {
-//         fees: fees.into(),
-//         weight_limit: Unlimited,
-//     }
-// }
-
 #[test]
 fn basic_dmp() {
     MockNet::reset();
@@ -40,6 +32,9 @@ fn basic_dmp() {
             remark: vec![1, 2, 3],
         },
     );
+
+    // A remote `Transact` is sent to the parachain A.
+    // No need to pay for the execution time since parachain is configured to allow unpaid execution from parents.
     Relay::execute_with(|| {
         assert_ok!(RelayChainPalletXcm::send_xcm(
             Here,
@@ -52,6 +47,7 @@ fn basic_dmp() {
         ));
     });
 
+    // Execute remote transact and verify that `Remarked` event is emitted.
     ParaA::execute_with(|| {
         use parachain::{RuntimeEvent, System};
         assert!(System::events().iter().any(|r| matches!(
@@ -70,6 +66,10 @@ fn basic_ump() {
             remark: vec![1, 2, 3],
         },
     );
+
+    // A remote `Transact` is sent to the relaychain.
+    // No need to pay for the execution time since relay chain is configured to allow unpaid execution from everything.
+    // TODO: Maybe change this later?
     ParaA::execute_with(|| {
         assert_ok!(ParachainPalletXcm::send_xcm(
             Here,
@@ -98,7 +98,8 @@ fn para_to_para_reserve_transfer() {
     let sibling_asset_id = 123 as u128;
     let para_a_multiloc = Box::new(MultiLocation::new(1, X1(Parachain(1))).versioned());
 
-    // Create asset and register it as cross-chain & payable
+    // On parachain B create an asset which representes a derivative of parachain A native asset.
+    // This asset is allowed as XCM execution fee payment asset.
     ParaB::execute_with(|| {
         assert_ok!(parachain::Assets::force_create(
             parachain::RuntimeOrigin::root(),
@@ -119,6 +120,7 @@ fn para_to_para_reserve_transfer() {
         ));
     });
 
+    // Next step is to send some of parachain A native asset to parachain B.
     let withdraw_amount = 567;
     ParaA::execute_with(|| {
         assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
@@ -147,6 +149,8 @@ fn para_to_para_reserve_transfer() {
         );
     });
 
+    // Parachain B should receive parachain A native assets and should mint their local derivate.
+    // Portion of those assets should be taken as the XCM execution fee.
     ParaB::execute_with(|| {
         // Ensure Alice received assets on ParaB (sent amount minus expenses)
         let four_instructions_execution_cost = 4 * parachain::UnitWeightCost::get() as u128;
@@ -154,5 +158,93 @@ fn para_to_para_reserve_transfer() {
             parachain::Assets::balance(sibling_asset_id, ALICE),
             withdraw_amount - four_instructions_execution_cost
         );
+    });
+}
+
+#[test]
+fn remote_dapps_staking_staker_claim() {
+    MockNet::reset();
+
+    // The idea of this test case is to remotely claim dApps staking staker rewards.
+    // Remote claim will be sent from parachain A to parachain B.
+
+    let smart_contract = parachain::SmartContract::Wasm(1337);
+    let stake_amount = 100_000_000;
+
+    // 1st step
+    // Register contract & stake on it. Advance a few blocks until new era is triggered.
+    // Enable parachain A sovereign account to claim on Alice's behalf.
+    ParaB::execute_with(|| {
+        assert_ok!(parachain::DappsStaking::register(
+            parachain::RuntimeOrigin::root(),
+            ALICE,
+            smart_contract.clone(),
+        ));
+        assert_ok!(parachain::DappsStaking::bond_and_stake(
+            parachain::RuntimeOrigin::signed(ALICE),
+            smart_contract.clone(),
+            stake_amount,
+        ));
+
+        // advance enough blocks so we at least get to era 3
+        advance_parachain_block_to(20);
+        assert!(parachain::DappsStaking::current_era() >= 3);
+
+        // Register para A sovereign account as proxy with dApps staking privileges
+        assert_ok!(parachain::Proxy::add_proxy(
+            parachain::RuntimeOrigin::signed(ALICE),
+            sibling_para_account_id(1),
+            parachain::ProxyType::DappsStaking,
+            0
+        ));
+    });
+
+    // 2nd step
+    // Dispatch remote `claim_staker` call from Para A to Para B
+    ParaA::execute_with(|| {
+        let claim_staker = parachain::RuntimeCall::DappsStaking(pallet_dapps_staking::Call::<
+            parachain::Runtime,
+        >::claim_staker {
+            contract_id: smart_contract.clone(),
+        });
+
+        let proxy_call =
+            parachain::RuntimeCall::Proxy(pallet_proxy::Call::<parachain::Runtime>::proxy {
+                real: ALICE,
+                force_proxy_type: None,
+                call: Box::new(claim_staker),
+            });
+
+        // Send the remote transact operation
+        assert_ok!(ParachainPalletXcm::send_xcm(
+            Here,
+            MultiLocation::new(1, X1(Parachain(2))),
+            Xcm(vec![
+                WithdrawAsset((Here, 100_000_000_000).into()),
+                BuyExecution {
+                    fees: (Here, 100_000_000_000).into(),
+                    weight_limit: Unlimited
+                },
+                Transact {
+                    origin_type: OriginKind::SovereignAccount,
+                    require_weight_at_most: 1_000_000_000 as u64,
+                    call: proxy_call.encode().into(),
+                }
+            ]),
+        ));
+    });
+
+    // 3rd step
+    //
+    ParaB::execute_with(|| {
+        // We expect at least one `Reward` event
+        assert!(parachain::System::events().iter().any(|r| matches!(
+            r.event,
+            parachain::RuntimeEvent::DappsStaking(pallet_dapps_staking::Event::Reward { .. })
+        )));
+
+        // Extra check to ensure reward was claimed for `Alice`
+        let staker_info = parachain::DappsStaking::staker_info(&ALICE, &smart_contract);
+        assert!(staker_info.latest_staked_value() > stake_amount);
     });
 }
