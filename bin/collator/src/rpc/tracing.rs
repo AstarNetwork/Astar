@@ -1,3 +1,5 @@
+// This file is part of Astar.
+
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -14,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+///! EVM tracing RPC support.
 use crate::cli::EthApi as EthApiCmd;
 
 use fc_rpc::OverrideHandle;
