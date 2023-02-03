@@ -69,7 +69,6 @@ fn basic_ump() {
 
     // A remote `Transact` is sent to the relaychain.
     // No need to pay for the execution time since relay chain is configured to allow unpaid execution from everything.
-    // TODO: Maybe change this later?
     ParaA::execute_with(|| {
         assert_ok!(ParachainPalletXcm::send_xcm(
             Here,
@@ -116,7 +115,7 @@ fn para_to_para_reserve_transfer() {
         assert_ok!(ParachainXcAssetConfig::set_asset_units_per_second(
             parachain::RuntimeOrigin::root(),
             para_a_multiloc,
-            1_000_000_000_000, // each unit of weight charged exactly 1 TODO: make this common & document it
+            1_000_000_000_000, // each unit of weight charged exactly 1
         ));
     });
 
@@ -172,7 +171,7 @@ fn remote_dapps_staking_staker_claim() {
     let stake_amount = 100_000_000;
 
     // 1st step
-    // Register contract & stake on it. Advance a few blocks until at least two new eras are triggered.
+    // Register contract & stake on it. Advance a few blocks until at least era 4 since we need 3 claimable rewards.
     // Enable parachain A sovereign account to claim on Alice's behalf.
     ParaB::execute_with(|| {
         assert_ok!(parachain::DappsStaking::register(
@@ -186,9 +185,9 @@ fn remote_dapps_staking_staker_claim() {
             stake_amount,
         ));
 
-        // advance enough blocks so we at least get to era 3
+        // advance enough blocks so we at least get to era 4
         advance_parachain_block_to(20);
-        assert!(parachain::DappsStaking::current_era() >= 3);
+        assert!(parachain::DappsStaking::current_era() >= 4);
 
         // Register para A sovereign account as proxy with dApps staking privileges
         assert_ok!(parachain::Proxy::add_proxy(
@@ -199,20 +198,20 @@ fn remote_dapps_staking_staker_claim() {
         ));
     });
 
+    let claim_staker_call = parachain::RuntimeCall::DappsStaking(pallet_dapps_staking::Call::<
+        parachain::Runtime,
+    >::claim_staker {
+        contract_id: smart_contract.clone(),
+    });
+
     // 2nd step
     // Dispatch remote `claim_staker` call from Para A to Para B
     ParaA::execute_with(|| {
-        let claim_staker = parachain::RuntimeCall::DappsStaking(pallet_dapps_staking::Call::<
-            parachain::Runtime,
-        >::claim_staker {
-            contract_id: smart_contract.clone(),
-        });
-
         let proxy_call =
             parachain::RuntimeCall::Proxy(pallet_proxy::Call::<parachain::Runtime>::proxy {
                 real: ALICE,
                 force_proxy_type: None,
-                call: Box::new(claim_staker),
+                call: Box::new(claim_staker_call.clone()),
             });
 
         // Send the remote transact operation
@@ -235,16 +234,79 @@ fn remote_dapps_staking_staker_claim() {
     });
 
     // 3rd step
-    //
+    // Receive claim & verify it was successful
     ParaB::execute_with(|| {
-        // We expect at least one `Reward` event
-        assert!(parachain::System::events().iter().any(|r| matches!(
-            r.event,
-            parachain::RuntimeEvent::DappsStaking(pallet_dapps_staking::Event::Reward { .. })
-        )));
+        // We expect exactly one `Reward` event
+        assert_eq!(
+            parachain::System::events()
+                .iter()
+                .filter(|r| matches!(
+                    r.event,
+                    parachain::RuntimeEvent::DappsStaking(
+                        pallet_dapps_staking::Event::Reward { .. }
+                    )
+                ))
+                .count(),
+            1
+        );
 
         // Extra check to ensure reward was claimed for `Alice`
         let staker_info = parachain::DappsStaking::staker_info(&ALICE, &smart_contract);
         assert!(staker_info.latest_staked_value() > stake_amount);
+
+        // Cleanup events
+        parachain::System::reset_events();
+    });
+
+    // 4th step
+    // Dispatch two remote `claim_staker` calls from Para A to Para B, but as a batch
+    ParaA::execute_with(|| {
+        let batch_call =
+            parachain::RuntimeCall::Utility(pallet_utility::Call::<parachain::Runtime>::batch {
+                calls: vec![claim_staker_call.clone(), claim_staker_call.clone()],
+            });
+
+        let proxy_call =
+            parachain::RuntimeCall::Proxy(pallet_proxy::Call::<parachain::Runtime>::proxy {
+                real: ALICE,
+                force_proxy_type: None,
+                call: Box::new(batch_call),
+            });
+
+        // Send the remote transact operation
+        assert_ok!(ParachainPalletXcm::send_xcm(
+            Here,
+            MultiLocation::new(1, X1(Parachain(2))),
+            Xcm(vec![
+                WithdrawAsset((Here, 100_000_000_000).into()),
+                BuyExecution {
+                    fees: (Here, 100_000_000_000).into(),
+                    weight_limit: Unlimited
+                },
+                Transact {
+                    origin_type: OriginKind::SovereignAccount,
+                    require_weight_at_most: 1_000_000_000 as u64,
+                    call: proxy_call.encode().into(),
+                }
+            ]),
+        ));
+    });
+
+    // 5th step
+    // Receive two claims & verify they were successful
+    ParaB::execute_with(|| {
+        // We expect exactly two `Reward` events
+        assert_eq!(
+            parachain::System::events()
+                .iter()
+                .filter(|r| matches!(
+                    r.event,
+                    parachain::RuntimeEvent::DappsStaking(
+                        pallet_dapps_staking::Event::Reward { .. }
+                    )
+                ))
+                .count(),
+            2
+        );
     });
 }

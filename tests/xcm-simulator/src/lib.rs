@@ -20,4 +20,4 @@
 mod mocks;
 
 #[cfg(test)]
-mod basic_tests;
+mod tests;

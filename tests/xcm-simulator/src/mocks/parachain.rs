@@ -227,6 +227,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 matches!(
                     c,
                     RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
+                        | RuntimeCall::Utility(..)
                 )
             }
         }

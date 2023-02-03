@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Examples of xcm-simulator usage."
 
-[dependencies]
+[dev-dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.1.2", features = ["derive"] }

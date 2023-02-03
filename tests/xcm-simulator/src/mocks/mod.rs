@@ -115,8 +115,6 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
             (ALICE, INITIAL_BALANCE),
             (sibling_para_account_id(1), INITIAL_BALANCE),
             (sibling_para_account_id(2), INITIAL_BALANCE),
-            // (derive_account32_hash(1), INITIAL_BALANCE),
-            // (derive_account32_hash(2), INITIAL_BALANCE), TODO
         ],
     }
     .assimilate_storage(&mut t)
@@ -171,6 +169,7 @@ pub fn advance_parachain_block_to(block_number: u64) {
         // Forward 1 block
         let current_block_number = current_block_number + 1;
         parachain::System::set_block_number(current_block_number);
+        parachain::System::reset_events();
 
         // On Initialize
         parachain::System::on_initialize(current_block_number);
