@@ -222,7 +222,12 @@ impl Contains<RuntimeCall> for BaseFilter {
             // Filter permissionless assets creation
             RuntimeCall::Assets(method) => match method {
                 pallet_assets::Call::create { id, .. } => *id < u32::MAX.into(),
-                // pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(), // TODO
+
+                pallet_assets::Call::start_destroy { id, .. } |
+                pallet_assets::Call::destroy_accounts { id, .. } |
+                pallet_assets::Call::destroy_approvals { id, .. } |
+                pallet_assets::Call::finish_destroy { id, .. } => *id < u32::MAX.into(),
+
                 _ => true,
             },
             // Filter cross-chain asset config, only allow registration for non-root users
@@ -627,7 +632,7 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-    type RemoveItemsLimit = ConstU32<1>; // TODO
+    type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = AssetId;
 }
 
@@ -1268,6 +1273,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    pallet_assets::migration::v1::MigrateToV1<Runtime>,
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {

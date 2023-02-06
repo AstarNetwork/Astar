@@ -188,7 +188,12 @@ impl Contains<RuntimeCall> for BaseFilter {
             // Filter permission-less assets creation/destroying
             RuntimeCall::Assets(method) => match method {
                 pallet_assets::Call::create { id, .. } => *id < u32::MAX.into(),
-                // pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(), // TODO
+
+                pallet_assets::Call::start_destroy { id, .. } |
+                pallet_assets::Call::destroy_accounts { id, .. } |
+                pallet_assets::Call::destroy_approvals { id, .. } |
+                pallet_assets::Call::finish_destroy { id, .. } => *id < u32::MAX.into(),
+
                 _ => true,
             },
             RuntimeCall::Contracts(_) => {
@@ -579,7 +584,7 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-    type RemoveItemsLimit = ConstU32<1>; // TODO
+    type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = AssetId;
 }
 
