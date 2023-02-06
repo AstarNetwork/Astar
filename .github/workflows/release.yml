@@ -163,7 +163,7 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: astar-macOS-latest-aarch64
+        name: astar-macOS-latest-x86_64
         path: target/release/astar-collator
 
   docker:
@@ -355,7 +355,7 @@ jobs:
         arch: ["x86_64", "aarch64"]
         exclude:
         - os: macos
-          arch: x86_64
+          arch: aarch64
     steps:
     - name: Create download folder
       run: |
