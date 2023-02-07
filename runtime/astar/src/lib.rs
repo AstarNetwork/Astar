@@ -875,7 +875,7 @@ pub type Executive = frame_executive::Executive<
     (
         pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
         pallet_assets::migration::v1::MigrateToV1<Runtime>,
-    )
+    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
