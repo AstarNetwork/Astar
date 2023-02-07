@@ -285,8 +285,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 1_000_000;
-    pub const ApprovalDeposit: Balance = 1_000_000;
+    pub const AssetDeposit: Balance = 1 * AST;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
@@ -306,7 +305,7 @@ impl pallet_assets::Config for Runtime {
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
     type AssetAccountDeposit = AssetAccountDeposit;
-    type ApprovalDeposit = ApprovalDeposit;
+    type ApprovalDeposit = ExistentialDeposit;
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
@@ -719,17 +718,7 @@ impl pallet_democracy::Config for Runtime {
 }
 
 parameter_types! {
-    pub const DepositPerItem: Balance = deposit(1, 0);
-    pub const DepositPerByte: Balance = deposit(0, 1);
-    pub const MaxValueSize: u32 = 16 * 1024;
-    // The lazy deletion runs inside on_initialize.
-    pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
-        RuntimeBlockWeights::get().max_block;
-    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
-}
-
-parameter_types! {
-    pub const MinVestedTransfer: Balance = AST;
+    pub const MinVestedTransfer: Balance = deposit(1, 0); // 1 DB entry is created;
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
         WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
@@ -744,6 +733,16 @@ impl pallet_vesting::Config for Runtime {
     // `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
     // highest number of schedules that encodes less than 2^10.
     const MAX_VESTING_SCHEDULES: u32 = 28;
+}
+
+parameter_types! {
+    pub const DepositPerItem: Balance = deposit(1, 0);
+    pub const DepositPerByte: Balance = deposit(0, 1);
+    pub const MaxValueSize: u32 = 16 * 1024;
+    // The lazy deletion runs inside on_initialize.
+    pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
+        RuntimeBlockWeights::get().max_block;
+    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
 impl pallet_contracts::Config for Runtime {

@@ -237,9 +237,9 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-    pub const BasicDeposit: Balance = 10 * ASTR;       // 258 bytes on-chain
-    pub const FieldDeposit: Balance = 25 * MILLIASTR;  // 66 bytes on-chain
-    pub const SubAccountDeposit: Balance = 2 * ASTR;   // 53 bytes on-chain
+    pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
+    pub const FieldDeposit: Balance = deposit(0, 66);  // 66 bytes on-chain
+    pub const SubAccountDeposit: Balance = deposit(1, 53);  // 53 bytes on-chain
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
     pub const MaxRegistrars: u32 = 20;
@@ -532,8 +532,7 @@ impl AddressToAssetId<AssetId> for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 1_000_000;
-    pub const ApprovalDeposit: Balance = 1_000_000;
+    pub const AssetDeposit: Balance = 10 * INIT_SUPPLY_FACTOR * ASTR;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
@@ -553,7 +552,7 @@ impl pallet_assets::Config for Runtime {
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
     type AssetAccountDeposit = AssetAccountDeposit;
-    type ApprovalDeposit = ApprovalDeposit;
+    type ApprovalDeposit = ExistentialDeposit;
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
@@ -561,7 +560,7 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinVestedTransfer: Balance = ASTR;
+    pub const MinVestedTransfer: Balance = deposit(1, 0); // 1 DB entry is created
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
         WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
