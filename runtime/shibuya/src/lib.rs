@@ -611,7 +611,7 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinVestedTransfer: Balance = deposit(1, 0); // 1 DB entry is created;
+    pub const MinVestedTransfer: Balance = 1 * SBY;
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
         WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
