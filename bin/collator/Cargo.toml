@@ -129,9 +129,9 @@ try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "p
 moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
 moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
 moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
-moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/txpool-rpc" }
+moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
 moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
-moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/txpool-rpc" }
+moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.33" }
 
 [build-dependencies]
 build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
