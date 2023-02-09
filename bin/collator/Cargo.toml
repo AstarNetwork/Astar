@@ -85,7 +85,7 @@ shibuya-runtime = { path = "../../runtime/shibuya" }
 shiden-runtime = { path = "../../runtime/shiden" }
 
 # astar-frame dependencies
-pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.36", default-features = false }
+pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "dk-upgrade-polkadot-v0.9.36", default-features = false }
 
 # frame dependencies
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }

@@ -17,6 +17,8 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //!
+pub use pallet_chain_extension_assets::AssetsExtension;
+pub use pallet_chain_extension_assets::weights::WeightInfo;
 use super::Runtime;
 /// Registered WASM contracts chain extensions.
 ///
@@ -31,6 +33,12 @@ impl RegisteredChainExtension<Runtime> for DappsStakingExtension<Runtime> {
     const ID: u16 = 00;
 }
 
+
 impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime> {
     const ID: u16 = 01;
+}
+
+/// Based on chain-extension registry https://github.com/paritytech/chainextension-registry
+impl<W: WeightInfo> RegisteredChainExtension<Runtime> for AssetsExtension<Runtime, W> {
+    const ID: u16 = 18678;
 }
