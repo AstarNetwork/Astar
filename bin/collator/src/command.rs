@@ -615,7 +615,7 @@ pub fn run() -> Result<()> {
 
             use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
             type HostFunctionsOf<E> =
-                ExtendedHostFunctions<(), <E as NativeExecutionDispatch>::ExtendHostFunctions>;
+                ExtendedHostFunctions<sp_io::SubstrateHostFunctions, <E as NativeExecutionDispatch>::ExtendHostFunctions>;
 
             if chain_spec.is_shiden() {
                 runner.async_run(|config| {
