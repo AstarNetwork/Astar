@@ -1003,6 +1003,7 @@ pub type Executive = frame_executive::Executive<
         pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
         pallet_contracts_migration::CustomMigration<Runtime>,
         pallet_assets::migration::v1::MigrateToV1<Runtime>,
+        pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
     ),
 >;
 
