@@ -4677,7 +4677,7 @@ checksum = "f051f77a7c8e6957c0696eac88f26b0117e54f52d3fc682ab19397a8812846a4"
 
 [[package]]
 name = "local-runtime"
-version = "4.46.0"
+version = "4.47.0"
 dependencies = [
  "array-bytes 6.0.0",
  "fp-rpc",
