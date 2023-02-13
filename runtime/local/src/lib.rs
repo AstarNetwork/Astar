@@ -327,7 +327,7 @@ impl pallet_assets::Config for Runtime {
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
-    type AssetIdParameter = AssetId;
+    type AssetIdParameter = codec::Compact<AssetId>;
 }
 
 parameter_types! {
