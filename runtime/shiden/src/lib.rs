@@ -192,7 +192,9 @@ impl Contains<RuntimeCall> for BaseFilter {
                 pallet_assets::Call::start_destroy { id, .. }
                 | pallet_assets::Call::destroy_accounts { id, .. }
                 | pallet_assets::Call::destroy_approvals { id, .. }
-                | pallet_assets::Call::finish_destroy { id, .. } => *id < (u32::MAX as AssetId).into(),
+                | pallet_assets::Call::finish_destroy { id, .. } => {
+                    *id < (u32::MAX as AssetId).into()
+                }
 
                 _ => true,
             },
