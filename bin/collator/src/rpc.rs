@@ -45,6 +45,7 @@ use substrate_frame_rpc_system::{System, SystemApiServer};
 
 use moonbeam_rpc_debug::{Debug, DebugServer};
 use moonbeam_rpc_trace::{Trace, TraceServer};
+use moonbeam_rpc_txpool::{TxPool, TxPoolServer};
 
 use crate::primitives::*;
 
@@ -54,6 +55,7 @@ pub mod tracing;
 pub struct EvmTracingConfig {
     pub tracing_requesters: tracing::RpcRequesters,
     pub trace_filter_max_count: u32,
+    pub enable_txpool: bool,
 }
 
 // TODO This is copied from frontier. It should be imported instead after
@@ -167,6 +169,7 @@ where
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
+        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>,
@@ -207,7 +210,7 @@ where
         Eth::new(
             client.clone(),
             pool.clone(),
-            graph,
+            graph.clone(),
             no_tx_converter,
             network.clone(),
             Default::default(),
@@ -251,6 +254,10 @@ where
         )
         .into_rpc(),
     )?;
+
+    if tracing_config.enable_txpool {
+        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
+    }
 
     if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
         io.merge(

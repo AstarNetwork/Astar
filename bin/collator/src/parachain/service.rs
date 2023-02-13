@@ -334,6 +334,7 @@ where
         + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
+        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
@@ -507,6 +508,7 @@ where
         let rpc_config = crate::rpc::EvmTracingConfig {
             tracing_requesters,
             trace_filter_max_count: tracing_config.ethapi_trace_max_count,
+            enable_txpool: ethapi_cmd.contains(&EthApiCmd::TxPool),
         };
 
         Box::new(move |deny_unsafe, subscription| {

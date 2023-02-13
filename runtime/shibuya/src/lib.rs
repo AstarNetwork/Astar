@@ -154,7 +154,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 87,
+    spec_version: 88,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1766,6 +1766,30 @@ impl_runtime_apis! {
             }
 
             Ok(())
+        }
+    }
+
+    impl moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block> for Runtime {
+        fn extrinsic_filter(
+            xts_ready: Vec<<Block as BlockT>::Extrinsic>,
+            xts_future: Vec<<Block as BlockT>::Extrinsic>,
+        ) -> moonbeam_rpc_primitives_txpool::TxPoolResponse {
+            moonbeam_rpc_primitives_txpool::TxPoolResponse {
+                ready: xts_ready
+                    .into_iter()
+                    .filter_map(|xt| match xt.0.function {
+                        RuntimeCall::Ethereum(pallet_ethereum::Call::transact { transaction }) => Some(transaction),
+                        _ => None,
+                    })
+                    .collect(),
+                future: xts_future
+                    .into_iter()
+                    .filter_map(|xt| match xt.0.function {
+                        RuntimeCall::Ethereum(pallet_ethereum::Call::transact { transaction }) => Some(transaction),
+                        _ => None,
+                    })
+                    .collect(),
+            }
         }
     }
 
