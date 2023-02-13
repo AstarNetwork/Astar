@@ -49,20 +49,6 @@ use substrate_prometheus_endpoint::Registry;
 use super::shell_upgrade::*;
 use crate::primitives::*;
 
-// #[cfg(not(feature = "runtime-benchmarks"))]
-// type HostFunctions = ();
-
-// #[cfg(feature = "runtime-benchmarks")]
-// type HostFunctions =
-// 	frame_benchmarking::benchmarking::HostFunctions;
-
-// type ParachainClient<RuntimeApi> = TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>;
-
-// type ParachainBackend = TFullBackend<Block>;
-
-// type ParachainBlockImport<RuntimeApi> =
-// 	TParachainBlockImport<Block, Arc<ParachainClient<RuntimeApi>>, ParachainBackend>;
-
 /// Astar network runtime executor.
 pub mod astar {
     pub use astar_runtime::RuntimeApi;
