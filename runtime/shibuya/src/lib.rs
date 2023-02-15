@@ -219,16 +219,10 @@ pub struct BaseFilter;
 impl Contains<RuntimeCall> for BaseFilter {
     fn contains(call: &RuntimeCall) -> bool {
         match call {
-            // Filter permissionless assets creation
+            // Filter permission-less assets creation/destroying.
+            // Custom asset's `id` should fit in `u32` as not to mix with service assets.
             RuntimeCall::Assets(method) => match method {
                 pallet_assets::Call::create { id, .. } => *id < (u32::MAX as AssetId).into(),
-
-                pallet_assets::Call::start_destroy { id, .. }
-                | pallet_assets::Call::destroy_accounts { id, .. }
-                | pallet_assets::Call::destroy_approvals { id, .. }
-                | pallet_assets::Call::finish_destroy { id, .. } => {
-                    *id < (u32::MAX as AssetId).into()
-                }
 
                 _ => true,
             },
@@ -695,7 +689,7 @@ impl pallet_contracts::Config for Runtime {
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
-    type UnsafeUnstableInterface = ConstBool<false>;
+    type UnsafeUnstableInterface = ConstBool<true>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
