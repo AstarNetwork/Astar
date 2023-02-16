@@ -31,4 +31,4 @@ jobs:
       run: rustup target list --installed
 
     - name: Check all features compilation
-      run: cargo check --verbose --all-features --frozen --locked
+      run: cargo check --verbose --all-features --locked
