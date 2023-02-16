@@ -613,6 +613,12 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(cmd)?;
             let chain_spec = &runner.config().chain_spec;
 
+            use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+            type HostFunctionsOf<E> = ExtendedHostFunctions<
+                sp_io::SubstrateHostFunctions,
+                <E as NativeExecutionDispatch>::ExtendHostFunctions,
+            >;
+
             if chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
@@ -622,7 +628,7 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shiden_runtime::Block, shiden::Executor>(config),
+                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>>(),
                         task_manager,
                     ))
                 })
@@ -635,7 +641,7 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shibuya_runtime::Block, shibuya::Executor>(config),
+                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>>(),
                         task_manager,
                     ))
                 })
@@ -647,7 +653,10 @@ pub fn run() -> Result<()> {
                             .map_err(|e| {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
-                    Ok((cmd.run::<Block, local::Executor>(config), task_manager))
+                    Ok((
+                        cmd.run::<Block, HostFunctionsOf<local::Executor>>(),
+                        task_manager,
+                    ))
                 })
             }
         }
