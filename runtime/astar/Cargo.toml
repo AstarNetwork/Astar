@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "4.47.1"
+version = "4.48.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -101,7 +101,7 @@ pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "po
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
 
 [features]
 default = ["std"]
@@ -177,6 +177,7 @@ std = [
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
 	"xcm-primitives/std",
+	"substrate-wasm-builder",
 ]
 runtime-benchmarks = [
 	'frame-benchmarking',

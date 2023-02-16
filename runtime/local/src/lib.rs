@@ -328,6 +328,7 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = codec::Compact<AssetId>;
+    type CallbackHandle = ();
 }
 
 parameter_types! {
@@ -1368,6 +1369,8 @@ impl_runtime_apis! {
         fn elasticity() -> Option<Permill> {
             Some(BaseFee::elasticity())
         }
+
+        fn gas_limit_multiplier_support() {}
     }
 
     impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
@@ -1472,7 +1475,7 @@ impl_runtime_apis! {
 
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
-        fn on_runtime_upgrade(checks: bool) -> (Weight, Weight) {
+        fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
             log::info!("try-runtime::on_runtime_upgrade");
             let weight = Executive::try_runtime_upgrade(checks).unwrap();
             (weight, RuntimeBlockWeights::get().max_block)

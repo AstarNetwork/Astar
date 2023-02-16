@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "4.47.1"
+version = "4.48.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -108,7 +108,7 @@ xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch =
 pallet-contracts-migration = { path = "../contracts-migration", default-features = false }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
 
 [features]
 default = ["std"]
@@ -190,6 +190,7 @@ std = [
 	"pallet-xc-asset-config/std",
 	"xcm-primitives/std",
 	"pallet-contracts-migration/std",
+	"substrate-wasm-builder",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

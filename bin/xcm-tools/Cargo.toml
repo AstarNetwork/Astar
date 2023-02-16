@@ -11,7 +11,7 @@ name = "xcm-tools"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.0.13", features = ["derive"] }
+clap = { version = "4.0.32", features = ["derive"] }
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.37" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }

@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "4.47.1"
+version = "4.48.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar collator implementation in Rust."
 build = "build.rs"
@@ -16,8 +16,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # third-party dependencies
-async-trait = "0.1.57"
-clap = { version = "4.0.29", features = ["derive"] }
+async-trait = "0.1.59"
+clap = { version = "4.0.32", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = { version = "0.3.21" }
 log = "0.4.17"

@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "4.47.1"
+version = "4.48.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -120,7 +120,7 @@ frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", b
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false, optional = true }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
 
 [features]
 default = ["std"]
@@ -213,6 +213,7 @@ std = [
 	"xcm-executor/std",
 	"xcm-primitives/std",
 	"pallet-contracts-migration/std",
+	"substrate-wasm-builder",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
