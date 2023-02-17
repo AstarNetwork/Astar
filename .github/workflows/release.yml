@@ -33,10 +33,10 @@ jobs:
       run: rustup target list --installed
 
     - name: Check all features compilation
-      run: cargo check --verbose --all-features
+      run: cargo check --verbose --all-features --locked
 
     - name: Run all tests
-      run: cargo test --all-features
+      run: cargo test --all-features --locked
 
   native-linux:
     needs: checks-and-tests
@@ -86,7 +86,7 @@ jobs:
       run: rustup target list --installed
 
     - name: Build optimized binary
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.target }} --verbose
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.target }} --verbose --locked
 
     - name: Set artifact name
       env:
@@ -159,7 +159,7 @@ jobs:
       run: rustup target list --installed
 
     - name: Build optimized binary
-      run: cargo build --release --verbose
+      run: cargo build --release --verbose --locked
 
     - uses: actions/upload-artifact@v3
       with:
