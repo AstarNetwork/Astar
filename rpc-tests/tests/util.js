@@ -2,14 +2,11 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/api';
 import chaiAsPromised from 'chai-as-promised';
 import chai from 'chai';
-import { run, killAll } from 'polkadot-launch';
-
-import config from '../config.js';
 
 chai.use(chaiAsPromised);
 
 export const SPAWNING_TIME = 500000;
-const WS_PORT = 9988;
+export const WS_PORT = process.env.WS_PORT;
 
 /**
  * capitalize: capitalize first letter of a string
@@ -92,8 +89,6 @@ export function describeWithNetwork(network, paraId, title, cb) {
 		before('Starting Astar Test Node', async function () {
 			this.timeout(SPAWNING_TIME);
 
-			await run(process.cwd(), config(network, paraId));
-
 			const api = await ApiPromise.create({
 				provider: new WsProvider(`ws://localhost:${WS_PORT}`)
 			});
@@ -139,7 +134,6 @@ export function describeWithNetwork(network, paraId, title, cb) {
 
 		after(async function () {
 			await context.api.disconnect()
-			killAll();
 			process.exit(0);
 		});
 

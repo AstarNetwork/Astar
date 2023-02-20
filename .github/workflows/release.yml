@@ -8,7 +8,7 @@ env:
   SUBWASM_VERSION: 0.16.1
 jobs:
   checks-and-tests:
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Free disk space
       run: |
@@ -33,14 +33,14 @@ jobs:
       run: rustup target list --installed
 
     - name: Check all features compilation
-      run: cargo check --verbose --all-features
+      run: cargo check --verbose --all-features --locked
 
     - name: Run all tests
-      run: cargo test --all-features
+      run: cargo test --all-features --locked
 
   native-linux:
     needs: checks-and-tests
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64]
     strategy:
       matrix:
         target:
@@ -86,7 +86,7 @@ jobs:
       run: rustup target list --installed
 
     - name: Build optimized binary
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.target }} --verbose
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.target }} --verbose --locked
 
     - name: Set artifact name
       env:
@@ -101,7 +101,7 @@ jobs:
 
   rpc-tests:
     needs: native-linux
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64]
     strategy:
       matrix:
         network: [astar, shiden]
@@ -159,11 +159,11 @@ jobs:
       run: rustup target list --installed
 
     - name: Build optimized binary
-      run: cargo build --release --verbose
+      run: cargo build --release --verbose --locked
 
     - uses: actions/upload-artifact@v3
       with:
-        name: astar-macOS-latest-aarch64
+        name: astar-macOS-latest-x86_64
         path: target/release/astar-collator
 
   docker:
@@ -222,7 +222,7 @@ jobs:
 
     - name: Srtool build
       id: srtool_build
-      uses: chevdor/srtool-actions@v0.5.0
+      uses: chevdor/srtool-actions@v0.6.0
       with:
         chain: ${{ matrix.chain }}
         runtime_dir: runtime/${{ matrix.chain }}
@@ -355,7 +355,7 @@ jobs:
         arch: ["x86_64", "aarch64"]
         exclude:
         - os: macos
-          arch: x86_64
+          arch: aarch64
     steps:
     - name: Create download folder
       run: |

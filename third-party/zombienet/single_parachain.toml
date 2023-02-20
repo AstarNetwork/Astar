@@ -1,7 +1,7 @@
-# Used to start 4 validator nodes and 2 collator nodes for a single parachain.
-
 [settings]
 timeout = 1000
+
+# Used to start 4 validator nodes and 2 collator nodes for a single parachain.
 
 [relaychain]
 default_command = "./polkadot"
