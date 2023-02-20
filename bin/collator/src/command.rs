@@ -1,3 +1,21 @@
+// This file is part of Astar.
+
+// Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+
 //! Astar collator CLI handlers.
 use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
@@ -595,6 +613,12 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(cmd)?;
             let chain_spec = &runner.config().chain_spec;
 
+            use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+            type HostFunctionsOf<E> = ExtendedHostFunctions<
+                sp_io::SubstrateHostFunctions,
+                <E as NativeExecutionDispatch>::ExtendHostFunctions,
+            >;
+
             if chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
@@ -604,7 +628,7 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shiden_runtime::Block, shiden::Executor>(config),
+                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>>(),
                         task_manager,
                     ))
                 })
@@ -617,7 +641,7 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shibuya_runtime::Block, shibuya::Executor>(config),
+                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>>(),
                         task_manager,
                     ))
                 })
@@ -629,7 +653,10 @@ pub fn run() -> Result<()> {
                             .map_err(|e| {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
-                    Ok((cmd.run::<Block, local::Executor>(config), task_manager))
+                    Ok((
+                        cmd.run::<Block, HostFunctionsOf<local::Executor>>(),
+                        task_manager,
+                    ))
                 })
             }
         }
@@ -683,17 +710,17 @@ pub fn run() -> Result<()> {
                 );
 
                 if config.chain_spec.is_astar() {
-                    start_astar_node(config, polkadot_config, collator_options, para_id)
+                    start_astar_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shiden() {
-                    start_shiden_node(config, polkadot_config, collator_options, para_id)
+                    start_shiden_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shibuya() {
-                    start_shibuya_node(config, polkadot_config, collator_options, para_id)
+                    start_shibuya_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)

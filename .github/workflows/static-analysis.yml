@@ -2,15 +2,14 @@ name: Static Analysis
 on: [push, workflow_dispatch]
 jobs:
   fmt:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v3
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
+      - name: Install deps
+        run: sudo apt -y install protobuf-compiler
 
       - name: Install & display rust toolchain
         run: rustup show
@@ -31,15 +30,14 @@ jobs:
           taplo fmt --check
 
   clippy:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the source code
       uses: actions/checkout@v3
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -51,3 +49,17 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         args: --all-features -- -D warnings
+
+  check-license:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the source code
+        uses: actions/checkout@v3
+
+      - name: Check license    
+        uses: viperproject/check-license-header@v2
+        with:
+          path: ./
+          config: ./.github/license-check/config.json
+          strict: false

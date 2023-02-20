@@ -21,10 +21,8 @@ jobs:
     - name: Checkout the source code
       uses: actions/checkout@v3
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        version: '3.x'
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -33,4 +31,4 @@ jobs:
       run: rustup target list --installed
 
     - name: Check all features compilation
-      run: cargo check --verbose --all-features
+      run: cargo check --verbose --all-features --locked

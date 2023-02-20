@@ -1,3 +1,21 @@
+// This file is part of Astar.
+
+// Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+
 //! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -15,7 +33,9 @@ use frame_support::{
         InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        constants::{
+            BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
+        },
         ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
@@ -31,7 +51,7 @@ use pallet_transaction_payment::{
 };
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_core::{OpaqueMetadata, H160, H256, U256};
+use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -107,7 +127,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 86,
+    spec_version: 89,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -136,9 +156,10 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND
-    .saturating_div(2)
-    .set_proof_size(polkadot_primitives::v2::MAX_POV_SIZE as u64);
+const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
+    WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
+    polkadot_primitives::v2::MAX_POV_SIZE as u64,
+);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -169,10 +190,11 @@ pub struct BaseFilter;
 impl Contains<RuntimeCall> for BaseFilter {
     fn contains(call: &RuntimeCall) -> bool {
         match call {
-            // Filter permission-less assets creation/destroying
+            // Filter permission-less assets creation/destroying.
+            // Custom asset's `id` should fit in `u32` as not to mix with service assets.
             RuntimeCall::Assets(method) => match method {
-                pallet_assets::Call::create { id, .. } => *id < u32::MAX.into(),
-                pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(),
+                pallet_assets::Call::create { id, .. } => *id < (u32::MAX as AssetId).into(),
+
                 _ => true,
             },
             RuntimeCall::Contracts(_) => {
@@ -562,6 +584,9 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = codec::Compact<AssetId>;
+    type CallbackHandle = ();
 }
 
 parameter_types! {
@@ -618,6 +643,8 @@ impl pallet_contracts::Config for Runtime {
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
+    type UnsafeUnstableInterface = ConstBool<false>;
+    type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
 impl pallet_contracts_migration::Config for Runtime {
@@ -661,8 +688,16 @@ impl WeightToFeePolynomial for WeightToFee {
 
 pub struct BurnFees;
 impl OnUnbalanced<NegativeImbalance> for BurnFees {
-    fn on_unbalanceds<B>(_: impl Iterator<Item = NegativeImbalance>) {
-        // burns the fees
+    /// Payout tips but burn all the fees
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+        if let Some(fees_to_burn) = fees_then_tips.next() {
+            if let Some(tips) = fees_then_tips.next() {
+                <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(tips);
+            }
+
+            // burn fees
+            drop(fees_to_burn);
+        }
     }
 }
 
@@ -715,7 +750,7 @@ pub const GAS_PER_SECOND: u64 = 40_000_000;
 
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
-pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND.saturating_div(GAS_PER_SECOND).ref_time();
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_REF_TIME_PER_SECOND.saturating_div(GAS_PER_SECOND);
 
 pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
@@ -969,8 +1004,8 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
     (
-        pallet_multisig::migrations::v1::MigrateToV1<Runtime>,
-        pallet_contracts_migration::CustomMigration<Runtime>,
+        pallet_assets::migration::v1::MigrateToV1<Runtime>,
+        pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
     ),
 >;
 
@@ -1046,6 +1081,7 @@ mod benches {
         [pallet_dapps_staking, DappsStaking]
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
+        [pallet_collator_selection, CollatorSelection]
     );
 }
 
@@ -1313,6 +1349,8 @@ impl_runtime_apis! {
         fn elasticity() -> Option<Permill> {
             Some(BaseFee::elasticity())
         }
+
+        fn gas_limit_multiplier_support() {}
     }
 
     impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
@@ -1418,15 +1456,16 @@ impl_runtime_apis! {
 
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
-        fn on_runtime_upgrade() -> (Weight, Weight) {
+        fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
             log::info!("try-runtime::on_runtime_upgrade");
-            let weight = Executive::try_runtime_upgrade().unwrap();
+            let weight = Executive::try_runtime_upgrade(checks).unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
 
         fn execute_block(
             block: Block,
             state_root_check: bool,
+            signature_check: bool,
             select: frame_try_runtime::TryStateSelect
         ) -> Weight {
             log::info!(
@@ -1436,7 +1475,7 @@ impl_runtime_apis! {
                 state_root_check,
                 select,
             );
-            Executive::try_execute_block(block, state_root_check, select).expect("execute-block failed")
+            Executive::try_execute_block(block, state_root_check, signature_check, select).expect("execute-block failed")
         }
     }
 }

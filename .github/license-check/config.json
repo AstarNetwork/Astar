@@ -1,0 +1,8 @@
+[
+    {
+        "include": [
+            "**/*.rs"
+        ],
+        "license": "./.github/license-check/headers/HEADER-GNUv3"
+    }
+]
