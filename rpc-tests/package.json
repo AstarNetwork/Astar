@@ -4,20 +4,18 @@
   "description": "tests for rpc node",
   "type": "module",
   "scripts": {
-    "test:astar": "export NETWORK=astar && export PARA_ID=2006 && export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js",
-    "test:shiden": "export NETWORK=shiden && export PARA_ID=2007 && export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js"
+    "test:astar": "export NETWORK=astar && export PARA_ID=2006 && export WS_PORT=9988 && export EVM_PORT=8545 && export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js",
+    "test:shiden": "export NETWORK=shiden && export PARA_ID=2007 && export WS_PORT=9989 && export EVM_PORT=8546 && export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js"
   },
   "author": "AstarNetwork",
   "license": "ISC",
   "dependencies": {
-    "@acala-network/type-definitions": "^4.1.5",
-    "@plasm/types": "^1.5.4-3",
     "@polkadot/api": "^7.12.1",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "mocha": "^9.2.2",
     "mocha-steps": "^1.3.0",
-    "polkadot-launch": "^2.3.0",
-    "solc": "^0.8.17"
+    "solc": "^0.8.17",
+    "web3": "^1.8.1"
   }
 }

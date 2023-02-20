@@ -5,7 +5,8 @@ import contractFile from './compile.js';
 import Web3 from 'web3';
 
 // Create Web3 instance
-const web3 = new Web3('http://localhost:9933');
+export const EVM_PORT = process.env.EVM_PORT;
+const web3 = new Web3('http://localhost:' + EVM_PORT);
 
 // Get the bytecode and API
 const bytecode = contractFile.evm.bytecode.object;
