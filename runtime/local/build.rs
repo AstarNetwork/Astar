@@ -16,12 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use substrate_wasm_builder::WasmBuilder;
-
 fn main() {
-    WasmBuilder::new()
-        .with_current_project()
-        .export_heap_base()
-        .import_memory()
-        .build()
+    #[cfg(feature = "std")]
+    {
+        substrate_wasm_builder::WasmBuilder::new()
+            .with_current_project()
+            .export_heap_base()
+            .import_memory()
+            .build();
+    }
 }
