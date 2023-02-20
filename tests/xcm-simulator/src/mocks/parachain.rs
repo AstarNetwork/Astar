@@ -25,7 +25,7 @@ use frame_support::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance,
         InstanceFilter, Nothing, OnUnbalanced,
     },
-    weights::{constants::WEIGHT_PER_SECOND, Weight},
+    weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
     PalletId,
 };
 use frame_system::EnsureSigned;
@@ -121,6 +121,7 @@ impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type AssetId = AssetId;
+    type AssetIdParameter = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
     type ForceOrigin = frame_system::EnsureRoot<AccountId>;
@@ -132,6 +133,8 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = ConstU32<50>;
     type Freezer = ();
     type Extra = ();
+    type RemoveItemsLimit = ConstU32<100>;
+    type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
@@ -280,8 +283,8 @@ impl cumulus_pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = WEIGHT_PER_SECOND.saturating_div(4);
-    pub const ReservedDmpWeight: Weight = WEIGHT_PER_SECOND.saturating_div(4);
+    pub const ReservedXcmpWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_div(4));
+    pub const ReservedDmpWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_div(4));
 }
 
 parameter_types! {
