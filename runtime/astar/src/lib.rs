@@ -874,10 +874,6 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (
-        pallet_assets::migration::v1::MigrateToV1<Runtime>,
-        pallet_balances::migration::MigrateToTrackInactive<Runtime, xcm_config::CheckingAccount>,
-    ),
 >;
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
