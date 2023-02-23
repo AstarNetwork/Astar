@@ -2,6 +2,8 @@
 
 `[nodeName]: js-script ./[path to script] with "[args]" ([return is greater than x] or [return is equal to x]) [within y seconds]`
 
+See the [Testing DSL spec](https://paritytech.github.io/zombienet/cli/test-dsl-definition-spec.html)
+
 Warning: can't use `"type": "module",` in `package.json`, it will break js-script functionality.
 
 ## The run function has 3 parameter
