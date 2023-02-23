@@ -354,7 +354,7 @@ jobs:
         os: ["ubuntu", "macOS"]
         arch: ["x86_64", "aarch64"]
         exclude:
-        - os: macos
+        - os: macOS
           arch: aarch64
     steps:
     - name: Create download folder
