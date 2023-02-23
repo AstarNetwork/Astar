@@ -73,7 +73,7 @@ pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar
 pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false, features = ["evm", "wasm"] }
 
 # chain-extensions
-pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.37", default-features = false, features = ["substrate"] }
+pallet-chain-extension-assets = { path = "../../../../astar/astar-frame-3/astar-frame/chain-extensions/pallet-assets", default-features = false }
 
 # benchmarking
 array-bytes = "6.0.0"
@@ -97,7 +97,6 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"pallet-assets/std",
-	"pallet-assets-chain-extension/substrate-std",
 	"pallet-aura/std",
 	"pallet-balances/std",
 	"pallet-block-reward/std",
@@ -150,6 +149,7 @@ std = [
 	"pallet-treasury/std",
 	"pallet-xvm/std",
 	"substrate-wasm-builder",
+	"pallet-chain-extension-assets/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

@@ -59,11 +59,13 @@ use sp_runtime::{
     ApplyExtrinsicResult, MultiSignature, RuntimeDebug,
 };
 use sp_std::prelude::*;
+pub use pallet_chain_extension_assets::weights::WeightInfo as ChainExtensionWeightInfo;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use pallet_chain_extension_assets::weights::SubstrateWeight;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -785,7 +787,7 @@ impl pallet_contracts::Config for Runtime {
     type ChainExtension = (
         DappsStakingExtension<Self>,
         XvmExtension<Self>,
-        pallet_assets_chain_extension::substrate::AssetsExtension,
+        AssetsExtension<Self, SubstrateWeight<Self>>
     );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
