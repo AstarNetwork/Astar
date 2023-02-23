@@ -7,7 +7,7 @@ on:
       astar_tag:
         description: 'Release tag version for astar collator'
         required: true
-        default: '4.44.0'
+        default: '4.47.1'
       polkadot_tag:
         description: 'Release tag version for polkadot relay chain'
         required: true
@@ -15,7 +15,7 @@ on:
       zombienet_tag:
         description: 'Release tag version for zombinet tool'
         required: true
-        default: '1.3.29'
+        default: '1.3.35'
 
 jobs:
   network:
@@ -29,7 +29,7 @@ jobs:
 
     - run: wget https://github.com/paritytech/polkadot/releases/download/v${{ github.event.inputs.polkadot_tag }}/polkadot
     - run: chmod +x ./polkadot
-    
+
     - run: wget https://github.com/paritytech/zombienet/releases/download/v${{ github.event.inputs.zombienet_tag }}/zombienet-linux-x64
     - run: chmod +x ./zombienet-linux-x64
 
@@ -37,14 +37,7 @@ jobs:
     - run: mv astar-collator rpc-tests/bin/astar-collator
     - run: mv polkadot rpc-tests/bin/polkadot
     - run: mv zombienet-linux-x64 rpc-tests/bin/zombienet-linux-x64
-    - run: ./bin/zombienet-linux-x64 spawn --provider native astar-dev.toml
-      working-directory: ./rpc-tests
-  tests:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        network: [astar, shiden]
-    steps:
+
     - uses: actions/checkout@v2
 
     - name: Use Node.js 18.x
@@ -54,5 +47,5 @@ jobs:
     - run: npm install -g yarn
     - run: yarn install
       working-directory: ./rpc-tests
-    - run: yarn test:${{ matrix.network }}
+    - run: yarn test
       working-directory: ./rpc-tests
