@@ -302,7 +302,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "4.48.0"
+version = "4.49.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -392,7 +392,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "4.48.0"
+version = "4.49.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -4964,7 +4964,7 @@ checksum = "f051f77a7c8e6957c0696eac88f26b0117e54f52d3fc682ab19397a8812846a4"
 
 [[package]]
 name = "local-runtime"
-version = "4.48.0"
+version = "4.49.0"
 dependencies = [
  "array-bytes 6.0.0",
  "fp-rpc",
@@ -6161,7 +6161,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
+source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#81bf978d88425de89c0c59028f91948675fee223"
 dependencies = [
  "bitflags",
  "frame-benchmarking",
@@ -6204,10 +6204,11 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "7.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
+source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#81bf978d88425de89c0c59028f91948675fee223"
 dependencies = [
  "bitflags",
  "parity-scale-codec",
+ "scale-info",
  "sp-runtime",
  "sp-std",
  "sp-weights",
@@ -6216,7 +6217,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
+source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#81bf978d88425de89c0c59028f91948675fee223"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -11106,7 +11107,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "4.48.0"
+version = "4.49.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -11206,7 +11207,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.48.0"
+version = "4.49.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
