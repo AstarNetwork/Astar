@@ -8,6 +8,8 @@ Warning: can't use `"type": "module",` in `package.json`, it will break js-scrip
 
 ## The run function has 3 parameter
 
+`async function run(nodeName, networkInfo, args) { ... }`
+
 ### nodeName
 
 A string of the name of the parachains.collator or relaychain.nodes as defined in the .toml file.
