@@ -22,9 +22,9 @@ pub(crate) mod relay_chain;
 
 use frame_support::traits::{Currency, OnFinalize, OnInitialize};
 use polkadot_parachain::primitives::{Id as ParaId, Sibling};
-use sp_runtime::traits::{AccountIdConversion, Get};
+use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
-use xcm_builder::{Account32Hash, SiblingParachainConvertsVia};
+use xcm_builder::SiblingParachainConvertsVia;
 use xcm_executor::traits::Convert;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
@@ -85,21 +85,6 @@ pub fn sibling_para_account_id(id: u32) -> parachain::AccountId {
         X1(Parachain(id)),
     ))
     .unwrap()
-}
-
-/// Derive account32 hash for parachain Id
-/// TODO: improve or change this later
-fn _derive_account32_hash(para_id: u32) -> relay_chain::AccountId {
-    struct AnyNetwork;
-    impl Get<NetworkId> for AnyNetwork {
-        fn get() -> NetworkId {
-            NetworkId::Any
-        }
-    }
-
-    let location = MultiLocation::new(1, X1(Parachain(para_id)));
-
-    Account32Hash::<AnyNetwork, relay_chain::AccountId>::convert_ref(&location).unwrap()
 }
 
 /// Prepare parachain test externality
