@@ -14378,6 +14378,56 @@ dependencies = [
 ]
 
 [[package]]
+name = "xcm-simulator"
+version = "0.9.37"
+source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.37#645723987cf9662244be8faf4e9b63e8b9a1b3a3"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "paste",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime-parachains",
+ "sp-io",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "xcm-simulator-tests"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-xcm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-dapps-staking",
+ "pallet-proxy",
+ "pallet-utility",
+ "pallet-xc-asset-config",
+ "pallet-xcm 0.9.37",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime-parachains",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-tracing",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+ "xcm-primitives",
+ "xcm-simulator",
+]
+
+[[package]]
 name = "xcm-tools"
 version = "0.5.0"
 dependencies = [
