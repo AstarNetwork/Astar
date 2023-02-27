@@ -16,13 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-fn main() {
-    #[cfg(feature = "std")]
-    {
-        substrate_wasm_builder::WasmBuilder::new()
-            .with_current_project()
-            .export_heap_base()
-            .import_memory()
-            .build();
-    }
-}
+#[cfg(test)]
+mod mocks;
+
+#[cfg(test)]
+mod tests;

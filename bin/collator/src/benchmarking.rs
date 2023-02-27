@@ -454,7 +454,7 @@ pub fn local_benchmark_inherent_data(
     // Assume that all runtimes have the `timestamp` pallet.
     let d = std::time::Duration::from_millis(0);
     let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
-    timestamp.provide_inherent_data(&mut inherent_data)?;
+    futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))?;
 
     Ok(inherent_data)
 }
@@ -470,7 +470,7 @@ pub fn para_benchmark_inherent_data(
     // Assume that all runtimes have the `timestamp` pallet.
     let d = std::time::Duration::from_millis(0);
     let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
-    timestamp.provide_inherent_data(&mut inherent_data)?;
+    futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))?;
 
     let sproof_builder = RelayStateSproofBuilder::default();
     let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();

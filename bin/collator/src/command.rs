@@ -39,7 +39,6 @@ use sc_service::{
     PartialComponents,
 };
 use sp_core::hexdisplay::HexDisplay;
-use sp_keyring::Sr25519Keyring;
 use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::Block as BlockT;
 use std::net::SocketAddr;
@@ -47,6 +46,8 @@ use std::net::SocketAddr;
 #[cfg(feature = "frame-benchmarking")]
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
+#[cfg(feature = "runtime-benchmarks")]
+use sp_keyring::Sr25519Keyring;
 #[cfg(feature = "runtime-benchmarks")]
 use crate::benchmarking::*;
 
@@ -195,21 +196,7 @@ impl SubstrateCli for RelayChainCli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        if id == "azores" {
-            Ok(Box::new(
-                polkadot_service::WestendChainSpec::from_json_bytes(
-                    &include_bytes!("../res/azores.raw.json")[..],
-                )
-                .unwrap(),
-            ))
-        } else if id == "kyoto" {
-            Ok(Box::new(
-                polkadot_service::WestendChainSpec::from_json_bytes(
-                    &include_bytes!("../res/kyoto.raw.json")[..],
-                )
-                .unwrap(),
-            ))
-        } else if id == "tokyo" {
+        if id == "tokyo" {
             Ok(Box::new(
                 polkadot_service::WestendChainSpec::from_json_bytes(
                     &include_bytes!("../res/tokyo.raw.json")[..],
@@ -783,6 +770,12 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(cmd)?;
             let chain_spec = &runner.config().chain_spec;
 
+            use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+            type HostFunctionsOf<E> = ExtendedHostFunctions<
+                sp_io::SubstrateHostFunctions,
+                <E as NativeExecutionDispatch>::ExtendHostFunctions,
+            >;
+
             if chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
@@ -792,7 +785,7 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shiden_runtime::Block, shiden::Executor>(config),
+                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>>(),
                         task_manager,
                     ))
                 })
@@ -805,7 +798,7 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shibuya_runtime::Block, shibuya::Executor>(config),
+                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>>(),
                         task_manager,
                     ))
                 })
@@ -817,7 +810,10 @@ pub fn run() -> Result<()> {
                             .map_err(|e| {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
-                    Ok((cmd.run::<Block, local::Executor>(config), task_manager))
+                    Ok((
+                        cmd.run::<Block, HostFunctionsOf<local::Executor>>(),
+                        task_manager,
+                    ))
                 })
             }
         }
