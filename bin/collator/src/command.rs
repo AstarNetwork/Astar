@@ -46,11 +46,6 @@ use std::net::SocketAddr;
 #[cfg(feature = "frame-benchmarking")]
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
-#[cfg(feature = "runtime-benchmarks")]
-use crate::benchmarking::*;
-#[cfg(feature = "runtime-benchmarks")]
-use sp_keyring::Sr25519Keyring;
-
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
     fn is_dev(&self) -> bool;
@@ -485,6 +480,9 @@ pub fn run() -> Result<()> {
         Some(Subcommand::Vanity(cmd)) => cmd.run(),
         #[cfg(feature = "frame-benchmarking")]
         Some(Subcommand::Benchmark(cmd)) => {
+            use crate::benchmarking::*;
+            use sp_keyring::Sr25519Keyring;
+
             let runner = cli.create_runner(cmd)?;
             let chain_spec = &runner.config().chain_spec;
 
