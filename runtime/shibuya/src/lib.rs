@@ -103,6 +103,16 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * 1 * SBY + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
+/// Charge fee for stored bytes and items as part of `pallet-contracts`.
+///
+/// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
+/// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
+///
+/// TODO: using this requires storage migration (good to test on Shibuya first!)
+pub const fn _contracts_deposit(items: u32, bytes: u32) -> Balance {
+    items as Balance * 4 * MILLISBY + (bytes as Balance) * STORAGE_BYTE_FEE
+}
+
 /// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
 // Time is measured by number of blocks.

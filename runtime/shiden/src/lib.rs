@@ -93,11 +93,21 @@ pub const SDN: Balance = 1_000 * MILLISDN;
 
 pub const INIT_SUPPLY_FACTOR: Balance = 1;
 
-pub const STORAGE_BYTE_FEE: Balance = 100 * MICROSDN * INIT_SUPPLY_FACTOR;
+pub const STORAGE_BYTE_FEE: Balance = 20 * MICROSDN * INIT_SUPPLY_FACTOR;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * 100 * MILLISDN * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
+}
+
+/// Charge fee for stored bytes and items as part of `pallet-contracts`.
+///
+/// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
+/// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
+///
+/// TODO: using this requires some storage migration since we're using some old, legacy values ATM
+pub const fn _contracts_deposit(items: u32, bytes: u32) -> Balance {
+    items as Balance * 4 * MILLISDN * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.
@@ -559,7 +569,7 @@ impl AddressToAssetId<AssetId> for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 10 * SDN;
+    pub const AssetDeposit: Balance = 10 * INIT_SUPPLY_FACTOR * SDN;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271

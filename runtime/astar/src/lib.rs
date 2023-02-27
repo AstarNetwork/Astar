@@ -94,11 +94,21 @@ pub const ASTR: Balance = 1_000 * MILLIASTR;
 
 pub const INIT_SUPPLY_FACTOR: Balance = 100;
 
-pub const STORAGE_BYTE_FEE: Balance = 100 * MICROASTR * INIT_SUPPLY_FACTOR;
+pub const STORAGE_BYTE_FEE: Balance = 20 * MICROASTR * INIT_SUPPLY_FACTOR;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * 100 * MILLIASTR * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
+}
+
+/// Charge fee for stored bytes and items as part of `pallet-contracts`.
+///
+/// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
+/// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
+///
+/// TODO: use this when `pallet-contracts` is added to **Astar**
+pub const fn _contracts_deposit(items: u32, bytes: u32) -> Balance {
+    items as Balance * 4 * MILLIASTR * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.
