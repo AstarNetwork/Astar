@@ -47,9 +47,9 @@ use std::net::SocketAddr;
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
 #[cfg(feature = "runtime-benchmarks")]
-use sp_keyring::Sr25519Keyring;
-#[cfg(feature = "runtime-benchmarks")]
 use crate::benchmarking::*;
+#[cfg(feature = "runtime-benchmarks")]
+use sp_keyring::Sr25519Keyring;
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
