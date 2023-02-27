@@ -34,6 +34,7 @@ sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = 
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
@@ -109,6 +110,7 @@ cumulus-relay-chain-inprocess-interface = { git = "https://github.com/paritytech
 cumulus-relay-chain-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.37" }
 cumulus-relay-chain-minimal-node = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.37" }
 cumulus-relay-chain-rpc-interface = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.37" }
+cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.37", optional = true }
 
 # polkadot dependencies
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37", optional = true }
@@ -119,6 +121,7 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "r
 # benchmark dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.37", optional = true }
 
 # try-runtime
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
@@ -139,6 +142,10 @@ runtime-benchmarks = [
 	"shibuya-runtime/runtime-benchmarks",
 	"shiden-runtime/runtime-benchmarks",
 	"polkadot-cli/runtime-benchmarks",
+	"polkadot-runtime-common/std",
+	"sp-keyring",
+	"cumulus-test-relay-sproof-builder",
+	"polkadot-runtime-common",
 ]
 cli = ['try-runtime-cli']
 try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]

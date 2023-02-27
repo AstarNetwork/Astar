@@ -44,7 +44,7 @@ use sp_runtime::traits::Block as BlockT;
 use std::net::SocketAddr;
 
 #[cfg(feature = "frame-benchmarking")]
-use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
+use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
@@ -480,6 +480,9 @@ pub fn run() -> Result<()> {
         Some(Subcommand::Vanity(cmd)) => cmd.run(),
         #[cfg(feature = "frame-benchmarking")]
         Some(Subcommand::Benchmark(cmd)) => {
+            use crate::benchmarking::*;
+            use sp_keyring::Sr25519Keyring;
+
             let runner = cli.create_runner(cmd)?;
             let chain_spec = &runner.config().chain_spec;
 
@@ -587,8 +590,174 @@ pub fn run() -> Result<()> {
                         })
                     }
                 }
-                BenchmarkCmd::Overhead(_) => Err("Benchmark overhead not supported.".into()),
-                BenchmarkCmd::Extrinsic(_) => Err("Benchmark extrinsic not supported.".into()),
+                BenchmarkCmd::Overhead(cmd) => {
+                    if chain_spec.is_astar() {
+                        runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            let ext_builder = RemarkBuilder::new(params.client.clone());
+                            let inherent_data = para_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(
+                                config,
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_builder,
+                            )
+                        })
+                    } else if chain_spec.is_shiden() {
+                        runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+
+                            let ext_builder = RemarkBuilder::new(params.client.clone());
+                            let inherent_data = para_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(
+                                config,
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_builder,
+                            )
+                        })
+                    } else if chain_spec.is_shibuya() {
+                        runner.sync_run(|config| {
+                            let params = parachain::new_partial::<
+                                shibuya::RuntimeApi,
+                                shibuya::Executor,
+                                _,
+                            >(
+                                &config, parachain::build_import_queue
+                            )?;
+
+                            let ext_builder = RemarkBuilder::new(params.client.clone());
+                            let inherent_data = para_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(
+                                config,
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_builder,
+                            )
+                        })
+                    } else {
+                        runner.sync_run(|config| {
+                            let params = local::new_partial(&config)?;
+                            let ext_builder = RemarkBuilder::new(params.client.clone());
+                            let inherent_data = local_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(
+                                config,
+                                params.client,
+                                inherent_data,
+                                Vec::new(),
+                                &ext_builder,
+                            )
+                        })
+                    }
+                }
+                BenchmarkCmd::Extrinsic(cmd) => {
+                    if chain_spec.is_astar() {
+                        runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            let remark_builder = RemarkBuilder::new(params.client.clone());
+                            let tka_builder = TransferKeepAliveBuilder::new(
+                                params.client.clone(),
+                                Sr25519Keyring::Alice.to_account_id(),
+                                params.client.existential_deposit(),
+                            );
+                            let ext_factory = ExtrinsicFactory(vec![
+                                Box::new(remark_builder),
+                                Box::new(tka_builder),
+                            ]);
+                            let inherent_data = para_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
+                        })
+                    } else if chain_spec.is_shiden() {
+                        runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            let remark_builder = RemarkBuilder::new(params.client.clone());
+                            let tka_builder = TransferKeepAliveBuilder::new(
+                                params.client.clone(),
+                                Sr25519Keyring::Alice.to_account_id(),
+                                params.client.existential_deposit(),
+                            );
+                            let ext_factory = ExtrinsicFactory(vec![
+                                Box::new(remark_builder),
+                                Box::new(tka_builder),
+                            ]);
+                            let inherent_data = para_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
+                        })
+                    } else if chain_spec.is_shibuya() {
+                        runner.sync_run(|config| {
+                            let params = parachain::new_partial::<
+                                shibuya::RuntimeApi,
+                                shibuya::Executor,
+                                _,
+                            >(
+                                &config, parachain::build_import_queue
+                            )?;
+                            let remark_builder = RemarkBuilder::new(params.client.clone());
+                            let tka_builder = TransferKeepAliveBuilder::new(
+                                params.client.clone(),
+                                Sr25519Keyring::Alice.to_account_id(),
+                                params.client.existential_deposit(),
+                            );
+                            let ext_factory = ExtrinsicFactory(vec![
+                                Box::new(remark_builder),
+                                Box::new(tka_builder),
+                            ]);
+                            let inherent_data = para_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
+                        })
+                    } else {
+                        runner.sync_run(|config| {
+                            let params = local::new_partial(&config)?;
+                            let remark_builder = RemarkBuilder::new(params.client.clone());
+                            let tka_builder = TransferKeepAliveBuilder::new(
+                                params.client.clone(),
+                                Sr25519Keyring::Alice.to_account_id(),
+                                params.client.existential_deposit(),
+                            );
+                            let ext_factory = ExtrinsicFactory(vec![
+                                Box::new(remark_builder),
+                                Box::new(tka_builder),
+                            ]);
+                            let inherent_data = local_benchmark_inherent_data()
+                                .map_err(|e| format!("generating inherent data: {:?}", e))?;
+
+                            cmd.run(params.client, inherent_data, Vec::new(), &ext_factory)
+                        })
+                    }
+                }
                 BenchmarkCmd::Machine(cmd) => {
                     runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
                 }

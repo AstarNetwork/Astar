@@ -26,6 +26,9 @@ pub mod local;
 /// Parachain node support.
 pub mod parachain;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 mod cli;
 mod command;
 mod primitives;

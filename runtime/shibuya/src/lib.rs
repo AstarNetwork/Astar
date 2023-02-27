@@ -74,6 +74,7 @@ use xcm_primitives::AssetLocationIdConverter;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
