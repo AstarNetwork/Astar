@@ -708,10 +708,6 @@ impl pallet_contracts::Config for Runtime {
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
-impl pallet_contracts_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-}
-
 parameter_types! {
     pub const TransactionByteFee: Balance = MILLISBY / 100;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
@@ -1239,9 +1235,6 @@ construct_runtime!(
         Xvm: pallet_xvm = 90,
 
         Sudo: pallet_sudo = 99,
-
-        // This will be removed after migration is finished
-        ContractsMigration: pallet_contracts_migration = 200,
     }
 );
 
