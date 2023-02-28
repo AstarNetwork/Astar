@@ -28,8 +28,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
-        OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, FindAuthor, Get,
+        Imbalance, OnUnbalanced, PrivilegeCmp, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -63,7 +63,7 @@ use sp_runtime::{
     },
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
-use sp_std::prelude::*;
+use sp_std::{cmp::Ordering, prelude::*};
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 
@@ -785,6 +785,103 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
+parameter_types! {
+    pub CouncilMotionDuration: BlockNumber = 3 * DAYS;
+    pub const CouncilMaxProposals: u32 = 100;
+    pub const CouncilMaxMembers: u32 = 100;
+}
+
+pub type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Runtime {
+    type RuntimeOrigin = RuntimeOrigin;
+    type Proposal = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type MotionDuration = CouncilMotionDuration;
+    type MaxProposals = CouncilMaxProposals;
+    type MaxMembers = CouncilMaxMembers;
+    type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type WeightInfo = ();
+}
+
+type MoreThanHalfCouncil = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
+>;
+
+impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = MoreThanHalfCouncil;
+    type RemoveOrigin = MoreThanHalfCouncil;
+    type SwapOrigin = MoreThanHalfCouncil;
+    type ResetOrigin = MoreThanHalfCouncil;
+    type PrimeOrigin = MoreThanHalfCouncil;
+    type MembershipInitialized = Council;
+    type MembershipChanged = Council;
+    type MaxMembers = CouncilMaxMembers;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * RuntimeBlockWeights::get().max_block;
+    pub const MaxScheduledPerBlock: u32 = 50;
+    pub const NoPreimagePostponement: Option<u32> = Some(10);
+}
+
+type ScheduleOrigin = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
+>;
+
+/// Used the compare the privilege of an origin inside the scheduler.
+pub struct OriginPrivilegeCmp;
+
+impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
+    fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<Ordering> {
+        if left == right {
+            return Some(Ordering::Equal);
+        }
+
+        match (left, right) {
+            // Root is greater than anything.
+            (OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
+            // Check which one has more yes votes.
+            (
+                OriginCaller::Council(pallet_collective::RawOrigin::Members(l_yes_votes, l_count)),
+                OriginCaller::Council(pallet_collective::RawOrigin::Members(r_yes_votes, r_count)),
+            ) => Some((l_yes_votes * r_count).cmp(&(r_yes_votes * l_count))),
+            // For every other origin we don't care, as they are not used for `ScheduleOrigin`.
+            _ => None,
+        }
+    }
+}
+
+impl pallet_scheduler::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type PalletsOrigin = OriginCaller;
+    type RuntimeCall = RuntimeCall;
+    type MaximumWeight = MaximumSchedulerWeight;
+    type ScheduleOrigin = ScheduleOrigin;
+    type MaxScheduledPerBlock = MaxScheduledPerBlock;
+    type WeightInfo = ();
+    type OriginPrivilegeCmp = OriginPrivilegeCmp;
+    type Preimages = Preimage;
+}
+
+parameter_types! {
+    pub const PreimageBaseDeposit: Balance = deposit(2, 64);
+    pub const PreimageByteDeposit: Balance = deposit(0, 1);
+}
+
+impl pallet_preimage::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type ManagerOrigin = EnsureRoot<AccountId>;
+    type BaseDeposit = PreimageBaseDeposit;
+    type ByteDeposit = PreimageByteDeposit;
+    type WeightInfo = ();
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -823,6 +920,12 @@ construct_runtime!(
         Ethereum: pallet_ethereum = 61,
         EthCall: pallet_custom_signatures = 62,
         BaseFee: pallet_base_fee = 63,
+
+        Council: pallet_collective::<Instance1> = 70,
+        CouncilMembership: pallet_membership::<Instance1> = 71,
+
+        Scheduler: pallet_scheduler = 80,
+        Preimage: pallet_preimage = 81,
 
         Sudo: pallet_sudo = 99,
     }
