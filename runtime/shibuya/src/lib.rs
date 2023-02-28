@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
+//! The Shibuya Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
@@ -29,9 +29,9 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, GetStorageVersion, Imbalance, InstanceFilter, Nothing,
-        OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly,
+        FindAuthor, Get, GetStorageVersion, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
+        WithdrawReasons,
     },
     weights::{
         constants::{
@@ -93,12 +93,25 @@ pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime, ShibuyaAssetLocationId
 use chain_extensions::*;
 
 /// Constant values used within the runtime.
-pub const MILLISDN: Balance = 1_000_000_000_000_000;
-pub const SDN: Balance = 1_000 * MILLISDN;
+pub const MICROSBY: Balance = 1_000_000_000_000;
+pub const MILLISBY: Balance = 1_000 * MICROSBY;
+pub const SBY: Balance = 1_000 * MILLISBY;
+
+pub const STORAGE_BYTE_FEE: Balance = 100 * MICROSBY;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    (items as Balance + bytes as Balance) * MILLISDN / 1_000_000
+    items as Balance * 1 * SBY + (bytes as Balance) * STORAGE_BYTE_FEE
+}
+
+/// Charge fee for stored bytes and items as part of `pallet-contracts`.
+///
+/// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
+/// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
+///
+/// TODO: using this requires storage migration (good to test on Shibuya first!)
+pub const fn _contracts_deposit(items: u32, bytes: u32) -> Balance {
+    items as Balance * 4 * MILLISBY + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.
@@ -157,7 +170,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 91,
+    spec_version: 92,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -300,9 +313,9 @@ impl pallet_timestamp::Config for Runtime {
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
-    pub const BasicDeposit: Balance = 10 * SDN;       // 258 bytes on-chain
-    pub const FieldDeposit: Balance = 25 * MILLISDN;  // 66 bytes on-chain
-    pub const SubAccountDeposit: Balance = 2 * SDN;   // 53 bytes on-chain
+    pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
+    pub const FieldDeposit: Balance = deposit(0, 66);  // 66 bytes on-chain
+    pub const SubAccountDeposit: Balance = deposit(1, 53);  // 53 bytes on-chain
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
     pub const MaxRegistrars: u32 = 20;
@@ -342,7 +355,7 @@ impl pallet_multisig::Config for Runtime {
 
 parameter_types! {
     pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
-    pub const CallFee: Balance = SDN / 10;
+    pub const CallFee: Balance = SBY / 10;
     pub const CallMagicNumber: u16 = 0xff51;
 }
 
@@ -391,10 +404,10 @@ impl pallet_preimage::Config for Runtime {
 
 parameter_types! {
     pub const BlockPerEra: BlockNumber = 4 * HOURS;
-    pub const RegisterDeposit: Balance = 100 * SDN;
+    pub const RegisterDeposit: Balance = 100 * SBY;
     pub const MaxNumberOfStakersPerContract: u32 = 2048;
-    pub const MinimumStakingAmount: Balance = 5 * SDN;
-    pub const MinimumRemainingAmount: Balance = SDN;
+    pub const MinimumStakingAmount: Balance = 5 * SBY;
+    pub const MinimumRemainingAmount: Balance = SBY;
     pub const MaxEraStakeValues: u32 = 5;
     pub const MaxUnlockingChunks: u32 = 32;
     pub const UnbondingPeriod: u32 = 2;
@@ -572,7 +585,7 @@ impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPa
 }
 
 parameter_types! {
-    pub const RewardAmount: Balance = 2_530 * MILLISDN;
+    pub const RewardAmount: Balance = 2_530 * MILLISBY;
 }
 
 impl pallet_block_reward::Config for Runtime {
@@ -603,8 +616,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 1_000_000;
-    pub const ApprovalDeposit: Balance = 1_000_000;
+    pub const AssetDeposit: Balance = 10 * SBY;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
@@ -624,7 +636,7 @@ impl pallet_assets::Config for Runtime {
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
     type AssetAccountDeposit = AssetAccountDeposit;
-    type ApprovalDeposit = ApprovalDeposit;
+    type ApprovalDeposit = ExistentialDeposit;
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
@@ -635,7 +647,7 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinVestedTransfer: Balance = SDN;
+    pub const MinVestedTransfer: Balance = 1 * SBY;
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
         WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
@@ -652,9 +664,10 @@ impl pallet_vesting::Config for Runtime {
     const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
+// TODO: changing depost per item and per byte to `deposit` function will require storage migration it seems
 parameter_types! {
-    pub const DepositPerItem: Balance = deposit(1, 0);
-    pub const DepositPerByte: Balance = deposit(0, 1);
+    pub const DepositPerItem: Balance = MILLISBY / 1_000_000;
+    pub const DepositPerByte: Balance = MILLISBY / 1_000_000;
     pub const MaxValueSize: u32 = 16 * 1024;
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
@@ -700,7 +713,7 @@ impl pallet_contracts_migration::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionByteFee: Balance = MILLISDN / 100;
+    pub const TransactionByteFee: Balance = MILLISBY / 100;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
@@ -722,8 +735,8 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        // in Shiden, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mSDN:
-        let p = MILLISDN;
+        // in Shibuya, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mSBY:
+        let p = MILLISBY;
         let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
@@ -781,7 +794,7 @@ impl pallet_xvm::Config for Runtime {
 
 parameter_types! {
     // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
-    pub DefaultBaseFeePerGas: U256 = (MILLISDN / 1_000_000).into();
+    pub DefaultBaseFeePerGas: U256 = (MILLISBY / 1_000_000).into();
     // At the moment, we don't use dynamic fee calculation for Shibuya by default
     pub DefaultElasticity: Permill = Permill::zero();
 }
@@ -902,7 +915,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 
 parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(5);
-    pub const ProposalBondMinimum: Balance = 100 * SDN;
+    pub const ProposalBondMinimum: Balance = 100 * SBY;
     pub const SpendPeriod: BlockNumber = 1 * DAYS;
 }
 
@@ -935,7 +948,7 @@ parameter_types! {
     pub LaunchPeriod: BlockNumber = 7 * DAYS;
     pub VotingPeriod: BlockNumber = 14 * DAYS;
     pub FastTrackVotingPeriod: BlockNumber = 1 * DAYS;
-    pub const MinimumDeposit: Balance = 1000 * SDN;
+    pub const MinimumDeposit: Balance = 1000 * SBY;
     pub EnactmentPeriod: BlockNumber = 2 * DAYS;
     pub VoteLockingPeriod: BlockNumber = 7 * DAYS;
     pub CooloffPeriod: BlockNumber = 7 * DAYS;
@@ -1009,6 +1022,15 @@ impl pallet_democracy::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+}
+
+parameter_types! {
+    // One storage item; key size 32, value size 8.
+    pub const ProxyDepositBase: Balance = deposit(1, 8);
+    // Additional storage item size of 33 bytes.
+    pub const ProxyDepositFactor: Balance = deposit(0, 33);
+    pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+    pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
 }
 
 /// The type used to represent the kinds of proxying allowed.
@@ -1128,17 +1150,17 @@ impl pallet_proxy::Config for Runtime {
     type Currency = Balances;
     type ProxyType = ProxyType;
     // One storage item; key size 32, value size 8; .
-    type ProxyDepositBase = ConstU128<{ SDN * 1 }>;
+    type ProxyDepositBase = ProxyDepositBase;
     // Additional storage item size of 33 bytes.
-    type ProxyDepositFactor = ConstU128<{ MILLISDN * 330 }>;
+    type ProxyDepositFactor = ProxyDepositFactor;
     type MaxProxies = ConstU32<32>;
     type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
     type MaxPending = ConstU32<32>;
     type CallHasher = BlakeTwo256;
     // Key size 32 + 1 item
-    type AnnouncementDepositBase = ConstU128<{ SDN * 1 }>;
+    type AnnouncementDepositBase = AnnouncementDepositBase;
     // Acc Id + Hash + block number
-    type AnnouncementDepositFactor = ConstU128<{ MILLISDN * 660 }>;
+    type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
 pub struct EvmRevertCodeHandler;

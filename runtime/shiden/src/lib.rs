@@ -89,12 +89,27 @@ pub use precompiles::{ShidenNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX}
 pub type Precompiles = ShidenNetworkPrecompiles<Runtime, ShidenAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
-pub const MILLISDN: Balance = 1_000_000_000_000_000;
+pub const MICROSDN: Balance = 1_000_000_000_000;
+pub const MILLISDN: Balance = 1_000 * MICROSDN;
 pub const SDN: Balance = 1_000 * MILLISDN;
+
+pub const INIT_SUPPLY_FACTOR: Balance = 1;
+
+pub const STORAGE_BYTE_FEE: Balance = 20 * MICROSDN * INIT_SUPPLY_FACTOR;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    (items as Balance + bytes as Balance) * MILLISDN / 1_000_000
+    items as Balance * 100 * MILLISDN * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
+}
+
+/// Charge fee for stored bytes and items as part of `pallet-contracts`.
+///
+/// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
+/// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
+///
+/// TODO: using this requires some storage migration since we're using some old, legacy values ATM
+pub const fn _contracts_deposit(items: u32, bytes: u32) -> Balance {
+    items as Balance * 4 * MILLISDN * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.
@@ -124,7 +139,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 90,
+    spec_version: 91,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -262,9 +277,9 @@ impl pallet_timestamp::Config for Runtime {
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
-    pub const BasicDeposit: Balance = 10 * SDN;       // 258 bytes on-chain
-    pub const FieldDeposit: Balance = 25 * MILLISDN;  // 66 bytes on-chain
-    pub const SubAccountDeposit: Balance = 2 * SDN;   // 53 bytes on-chain
+    pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
+    pub const FieldDeposit: Balance = deposit(0, 66);  // 66 bytes on-chain
+    pub const SubAccountDeposit: Balance = deposit(1, 53);  // 53 bytes on-chain
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
     pub const MaxRegistrars: u32 = 20;
@@ -556,8 +571,7 @@ impl AddressToAssetId<AssetId> for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 1_000_000;
-    pub const ApprovalDeposit: Balance = 1_000_000;
+    pub const AssetDeposit: Balance = 10 * INIT_SUPPLY_FACTOR * SDN;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
@@ -577,7 +591,7 @@ impl pallet_assets::Config for Runtime {
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
     type AssetAccountDeposit = AssetAccountDeposit;
-    type ApprovalDeposit = ApprovalDeposit;
+    type ApprovalDeposit = ExistentialDeposit;
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
@@ -588,7 +602,7 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinVestedTransfer: Balance = SDN;
+    pub const MinVestedTransfer: Balance = 1 * SDN;
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
         WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
@@ -605,9 +619,10 @@ impl pallet_vesting::Config for Runtime {
     const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
+// TODO: changing depost per item and per byte to `deposit` function will require storage migration it seems
 parameter_types! {
-    pub const DepositPerItem: Balance = deposit(1, 0);
-    pub const DepositPerByte: Balance = deposit(0, 1);
+    pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
+    pub const DepositPerByte: Balance = MILLISDN / 1_000_000;
     pub const MaxValueSize: u32 = 16 * 1024;
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
@@ -877,12 +892,14 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 }
 
 parameter_types! {
-    pub const ProxyDepositBase: Balance = 1800 * MILLISDN;
-    pub const ProxyDepositFactor: Balance = 3300 * MILLISDN;
+    // One storage item; key size 32, value size 8; .
+    pub const ProxyDepositBase: Balance = deposit(1, 8);
+    // Additional storage item size of 33 bytes.
+    pub const ProxyDepositFactor: Balance = deposit(0, 33);
     pub const MaxProxies: u16 = 32;
     pub const MaxPending: u16 = 32;
-    pub const AnnouncementDepositBase: Balance = 1800 * MILLISDN;
-    pub const AnnouncementDepositFactor: Balance = 6600 * MILLISDN;
+    pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+    pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
 }
 
 impl pallet_proxy::Config for Runtime {

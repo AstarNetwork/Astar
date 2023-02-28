@@ -90,12 +90,27 @@ pub use precompiles::{AstarNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = AstarNetworkPrecompiles<Runtime, AstarAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
-pub const MILLIASTR: Balance = 1_000_000_000_000_000;
+pub const MICROASTR: Balance = 1_000_000_000_000;
+pub const MILLIASTR: Balance = 1_000 * MICROASTR;
 pub const ASTR: Balance = 1_000 * MILLIASTR;
+
+pub const INIT_SUPPLY_FACTOR: Balance = 100;
+
+pub const STORAGE_BYTE_FEE: Balance = 20 * MICROASTR * INIT_SUPPLY_FACTOR;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    (items as Balance + bytes as Balance) * MILLIASTR / 1_000_000
+    items as Balance * 100 * MILLIASTR * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
+}
+
+/// Charge fee for stored bytes and items as part of `pallet-contracts`.
+///
+/// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
+/// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
+///
+/// TODO: use this when `pallet-contracts` is added to **Astar**
+pub const fn _contracts_deposit(items: u32, bytes: u32) -> Balance {
+    items as Balance * 4 * MILLIASTR * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.
@@ -125,7 +140,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 52,
+    spec_version: 53,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -256,9 +271,9 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-    pub const BasicDeposit: Balance = 10 * ASTR;       // 258 bytes on-chain
-    pub const FieldDeposit: Balance = 25 * MILLIASTR;  // 66 bytes on-chain
-    pub const SubAccountDeposit: Balance = 2 * ASTR;   // 53 bytes on-chain
+    pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
+    pub const FieldDeposit: Balance = deposit(0, 66);  // 66 bytes on-chain
+    pub const SubAccountDeposit: Balance = deposit(1, 53);  // 53 bytes on-chain
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
     pub const MaxRegistrars: u32 = 20;
@@ -551,8 +566,7 @@ impl AddressToAssetId<AssetId> for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 1_000_000;
-    pub const ApprovalDeposit: Balance = 1_000_000;
+    pub const AssetDeposit: Balance = 10 * INIT_SUPPLY_FACTOR * ASTR;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
@@ -572,7 +586,7 @@ impl pallet_assets::Config for Runtime {
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
     type AssetAccountDeposit = AssetAccountDeposit;
-    type ApprovalDeposit = ApprovalDeposit;
+    type ApprovalDeposit = ExistentialDeposit;
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
@@ -583,7 +597,7 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinVestedTransfer: Balance = ASTR;
+    pub const MinVestedTransfer: Balance = 100 * ASTR;
     pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
         WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
 }
