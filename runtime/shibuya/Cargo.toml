@@ -108,9 +108,6 @@ xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch =
 # chain-extensions
 pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.37", default-features = false, features = ["substrate"] }
 
-# Remove after migration is done
-pallet-contracts-migration = { path = "../contracts-migration", default-features = false }
-
 # benchmarking
 array-bytes = "6.0.0"
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false, optional = true }
@@ -212,7 +209,6 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm-primitives/std",
-	"pallet-contracts-migration/std",
 	"substrate-wasm-builder",
 ]
 runtime-benchmarks = [
@@ -277,5 +273,4 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
-	"pallet-contracts-migration/try-runtime",
 ]

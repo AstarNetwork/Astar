@@ -6,7 +6,6 @@ members = [
 	"runtime/astar",
 	"runtime/shiden",
 	"runtime/shibuya",
-	"runtime/contracts-migration",
 	"tests/xcm-simulator",
 ]
 

@@ -6190,21 +6190,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-contracts-migration"
-version = "1.0.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-contracts",
- "parity-scale-codec",
- "scale-info",
- "sp-arithmetic",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-contracts-primitives"
 version = "7.0.0"
 source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#81bf978d88425de89c0c59028f91948675fee223"
@@ -11143,7 +11128,6 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
- "pallet-contracts-migration",
  "pallet-contracts-primitives",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
@@ -11240,7 +11224,6 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
- "pallet-contracts-migration",
  "pallet-contracts-primitives",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
