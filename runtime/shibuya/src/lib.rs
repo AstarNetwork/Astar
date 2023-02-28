@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
+//! The Shibuya Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
@@ -169,7 +169,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 91,
+    spec_version: 92,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -734,7 +734,7 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        // in Shiden, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mSBY:
+        // in Shibuya, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mSBY:
         let p = MILLISBY;
         let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec::smallvec![WeightToFeeCoefficient {
@@ -1024,7 +1024,7 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-    // One storage item; key size 32, value size 8; .
+    // One storage item; key size 32, value size 8.
     pub const ProxyDepositBase: Balance = deposit(1, 8);
     // Additional storage item size of 33 bytes.
     pub const ProxyDepositFactor: Balance = deposit(0, 33);
