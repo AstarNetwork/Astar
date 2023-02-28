@@ -1163,15 +1163,17 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
+// TODO: requires re-running the benchmarks!
 pub struct EvmRevertCodeHandler;
-impl pallet_xc_asset_config::XcAssetChanged<Runtime> for EvmRevertCodeHandler {
-    fn xc_asset_registered(asset_id: AssetId) {
-        let address = Runtime::asset_id_to_address(asset_id);
+impl pallet_assets::AssetsCallback<AssetId, AccountId> for EvmRevertCodeHandler {
+    fn created(id: &AssetId, _owner: &AccountId) {
+        // TODO: how do we handle collisions?
+        let address = Runtime::asset_id_to_address(*id);
         pallet_evm::AccountCodes::<Runtime>::insert(address, vec![0x60, 0x00, 0x60, 0x00, 0xfd]);
     }
 
-    fn xc_asset_unregistered(asset_id: AssetId) {
-        let address = Runtime::asset_id_to_address(asset_id);
+    fn destroyed(id: &AssetId) {
+        let address = Runtime::asset_id_to_address(*id);
         pallet_evm::AccountCodes::<Runtime>::remove(address);
     }
 }
@@ -1179,9 +1181,8 @@ impl pallet_xc_asset_config::XcAssetChanged<Runtime> for EvmRevertCodeHandler {
 impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
-    type XcAssetChanged = EvmRevertCodeHandler;
-    // Good enough for testnet since we lack pallet-assets hooks for now
-    type ManagerOrigin = EitherOfDiverse<EnsureRoot<AccountId>, EnsureSigned<AccountId>>;
+    type XcAssetChanged = ();
+    type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
