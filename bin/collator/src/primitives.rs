@@ -27,6 +27,10 @@ pub type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::B
 /// Block type.
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
 
+/// Block ID.
+#[cfg(feature = "runtime-benchmarks")]
+pub type BlockId = sp_runtime::generic::BlockId<Block>;
+
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 

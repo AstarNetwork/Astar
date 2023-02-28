@@ -7,6 +7,7 @@ members = [
 	"runtime/shiden",
 	"runtime/shibuya",
 	"runtime/contracts-migration",
+	"tests/xcm-simulator",
 ]
 
 exclude = ["vendor"]
@@ -14,3 +15,7 @@ exclude = ["vendor"]
 [profile.release]
 # Astar runtime requires unwinding.
 panic = "unwind"
+
+[patch."https://github.com/paritytech/substrate"]
+pallet-contracts = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.37/pallet-contracts-latest" }
+pallet-contracts-primitives = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.37/pallet-contracts-latest" }

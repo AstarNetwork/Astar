@@ -16,23 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! Astar collator library.
+#[cfg(test)]
+mod mocks;
 
-#![warn(missing_docs)]
-#![warn(unused_extern_crates)]
-
-/// Development node support.
-pub mod local;
-/// Parachain node support.
-pub mod parachain;
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
-
-mod cli;
-mod command;
-mod primitives;
-mod rpc;
-
-pub use cli::*;
-pub use command::*;
+#[cfg(test)]
+mod tests;

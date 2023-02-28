@@ -73,6 +73,8 @@ use xcm_primitives::AssetLocationIdConverter;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+pub use frame_system::Call as SystemCall;
+pub use pallet_balances::Call as BalancesCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -628,7 +630,7 @@ impl pallet_contracts::Config for Runtime {
     type CallFilter = Nothing;
     type DepositPerItem = DepositPerItem;
     type DepositPerByte = DepositPerByte;
-    type CallStack = [pallet_contracts::Frame<Self>; 31];
+    type CallStack = [pallet_contracts::Frame<Self>; 5];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = ();
@@ -636,7 +638,7 @@ impl pallet_contracts::Config for Runtime {
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-    type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+    type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
     type UnsafeUnstableInterface = ConstBool<false>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
