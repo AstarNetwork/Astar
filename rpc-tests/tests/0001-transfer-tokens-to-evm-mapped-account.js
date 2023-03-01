@@ -1,39 +1,9 @@
 async function run(nodeName, networkInfo, args) {
     const polkadotCryptoUtils = require("@polkadot/util-crypto");
+    const { sendTransaction } = await import("./tx-utils.mjs");
 
     const {wsUri, userDefinedTypes} = networkInfo.nodesByName[nodeName];
     const api = await zombie.connect(wsUri, userDefinedTypes);
-
-    const SPAWNING_TIME = 500000;
-
-    async function sendTransaction(transaction, sender) {
-      return new Promise((resolve, reject) => {
-        let unsubscribe;
-        let timeout;
-
-        transaction.signAndSend(sender, async (result) => {
-          console.log(`Current status is ${result?.status}`);
-
-          if (result.isFinalized) {
-            if (unsubscribe) {
-              unsubscribe();
-            }
-
-            clearTimeout(timeout);
-            resolve(true);
-          }
-        }).then(unsub => {
-          unsubscribe = unsub;
-        }).catch(error => {
-          console.error(error);
-          reject(error);
-        });
-
-        timeout = setTimeout(() => {
-          reject(new Error('Transaction timeout'));
-        }, SPAWNING_TIME);
-      });
-    }
 
     await zombie.util.cryptoWaitReady();
 
@@ -55,7 +25,7 @@ async function run(nodeName, networkInfo, args) {
         api.tx.balances.transfer({ Id: TO }, AMOUNT),
         FROM
     );
-  
+
     const newBalance = await api.query.system.account(TO);
     console.log('newBalance', newBalance.toString());
 

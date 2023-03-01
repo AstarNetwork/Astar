@@ -2,71 +2,32 @@ async function run(nodeName, networkInfo, args) {
     networkInfo.nodesByName["astar"].rpcPort = 8545
     networkInfo.nodesByName["shiden"].rpcPort = 8546
 
-    const {rpcPort} = networkInfo.nodesByName[nodeName];
-    const solc = require("solc");
-
-    const source = `
-    // SPDX-License-Identifier: MIT
-    pragma solidity ^0.8.13;
-    
-    contract Hello {
-        string public message;
-    
-        constructor() {
-            message = "Hello World";
-        }
-    
-        function sayMessage() public view returns (string memory) {
-            return message;
-        }
-    
-        function setMessage(string memory newMessage) public {
-            message = newMessage;
-        }
-    }
-    `;
-    
-    const input = {
-        language: 'Solidity',
-        sources: {
-          'hello.sol': {
-            content: source
-          }
-        },
-        settings: {
-          outputSelection: {
-            '*': {
-              '*': ['*']
-            }
-          }
-        }
-      };
-    
-    const contractFile = JSON.parse(solc.compile(JSON.stringify(input))).contracts['hello.sol']['Hello'];
+    const { rpcPort } = networkInfo.nodesByName[nodeName];
+    const { compiled } = await import("./compile.mjs");
 
     // Add the Web3 provider logic here:
     const Web3 = require("web3");
-    
+
     // Create Web3 instance
     const web3 = new Web3('http://localhost:' + rpcPort);
-    
+
     // Get the bytecode and API
-    const bytecode = contractFile.evm.bytecode.object;
-    const abi = contractFile.abi;
-    
+    const bytecode = compiled.evm.bytecode.object;
+    const abi = compiled.abi;
+
     // Create deploy function
     const deploy = async (accountFrom) => {
       console.log(`Attempting to deploy from account ${accountFrom.address}`);
-    
+
       // Create contract instance
       const hello = new web3.eth.Contract(abi);
-    
+
       // Create constructor tx
       const helloTx = hello.deploy({
         data: bytecode,
         arguments: [],
       });
-    
+
       // Sign transacation and send
       const createTransaction = await web3.eth.accounts.signTransaction(
         {
@@ -75,11 +36,11 @@ async function run(nodeName, networkInfo, args) {
         },
         accountFrom.privateKey
       );
-    
+
       // Send tx and wait for receipt
       const createReceipt = await web3.eth.sendSignedTransaction(createTransaction.rawTransaction);
       console.log(`Contract deployed at address: ${createReceipt.contractAddress}`);
-    
+
       return createReceipt;
     };
 
