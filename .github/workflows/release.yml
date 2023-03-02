@@ -122,9 +122,15 @@ jobs:
 
     - name: Copy polkadot relay chain binary
       run: |
-        wget https://github.com/paritytech/polkadot/releases/download/v0.9.25/polkadot
+        wget https://github.com/paritytech/polkadot/releases/download/v0.9.37/polkadot
         chmod +x ./polkadot
         mv polkadot rpc-tests/bin/polkadot
+
+    - name: Copy zombinet testing binary
+      run: |
+        wget https://github.com/paritytech/zombienet/releases/download/v1.3.35/zombienet-linux-x64
+        chmod +x ./zombienet-linux-x64
+        mv zombienet-linux-x64 rpc-tests/bin/zombienet-linux-x64
 
     - name: Use Node.js 18.x
       uses: actions/setup-node@v2
@@ -136,8 +142,9 @@ jobs:
         npm install -g yarn
         yarn install
       working-directory: ./rpc-tests
+
     - name: Run tests
-      run: yarn test:${{ matrix.network }}
+      run: yarn test
       working-directory: ./rpc-tests
 
   native-macos:
@@ -325,7 +332,7 @@ jobs:
       with:
         repository: AstarNetwork/Astar
         excludes: "prerelease, draft"
-    
+
     - name: Generate Release Body
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
