@@ -1167,13 +1167,19 @@ impl pallet_proxy::Config for Runtime {
 pub struct EvmRevertCodeHandler;
 impl pallet_assets::AssetsCallback<AssetId, AccountId> for EvmRevertCodeHandler {
     fn created(id: &AssetId, _owner: &AccountId) {
-        // TODO: how do we handle collisions?
+        // https://eips.ethereum.org/EIPS/eip-3607 - not possible to send transactions from EOA that has some code deployed!
+        // Do we have something similar for WASM?
         let address = Runtime::asset_id_to_address(*id);
+        // TODO: in case of collision, we need to cancel the asset creation.
+        // Unfortuantely, a miss from my side when adding support to `pallet-assets` for the callback.
+        // The callback should be fallible - in which case, asset creation should fail.
         pallet_evm::AccountCodes::<Runtime>::insert(address, vec![0x60, 0x00, 0x60, 0x00, 0xfd]);
     }
 
     fn destroyed(id: &AssetId) {
         let address = Runtime::asset_id_to_address(*id);
+        // It is safe to remove this code since it's not possible for any new code to be deployed
+        // on an address that already has some code deployed.
         pallet_evm::AccountCodes::<Runtime>::remove(address);
     }
 }
