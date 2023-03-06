@@ -37,6 +37,5 @@ const input = {
     }
   };
 
-const compiled = JSON.parse(solc.compile(JSON.stringify(input))).contracts['hello.sol']['Hello'];
+export const compiled = JSON.parse(solc.compile(JSON.stringify(input))).contracts['hello.sol']['Hello'];
 
-export default compiled;

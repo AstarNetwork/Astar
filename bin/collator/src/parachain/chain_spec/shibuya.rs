@@ -25,7 +25,7 @@ use shibuya_runtime::{
     BlockRewardConfig, CollatorSelectionConfig, CouncilConfig, DemocracyConfig, EVMChainIdConfig,
     EVMConfig, GenesisConfig, ParachainInfoConfig, Precompiles, SessionConfig, SessionKeys,
     Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig,
-    SDN,
+    SBY,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -48,11 +48,11 @@ pub fn get_chain_spec() -> ShibuyaChainSpec {
     let endowned = vec![
         (
             get_account_id_from_seed::<sr25519::Public>("Alice"),
-            1_000_000_000 * SDN,
+            1_000_000_000 * SBY,
         ),
         (
             get_account_id_from_seed::<sr25519::Public>("Bob"),
-            1_000_000_000 * SDN,
+            1_000_000_000 * SBY,
         ),
     ];
 
@@ -138,7 +138,7 @@ fn make_genesis(
         aura_ext: Default::default(),
         collator_selection: CollatorSelectionConfig {
             desired_candidates: 32,
-            candidacy_bond: 32_000 * SDN,
+            candidacy_bond: 32_000 * SBY,
             invulnerables: authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
         },
         evm: EVMConfig {
