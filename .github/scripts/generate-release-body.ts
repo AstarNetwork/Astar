@@ -223,7 +223,12 @@ async function main() {
 ## Description
 (Placeholder for release descriptions, please freely write explanations for this release here.)
 
-\*\*Upgrade priority: LOW/MID/HIGH\*\*
+\*\*Upgrade priority: LOW/MID/HIGH/CRITICAL\*\*
+> DELETE THIS
+> CRITICAL - contains critical update for the client which should be rolled out ASAP
+> HIGH - significant changes to client
+> MEDIUM - some minor changes to the client
+> LOW - no client changes
 
 ${runtimes.length > 0 ? `## Runtimes
 ${runtimes
