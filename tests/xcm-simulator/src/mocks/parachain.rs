@@ -265,11 +265,6 @@ parameter_types! {
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
-impl pallet_xc_asset_config::XcAssetChanged<Runtime> for () {
-    fn xc_asset_registered(_: AssetId) {}
-    fn xc_asset_unregistered(_: AssetId) {}
-}
-
 impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
