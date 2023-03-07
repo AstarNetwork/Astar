@@ -189,7 +189,7 @@ pub fn new_partial(
 /// Builds a new service.
 pub fn start_node(
     config: Configuration,
-    tracing_config: EvmTracingConfig,
+    evm_tracing_config: EvmTracingConfig,
 ) -> Result<TaskManager, ServiceError> {
     let sc_service::PartialComponents {
         client,
@@ -235,11 +235,11 @@ pub fn start_node(
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let overrides = crate::rpc::overrides_handle(client.clone());
 
-    let ethapi_cmd = tracing_config.ethapi.clone();
+    let ethapi_cmd = evm_tracing_config.ethapi.clone();
     let tracing_requesters =
         if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
-                &tracing_config,
+                &evm_tracing_config,
                 tracing::SpawnTasksParams {
                     task_manager: &task_manager,
                     client: client.clone(),
@@ -321,8 +321,8 @@ pub fn start_node(
         let transaction_pool = transaction_pool.clone();
         let rpc_config = crate::rpc::EvmTracingConfig {
             tracing_requesters,
-            trace_filter_max_count: tracing_config.ethapi_trace_max_count,
-            enable_txpool: true,
+            trace_filter_max_count: evm_tracing_config.ethapi_trace_max_count,
+            enable_txpool: ethapi_cmd.contains(&EthApiCmd::TxPool),
         };
 
         Box::new(move |deny_unsafe, subscription| {

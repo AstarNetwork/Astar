@@ -316,7 +316,7 @@ async fn build_relay_chain_interface(
 async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
-    tracing_config: EvmTracingConfig,
+    evm_tracing_config: EvmTracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
     enable_evm_rpc: bool,
@@ -441,11 +441,11 @@ where
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let overrides = crate::rpc::overrides_handle(client.clone());
 
-    let ethapi_cmd = tracing_config.ethapi.clone();
+    let ethapi_cmd = evm_tracing_config.ethapi.clone();
     let tracing_requesters =
         if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
-                &tracing_config,
+                &evm_tracing_config,
                 tracing::SpawnTasksParams {
                     task_manager: &task_manager,
                     client: client.clone(),
@@ -519,7 +519,7 @@ where
         let transaction_pool = transaction_pool.clone();
         let rpc_config = crate::rpc::EvmTracingConfig {
             tracing_requesters,
-            trace_filter_max_count: tracing_config.ethapi_trace_max_count,
+            trace_filter_max_count: evm_tracing_config.ethapi_trace_max_count,
             enable_txpool: ethapi_cmd.contains(&EthApiCmd::TxPool),
         };
 
@@ -711,7 +711,7 @@ where
 pub async fn start_astar_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
-    tracing_config: EvmTracingConfig,
+    evm_tracing_config: EvmTracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
     enable_evm_rpc: bool,
@@ -722,7 +722,7 @@ pub async fn start_astar_node(
     start_node_impl::<astar::RuntimeApi, astar::Executor, _, _>(
         parachain_config,
         polkadot_config,
-        tracing_config,
+        evm_tracing_config,
         collator_options,
         id,
         enable_evm_rpc,
@@ -843,7 +843,7 @@ pub async fn start_astar_node(
 pub async fn start_shiden_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
-    tracing_config: EvmTracingConfig,
+    evm_tracing_config: EvmTracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
     enable_evm_rpc: bool,
@@ -854,7 +854,7 @@ pub async fn start_shiden_node(
     start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
         parachain_config,
         polkadot_config,
-        tracing_config,
+        evm_tracing_config,
         collator_options,
         id,
         enable_evm_rpc,
@@ -1001,7 +1001,7 @@ pub async fn start_shiden_node(
 pub async fn start_shibuya_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
-    tracing_config: EvmTracingConfig,
+    evm_tracing_config: EvmTracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
     enable_evm_rpc: bool,
@@ -1012,7 +1012,7 @@ pub async fn start_shibuya_node(
     start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
         parachain_config,
         polkadot_config,
-        tracing_config,
+        evm_tracing_config,
         collator_options,
         id,
         enable_evm_rpc,
