@@ -32,17 +32,22 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 pub use local_runtime::RuntimeApi;
 
+use crate::cli::{EthApi as EthApiCmd, EvmTracingConfig};
 use crate::primitives::*;
+use crate::rpc::tracing;
 
 /// Local runtime native executor.
 pub struct Executor;
 
 impl sc_executor::NativeExecutionDispatch for Executor {
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type ExtendHostFunctions = ();
+    type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
 
     #[cfg(feature = "runtime-benchmarks")]
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+    type ExtendHostFunctions = (
+        frame_benchmarking::benchmarking::HostFunctions,
+        moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+    );
 
     fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
         local_runtime::api::dispatch(method, data)
@@ -182,7 +187,10 @@ pub fn new_partial(
 }
 
 /// Builds a new service.
-pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
+pub fn start_node(
+    config: Configuration,
+    evm_tracing_config: EvmTracingConfig,
+) -> Result<TaskManager, ServiceError> {
     let sc_service::PartialComponents {
         client,
         backend,
@@ -226,6 +234,27 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let overrides = crate::rpc::overrides_handle(client.clone());
+
+    let ethapi_cmd = evm_tracing_config.ethapi.clone();
+    let tracing_requesters =
+        if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
+            tracing::spawn_tracing_tasks(
+                &evm_tracing_config,
+                tracing::SpawnTasksParams {
+                    task_manager: &task_manager,
+                    client: client.clone(),
+                    substrate_backend: backend.clone(),
+                    frontier_backend: frontier_backend.clone(),
+                    filter_pool: Some(filter_pool.clone()),
+                    overrides: overrides.clone(),
+                },
+            )
+        } else {
+            tracing::RpcRequesters {
+                debug: None,
+                trace: None,
+            }
+        };
 
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
@@ -290,6 +319,11 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         let client = client.clone();
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
+        let rpc_config = crate::rpc::EvmTracingConfig {
+            tracing_requesters,
+            trace_filter_max_count: evm_tracing_config.ethapi_trace_max_count,
+            enable_txpool: ethapi_cmd.contains(&EthApiCmd::TxPool),
+        };
 
         Box::new(move |deny_unsafe, subscription| {
             let deps = crate::rpc::FullDeps {
@@ -308,7 +342,8 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
             };
 
-            crate::rpc::create_full(deps, subscription).map_err::<ServiceError, _>(Into::into)
+            crate::rpc::create_full(deps, subscription, rpc_config.clone())
+                .map_err::<ServiceError, _>(Into::into)
         })
     };
 

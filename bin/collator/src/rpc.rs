@@ -43,7 +43,20 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
 
+use moonbeam_rpc_debug::{Debug, DebugServer};
+use moonbeam_rpc_trace::{Trace, TraceServer};
+use moonbeam_rpc_txpool::{TxPool, TxPoolServer};
+
 use crate::primitives::*;
+
+pub mod tracing;
+
+#[derive(Clone)]
+pub struct EvmTracingConfig {
+    pub tracing_requesters: tracing::RpcRequesters,
+    pub trace_filter_max_count: u32,
+    pub enable_txpool: bool,
+}
 
 // TODO This is copied from frontier. It should be imported instead after
 // https://github.com/paritytech/frontier/issues/333 is solved
@@ -140,6 +153,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -154,6 +168,8 @@ where
     C: sc_client_api::BlockBackend<Block>,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
+        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>,
@@ -194,7 +210,7 @@ where
         Eth::new(
             client.clone(),
             pool.clone(),
-            graph,
+            graph.clone(),
             no_tx_converter,
             network.clone(),
             Default::default(),
@@ -229,8 +245,34 @@ where
     io.merge(Web3::new(client.clone()).into_rpc())?;
 
     io.merge(
-        EthPubSub::new(pool, client, network, subscription_task_executor, overrides).into_rpc(),
+        EthPubSub::new(
+            pool,
+            client.clone(),
+            network,
+            subscription_task_executor,
+            overrides,
+        )
+        .into_rpc(),
     )?;
+
+    if tracing_config.enable_txpool {
+        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
+    }
+
+    if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
+        io.merge(
+            Trace::new(
+                client,
+                trace_filter_requester,
+                tracing_config.trace_filter_max_count,
+            )
+            .into_rpc(),
+        )?;
+    }
+
+    if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
+        io.merge(Debug::new(debug_requester).into_rpc())?;
+    }
 
     Ok(io)
 }

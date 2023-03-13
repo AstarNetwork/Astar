@@ -819,9 +819,20 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
+            let evm_tracing_config = crate::cli::EvmTracingConfig {
+                ethapi: cli.ethapi,
+                ethapi_max_permits: cli.ethapi_max_permits,
+                ethapi_trace_max_count: cli.ethapi_trace_max_count,
+                ethapi_trace_cache_duration: cli.ethapi_trace_cache_duration,
+                eth_log_block_cache: cli.eth_log_block_cache,
+                eth_statuses_cache: cli.eth_statuses_cache,
+                max_past_logs: cli.max_past_logs,
+                tracing_raw_max_memory_usage: cli.tracing_raw_max_memory_usage,
+            };
+
             runner.run_node_until_exit(|config| async move {
                 if config.chain_spec.is_dev() {
-                    return local::start_node(config).map_err(Into::into);
+                    return local::start_node(config, evm_tracing_config).map_err(Into::into);
                 }
 
                 let polkadot_cli = RelayChainCli::new(
@@ -865,17 +876,17 @@ pub fn run() -> Result<()> {
                 );
 
                 if config.chain_spec.is_astar() {
-                    start_astar_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
+                    start_astar_node(config, polkadot_config, evm_tracing_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shiden() {
-                    start_shiden_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
+                    start_shiden_node(config, polkadot_config, evm_tracing_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shibuya() {
-                    start_shibuya_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
+                    start_shibuya_node(config, polkadot_config, evm_tracing_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
