@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "5.0.1"
+version = "5.1.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar collator implementation in Rust."
 build = "build.rs"
@@ -129,12 +129,12 @@ frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = 
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
 
 # evm-tracing
-moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37" }
-moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37" }
-moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37" }
-moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37" }
-moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37" }
-moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37" }
+moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
+moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
+moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
+moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
+moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
+moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
 
 [build-dependencies]
 build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
@@ -158,3 +158,11 @@ runtime-benchmarks = [
 ]
 cli = ['try-runtime-cli']
 try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]
+evm-tracing = [
+	"moonbeam-primitives-ext",
+	"moonbeam-rpc-debug",
+	"moonbeam-rpc-primitives-debug",
+	"moonbeam-rpc-primitives-txpool",
+	"moonbeam-rpc-trace",
+	"moonbeam-rpc-txpool",
+]

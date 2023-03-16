@@ -32,18 +32,22 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 pub use local_runtime::RuntimeApi;
 
-use crate::cli::{EthApi as EthApiCmd, EvmTracingConfig};
 use crate::primitives::*;
-use crate::rpc::tracing;
 
 /// Local runtime native executor.
 pub struct Executor;
 
 impl sc_executor::NativeExecutionDispatch for Executor {
-    #[cfg(not(feature = "runtime-benchmarks"))]
+    #[cfg(all(not(feature = "evm-tracing"), not(feature = "runtime-benchmarks")))]
+    type ExtendHostFunctions = ();
+
+    #[cfg(all(not(feature = "runtime-benchmarks"), feature = "evm-tracing"))]
     type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
 
-    #[cfg(feature = "runtime-benchmarks")]
+    #[cfg(all(not(feature = "evm-tracing"), feature = "runtime-benchmarks"))]
+    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+    #[cfg(all(feature = "runtime-benchmarks", feature = "evm-tracing"))]
     type ExtendHostFunctions = (
         frame_benchmarking::benchmarking::HostFunctions,
         moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
@@ -187,10 +191,14 @@ pub fn new_partial(
 }
 
 /// Builds a new service.
+#[cfg(feature = "evm-tracing")]
 pub fn start_node(
     config: Configuration,
-    evm_tracing_config: EvmTracingConfig,
+    evm_tracing_config: crate::EvmTracingConfig,
 ) -> Result<TaskManager, ServiceError> {
+    use crate::cli::EthApi as EthApiCmd;
+    use crate::rpc::tracing;
+
     let sc_service::PartialComponents {
         client,
         backend,
@@ -344,6 +352,250 @@ pub fn start_node(
 
             crate::rpc::create_full(deps, subscription, rpc_config.clone())
                 .map_err::<ServiceError, _>(Into::into)
+        })
+    };
+
+    let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+        network: network.clone(),
+        client: client.clone(),
+        keystore: keystore_container.sync_keystore(),
+        task_manager: &mut task_manager,
+        transaction_pool: transaction_pool.clone(),
+        rpc_builder: rpc_extensions_builder,
+        backend,
+        system_rpc_tx,
+        tx_handler_controller,
+        config,
+        telemetry: telemetry.as_mut(),
+    })?;
+
+    if role.is_authority() {
+        let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+            task_manager.spawn_handle(),
+            client.clone(),
+            transaction_pool,
+            prometheus_registry.as_ref(),
+            telemetry.as_ref().map(|x| x.handle()),
+        );
+
+        let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
+
+        let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
+            StartAuraParams {
+                slot_duration,
+                client,
+                select_chain,
+                block_import,
+                proposer_factory,
+                create_inherent_data_providers: move |_, ()| async move {
+                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+                    let slot =
+                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                            *timestamp,
+                            slot_duration,
+                        );
+
+                    Ok((slot, timestamp))
+                },
+                force_authoring,
+                backoff_authoring_blocks,
+                keystore: keystore_container.sync_keystore(),
+                sync_oracle: network.clone(),
+                justification_sync_link: network.clone(),
+                block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
+                max_block_proposal_slot_portion: None,
+                telemetry: telemetry.as_ref().map(|x| x.handle()),
+                compatibility_mode: Default::default(),
+            },
+        )?;
+
+        // the AURA authoring task is considered essential, i.e. if it
+        // fails we take down the service with it.
+        task_manager
+            .spawn_essential_handle()
+            .spawn_blocking("aura", Some("block-authoring"), aura);
+    }
+
+    // if the node isn't actively participating in consensus then it doesn't
+    // need a keystore, regardless of which protocol we use below.
+    let keystore = if role.is_authority() {
+        Some(keystore_container.sync_keystore())
+    } else {
+        None
+    };
+
+    let grandpa_config = sc_finality_grandpa::Config {
+        // FIXME #1578 make this available through chainspec
+        gossip_duration: Duration::from_millis(333),
+        justification_period: 512,
+        name: Some(name),
+        observer_enabled: false,
+        keystore,
+        local_role: role,
+        telemetry: telemetry.as_ref().map(|x| x.handle()),
+        protocol_name,
+    };
+
+    if enable_grandpa {
+        // start the full GRANDPA voter
+        // NOTE: non-authorities could run the GRANDPA observer protocol, but at
+        // this point the full voter should provide better guarantees of block
+        // and vote data availability than the observer. The observer has not
+        // been tested extensively yet and having most nodes in a network run it
+        // could lead to finality stalls.
+        let grandpa_config = sc_finality_grandpa::GrandpaParams {
+            config: grandpa_config,
+            link: grandpa_link,
+            network,
+            voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
+            prometheus_registry,
+            shared_voter_state: SharedVoterState::empty(),
+            telemetry: telemetry.as_ref().map(|x| x.handle()),
+        };
+
+        // the GRANDPA voter task is considered infallible, i.e.
+        // if it fails we take down the service with it.
+        task_manager.spawn_essential_handle().spawn_blocking(
+            "grandpa-voter",
+            None,
+            sc_finality_grandpa::run_grandpa_voter(grandpa_config)?,
+        );
+    }
+
+    network_starter.start_network();
+    Ok(task_manager)
+}
+
+/// Builds a new service.
+#[cfg(not(feature = "evm-tracing"))]
+pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
+    let sc_service::PartialComponents {
+        client,
+        backend,
+        mut task_manager,
+        import_queue,
+        keystore_container,
+        select_chain,
+        transaction_pool,
+        other: (block_import, grandpa_link, mut telemetry, frontier_backend),
+    } = new_partial(&config)?;
+
+    let protocol_name = sc_finality_grandpa::protocol_standard_name(
+        &client
+            .block_hash(0)
+            .ok()
+            .flatten()
+            .expect("Genesis block exists; qed"),
+        &config.chain_spec,
+    );
+
+    let (network, system_rpc_tx, tx_handler_controller, network_starter) =
+        sc_service::build_network(sc_service::BuildNetworkParams {
+            config: &config,
+            client: client.clone(),
+            transaction_pool: transaction_pool.clone(),
+            spawn_handle: task_manager.spawn_handle(),
+            import_queue,
+            block_announce_validator_builder: None,
+            warp_sync: None,
+        })?;
+
+    if config.offchain_worker.enabled {
+        sc_service::build_offchain_workers(
+            &config,
+            task_manager.spawn_handle(),
+            client.clone(),
+            network.clone(),
+        );
+    }
+
+    let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let overrides = crate::rpc::overrides_handle(client.clone());
+
+    // Frontier offchain DB task. Essential.
+    // Maps emulated ethereum data to substrate native data.
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-mapping-sync-worker",
+        Some("frontier"),
+        fc_mapping_sync::MappingSyncWorker::new(
+            client.import_notification_stream(),
+            Duration::new(6, 0),
+            client.clone(),
+            backend.clone(),
+            frontier_backend.clone(),
+            3,
+            0,
+            fc_mapping_sync::SyncStrategy::Parachain,
+        )
+        .for_each(|()| futures::future::ready(())),
+    );
+
+    // Frontier `EthFilterApi` maintenance. Manages the pool of user-created Filters.
+    // Each filter is allowed to stay in the pool for 100 blocks.
+    const FILTER_RETAIN_THRESHOLD: u64 = 100;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-filter-pool",
+        Some("frontier"),
+        fc_rpc::EthTask::filter_pool_task(
+            client.clone(),
+            filter_pool.clone(),
+            FILTER_RETAIN_THRESHOLD,
+        ),
+    );
+
+    const FEE_HISTORY_LIMIT: u64 = 2048;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-fee-history",
+        Some("frontier"),
+        fc_rpc::EthTask::fee_history_task(
+            client.clone(),
+            overrides.clone(),
+            fee_history_cache.clone(),
+            FEE_HISTORY_LIMIT,
+        ),
+    );
+
+    let role = config.role.clone();
+    let force_authoring = config.force_authoring;
+    let backoff_authoring_blocks: Option<()> = None;
+    let name = config.network.node_name.clone();
+    let enable_grandpa = !config.disable_grandpa;
+    let prometheus_registry = config.prometheus_registry().cloned();
+    let is_authority = config.role.is_authority();
+
+    let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
+        task_manager.spawn_handle(),
+        overrides.clone(),
+        50,
+        50,
+        prometheus_registry.clone(),
+    ));
+
+    let rpc_extensions_builder = {
+        let client = client.clone();
+        let network = network.clone();
+        let transaction_pool = transaction_pool.clone();
+
+        Box::new(move |deny_unsafe, subscription| {
+            let deps = crate::rpc::FullDeps {
+                client: client.clone(),
+                pool: transaction_pool.clone(),
+                graph: transaction_pool.pool().clone(),
+                network: network.clone(),
+                is_authority,
+                deny_unsafe,
+                frontier_backend: frontier_backend.clone(),
+                filter_pool: filter_pool.clone(),
+                fee_history_limit: FEE_HISTORY_LIMIT,
+                fee_history_cache: fee_history_cache.clone(),
+                block_data_cache: block_data_cache.clone(),
+                overrides: overrides.clone(),
+                enable_evm_rpc: true, // enable EVM RPC for dev node by default
+            };
+
+            crate::rpc::create_full(deps, subscription).map_err::<ServiceError, _>(Into::into)
         })
     };
 
