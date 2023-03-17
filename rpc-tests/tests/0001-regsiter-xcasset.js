@@ -1,7 +1,9 @@
 async function run(nodeName, networkInfo, args) {
-    const { sendTransaction } = await import("./tx-utils.mjs");
+    networkInfo.nodesByName["astar"].hrmpTo = 2007
+    networkInfo.nodesByName["shiden"].hrmpTo = 2006
 
-    const {wsUri, userDefinedTypes} = networkInfo.nodesByName[nodeName];
+    const { sendTransaction } = await import("./tx-utils.mjs");
+    const { wsUri, userDefinedTypes, hrmpTo } = networkInfo.nodesByName[nodeName];
     const api = await zombie.connect(wsUri, userDefinedTypes);
 
     await zombie.util.cryptoWaitReady();
@@ -10,25 +12,17 @@ async function run(nodeName, networkInfo, args) {
     const keyring = new zombie.Keyring({ type: "sr25519" });
     const sender = keyring.addFromUri("//" + args[0]);
 
-    // https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A43003#/extrinsics/decode/0x6300360001010200591f060430591f
-    const assetLocation = '{ XcmVersionedMultiLocation: { V1: { parents: 1, interior: { X2: [ { Parachain: 2006 }, { GeneralKey: 0 } ] } } } }';
-    const assetId = '2006';
+    const assetLocation = `{"v1":{"parents":1,"interior":{"x2":[{"parachain":${hrmpTo}},{"generalKey":"0x"}]}}}`;
 
-    const tx = await api.tx.xcAssetConfig.registerAssetLocation(assetLocation, assetId)
+    const tx = await api.tx.xcAssetConfig.registerAssetLocation(JSON.parse(assetLocation), hrmpTo);
+    const finalised = await sendTransaction(api.tx.sudo.sudo(tx), sender);
 
-    const finalised = await sendTransaction(
-        api.tx.sudo.sudo(tx),
-        sender
-    );
+    const assetIdToLocation = await api.query.xcAssetConfig.assetIdToLocation(hrmpTo);
+    const location = JSON.stringify(assetIdToLocation);
+    console.log("location", location);
 
-    const assetIdToLocation = await api.query.xcAssetConfig.assetIdToLocation('2006');
-
-    // return config.unwrap().v1;
-    const location = assetIdToLocation.unwrap();
-    console.log('location', location);
-
-    const result = ('Registered' === 'Registered') ? 1 : 0
+    const result = assetLocation === location ? 1 : 0;
     return result;
 }
 
-module.exports = { run }
+module.exports = { run };
