@@ -111,7 +111,7 @@ moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-f
 moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false }
 
 # chain-extensions
-pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.37", default-features = false, features = ["substrate"] }
+pallet-chain-extension-assets = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false }
 
 # benchmarking
 array-bytes = "6.0.0"
@@ -148,7 +148,6 @@ std = [
 	"pallet-authorship/std",
 	"pallet-aura/std",
 	"pallet-assets/std",
-	"pallet-assets-chain-extension/substrate-std",
 	"pallet-balances/std",
 	"pallet-block-reward/std",
 	"pallet-contracts/std",
@@ -218,6 +217,7 @@ std = [
 	"xcm-executor/std",
 	"xcm-primitives/std",
 	"substrate-wasm-builder",
+	"pallet-chain-extension-assets/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

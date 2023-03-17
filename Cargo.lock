@@ -6010,44 +6010,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "obce"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.37#53f8b50742b4c9c0e5a8131c4de085a3891abb55"
-dependencies = [
- "frame-support",
- "frame-system",
- "obce-macro",
- "pallet-contracts",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "obce-codegen"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.37#53f8b50742b4c9c0e5a8131c4de085a3891abb55"
-dependencies = [
- "blake2",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "obce-macro"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.37#53f8b50742b4c9c0e5a8131c4de085a3891abb55"
-dependencies = [
- "obce-codegen",
- "proc-macro2",
- "syn",
- "synstructure",
-]
-
-[[package]]
 name = "object"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6202,17 +6164,6 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-assets-chain-extension"
-version = "0.1.1"
-source = "git+https://github.com/AstarNetwork/pallet-assets-chain-extension?branch=polkadot-v0.9.37#ab514bc9c51b69abed30ae84b47d66d3dee72643"
-dependencies = [
- "obce",
- "pallet-assets",
- "parity-scale-codec",
- "scale-info",
 ]
 
 [[package]]
@@ -11481,12 +11432,12 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "pallet-assets",
- "pallet-assets-chain-extension",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-base-fee",
  "pallet-block-reward",
+ "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-xvm",
  "pallet-collator-selection",
