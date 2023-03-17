@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.0.1"
+version = "5.0.2"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -78,8 +78,7 @@ moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-f
 moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false }
 
 # chain-extensions
-pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.37", default-features = false, features = ["substrate"] }
-
+pallet-chain-extension-assets = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false }
 # benchmarking
 array-bytes = "6.0.0"
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false, optional = true }
@@ -102,7 +101,6 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"pallet-assets/std",
-	"pallet-assets-chain-extension/substrate-std",
 	"pallet-aura/std",
 	"pallet-balances/std",
 	"pallet-block-reward/std",
@@ -158,6 +156,7 @@ std = [
 	"moonbeam-rpc-primitives-debug/std",
 	"moonbeam-rpc-primitives-txpool/std",
 	"substrate-wasm-builder",
+	"pallet-chain-extension-assets/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
