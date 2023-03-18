@@ -34,3 +34,15 @@ Creds: config
   # Shell script
   # {{collator}}: run ./tests/0001-custom.sh within 200 seconds
 {% endfor %}
+
+{% set collators = ["shiden", "astar"] %}
+{% for collator in collators %}
+  # Transfer test should only by done after the asset is registered on the other chain.
+  {{collator}}: js-script ./tests/0001-transfer-xcm-asset.js with "Alice" within 200 seconds
+
+  # EVM Test Section
+  {{collator}}: js-script ./tests/0001-transfer-tokens-to-evm-mapped-account.js with "Alice" within 200 seconds
+  {{collator}}: js-script ./tests/0002-deploy-an-evm-contract return is equal to 1 within 200 seconds
+  {{collator}}: js-script ./tests/0002-get-evm-contract-data return is equal to 1 within 200 seconds
+  {{collator}}: js-script ./tests/0002-set-evm-contract-data with "Hola" return is equal to 1 within 200 seconds
+{% endfor %}
