@@ -15,13 +15,21 @@ async function run(nodeName, networkInfo, args) {
     const assetLocation = `{"v1":{"parents":1,"interior":{"x2":[{"parachain":${hrmpTo}},{"generalKey":"0x"}]}}}`;
 
     const tx = await api.tx.xcAssetConfig.registerAssetLocation(JSON.parse(assetLocation), hrmpTo);
-    const finalised = await sendTransaction(api.tx.sudo.sudo(tx), sender);
+    await sendTransaction(api.tx.sudo.sudo(tx), sender);
 
     const assetIdToLocation = await api.query.xcAssetConfig.assetIdToLocation(hrmpTo);
     const location = JSON.stringify(assetIdToLocation);
     console.log("location", location);
 
-    const result = assetLocation === location ? 1 : 0;
+    const unitsPerSecond = 1000000000;
+    const tx2 = await api.tx.xcAssetConfig.setAssetUnitsPerSecond(JSON.parse(assetLocation), unitsPerSecond);
+    await sendTransaction(api.tx.sudo.sudo(tx2), sender);
+
+    const assetLocationUnitsPerSecond = await api.query.xcAssetConfig.assetLocationUnitsPerSecond(JSON.parse(assetLocation));
+    const units = JSON.stringify(assetLocationUnitsPerSecond);
+    console.log("units", units);
+
+    const result = (assetLocation === location) && (unitsPerSecond === units) ? 1 : 0;
     return result;
 }
 
