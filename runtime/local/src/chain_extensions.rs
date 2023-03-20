@@ -37,7 +37,6 @@ impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime> {
     const ID: u16 = 01;
 }
 
-/// Based on chain-extension registry https://github.com/paritytech/chainextension-registry
 impl<W: WeightInfo> RegisteredChainExtension<Runtime> for AssetsExtension<Runtime, W> {
-    const ID: u16 = 18678;
+    const ID: u16 = 02;
 }
