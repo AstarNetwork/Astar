@@ -18,8 +18,8 @@
 
 use crate::mocks::{parachain, relay_chain, *};
 
-use codec::Encode;
 use frame_support::assert_ok;
+use parity_scale_codec::Encode;
 use xcm::latest::prelude::*;
 use xcm_simulator::TestExt;
 
