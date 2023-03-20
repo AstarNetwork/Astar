@@ -43,7 +43,7 @@ serde_json = "1.0"
 tokio = { version = "1.13.0", features = ["macros", "sync"] }
 url = "2.2.2"
 
-# Base functionality
+# Substrate
 # (wasm)
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
@@ -59,6 +59,14 @@ sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 sp-version = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+
+# (native)
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 
 # Substrate pallets
 # (wasm)
