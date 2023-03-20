@@ -31,4 +31,7 @@ jobs:
       run: rustup target list --installed
 
     - name: Check all features compilation
-      run: cargo check --verbose --all-features --locked
+      run: cargo check --verbose --features try-runtime,runtime-benchmarks --locked
+
+    - name: Check EVM tracing features compilation
+      run: cargo check --verbose --features evm-tracing --locked

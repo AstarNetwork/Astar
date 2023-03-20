@@ -33,10 +33,10 @@ jobs:
       run: rustup target list --installed
 
     - name: Check all features compilation
-      run: cargo check --verbose --all-features --locked
+      run: cargo check --verbose --features try-runtime,runtime-benchmarks --locked
 
     - name: Run all tests
-      run: cargo test --all-features --locked
+      run: cargo test --features try-runtime,runtime-benchmarks --locked
 
   native-linux:
     needs: checks-and-tests
