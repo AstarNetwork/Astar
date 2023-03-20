@@ -170,7 +170,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 92,
+    spec_version: 93,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1732,6 +1732,7 @@ impl_runtime_apis! {
         }
     }
 
+    #[cfg(feature = "evm-tracing")]
     impl moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block> for Runtime {
         fn trace_transaction(
             extrinsics: Vec<<Block as BlockT>::Extrinsic>,
@@ -1796,6 +1797,7 @@ impl_runtime_apis! {
         }
     }
 
+    #[cfg(feature = "evm-tracing")]
     impl moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block> for Runtime {
         fn extrinsic_filter(
             xts_ready: Vec<<Block as BlockT>::Extrinsic>,

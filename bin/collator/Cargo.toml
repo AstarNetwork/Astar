@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "5.0.1"
+version = "5.1.0"
 description = "Astar collator implementation in Rust."
 build = "build.rs"
 default-run = "astar-collator"
@@ -134,13 +134,13 @@ frame-try-runtime = { workspace = true, features = ["std"], optional = true }
 try-runtime-cli = { workspace = true, optional = true }
 
 # evm-tracing
-moonbeam-rpc-primitives-debug = { workspace = true, features = ["std"] }
-moonbeam-rpc-primitives-txpool = { workspace = true, features = ["std"] }
+moonbeam-rpc-primitives-debug = { workspace = true, features = ["std"], optional = true }
+moonbeam-rpc-primitives-txpool = { workspace = true, features = ["std"], optional = true }
 
-moonbeam-primitives-ext = { workspace = true }
-moonbeam-rpc-debug = { workspace = true }
-moonbeam-rpc-trace = { workspace = true }
-moonbeam-rpc-txpool = { workspace = true }
+moonbeam-primitives-ext = { workspace = true, optional = true }
+moonbeam-rpc-debug = { workspace = true, optional = true }
+moonbeam-rpc-trace = { workspace = true, optional = true }
+moonbeam-rpc-txpool = { workspace = true, optional = true }
 
 [build-dependencies]
 polkadot-cli = { workspace = true, optional = true }
@@ -164,3 +164,11 @@ runtime-benchmarks = [
 ]
 cli = ["try-runtime-cli"]
 try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]
+evm-tracing = [
+	"moonbeam-primitives-ext",
+	"moonbeam-rpc-debug",
+	"moonbeam-rpc-primitives-debug",
+	"moonbeam-rpc-primitives-txpool",
+	"moonbeam-rpc-trace",
+	"moonbeam-rpc-txpool",
+]

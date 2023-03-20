@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.0.1"
+version = "5.1.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -75,9 +75,9 @@ pallet-precompile-dapps-staking = { workspace = true }
 pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
 
 # Moonbeam tracing
-moonbeam-evm-tracer = { workspace = true }
-moonbeam-rpc-primitives-debug = { workspace = true }
-moonbeam-rpc-primitives-txpool = { workspace = true }
+moonbeam-evm-tracer = { workspace = true, optional = true }
+moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
+moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
 # chain-extensions
 pallet-assets-chain-extension = { workspace = true }
@@ -206,4 +206,9 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
+]
+evm-tracing = [
+	"moonbeam-evm-tracer",
+	"moonbeam-rpc-primitives-debug",
+	"moonbeam-rpc-primitives-txpool",
 ]

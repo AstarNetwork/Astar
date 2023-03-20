@@ -43,14 +43,19 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
 
+#[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_debug::{Debug, DebugServer};
+#[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_trace::{Trace, TraceServer};
+#[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_txpool::{TxPool, TxPoolServer};
 
 use crate::primitives::*;
 
+#[cfg(feature = "evm-tracing")]
 pub mod tracing;
 
+#[cfg(feature = "evm-tracing")]
 #[derive(Clone)]
 pub struct EvmTracingConfig {
     pub tracing_requesters: tracing::RpcRequesters,
@@ -149,7 +154,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub enable_evm_rpc: bool,
 }
 
-/// Instantiate all RPC extensions.
+/// Instantiate all RPC extensions and Tracing RPC.
+#[cfg(feature = "evm-tracing")]
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
@@ -168,8 +174,92 @@ where
     C: sc_client_api::BlockBackend<Block>,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + BlockBuilder<Block>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
-        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>
+        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
+    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
+    BE::Blockchain: BlockchainBackend<Block>,
+    A: ChainApi<Block = Block> + 'static,
+{
+    let client = Arc::clone(&deps.client);
+    let graph = Arc::clone(&deps.graph);
+
+    let mut io = create_full_rpc(deps, subscription_task_executor)?;
+
+    if tracing_config.enable_txpool {
+        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
+    }
+
+    if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
+        io.merge(
+            Trace::new(
+                client,
+                trace_filter_requester,
+                tracing_config.trace_filter_max_count,
+            )
+            .into_rpc(),
+        )?;
+    }
+
+    if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
+        io.merge(Debug::new(debug_requester).into_rpc())?;
+    }
+
+    Ok(io)
+}
+
+/// Instantiate all RPC extensions.
+#[cfg(not(feature = "evm-tracing"))]
+pub fn create_full<C, P, BE, A>(
+    deps: FullDeps<C, P, A>,
+    subscription_task_executor: SubscriptionTaskExecutor,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + AuxStore
+        + StorageProvider<Block, BE>
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + BlockchainEvents<Block>
+        + Send
+        + Sync
+        + 'static,
+    C: sc_client_api::BlockBackend<Block>,
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + BlockBuilder<Block>,
+    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
+    BE::Blockchain: BlockchainBackend<Block>,
+    A: ChainApi<Block = Block> + 'static,
+{
+    create_full_rpc(deps, subscription_task_executor)
+}
+
+fn create_full_rpc<C, P, BE, A>(
+    deps: FullDeps<C, P, A>,
+    subscription_task_executor: SubscriptionTaskExecutor,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + AuxStore
+        + StorageProvider<Block, BE>
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + BlockchainEvents<Block>
+        + Send
+        + Sync
+        + 'static,
+    C: sc_client_api::BlockBackend<Block>,
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>,
@@ -254,25 +344,6 @@ where
         )
         .into_rpc(),
     )?;
-
-    if tracing_config.enable_txpool {
-        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
-    }
-
-    if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
-        io.merge(
-            Trace::new(
-                client,
-                trace_filter_requester,
-                tracing_config.trace_filter_max_count,
-            )
-            .into_rpc(),
-        )?;
-    }
-
-    if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
-        io.merge(Debug::new(debug_requester).into_rpc())?;
-    }
 
     Ok(io)
 }
