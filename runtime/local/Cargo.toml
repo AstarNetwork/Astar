@@ -1,9 +1,11 @@
 [package]
 name = "local-runtime"
 version = "5.0.1"
-authors = ["Stake Technologies <devops@stake.co.jp>"]
-edition = "2021"
 build = "build.rs"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [dependencies]
 log = { workspace = true, optional = true }

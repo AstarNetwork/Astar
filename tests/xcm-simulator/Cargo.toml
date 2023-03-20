@@ -1,8 +1,11 @@
 [package]
 name = "xcm-simulator-tests"
 version = "0.1.0"
-edition = "2021"
 description = "Examples of xcm-simulator usage."
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [dev-dependencies]
 log = { workspace = true }
