@@ -57,7 +57,7 @@ use crate::rpc::tracing;
 pub mod astar {
     pub use astar_runtime::RuntimeApi;
 
-    /// Shibuya runtime executor.
+    /// Astar runtime executor.
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
         #[cfg(all(not(feature = "evm-tracing"), not(feature = "runtime-benchmarks")))]
@@ -124,16 +124,10 @@ pub mod shibuya {
     /// Shibuya runtime executor.
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
-        #[cfg(all(not(feature = "evm-tracing"), not(feature = "runtime-benchmarks")))]
-        type ExtendHostFunctions = (); // TODO: dummy tracing functions to help shibuya sync
-
-        #[cfg(all(not(feature = "runtime-benchmarks"), feature = "evm-tracing"))]
+        #[cfg(all(not(feature = "runtime-benchmarks")))]
         type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
 
-        #[cfg(all(not(feature = "evm-tracing"), feature = "runtime-benchmarks"))]
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-        #[cfg(all(feature = "runtime-benchmarks", feature = "evm-tracing"))]
+        #[cfg(all(feature = "runtime-benchmarks"))]
         type ExtendHostFunctions = (
             frame_benchmarking::benchmarking::HostFunctions,
             moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
