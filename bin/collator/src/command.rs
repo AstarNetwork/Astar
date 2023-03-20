@@ -819,6 +819,7 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
+            #[cfg(feature = "evm-tracing")]
             let evm_tracing_config = crate::cli::EvmTracingConfig {
                 ethapi: cli.ethapi,
                 ethapi_max_permits: cli.ethapi_max_permits,
@@ -831,8 +832,14 @@ pub fn run() -> Result<()> {
             };
 
             runner.run_node_until_exit(|config| async move {
+                #[cfg(feature = "evm-tracing")]
                 if config.chain_spec.is_dev() {
                     return local::start_node(config, evm_tracing_config).map_err(Into::into);
+                }
+
+                #[cfg(not(feature = "evm-tracing"))]
+                if config.chain_spec.is_dev() {
+                    return local::start_node(config).map_err(Into::into);
                 }
 
                 let polkadot_cli = RelayChainCli::new(
@@ -875,6 +882,7 @@ pub fn run() -> Result<()> {
                     }
                 );
 
+                #[cfg(feature = "evm-tracing")]
                 if config.chain_spec.is_astar() {
                     start_astar_node(config, polkadot_config, evm_tracing_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
@@ -887,6 +895,28 @@ pub fn run() -> Result<()> {
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shibuya() {
                     start_shibuya_node(config, polkadot_config, evm_tracing_config, collator_options, para_id, cli.enable_evm_rpc)
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                } else {
+                    let err_msg = "Unrecognized chain spec - name should start with one of: astar or shiden or shibuya";
+                    error!("{}", err_msg);
+                    Err(err_msg.into())
+                }
+
+                #[cfg(not(feature = "evm-tracing"))]
+                if config.chain_spec.is_astar() {
+                    start_astar_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                } else if config.chain_spec.is_shiden() {
+                    start_shiden_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                } else if config.chain_spec.is_shibuya() {
+                    start_shibuya_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
