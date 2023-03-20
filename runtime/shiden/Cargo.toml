@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "5.0.1"
+version = "5.1.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -105,9 +105,9 @@ pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", default-feat
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false }
 
 # Moonbeam tracing
-moonbeam-evm-tracer = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false }
-moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false }
-moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false }
+moonbeam-evm-tracer = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false, optional = true }
+moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false, optional = true }
+moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", default-features = false, optional = true }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
@@ -250,4 +250,9 @@ try-runtime = [
 	"parachain-info/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
+]
+evm-tracing = [
+	"moonbeam-evm-tracer",
+	"moonbeam-rpc-primitives-debug",
+	"moonbeam-rpc-primitives-txpool",
 ]
