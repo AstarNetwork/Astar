@@ -53,8 +53,6 @@ use crate::primitives::*;
 #[cfg(feature = "evm-tracing")]
 use crate::rpc::tracing;
 
-mod legacy_hosts;
-
 /// Astar network runtime executor.
 pub mod astar {
     pub use astar_runtime::RuntimeApi;
@@ -62,16 +60,6 @@ pub mod astar {
     /// Shibuya runtime executor.
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
-        #[cfg(all(not(feature = "evm-tracing"), not(feature = "runtime-benchmarks")))]
-        type ExtendHostFunctions = ();
-
-        #[cfg(all(not(feature = "runtime-benchmarks"), feature = "evm-tracing"))]
-        type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
-
-        #[cfg(all(not(feature = "evm-tracing"), feature = "runtime-benchmarks"))]
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-        #[cfg(all(feature = "runtime-benchmarks", feature = "evm-tracing"))]
         type ExtendHostFunctions = (
             frame_benchmarking::benchmarking::HostFunctions,
             moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
@@ -94,16 +82,6 @@ pub mod shiden {
     /// Shiden runtime executor.
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
-        #[cfg(all(not(feature = "evm-tracing"), not(feature = "runtime-benchmarks")))]
-        type ExtendHostFunctions = ();
-
-        #[cfg(all(not(feature = "runtime-benchmarks"), feature = "evm-tracing"))]
-        type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
-
-        #[cfg(all(not(feature = "evm-tracing"), feature = "runtime-benchmarks"))]
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-        #[cfg(all(feature = "runtime-benchmarks", feature = "evm-tracing"))]
         type ExtendHostFunctions = (
             frame_benchmarking::benchmarking::HostFunctions,
             moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
@@ -126,16 +104,6 @@ pub mod shibuya {
     /// Shibuya runtime executor.
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
-        #[cfg(all(not(feature = "evm-tracing"), not(feature = "runtime-benchmarks")))]
-        type ExtendHostFunctions = legacy_hosts::HostFunctions;
-
-        #[cfg(all(not(feature = "runtime-benchmarks"), feature = "evm-tracing"))]
-        type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
-
-        #[cfg(all(not(feature = "evm-tracing"), feature = "runtime-benchmarks"))]
-        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-        #[cfg(all(feature = "runtime-benchmarks", feature = "evm-tracing"))]
         type ExtendHostFunctions = (
             frame_benchmarking::benchmarking::HostFunctions,
             moonbeam_primitives_ext::moonbeam_ext::HostFunctions,

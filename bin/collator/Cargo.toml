@@ -120,7 +120,7 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
 
 # benchmark dependencies
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.37", optional = true }
 
@@ -129,7 +129,7 @@ frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = 
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", optional = true }
 
 # evm-tracing
-moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
+moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37" }
 moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
 moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
 moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.37", optional = true }
@@ -145,7 +145,6 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkad
 [features]
 default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/rocksdb"]
 runtime-benchmarks = [
-	"frame-benchmarking",
 	"frame-benchmarking-cli",
 	"local-runtime/runtime-benchmarks",
 	"shibuya-runtime/runtime-benchmarks",
@@ -159,7 +158,6 @@ runtime-benchmarks = [
 cli = ['try-runtime-cli']
 try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]
 evm-tracing = [
-	"moonbeam-primitives-ext",
 	"moonbeam-rpc-debug",
 	"moonbeam-rpc-primitives-debug",
 	"moonbeam-rpc-primitives-txpool",
