@@ -435,7 +435,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.1.1"
+version = "5.2.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -5071,7 +5071,7 @@ checksum = "f051f77a7c8e6957c0696eac88f26b0117e54f52d3fc682ab19397a8812846a4"
 
 [[package]]
 name = "local-runtime"
-version = "5.1.1"
+version = "5.2.0"
 dependencies = [
  "array-bytes 6.0.0",
  "fp-rpc",
@@ -11407,7 +11407,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.1.1"
+version = "5.2.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -11509,7 +11509,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.1.1"
+version = "5.2.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
