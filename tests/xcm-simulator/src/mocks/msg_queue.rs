@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
 use frame_support::weights::Weight;
+use parity_scale_codec::{Decode, Encode};
 use sp_runtime::traits::Hash;
 use sp_std::prelude::*;
 

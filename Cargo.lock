@@ -14751,7 +14751,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-utility",
  "pallet-xc-asset-config",
- "pallet-xcm 0.9.37",
+ "pallet-xcm 0.9.28",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",

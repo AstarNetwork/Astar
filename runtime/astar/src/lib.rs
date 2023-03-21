@@ -22,7 +22,6 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
@@ -48,6 +47,7 @@ use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
+use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
@@ -592,7 +592,7 @@ impl pallet_assets::Config for Runtime {
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
-    type AssetIdParameter = codec::Compact<AssetId>;
+    type AssetIdParameter = Compact<AssetId>;
     type CallbackHandle = ();
 }
 

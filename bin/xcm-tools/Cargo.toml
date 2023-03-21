@@ -1,28 +1,30 @@
 [package]
 name = "xcm-tools"
 version = "0.5.0"
-authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar XCM tools."
-edition = "2021"
 build = "build.rs"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [[bin]]
 name = "xcm-tools"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.0.32", features = ["derive"] }
-cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.37" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
+clap = { workspace = true }
+cumulus-primitives-core = { workspace = true, features = ["std"] }
+polkadot-parachain = { workspace = true, features = ["std"] }
+polkadot-primitives = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }
+xcm = { workspace = true, features = ["std"] }
+xcm-builder = { workspace = true, features = ["std"] }
+xcm-executor = { workspace = true, features = ["std"] }
 
-hex = "0.4.3"
-regex = "1.6.0"
+hex = { workspace = true }
+regex = { workspace = true }
 
 [build-dependencies]
-build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+substrate-build-script-utils = { workspace = true }

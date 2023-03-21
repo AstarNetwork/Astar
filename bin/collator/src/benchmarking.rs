@@ -17,10 +17,10 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::primitives::{AccountId, Balance, Block, BlockId};
-use codec::Encode;
 use cumulus_primitives_core::PersistedValidationData;
 use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+use parity_scale_codec::Encode;
 use polkadot_runtime_common::BlockHashCount;
 use sc_executor::NativeElseWasmExecutor;
 use sc_service::TFullClient;

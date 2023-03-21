@@ -18,7 +18,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
     construct_runtime, match_types, parameter_types,
     traits::{
@@ -29,6 +28,7 @@ use frame_support::{
     PalletId,
 };
 use frame_system::EnsureSigned;
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,

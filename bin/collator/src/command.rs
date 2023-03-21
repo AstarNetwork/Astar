@@ -26,10 +26,10 @@ use crate::{
     },
     primitives::Block,
 };
-use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::{error, info};
+use parity_scale_codec::Encode;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -43,7 +43,7 @@ use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::Block as BlockT;
 use std::net::SocketAddr;
 
-#[cfg(feature = "frame-benchmarking")]
+#[cfg(feature = "frame-benchmarking-cli")]
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
 trait IdentifyChain {
@@ -478,7 +478,7 @@ pub fn run() -> Result<()> {
         Some(Subcommand::Sign(cmd)) => cmd.run(),
         Some(Subcommand::Verify(cmd)) => cmd.run(),
         Some(Subcommand::Vanity(cmd)) => cmd.run(),
-        #[cfg(feature = "frame-benchmarking")]
+        #[cfg(feature = "frame-benchmarking-cli")]
         Some(Subcommand::Benchmark(cmd)) => {
             use crate::benchmarking::*;
             use sp_keyring::Sr25519Keyring;
