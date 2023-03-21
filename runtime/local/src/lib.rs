@@ -73,6 +73,8 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+pub use pallet_chain_extension_scheduler::weights::WeightInfo as ChainExtensionWeightInfo;
+use pallet_chain_extension_scheduler::weights::SubstrateWeight;
 
 mod weights;
 
@@ -789,6 +791,7 @@ impl pallet_contracts::Config for Runtime {
         DappsStakingExtension<Self>,
         XvmExtension<Self>,
         pallet_assets_chain_extension::substrate::AssetsExtension,
+        SchedulerExtension<Self, SubstrateWeight<Self>>,
     );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;

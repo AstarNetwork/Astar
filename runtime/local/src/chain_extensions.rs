@@ -22,6 +22,9 @@ use super::Runtime;
 ///
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 
+pub use pallet_chain_extension_scheduler::weights::WeightInfo;
+pub use pallet_chain_extension_scheduler::SchedulerExtension;
+
 pub use pallet_chain_extension_dapps_staking::DappsStakingExtension;
 pub use pallet_chain_extension_xvm::XvmExtension;
 
@@ -33,4 +36,8 @@ impl RegisteredChainExtension<Runtime> for DappsStakingExtension<Runtime> {
 
 impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime> {
     const ID: u16 = 01;
+}
+
+impl<W: WeightInfo> RegisteredChainExtension<Runtime> for SchedulerExtension<Runtime, W> {
+    const ID: u16 = 03;
 }

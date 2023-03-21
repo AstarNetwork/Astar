@@ -79,6 +79,7 @@ moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-
 
 # chain-extensions
 pallet-assets-chain-extension = { git = "https://github.com/AstarNetwork/pallet-assets-chain-extension", branch = "polkadot-v0.9.37", default-features = false, features = ["substrate"] }
+pallet-chain-extension-scheduler = { path = "../../../astar-frame/chain-extensions/pallet-scheduler", default-features = false }
 
 # benchmarking
 array-bytes = "6.0.0"
@@ -158,6 +159,7 @@ std = [
 	"moonbeam-rpc-primitives-debug/std",
 	"moonbeam-rpc-primitives-txpool/std",
 	"substrate-wasm-builder",
+	"pallet-chain-extension-scheduler/std"
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
