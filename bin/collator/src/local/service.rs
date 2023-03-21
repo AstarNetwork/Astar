@@ -38,16 +38,6 @@ use crate::primitives::*;
 pub struct Executor;
 
 impl sc_executor::NativeExecutionDispatch for Executor {
-    #[cfg(all(not(feature = "evm-tracing"), not(feature = "runtime-benchmarks")))]
-    type ExtendHostFunctions = ();
-
-    #[cfg(all(not(feature = "runtime-benchmarks"), feature = "evm-tracing"))]
-    type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
-
-    #[cfg(all(not(feature = "evm-tracing"), feature = "runtime-benchmarks"))]
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-    #[cfg(all(feature = "runtime-benchmarks", feature = "evm-tracing"))]
     type ExtendHostFunctions = (
         frame_benchmarking::benchmarking::HostFunctions,
         moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
