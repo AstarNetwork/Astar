@@ -53,6 +53,8 @@ use crate::primitives::*;
 #[cfg(feature = "evm-tracing")]
 use crate::rpc::tracing;
 
+mod legacy_hosts;
+
 /// Astar network runtime executor.
 pub mod astar {
     pub use astar_runtime::RuntimeApi;
@@ -125,7 +127,7 @@ pub mod shibuya {
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
         #[cfg(all(not(feature = "evm-tracing"), not(feature = "runtime-benchmarks")))]
-        type ExtendHostFunctions = (); // TODO: dummy tracing functions to help shibuya sync
+        type ExtendHostFunctions = legacy_hosts::HostFunctions;
 
         #[cfg(all(not(feature = "runtime-benchmarks"), feature = "evm-tracing"))]
         type ExtendHostFunctions = moonbeam_primitives_ext::moonbeam_ext::HostFunctions;
