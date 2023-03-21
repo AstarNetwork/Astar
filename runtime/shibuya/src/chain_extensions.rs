@@ -36,6 +36,8 @@ impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime> {
     const ID: u16 = 01;
 }
 
-impl<W: pallet_chain_extension_assets::weights::WeightInfo> RegisteredChainExtension<Runtime> for AssetsExtension<Runtime, W> {
+impl<W: pallet_chain_extension_assets::weights::WeightInfo> RegisteredChainExtension<Runtime>
+    for AssetsExtension<Runtime, W>
+{
     const ID: u16 = 02;
 }
