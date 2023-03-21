@@ -125,7 +125,7 @@ polkadot-primitives = { workspace = true, features = ["std"] }
 polkadot-service = { workspace = true }
 
 # benchmark dependencies
-frame-benchmarking = { workspace = true, features = ["std"], optional = true }
+frame-benchmarking = { workspace = true, features = ["std"] }
 frame-benchmarking-cli = { workspace = true, optional = true }
 polkadot-runtime-common = { workspace = true, features = ["std"], optional = true }
 
@@ -137,7 +137,7 @@ try-runtime-cli = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, features = ["std"], optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, features = ["std"], optional = true }
 
-moonbeam-primitives-ext = { workspace = true, optional = true }
+moonbeam-primitives-ext = { workspace = true }
 moonbeam-rpc-debug = { workspace = true, optional = true }
 moonbeam-rpc-trace = { workspace = true, optional = true }
 moonbeam-rpc-txpool = { workspace = true, optional = true }
@@ -151,7 +151,6 @@ substrate-build-script-utils = { workspace = true }
 [features]
 default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/rocksdb"]
 runtime-benchmarks = [
-	"frame-benchmarking",
 	"frame-benchmarking-cli",
 	"local-runtime/runtime-benchmarks",
 	"shibuya-runtime/runtime-benchmarks",
@@ -165,7 +164,6 @@ runtime-benchmarks = [
 cli = ["try-runtime-cli"]
 try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]
 evm-tracing = [
-	"moonbeam-primitives-ext",
 	"moonbeam-rpc-debug",
 	"moonbeam-rpc-primitives-debug",
 	"moonbeam-rpc-primitives-txpool",
