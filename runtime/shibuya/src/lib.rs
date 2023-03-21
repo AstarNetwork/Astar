@@ -46,7 +46,6 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot, EnsureSigned,
 };
-pub use pallet_chain_extension_assets::weights::WeightInfo as ChainExtensionWeightInfo;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -74,8 +73,6 @@ use xcm_primitives::AssetLocationIdConverter;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
-use pallet_chain_extension_assets::weights::SubstrateWeight;
 
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
@@ -699,7 +696,7 @@ impl pallet_contracts::Config for Runtime {
     type ChainExtension = (
         DappsStakingExtension<Self>,
         XvmExtension<Self>,
-        AssetsExtension<Self, SubstrateWeight<Self>>,
+        AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
     );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;

@@ -18,7 +18,6 @@
 
 //!
 use super::Runtime;
-pub use pallet_chain_extension_assets::weights::WeightInfo;
 /// Registered WASM contracts chain extensions.
 ///
 pub use pallet_chain_extension_assets::AssetsExtension;
@@ -37,6 +36,6 @@ impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime> {
     const ID: u16 = 01;
 }
 
-impl<W: WeightInfo> RegisteredChainExtension<Runtime> for AssetsExtension<Runtime, W> {
+impl<W: pallet_chain_extension_assets::weights::WeightInfo> RegisteredChainExtension<Runtime> for AssetsExtension<Runtime, W> {
     const ID: u16 = 02;
 }
