@@ -91,6 +91,23 @@ For key management and validator rewards, consult our [validator guide online](h
 RPC tests suite can be run for any release. To run tests go to https://github.com/AstarNetwork/Astar/actions/workflows/rpcTest.yml. Click Run workflow, in the dropdown input the release version tag you want to run the test suite. Then click the green Run workflow button to start the test suite. 
 
 ![Screenshot from 2022-07-07 15-28-46](https://user-images.githubusercontent.com/874046/177785570-330c6613-237d-4190-bfed-69876209daf6.png)
+
+## Workspace Dependency Handling
+
+All dependencies should be listed inside the workspace's root `Cargo.toml` file.
+This allows us to easily change version of a crate used by the entire repo by modifying the version in a single place.
+
+Right now, if **non_std** is required, `default-features = false` must be set in the root `Cargo.toml` file (related to this [issue](https://github.com/rust-lang/cargo/pull/11409)). Otherwise, it will have no effect, causing your compilation to fail.
+Also `package` imports aren't properly propagated from root to sub-crates, so defining those should be avoided.
+
+Defining _features_ in the root `Cargo.toml` is additive with the features defined in concrete crate's `Cargo.toml`.
+
+**Adding Dependency**
+1. Check if the dependency is already defined in the root `Cargo.toml`
+    1. if **yes**, nothing to do, just take note of the enabled features
+    2. if **no**, add it (make sure to use `default-features = false` if dependency is used in _no_std_ context)
+2. Add `new_dependecy = { workspace = true }` to the required crate
+3. In case dependency is defined with `default-features = false` but you need it in _std_ context, add `features = ["std"]` to the required crate.
  
 
 ## Further Reading
