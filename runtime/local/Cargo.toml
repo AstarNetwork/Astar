@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.1.0"
+version = "5.2.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -80,7 +80,7 @@ moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
 # chain-extensions
-pallet-assets-chain-extension = { workspace = true }
+pallet-chain-extension-assets = { workspace = true }
 
 # benchmarking
 array-bytes = { workspace = true }
@@ -104,7 +104,6 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"pallet-assets/std",
-	"pallet-assets-chain-extension/substrate-std",
 	"pallet-aura/std",
 	"pallet-balances/std",
 	"pallet-block-reward/std",
@@ -160,6 +159,7 @@ std = [
 	"moonbeam-rpc-primitives-debug/std",
 	"moonbeam-rpc-primitives-txpool/std",
 	"substrate-wasm-builder",
+	"pallet-chain-extension-assets/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

@@ -322,6 +322,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
+name = "assets-chain-extension-types"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.37#df45f46d59a8c04d4c8002180cb1ee188eb64a28"
+dependencies = [
+ "frame-system",
+ "pallet-contracts",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+]
+
+[[package]]
 name = "astar-collator"
 version = "5.1.0"
 dependencies = [
@@ -423,7 +435,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.1.0"
+version = "5.2.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -5059,7 +5071,7 @@ checksum = "f051f77a7c8e6957c0696eac88f26b0117e54f52d3fc682ab19397a8812846a4"
 
 [[package]]
 name = "local-runtime"
-version = "5.1.0"
+version = "5.2.0"
 dependencies = [
  "array-bytes 6.0.0",
  "fp-rpc",
@@ -5076,11 +5088,11 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "pallet-assets",
- "pallet-assets-chain-extension",
  "pallet-aura",
  "pallet-balances",
  "pallet-base-fee",
  "pallet-block-reward",
+ "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-xvm",
  "pallet-collective",
@@ -5998,44 +6010,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "obce"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.37#53f8b50742b4c9c0e5a8131c4de085a3891abb55"
-dependencies = [
- "frame-support",
- "frame-system",
- "obce-macro",
- "pallet-contracts",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "obce-codegen"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.37#53f8b50742b4c9c0e5a8131c4de085a3891abb55"
-dependencies = [
- "blake2",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "obce-macro"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/obce?branch=polkadot-v0.9.37#53f8b50742b4c9c0e5a8131c4de085a3891abb55"
-dependencies = [
- "obce-codegen",
- "proc-macro2",
- "syn",
- "synstructure",
-]
-
-[[package]]
 name = "object"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6190,17 +6164,6 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-assets-chain-extension"
-version = "0.1.1"
-source = "git+https://github.com/AstarNetwork/pallet-assets-chain-extension?branch=polkadot-v0.9.37#ab514bc9c51b69abed30ae84b47d66d3dee72643"
-dependencies = [
- "obce",
- "pallet-assets",
- "parity-scale-codec",
- "scale-info",
 ]
 
 [[package]]
@@ -6392,6 +6355,26 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-chain-extension-assets"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.37#df45f46d59a8c04d4c8002180cb1ee188eb64a28"
+dependencies = [
+ "assets-chain-extension-types",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "pallet-assets",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
  "sp-runtime",
  "sp-std",
 ]
@@ -11424,7 +11407,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.1.0"
+version = "5.2.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -11449,12 +11432,12 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "pallet-assets",
- "pallet-assets-chain-extension",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-base-fee",
  "pallet-block-reward",
+ "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-xvm",
  "pallet-collator-selection",
@@ -11526,7 +11509,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.1.0"
+version = "5.2.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",

@@ -788,7 +788,7 @@ impl pallet_contracts::Config for Runtime {
     type ChainExtension = (
         DappsStakingExtension<Self>,
         XvmExtension<Self>,
-        pallet_assets_chain_extension::substrate::AssetsExtension,
+        AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
     );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
