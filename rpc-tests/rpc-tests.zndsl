@@ -39,7 +39,16 @@ Creds: config
 {% for collator in collators %}
   # Transfer test should only by done after the asset is registered on the other chain.
   {{collator}}: js-script ./tests/0001-transfer-xcm-asset.js with "Alice" within 200 seconds
+ {% endfor %}
 
+{% set collators = ["shiden", "astar"] %}
+{% for collator in collators %}
+  # Transfer test should only by done after the asset is registered on the other chain.
+  {{collator}}: js-script ./tests/0001-balance-xcm-asset.js with "Alice" within 200 seconds
+{% endfor %}
+
+{% set collators = ["shiden", "astar"] %}
+{% for collator in collators %}
   # EVM Test Section
   {{collator}}: js-script ./tests/0001-transfer-tokens-to-evm-mapped-account.js with "Alice" within 200 seconds
   {{collator}}: js-script ./tests/0002-deploy-an-evm-contract return is equal to 1 within 200 seconds

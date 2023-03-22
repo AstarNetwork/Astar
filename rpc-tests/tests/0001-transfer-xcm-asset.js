@@ -40,7 +40,7 @@ async function run(nodeName, networkInfo, args) {
         {
             V1: [
                 {
-                    fun: { Fungible: ONE.muln(10000) },
+                    fun: { Fungible: ONE.muln(21000) },
                     id: { Concrete: { parents: 0, interior: "Here" } },
                 },
             ],
@@ -48,7 +48,6 @@ async function run(nodeName, networkInfo, args) {
         0
     );
 
-    //  id: { Concrete: { parents: 1, interior: { X2: [{ Parachain: hrmpTo }, { GeneralKey: 0 }] } } },
     const finalised = await sendTransaction(tx, sender);
 
     const result = 1 === 1 ? 1 : 0;
