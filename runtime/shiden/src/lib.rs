@@ -28,8 +28,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, GetStorageVersion,
-        InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, InstanceFilter,
+        Nothing, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -139,7 +139,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 92,
+    spec_version: 93,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -209,11 +209,6 @@ impl Contains<RuntimeCall> for BaseFilter {
 
                 _ => true,
             },
-            RuntimeCall::Contracts(_) => {
-                // We block the calls until storage migration has been finished.
-                // The DB read weight is already accounted for in the migration pallet's `on_initialize` function.
-                <pallet_contracts::Pallet<Runtime>>::on_chain_storage_version() == 9
-            }
             // These modules are not allowed to be called by transactions:
             // To leave collator just shutdown it, next session funds will be released
             // Other modules should works:
@@ -623,7 +618,6 @@ impl pallet_vesting::Config for Runtime {
 parameter_types! {
     pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
     pub const DepositPerByte: Balance = MILLISDN / 1_000_000;
-    pub const MaxValueSize: u32 = 16 * 1024;
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
         RuntimeBlockWeights::get().max_block;

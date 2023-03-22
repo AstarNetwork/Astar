@@ -27,8 +27,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
-        OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        Nothing, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -57,6 +57,7 @@ use sp_runtime::{
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Bounded, ConvertInto,
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
+        Zero,
     },
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
@@ -107,9 +108,7 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 ///
 /// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
 /// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
-///
-/// TODO: use this when `pallet-contracts` is added to **Astar**
-pub const fn _contracts_deposit(items: u32, bytes: u32) -> Balance {
+pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * 4 * MILLIASTR * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
@@ -140,7 +139,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 54,
+    spec_version: 55,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -615,6 +614,55 @@ impl pallet_vesting::Config for Runtime {
 }
 
 parameter_types! {
+    pub const DepositPerItem: Balance = contracts_deposit(1, 0);
+    pub const DepositPerByte: Balance = contracts_deposit(0, 1);
+    // The lazy deletion runs inside on_initialize.
+    pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
+        RuntimeBlockWeights::get().max_block;
+    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
+}
+
+/// Codes using the randomness functionality cannot be uploaded. Neither can contracts
+/// be instantiated from existing codes that use this deprecated functionality.
+///
+/// But since some `Randomness` config type is still required for `pallet-contracts`, we provide this dummy type.
+pub struct DummyDeprecatedRandomness;
+impl Randomness<Hash, BlockNumber> for DummyDeprecatedRandomness {
+    fn random(_: &[u8]) -> (Hash, BlockNumber) {
+        (Default::default(), Zero::zero())
+    }
+}
+
+impl pallet_contracts::Config for Runtime {
+    type Time = Timestamp;
+    type Randomness = DummyDeprecatedRandomness;
+    type Currency = Balances;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    /// The safest default is to allow no calls at all.
+    ///
+    /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
+    /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
+    /// change because that would break already deployed contracts. The `Call` structure itself
+    /// is not allowed to change the indices of existing pallets, too.
+    type CallFilter = Nothing;
+    type DepositPerItem = DepositPerItem;
+    type DepositPerByte = DepositPerByte;
+    type CallStack = [pallet_contracts::Frame<Self>; 5];
+    type WeightPrice = pallet_transaction_payment::Pallet<Self>;
+    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
+    type ChainExtension = ();
+    type DeletionQueueDepth = ConstU32<128>;
+    type DeletionWeightLimit = DeletionWeightLimit;
+    type Schedule = Schedule;
+    type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+    type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
+    type MaxStorageKeyLen = ConstU32<128>;
+    type UnsafeUnstableInterface = ConstBool<false>;
+    type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+}
+
+parameter_types! {
     pub const TransactionByteFee: Balance = MILLIASTR / 100;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
@@ -837,6 +885,8 @@ construct_runtime!(
         Ethereum: pallet_ethereum = 61,
         EthCall: pallet_custom_signatures = 62,
         BaseFee: pallet_base_fee = 63,
+
+        Contracts: pallet_contracts = 70,
 
         Sudo: pallet_sudo = 99,
     }
@@ -1243,6 +1293,55 @@ impl_runtime_apis! {
             UncheckedExtrinsic::new_unsigned(
                 pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
             )
+        }
+    }
+
+    impl pallet_contracts::ContractsApi<
+        Block, AccountId, Balance, BlockNumber, Hash,
+    >
+        for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            input_data: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
+            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            value: Balance,
+            gas_limit: Option<Weight>,
+            storage_deposit_limit: Option<Balance>,
+            code: pallet_contracts_primitives::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
+        {
+            let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
+            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+        }
+
+        fn upload_code(
+            origin: AccountId,
+            code: Vec<u8>,
+            storage_deposit_limit: Option<Balance>,
+            determinism: pallet_contracts::Determinism,
+        ) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
+        {
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
+        }
+
+        fn get_storage(
+            address: AccountId,
+            key: Vec<u8>,
+        ) -> pallet_contracts_primitives::GetStorageResult {
+            Contracts::get_storage(address, key)
         }
     }
 
