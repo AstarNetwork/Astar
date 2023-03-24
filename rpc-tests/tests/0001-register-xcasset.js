@@ -12,19 +12,20 @@ async function run(nodeName, networkInfo, args) {
     const keyring = new zombie.Keyring({ type: "sr25519" });
     const sender = keyring.addFromUri("//" + args[0]);
 
-    // const assetLocation = `{"v1":{"parents":1,"interior":{"x2":[{"parachain":${hrmpTo}},{"generalKey":"0x000000000000000000"}]}}}`;
-    const assetLocation = `{"v1":{"parents":1,"interior":{"x1":{"parachain":${hrmpTo}}}}}`;
+    const tx0 = await api.tx.assets.forceCreate(hrmpTo, {id: sender.address}, true, 1);
 
-    const tx = await api.tx.xcAssetConfig.registerAssetLocation(JSON.parse(assetLocation), hrmpTo);
-    await sendTransaction(api.tx.sudo.sudo(tx), sender);
+    const assetLocation = `{"v1":{"parents":1,"interior":{"x1":{"parachain":${hrmpTo}}}}}`;
+    const tx1 = await api.tx.xcAssetConfig.registerAssetLocation(JSON.parse(assetLocation), hrmpTo);
+
+    const unitsPerSecond = 7000000000;
+    const tx2 = await api.tx.xcAssetConfig.setAssetUnitsPerSecond(JSON.parse(assetLocation), unitsPerSecond);
+
+    const batch = await api.tx.utility.batch([ tx0, tx1, tx2 ]);
+    await sendTransaction(api.tx.sudo.sudo(batch), sender);
 
     const assetIdToLocation = await api.query.xcAssetConfig.assetIdToLocation(hrmpTo);
     const location = JSON.stringify(assetIdToLocation);
     console.log("location", location);
-
-    const unitsPerSecond = 7000000000;
-    const tx2 = await api.tx.xcAssetConfig.setAssetUnitsPerSecond(JSON.parse(assetLocation), unitsPerSecond);
-    await sendTransaction(api.tx.sudo.sudo(tx2), sender);
 
     const assetLocationUnitsPerSecond = await api.query.xcAssetConfig.assetLocationUnitsPerSecond(JSON.parse(assetLocation));
     const units = JSON.stringify(assetLocationUnitsPerSecond);
