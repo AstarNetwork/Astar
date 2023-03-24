@@ -37,7 +37,9 @@ use sc_client_api::BlockchainEvents;
 use sc_consensus::{import_queue::BasicQueue, ImportQueue};
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::{NetworkBlock, NetworkService};
-use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager, WarpSyncParams};
+use sc_service::{
+    Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager, WarpSyncParams,
+};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -438,6 +440,7 @@ where
             Duration::new(6, 0),
             client.clone(),
             backend.clone(),
+            overrides.clone(),
             frontier_backend.clone(),
             3,
             0,
@@ -741,6 +744,7 @@ where
             Duration::new(6, 0),
             client.clone(),
             backend.clone(),
+            overrides.clone(),
             frontier_backend.clone(),
             3,
             0,

@@ -23,7 +23,7 @@ use crate::cli::*;
 use clap::Parser;
 use cumulus_primitives_core::ParaId;
 use polkadot_parachain::primitives::Sibling;
-use polkadot_primitives::v2::AccountId;
+use polkadot_primitives::AccountId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Get};
 use xcm::latest::prelude::*;

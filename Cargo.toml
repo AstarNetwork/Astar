@@ -30,7 +30,7 @@ repository = "https://github.com/AstarNetwork/Astar"
 # (wasm)
 parity-scale-codec = { version = "3.4.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
-log = { version = "0.4.14", default-features = false }
+log = { version = "0.4.17", default-features = false }
 
 # (native)
 array-bytes = "6.0.0"
@@ -40,7 +40,7 @@ clap = { version = "4.1.6", features = ["derive"] }
 futures = { version = "0.3.26" }
 serde = { version = "1.0.151", features = ["derive"] }
 serde_json = "1.0.92"
-tokio = { version = "1.13.0", features = ["macros", "sync"] }
+tokio = { version = "1.24.2", features = ["macros", "sync"] }
 url = "2.2.2"
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 hex = "0.4.3"
@@ -111,7 +111,7 @@ pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-identity = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
+pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false, features = ["historical"] }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }

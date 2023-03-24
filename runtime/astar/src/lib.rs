@@ -43,6 +43,7 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot, EnsureSigned,
 };
+use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -171,7 +172,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-    polkadot_primitives::v2::MAX_POV_SIZE as u64,
+    polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
 parameter_types! {
@@ -765,12 +766,18 @@ impl pallet_evm::Config for Runtime {
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
+    type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
+}
+
+parameter_types! {
+    pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
 }
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type PostLogContent = PostBlockAndTxnHashes;
 }
 
 impl pallet_sudo::Config for Runtime {

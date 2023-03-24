@@ -54,9 +54,9 @@ pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
+pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-proxy = { workspace = true }
-pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }

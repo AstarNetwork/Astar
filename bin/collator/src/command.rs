@@ -773,7 +773,8 @@ pub fn run() -> Result<()> {
                 sp_io::SubstrateHostFunctions,
                 <E as NativeExecutionDispatch>::ExtendHostFunctions,
             >;
-            let info_provider = try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
+            let info_provider =
+                try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
 
             if chain_spec.is_shiden() {
                 runner.async_run(|config| {
@@ -784,7 +785,9 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>, _>(Some(info_provider)),
+                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>, _>(
+                            Some(info_provider),
+                        ),
                         task_manager,
                     ))
                 })
@@ -797,7 +800,9 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>, _>(Some(info_provider)),
+                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>, _>(
+                            Some(info_provider),
+                        ),
                         task_manager,
                     ))
                 })
@@ -857,7 +862,7 @@ pub fn run() -> Result<()> {
                 );
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&para_id);
+                    AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&para_id);
 
                 let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
                 let block: Block = generate_genesis_block(&*config.chain_spec, state_version)

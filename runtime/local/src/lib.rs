@@ -40,6 +40,7 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot, EnsureSigned,
 };
+use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
@@ -544,12 +545,18 @@ impl pallet_evm::Config for Runtime {
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ()>;
     type BlockGasLimit = BlockGasLimit;
+    type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
+}
+
+parameter_types! {
+    pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
 }
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type PostLogContent = PostBlockAndTxnHashes;
 }
 
 parameter_types! {
