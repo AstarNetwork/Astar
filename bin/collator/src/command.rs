@@ -773,6 +773,7 @@ pub fn run() -> Result<()> {
                 sp_io::SubstrateHostFunctions,
                 <E as NativeExecutionDispatch>::ExtendHostFunctions,
             >;
+            let info_provider = try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
 
             if chain_spec.is_shiden() {
                 runner.async_run(|config| {
@@ -783,7 +784,7 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>>(),
+                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>, _>(Some(info_provider)),
                         task_manager,
                     ))
                 })
@@ -796,7 +797,7 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>>(),
+                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>, _>(Some(info_provider)),
                         task_manager,
                     ))
                 })
@@ -809,7 +810,7 @@ pub fn run() -> Result<()> {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<Block, HostFunctionsOf<local::Executor>>(),
+                        cmd.run::<Block, HostFunctionsOf<local::Executor>, _>(Some(info_provider)),
                         task_manager,
                     ))
                 })

@@ -310,7 +310,7 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
     pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
@@ -891,6 +891,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type MaxMembers = ConstU32<10>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 }
 
 parameter_types! {
@@ -907,6 +908,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
     type MaxMembers = ConstU32<10>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 }
 
 parameter_types! {
@@ -975,6 +977,7 @@ impl pallet_democracy::Config for Runtime {
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
         EnsureRoot<AccountId>,
     >;
+    type SubmitOrigin = EnsureSigned<AccountId>;
     /// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
     /// be tabled immediately and with a shorter voting/enactment period.
     type FastTrackOrigin = EitherOfDiverse<
@@ -1193,7 +1196,7 @@ construct_runtime!(
         Timestamp: pallet_timestamp = 13,
         Multisig: pallet_multisig = 14,
         EthCall: pallet_custom_signatures = 15,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip = 16,
+        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 16,
         Scheduler: pallet_scheduler = 17,
         Proxy: pallet_proxy = 18,
 

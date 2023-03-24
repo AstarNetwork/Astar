@@ -76,11 +76,11 @@ where
         relay_parent: PHash,
         validation_data: &PersistedValidationData,
     ) -> Option<ParachainCandidate<Block>> {
-        let block_id = BlockId::hash(parent.hash());
+        let block_hash = parent.hash();
         if self
             .client
             .runtime_api()
-            .has_api::<dyn AuraApi<Block, AuraId>>(&block_id)
+            .has_api::<dyn AuraApi<Block, AuraId>>(block_hash)
             .unwrap_or(false)
         {
             self.aura_consensus
@@ -121,12 +121,12 @@ where
         ),
         String,
     > {
-        let block_id = BlockId::hash(*block_import.header.parent_hash());
+        let block_hash = *block_import.header.parent_hash();
 
         if self
             .client
             .runtime_api()
-            .has_api::<dyn AuraApi<Block, AuraId>>(&block_id)
+            .has_api::<dyn AuraApi<Block, AuraId>>(block_hash)
             .unwrap_or(false)
         {
             self.aura_verifier.get_mut().verify(block_import).await

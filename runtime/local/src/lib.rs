@@ -248,7 +248,7 @@ parameter_types! {
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
-    type MaxAuthorities = MaxAuthorities;
+    type MaxAuthorities = ConstU32<50>;
 }
 
 impl pallet_grandpa::Config for Runtime {
@@ -268,6 +268,7 @@ impl pallet_grandpa::Config for Runtime {
 
     type WeightInfo = ();
     type MaxAuthorities = MaxAuthorities;
+    type MaxSetIdSessionEntries = ConstU64<0>;
 }
 
 parameter_types! {
@@ -282,7 +283,7 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
     pub const ExistentialDeposit: u128 = 500;
@@ -614,6 +615,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type MaxMembers = ConstU32<3>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 }
 
 parameter_types! {
@@ -630,6 +632,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
     type MaxMembers = ConstU32<3>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 }
 
 parameter_types! {
@@ -700,6 +703,7 @@ impl pallet_democracy::Config for Runtime {
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
         EnsureRoot<AccountId>,
     >;
+    type SubmitOrigin = EnsureSigned<AccountId>;
     /// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
     /// be tabled immediately and with a shorter voting/enactment period.
     type FastTrackOrigin = EitherOfDiverse<
@@ -928,7 +932,7 @@ construct_runtime!(
         System: frame_system,
         Utility: pallet_utility,
         Timestamp: pallet_timestamp,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip,
+        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
         Aura: pallet_aura,
         Grandpa: pallet_grandpa,
         Balances: pallet_balances,

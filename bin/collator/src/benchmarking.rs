@@ -502,7 +502,7 @@ macro_rules! with_runtime {
 		$client:expr,
 		$code:expr
 	} => {
-        match $client.runtime_version_at(&BlockId::Number(0)).unwrap().spec_name.to_string().as_str() {
+        match $client.runtime_version_at($client.chain_info().genesis_hash).unwrap().spec_name.to_string().as_str() {
             "astar" => {
                 #[allow(unused_imports)]
 				use astar_runtime as runtime;

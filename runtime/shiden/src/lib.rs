@@ -274,7 +274,7 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
     pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
@@ -954,7 +954,7 @@ construct_runtime!(
         BaseFee: pallet_base_fee = 63,
 
         Contracts: pallet_contracts = 70,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip = 71,
+        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 71,
 
         Sudo: pallet_sudo = 99,
     }
