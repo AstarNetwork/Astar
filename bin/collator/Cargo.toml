@@ -81,7 +81,7 @@ fc-mapping-sync = { workspace = true }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
 fp-consensus = { workspace = true }
-fp-evm = { workspace = true }
+fp-evm = { workspace = true, features = ["std"] }
 fp-storage = { workspace = true }
 
 # astar-specific dependencies
