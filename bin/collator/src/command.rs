@@ -906,17 +906,17 @@ pub fn run() -> Result<()> {
 
                 #[cfg(not(feature = "evm-tracing"))]
                 if config.chain_spec.is_astar() {
-                    start_astar_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
+                    start_astar_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc, cli.proposer_block_size_limit, cli.proposer_soft_deadline_percent)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shiden() {
-                    start_shiden_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
+                    start_shiden_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc, cli.proposer_block_size_limit, cli.proposer_soft_deadline_percent)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shibuya() {
-                    start_shibuya_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc)
+                    start_shibuya_node(config, polkadot_config, collator_options, para_id, cli.enable_evm_rpc, cli.proposer_block_size_limit, cli.proposer_soft_deadline_percent)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
