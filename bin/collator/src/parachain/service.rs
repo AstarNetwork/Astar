@@ -43,6 +43,7 @@ use sp_api::ConstructRuntimeApi;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::Percent;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
@@ -985,6 +986,8 @@ pub async fn start_astar_node(
     collator_options: CollatorOptions,
     id: ParaId,
     enable_evm_rpc: bool,
+    proposer_block_size_limit: Option<usize>,
+    proposer_soft_deadline_percent: Option<u8>,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
@@ -1045,7 +1048,7 @@ pub async fn start_astar_node(
             let slot_duration =
                 cumulus_client_consensus_aura::slot_duration(&*client).unwrap();
 
-            let proposer_factory =
+            let mut proposer_factory =
                 sc_basic_authorship::ProposerFactory::with_proof_recording(
                     spawn_handle,
                     client.clone(),
@@ -1053,6 +1056,14 @@ pub async fn start_astar_node(
                     prometheus_registry,
                     telemetry.clone(),
                 );
+
+            if let Some(limit) = proposer_block_size_limit {
+                proposer_factory.set_default_block_size_limit(limit);
+            }
+
+            if let Some(deadline) = proposer_soft_deadline_percent {
+                proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
+            }
 
             let relay_chain_for_aura = relay_chain_interface.clone();
 
@@ -1249,6 +1260,8 @@ pub async fn start_shiden_node(
     collator_options: CollatorOptions,
     id: ParaId,
     enable_evm_rpc: bool,
+    proposer_block_size_limit: Option<usize>,
+    proposer_soft_deadline_percent: Option<u8>,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
@@ -1286,7 +1299,7 @@ pub async fn start_shiden_node(
                     let slot_duration =
                         cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
 
-                    let proposer_factory =
+                    let mut proposer_factory =
                         sc_basic_authorship::ProposerFactory::with_proof_recording(
                             spawn_handle,
                             client2.clone(),
@@ -1294,6 +1307,14 @@ pub async fn start_shiden_node(
                             prometheus_registry2.as_ref(),
                             telemetry2.clone(),
                         );
+
+                    if let Some(limit) = proposer_block_size_limit {
+                        proposer_factory.set_default_block_size_limit(limit);
+                    }
+
+                    if let Some(deadline) = proposer_soft_deadline_percent {
+                        proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
+                    }
 
                     AuraConsensus::build::<
                         sp_consensus_aura::sr25519::AuthorityPair,
@@ -1350,7 +1371,7 @@ pub async fn start_shiden_node(
                 }),
             ));
 
-            let proposer_factory =
+            let mut proposer_factory =
                 sc_basic_authorship::ProposerFactory::with_proof_recording(
                     task_manager.spawn_handle(),
                     client.clone(),
@@ -1358,6 +1379,14 @@ pub async fn start_shiden_node(
                     prometheus_registry,
                     telemetry.clone(),
                 );
+
+            if let Some(limit) = proposer_block_size_limit {
+                proposer_factory.set_default_block_size_limit(limit);
+            }
+
+            if let Some(deadline) = proposer_soft_deadline_percent {
+                proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
+            }
 
             let relay_chain_consensus =
                 cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
@@ -1565,6 +1594,8 @@ pub async fn start_shibuya_node(
     collator_options: CollatorOptions,
     id: ParaId,
     enable_evm_rpc: bool,
+    proposer_block_size_limit: Option<usize>,
+    proposer_soft_deadline_percent: Option<u8>,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
@@ -1625,7 +1656,7 @@ pub async fn start_shibuya_node(
             let slot_duration =
                 cumulus_client_consensus_aura::slot_duration(&*client).unwrap();
 
-            let proposer_factory =
+            let mut proposer_factory =
                 sc_basic_authorship::ProposerFactory::with_proof_recording(
                     spawn_handle,
                     client.clone(),
@@ -1633,6 +1664,14 @@ pub async fn start_shibuya_node(
                     prometheus_registry,
                     telemetry.clone(),
                 );
+
+            if let Some(limit) = proposer_block_size_limit {
+                proposer_factory.set_default_block_size_limit(limit);
+            }
+
+            if let Some(deadline) = proposer_soft_deadline_percent {
+                proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
+            }
 
             Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
