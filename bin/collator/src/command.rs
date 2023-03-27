@@ -773,12 +773,12 @@ pub fn run() -> Result<()> {
                 sp_io::SubstrateHostFunctions,
                 <E as NativeExecutionDispatch>::ExtendHostFunctions,
             >;
-            let info_provider =
-                try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
 
             if chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let info_provider =
+                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
                     let task_manager =
                         sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
                             .map_err(|e| {
@@ -794,6 +794,8 @@ pub fn run() -> Result<()> {
             } else if chain_spec.is_shibuya() {
                 runner.async_run(|config| {
                     let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let info_provider =
+                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
                     let task_manager =
                         sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
                             .map_err(|e| {
@@ -806,9 +808,28 @@ pub fn run() -> Result<()> {
                         task_manager,
                     ))
                 })
+            } else if chain_spec.is_astar() {
+                runner.async_run(|config| {
+                    let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let info_provider =
+                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
+                    let task_manager =
+                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+                            .map_err(|e| {
+                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
+                            })?;
+                    Ok((
+                        cmd.run::<astar_runtime::Block, HostFunctionsOf<astar::Executor>, _>(Some(
+                            info_provider,
+                        )),
+                        task_manager,
+                    ))
+                })
             } else {
                 runner.async_run(|config| {
                     let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let info_provider =
+                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
                     let task_manager =
                         sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
                             .map_err(|e| {

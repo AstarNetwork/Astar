@@ -157,6 +157,7 @@ fc-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-
 fc-rpc-core = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.39" }
 fp-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.39" }
 fp-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.39" }
+fc-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.39" }
 
 # Cumulus
 # (wasm)
