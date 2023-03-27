@@ -56,7 +56,7 @@ parameter_types! {
     pub UniversalLocation: InteriorMultiLocation =
         X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
     pub const ShibuyaLocation: MultiLocation = Here.into_location();
-    pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+    pub DummyCheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -97,10 +97,10 @@ pub type FungiblesTransactor = FungiblesAdapter<
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
-    // We don't track any teleports of `Assets`.
+    // We don't support teleport so no need to check any assets.
     NoChecking,
-    // We don't track any teleports of `Assets`.
-    (),
+    // We don't support teleport so this is just a dummy account.
+    DummyCheckingAccount,
 >;
 
 /// Means for transacting assets on this chain.
@@ -132,7 +132,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: u64 = 1_000_000_000;
+    pub UnitWeightCost: Weight = Weight::from_ref_time(1_000_000_000);
     pub const MaxInstructions: u32 = 100;
     pub const MaxAssetsIntoHolding: u32 = 64;
 }
