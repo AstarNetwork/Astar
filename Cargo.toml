@@ -19,6 +19,9 @@ panic = "unwind"
 pallet-contracts = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.39/pallet-contracts-custom" }
 pallet-contracts-primitives = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.39/pallet-contracts-custom" }
 
+[patch."https://github.com/paritytech/polkadot"]
+pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39" }
+
 [workspace.package]
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
@@ -211,9 +214,11 @@ pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame
 pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
 pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
 pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
+
+# TODO: solve this double dep problem
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false }
 
 pallet-chain-extension-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
 pallet-chain-extension-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }

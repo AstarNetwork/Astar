@@ -123,6 +123,9 @@ frame-system-benchmarking = { workspace = true, optional = true }
 # try-runtime
 frame-try-runtime = { workspace = true, optional = true }
 
+# TODO: see if this can be solved in a better way - right now I don't see how else to inject `runtime-benchmarks` into the `polkadot-runtime`
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false, optional = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -238,6 +241,7 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"polkadot-runtime/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
