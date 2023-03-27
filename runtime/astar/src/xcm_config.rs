@@ -150,11 +150,11 @@ match_types! {
 /// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
 pub struct SafeCallFilter;
 impl Contains<RuntimeCall> for SafeCallFilter {
-    fn contains(call: &RuntimeCall) -> bool {
+    fn contains(_call: &RuntimeCall) -> bool {
         #[cfg(feature = "runtime-benchmarks")]
         {
             if matches!(
-                call,
+                _call,
                 RuntimeCall::System(frame_system::Call::remark_with_event { .. })
             ) {
                 return true;
