@@ -510,6 +510,7 @@ dependencies = [
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-primitives",
+ "polkadot-runtime",
  "polkadot-runtime-common",
  "scale-info",
  "smallvec",

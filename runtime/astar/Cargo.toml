@@ -107,6 +107,9 @@ moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
+# TODO: see if this can be solved in a better way - right now I don't see how else to inject `runtime-benchmarks` into the `polkadot-runtime`
+polkadot-runtime = { workspace = true, optional = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -205,6 +208,7 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"polkadot-runtime/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
