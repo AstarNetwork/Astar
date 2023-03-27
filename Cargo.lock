@@ -371,7 +371,7 @@ dependencies = [
  "fc-rpc",
  "fc-rpc-core",
  "fp-consensus",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "fp-rpc",
  "fp-storage",
  "frame-benchmarking",
@@ -3131,7 +3131,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "frame-support",
  "num_enum",
  "parity-scale-codec",
@@ -3153,27 +3153,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "fp-evm"
-version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.39#3297c466619934d462e0b845c1ab1e81906dcb18"
-dependencies = [
- "evm",
- "frame-support",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -5570,7 +5556,7 @@ dependencies = [
  "evm-gasometer",
  "evm-runtime",
  "evm-tracing-events",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "moonbeam-primitives-ext",
  "pallet-evm",
  "parity-scale-codec",
@@ -6413,9 +6399,9 @@ dependencies = [
 [[package]]
 name = "pallet-base-fee"
 version = "1.0.0"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.39#3297c466619934d462e0b845c1ab1e81906dcb18"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -6804,7 +6790,7 @@ dependencies = [
  "evm",
  "fp-consensus",
  "fp-ethereum",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "fp-rpc",
  "fp-storage",
  "frame-support",
@@ -6826,7 +6812,7 @@ dependencies = [
  "environmental",
  "evm",
  "fp-account",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6846,7 +6832,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-chain-id"
 version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.39#3297c466619934d462e0b845c1ab1e81906dcb18"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6859,7 +6845,7 @@ name = "pallet-evm-precompile-assets-erc20"
 version = "0.5.2"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=temp/polkadot-v0.9.39#fcffb0f858e77a923ca702fc6103a31d1c5eaea9"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "log",
@@ -6881,7 +6867,7 @@ name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
 ]
 
 [[package]]
@@ -6889,7 +6875,7 @@ name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "sp-core",
  "substrate-bn",
 ]
@@ -6899,7 +6885,7 @@ name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "frame-support",
  "pallet-evm",
 ]
@@ -6910,7 +6896,7 @@ version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
  "ed25519-dalek",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
 ]
 
 [[package]]
@@ -6918,7 +6904,7 @@ name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "num",
 ]
 
@@ -6927,7 +6913,7 @@ name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "tiny-keccak",
 ]
 
@@ -6936,7 +6922,7 @@ name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#7030ab484b0449b1a29a2d2181195a322a97b321"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "ripemd",
  "sp-io",
 ]
@@ -6946,7 +6932,7 @@ name = "pallet-evm-precompile-sr25519"
 version = "1.2.1"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=temp/polkadot-v0.9.39#fcffb0f858e77a923ca702fc6103a31d1c5eaea9"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "log",
  "num_enum",
  "pallet-evm",
@@ -6962,7 +6948,7 @@ name = "pallet-evm-precompile-substrate-ecdsa"
 version = "1.2.2"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=temp/polkadot-v0.9.39#fcffb0f858e77a923ca702fc6103a31d1c5eaea9"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "log",
  "num_enum",
  "pallet-evm",
@@ -6978,7 +6964,7 @@ name = "pallet-evm-precompile-xcm"
 version = "0.9.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=temp/polkadot-v0.9.39#fcffb0f858e77a923ca702fc6103a31d1c5eaea9"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "log",
@@ -7001,7 +6987,7 @@ name = "pallet-evm-precompile-xvm"
 version = "0.1.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=temp/polkadot-v0.9.39#fcffb0f858e77a923ca702fc6103a31d1c5eaea9"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "log",
@@ -7283,7 +7269,7 @@ name = "pallet-precompile-dapps-staking"
 version = "3.6.3"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=temp/polkadot-v0.9.39#fcffb0f858e77a923ca702fc6103a31d1c5eaea9"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "log",
@@ -9282,7 +9268,7 @@ version = "0.4.3"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=temp/polkadot-v0.9.39#fcffb0f858e77a923ca702fc6103a31d1c5eaea9"
 dependencies = [
  "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39)",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
