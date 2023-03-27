@@ -278,7 +278,6 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = pallet_xcm::TestWeightInfo; // TODO: this is wrong but there are no concrete weight files available in `pallet-xcm`. We'll need to run our own benchmarks.
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
-    type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -291,8 +290,8 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ChannelInfo = ParachainSystem;
     type VersionWrapper = PolkadotXcm;
-    type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
-    type ControllerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
     type PriceForSiblingDelivery = (); // TODO: check this again
     type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
@@ -301,5 +300,5 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 impl cumulus_pallet_dmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
-    type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
