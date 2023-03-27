@@ -217,7 +217,7 @@ pub fn start_node(
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync: None,
+            warp_sync_params: None,
         })?;
 
     if config.offchain_worker.enabled {
@@ -231,7 +231,7 @@ pub fn start_node(
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
-    let overrides = crate::rpc::overrides_handle(client.clone());
+    let overrides = fc_storage::overrides_handle(client.clone());
 
     let ethapi_cmd = evm_tracing_config.ethapi.clone();
     let tracing_requesters =

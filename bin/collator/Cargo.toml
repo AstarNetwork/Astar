@@ -80,10 +80,10 @@ fc-db = { workspace = true }
 fc-mapping-sync = { workspace = true }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
+fc-storage = { workspace = true }
 fp-consensus = { workspace = true }
 fp-evm = { workspace = true, features = ["std"] }
 fp-storage = { workspace = true }
-fc-storage = { workspace = true }
 
 # astar-specific dependencies
 astar-runtime = { path = "../../runtime/astar" }
