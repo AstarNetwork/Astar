@@ -600,10 +600,10 @@ pub struct StartupConfiguration {
     pub enable_evm_rpc: bool,
 
     /// Maxium allowed block size limit to propose
-    pub proposer_block_size_limit: Option<usize>,
+    pub proposer_block_size_limit: usize,
 
     /// Soft deadline limit used by `Proposer`
-    pub proposer_soft_deadline_percent: Option<u8>,
+    pub proposer_soft_deadline_percent: u8,
 }
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
@@ -1078,13 +1078,8 @@ pub async fn start_astar_node(
                     telemetry.clone(),
                 );
 
-            if let Some(limit) = configuration.proposer_block_size_limit {
-                proposer_factory.set_default_block_size_limit(limit);
-            }
-
-            if let Some(deadline) = configuration.proposer_soft_deadline_percent {
-                proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
-            }
+            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
 
             let relay_chain_for_aura = relay_chain_interface.clone();
 
@@ -1213,13 +1208,8 @@ pub async fn start_astar_node(
                     telemetry.clone(),
                 );
 
-            if let Some(limit) = configuration.proposer_block_size_limit {
-                proposer_factory.set_default_block_size_limit(limit);
-            }
-
-            if let Some(deadline) = configuration.proposer_soft_deadline_percent {
-                proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
-            }
+            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
 
             let relay_chain_for_aura = relay_chain_interface.clone();
 
@@ -1326,13 +1316,8 @@ pub async fn start_shiden_node(
                             telemetry2.clone(),
                         );
 
-                    if let Some(limit) = configuration.proposer_block_size_limit {
-                        proposer_factory.set_default_block_size_limit(limit);
-                    }
-
-                    if let Some(deadline) = configuration.proposer_soft_deadline_percent {
-                        proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
-                    }
+                    proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
+                    proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
 
                     AuraConsensus::build::<
                         sp_consensus_aura::sr25519::AuthorityPair,
@@ -1398,13 +1383,8 @@ pub async fn start_shiden_node(
                     telemetry.clone(),
                 );
 
-            if let Some(limit) = configuration.proposer_block_size_limit {
-                proposer_factory.set_default_block_size_limit(limit);
-            }
-
-            if let Some(deadline) = configuration.proposer_soft_deadline_percent {
-                proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
-            }
+            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
 
             let relay_chain_consensus =
                 cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
@@ -1495,13 +1475,8 @@ pub async fn start_shiden_node(
                             telemetry2.clone(),
                         );
 
-                    if let Some(limit) = configuration.proposer_block_size_limit {
-                        proposer_factory.set_default_block_size_limit(limit);
-                    }
-
-                    if let Some(deadline) = configuration.proposer_soft_deadline_percent {
-                        proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
-                    }
+                    proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
+                    proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
 
                     AuraConsensus::build::<
                         sp_consensus_aura::sr25519::AuthorityPair,
@@ -1567,13 +1542,8 @@ pub async fn start_shiden_node(
                     telemetry.clone(),
                 );
 
-            if let Some(limit) = configuration.proposer_block_size_limit {
-                proposer_factory.set_default_block_size_limit(limit);
-            }
-
-            if let Some(deadline) = configuration.proposer_soft_deadline_percent {
-                proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
-            }
+            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
 
             let relay_chain_consensus =
                 cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
@@ -1696,13 +1666,8 @@ pub async fn start_shibuya_node(
                     telemetry.clone(),
                 );
 
-            if let Some(limit) = configuration.proposer_block_size_limit {
-                proposer_factory.set_default_block_size_limit(limit);
-            }
-
-            if let Some(deadline) = configuration.proposer_soft_deadline_percent {
-                proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
-            }
+            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
 
             Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
@@ -1836,13 +1801,8 @@ pub async fn start_shibuya_node(
                     telemetry.clone(),
                 );
 
-            if let Some(limit) = configuration.proposer_block_size_limit {
-                proposer_factory.set_default_block_size_limit(limit);
-            }
-
-            if let Some(deadline) = configuration.proposer_soft_deadline_percent {
-                proposer_factory.set_soft_deadline(Percent::from_percent(deadline));
-            }
+            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
 
             Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,

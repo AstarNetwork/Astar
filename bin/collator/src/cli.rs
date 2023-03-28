@@ -88,12 +88,12 @@ pub struct Cli {
     pub relaychain_args: Vec<String>,
 
     /// Proposer's maximum block size limit in bytes
-    #[clap(long)]
-    pub proposer_block_size_limit: Option<usize>,
+    #[clap(long, default_value = sc_basic_authorship::DEFAULT_BLOCK_SIZE_LIMIT.to_string())]
+    pub proposer_block_size_limit: usize,
 
     /// Proposer's soft deadline in percents of block size
-    #[clap(long)]
-    pub proposer_soft_deadline_percent: Option<u8>,
+    #[clap(long, default_value = "50")]
+    pub proposer_soft_deadline_percent: u8,
 }
 
 /// Possible subcommands of the main binary.
