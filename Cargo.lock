@@ -6480,7 +6480,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#bfc14505fd4d442ca3d101296f08229548005c03"
+source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#bdc0032afd539fd4cb3fd1239dd85e2c16b533b6"
 dependencies = [
  "bitflags",
  "frame-benchmarking",
@@ -6508,7 +6508,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "7.0.0"
-source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#bfc14505fd4d442ca3d101296f08229548005c03"
+source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#bdc0032afd539fd4cb3fd1239dd85e2c16b533b6"
 dependencies = [
  "bitflags",
  "parity-scale-codec",
@@ -6521,7 +6521,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#bfc14505fd4d442ca3d101296f08229548005c03"
+source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#bdc0032afd539fd4cb3fd1239dd85e2c16b533b6"
 dependencies = [
  "proc-macro2",
  "quote",
