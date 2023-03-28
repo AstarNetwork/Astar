@@ -578,15 +578,31 @@ where
     Ok((task_manager, client))
 }
 
+/// Configuration used to start a node
 pub struct StartupConfiguration {
+    /// Parachain configuration
     pub parachain_config: Configuration,
+
+    /// Relay chain configuration
     pub polkadot_config: Configuration,
+
+    /// EVM tracing configuration
     #[cfg(feature = "evm-tracing")]
     pub evm_tracing_config: EvmTracingConfig,
+
+    /// Options specific to collators
     pub collator_options: CollatorOptions,
+
+    /// Parachain ID to collate
     pub id: ParaId,
+
+    /// Whether EVM RPC be enabled
     pub enable_evm_rpc: bool,
+
+    /// Maxium allowed block size limit to propose
     pub proposer_block_size_limit: Option<usize>,
+
+    /// Soft deadline limit used by `Proposer`
     pub proposer_soft_deadline_percent: Option<u8>,
 }
 
