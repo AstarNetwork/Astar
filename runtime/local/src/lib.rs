@@ -581,7 +581,7 @@ impl pallet_scheduler::Config for Runtime {
     type PalletsOrigin = OriginCaller;
     type RuntimeCall = RuntimeCall;
     type MaximumWeight = MaximumSchedulerWeight;
-    type ScheduleOrigin = EnsureRoot<AccountId>;
+    type ScheduleOrigin = EnsureSigned<AccountId>;
     type MaxScheduledPerBlock = ConstU32<50>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
