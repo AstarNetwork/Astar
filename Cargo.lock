@@ -335,7 +335,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.2.0"
+version = "5.3.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -435,7 +435,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.2.0"
+version = "5.3.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -467,6 +467,8 @@ dependencies = [
  "pallet-block-reward",
  "pallet-collator-selection",
  "pallet-collective",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-ethereum",
@@ -5071,7 +5073,7 @@ checksum = "f051f77a7c8e6957c0696eac88f26b0117e54f52d3fc682ab19397a8812846a4"
 
 [[package]]
 name = "local-runtime"
-version = "5.2.0"
+version = "5.3.0"
 dependencies = [
  "array-bytes 6.0.0",
  "fp-rpc",
@@ -6478,7 +6480,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#81bf978d88425de89c0c59028f91948675fee223"
+source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#bdc0032afd539fd4cb3fd1239dd85e2c16b533b6"
 dependencies = [
  "bitflags",
  "frame-benchmarking",
@@ -6506,7 +6508,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "7.0.0"
-source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#81bf978d88425de89c0c59028f91948675fee223"
+source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#bdc0032afd539fd4cb3fd1239dd85e2c16b533b6"
 dependencies = [
  "bitflags",
  "parity-scale-codec",
@@ -6519,7 +6521,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#81bf978d88425de89c0c59028f91948675fee223"
+source = "git+https://github.com/AstarNetwork/substrate?branch=polkadot-v0.9.37/pallet-contracts-latest#bdc0032afd539fd4cb3fd1239dd85e2c16b533b6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -11407,7 +11409,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.2.0"
+version = "5.3.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
@@ -11509,7 +11511,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.2.0"
+version = "5.3.0"
 dependencies = [
  "array-bytes 6.0.0",
  "cumulus-pallet-aura-ext",
