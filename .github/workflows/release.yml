@@ -321,10 +321,10 @@ jobs:
         name: shibuya-runtime
         path: runtime-artifacts
 
-    - name: Use Node.js 16.x
+    - name: Use Node.js 18.x
       uses: actions/setup-node@v2
       with:
-        node-version: 16.x
+        node-version: 18.x
 
     - name: Get the latest release
       id: latest-release
@@ -359,7 +359,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu", "macOS"]
-        arch: ["x86_64"]
+        arch: ["x86_64", "aarch64"]
         exclude:
         - os: macOS
           arch: aarch64
