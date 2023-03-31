@@ -891,7 +891,13 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    Migrations,
 >;
+
+/// All migrations that will run on the next runtime upgrade.
+///
+/// Once done, migrations should be removed from the tuple.
+pub type Migrations = (pallet_xc_asset_config::migrations::MigrationXcmcV3<Runtime>,);
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
