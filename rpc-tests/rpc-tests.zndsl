@@ -21,7 +21,7 @@ Creds: config
 {% set collators = ["shiden", "astar"] %}
 {% for collator in collators %}
   # Transfer test should only by done after the asset is registered on the other chain.
-  {{collator}}: js-script ./tests/0001-transfer-xcm-asset.js with "Alice" within 200 seconds
+  {{collator}}: js-script ./tests/0001-transfer-reserve-asset-to-sibling.js with "Alice" within 200 seconds
  {% endfor %}
 
 {% set collators = ["shiden", "astar"] %}
@@ -47,5 +47,5 @@ Creds: config
   {{collator}}: js-script ./tests/0002-set-evm-contract-data with "Hola" return is equal to 1 within 200 seconds
 
   # Shell script
-  # {{collator}}: run ./tests/0001-custom.sh within 200 seconds
+  {{collator}}: run ./tests/0001-custom.sh within 200 seconds
 {% endfor %}
