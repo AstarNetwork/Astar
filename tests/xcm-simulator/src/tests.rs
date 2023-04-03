@@ -41,7 +41,7 @@ fn basic_dmp() {
             Parachain(1),
             Xcm(vec![Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_ref_time(1_000_000_000),
+                require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                 call: remark.encode().into(),
             }]),
         ));
@@ -75,7 +75,7 @@ fn basic_ump() {
             Parent,
             Xcm(vec![Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_ref_time(1_000_000_000),
+                require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                 call: remark.encode().into(),
             }]),
         ));
@@ -219,14 +219,14 @@ fn remote_dapps_staking_staker_claim() {
             Here,
             MultiLocation::new(1, X1(Parachain(2))),
             Xcm(vec![
-                WithdrawAsset((Here, 100_000_000_000_u64).into()),
+                WithdrawAsset((Here, 100_000_000_000_u128).into()),
                 BuyExecution {
-                    fees: (Here, 100_000_000_000_u64).into(),
+                    fees: (Here, 100_000_000_000_u128).into(),
                     weight_limit: Unlimited
                 },
                 Transact {
                     origin_kind: OriginKind::SovereignAccount,
-                    require_weight_at_most: Weight::from_ref_time(1_000_000_000),
+                    require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                     call: proxy_call.encode().into(),
                 }
             ]),
@@ -278,14 +278,14 @@ fn remote_dapps_staking_staker_claim() {
             Here,
             MultiLocation::new(1, X1(Parachain(2))),
             Xcm(vec![
-                WithdrawAsset((Here, 100_000_000_000_u64).into()),
+                WithdrawAsset((Here, 100_000_000_000_u128).into()),
                 BuyExecution {
-                    fees: (Here, 100_000_000_000_u64).into(),
+                    fees: (Here, 100_000_000_000_u128).into(),
                     weight_limit: Unlimited
                 },
                 Transact {
                     origin_kind: OriginKind::SovereignAccount,
-                    require_weight_at_most: Weight::from_ref_time(1_000_000_000),
+                    require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                     call: proxy_call.encode().into(),
                 }
             ]),

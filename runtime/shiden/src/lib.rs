@@ -1016,7 +1016,7 @@ pub type Executive = frame_executive::Executive<
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    pallet_xc_asset_config::migrations::MigrationXcmcV3<Runtime>,
+    pallet_xc_asset_config::migrations::MigrationXcmV3<Runtime>,
     pallet_xcm::migration::v1::MigrateToV1<Runtime>,
 );
 
