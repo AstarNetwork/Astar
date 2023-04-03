@@ -51,7 +51,7 @@ use xcm_primitives::{
 };
 
 parameter_types! {
-    pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Rococo); // TODO: check this later (or set it to `None`?)
+    pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub UniversalLocation: InteriorMultiLocation =
         X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
@@ -242,7 +242,7 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 /// queues.
 pub type XcmRouter = (
     // Two routers - use UMP to communicate with the relay chain:
-    cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>, // TODO: What should be `PriceForParentDelivery` in our context?
+    cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
     // ..and XCMP to communicate with the sibling chains.
     XcmpQueue,
 );
@@ -267,13 +267,13 @@ impl pallet_xcm::Config for Runtime {
     type UniversalLocation = UniversalLocation;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion; // TODO: what is the way to handle this?
+    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 
     type Currency = Balances;
     type CurrencyMatcher = ();
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
-    type MaxLockers = ConstU32<8>;
+    type MaxLockers = ConstU32<0>;
     type WeightInfo = pallet_xcm::TestWeightInfo; // TODO: this is wrong but there are no concrete weight files available in `pallet-xcm`. We'll need to run our own benchmarks.
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
@@ -292,7 +292,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type PriceForSiblingDelivery = (); // TODO: check this again
+    type PriceForSiblingDelivery = ();
     type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
 

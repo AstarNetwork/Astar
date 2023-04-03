@@ -262,13 +262,13 @@ impl pallet_xcm::Config for Runtime {
     type UniversalLocation = UniversalLocation;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion; // TODO: what is the way to handle this?
+    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 
     type Currency = Balances;
     type CurrencyMatcher = ();
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
-    type MaxLockers = ConstU32<8>; // TODO: make this zero since we don't handle locking anyhow?
+    type MaxLockers = ConstU32<0>;
     type WeightInfo = pallet_xcm::TestWeightInfo; // TODO: this is wrong but there are no concrete weight files available in `pallet-xcm`. We'll need to run our own benchmarks.
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
@@ -287,7 +287,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
-    type PriceForSiblingDelivery = (); // TODO: check this again
+    type PriceForSiblingDelivery = ();
     type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
 
