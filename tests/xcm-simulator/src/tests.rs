@@ -127,7 +127,7 @@ fn para_to_para_reserve_transfer() {
             Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
             Box::new(
                 X1(AccountId32 {
-                    network: Any,
+                    network: None,
                     id: ALICE.into()
                 })
                 .into()
