@@ -286,8 +286,8 @@ parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Kusama);
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub UniversalLocation: InteriorMultiLocation =
-        X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
-    pub const ShidenLocation: MultiLocation = Here.into();
+        X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(MsgQueue::parachain_id().into()));
+    pub const ShidenLocation: MultiLocation = Here.into_location();
     pub DummyCheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
