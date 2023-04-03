@@ -24,7 +24,7 @@ use super::{
 };
 use frame_support::{
     match_types, parameter_types,
-    traits::{ConstU32, Contains, Everything, Nothing},
+    traits::{ConstU32, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -37,18 +37,12 @@ use xcm_builder::{
     EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
 };
-use xcm_executor::{
-    traits::{JustTry, WithOriginFilter},
-    XcmExecutor,
-};
+use xcm_executor::{traits::JustTry, XcmExecutor};
 
 // Astar imports
-use xcm_primitives::{
-    AllowPaidExecWithDescendOriginFrom, FixedRateOfForeignAsset, ReserveAssetFilter,
-    XcmFungibleFeeHandler,
-};
+use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
 
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
@@ -143,47 +137,11 @@ match_types! {
     };
 }
 
-/// TODO: this comment is taken from Statemine - we should design our own filter!
-/// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
-/// account for proof size weights.
-///
-/// Calls that are allowed through this filter must:
-/// 1. Have a fixed weight;
-/// 2. Cannot lead to another call being made;
-/// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
-pub struct SafeCallFilter;
-impl Contains<RuntimeCall> for SafeCallFilter {
-    fn contains(_call: &RuntimeCall) -> bool {
-        #[cfg(feature = "runtime-benchmarks")]
-        {
-            if matches!(
-                _call,
-                RuntimeCall::System(frame_system::Call::remark_with_event { .. })
-            ) {
-                return true;
-            }
-        }
-
-        // No need to block anything yet, we'll need to define this properly later: TODO
-        // match call {
-        // 	RuntimeCall::System(
-        // 		frame_system::Call::set_heap_pages { .. } |
-        // 		frame_system::Call::set_code { .. } |
-        // 		frame_system::Call::set_code_without_checks { .. } |
-        // 		frame_system::Call::kill_prefix { .. },
-        // 	) => true,
-        //     _ => false,
-        // }
-        true
-    }
-}
-
-// TODO: should we use `WithComputedOrigin` here?
-
 pub type XcmBarrier = (
     TakeWeightCredit,
     AllowTopLevelPaidExecutionFrom<Everything>,
-    AllowPaidExecWithDescendOriginFrom<Everything>,
+    // This will first calculate the derived origin, before checking it against the barrier implementation
+    WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, UniversalLocation, ConstU32<8>>,
     // Parent and its plurality get free execution
     AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
     // Expected responses are OK.
@@ -227,8 +185,8 @@ impl xcm_executor::Config for XcmConfig {
     type FeeManager = ();
     type MessageExporter = ();
     type UniversalAliases = Nothing;
-    type CallDispatcher = WithOriginFilter<SafeCallFilter>;
-    type SafeCallFilter = SafeCallFilter;
+    type CallDispatcher = RuntimeCall;
+    type SafeCallFilter = Everything;
 }
 
 parameter_types! {

@@ -149,32 +149,31 @@ match_types! {
 /// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
 pub struct SafeCallFilter;
 impl Contains<RuntimeCall> for SafeCallFilter {
-    fn contains(_call: &RuntimeCall) -> bool {
+    fn contains(call: &RuntimeCall) -> bool {
         #[cfg(feature = "runtime-benchmarks")]
         {
             if matches!(
-                _call,
+                call,
                 RuntimeCall::System(frame_system::Call::remark_with_event { .. })
             ) {
                 return true;
             }
         }
 
-        // No need to block anything yet, we'll need to define this properly later: TODO
-        // match call {
-        // 	RuntimeCall::System(
-        // 		frame_system::Call::set_heap_pages { .. } |
-        // 		frame_system::Call::set_code { .. } |
-        // 		frame_system::Call::set_code_without_checks { .. } |
-        // 		frame_system::Call::kill_prefix { .. },
-        // 	) => true,
-        //     _ => false,
-        // }
-        true
+        match call {
+            RuntimeCall::EVM(..) | RuntimeCall::Ethereum(..) => false,
+            // RuntimeCall::System( .. ) |
+            // // TODO: Is this really safe? Only if we can prohibit calls that aren't here being made.
+            // // TODO: if we want to integrate with Oak, we'll need to allow batch call of dAPps staking calls!
+            // RuntimeCall::Utility( .. ) |
+            // RuntimeCall::Identity( .. ) |
+            // // TODO: how safe is this if we allow arbitrary call to be wrapped?
+            // RuntimeCall::Multisig( .. ) |
+            //  => true,
+            _ => true,
+        }
     }
 }
-
-// TODO: should we use `WithComputedOrigin` here?
 
 pub type XcmBarrier = (
     TakeWeightCredit,

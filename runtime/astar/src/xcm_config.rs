@@ -175,8 +175,6 @@ impl Contains<RuntimeCall> for SafeCallFilter {
     }
 }
 
-// TODO: should we use `WithComputedOrigin` here?
-
 pub type XcmBarrier = (
     TakeWeightCredit,
     AllowTopLevelPaidExecutionFrom<Everything>,
