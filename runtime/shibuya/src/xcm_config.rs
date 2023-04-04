@@ -126,7 +126,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: Weight = Weight::from_ref_time(1_000_000_000);
+    // The default POV size was taken from XCM V3's mod file (this should be replaced by proper benchmarks)
+    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
     pub const MaxInstructions: u32 = 100;
 }
 
