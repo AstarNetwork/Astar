@@ -20,7 +20,7 @@ use crate::mocks::{parachain, relay_chain, *};
 
 use frame_support::{assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
-use xcm::latest::prelude::*;
+use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
 #[test]
@@ -83,6 +83,43 @@ fn basic_ump() {
 
     Relay::execute_with(|| {
         use relay_chain::{RuntimeEvent, System};
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::System(frame_system::Event::Remarked { .. })
+        )));
+    });
+}
+
+#[test]
+fn basic_xcmp() {
+    MockNet::reset();
+
+    let remark = parachain::RuntimeCall::System(
+        frame_system::Call::<parachain::Runtime>::remark_with_event {
+            remark: vec![1, 2, 3],
+        },
+    );
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainPalletXcm::send_xcm(
+            Here,
+            (Parent, Parachain(2)),
+            Xcm(vec![
+                WithdrawAsset((Here, 100_000_000_000_u128).into()),
+                BuyExecution {
+                    fees: (Here, 100_000_000_000_u128).into(),
+                    weight_limit: Unlimited
+                },
+                Transact {
+                    origin_kind: OriginKind::SovereignAccount,
+                    require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
+                    call: remark.encode().into(),
+                }
+            ]),
+        ));
+    });
+
+    ParaB::execute_with(|| {
+        use parachain::{RuntimeEvent, System};
         assert!(System::events().iter().any(|r| matches!(
             r.event,
             RuntimeEvent::System(frame_system::Event::Remarked { .. })
@@ -228,7 +265,7 @@ fn remote_dapps_staking_staker_claim() {
                     origin_kind: OriginKind::SovereignAccount,
                     require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                     call: proxy_call.encode().into(),
-                }
+                },
             ]),
         ));
     });
