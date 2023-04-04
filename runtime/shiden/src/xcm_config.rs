@@ -140,13 +140,14 @@ match_types! {
 }
 
 /// TODO: this comment is taken from Statemine - we should design our own filter!
+///
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
 /// account for proof size weights.
 ///
 /// Calls that are allowed through this filter must:
 /// 1. Have a fixed weight;
-/// 2. Cannot lead to another call being made;
-/// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters.
+/// 2. Cannot lead to another call being made - TODO: perhaps we should do recursive filtering of limited depth?
+/// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters. - TODO: shouldn't max XCM weight handle this?
 pub struct SafeCallFilter;
 impl Contains<RuntimeCall> for SafeCallFilter {
     fn contains(call: &RuntimeCall) -> bool {
@@ -160,17 +161,29 @@ impl Contains<RuntimeCall> for SafeCallFilter {
             }
         }
 
+        // RuntimeCall::EVM(..) |
+        // RuntimeCall::Ethereum(..) |
+        // // TODO: how safe is this if we allow arbitrary call to be wrapped?
+        // RuntimeCall::Multisig(..) |
+        // RuntimeCall::EVM(..) & RuntimeCall::Ethereum(..) are prohibited because we cannot estimate the PoV size in advance.
+        //
+        // RuntimeCall::Multisig(..), RuntimeCall::Utility(..) & RuntimeCall::Proxy(..) will require additional special filtering.
+        // We must ensure no prohibited calls are wrapped inside wrapper calls (otherwise user can just bypass the limit)
+        // TODO: if we want to integrate with Oak, we'll need to allow batch call of dAPps staking calls
+        //
+        // RuntimeCall::Contracts(..) it should be safe to allow for such calls but perhaps it's better to do more delibrate testing on Shibuya/RocStar.
+        // We must ensure that weight metering works well, otherwise we risk stalling our chain.
+
         match call {
-            RuntimeCall::EVM(..) | RuntimeCall::Ethereum(..) => false,
-            // RuntimeCall::System( .. ) |
-            // // TODO: Is this really safe? Only if we can prohibit calls that aren't here being made.
-            // // TODO: if we want to integrate with Oak, we'll need to allow batch call of dAPps staking calls!
-            // RuntimeCall::Utility( .. ) |
-            // RuntimeCall::Identity( .. ) |
-            // // TODO: how safe is this if we allow arbitrary call to be wrapped?
-            // RuntimeCall::Multisig( .. ) |
-            //  => true,
-            _ => true,
+            RuntimeCall::System(..)
+            | RuntimeCall::Identity(..)
+            | RuntimeCall::Balances(..)
+            | RuntimeCall::Vesting(..)
+            | RuntimeCall::DappsStaking(..)
+            | RuntimeCall::Assets(..)
+            | RuntimeCall::PolkadotXcm(..)
+            | RuntimeCall::Session(..) => true,
+            _ => false,
         }
     }
 }
