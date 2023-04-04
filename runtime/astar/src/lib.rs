@@ -975,6 +975,7 @@ mod benches {
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
+        [pallet_xcm, PolkadotXcm]
     );
 }
 
