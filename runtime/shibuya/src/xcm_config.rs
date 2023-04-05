@@ -227,13 +227,12 @@ impl pallet_xcm::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-
     type Currency = Balances;
     type CurrencyMatcher = ();
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<0>;
-    type WeightInfo = pallet_xcm::TestWeightInfo; // TODO: this is wrong but there are no concrete weight files available in `pallet-xcm`. We'll need to run our own benchmarks.
+    type WeightInfo = pallet_xcm::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
 }
