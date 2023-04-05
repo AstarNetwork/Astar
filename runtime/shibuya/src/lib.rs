@@ -81,6 +81,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod chain_extensions;
+mod nonfungibles;
 mod precompiles;
 mod xcm_config;
 

@@ -42,6 +42,7 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 // Astar imports
+use crate::nonfungibles::NonFungiblesTransactor;
 use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
 
 parameter_types! {
@@ -98,7 +99,11 @@ pub type FungiblesTransactor = FungiblesAdapter<
 >;
 
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
+pub type AssetTransactors = (
+    CurrencyTransactor,
+    FungiblesTransactor,
+    NonFungiblesTransactor,
+);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
