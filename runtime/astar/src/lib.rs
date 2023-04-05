@@ -82,7 +82,6 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod precompiles;
-mod weights;
 mod xcm_config;
 
 pub type AstarAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
@@ -347,7 +346,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type SmartContract = SmartContract<AccountId>;
     type RegisterDeposit = RegisterDeposit;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
+    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
@@ -797,7 +796,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
+    type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
 construct_runtime!(

@@ -76,8 +76,6 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-mod weights;
-
 #[cfg(feature = "std")]
 /// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
 pub fn wasm_binary_unwrap() -> &'static [u8] {
@@ -410,7 +408,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type SmartContract = SmartContract<AccountId>;
     type RegisterDeposit = RegisterDeposit;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
+    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;

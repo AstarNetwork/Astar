@@ -83,7 +83,6 @@ pub use sp_runtime::BuildStorage;
 
 mod chain_extensions;
 mod precompiles;
-mod weights;
 mod xcm_config;
 
 pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
@@ -420,7 +419,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type SmartContract = SmartContract<AccountId>;
     type RegisterDeposit = RegisterDeposit;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
+    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
@@ -1181,7 +1180,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type XcAssetChanged = EvmRevertCodeHandler;
     // Good enough for testnet since we lack pallet-assets hooks for now
     type ManagerOrigin = EitherOfDiverse<EnsureRoot<AccountId>, EnsureSigned<AccountId>>;
-    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
+    type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
 construct_runtime!(
