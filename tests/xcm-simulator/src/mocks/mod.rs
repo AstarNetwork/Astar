@@ -19,12 +19,10 @@
 pub(crate) mod msg_queue;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
+pub(crate) mod statemine_like;
 
 use frame_support::traits::{Currency, OnFinalize, OnInitialize};
-use polkadot_parachain::primitives::{Id as ParaId, Sibling};
-use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
-use xcm_builder::SiblingParachainConvertsVia;
 use xcm_executor::traits::Convert;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
@@ -51,6 +49,15 @@ decl_test_parachain! {
     }
 }
 
+decl_test_parachain! {
+    pub struct Statemine {
+        Runtime = statemine_like::Runtime,
+        XcmpMessageHandler = statemine_like::MsgQueue,
+        DmpMessageHandler = statemine_like::MsgQueue,
+        new_ext = para_ext(3),
+    }
+}
+
 decl_test_relay_chain! {
     pub struct Relay {
         Runtime = relay_chain::Runtime,
@@ -73,18 +80,21 @@ pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
 
+// pub fn parent_account_id() -> parachain::AccountId {
+//     let location = (Parent,);
+//     parachain::LocationToAccountId::convert(location.into()).unwrap()
+// }
+
 /// Derive parachain sovereign account on relay chain, from parachain Id
-pub fn para_account_id_on_relay(id: u32) -> relay_chain::AccountId {
-    ParaId::from(id).into_account_truncating()
+pub fn child_account_id(para: u32) -> relay_chain::AccountId {
+    let location = (Parachain(para),);
+    relay_chain::LocationToAccountId::convert(location.into()).unwrap()
 }
 
 /// Derive parachain sovereign account on a sibling parachain, from parachain Id
-pub fn sibling_para_account_id(id: u32) -> parachain::AccountId {
-    SiblingParachainConvertsVia::<Sibling, parachain::AccountId>::convert_ref(MultiLocation::new(
-        1,
-        X1(Parachain(id)),
-    ))
-    .unwrap()
+pub fn sibling_account_id(para: u32) -> parachain::AccountId {
+    let location = (Parent, X1(Parachain(para)));
+    parachain::LocationToAccountId::convert(location.into()).unwrap()
 }
 
 /// Prepare parachain test externality
@@ -98,8 +108,8 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
     pallet_balances::GenesisConfig::<Runtime> {
         balances: vec![
             (ALICE, INITIAL_BALANCE),
-            (sibling_para_account_id(1), INITIAL_BALANCE),
-            (sibling_para_account_id(2), INITIAL_BALANCE),
+            (sibling_account_id(1), INITIAL_BALANCE),
+            (sibling_account_id(2), INITIAL_BALANCE),
         ],
     }
     .assimilate_storage(&mut t)
@@ -128,8 +138,8 @@ pub fn relay_ext() -> sp_io::TestExternalities {
     pallet_balances::GenesisConfig::<Runtime> {
         balances: vec![
             (ALICE, INITIAL_BALANCE),
-            (para_account_id_on_relay(1), INITIAL_BALANCE),
-            (para_account_id_on_relay(2), INITIAL_BALANCE),
+            (child_account_id(1), INITIAL_BALANCE),
+            (child_account_id(2), INITIAL_BALANCE),
         ],
     }
     .assimilate_storage(&mut t)

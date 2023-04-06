@@ -140,7 +140,7 @@ fn para_to_para_reserve_transfer() {
         assert_ok!(parachain::Assets::force_create(
             parachain::RuntimeOrigin::root(),
             sibling_asset_id,
-            sibling_para_account_id(1),
+            sibling_account_id(1),
             true,
             1
         ));
@@ -176,7 +176,7 @@ fn para_to_para_reserve_transfer() {
 
         // Parachain 2 sovereign account should have it's balance increased, while Alice balance should be decreased.
         assert_eq!(
-            parachain::Balances::free_balance(&sibling_para_account_id(2)),
+            parachain::Balances::free_balance(&sibling_account_id(2)),
             INITIAL_BALANCE + withdraw_amount
         );
         assert_eq!(
@@ -229,7 +229,7 @@ fn remote_dapps_staking_staker_claim() {
         // Register para A sovereign account as proxy with dApps staking privileges
         assert_ok!(parachain::Proxy::add_proxy(
             parachain::RuntimeOrigin::signed(ALICE),
-            sibling_para_account_id(1),
+            sibling_account_id(1),
             parachain::ProxyType::StakerRewardClaim,
             0
         ));
