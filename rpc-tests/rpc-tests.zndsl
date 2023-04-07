@@ -15,12 +15,30 @@ Creds: config
 
 {% set collators = ["shiden", "astar"] %}
 {% for collator in collators %}
-  {{collator}}: is up
+  {{collator}}: js-script ./tests/0001-register-xcasset.js with "Alice" within 200 seconds
+{% endfor %}
 
+{% set collators = ["shiden", "astar"] %}
+{% for collator in collators %}
+  # Transfer test should only by done after the asset is registered on the other chain.
+  {{collator}}: js-script ./tests/0001-transfer-reserve-asset-to-sibling.js with "Alice" within 200 seconds
+ {% endfor %}
+
+{% set collators = ["shiden", "astar"] %}
+{% for collator in collators %}
+  # Balance test should only by done after the asset is transfered to the other chain.
+  {{collator}}: js-script ./tests/0001-balance-xcm-asset.js with "Alice" within 200 seconds
+{% endfor %}
+
+{% set collators = ["shiden", "astar"] %}
+{% for collator in collators %}
   # Basic Tests
+  {{collator}}: is up
   {{collator}}: js-script ./tests/0001-fetch-name-and-chain-from-rpc-node.js return is equal to 1 within 200 seconds
   {{collator}}: js-script ./tests/0001-transfer-tokens.js with "Alice,Dave" return is equal to 1 within 200 seconds
-  {{collator}}: js-script ./tests/0001-regsiter-contract-on-h160.js with "Alice" within 200 seconds
+  {{collator}}: js-script ./tests/0001-register-contract-on-h160.js with "Alice" within 200 seconds
+  {{collator}}: js-script ./tests/0001-dappsttaking-bondandstake.js with "Alice" within 200 seconds
+  {{collator}}: js-script ./tests/0001-parse-block.js return is equal to 1 within 200 seconds
 
   # EVM Test Section
   {{collator}}: js-script ./tests/0001-transfer-tokens-to-evm-mapped-account.js with "Alice" within 200 seconds
