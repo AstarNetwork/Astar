@@ -25,7 +25,7 @@ use sc_client_api::{BlockBackend, BlockchainEvents};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
-use sc_service::{error::Error as ServiceError, Configuration, TaskManager, WarpSyncParams};
+use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
@@ -209,12 +209,6 @@ pub fn start_node(
         &config.chain_spec,
     );
 
-    let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
-        backend.clone(),
-        grandpa_link.shared_authority_set().clone(),
-        Vec::default(),
-    ));
-
     let (network, system_rpc_tx, tx_handler_controller, network_starter) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
@@ -223,7 +217,7 @@ pub fn start_node(
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
+            warp_sync_params: None,
         })?;
 
     if config.offchain_worker.enabled {
@@ -487,12 +481,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         &config.chain_spec,
     );
 
-    let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
-        backend.clone(),
-        grandpa_link.shared_authority_set().clone(),
-        Vec::default(),
-    ));
-
     let (network, system_rpc_tx, tx_handler_controller, network_starter) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
@@ -501,7 +489,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
             block_announce_validator_builder: None,
-            warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
+            warp_sync_params: None,
         })?;
 
     if config.offchain_worker.enabled {
