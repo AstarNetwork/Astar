@@ -19,11 +19,6 @@ panic = "unwind"
 pallet-contracts = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.39/pallet-contracts-custom" }
 pallet-contracts-primitives = { git = "https://github.com/AstarNetwork/substrate", branch = "polkadot-v0.9.39/pallet-contracts-custom" }
 
-# TODO: added this to avoid double deps but I should probably remove it to ensure polkadot deps ALWAYS use the supposed pallet-xcm version
-# [patch."https://github.com/paritytech/polkadot"]
-# pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39" }
-# TODO2 - we need to get rid of this double dependecy issue
-
 [workspace.package]
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"

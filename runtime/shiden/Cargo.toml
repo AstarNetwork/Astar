@@ -112,7 +112,7 @@ moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
-# TODO: see if this can be solved in a better way - right now I don't see how else to inject `runtime-benchmarks` into the `polkadot-runtime`
+# TODO: remove this once we get rid of `pallet-xcm` fork & double dep
 polkadot-runtime = { workspace = true, optional = true }
 
 [build-dependencies]
