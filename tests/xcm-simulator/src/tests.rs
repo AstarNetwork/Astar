@@ -197,6 +197,77 @@ fn para_to_para_reserve_transfer() {
     });
 }
 
+// Send a relay asset (like DOT/KSM) to a parachain A
+#[test]
+fn receive_relay_asset_from_relay() {
+    MockNet::reset();
+
+    let relay_asset_id = 123 as u128;
+    let source_location = (Parent,);
+
+    // On parachain A create an asset which representes a derivative of relay native asset.
+    // This asset is allowed as XCM execution fee payment asset.
+    ParaA::execute_with(|| {
+        assert_ok!(parachain::Assets::force_create(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            parent_account_id(),
+            true,
+            relay_asset_id
+        ));
+        assert_ok!(ParachainXcAssetConfig::register_asset_location(
+            parachain::RuntimeOrigin::root(),
+            Box::new(source_location.clone().into()),
+            relay_asset_id
+        ));
+        assert_ok!(ParachainXcAssetConfig::set_asset_units_per_second(
+            parachain::RuntimeOrigin::root(),
+            Box::new(source_location.into()),
+            1_000_000_000_000, // each unit of weight charged exactly 1
+        ));
+    });
+
+    // Next step is to send some of relay native asset to parachain A.
+    let withdraw_amount = 567;
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(
+                AccountId32 {
+                    network: None,
+                    id: ALICE.into()
+                }
+                .into_location()
+                .into_versioned()
+            ),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+        ));
+
+        // Parachain A sovereign account should have it's balance increased, while Alice balance should be decreased.
+        assert_eq!(
+            relay_chain::Balances::free_balance(&child_account_id(1)),
+            INITIAL_BALANCE + withdraw_amount
+        );
+        assert_eq!(
+            relay_chain::Balances::free_balance(&ALICE),
+            INITIAL_BALANCE - withdraw_amount
+        );
+    });
+
+    // Parachain A should receive relay native assets and should mint their local derivate.
+    // Portion of those assets should be taken as the XCM execution fee.
+    ParaA::execute_with(|| {
+        // Ensure Alice received assets on ParaA (sent amount minus expenses)
+        let four_instructions_execution_cost = parachain::UnitWeightCost::get() * 4;
+        assert_eq!(
+            parachain::Assets::balance(relay_asset_id, ALICE),
+            withdraw_amount - four_instructions_execution_cost.ref_time() as u128
+        );
+    });
+}
+
 #[test]
 fn remote_dapps_staking_staker_claim() {
     MockNet::reset();
