@@ -129,8 +129,9 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    // The default POV size was taken from XCM V3's mod file (this should be replaced by proper benchmarks)
-    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
+    // The default POV size used by Polkadot/Kusama is 64 kB but that breaks backwards compatibility with v2.
+    // A small, but not negligible size of 4 kB is used instead.
+    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 4 * 1024);
     pub const MaxInstructions: u32 = 100;
 }
 
