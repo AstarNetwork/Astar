@@ -18,10 +18,50 @@
 
 use crate::mocks::{parachain, relay_chain, *};
 
-use frame_support::{assert_ok, weights::Weight};
+use frame_support::{assert_ok, traits::IsType, weights::Weight};
 use parity_scale_codec::Encode;
+use sp_runtime::{
+    traits::{Bounded, StaticLookup},
+    DispatchResult,
+};
 use xcm::prelude::*;
 use xcm_simulator::TestExt;
+
+fn register_asset<Runtime, AssetId>(
+    origin: Runtime::RuntimeOrigin,
+    asset_id: AssetId,
+    asset_location: impl Into<MultiLocation> + Clone,
+    asset_controller: <Runtime::Lookup as StaticLookup>::Source,
+    is_sufficent: Option<bool>,
+    initial_balance: Option<Runtime::Balance>,
+    units_per_second: Option<u128>,
+) -> DispatchResult
+where
+    Runtime: pallet_xc_asset_config::Config + pallet_assets::Config,
+    AssetId: IsType<<Runtime as pallet_xc_asset_config::Config>::AssetId>
+        + IsType<<Runtime as pallet_assets::Config>::AssetId>
+        + Clone,
+{
+    pallet_assets::Pallet::<Runtime>::force_create(
+        origin.clone(),
+        <Runtime as pallet_assets::Config>::AssetIdParameter::from(asset_id.clone().into()),
+        asset_controller,
+        is_sufficent.unwrap_or(true),
+        initial_balance.unwrap_or(Bounded::min_value()),
+    )?;
+
+    pallet_xc_asset_config::Pallet::<Runtime>::register_asset_location(
+        origin.clone(),
+        Box::new(asset_location.clone().into().into_versioned()),
+        asset_id.into(),
+    )?;
+
+    pallet_xc_asset_config::Pallet::<Runtime>::set_asset_units_per_second(
+        origin,
+        Box::new(asset_location.into().into_versioned()),
+        units_per_second.unwrap_or(1_000_000_000_000), // each unit of weight charged exactly 1
+    )
+}
 
 #[test]
 fn basic_dmp() {
@@ -132,27 +172,19 @@ fn para_to_para_reserve_transfer() {
     MockNet::reset();
 
     let sibling_asset_id = 123 as u128;
-    let para_a_multiloc = Box::new(MultiLocation::new(1, X1(Parachain(1))).into_versioned());
+    let para_a_multiloc = (Parent, Parachain(1));
 
     // On parachain B create an asset which representes a derivative of parachain A native asset.
     // This asset is allowed as XCM execution fee payment asset.
     ParaB::execute_with(|| {
-        assert_ok!(parachain::Assets::force_create(
+        assert_ok!(register_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             sibling_asset_id,
-            sibling_account_id(1),
-            true,
-            1
-        ));
-        assert_ok!(ParachainXcAssetConfig::register_asset_location(
-            parachain::RuntimeOrigin::root(),
             para_a_multiloc.clone(),
-            sibling_asset_id
-        ));
-        assert_ok!(ParachainXcAssetConfig::set_asset_units_per_second(
-            parachain::RuntimeOrigin::root(),
-            para_a_multiloc,
-            1_000_000_000_000, // each unit of weight charged exactly 1
+            sibling_account_id(1),
+            Some(true),
+            Some(1),
+            Some(1_000_000_000_000)
         ));
     });
 
@@ -208,22 +240,14 @@ fn receive_relay_asset_from_relay() {
     // On parachain A create an asset which representes a derivative of relay native asset.
     // This asset is allowed as XCM execution fee payment asset.
     ParaA::execute_with(|| {
-        assert_ok!(parachain::Assets::force_create(
+        assert_ok!(register_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
+            source_location,
             parent_account_id(),
-            true,
-            relay_asset_id
-        ));
-        assert_ok!(ParachainXcAssetConfig::register_asset_location(
-            parachain::RuntimeOrigin::root(),
-            Box::new(source_location.clone().into()),
-            relay_asset_id
-        ));
-        assert_ok!(ParachainXcAssetConfig::set_asset_units_per_second(
-            parachain::RuntimeOrigin::root(),
-            Box::new(source_location.into()),
-            1_000_000_000_000, // each unit of weight charged exactly 1
+            Some(true),
+            Some(1),
+            Some(1_000_000_000_000)
         ));
     });
 
@@ -266,6 +290,85 @@ fn receive_relay_asset_from_relay() {
             withdraw_amount - four_instructions_execution_cost.ref_time() as u128
         );
     });
+}
+
+// Send relay asset (like DOT) back from Parachain A to relaychain
+#[test]
+fn send_relay_asset_to_relay() {
+    MockNet::reset();
+
+    let source_location = (Parent,);
+    let relay_asset_id = 123_u128;
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
+
+    // On parachain A create an asset which representes a derivative of relay native asset.
+    // This asset is allowed as XCM execution fee payment asset.
+    // Register relay asset in paraA
+    ParaA::execute_with(|| {
+        assert_ok!(register_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(123),
+            Some(0)
+        ));
+    });
+
+    // Next step is to send some of relay native asset to parachain A.
+    // same as previous test
+    let withdraw_amount = 54321;
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(alice.into_location().into_versioned()),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+        ));
+    });
+
+    ParaA::execute_with(|| {
+        // Free execution, full amount received
+        assert_eq!(
+            parachain::Assets::balance(relay_asset_id, ALICE),
+            withdraw_amount
+        );
+    });
+
+    // Lets gather the balance before sending back money
+    let mut balance_before_sending = 0;
+    Relay::execute_with(|| {
+        balance_before_sending = relay_chain::Balances::free_balance(&ALICE);
+    });
+
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainPalletXcm::reserve_withdraw_assets(
+            parachain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parent.into()),
+            Box::new(alice.into_location().into_versioned()),
+            Box::new((Parent, withdraw_amount).into()),
+            0,
+        ));
+    });
+
+    // The balances in ParaA alice should have been substracted
+    ParaA::execute_with(|| {
+        assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0);
+    });
+
+    // Balances in the relay should have been received
+    Relay::execute_with(|| {
+        // free execution,x	 full amount received
+        assert!(relay_chain::Balances::free_balance(ALICE) > balance_before_sending);
+    });
+
+    // // To get logs
+    // std::thread::sleep(std::time::Duration::from_millis(4000));
 }
 
 #[test]
