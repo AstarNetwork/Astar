@@ -16,15 +16,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::mocks::{parachain, relay_chain, *};
+use crate::mocks::{parachain, relay_chain, statemint_like, *};
 
-use frame_support::{assert_ok, traits::IsType, weights::Weight};
+use frame_support::{
+    assert_ok,
+    traits::{IsType, PalletInfoAccess},
+    weights::Weight,
+};
 use parity_scale_codec::Encode;
 use sp_runtime::{
     traits::{Bounded, StaticLookup},
     DispatchResult,
 };
 use xcm::prelude::*;
+use xcm_executor::traits::Convert;
 use xcm_simulator::TestExt;
 
 fn register_asset<Runtime, AssetId>(
@@ -369,6 +374,101 @@ fn send_relay_asset_to_relay() {
 
     // // To get logs
     // std::thread::sleep(std::time::Duration::from_millis(4000));
+}
+
+#[test]
+fn test_statemint_like() {
+    MockNet::reset();
+
+    let dest_para = (Parent, Parachain(1));
+
+    let sov = xcm_builder::SiblingParachainConvertsVia::<
+        polkadot_parachain::primitives::Sibling,
+        statemint_like::AccountId,
+    >::convert_ref(&dest_para.into())
+    .unwrap();
+
+    let statemint_asset_a_balances = MultiLocation::new(
+        1,
+        X3(
+            Parachain(4),
+            PalletInstance(5),
+            xcm::latest::prelude::GeneralIndex(0u128),
+        ),
+    );
+    let source_id = 123;
+
+    ParaA::execute_with(|| {
+        assert_ok!(register_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            source_id,
+            statemint_asset_a_balances,
+            sibling_account_id(4),
+            Some(true),
+            Some(1),
+            // free execution
+            Some(0)
+        ));
+    });
+
+    Statemint::execute_with(|| {
+        // Set new prefix
+        statemint_like::PrefixChanger::set_prefix(
+            PalletInstance(<StatemintAssets as PalletInfoAccess>::index() as u8).into(),
+        );
+
+        assert_ok!(StatemintAssets::create(
+            statemint_like::RuntimeOrigin::signed(ALICE),
+            0,
+            ALICE,
+            1
+        ));
+
+        assert_ok!(StatemintAssets::mint(
+            statemint_like::RuntimeOrigin::signed(ALICE),
+            0,
+            ALICE,
+            300000000000000
+        ));
+
+        // This is needed, since the asset is created as non-sufficient
+        assert_ok!(StatemintBalances::transfer(
+            statemint_like::RuntimeOrigin::signed(ALICE),
+            sov,
+            100000000000000
+        ));
+
+        // Actually send relay asset to parachain
+        let dest: MultiLocation = AccountId32 {
+            network: None,
+            id: ALICE.into(),
+        }
+        .into();
+
+        // Send with new prefix
+        assert_ok!(StatemintPalletXcm::reserve_transfer_assets(
+            statemint_like::RuntimeOrigin::signed(ALICE),
+            Box::new(MultiLocation::new(1, X1(Parachain(1))).into()),
+            Box::new(VersionedMultiLocation::V3(dest).clone().into()),
+            Box::new(
+                (
+                    X2(
+                        xcm::latest::prelude::PalletInstance(
+                            <StatemintAssets as PalletInfoAccess>::index() as u8
+                        ),
+                        xcm::latest::prelude::GeneralIndex(0),
+                    ),
+                    123
+                )
+                    .into()
+            ),
+            0,
+        ));
+    });
+
+    ParaA::execute_with(|| {
+    	assert_eq!(ParachainAssets::balance(source_id, &ALICE.into()), 123);
+    });
 }
 
 #[test]

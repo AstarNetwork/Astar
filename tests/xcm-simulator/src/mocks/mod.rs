@@ -19,7 +19,7 @@
 pub(crate) mod msg_queue;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
-pub(crate) mod statemine_like;
+pub(crate) mod statemint_like;
 
 use frame_support::traits::{Currency, OnFinalize, OnInitialize};
 use xcm::latest::prelude::*;
@@ -50,11 +50,11 @@ decl_test_parachain! {
 }
 
 decl_test_parachain! {
-    pub struct Statemine {
+    pub struct Statemint {
         Runtime = statemine_like::Runtime,
-        XcmpMessageHandler = statemine_like::MsgQueue,
-        DmpMessageHandler = statemine_like::MsgQueue,
-        new_ext = para_ext(3),
+        XcmpMessageHandler = statemint_like::MsgQueue,
+        DmpMessageHandler = statemint_like::MsgQueue,
+        new_ext = para_ext(4),
     }
 }
 
@@ -77,13 +77,19 @@ decl_test_network! {
 }
 
 pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
-pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
-pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
 
-// pub fn parent_account_id() -> parachain::AccountId {
-//     let location = (Parent,);
-//     parachain::LocationToAccountId::convert(location.into()).unwrap()
-// }
+pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
+pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
+// pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
+
+pub type StatemintPalletXcm = pallet_xcm::Pallet<statemint_like::Runtime>;
+pub type StatemintAssets = pallet_assets::Pallet<statemint_like::Runtime>;
+pub type StatemintBalances = pallet_balances::Pallet<statemint_like::Runtime>;
+
+pub fn parent_account_id() -> parachain::AccountId {
+    let location = (Parent,);
+    parachain::LocationToAccountId::convert(location.into()).unwrap()
+}
 
 /// Derive parachain sovereign account on relay chain, from parachain Id
 pub fn child_account_id(para: u32) -> relay_chain::AccountId {
