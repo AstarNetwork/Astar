@@ -376,6 +376,169 @@ fn send_relay_asset_to_relay() {
     // std::thread::sleep(std::time::Duration::from_millis(4000));
 }
 
+// Send relay asset (like DOT) back from Parachain A to Parachain B
+#[test]
+fn send_relay_asset_to_para_b() {
+    MockNet::reset();
+
+    let source_location = (Parent,);
+    let relay_asset_id = 123_u128;
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
+
+    // On parachain A create an asset which representes a derivative of relay native asset.
+    // This asset is allowed as XCM execution fee payment asset.
+    // Register relay asset in ParaA
+    ParaA::execute_with(|| {
+        assert_ok!(register_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(123),
+            Some(0)
+        ));
+    });
+
+    // register relay asset in ParaB
+    ParaB::execute_with(|| {
+        assert_ok!(register_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(123),
+            Some(0)
+        ));
+    });
+
+    // Next step is to send some of relay native asset to parachain A.
+    // same as previous test
+    let withdraw_amount = 54321;
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(alice.into_location().into_versioned()),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+        ));
+    });
+
+    ParaA::execute_with(|| {
+        // Free execution, full amount received
+        assert_eq!(
+            parachain::Assets::balance(relay_asset_id, ALICE),
+            withdraw_amount
+        );
+    });
+
+    // send relay asset to ParaB
+    ParaA::execute_with(|| {
+        let xcm = Xcm(vec![
+            // withdraw relay native asset
+            WithdrawAsset((Parent, withdraw_amount).into()),
+            InitiateReserveWithdraw {
+                assets: All.into(),
+                reserve: source_location.clone().into(),
+                xcm: Xcm(vec![
+                    BuyExecution {
+                        fees: (Here, withdraw_amount).into(),
+                        weight_limit: Unlimited,
+                    },
+                    // deposit into ParaB
+                    DepositReserveAsset {
+                        assets: All.into(),
+                        dest: Parachain(2).into(),
+                        xcm: Xcm(vec![
+                            BuyExecution {
+                                // for sake of sanity, let's assume half the
+                                // amount is still available
+                                fees: (Parent, withdraw_amount / 2).into(),
+                                weight_limit: Unlimited,
+                            },
+                            // deposit into ParaB's alice
+                            DepositAsset {
+                                assets: All.into(),
+                                beneficiary: alice.clone().into(),
+                            },
+                        ]),
+                    },
+                ]),
+            },
+        ]);
+
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            Box::new(VersionedXcm::V3(xcm)),
+            Weight::from_parts(100_000_000_000, 1024 * 1024)
+        ));
+    });
+
+    // Para A balances should have been substracted
+    ParaA::execute_with(|| {
+        assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0);
+    });
+
+    // Para B balances should have been credited
+    ParaB::execute_with(|| {
+        assert_eq!(
+            parachain::Assets::balance(relay_asset_id, ALICE),
+            withdraw_amount
+        );
+    });
+}
+
+#[test]
+fn error_when_not_paying_enough() {
+    MockNet::reset();
+
+    let source_location: MultiLocation = (Parent,).into();
+    let source_id: parachain::AssetId = 123;
+
+    let dest: MultiLocation = Junction::AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    }
+    .into();
+    // This time we are gonna put a rather high number of units per second
+    // we know later we will divide by 1e12
+    // Lets put 1e6 as units per second
+    ParaA::execute_with(|| {
+        assert_ok!(register_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            source_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(1),
+            Some(2500000000000u128)
+        ));
+    });
+
+    // We are sending 100 tokens from relay.
+    // If we set the dest weight to be 1e7, we know the buy_execution will spend 1e7*1e6/1e12 = 10
+    // Therefore with no refund, we should receive 10 tokens less
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(VersionedMultiLocation::V3(dest).clone().into()),
+            Box::new((Here, 5).into()),
+            0,
+        ));
+    });
+
+    ParaA::execute_with(|| {
+        // amount not received as it is not paying enough
+        assert_eq!(ParachainAssets::balance(source_id, &ALICE.into()), 0);
+    });
+}
+
 #[test]
 fn test_statemint_like() {
     MockNet::reset();
