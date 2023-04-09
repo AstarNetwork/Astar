@@ -107,7 +107,12 @@ pub mod mock_msg_queue {
                 Ok(xcm) => {
                     let location = (Parent, Parachain(sender.into()));
                     <ReceivedXcmp<T>>::append(xcm.clone());
-                    match T::XcmExecutor::execute_xcm(location, xcm.clone(), message_hash, max_weight) {
+                    match T::XcmExecutor::execute_xcm(
+                        location,
+                        xcm.clone(),
+                        message_hash,
+                        max_weight,
+                    ) {
                         Outcome::Error(e) => {
                             println!("Error in XCMP handling: {:?}, sender=Parachain({sender}), xcm={xcm:?}", e);
                             (Err(e.clone()), Event::Fail(Some(hash), e))

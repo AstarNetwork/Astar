@@ -467,7 +467,7 @@ fn test_statemint_like() {
     });
 
     ParaA::execute_with(|| {
-    	assert_eq!(ParachainAssets::balance(source_id, &ALICE.into()), 123);
+        assert_eq!(ParachainAssets::balance(source_id, &ALICE.into()), 123);
     });
 }
 
