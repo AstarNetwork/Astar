@@ -17,37 +17,43 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    AccountId, AssetId, Assets, AstarAssetLocationIdConverter, Balance, Balances, DealWithFees,
-    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-    TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+    AccountId, AllPalletsWithSystem, AssetId, Assets, AstarAssetLocationIdConverter, Balance,
+    Balances, DealWithFees, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
+    RuntimeEvent, RuntimeOrigin, TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue,
+    MAXIMUM_BLOCK_WEIGHT,
 };
 use frame_support::{
     match_types, parameter_types,
-    traits::{Everything, Nothing},
+    traits::{ConstU32, Contains, Everything, Nothing},
     weights::Weight,
 };
+use frame_system::EnsureRoot;
 
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
-    LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
+    EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
-use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+use xcm_executor::{
+    traits::{JustTry, WithOriginFilter},
+    XcmExecutor,
+};
 
 // Astar imports
 use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
 
 parameter_types! {
-    pub RelayNetwork: NetworkId = NetworkId::Polkadot;
+    pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Polkadot);
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-    pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-    pub AstarLocation: MultiLocation = Here.into();
-    pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+    pub UniversalLocation: InteriorMultiLocation =
+    X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
+    pub AstarLocation: MultiLocation = Here.into_location();
+    pub DummyCheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -83,15 +89,15 @@ pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
     // Use this currency when it is a fungible asset matching the given location or name:
-    ConvertedConcreteAssetId<AssetId, Balance, AstarAssetLocationIdConverter, JustTry>,
+    ConvertedConcreteId<AssetId, Balance, AstarAssetLocationIdConverter, JustTry>,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
-    // We don't track any teleports of `Assets`.
-    Nothing,
-    // We don't track any teleports of `Assets`.
-    CheckingAccount,
+    // We don't support teleport so no need to check any assets.
+    NoChecking,
+    // We don't support teleport so this is just a dummy account.
+    DummyCheckingAccount,
 >;
 
 /// Means for transacting assets on this chain.
@@ -123,7 +129,9 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: u64 = 1_000_000_000;
+    // The default POV size used by Polkadot/Kusama is 64 kB but that breaks backwards compatibility with v2.
+    // A small, but not negligible size of 4 kB is used instead.
+    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 4 * 1024);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -132,6 +140,52 @@ match_types! {
         MultiLocation { parents: 1, interior: Here } |
         MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
     };
+}
+
+/// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
+/// account for proof size weights.
+///
+/// Calls that are allowed through this filter must:
+/// 1. Have a fixed weight;
+/// 2. Cannot lead to another call being made
+/// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters. - TODO: shouldn't max XCM weight handle this?
+pub struct SafeCallFilter;
+
+impl SafeCallFilter {
+    // 1. RuntimeCall::Multisig(..) - contains `Vec` in argument so we should avoid this
+    // 2. RuntimeCall::EVM(..) & RuntimeCall::Ethereum(..) have to be prohibited since we cannot measure PoV size properly
+    // 3. RuntimeCall::Contracts(..) it should be safe to allow for such calls but perhaps it's better to do more delibrate testing on Shibuya/RocStar.
+
+    /// Checks whether the base (non-composite) call is allowed to be executed via `Transact` XCM instruction.
+    pub fn allow_base_call(call: &RuntimeCall) -> bool {
+        match call {
+            RuntimeCall::System(..)
+            | RuntimeCall::Identity(..)
+            | RuntimeCall::Balances(..)
+            | RuntimeCall::Vesting(..)
+            | RuntimeCall::DappsStaking(..)
+            | RuntimeCall::Assets(..)
+            | RuntimeCall::PolkadotXcm(..)
+            | RuntimeCall::Session(..) => true,
+            _ => false,
+        }
+    }
+}
+
+impl Contains<RuntimeCall> for SafeCallFilter {
+    fn contains(call: &RuntimeCall) -> bool {
+        #[cfg(feature = "runtime-benchmarks")]
+        {
+            if matches!(
+                call,
+                RuntimeCall::System(frame_system::Call::remark_with_event { .. })
+            ) {
+                return true;
+            }
+        }
+
+        Self::allow_base_call(call)
+    }
 }
 
 pub type XcmBarrier = (
@@ -148,20 +202,20 @@ pub type XcmBarrier = (
 // Used to handle XCM fee deposit into treasury account
 pub type AstarXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     AccountId,
-    ConvertedConcreteAssetId<AssetId, Balance, AstarAssetLocationIdConverter, JustTry>,
+    ConvertedConcreteId<AssetId, Balance, AstarAssetLocationIdConverter, JustTry>,
     Assets,
     TreasuryAccountId,
 >;
 
 pub struct XcmConfig;
-impl Config for XcmConfig {
+impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type IsReserve = ReserveAssetFilter;
     type IsTeleporter = ();
-    type LocationInverter = LocationInverter<Ancestry>;
+    type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type Trader = (
@@ -172,6 +226,16 @@ impl Config for XcmConfig {
     type AssetTrap = PolkadotXcm;
     type AssetClaims = PolkadotXcm;
     type SubscriptionService = PolkadotXcm;
+
+    type PalletInstancesInfo = AllPalletsWithSystem;
+    type MaxAssetsIntoHolding = ConstU32<64>;
+    type AssetLocker = ();
+    type AssetExchanger = ();
+    type FeeManager = ();
+    type MessageExporter = ();
+    type UniversalAliases = Nothing;
+    type CallDispatcher = WithOriginFilter<SafeCallFilter>;
+    type SafeCallFilter = SafeCallFilter;
 }
 
 parameter_types! {
@@ -185,10 +249,15 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 /// queues.
 pub type XcmRouter = (
     // Two routers - use UMP to communicate with the relay chain:
-    cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm>,
+    cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
     // ..and XCMP to communicate with the sibling chains.
     XcmpQueue,
 );
+
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+    pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
+}
 
 impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
@@ -202,10 +271,19 @@ impl pallet_xcm::Config for Runtime {
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Everything;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
-    type LocationInverter = LocationInverter<Ancestry>;
+    type UniversalLocation = UniversalLocation;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion; // TODO:OR should we keep this at 2?
+
+    type Currency = Balances;
+    type CurrencyMatcher = ();
+    type TrustedLockers = ();
+    type SovereignAccountOf = LocationToAccountId;
+    type MaxLockers = ConstU32<0>;
+    type WeightInfo = pallet_xcm::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type ReachableDest = ReachableDest;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -218,14 +296,15 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ChannelInfo = ParachainSystem;
     type VersionWrapper = PolkadotXcm;
-    type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
-    type ControllerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+    type PriceForSiblingDelivery = ();
     type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
-    type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }

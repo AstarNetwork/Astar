@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "5.3.0"
+version = "5.4.0"
 description = "Astar collator implementation in Rust."
 build = "build.rs"
 default-run = "astar-collator"
@@ -80,8 +80,9 @@ fc-db = { workspace = true }
 fc-mapping-sync = { workspace = true }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
+fc-storage = { workspace = true }
 fp-consensus = { workspace = true }
-fp-evm = { workspace = true }
+fp-evm = { workspace = true, features = ["std"] }
 fp-storage = { workspace = true }
 
 # astar-specific dependencies

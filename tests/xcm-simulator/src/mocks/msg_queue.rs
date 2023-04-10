@@ -97,22 +97,21 @@ pub mod mock_msg_queue {
             max_weight: Weight,
         ) -> Result<Weight, XcmError> {
             let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
+            let message_hash = Encode::using_encoded(&xcm, sp_io::hashing::blake2_256);
             let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
                 Ok(xcm) => {
-                    let location = (1, Parachain(sender.into()));
-                    match T::XcmExecutor::execute_xcm(location, xcm, max_weight.ref_time()) {
+                    let location = (Parent, Parachain(sender.into()));
+                    match T::XcmExecutor::execute_xcm(location, xcm, message_hash, max_weight) {
                         Outcome::Error(e) => {
                             println!("Error in XCMP handling: {:?}", e);
                             (Err(e.clone()), Event::Fail(Some(hash), e))
                         }
-                        Outcome::Complete(w) => {
-                            (Ok(Weight::from_ref_time(w)), Event::Success(Some(hash)))
-                        }
+                        Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
                         // As far as the caller is concerned, this was dispatched without error, so
                         // we just report the weight used.
                         Outcome::Incomplete(w, e) => {
                             println!("Incomplete XCMP handling: {:?}", e);
-                            (Ok(Weight::from_ref_time(w)), Event::Fail(Some(hash), e))
+                            (Ok(w), Event::Fail(Some(hash), e))
                         }
                     }
                 }
@@ -158,21 +157,19 @@ pub mod mock_msg_queue {
         ) -> Weight {
             for (_i, (_sent_at, data)) in iter.enumerate() {
                 let id = sp_io::hashing::blake2_256(&data[..]);
-                let maybe_msg = VersionedXcm::<T::RuntimeCall>::decode(&mut &data[..])
-                    .map(Xcm::<T::RuntimeCall>::try_from);
-                match maybe_msg {
+                let maybe_versioned = VersionedXcm::<T::RuntimeCall>::decode(&mut &data[..]);
+                match maybe_versioned {
                     Err(_) => {
                         Self::deposit_event(Event::InvalidFormat(id));
                     }
-                    Ok(Err(())) => {
-                        Self::deposit_event(Event::UnsupportedVersion(id));
-                    }
-                    Ok(Ok(x)) => {
-                        let outcome =
-                            T::XcmExecutor::execute_xcm(Parent, x.clone(), limit.ref_time());
-                        <ReceivedDmp<T>>::append(x);
-                        Self::deposit_event(Event::ExecutedDownward(id, outcome));
-                    }
+                    Ok(versioned) => match Xcm::try_from(versioned) {
+                        Err(()) => Self::deposit_event(Event::UnsupportedVersion(id)),
+                        Ok(x) => {
+                            let outcome = T::XcmExecutor::execute_xcm(Parent, x.clone(), id, limit);
+                            <ReceivedDmp<T>>::append(x);
+                            Self::deposit_event(Event::ExecutedDownward(id, outcome));
+                        }
+                    },
                 }
             }
             limit

@@ -19,13 +19,13 @@
 ///! Special [`ParachainConsensus`] implementation that waits for the upgrade from
 ///! shell to a parachain runtime that implements Aura.
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
-use cumulus_primitives_core::relay_chain::v2::{Hash as PHash, PersistedValidationData};
+use cumulus_primitives_core::relay_chain::{Hash as PHash, PersistedValidationData};
 use futures::lock::Mutex;
 use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams};
 use sp_api::ApiExt;
 use sp_consensus::CacheKeyId;
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
-use sp_runtime::{generic::BlockId, traits::Header as HeaderT};
+use sp_runtime::traits::Header as HeaderT;
 use std::sync::Arc;
 
 use crate::primitives::*;
@@ -76,11 +76,11 @@ where
         relay_parent: PHash,
         validation_data: &PersistedValidationData,
     ) -> Option<ParachainCandidate<Block>> {
-        let block_id = BlockId::hash(parent.hash());
+        let block_hash = parent.hash();
         if self
             .client
             .runtime_api()
-            .has_api::<dyn AuraApi<Block, AuraId>>(&block_id)
+            .has_api::<dyn AuraApi<Block, AuraId>>(block_hash)
             .unwrap_or(false)
         {
             self.aura_consensus
@@ -121,12 +121,12 @@ where
         ),
         String,
     > {
-        let block_id = BlockId::hash(*block_import.header.parent_hash());
+        let block_hash = *block_import.header.parent_hash();
 
         if self
             .client
             .runtime_api()
-            .has_api::<dyn AuraApi<Block, AuraId>>(&block_id)
+            .has_api::<dyn AuraApi<Block, AuraId>>(block_hash)
             .unwrap_or(false)
         {
             self.aura_verifier.get_mut().verify(block_import).await

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::primitives::{AccountId, Balance, Block, BlockId};
+use crate::primitives::{AccountId, Balance, Block};
 use cumulus_primitives_core::PersistedValidationData;
 use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
@@ -502,7 +502,7 @@ macro_rules! with_runtime {
 		$client:expr,
 		$code:expr
 	} => {
-        match $client.runtime_version_at(&BlockId::Number(0)).unwrap().spec_name.to_string().as_str() {
+        match $client.runtime_version_at($client.chain_info().genesis_hash).unwrap().spec_name.to_string().as_str() {
             "astar" => {
                 #[allow(unused_imports)]
 				use astar_runtime as runtime;

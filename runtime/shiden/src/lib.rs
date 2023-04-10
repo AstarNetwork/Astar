@@ -44,6 +44,7 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureSigned,
 };
+use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -80,7 +81,6 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod precompiles;
-mod weights;
 mod xcm_config;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
@@ -139,7 +139,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 93,
+    spec_version: 94,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -170,7 +170,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-    polkadot_primitives::v2::MAX_POV_SIZE as u64,
+    polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
 parameter_types! {
@@ -269,7 +269,7 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
     pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
@@ -347,7 +347,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type SmartContract = SmartContract<AccountId>;
     type RegisterDeposit = RegisterDeposit;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
+    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
@@ -413,14 +413,8 @@ impl pallet_aura::Config for Runtime {
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
-parameter_types! {
-    pub const UncleGenerations: BlockNumber = 5;
-}
-
 impl pallet_authorship::Config for Runtime {
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-    type UncleGenerations = UncleGenerations;
-    type FilterUncle = ();
     type EventHandler = (CollatorSelection,);
 }
 
@@ -799,12 +793,18 @@ impl pallet_evm::Config for Runtime {
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
+    type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
+}
+
+parameter_types! {
+    pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
 }
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type PostLogContent = PostBlockAndTxnHashes;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -830,7 +830,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
+    type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
 /// The type used to represent the kinds of proxying allowed.
@@ -948,7 +948,7 @@ construct_runtime!(
         BaseFee: pallet_base_fee = 63,
 
         Contracts: pallet_contracts = 70,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip = 71,
+        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 71,
 
         Sudo: pallet_sudo = 99,
     }
@@ -1002,7 +1002,16 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    Migrations,
 >;
+
+/// All migrations that will run on the next runtime upgrade.
+///
+/// Once done, migrations should be removed from the tuple.
+pub type Migrations = (
+    pallet_xc_asset_config::migrations::MigrationXcmV3<Runtime>,
+    pallet_xcm::migration::v1::MigrateToV1<Runtime>,
+);
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
@@ -1077,6 +1086,7 @@ mod benches {
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
+        [pallet_xcm, PolkadotXcm]
     );
 }
 
@@ -1161,6 +1171,12 @@ impl_runtime_apis! {
         fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
     }
 
     impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
@@ -1177,6 +1193,13 @@ impl_runtime_apis! {
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_call_fee_details(call, len)
+        }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
         }
     }
 

@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.3.0"
+version = "5.4.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -56,10 +56,10 @@ pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
+pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
-pallet-randomness-collective-flip = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
@@ -123,6 +123,9 @@ frame-system-benchmarking = { workspace = true, optional = true }
 # try-runtime
 frame-try-runtime = { workspace = true, optional = true }
 
+# TODO: remove this once we get rid of `pallet-xcm` fork & double dep
+polkadot-runtime = { workspace = true, optional = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -178,7 +181,7 @@ std = [
 	"pallet-dapps-staking/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",
-	"pallet-randomness-collective-flip/std",
+	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-utility/std",
 	"pallet-timestamp/std",
@@ -238,6 +241,7 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"polkadot-runtime/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -265,7 +269,7 @@ try-runtime = [
 	"pallet-xcm/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-multisig/try-runtime",
-	"pallet-randomness-collective-flip/try-runtime",
+	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-scheduler/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-contracts/try-runtime",

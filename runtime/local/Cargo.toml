@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.3.0"
+version = "5.4.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -35,9 +35,9 @@ pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-grandpa = { workspace = true }
+pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
-pallet-randomness-collective-flip = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
@@ -128,7 +128,7 @@ std = [
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-xvm/std",
 	"pallet-grandpa/std",
-	"pallet-randomness-collective-flip/std",
+	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-preimage/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
@@ -189,7 +189,7 @@ try-runtime = [
 	"pallet-custom-signatures/try-runtime",
 	"pallet-dapps-staking/try-runtime",
 	"pallet-grandpa/try-runtime",
-	"pallet-randomness-collective-flip/try-runtime",
+	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",

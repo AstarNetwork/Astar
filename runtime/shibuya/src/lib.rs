@@ -44,6 +44,7 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot, EnsureSigned,
 };
+use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -81,7 +82,6 @@ pub use sp_runtime::BuildStorage;
 
 mod chain_extensions;
 mod precompiles;
-mod weights;
 mod xcm_config;
 
 pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
@@ -169,7 +169,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 95,
+    spec_version: 96,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -200,7 +200,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
     WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
-    polkadot_primitives::v2::MAX_POV_SIZE as u64,
+    polkadot_primitives::MAX_POV_SIZE as u64,
 );
 
 parameter_types! {
@@ -304,7 +304,7 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
     pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
@@ -413,7 +413,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type SmartContract = SmartContract<AccountId>;
     type RegisterDeposit = RegisterDeposit;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
+    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
@@ -486,14 +486,8 @@ impl pallet_aura::Config for Runtime {
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
-parameter_types! {
-    pub const UncleGenerations: BlockNumber = 5;
-}
-
 impl pallet_authorship::Config for Runtime {
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-    type UncleGenerations = UncleGenerations;
-    type FilterUncle = ();
     type EventHandler = (CollatorSelection,);
 }
 
@@ -860,14 +854,20 @@ impl pallet_evm::Config for Runtime {
     type ChainId = EVMChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
+    type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
 }
 
 impl pallet_evm_chain_id::Config for Runtime {}
 
+parameter_types! {
+    pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+}
+
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
+    type PostLogContent = PostBlockAndTxnHashes;
 }
 
 parameter_types! {
@@ -884,6 +884,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type MaxMembers = ConstU32<10>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 }
 
 parameter_types! {
@@ -900,6 +901,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
     type MaxMembers = ConstU32<10>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 }
 
 parameter_types! {
@@ -968,6 +970,7 @@ impl pallet_democracy::Config for Runtime {
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
         EnsureRoot<AccountId>,
     >;
+    type SubmitOrigin = EnsureSigned<AccountId>;
     /// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
     /// be tabled immediately and with a shorter voting/enactment period.
     type FastTrackOrigin = EitherOfDiverse<
@@ -1073,7 +1076,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
                         | RuntimeCall::DappsStaking(..)
                         // Skip entire Assets pallet
-                        | RuntimeCall::Authorship(..)
                         | RuntimeCall::CollatorSelection(..)
                         | RuntimeCall::Session(..)
                         | RuntimeCall::XcmpQueue(..)
@@ -1171,7 +1173,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type XcAssetChanged = EvmRevertCodeHandler;
     // Good enough for testnet since we lack pallet-assets hooks for now
     type ManagerOrigin = EitherOfDiverse<EnsureRoot<AccountId>, EnsureSigned<AccountId>>;
-    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
+    type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
 construct_runtime!(
@@ -1186,7 +1188,7 @@ construct_runtime!(
         Timestamp: pallet_timestamp = 13,
         Multisig: pallet_multisig = 14,
         EthCall: pallet_custom_signatures = 15,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip = 16,
+        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 16,
         Scheduler: pallet_scheduler = 17,
         Proxy: pallet_proxy = 18,
 
@@ -1279,7 +1281,16 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    Migrations,
 >;
+
+/// All migrations that will run on the next runtime upgrade.
+///
+/// Once done, migrations should be removed from the tuple.
+pub type Migrations = (
+    pallet_xc_asset_config::migrations::MigrationXcmV3<Runtime>,
+    pallet_xcm::migration::v1::MigrateToV1<Runtime>,
+);
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
@@ -1354,6 +1365,7 @@ mod benches {
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
+        [pallet_xcm, PolkadotXcm]
     );
 }
 
@@ -1438,6 +1450,12 @@ impl_runtime_apis! {
         fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
     }
 
     impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
@@ -1454,6 +1472,13 @@ impl_runtime_apis! {
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_call_fee_details(call, len)
+        }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
         }
     }
 

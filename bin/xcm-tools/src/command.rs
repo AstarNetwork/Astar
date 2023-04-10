@@ -23,7 +23,7 @@ use crate::cli::*;
 use clap::Parser;
 use cumulus_primitives_core::ParaId;
 use polkadot_parachain::primitives::Sibling;
-use polkadot_primitives::v2::AccountId;
+use polkadot_primitives::AccountId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Get};
 use xcm::latest::prelude::*;
@@ -67,13 +67,13 @@ pub fn run() -> Result<(), Error> {
         Some(Subcommand::Account32Hash(cmd)) => {
             let network = if let Some(ref id) = cmd.network_id {
                 match id.to_lowercase().as_str() {
-                    "any" => NetworkId::Any,
-                    "polkadot" => NetworkId::Polkadot,
-                    "kusama" => NetworkId::Kusama,
+                    "none" => None,
+                    "polkadot" => Some(NetworkId::Polkadot),
+                    "kusama" => Some(NetworkId::Kusama),
                     _ => return Err("Unexpected network Id value.".into()),
                 }
             } else {
-                NetworkId::Any
+                None
             };
 
             let mut sender_multilocation = MultiLocation::parent();
@@ -93,9 +93,9 @@ pub fn run() -> Result<(), Error> {
 
             // Not important for the functionality, totally redundant
             struct AnyNetwork;
-            impl Get<NetworkId> for AnyNetwork {
-                fn get() -> NetworkId {
-                    NetworkId::Any
+            impl Get<Option<NetworkId>> for AnyNetwork {
+                fn get() -> Option<NetworkId> {
+                    None
                 }
             }
 

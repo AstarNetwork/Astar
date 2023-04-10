@@ -777,39 +777,66 @@ pub fn run() -> Result<()> {
             if chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let info_provider =
+                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
                     let task_manager =
                         sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
                             .map_err(|e| {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>>(),
+                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>, _>(
+                            Some(info_provider),
+                        ),
                         task_manager,
                     ))
                 })
             } else if chain_spec.is_shibuya() {
                 runner.async_run(|config| {
                     let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let info_provider =
+                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
                     let task_manager =
                         sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
                             .map_err(|e| {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>>(),
+                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>, _>(
+                            Some(info_provider),
+                        ),
+                        task_manager,
+                    ))
+                })
+            } else if chain_spec.is_astar() {
+                runner.async_run(|config| {
+                    let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let info_provider =
+                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
+                    let task_manager =
+                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+                            .map_err(|e| {
+                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
+                            })?;
+                    Ok((
+                        cmd.run::<astar_runtime::Block, HostFunctionsOf<astar::Executor>, _>(Some(
+                            info_provider,
+                        )),
                         task_manager,
                     ))
                 })
             } else {
                 runner.async_run(|config| {
                     let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let info_provider =
+                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
                     let task_manager =
                         sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
                             .map_err(|e| {
                                 sc_cli::Error::Service(sc_service::Error::Prometheus(e))
                             })?;
                     Ok((
-                        cmd.run::<Block, HostFunctionsOf<local::Executor>>(),
+                        cmd.run::<Block, HostFunctionsOf<local::Executor>, _>(Some(info_provider)),
                         task_manager,
                     ))
                 })
@@ -856,7 +883,7 @@ pub fn run() -> Result<()> {
                 );
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&para_id);
+                    AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&para_id);
 
                 let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
                 let block: Block = generate_genesis_block(&*config.chain_spec, state_version)

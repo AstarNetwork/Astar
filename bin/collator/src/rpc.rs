@@ -20,11 +20,9 @@
 
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, RuntimeApiStorageOverride,
-    SchemaV1Override, SchemaV2Override, SchemaV3Override, StorageOverride, Web3, Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
-use fp_storage::EthereumStorageSchema;
 use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 use sc_client_api::{AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider};
@@ -39,7 +37,6 @@ use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
 use sp_runtime::traits::BlakeTwo256;
-use std::collections::BTreeMap;
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
 
@@ -90,38 +87,6 @@ where
             },
         },
     )?))
-}
-
-pub fn overrides_handle<C, BE>(client: Arc<C>) -> Arc<OverrideHandle<Block>>
-where
-    C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
-    C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError>,
-    C: Send + Sync + 'static,
-    C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
-    BE: Backend<Block> + 'static,
-    BE::State: StateBackend<BlakeTwo256>,
-{
-    let mut overrides_map = BTreeMap::new();
-    overrides_map.insert(
-        EthereumStorageSchema::V1,
-        Box::new(SchemaV1Override::new(client.clone()))
-            as Box<dyn StorageOverride<_> + Send + Sync>,
-    );
-    overrides_map.insert(
-        EthereumStorageSchema::V2,
-        Box::new(SchemaV2Override::new(client.clone()))
-            as Box<dyn StorageOverride<_> + Send + Sync>,
-    );
-    overrides_map.insert(
-        EthereumStorageSchema::V3,
-        Box::new(SchemaV3Override::new(client.clone()))
-            as Box<dyn StorageOverride<_> + Send + Sync>,
-    );
-
-    Arc::new(OverrideHandle {
-        schemas: overrides_map,
-        fallback: Box::new(RuntimeApiStorageOverride::new(client)),
-    })
 }
 
 /// Full client dependencies

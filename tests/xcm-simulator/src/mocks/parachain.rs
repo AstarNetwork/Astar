@@ -41,13 +41,13 @@ use super::msg_queue::*;
 use xcm::latest::prelude::{AssetId as XcmAssetId, *};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    CurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter,
-    IsConcrete, LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
+    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, IsConcrete,
+    NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit,
 };
-use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use xcm_primitives::{
     AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
@@ -283,11 +283,12 @@ parameter_types! {
 }
 
 parameter_types! {
-    pub RelayNetwork: NetworkId = NetworkId::Kusama;
+    pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Kusama);
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-    pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
-    pub const ShidenLocation: MultiLocation = Here.into();
-    pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+    pub UniversalLocation: InteriorMultiLocation =
+        X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(MsgQueue::parachain_id().into()));
+    pub const ShidenLocation: MultiLocation = Here.into_location();
+    pub DummyCheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -323,15 +324,15 @@ pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
     // Use this currency when it is a fungible asset matching the given location or name:
-    ConvertedConcreteAssetId<AssetId, Balance, ShidenAssetLocationIdConverter, JustTry>,
+    ConvertedConcreteId<AssetId, Balance, ShidenAssetLocationIdConverter, JustTry>,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
     // We don't track any teleports of `Assets`.
-    Nothing,
+    NoChecking,
     // We don't track any teleports of `Assets`.
-    CheckingAccount,
+    DummyCheckingAccount,
 >;
 
 /// Means for transacting assets on this chain.
@@ -362,9 +363,9 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-    pub const UnitWeightCost: u64 = 10;
+    pub const UnitWeightCost: Weight = Weight::from_ref_time(10);
     pub const MaxInstructions: u32 = 100;
-    pub NativePerSecond: (XcmAssetId, u128) = (Concrete(ShidenLocation::get()), 1_000_000_000_000);
+    pub NativePerSecond: (XcmAssetId, u128, u128) = (Concrete(ShidenLocation::get()), 1_000_000_000_000, 1024 * 1024);
 }
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
@@ -390,20 +391,20 @@ pub type XcmBarrier = (
 // Used to handle XCM fee deposit into treasury account
 pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     AccountId,
-    ConvertedConcreteAssetId<AssetId, Balance, ShidenAssetLocationIdConverter, JustTry>,
+    ConvertedConcreteId<AssetId, Balance, ShidenAssetLocationIdConverter, JustTry>,
     Assets,
     TreasuryAccountId,
 >;
 
 pub struct XcmConfig;
-impl Config for XcmConfig {
+impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type IsReserve = ReserveAssetFilter;
     type IsTeleporter = ();
-    type LocationInverter = LocationInverter<Ancestry>;
+    type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type Trader = (
@@ -414,6 +415,16 @@ impl Config for XcmConfig {
     type AssetTrap = ();
     type AssetClaims = ();
     type SubscriptionService = ();
+
+    type PalletInstancesInfo = AllPalletsWithSystem;
+    type MaxAssetsIntoHolding = ConstU32<64>;
+    type AssetLocker = ();
+    type AssetExchanger = ();
+    type FeeManager = ();
+    type MessageExporter = ();
+    type UniversalAliases = Nothing;
+    type CallDispatcher = RuntimeCall;
+    type SafeCallFilter = Everything;
 }
 
 impl mock_msg_queue::Config for Runtime {
@@ -433,11 +444,18 @@ impl pallet_xcm::Config for Runtime {
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Everything;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
-    type LocationInverter = LocationInverter<Ancestry>;
+    type UniversalLocation = UniversalLocation;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+
+    type Currency = Balances;
+    type CurrencyMatcher = ();
+    type TrustedLockers = ();
+    type SovereignAccountOf = LocationToAccountId;
+    type MaxLockers = ConstU32<0>;
+    type WeightInfo = pallet_xcm::TestWeightInfo;
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;

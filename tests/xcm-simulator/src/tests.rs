@@ -18,7 +18,7 @@
 
 use crate::mocks::{parachain, relay_chain, *};
 
-use frame_support::assert_ok;
+use frame_support::{assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
 use xcm::latest::prelude::*;
 use xcm_simulator::TestExt;
@@ -40,8 +40,8 @@ fn basic_dmp() {
             Here,
             Parachain(1),
             Xcm(vec![Transact {
-                origin_type: OriginKind::SovereignAccount,
-                require_weight_at_most: 1_000_000_000 as u64,
+                origin_kind: OriginKind::SovereignAccount,
+                require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                 call: remark.encode().into(),
             }]),
         ));
@@ -74,8 +74,8 @@ fn basic_ump() {
             Here,
             Parent,
             Xcm(vec![Transact {
-                origin_type: OriginKind::SovereignAccount,
-                require_weight_at_most: 1_000_000_000 as u64,
+                origin_kind: OriginKind::SovereignAccount,
+                require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                 call: remark.encode().into(),
             }]),
         ));
@@ -95,7 +95,7 @@ fn para_to_para_reserve_transfer() {
     MockNet::reset();
 
     let sibling_asset_id = 123 as u128;
-    let para_a_multiloc = Box::new(MultiLocation::new(1, X1(Parachain(1))).versioned());
+    let para_a_multiloc = Box::new(MultiLocation::new(1, X1(Parachain(1))).into_versioned());
 
     // On parachain B create an asset which representes a derivative of parachain A native asset.
     // This asset is allowed as XCM execution fee payment asset.
@@ -127,11 +127,11 @@ fn para_to_para_reserve_transfer() {
             Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
             Box::new(
                 X1(AccountId32 {
-                    network: Any,
+                    network: None,
                     id: ALICE.into()
                 })
-                .into()
-                .into()
+                .into_location()
+                .into_versioned()
             ),
             Box::new((Here, withdraw_amount).into()),
             0,
@@ -152,10 +152,10 @@ fn para_to_para_reserve_transfer() {
     // Portion of those assets should be taken as the XCM execution fee.
     ParaB::execute_with(|| {
         // Ensure Alice received assets on ParaB (sent amount minus expenses)
-        let four_instructions_execution_cost = 4 * parachain::UnitWeightCost::get() as u128;
+        let four_instructions_execution_cost = parachain::UnitWeightCost::get() * 4;
         assert_eq!(
             parachain::Assets::balance(sibling_asset_id, ALICE),
-            withdraw_amount - four_instructions_execution_cost
+            withdraw_amount - four_instructions_execution_cost.ref_time() as u128
         );
     });
 }
@@ -219,14 +219,14 @@ fn remote_dapps_staking_staker_claim() {
             Here,
             MultiLocation::new(1, X1(Parachain(2))),
             Xcm(vec![
-                WithdrawAsset((Here, 100_000_000_000).into()),
+                WithdrawAsset((Here, 100_000_000_000_u128).into()),
                 BuyExecution {
-                    fees: (Here, 100_000_000_000).into(),
+                    fees: (Here, 100_000_000_000_u128).into(),
                     weight_limit: Unlimited
                 },
                 Transact {
-                    origin_type: OriginKind::SovereignAccount,
-                    require_weight_at_most: 1_000_000_000 as u64,
+                    origin_kind: OriginKind::SovereignAccount,
+                    require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                     call: proxy_call.encode().into(),
                 }
             ]),
@@ -278,14 +278,14 @@ fn remote_dapps_staking_staker_claim() {
             Here,
             MultiLocation::new(1, X1(Parachain(2))),
             Xcm(vec![
-                WithdrawAsset((Here, 100_000_000_000).into()),
+                WithdrawAsset((Here, 100_000_000_000_u128).into()),
                 BuyExecution {
-                    fees: (Here, 100_000_000_000).into(),
+                    fees: (Here, 100_000_000_000_u128).into(),
                     weight_limit: Unlimited
                 },
                 Transact {
-                    origin_type: OriginKind::SovereignAccount,
-                    require_weight_at_most: 1_000_000_000 as u64,
+                    origin_kind: OriginKind::SovereignAccount,
+                    require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                     call: proxy_call.encode().into(),
                 }
             ]),

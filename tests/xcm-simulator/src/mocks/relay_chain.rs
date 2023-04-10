@@ -18,7 +18,8 @@
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Everything, Nothing},
+    traits::{ConstU32, Everything, Nothing},
+    weights::Weight,
 };
 use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup, AccountId32};
@@ -30,9 +31,9 @@ use xcm_builder::{
     AccountId32Aliases, AllowUnpaidExecutionFrom, ChildParachainAsNative,
     ChildParachainConvertsVia, ChildSystemParachainAsSuperuser,
     CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds, IsConcrete,
-    LocationInverter, SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
 };
-use xcm_executor::{Config, XcmExecutor};
+use xcm_executor::XcmExecutor;
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -93,11 +94,9 @@ impl configuration::Config for Runtime {
 }
 
 parameter_types! {
-    pub const KsmLocation: MultiLocation = Here.into();
+    pub const KsmLocation: MultiLocation = Here.into_location();
     pub const KusamaNetwork: NetworkId = NetworkId::Kusama;
-    pub const AnyNetwork: NetworkId = NetworkId::Any;
-    pub Ancestry: MultiLocation = Here.into();
-    pub UnitWeightCost: u64 = 1_000;
+    pub UniversalLocation: InteriorMultiLocation = Here;
 }
 
 pub type SovereignAccountOf = (
@@ -116,8 +115,8 @@ type LocalOriginConverter = (
 );
 
 parameter_types! {
-    pub const BaseXcmWeight: u64 = 1_000;
-    pub KsmPerSecond: (AssetId, u128) = (Concrete(KsmLocation::get()), 1);
+    pub const BaseXcmWeight: Weight = Weight::from_ref_time(1_000);
+    pub KsmPerSecond: (AssetId, u128, u128) = (Concrete(KsmLocation::get()), 1, 1024 * 1024);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -125,14 +124,14 @@ pub type XcmRouter = super::RelayChainXcmRouter;
 pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
 
 pub struct XcmConfig;
-impl Config for XcmConfig {
+impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = LocalAssetTransactor;
     type OriginConverter = LocalOriginConverter;
     type IsReserve = ();
     type IsTeleporter = ();
-    type LocationInverter = LocationInverter<Ancestry>;
+    type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
     type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
     type Trader = FixedRateOfFungible<KsmPerSecond, ()>;
@@ -140,9 +139,21 @@ impl Config for XcmConfig {
     type AssetTrap = ();
     type AssetClaims = ();
     type SubscriptionService = ();
+
+    type PalletInstancesInfo = AllPalletsWithSystem;
+    type MaxAssetsIntoHolding = ConstU32<64>;
+    type AssetLocker = ();
+    type AssetExchanger = ();
+    type FeeManager = ();
+    type MessageExporter = ();
+    type UniversalAliases = Nothing;
+    type CallDispatcher = RuntimeCall;
+    type SafeCallFilter = Everything;
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, KusamaNetwork>;
+
+pub type LocationToAccountId = (ChildParachainConvertsVia<ParaId, AccountId>,);
 
 impl pallet_xcm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -155,11 +166,18 @@ impl pallet_xcm::Config for Runtime {
     type XcmTeleportFilter = Everything;
     type XcmReserveTransferFilter = Everything;
     type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
-    type LocationInverter = LocationInverter<Ancestry>;
+    type UniversalLocation = UniversalLocation;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+
+    type Currency = Balances;
+    type CurrencyMatcher = ();
+    type TrustedLockers = ();
+    type SovereignAccountOf = LocationToAccountId;
+    type MaxLockers = ConstU32<0>;
+    type WeightInfo = pallet_xcm::TestWeightInfo;
 }
 
 parameter_types! {
