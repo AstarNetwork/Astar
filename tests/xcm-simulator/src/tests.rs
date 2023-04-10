@@ -38,7 +38,7 @@ fn register_asset<Runtime, AssetId>(
     asset_location: impl Into<MultiLocation> + Clone,
     asset_controller: <Runtime::Lookup as StaticLookup>::Source,
     is_sufficent: Option<bool>,
-    initial_balance: Option<Runtime::Balance>,
+    min_balance: Option<Runtime::Balance>,
     units_per_second: Option<u128>,
 ) -> DispatchResult
 where
@@ -52,7 +52,7 @@ where
         <Runtime as pallet_assets::Config>::AssetIdParameter::from(asset_id.clone().into()),
         asset_controller,
         is_sufficent.unwrap_or(true),
-        initial_balance.unwrap_or(Bounded::min_value()),
+        min_balance.unwrap_or(Bounded::min_value()),
     )?;
 
     pallet_xc_asset_config::Pallet::<Runtime>::register_asset_location(
@@ -64,7 +64,7 @@ where
     pallet_xc_asset_config::Pallet::<Runtime>::set_asset_units_per_second(
         origin,
         Box::new(asset_location.into().into_versioned()),
-        units_per_second.unwrap_or(1_000_000_000_000), // each unit of weight charged exactly 1
+        units_per_second.unwrap_or(1_000_000_000_000),
     )
 }
 
@@ -269,6 +269,77 @@ fn para_to_para_reserve_transfer_and_back() {
     });
 }
 
+#[test]
+fn para_to_para_reserve_transfer_local_asset() {
+    MockNet::reset();
+
+    let asset_id = 123;
+    let local_asset: MultiLocation = (PalletInstance(4u8), GeneralIndex(asset_id)).into();
+    let para_a_local_asset = local_asset
+        .clone()
+        .pushed_front_with_interior(Parachain(1))
+        .unwrap()
+        .prepended_with(Parent)
+        .unwrap();
+
+    ParaA::execute_with(|| {
+        assert_ok!(register_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            asset_id,
+            local_asset,
+            ALICE.into(),
+            Some(true),
+            Some(1),
+            // free execution
+            Some(0)
+        ));
+
+        assert_ok!(ParachainAssets::mint(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            asset_id,
+            ALICE.into(),
+            300000000000000
+        ));
+    });
+
+    ParaB::execute_with(|| {
+        assert_ok!(register_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            asset_id,
+            para_a_local_asset,
+            sibling_account_id(1),
+            Some(true),
+            Some(1),
+            // free execution
+            Some(0)
+        ));
+    });
+
+    let send_amount = 123;
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            Box::new((Parent, Parachain(2)).into()),
+            Box::new(
+                AccountId32 {
+                    network: None,
+                    id: ALICE.into(),
+                }
+                .into(),
+            ),
+            Box::new((local_asset, send_amount).into()),
+            0,
+        ));
+    });
+
+    ParaB::execute_with(|| {
+        // free execution, full amount received
+        assert_eq!(
+            ParachainAssets::balance(asset_id, &ALICE.into()),
+            send_amount
+        );
+    });
+}
 // Send a relay asset (like DOT/KSM) to a parachain A
 #[test]
 fn receive_relay_asset_from_relay() {
