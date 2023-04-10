@@ -80,6 +80,7 @@ pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
+pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
 // pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
 
 pub type StatemintPalletXcm = pallet_xcm::Pallet<statemint_like::Runtime>;

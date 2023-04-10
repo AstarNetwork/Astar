@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-
 use crate::mocks::{msg_queue::mock_msg_queue, parachain, *};
 
 use frame_support::{assert_ok, weights::Weight};

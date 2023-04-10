@@ -529,6 +529,141 @@ fn send_relay_asset_to_para_b() {
 }
 
 #[test]
+fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
+    MockNet::reset();
+
+    let relay_asset_id = 123 as u128;
+    let source_location = (Parent,);
+    let fresh_account = [2u8; 32];
+
+    // On parachain A create an asset which representes a derivative of relay native asset.
+    ParaA::execute_with(|| {
+        assert_ok!(register_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(false),
+            Some(1),
+            // free execution
+            Some(0)
+        ));
+    });
+
+    // Next step is to send some of relay native asset to parachain A.
+    let withdraw_amount = 123;
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(
+                AccountId32 {
+                    network: None,
+                    id: fresh_account.into()
+                }
+                .into()
+            ),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+        ));
+    });
+
+    // parachain should not have received assets
+    ParaA::execute_with(|| {
+        assert_eq!(
+            ParachainAssets::balance(relay_asset_id, &fresh_account.into()),
+            0
+        );
+    });
+
+    // Send native token to fresh_account
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainBalances::transfer(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            fresh_account.into(),
+            100
+        ));
+    });
+
+    // Re-send tokens
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(
+                AccountId32 {
+                    network: None,
+                    id: fresh_account.into()
+                }
+                .into()
+            ),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+        ));
+    });
+
+    // parachain should have received assets
+    ParaA::execute_with(|| {
+        // free execution, full amount received
+        assert_eq!(
+            ParachainAssets::balance(relay_asset_id, &fresh_account.into()),
+            withdraw_amount
+        );
+    });
+}
+
+#[test]
+fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_assets() {
+    MockNet::reset();
+
+    let relay_asset_id = 123 as u128;
+    let source_location = (Parent,);
+    let fresh_account = [2u8; 32];
+
+    // On parachain A create an asset which representes a derivative of relay native asset.
+    ParaA::execute_with(|| {
+        assert_ok!(register_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            relay_asset_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(1),
+            // free execution
+            Some(0)
+        ));
+    });
+
+    // Next step is to send some of relay native asset to parachain A.
+    // Since min balance is configured to 1, 123 should be fine
+    let withdraw_amount = 123;
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(
+                AccountId32 {
+                    network: None,
+                    id: fresh_account.into()
+                }
+                .into()
+            ),
+            Box::new((Here, withdraw_amount).into()),
+            0,
+        ));
+    });
+
+    // parachain should have received assets
+    ParaA::execute_with(|| {
+        // free execution, full amount received
+        assert_eq!(
+            ParachainAssets::balance(relay_asset_id, &fresh_account.into()),
+            withdraw_amount
+        );
+    });
+}
+
+#[test]
 fn error_when_not_paying_enough() {
     MockNet::reset();
 
