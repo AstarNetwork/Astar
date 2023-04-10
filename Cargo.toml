@@ -94,7 +94,7 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 
-# Substrate pallets 
+# Substrate pallets
 # (wasm)
 pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
@@ -234,6 +234,10 @@ moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame",
 moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
 moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
 moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
+
+# InvArch Tinkernet Multisig dependencies
+# (wasm)
+invarch-xcm-builder = { git = "https://github.com/InvArch/InvArch-XCM-Builder", branch = "polkadot-v0.9.39", default-features = false }
 
 # Build deps
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }

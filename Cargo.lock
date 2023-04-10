@@ -4189,6 +4189,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "invarch-xcm-builder"
+version = "0.1.0"
+source = "git+https://github.com/InvArch/InvArch-XCM-Builder?branch=polkadot-v0.9.39#c704c0f2d4c436f96eff10d06c197527b46b3536"
+dependencies = [
+ "frame-support",
+ "log",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-io",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
 name = "io-lifetimes"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11624,6 +11638,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "invarch-xcm-builder",
  "log",
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",

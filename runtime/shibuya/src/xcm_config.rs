@@ -63,6 +63,8 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<polkadot_parachain::primitives::Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
+    // Mapping Tinkernet multisig to the correctly derived AccountId32.
+    invarch_xcm_builder::TinkernetMultisigAsAccountId<AccountId>,
     // Derives a private `Account32` by hashing `("multiloc", received multilocation)`
     Account32Hash<RelayNetwork, AccountId>,
 );
@@ -122,6 +124,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
     // Native signed account converter; this just converts an `AccountId32` origin into a normal
     // `Origin::Signed` origin of the same 32-byte value.
     SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
+    // Derives signed AccountId32 origins for Tinkernet multisigs.
+    invarch_xcm_builder::DeriveOriginFromTinkernetMultisig<RuntimeOrigin>,
 );
 
 parameter_types! {
