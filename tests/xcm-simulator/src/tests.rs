@@ -173,7 +173,7 @@ fn basic_xcmp() {
 }
 
 #[test]
-fn para_to_para_reserve_transfer() {
+fn para_to_para_reserve_transfer_and_back() {
     MockNet::reset();
 
     let sibling_asset_id = 123 as u128;
@@ -224,12 +224,47 @@ fn para_to_para_reserve_transfer() {
 
     // Parachain B should receive parachain A native assets and should mint their local derivate.
     // Portion of those assets should be taken as the XCM execution fee.
+    let four_instructions_execution_cost =
+        (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
+    let remaining = withdraw_amount - four_instructions_execution_cost;
     ParaB::execute_with(|| {
         // Ensure Alice received assets on ParaB (sent amount minus expenses)
-        let four_instructions_execution_cost = parachain::UnitWeightCost::get() * 4;
         assert_eq!(
             parachain::Assets::balance(sibling_asset_id, ALICE),
-            withdraw_amount - four_instructions_execution_cost.ref_time() as u128
+            remaining
+        );
+    });
+
+    // send assets back to ParaA
+    ParaB::execute_with(|| {
+        assert_ok!(ParachainPalletXcm::reserve_withdraw_assets(
+            parachain::RuntimeOrigin::signed(ALICE),
+            Box::new((Parent, Parachain(1)).into()),
+            Box::new(
+                AccountId32 {
+                    network: None,
+                    id: ALICE.into()
+                }
+                .into()
+            ),
+            Box::new((para_a_multiloc, remaining).into()),
+            0
+        ));
+    });
+
+    ParaA::execute_with(|| {
+        // ParaB soveregin account account should have only the execution cost
+        assert_eq!(
+            parachain::Balances::free_balance(&sibling_account_id(2)),
+            INITIAL_BALANCE + four_instructions_execution_cost
+        );
+        // ParaA alice should have initial amount backed subtracted with execution costs
+        // which is 2xfour_instructions_execution_cost
+        // or withdraw_amount + remaining - four_instructions_execution_cost
+        // both are same
+        assert_eq!(
+            parachain::Balances::free_balance(&ALICE),
+            INITIAL_BALANCE - withdraw_amount + remaining - four_instructions_execution_cost
         );
     });
 }
