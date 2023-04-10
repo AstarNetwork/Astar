@@ -204,36 +204,36 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "r
 
 # Astar pallets & modules
 # (wasm)
-pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-collator-selection = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
+pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-collator-selection = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-evm-precompile-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 
-pallet-chain-extension-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-chain-extension-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-pallet-chain-extension-assets = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
+pallet-chain-extension-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-chain-extension-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-chain-extension-assets = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 
 ## Moonbeam tracing
 ## (wasm)
-moonbeam-evm-tracer = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
-moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39", default-features = false }
+moonbeam-evm-tracer = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 
 ## (native)
-moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39" }
-moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39" }
-moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39" }
-moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/polkadot-v0.9.39" }
+moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
+moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
+moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
+moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
 
 # Build deps
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
