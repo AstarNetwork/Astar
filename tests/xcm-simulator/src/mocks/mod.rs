@@ -19,7 +19,6 @@
 pub(crate) mod msg_queue;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
-pub(crate) mod statemint_like;
 
 use frame_support::traits::{Currency, OnFinalize, OnInitialize};
 use xcm::latest::prelude::*;
@@ -49,15 +48,6 @@ decl_test_parachain! {
     }
 }
 
-decl_test_parachain! {
-    pub struct Statemint {
-        Runtime = statemine_like::Runtime,
-        XcmpMessageHandler = statemint_like::MsgQueue,
-        DmpMessageHandler = statemint_like::MsgQueue,
-        new_ext = para_ext(4),
-    }
-}
-
 decl_test_relay_chain! {
     pub struct Relay {
         Runtime = relay_chain::Runtime,
@@ -82,10 +72,6 @@ pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
 // pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
-
-pub type StatemintPalletXcm = pallet_xcm::Pallet<statemint_like::Runtime>;
-pub type StatemintAssets = pallet_assets::Pallet<statemint_like::Runtime>;
-pub type StatemintBalances = pallet_balances::Pallet<statemint_like::Runtime>;
 
 pub fn parent_account_id() -> parachain::AccountId {
     let location = (Parent,);
