@@ -33,6 +33,7 @@ mod cli;
 mod command;
 mod primitives;
 mod rpc;
+mod evm_tracing_types;
 
 pub use cli::*;
 pub use command::*;

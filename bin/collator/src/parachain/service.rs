@@ -49,7 +49,7 @@ use substrate_prometheus_endpoint::Registry;
 
 use super::shell_upgrade::*;
 #[cfg(feature = "evm-tracing")]
-use crate::cli::{EthApi as EthApiCmd, EvmTracingConfig};
+use crate::evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig};
 use crate::primitives::*;
 #[cfg(feature = "evm-tracing")]
 use crate::rpc::tracing;
@@ -1153,7 +1153,7 @@ pub async fn start_astar_node(
 /// Start a parachain node for Astar.
 #[cfg(not(feature = "evm-tracing"))]
 pub async fn start_astar_node(
-    configuration: StartupConfiguration,
+    configuration: StartupConfiguration
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
