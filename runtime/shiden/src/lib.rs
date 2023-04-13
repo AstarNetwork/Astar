@@ -462,6 +462,38 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
+	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
+	pub const AttributeDepositBase: Balance = deposit(1, 0);
+	// pub const DepositPerByte: Balance = deposit(0, 1);
+	pub const CollectionDeposit: Balance = 100 * SDN;
+	pub const ItemDeposit: Balance = 1 * SDN;
+	pub const StringLimit: u32 = 50;
+	pub const KeyLimit: u32 = 32;
+	pub const ValueLimit: u32 = 256;
+}
+
+impl pallet_uniques::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+    type CollectionId = u32; // MultiLocation;
+	type ItemId = u32; // AssetInstance;
+	type Currency = Balances;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type CollectionDeposit = CollectionDeposit;
+	type ItemDeposit = ItemDeposit;
+	type MetadataDepositBase = UniquesMetadataDepositBase;
+	type AttributeDepositBase = AttributeDepositBase;
+	type DepositPerByte = DepositPerByte;
+	type StringLimit = StringLimit;
+	type KeyLimit = KeyLimit;
+	type ValueLimit = ValueLimit;
+	type WeightInfo = pallet_uniques::weights::SubstrateWeight<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = ();
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type Locker = ();
+}
+
+parameter_types! {
     pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
     pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
@@ -929,6 +961,7 @@ construct_runtime!(
         DappsStaking: pallet_dapps_staking = 34,
         BlockReward: pallet_block_reward = 35,
         Assets: pallet_assets = 36,
+        Uniques: pallet_uniques = 37,
 
         Authorship: pallet_authorship = 40,
         CollatorSelection: pallet_collator_selection = 41,

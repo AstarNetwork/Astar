@@ -62,6 +62,7 @@ pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
+pallet-uniques = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 
@@ -167,6 +168,7 @@ std = [
 	"pallet-multisig/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-session/std",
+	"pallet-uniques/std",
 	"pallet-utility/std",
 	"pallet-proxy/std",
 	"pallet-timestamp/std",

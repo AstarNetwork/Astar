@@ -21,6 +21,7 @@ use frame_support::{
     traits::nonfungibles::{Inspect, Mutate, Transfer},
 };
 use sp_runtime::DispatchResult;
+use frame_support::log;
 
 // Polkadot imports
 use polkadot_parachain::primitives::Sibling;
@@ -39,14 +40,16 @@ pub struct NftAdapter;
 
 impl Mutate<AccountId> for NftAdapter {
     fn mint_into(_collection: &CollectionId, _item: &ItemId, _who: &AccountId) -> DispatchResult {
+        log::trace!(target: "runtime", "########### mint_into {:?} {:?} {:?}", _collection, _item, _who);
         Ok(())
     }
-
+    
     fn burn(
         _collection: &CollectionId,
         _item: &ItemId,
         _maybe_check_owner: Option<&AccountId>,
     ) -> DispatchResult {
+        log::trace!(target: "runtime", "########### burn {:?} {:?} {:?}", _collection, _item, _maybe_check_owner);
         Ok(())
     }
 }
@@ -57,6 +60,7 @@ impl Transfer<AccountId> for NftAdapter {
         _item: &Self::ItemId,
         _destination: &AccountId,
     ) -> DispatchResult {
+        log::trace!(target: "runtime", "########### transfer {:?} {:?} {:?}", _collection, _item, _destination);
         Ok(())
     }
 }

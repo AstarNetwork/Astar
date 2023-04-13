@@ -223,6 +223,7 @@ std = [
 	"xcm-primitives/std",
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
+	"log"
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
