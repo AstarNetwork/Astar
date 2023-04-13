@@ -21,9 +21,16 @@ pub(crate) mod parachain;
 pub(crate) mod relay_chain;
 
 use frame_support::traits::{Currency, OnFinalize, OnInitialize};
+use frame_support::weights::Weight;
+use pallet_contracts_primitives::Code;
+use sp_runtime::traits::Hash;
 use xcm::latest::prelude::*;
 use xcm_executor::traits::Convert;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
+
+type ContractBalanceOf<T> = <<T as pallet_contracts::Config>::Currency as Currency<
+    <T as frame_system::Config>::AccountId,
+>>::Balance;
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFAu8; 32]);
 pub const INITIAL_BALANCE: u128 = 1_000_000_000_000_000_000_000_000;
@@ -71,6 +78,7 @@ pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
+pub type ParachainContracts = pallet_contracts::Pallet<parachain::Runtime>;
 // pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
 
 pub fn parent_account_id() -> parachain::AccountId {
@@ -177,4 +185,53 @@ fn issue_dapps_staking_rewards() -> (parachain::NegativeImbalance, parachain::Ne
         parachain::Balances::issue(DAPP_STAKER_REWARD_PER_BLOCK),
         parachain::Balances::issue(DAPP_STAKER_DEV_PER_BLOCK),
     )
+}
+
+/// Load a given wasm module from wasm binary contents along
+/// with it's hash.
+///
+/// The fixture files are located under the `fixtures/` directory.
+pub fn load_module<T>(
+    fixture_name: &str,
+) -> std::io::Result<(Vec<u8>, <T::Hashing as Hash>::Output)>
+where
+    T: frame_system::Config,
+{
+    let fixture_path = ["fixtures/", fixture_name, ".wasm"].concat();
+    let wasm_binary = std::fs::read(fixture_path)?;
+    let code_hash = T::Hashing::hash(&wasm_binary);
+    Ok((wasm_binary, code_hash))
+}
+
+/// Load and deploy the contract from wasm binary
+/// and check for successful deploy
+pub fn deploy_contract<T: pallet_contracts::Config>(
+    contract_name: &str,
+    origin: T::AccountId,
+    value: ContractBalanceOf<T>,
+    gas_limit: Weight,
+    storage_deposit_limit: Option<ContractBalanceOf<T>>,
+    data: Vec<u8>,
+) -> (T::AccountId, <T::Hashing as Hash>::Output) {
+    let (code, hash) = load_module::<T>(contract_name).unwrap();
+    let outcome = pallet_contracts::Pallet::<T>::bare_instantiate(
+        origin,
+        value,
+        gas_limit,
+        storage_deposit_limit,
+        Code::Upload(code),
+        data,
+        // vec![],
+        vec![],
+        true,
+    );
+
+    // make sure it does not revert
+    let result = outcome.result.unwrap();
+    assert!(
+        result.result.did_revert() == false,
+        "deploy_contract: reverted - {:?}",
+        result
+    );
+    (result.account_id, hash)
 }

@@ -19,10 +19,13 @@
 use crate::mocks::{msg_queue::mock_msg_queue, parachain, *};
 
 use frame_support::{assert_ok, weights::Weight};
-use parity_scale_codec::Encode;
+use pallet_contracts::Determinism;
+use parity_scale_codec::{Decode, Encode};
 use sp_runtime::traits::Bounded;
 use xcm::{prelude::*, v3::Response};
 use xcm_simulator::TestExt;
+
+const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
 
 #[test]
 fn basic_xcmp_outcome() {
@@ -133,5 +136,100 @@ fn basic_xcmp_outcome() {
                 ..
             }]
         ));
+    });
+}
+
+#[test]
+fn xcm_remote_transact_contract() {
+    MockNet::reset();
+
+    const SELECTOR_CONSTRUCTOR: [u8; 4] = [0x9b, 0xae, 0x9d, 0x5e];
+    const SELECTOR_GET: [u8; 4] = [0x2f, 0x86, 0x5b, 0xd9];
+    const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
+
+    // deploy and initialize flipper contract with `true` in ParaA
+    let mut contract_id = [0u8; 32].into();
+    ParaA::execute_with(|| {
+        (contract_id, _) = deploy_contract::<parachain::Runtime>(
+            "flipper",
+            ALICE.into(),
+            0,
+            GAS_LIMIT,
+            None,
+            // selector + true
+            [SELECTOR_CONSTRUCTOR.to_vec(), vec![0x01]].concat(),
+        );
+
+        // check for flip status
+        let outcome = ParachainContracts::bare_call(
+            ALICE.into(),
+            contract_id.clone(),
+            0,
+            GAS_LIMIT,
+            None,
+            SELECTOR_GET.to_vec(),
+            true,
+            Determinism::Deterministic,
+        );
+        let res = outcome.result.unwrap();
+        // check for revert
+        assert!(res.did_revert() == false);
+        // decode the return value
+        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
+        assert_eq!(flag, Ok(true));
+    });
+
+    ParaB::execute_with(|| {
+        // dispatch call to flip contract
+        let call = parachain::RuntimeCall::Contracts(pallet_contracts::Call::call {
+            dest: contract_id.clone(),
+            value: 0,
+            gas_limit: Weight::from_parts(100_000_000_000, 1024 * 1024),
+            storage_deposit_limit: None,
+            data: SELECTOR_FLIP.to_vec(),
+        });
+
+        let xcm: Xcm<()> = Xcm(vec![
+            WithdrawAsset((Here, INITIAL_BALANCE).into()),
+            BuyExecution {
+                fees: (Here, INITIAL_BALANCE).into(),
+                weight_limit: Unlimited,
+            },
+            SetAppendix(Xcm(vec![RefundSurplus])),
+            Transact {
+                origin_kind: OriginKind::SovereignAccount,
+                require_weight_at_most: Weight::from_parts(100_000_000_000_000, 1024 * 1024 * 1024),
+                call: call.encode().into(),
+            },
+            ExpectTransactStatus(MaybeErrorCode::Success),
+        ]);
+
+        // send the XCM to ParaA
+        assert_ok!(ParachainPalletXcm::send(
+            // only root origin can call because we don't support DescendOrigin yet
+            parachain::RuntimeOrigin::root(),
+            Box::new((Parent, Parachain(1)).into()),
+            Box::new(VersionedXcm::V3(xcm)),
+        ));
+    });
+
+    // check for flip status, it should be false
+    ParaA::execute_with(|| {
+        let outcome = ParachainContracts::bare_call(
+            ALICE.into(),
+            contract_id.clone(),
+            0,
+            GAS_LIMIT,
+            None,
+            SELECTOR_GET.to_vec(),
+            true,
+            Determinism::Deterministic,
+        );
+        let res = outcome.result.unwrap();
+        // check for revert
+        assert!(res.did_revert() == false);
+        // decode the return value, it should be false
+        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
+        assert_eq!(flag, Ok(false));
     });
 }
