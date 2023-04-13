@@ -21,8 +21,9 @@ use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
     local::{self, development_config},
     parachain::{
-        self, astar, chain_spec, service::StartupConfiguration, shibuya, shiden, start_astar_node,
-        start_shibuya_node, start_shiden_node,
+        self, astar, chain_spec,
+        service::{AdditionalConfig, StartupConfiguration},
+        shibuya, shiden, start_astar_node, start_shibuya_node, start_shiden_node,
     },
     primitives::Block,
 };
@@ -845,6 +846,9 @@ pub fn run() -> Result<()> {
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
+            let additional_config = AdditionalConfig {
+                evm_tracing_config: None,
+            };
 
             #[cfg(feature = "evm-tracing")]
             let evm_tracing_config = crate::evm_tracing_types::EvmTracingConfig {
@@ -910,91 +914,46 @@ pub fn run() -> Result<()> {
                 );
 
                 #[cfg(feature = "evm-tracing")]
-                if config.chain_spec.is_astar() {
-                    start_astar_node(StartupConfiguration {
-                            parachain_config: config,
-                            polkadot_config,
-                            evm_tracing_config,
-                            collator_options,
-                            id: para_id,
-                            enable_evm_rpc: cli.enable_evm_rpc,
-                            proposer_block_size_limit: cli.proposer_block_size_limit,
-                            proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                        })
-                        .await
-                        .map(|r| r.0)
-                        .map_err(Into::into)
-                } else if config.chain_spec.is_shiden() {
-                    start_shiden_node(StartupConfiguration {
-                            parachain_config: config,
-                            polkadot_config,
-                            evm_tracing_config,
-                            collator_options,
-                            id: para_id,
-                            enable_evm_rpc: cli.enable_evm_rpc,
-                            proposer_block_size_limit: cli.proposer_block_size_limit,
-                            proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                        })
-                        .await
-                        .map(|r| r.0)
-                        .map_err(Into::into)
-                } else if config.chain_spec.is_shibuya() {
-                    start_shibuya_node(StartupConfiguration {
-                            parachain_config: config,
-                            polkadot_config,
-                            evm_tracing_config,
-                            collator_options,
-                            id: para_id,
-                            enable_evm_rpc: cli.enable_evm_rpc,
-                            proposer_block_size_limit: cli.proposer_block_size_limit,
-                            proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                        })
-                        .await
-                        .map(|r| r.0)
-                        .map_err(Into::into)
-                } else {
-                    let err_msg = "Unrecognized chain spec - name should start with one of: astar or shiden or shibuya";
-                    error!("{}", err_msg);
-                    Err(err_msg.into())
-                }
+                let additional_config = AdditionalConfig {
+                    evm_tracing_config: Some(evm_tracing_config),
+                };
 
-                #[cfg(not(feature = "evm-tracing"))]
                 if config.chain_spec.is_astar() {
-                    start_astar_node(StartupConfiguration {
-                            parachain_config: config,
-                            polkadot_config,
-                            collator_options,
-                            id: para_id,
-                            enable_evm_rpc: cli.enable_evm_rpc,
-                            proposer_block_size_limit: cli.proposer_block_size_limit,
-                            proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                        })
+                    start_astar_node( StartupConfiguration {
+                        parachain_config: config,
+                        polkadot_config,
+                        collator_options,
+                        id: para_id,
+                        enable_evm_rpc: cli.enable_evm_rpc,
+                        proposer_block_size_limit: cli.proposer_block_size_limit,
+                        proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
+                    },additional_config)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shiden() {
-                    start_shiden_node(StartupConfiguration {
-                            parachain_config: config,
-                            polkadot_config,
-                            collator_options,
-                            id: para_id,
-                            enable_evm_rpc: cli.enable_evm_rpc,
-                            proposer_block_size_limit: cli.proposer_block_size_limit,
-                            proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                        })
+                    start_shiden_node( StartupConfiguration {
+                        parachain_config: config,
+                        polkadot_config,
+                        collator_options,
+                        id: para_id,
+                        enable_evm_rpc: cli.enable_evm_rpc,
+                        proposer_block_size_limit: cli.proposer_block_size_limit,
+                        proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
+                    }, additional_config)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shibuya() {
-                    start_shibuya_node(StartupConfiguration {
-                            parachain_config: config,
-                            polkadot_config,
-                            collator_options,
-                            id: para_id,
-                            enable_evm_rpc: cli.enable_evm_rpc,
-                            proposer_block_size_limit: cli.proposer_block_size_limit,
-                            proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                        })
+                    start_shibuya_node( StartupConfiguration {
+                        parachain_config: config,
+                        polkadot_config,
+                        collator_options,
+                        id: para_id,
+                        enable_evm_rpc: cli.enable_evm_rpc,
+                        proposer_block_size_limit: cli.proposer_block_size_limit,
+                        proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
+                    }, additional_config)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)

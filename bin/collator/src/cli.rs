@@ -55,7 +55,6 @@ pub struct Cli {
     pub proposer_soft_deadline_percent: u8,
 }
 
-
 /// Possible subcommands of the main binary.
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
@@ -142,4 +141,3 @@ impl RelayChainCli {
         }
     }
 }
-

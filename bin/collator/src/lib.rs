@@ -31,9 +31,9 @@ mod benchmarking;
 
 mod cli;
 mod command;
+mod evm_tracing_types;
 mod primitives;
 mod rpc;
-mod evm_tracing_types;
 
 pub use cli::*;
 pub use command::*;

@@ -593,10 +593,6 @@ pub struct StartupConfiguration {
     /// Relay chain configuration
     pub polkadot_config: Configuration,
 
-    /// EVM tracing configuration
-    #[cfg(feature = "evm-tracing")]
-    pub evm_tracing_config: EvmTracingConfig,
-
     /// Options specific to collators
     pub collator_options: CollatorOptions,
 
@@ -611,6 +607,12 @@ pub struct StartupConfiguration {
 
     /// Soft deadline limit used by `Proposer`
     pub proposer_soft_deadline_percent: u8,
+}
+
+/// To add additional config to start_xyz_node functions
+pub struct AdditionalConfig {
+    /// EVM tracing configuration
+    pub evm_tracing_config: Option<crate::evm_tracing_types::EvmTracingConfig>,
 }
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
@@ -1023,6 +1025,7 @@ where
 #[cfg(feature = "evm-tracing")]
 pub async fn start_astar_node(
     configuration: StartupConfiguration,
+    additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
@@ -1030,7 +1033,7 @@ pub async fn start_astar_node(
     start_node_impl::<astar::RuntimeApi, astar::Executor, _, _>(
         configuration.parachain_config,
         configuration.polkadot_config,
-        configuration.evm_tracing_config,
+        additional_config.evm_tracing_config.unwrap(),
         configuration.collator_options,
         configuration.id,
         configuration.enable_evm_rpc,
@@ -1153,7 +1156,8 @@ pub async fn start_astar_node(
 /// Start a parachain node for Astar.
 #[cfg(not(feature = "evm-tracing"))]
 pub async fn start_astar_node(
-    configuration: StartupConfiguration
+    configuration: StartupConfiguration,
+    _additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
@@ -1284,6 +1288,7 @@ pub async fn start_astar_node(
 #[cfg(feature = "evm-tracing")]
 pub async fn start_shiden_node(
     configuration: StartupConfiguration,
+    additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
@@ -1291,7 +1296,7 @@ pub async fn start_shiden_node(
     start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
         configuration.parachain_config,
         configuration.polkadot_config,
-        configuration.evm_tracing_config,
+        additional_config.evm_tracing_config.unwrap(),
         configuration.collator_options,
         configuration.id,
         configuration.enable_evm_rpc,
@@ -1444,6 +1449,7 @@ pub async fn start_shiden_node(
 #[cfg(not(feature = "evm-tracing"))]
 pub async fn start_shiden_node(
     configuration: StartupConfiguration,
+    _additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
@@ -1611,6 +1617,7 @@ pub async fn start_shibuya_node(
     // enable_evm_rpc: bool,
     // proposer_block_size_limit: Option<usize>,
     // proposer_soft_deadline_percent: Option<u8>,
+    additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
@@ -1618,7 +1625,7 @@ pub async fn start_shibuya_node(
     start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
         configuration.parachain_config,
         configuration.polkadot_config,
-        configuration.evm_tracing_config,
+        additional_config.evm_tracing_config.unwrap(),
         configuration.collator_options,
         configuration.id,
         configuration.enable_evm_rpc,
@@ -1747,6 +1754,7 @@ pub async fn start_shibuya_node(
     // enable_evm_rpc: bool,
     // proposer_block_size_limit: Option<usize>,
     // proposer_soft_deadline_percent: Option<u8>,
+    _additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
