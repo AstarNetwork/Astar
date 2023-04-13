@@ -27,7 +27,7 @@ use frame_support::{
         InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
-        constants::{BlockExecutionWeight, WEIGHT_REF_TIME_PER_SECOND, ExtrinsicBaseWeight},
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
         Weight,
     },
     PalletId,
