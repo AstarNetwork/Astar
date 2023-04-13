@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "5.2.0"
+version = "5.4.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -41,6 +41,8 @@ pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-base-fee = { workspace = true }
+pallet-contracts = { workspace = true }
+pallet-contracts-primitives = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-precompile-blake2 = { workspace = true }
@@ -107,7 +109,7 @@ moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
-# TODO: see if this can be solved in a better way - right now I don't see how else to inject `runtime-benchmarks` into the `polkadot-runtime`
+# TODO: remove this once we get rid of `pallet-xcm` fork & double dep
 polkadot-runtime = { workspace = true, optional = true }
 
 [build-dependencies]
@@ -179,6 +181,8 @@ std = [
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-dmp-queue/std",
 	"cumulus-pallet-xcmp-queue/std",
+	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-collator-selection/std",
 	"frame-benchmarking/std",
@@ -244,6 +248,7 @@ try-runtime = [
 	"cumulus-pallet-xcmp-queue/try-runtime",
 	"parachain-info/try-runtime",
 	"pallet-base-fee/try-runtime",
+	"pallet-contracts/try-runtime",
 	"pallet-evm/try-runtime",
 ]
 evm-tracing = [
