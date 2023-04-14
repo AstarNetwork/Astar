@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::log;
 use frame_support::{
     log,
     parameter_types,
@@ -43,20 +42,20 @@ const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
 
 impl Mutate<AccountId> for NftAdapter {
     fn mint_into(collection_ml: &CollectionId, _item: &ItemId, _who: &AccountId) -> DispatchResult {
-        log::trace!(target: "runtime", "########### mint_into {:?} {:?} {:?}", collection_ml, _item, _who);
+        log::debug!(target: "runtime", "########### mint_into \n###coll: {:?} \n###item: {:?} \n###who: {:?}", collection_ml, _item, _who);
         let contract_id =  match collection_ml.interior()
         {
-            X1(AccountId32{id, ..}) => id,
+            X1(Junction::AccountId32{id, ..}) => id,
             _ => return Err("Invalid collection id".into()),
         };
 
-        let call = RuntimeCall::Contracts(pallet_contracts::Call::call {
-            dest: contract_id.clone(),
-            value: 0,
-            gas_limit: Weight::from_parts(100_000_000_000, 1024 * 1024),
-            storage_deposit_limit: None,
-            data: SELECTOR_FLIP.to_vec(),
-        });
+        // let call = RuntimeCall::Contracts(pallet_contracts::Call::call {
+        //     dest: contract_id.clone(),
+        //     value: 0,
+        //     gas_limit: Weight::from_parts(100_000_000_000, 1024 * 1024),
+        //     storage_deposit_limit: None,
+        //     data: SELECTOR_FLIP.to_vec(),
+        // });
         Ok(())
     }
 

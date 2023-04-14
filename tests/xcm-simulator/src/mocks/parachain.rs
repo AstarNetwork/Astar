@@ -24,7 +24,7 @@ use frame_support::{
     match_types, parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance,
-        InstanceFilter, Nothing, OnUnbalanced,
+        InstanceFilter, Nothing, OnUnbalanced, nonfungibles::{Inspect, Mutate, Transfer},
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -39,11 +39,13 @@ use frame_system::{
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::{ConstBool, H256};
 use sp_runtime::{
+    DispatchResult,
     testing::Header,
     traits::{AccountIdConversion, Convert, IdentityLookup},
     AccountId32, Perbill, RuntimeDebug,
 };
 use sp_std::prelude::*;
+use pallet_contracts::Determinism;
 
 use super::msg_queue::*;
 use xcm::latest::prelude::{AssetId as XcmAssetId, *};
@@ -53,19 +55,19 @@ use xcm_builder::{
     EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, IsConcrete,
     NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit,
+    SovereignSignedViaLocation, TakeWeightCredit, NonFungiblesAdapter
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use xcm_primitives::{
     AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
 };
-
-use crate::mocks::nonfungibles::NonFungiblesTransactor;
+use polkadot_parachain::primitives::Sibling;
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 pub type AssetId = u128;
+pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFAu8; 32]);
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -589,6 +591,100 @@ impl pallet_uniques::Config for Runtime {
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
+
+
+
+type CollectionId = MultiLocation;
+type ItemId = AssetInstance;
+
+pub struct NftAdapter;
+const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
+// const SELECTOR_GET: [u8; 4] = [0x2f, 0x86, 0x5b, 0xd9];
+
+impl Mutate<AccountId> for NftAdapter {
+    fn mint_into(collection_ml: &CollectionId, _item: &ItemId, _who: &AccountId) -> DispatchResult {
+        log::debug!(target: "runtime", "########### mint_into \n###coll: {:?} \n###item: {:?} \n###who: {:?}", collection_ml, _item, _who);
+        let contract_id =  match collection_ml.interior()
+        {
+            X1(Junction::AccountId32{id, ..}) => id,
+            _ => return Err("Invalid collection id".into()),
+        };
+
+        // let _call = RuntimeCall::Contracts(pallet_contracts::Call::call {
+        //     dest: contract_id.clone().into(),
+        //     value: 0,
+        //     gas_limit: Weight::from_parts(100_000_000_000, 1024 * 1024),
+        //     storage_deposit_limit: None,
+        //     data: SELECTOR_FLIP.to_vec(),
+        // });
+
+        let _outcome = Contracts::bare_call(
+            ALICE.into(),
+            contract_id.clone().into(),
+            0,
+            Weight::from_parts(100_000_000_000, 1024 * 1024),
+            None,
+            SELECTOR_FLIP.to_vec(),
+            true,
+            Determinism::Deterministic,
+        );
+        // let res = outcome.result.unwrap();
+        log::debug!(target: "runtime", "########### mint_into \noutcome:{:?} \ncontract_id:{:?}", _outcome, contract_id);
+
+        // check for revert
+        // assert!(res.did_revert() == false);
+
+        Ok(())
+    }
+
+    fn burn(
+        _collection: &CollectionId,
+        _item: &ItemId,
+        _maybe_check_owner: Option<&AccountId>,
+    ) -> DispatchResult {
+        log::trace!(target: "runtime", "########### burn {:?} {:?} {:?}", _collection, _item, _maybe_check_owner);
+        Ok(())
+    }
+}
+
+impl Transfer<AccountId> for NftAdapter {
+    fn transfer(
+        _collection: &Self::CollectionId,
+        _item: &Self::ItemId,
+        _destination: &AccountId,
+    ) -> DispatchResult {
+        log::trace!(target: "runtime", "########### transfer {:?} {:?} {:?}", _collection, _item, _destination);
+        Ok(())
+    }
+}
+
+impl Inspect<AccountId> for NftAdapter {
+    type ItemId = ItemId;
+    type CollectionId = CollectionId;
+
+    fn owner(_collection: &Self::CollectionId, _item: &Self::ItemId) -> Option<AccountId> {
+        None
+    }
+}
+
+
+pub type SovereignAccountOf = (
+    SiblingParachainConvertsVia<Sibling, AccountId>,
+    AccountId32Aliases<RelayNetwork, AccountId>,
+    ParentIsPreset<AccountId>,
+);
+
+/// Means for transacting non-fungibles assets
+pub type NonFungiblesTransactor = NonFungiblesAdapter<
+    NftAdapter,
+    ConvertedConcreteId<MultiLocation, AssetInstance, JustTry, JustTry>,
+    SovereignAccountOf,
+    AccountId,
+    NoChecking,
+    (),
+>;
+
+
 
 construct_runtime!(
     pub enum Runtime where

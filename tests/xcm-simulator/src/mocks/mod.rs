@@ -17,7 +17,6 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 pub(crate) mod msg_queue;
-pub(crate) mod nonfungibles;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
 

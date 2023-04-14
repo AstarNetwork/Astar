@@ -936,7 +936,7 @@ fn transfer_nft_to_smart_contract() {
     MockNet::reset();
     let collection = 1;
     let item = 42;
-    let uniques_pallet_instance = 13u8;
+    // let uniques_pallet_instance = 13u8;
     // Alice owns an NFT on the ParaA chain.
     ParaA::execute_with(|| {
         assert_eq!(
@@ -945,13 +945,13 @@ fn transfer_nft_to_smart_contract() {
         );
     });
 
-    let sibling_asset_id = 123 as u128;
-    let para_a_multiloc = (Parent, Parachain(1));
+    // let sibling_asset_id = 123 as u128;
+    // let para_a_multiloc = (Parent, Parachain(1));
 
     // Deploy and initialize flipper contract with `true` in ParaB
     const SELECTOR_CONSTRUCTOR: [u8; 4] = [0x9b, 0xae, 0x9d, 0x5e];
     const SELECTOR_GET: [u8; 4] = [0x2f, 0x86, 0x5b, 0xd9];
-    const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
+    // const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
     const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
     let mut contract_id = [0u8; 32].into();
     ParaB::execute_with(|| {
@@ -964,7 +964,8 @@ fn transfer_nft_to_smart_contract() {
             // selector + true
             [SELECTOR_CONSTRUCTOR.to_vec(), vec![0x01]].concat(),
         );
-
+        
+        println!("#######Contract ID: {:?}", contract_id);
         // check for flip status
         let outcome = ParachainContracts::bare_call(
             ALICE.into(),
@@ -984,36 +985,14 @@ fn transfer_nft_to_smart_contract() {
         assert_eq!(flag, Ok(true));
     });
 
-    // ParaA::execute_with(|| {
-    //     // Alice transfers the NFT to Bob on ParaB
-    //     let xcm: Xcm<()> = Xcm(vec![
-    //         WithdrawAsset((Here, INITIAL_BALANCE).into()),
-    //         BuyExecution {
-    //             fees: (Here, INITIAL_BALANCE).into(),
-    //             weight_limit: Unlimited,
-    //         },
-    //         TransferReserveAsset { assets: (), dest: (), xcm: () }
-    //     ]);
-
-    //     // send the XCM to ParaA
-    //     assert_ok!(ParachainPalletXcm::send(
-    //         // only root origin can call because we don't support DescendOrigin yet
-    //         parachain::RuntimeOrigin::root(),
-    //         Box::new((Parent, Parachain(1)).into()),
-    //         Box::new(VersionedXcm::V3(xcm)),
-    //     ));
-    // });
-
     // Alice transfers the NFT to Bob on ParaB
-    // (PalletInstance(uniques_pallet_instance), GeneralIndex(collection as u128)).into();
-
-    ParaB::execute_with(|| {
+    ParaA::execute_with(|| {
         let nft_multiasset: MultiAssets = vec![MultiAsset {
             id: Concrete(MultiLocation {
                 parents: 1,
                 interior: X1(AccountId32 {
                     network: None,
-                    id: contract_id.into(),
+                    id: contract_id.clone().into(),
                 }),
             }),
             fun: NonFungible(item.into()),
