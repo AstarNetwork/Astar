@@ -936,7 +936,7 @@ fn transfer_nft_to_smart_contract() {
     MockNet::reset();
     let collection = 1;
     let item = 42;
-    // let uniques_pallet_instance = 13u8;
+    let uniques_pallet_instance = 13u8;
     // Alice owns an NFT on the ParaA chain.
     ParaA::execute_with(|| {
         assert_eq!(
@@ -964,7 +964,7 @@ fn transfer_nft_to_smart_contract() {
             // selector + true
             [SELECTOR_CONSTRUCTOR.to_vec(), vec![0x01]].concat(),
         );
-        
+
         println!("#######Contract ID: {:?}", contract_id);
         // check for flip status
         let outcome = ParachainContracts::bare_call(
@@ -983,11 +983,28 @@ fn transfer_nft_to_smart_contract() {
         // decode the return value
         let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
         assert_eq!(flag, Ok(true));
+
+        // Register ParaA nft item as asset on ParaB
+        let collection_location = MultiLocation {
+            parents: 1,
+            interior: X3(Parachain(1), PalletInstance(uniques_pallet_instance), GeneralIndex(collection.into())),
+        };
+        _ = pallet_xc_asset_config::Pallet::<parachain::Runtime>::register_asset_location(
+            parachain::RuntimeOrigin::root(),
+            Box::new(collection_location.clone().into_versioned()),
+            item.into(),
+        );
+
+        _ = pallet_xc_asset_config::Pallet::<parachain::Runtime>::set_asset_units_per_second(
+            parachain::RuntimeOrigin::root(),
+            Box::new(collection_location.into_versioned()),
+            1_000_000_000_000,
+        );
     });
 
     // Alice transfers the NFT to Bob on ParaB
     ParaA::execute_with(|| {
-        let nft_multiasset: MultiAssets = vec![MultiAsset {
+        let nft_multiasset: MultiAsset = MultiAsset {
             id: Concrete(MultiLocation {
                 parents: 1,
                 interior: X1(AccountId32 {
@@ -996,8 +1013,16 @@ fn transfer_nft_to_smart_contract() {
                 }),
             }),
             fun: NonFungible(item.into()),
-        }]
-        .into();
+        };
+        let native_multiasset: MultiAsset = MultiAsset {
+            id: Concrete(MultiLocation {
+                parents: 0,
+                interior: Here,
+            }),
+            fun: Fungible(1_000_000),
+        };
+        let all_assets: Vec<MultiAsset> = vec![nft_multiasset.clone(), native_multiasset.clone()];
+
         assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
             parachain::RuntimeOrigin::signed(ALICE),
             Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
@@ -1009,7 +1034,7 @@ fn transfer_nft_to_smart_contract() {
                 .into_location()
                 .into_versioned()
             ),
-            Box::new((nft_multiasset).into()),
+            Box::new((all_assets).into()),
             0,
         ));
     });
@@ -1033,3 +1058,23 @@ fn transfer_nft_to_smart_contract() {
         assert_eq!(flag, Ok(false));
     });
 }
+
+// xcm::execute_xcm: origin: MultiLocation { parents: 1, interior: X1(Parachain(1)) },
+// message: Xcm([
+//     ReserveAssetDeposited(
+//                 MultiAssets([MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }),
+//                                 fun: Fungible(1000000) },
+//                             MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(AccountId32 { network: None, id: [246, 106, 229, 81, 70, 154, 31, 201, 19, 66, 83, 186, 54, 229, 40, 18, 106, 241, 228, 219, 151, 28, 138, 38, 201, 239, 192, 139, 235, 162, 88, 245] }) }),
+//                                 fun: NonFungible(Index(42)) }
+//                             ])
+//                         ),
+//     ClearOrigin,
+//     BuyExecution { fees: MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }),
+//                                       fun: Fungible(1000000) },
+//                     weight_limit: Limited(Weight { ref_time: 40, proof_size: 0 })
+//                 },
+//     DepositAsset { assets: Wild(AllCounted(2)),
+//                     beneficiary: MultiLocation { parents: 0, interior: X1(AccountId32 { network: None, id: [250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250]
+//                     }
+//     ) } }]),
+// weight_limit: Weight { ref_time: 18446744073709551615, proof_size: 18446744073709551615 }
