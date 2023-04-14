@@ -6,8 +6,8 @@
     "/ip4/3.114.212.146/tcp/30333/p2p/12D3KooWEHWUJ3Rzf8RLRihohbgXafz3Y4LnnKSzFDeZ1sXnopJs",
     "/ip4/20.40.146.211/tcp/30333/ws/p2p/12D3KooWBVXQ1WgLjHhWMn8mVEdpwF6uepMT1sYkDvAhYAomZvvx",
     "/ip4/34.168.19.219/tcp/30333/ws/p2p/12D3KooWBwxyvhLfMLLBaC4umejNUZu2C1RiyCRAJSTxnNDzywQ4",
-    "/dns/shibuya-02.wss-bootnode.astar.network/tcp/443/wss/p2p/12D3KooWBVXQ1WgLjHhWMn8mVEdpwF6uepMT1sYkDvAhYAomZvvx",
-    "/dns/shibuya-03.wss-bootnode.astar.network/tcp/443/wss/p2p/12D3KooWBwxyvhLfMLLBaC4umejNUZu2C1RiyCRAJSTxnNDzywQ4"
+    "/dns/wss-bootnode-02.shibuya.astar.network/tcp/443/wss/p2p/12D3KooWBVXQ1WgLjHhWMn8mVEdpwF6uepMT1sYkDvAhYAomZvvx",
+    "/dns/wss-bootnode-03.shibuya.astar.network/tcp/443/wss/p2p/12D3KooWBwxyvhLfMLLBaC4umejNUZu2C1RiyCRAJSTxnNDzywQ4"
   ],
   "telemetryEndpoints": null,
   "protocolId": "shibuya",
