@@ -29,7 +29,6 @@ use sp_runtime::DispatchResult;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_primitives::AccountId;
 use xcm::latest::prelude::*;
-use xcm::v2::Junctions::X1;
 use xcm_builder::{
     AccountId32Aliases, ConvertedConcreteId, NoChecking, NonFungiblesAdapter, ParentIsPreset,
     SiblingParachainConvertsVia,
@@ -45,7 +44,11 @@ const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
 impl Mutate<AccountId> for NftAdapter {
     fn mint_into(collection_ml: &CollectionId, _item: &ItemId, _who: &AccountId) -> DispatchResult {
         log::trace!(target: "runtime", "########### mint_into {:?} {:?} {:?}", collection_ml, _item, _who);
-        let contract_id : AccountId = collection_ml.interior().clone().into();
+        let contract_id =  match collection_ml.interior()
+        {
+            X1(AccountId32{id, ..}) => id,
+            _ => return Err("Invalid collection id".into()),
+        };
 
         let call = RuntimeCall::Contracts(pallet_contracts::Call::call {
             dest: contract_id.clone(),
