@@ -61,6 +61,8 @@ use xcm_primitives::{
     AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 
+use crate::mocks::nonfungibles::NonFungiblesTransactor;
+
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 pub type AssetId = u128;
@@ -438,7 +440,11 @@ pub type FungiblesTransactor = FungiblesAdapter<
 >;
 
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
+pub type AssetTransactors = (
+    CurrencyTransactor,
+    FungiblesTransactor,
+    NonFungiblesTransactor,
+);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -560,6 +566,27 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = pallet_xcm::TestWeightInfo;
 }
 
+impl pallet_uniques::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CollectionId = u32;
+    type ItemId = u32;
+    type Currency = Balances;
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type CollectionDeposit = frame_support::traits::ConstU128<1_000>;
+    type ItemDeposit = frame_support::traits::ConstU128<1_000>;
+    type MetadataDepositBase = frame_support::traits::ConstU128<1_000>;
+    type AttributeDepositBase = frame_support::traits::ConstU128<1_000>;
+    type DepositPerByte = frame_support::traits::ConstU128<1>;
+    type StringLimit = frame_support::traits::ConstU32<64>;
+    type KeyLimit = frame_support::traits::ConstU32<64>;
+    type ValueLimit = frame_support::traits::ConstU32<128>;
+    type Locker = ();
+    type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type Helper = ();
+}
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
@@ -582,5 +609,6 @@ construct_runtime!(
         Randomness: pallet_insecure_randomness_collective_flip::{Pallet, Storage},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+        Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>},
     }
 );

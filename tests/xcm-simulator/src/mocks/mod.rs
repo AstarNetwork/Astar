@@ -17,6 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 pub(crate) mod msg_queue;
+pub(crate) mod nonfungibles;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
 
@@ -100,7 +101,7 @@ pub fn sibling_account_id(para: u32) -> parachain::AccountId {
 
 /// Prepare parachain test externality
 pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
-    use parachain::{MsgQueue, Runtime, System};
+    use parachain::{MsgQueue, Runtime, RuntimeOrigin, System, Uniques};
 
     let mut t = frame_system::GenesisConfig::default()
         .build_storage::<Runtime>()
@@ -120,6 +121,17 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
     ext.execute_with(|| {
         System::set_block_number(1);
         MsgQueue::set_para_id(para_id.into());
+
+        // Premint some assets for testing
+        assert_eq!(
+            Uniques::force_create(RuntimeOrigin::root(), 1, ALICE, true),
+            Ok(())
+        );
+        assert_eq!(
+            Uniques::mint(RuntimeOrigin::signed(ALICE), 1, 42, child_account_id(1)),
+            Ok(())
+        );
+        assert_eq!(Uniques::owner(1, 42), Some(child_account_id(1)));
 
         parachain::DappsStaking::on_initialize(1);
         let (staker_rewards, dev_rewards) = issue_dapps_staking_rewards();

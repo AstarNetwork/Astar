@@ -23,6 +23,7 @@ pallet-contracts-primitives = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-timestamp = { workspace = true }
+pallet-uniques = { workspace = true }
 pallet-utility = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
@@ -72,6 +73,7 @@ std = [
 	"polkadot-primitives/std",
 	"pallet-dapps-staking/std",
 	"pallet-proxy/std",
+	"pallet-uniques/std",
 	"pallet-utility/std",
 ]
 runtime-benchmarks = [

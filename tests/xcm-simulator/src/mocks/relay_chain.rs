@@ -18,7 +18,7 @@
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU32, Everything, Nothing},
+    traits::{AsEnsureOriginWithArg, ConstU32, Everything, Nothing},
     weights::Weight,
 };
 use sp_core::H256;
@@ -194,6 +194,27 @@ impl ump::Config for Runtime {
 
 impl origin::Config for Runtime {}
 
+impl pallet_uniques::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CollectionId = u32;
+    type ItemId = u32;
+    type Currency = Balances;
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type CollectionDeposit = frame_support::traits::ConstU128<1_000>;
+    type ItemDeposit = frame_support::traits::ConstU128<1_000>;
+    type MetadataDepositBase = frame_support::traits::ConstU128<1_000>;
+    type AttributeDepositBase = frame_support::traits::ConstU128<1_000>;
+    type DepositPerByte = frame_support::traits::ConstU128<1>;
+    type StringLimit = frame_support::traits::ConstU32<64>;
+    type KeyLimit = frame_support::traits::ConstU32<64>;
+    type ValueLimit = frame_support::traits::ConstU32<128>;
+    type Locker = ();
+    type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type Helper = ();
+}
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
@@ -208,5 +229,6 @@ construct_runtime!(
         ParasOrigin: origin::{Pallet, Origin},
         ParasUmp: ump::{Pallet, Call, Storage, Event},
         XcmPallet: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
+        Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>},
     }
 );
