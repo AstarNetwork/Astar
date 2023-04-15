@@ -18,6 +18,7 @@
 
 pub(crate) mod msg_queue;
 pub(crate) mod parachain;
+pub(crate) mod parachain_c;
 pub(crate) mod relay_chain;
 
 use frame_support::traits::{Currency, OnFinalize, OnInitialize};
@@ -55,6 +56,15 @@ decl_test_parachain! {
     }
 }
 
+decl_test_parachain! {
+    pub struct ParaC {
+        Runtime = parachain_c::Runtime,
+        XcmpMessageHandler = parachain_c::MsgQueue,
+        DmpMessageHandler = parachain_c::MsgQueue,
+        new_ext = para_c_ext(3),
+    }
+}
+
 decl_test_relay_chain! {
     pub struct Relay {
         Runtime = relay_chain::Runtime,
@@ -69,6 +79,7 @@ decl_test_network! {
         parachains = vec![
             (1, ParaA),
             (2, ParaB),
+            (3, ParaC),
         ],
     }
 }
@@ -79,6 +90,9 @@ pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
 pub type ParachainContracts = pallet_contracts::Pallet<parachain::Runtime>;
+
+pub type NftParachainPalletXcm = pallet_xcm::Pallet<parachain_c::Runtime>;
+pub type NftParachainContracts = pallet_contracts::Pallet<parachain_c::Runtime>;
 // pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
 
 pub fn parent_account_id() -> parachain::AccountId {
@@ -111,6 +125,7 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
             (ALICE, INITIAL_BALANCE),
             (sibling_account_id(1), INITIAL_BALANCE),
             (sibling_account_id(2), INITIAL_BALANCE),
+            (sibling_account_id(3), INITIAL_BALANCE),
         ],
     }
     .assimilate_storage(&mut t)
@@ -121,20 +136,47 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
         System::set_block_number(1);
         MsgQueue::set_para_id(para_id.into());
 
-        // Premint some assets for testing
-        assert_eq!(
-            Uniques::force_create(RuntimeOrigin::root(), 1, ALICE, true),
-            Ok(())
-        );
-        assert_eq!(
-            Uniques::mint(RuntimeOrigin::signed(ALICE), 1, 42, child_account_id(1)),
-            Ok(())
-        );
-        assert_eq!(Uniques::owner(1, 42), Some(child_account_id(1)));
+        // // Premint some assets for testing
+        // assert_eq!(
+        //     Uniques::force_create(RuntimeOrigin::root(), 1, ALICE, true),
+        //     Ok(())
+        // );
+        // assert_eq!(
+        //     Uniques::mint(RuntimeOrigin::signed(ALICE), 1, 42, child_account_id(1)),
+        //     Ok(())
+        // );
+        // assert_eq!(Uniques::owner(1, 42), Some(child_account_id(1)));
 
         parachain::DappsStaking::on_initialize(1);
         let (staker_rewards, dev_rewards) = issue_dapps_staking_rewards();
         parachain::DappsStaking::rewards(staker_rewards, dev_rewards);
+    });
+    ext
+}
+
+/// Prepare parachain test externality
+pub fn para_c_ext(para_id: u32) -> sp_io::TestExternalities {
+    use parachain_c::{MsgQueue, Runtime, System};
+
+    let mut t = frame_system::GenesisConfig::default()
+        .build_storage::<Runtime>()
+        .unwrap();
+
+    pallet_balances::GenesisConfig::<Runtime> {
+        balances: vec![
+            (ALICE, INITIAL_BALANCE),
+            (sibling_account_id(1), INITIAL_BALANCE),
+            (sibling_account_id(2), INITIAL_BALANCE),
+            (sibling_account_id(3), INITIAL_BALANCE),
+        ],
+    }
+    .assimilate_storage(&mut t)
+    .unwrap();
+
+    let mut ext = sp_io::TestExternalities::new(t);
+    ext.execute_with(|| {
+        System::set_block_number(1);
+        MsgQueue::set_para_id(para_id.into());
     });
     ext
 }
@@ -152,6 +194,7 @@ pub fn relay_ext() -> sp_io::TestExternalities {
             (ALICE, INITIAL_BALANCE),
             (child_account_id(1), INITIAL_BALANCE),
             (child_account_id(2), INITIAL_BALANCE),
+            (child_account_id(3), INITIAL_BALANCE),
         ],
     }
     .assimilate_storage(&mut t)

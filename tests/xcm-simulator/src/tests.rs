@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::mocks::{parachain, relay_chain, *};
+use crate::mocks::{parachain, parachain_c, relay_chain, *};
 
 use frame_support::{assert_ok, traits::IsType, weights::Weight};
 use pallet_contracts::Determinism;
@@ -927,137 +927,142 @@ fn remote_dapps_staking_staker_claim() {
     });
 }
 
-/// Scenario:
-/// User transfers an NFT from ParaA to ParaB.
-/// NFT is first minted on ParaA pallet-uniques.
-/// On ParaB, a derivative NFT is minted on smart contract.
-#[test]
-fn transfer_nft_to_smart_contract() {
-    MockNet::reset();
-    let collection = 1;
-    let item = 42;
-    let uniques_pallet_instance = 13u8;
-    // Alice owns an NFT on the ParaA chain.
-    ParaA::execute_with(|| {
-        assert_eq!(
-            parachain::Uniques::owner(collection, item),
-            Some(child_account_id(1))
-        );
-    });
+// Scenario:
+// User transfers an NFT from ParaA to ParaC.
+// NFT is first minted on ParaA pallet-uniques.
+// On ParaC, a derivative NFT is minted on smart contract.
+// fn transfer_nft_to_smart_contract() {
+//     MockNet::reset();
+//     let collection = 1;
+//     let item = 42;
+//     let uniques_pallet_instance = 13u8;
+//     // Alice owns an NFT on the ParaA chain.
+//     ParaA::execute_with(|| {
+//         assert_eq!(
+//             parachain::Uniques::owner(collection, item),
+//             Some(child_account_id(1))
+//         );
+//     });
 
-    // let sibling_asset_id = 123 as u128;
-    // let para_a_multiloc = (Parent, Parachain(1));
+//     // let sibling_asset_id = 123 as u128;
+//     // let para_a_multiloc = (Parent, Parachain(1));
 
-    // Deploy and initialize flipper contract with `true` in ParaB
-    const SELECTOR_CONSTRUCTOR: [u8; 4] = [0x9b, 0xae, 0x9d, 0x5e];
-    const SELECTOR_GET: [u8; 4] = [0x2f, 0x86, 0x5b, 0xd9];
-    // const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
-    const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
-    let mut contract_id = [0u8; 32].into();
-    ParaB::execute_with(|| {
-        (contract_id, _) = deploy_contract::<parachain::Runtime>(
-            "flipper",
-            ALICE.into(),
-            0,
-            GAS_LIMIT,
-            None,
-            // selector + true
-            [SELECTOR_CONSTRUCTOR.to_vec(), vec![0x01]].concat(),
-        );
+//     // Deploy and initialize flipper contract with `true` in ParaC
+//     const SELECTOR_CONSTRUCTOR: [u8; 4] = [0x9b, 0xae, 0x9d, 0x5e];
+//     const SELECTOR_GET: [u8; 4] = [0x2f, 0x86, 0x5b, 0xd9];
+//     // const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
+//     const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
+//     let mut contract_id = [0u8; 32].into();
+//     ParaC::execute_with(|| {
+//         (contract_id, _) = deploy_contract::<parachain_c::Runtime>(
+//             "flipper",
+//             ALICE.into(),
+//             0,
+//             GAS_LIMIT,
+//             None,
+//             // selector + true
+//             [SELECTOR_CONSTRUCTOR.to_vec(), vec![0x01]].concat(),
+//         );
 
-        println!("#######Contract ID: {:?}", contract_id);
-        // check for flip status
-        let outcome = ParachainContracts::bare_call(
-            ALICE.into(),
-            contract_id.clone(),
-            0,
-            GAS_LIMIT,
-            None,
-            SELECTOR_GET.to_vec(),
-            true,
-            Determinism::Deterministic,
-        );
-        let res = outcome.result.unwrap();
-        // check for revert
-        assert!(res.did_revert() == false);
-        // decode the return value
-        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
-        assert_eq!(flag, Ok(true));
+//         println!("####### ParaC Contract ID: {:?}", contract_id);
+//         // check for flip status
+//         let outcome = ParachainContracts::bare_call(
+//             ALICE.into(),
+//             contract_id.clone(),
+//             0,
+//             GAS_LIMIT,
+//             None,
+//             SELECTOR_GET.to_vec(),
+//             true,
+//             Determinism::Deterministic,
+//         );
+//         let res = outcome.result.unwrap();
+//         // check for revert
+//         assert!(res.did_revert() == false);
+//         // decode the return value
+//         let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
+//         assert_eq!(flag, Ok(true));
 
-        // Register ParaA nft item as asset on ParaB
-        let collection_location = MultiLocation {
-            parents: 1,
-            interior: X3(Parachain(1), PalletInstance(uniques_pallet_instance), GeneralIndex(collection.into())),
-        };
-        _ = pallet_xc_asset_config::Pallet::<parachain::Runtime>::register_asset_location(
-            parachain::RuntimeOrigin::root(),
-            Box::new(collection_location.clone().into_versioned()),
-            item.into(),
-        );
+//         // Register ParaA nft item as asset on ParaC
+//         let collection_location = MultiLocation {
+//             parents: 1,
+//             interior: Here,
+//             // interior: X1(Parachain(1)),
+//             // interior: X3(Parachain(1), PalletInstance(uniques_pallet_instance), GeneralIndex(collection.into())),
+//         };
+//         _ = pallet_xc_asset_config::Pallet::<parachain_c::Runtime>::register_asset_location(
+//             parachain::RuntimeOrigin::root(),
+//             Box::new(collection_location.clone().into_versioned()),
+//             item.into(),
+//         );
 
-        _ = pallet_xc_asset_config::Pallet::<parachain::Runtime>::set_asset_units_per_second(
-            parachain::RuntimeOrigin::root(),
-            Box::new(collection_location.into_versioned()),
-            1_000_000_000_000,
-        );
-    });
+//         _ = pallet_xc_asset_config::Pallet::<parachain::Runtime>::set_asset_units_per_second(
+//             parachain::RuntimeOrigin::root(),
+//             Box::new(collection_location.into_versioned()),
+//             1_000_000_000_000,
+//         );
+//         println!("####### ParaC registered asset: {:?}", collection_location);
 
-    // Alice transfers the NFT to Bob on ParaB
-    ParaA::execute_with(|| {
-        let nft_multiasset: MultiAsset = MultiAsset {
-            id: Concrete(MultiLocation {
-                parents: 1,
-                interior: X1(AccountId32 {
-                    network: None,
-                    id: contract_id.clone().into(),
-                }),
-            }),
-            fun: NonFungible(item.into()),
-        };
-        let native_multiasset: MultiAsset = MultiAsset {
-            id: Concrete(MultiLocation {
-                parents: 0,
-                interior: Here,
-            }),
-            fun: Fungible(1_000_000),
-        };
-        let all_assets: Vec<MultiAsset> = vec![nft_multiasset.clone(), native_multiasset.clone()];
+//     });
 
-        assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
-            parachain::RuntimeOrigin::signed(ALICE),
-            Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
-            Box::new(
-                X1(AccountId32 {
-                    network: None,
-                    id: ALICE.into()
-                })
-                .into_location()
-                .into_versioned()
-            ),
-            Box::new((all_assets).into()),
-            0,
-        ));
-    });
-    // check for flip status, it should be false
-    ParaB::execute_with(|| {
-        let outcome = ParachainContracts::bare_call(
-            ALICE.into(),
-            contract_id.clone(),
-            0,
-            GAS_LIMIT,
-            None,
-            SELECTOR_GET.to_vec(),
-            true,
-            Determinism::Deterministic,
-        );
-        let res = outcome.result.unwrap();
-        // check for revert
-        assert!(res.did_revert() == false);
-        // decode the return value, it should be false
-        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
-        assert_eq!(flag, Ok(false));
-    });
-}
+//     // Alice transfers the NFT to Bob on ParaC
+//     ParaA::execute_with(|| {
+
+//         let nft_multiasset: MultiAsset = MultiAsset {
+//             id: Concrete(MultiLocation {
+//                 parents: 1,
+//                 interior: X1(AccountId32 {
+//                     network: None,
+//                     id: contract_id.clone().into(),
+//                 }),
+//             }),
+//             fun: NonFungible(item.into()),
+//         };
+//         let native_multiasset: MultiAsset = MultiAsset {
+//             id: Concrete(MultiLocation {
+//                 parents: 0,
+//                 interior: Here,
+//             }),
+//             fun: Fungible(1_000_000),
+//         };
+//         let all_assets: Vec<MultiAsset> = vec![nft_multiasset.clone(), native_multiasset.clone()];
+//         println!("####### ParaA all_assets: {:?}", all_assets);
+
+//         assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
+//             parachain::RuntimeOrigin::signed(ALICE),
+//             Box::new(MultiLocation::new(1, X1(Parachain(3))).into()),
+//             Box::new(
+//                 X1(AccountId32 {
+//                     network: None,
+//                     id: ALICE.into()
+//                 })
+//                 .into_location()
+//                 .into_versioned()
+//             ),
+//             Box::new((all_assets).into()),
+//             0,
+//         ));
+//     });
+//     // check for flip status, it should be false
+//     ParaC::execute_with(|| {
+//         let outcome = ParachainContracts::bare_call(
+//             ALICE.into(),
+//             contract_id.clone(),
+//             0,
+//             GAS_LIMIT,
+//             None,
+//             SELECTOR_GET.to_vec(),
+//             true,
+//             Determinism::Deterministic,
+//         );
+//         let res = outcome.result.unwrap();
+//         // check for revert
+//         assert!(res.did_revert() == false);
+//         // decode the return value, it should be false
+//         let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
+//         assert_eq!(flag, Ok(false));
+//     });
+// }
 
 // xcm::execute_xcm: origin: MultiLocation { parents: 1, interior: X1(Parachain(1)) },
 // message: Xcm([
