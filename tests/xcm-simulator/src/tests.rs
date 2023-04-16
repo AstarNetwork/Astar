@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::mocks::{parachain, relay_chain, *};
+use crate::mocks::{msg_queue::mock_msg_queue, parachain, relay_chain, *};
 
 use frame_support::{assert_ok, traits::IsType, weights::Weight};
 use parity_scale_codec::Encode;
@@ -500,6 +500,7 @@ fn send_relay_asset_to_para_b() {
             parent_account_id(),
             Some(true),
             Some(123),
+            // free execution
             Some(0)
         ));
     });
@@ -513,7 +514,7 @@ fn send_relay_asset_to_para_b() {
             parent_account_id(),
             Some(true),
             Some(123),
-            Some(0)
+            Some(1_000_000_000_000)
         ));
     });
 
@@ -548,7 +549,7 @@ fn send_relay_asset_to_para_b() {
                 reserve: source_location.clone().into(),
                 xcm: Xcm(vec![
                     BuyExecution {
-                        fees: (Here, withdraw_amount).into(),
+                        fees: (Here, 1).into(),
                         weight_limit: Unlimited,
                     },
                     // deposit into ParaB
@@ -557,9 +558,8 @@ fn send_relay_asset_to_para_b() {
                         dest: Parachain(2).into(),
                         xcm: Xcm(vec![
                             BuyExecution {
-                                // for sake of sanity, let's assume half the
-                                // amount is still available
-                                fees: (Parent, withdraw_amount / 2).into(),
+                                // cost for 4 intr
+                                fees: (Parent, 40).into(),
                                 weight_limit: Unlimited,
                             },
                             // deposit into ParaB's alice
@@ -589,7 +589,7 @@ fn send_relay_asset_to_para_b() {
     ParaB::execute_with(|| {
         assert_eq!(
             parachain::Assets::balance(relay_asset_id, ALICE),
-            withdraw_amount
+            withdraw_amount - 40
         );
     });
 }
@@ -742,8 +742,8 @@ fn error_when_not_paying_enough() {
     }
     .into();
     // This time we are gonna put a rather high number of units per second
-    // we know later we will divide by 1e12
-    // Lets put 1e6 as units per second
+    // Lets put (25 * 1e12) as units per second, later it will be divided by 1e12
+    // to calculate cost
     ParaA::execute_with(|| {
         assert_ok!(register_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
@@ -752,24 +752,34 @@ fn error_when_not_paying_enough() {
             parent_account_id(),
             Some(true),
             Some(1),
-            Some(2500000000000u128)
+            Some(2_500_000_000_000u128)
         ));
     });
 
-    // We are sending 100 tokens from relay.
-    // If we set the dest weight to be 1e7, we know the buy_execution will spend 1e7*1e6/1e12 = 10
-    // Therefore with no refund, we should receive 10 tokens less
+    // We are sending 99 tokens from relay.
+    // we know the buy_execution will spend 4 * 25 = 100
     Relay::execute_with(|| {
         assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
             Box::new(VersionedMultiLocation::V3(dest).clone().into()),
-            Box::new((Here, 5).into()),
+            Box::new((Here, 99).into()),
             0,
         ));
     });
 
     ParaA::execute_with(|| {
+        use parachain::{RuntimeEvent, System};
+
+        // check for xcm too expensive error
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::MsgQueue(mock_msg_queue::Event::ExecutedDownward(
+                _,
+                Outcome::Incomplete(_, XcmError::TooExpensive)
+            ))
+        )));
+
         // amount not received as it is not paying enough
         assert_eq!(ParachainAssets::balance(source_id, &ALICE.into()), 0);
     });
