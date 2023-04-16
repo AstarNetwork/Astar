@@ -278,13 +278,13 @@ fn transfer_nft_to_smart_contract() {
                 RuntimeOrigin::signed(ALICE),
                 collection_ml,
                 Index(item),
-                child_account_id(1)
+                ALICE
             )
         );
         // Alice owns an NFT on the ParaA chain
         assert_eq!(
             Uniques::owner(collection_ml, Index(item)),
-            Some(child_account_id(1))
+            Some(ALICE)
         );
         println!("--------------ParaA mint OK  -------------\n");
 
@@ -312,7 +312,7 @@ fn transfer_nft_to_smart_contract() {
         // Alice transfers the NFT to ParaC
         assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
             parachain::RuntimeOrigin::root(),
-            Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
+            Box::new(MultiLocation::new(1, X1(Parachain(3))).into()),
             Box::new(MultiLocation::new(0, X1(AccountId32 {
                     network: None,
                     id: ALICE.into()
