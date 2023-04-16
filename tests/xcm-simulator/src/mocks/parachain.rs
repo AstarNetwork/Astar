@@ -24,7 +24,7 @@ use frame_support::{
     match_types, parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance,
-        InstanceFilter, Nothing, OnUnbalanced, nonfungibles::{Inspect, Mutate, Transfer},
+        InstanceFilter, Nothing, OnUnbalanced, nonfungibles::{Inspect, Mutate, Transfer}, ContainsPair, 
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -506,13 +506,42 @@ pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     TreasuryAccountId,
 >;
 
+
+pub struct AstarReserveAssetFilter;
+impl ContainsPair<MultiAsset, MultiLocation> for AstarReserveAssetFilter {
+    fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+        // We assume that relay chain and sibling parachain assets are trusted reserves for their assets
+        let reserve_location = if let Concrete(location) = &asset.id {
+            // log::debug!(target: "runtime", "########### ReserveAssetFilter reserve_location: \n{:?}", location);
+            match (location.parents, location.first_interior()) {
+                // sibling parachain
+                (1, Some(Parachain(id))) => Some(MultiLocation::new(1, X1(Parachain(*id)))),
+                // relay chain
+                (1, _) => Some(MultiLocation::parent()),
+                _ => None,
+            }
+        } else {
+            None
+        };
+
+        if let Some(ref reserve) = reserve_location {
+            log::debug!(target: "runtime", "########### ReserveAssetFilter ---------- reserve: \n{:?}", reserve);
+            log::debug!(target: "runtime", "ReserveAssetFilter ---------- origin: \n{:?}", origin);
+            origin == reserve
+        } else {
+            log::debug!(target: "runtime", "ReserveAssetFilter ---------- \nfalse -----------");
+            false
+        }
+    }
+}
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = ReserveAssetFilter;
+    type IsReserve = AstarReserveAssetFilter;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
@@ -606,10 +635,15 @@ impl Mutate<AccountId> for NftAdapter {
         log::debug!(target: "runtime", "########### mint_into \n###coll: {:?} \n###item: {:?} \n###who: {:?}", collection_ml, _item, _who);
         let contract_id =  match collection_ml.interior()
         {
-            X1(Junction::AccountId32{id, ..}) => id,
-            _ => return Err("Invalid collection id".into()),
+            X2(Parachain(..), Junction::AccountId32{id, ..}) => id,
+            _ => &[0u8; 32],
         };
-
+        
+        log::debug!(target: "runtime", "########### mint_into contract_id: \n{:?}", contract_id.clone());
+        if contract_id == &[0u8; 32] {
+            log::debug!(target: "runtime", "########### contract does not exist");
+            return Ok(())
+        }
         // let _call = RuntimeCall::Contracts(pallet_contracts::Call::call {
         //     dest: contract_id.clone().into(),
         //     value: 0,
@@ -628,12 +662,12 @@ impl Mutate<AccountId> for NftAdapter {
             true,
             Determinism::Deterministic,
         );
-        // let res = outcome.result.unwrap();
-        log::debug!(target: "runtime", "########### mint_into \noutcome:{:?} \ncontract_id:{:?}", _outcome, contract_id);
-
+        log::debug!(target: "runtime", "########### mint_into outcome:\n{:?} \ncontract_id:{:?}", _outcome, contract_id);
+        
         // check for revert
         // assert!(res.did_revert() == false);
-
+        
+        log::debug!(target: "runtime", "########### mint_into OK");
         Ok(())
     }
 
@@ -642,7 +676,7 @@ impl Mutate<AccountId> for NftAdapter {
         _item: &ItemId,
         _maybe_check_owner: Option<&AccountId>,
     ) -> DispatchResult {
-        log::trace!(target: "runtime", "########### burn {:?} {:?} {:?}", _collection, _item, _maybe_check_owner);
+        log::debug!(target: "runtime", "########### burn {:?} {:?} {:?}", _collection, _item, _maybe_check_owner);
         Ok(())
     }
 }
@@ -653,7 +687,7 @@ impl Transfer<AccountId> for NftAdapter {
         _item: &Self::ItemId,
         _destination: &AccountId,
     ) -> DispatchResult {
-        log::trace!(target: "runtime", "########### transfer {:?} {:?} {:?}", _collection, _item, _destination);
+        log::debug!(target: "runtime", "########### transfer {:?} {:?} {:?}", _collection, _item, _destination);
         Ok(())
     }
 }

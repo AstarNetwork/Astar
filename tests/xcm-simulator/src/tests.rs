@@ -753,7 +753,7 @@ fn error_when_not_paying_enough() {
             parent_account_id(),
             Some(true),
             Some(1),
-            Some(2500000000000u128)
+            Some(2_500_000_000_000u128)
         ));
     });
 
@@ -985,28 +985,49 @@ fn transfer_nft_to_smart_contract() {
         assert_eq!(flag, Ok(true));
 
         // Register ParaA nft item as asset on ParaB
-        let collection_location = MultiLocation {
-            parents: 1,
-            interior: X3(Parachain(1), PalletInstance(uniques_pallet_instance), GeneralIndex(collection.into())),
-        };
-        _ = pallet_xc_asset_config::Pallet::<parachain::Runtime>::register_asset_location(
-            parachain::RuntimeOrigin::root(),
-            Box::new(collection_location.clone().into_versioned()),
-            item.into(),
-        );
+        // let collection_location = MultiLocation {
+        //     parents: 1,
+        //     interior: X3(Parachain(1), PalletInstance(uniques_pallet_instance), GeneralIndex(collection.into())),
+        // };
+        // _ = pallet_xc_asset_config::Pallet::<parachain::Runtime>::register_asset_location(
+        //     parachain::RuntimeOrigin::root(),
+        //     Box::new(collection_location.clone().into_versioned()),
+        //     item.into(),
+        // );
 
-        _ = pallet_xc_asset_config::Pallet::<parachain::Runtime>::set_asset_units_per_second(
-            parachain::RuntimeOrigin::root(),
-            Box::new(collection_location.into_versioned()),
-            1_000_000_000_000,
-        );
+        // _ = pallet_xc_asset_config::Pallet::<parachain::Runtime>::set_asset_units_per_second(
+        //     parachain::RuntimeOrigin::root(),
+        //     Box::new(collection_location.into_versioned()),
+        //     1_000_000_000_000,
+        // );
+
+        let sibling_asset_id = 123 as u128;
+        let para_a_multiloc = (Parent, Parachain(1));
+    
+        // On parachain B create an asset which representes a derivative of parachain A native asset.
+        // This asset is allowed as XCM execution fee payment asset.
+            assert_ok!(register_asset::<parachain::Runtime, _>(
+                parachain::RuntimeOrigin::root(),
+                sibling_asset_id,
+                para_a_multiloc.clone(),
+                sibling_account_id(1),
+                Some(true),
+                Some(1),
+                Some(1_000_000_000_000)
+            ));
+            println!(
+                "####### ParaB register_asset: {:?}, sibling_account_id(1): {:?}",
+                sibling_asset_id, sibling_account_id(1)
+            );
     });
 
     // Alice transfers the NFT to Bob on ParaB
     ParaA::execute_with(|| {
+        println!("--------------ParaA reserve_transfer_assets  -------------\n");
+
         let nft_multiasset: MultiAsset = MultiAsset {
             id: Concrete(MultiLocation {
-                parents: 1,
+                parents: 0,
                 interior: X1(AccountId32 {
                     network: None,
                     id: contract_id.clone().into(),
@@ -1014,29 +1035,43 @@ fn transfer_nft_to_smart_contract() {
             }),
             fun: NonFungible(item.into()),
         };
+        // let native_multiasset: MultiAsset = MultiAsset {
+        //     id: Concrete(MultiLocation {
+        //         parents: 0,
+        //         interior: Here,
+        //     }),
+        //     fun: Fungible(1_000_000_000_000_000_000),
+        // };
         let native_multiasset: MultiAsset = MultiAsset {
             id: Concrete(MultiLocation {
                 parents: 0,
                 interior: Here,
             }),
-            fun: Fungible(1_000_000),
+            fun: Fungible(1_000_000_000_000_000),
         };
-        let all_assets: Vec<MultiAsset> = vec![nft_multiasset.clone(), native_multiasset.clone()];
+        // let native_multiasset: MultiAsset = (Here, 1_000_000_000_000_000u128).into();
+        let all_assets: Vec<MultiAsset> = vec![
+            nft_multiasset.clone(), 
+            native_multiasset.clone()
+        ];
 
         assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
             parachain::RuntimeOrigin::signed(ALICE),
             Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
-            Box::new(
-                X1(AccountId32 {
+            Box::new(MultiLocation::new(0, X1(AccountId32 {
                     network: None,
                     id: ALICE.into()
                 })
-                .into_location()
-                .into_versioned()
+                ).into_versioned()
             ),
             Box::new((all_assets).into()),
             0,
         ));
+
+        println!("--------------ParaA Events -------------\n");
+        for e in parachain::System::events() {
+            println!("{:?}\n\n", e);
+        }
     });
     // check for flip status, it should be false
     ParaB::execute_with(|| {

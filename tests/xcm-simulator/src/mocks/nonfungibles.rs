@@ -45,7 +45,7 @@ impl Mutate<AccountId> for NftAdapter {
         log::debug!(target: "runtime", "########### mint_into \n###coll: {:?} \n###item: {:?} \n###who: {:?}", collection_ml, _item, _who);
         let contract_id =  match collection_ml.interior()
         {
-            X1(Junction::AccountId32{id, ..}) => id,
+            X2(Parachain(1), Junction::AccountId32{id, ..}) => id,
             _ => return Err("Invalid collection id".into()),
         };
 
