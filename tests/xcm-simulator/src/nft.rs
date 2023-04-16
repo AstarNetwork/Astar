@@ -18,12 +18,51 @@
 
 use crate::mocks::{parachain, parachain_c, relay_chain, *};
 
-use frame_support::{assert_ok, weights::Weight};
+use frame_support::{assert_ok, traits::IsType, weights::Weight};
 use pallet_contracts::Determinism;
 use parity_scale_codec::{Decode, Encode};
-
+use sp_runtime::{
+    traits::{Bounded, StaticLookup},
+    DispatchResult,
+};
 use xcm::prelude::*;
 use xcm_simulator::TestExt;
+
+fn register_asset<Runtime, AssetId>(
+    origin: Runtime::RuntimeOrigin,
+    asset_id: AssetId,
+    asset_location: impl Into<MultiLocation> + Clone,
+    asset_controller: <Runtime::Lookup as StaticLookup>::Source,
+    is_sufficent: Option<bool>,
+    min_balance: Option<Runtime::Balance>,
+    units_per_second: Option<u128>,
+) -> DispatchResult
+where
+    Runtime: pallet_xc_asset_config::Config + pallet_assets::Config,
+    AssetId: IsType<<Runtime as pallet_xc_asset_config::Config>::AssetId>
+        + IsType<<Runtime as pallet_assets::Config>::AssetId>
+        + Clone,
+{
+    pallet_assets::Pallet::<Runtime>::force_create(
+        origin.clone(),
+        <Runtime as pallet_assets::Config>::AssetIdParameter::from(asset_id.clone().into()),
+        asset_controller,
+        is_sufficent.unwrap_or(true),
+        min_balance.unwrap_or(Bounded::min_value()),
+    )?;
+
+    pallet_xc_asset_config::Pallet::<Runtime>::register_asset_location(
+        origin.clone(),
+        Box::new(asset_location.clone().into().into_versioned()),
+        asset_id.into(),
+    )?;
+
+    pallet_xc_asset_config::Pallet::<Runtime>::set_asset_units_per_second(
+        origin,
+        Box::new(asset_location.into().into_versioned()),
+        units_per_second.unwrap_or(1_000_000_000_000),
+    )
+}
 
 #[test]
 fn basic_dmp() {
@@ -164,9 +203,10 @@ fn basic_xcmp() {
 fn transfer_nft_to_smart_contract() {
     MockNet::reset();
     let uniques_pallet_instance = 13u8;
+    let collection_junction = X2(PalletInstance(uniques_pallet_instance), GeneralIndex(1u128));
     let collection_ml: MultiLocation = MultiLocation {
         parents: 0,
-        interior: X2(PalletInstance(uniques_pallet_instance), GeneralIndex(1u128)),
+        interior: collection_junction,
     };
     let item = 42;
 
@@ -204,24 +244,32 @@ fn transfer_nft_to_smart_contract() {
         assert_eq!(flag, Ok(true));
 
         // Register ParaA nft item as asset on ParaC
-        _ = pallet_xc_asset_config::Pallet::<parachain_c::Runtime>::register_asset_location(
-            parachain_c::RuntimeOrigin::root(),
-            Box::new(collection_ml.into_versioned()),
-            item,
-        );
-
-        _ = pallet_xc_asset_config::Pallet::<parachain_c::Runtime>::set_asset_units_per_second(
-            parachain_c::RuntimeOrigin::root(),
-            Box::new(collection_ml.into_versioned()),
-            1_000_000_000_000,
-        );
-        println!("####### ParaC registered asset: {:?}", collection_ml);
+        let sibling_asset_id = 123 as u128;
+        let para_a_multiloc = (Parent, Parachain(1));
+    
+        // On parachain C create an asset which represents a derivative of parachain A native asset.
+        // This asset is allowed as XCM execution fee payment asset.
+            assert_ok!(register_asset::<parachain::Runtime, _>(
+                parachain::RuntimeOrigin::root(),
+                sibling_asset_id,
+                para_a_multiloc.clone(),
+                sibling_account_id(1),
+                Some(true),
+                Some(1),
+                Some(1_000_000_000_000_000)
+            ));
+            println!(
+                "####### ParaB register_asset: {:?}, sibling_account_id(1): {:?}",
+                sibling_asset_id, sibling_account_id(1)
+            );
     });
 
     // Alice mints and transfers the NFT to Alice on ParaC
     ParaA::execute_with(|| {
+        println!("--------------ParaA reserve_transfer_assets  -------------\n");
+        
         // Mint nft on ParaA
-        use parachain::{RuntimeOrigin, System, Uniques};
+        use parachain::{RuntimeOrigin, Uniques};
         assert_ok!(
             Uniques::force_create(RuntimeOrigin::root(), collection_ml, ALICE, true)
         );
@@ -233,62 +281,57 @@ fn transfer_nft_to_smart_contract() {
                 child_account_id(1)
             )
         );
-        assert_eq!(
-            Uniques::owner(collection_ml, Index(item)),
-            Some(child_account_id(1))
-        );
-
         // Alice owns an NFT on the ParaA chain
         assert_eq!(
             Uniques::owner(collection_ml, Index(item)),
             Some(child_account_id(1))
         );
+        println!("--------------ParaA mint OK  -------------\n");
 
         // Create MultiAssets needed for the transfer
         let nft_multiasset: MultiAsset = MultiAsset {
-            id: Concrete(collection_ml),
+            id: Concrete(MultiLocation {
+                parents: 0,
+                interior: collection_junction,
+            }),
             fun: NonFungible(Index(item)),
         };
-        let native_multiasset: MultiAsset = MultiAsset {
-            id: Concrete(MultiLocation {
-                parents: 1,
-                interior: X1(Parachain(1)),
-            }),
-            fun: Fungible(1_000_000),
-        };
-        let all_assets: Vec<MultiAsset> = vec![nft_multiasset.clone(), native_multiasset.clone()];
+            let native_multiasset: MultiAsset = MultiAsset {
+                id: Concrete(MultiLocation {
+                    parents: 0,
+                    interior: Here,
+                }),
+                fun: Fungible(1_000_000_000_000_000_000),
+            };
+
+        let all_assets: Vec<MultiAsset> = vec![
+            nft_multiasset.clone(), 
+            native_multiasset.clone()
+        ];
 
         // Alice transfers the NFT to ParaC
         assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
-            parachain::RuntimeOrigin::signed(ALICE),
-            Box::new(MultiLocation::new(1, X1(Parachain(3))).into()),
-            Box::new(
-                X1(AccountId32 {
+            parachain::RuntimeOrigin::root(),
+            Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
+            Box::new(MultiLocation::new(0, X1(AccountId32 {
                     network: None,
                     id: ALICE.into()
                 })
-                .into_location()
-                .into_versioned()
+                ).into_versioned()
             ),
-            Box::new((all_assets.clone()).into()),
+            Box::new((all_assets).into()),
             0,
         ));
-        println!(
-            "####### ParaA reserve_transfer_assets sent, all_assets: {:?}",
-            all_assets
-        );
-        // println!("--------------ParaA Events -------------\n");
-        // for e in System::events() {
-        //     println!("{:?}\n\n", e);
-        // }
+        println!("Alice balance on ParaA: {:?}", parachain::Balances::free_balance(ALICE));
+        println!("SiblingC account balance on ParaA: {:?}", parachain::Balances::free_balance(sibling_account_id(3)));
+        println!("--------------ParaA Events -------------\n");
+        for e in parachain::System::events() {
+            println!("{:?}\n\n", e);
+        }
     });
 
     // check for flip status, it should be false
     ParaC::execute_with(|| {
-        // println!("+++++++++++++++++++ParaC Events ++++++++++++++\n");
-        // for e in parachain_c::System::events() {
-        //     println!("{:?}\n\n", e);
-        // }
         let outcome = ParachainContracts::bare_call(
             ALICE.into(),
             contract_id.clone(),
@@ -305,98 +348,4 @@ fn transfer_nft_to_smart_contract() {
         assert_eq!(flag, Ok(false));
     });
 }
-
-// xcm::execute_xcm: origin: MultiLocation { parents: 1, interior: X1(Parachain(1)) },
-// message: Xcm([
-//     ReserveAssetDeposited(
-//                 MultiAssets([MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }),
-//                                 fun: Fungible(1000000) },
-//                             MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(AccountId32 { network: None, id: [246, 106, 229, 81, 70, 154, 31, 201, 19, 66, 83, 186, 54, 229, 40, 18, 106, 241, 228, 219, 151, 28, 138, 38, 201, 239, 192, 139, 235, 162, 88, 245] }) }),
-//                                 fun: NonFungible(Index(42)) }
-//                             ])
-//                         ),
-//     ClearOrigin,
-//     BuyExecution { fees: MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }),
-//                                       fun: Fungible(1000000) },
-//                     weight_limit: Limited(Weight { ref_time: 40, proof_size: 0 })
-//                 },
-//     DepositAsset { assets: Wild(AllCounted(2)),
-//                     beneficiary: MultiLocation { parents: 0, interior: X1(AccountId32 { network: None, id: [250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250]
-//                     }
-//     ) } }]),
-// weight_limit: Weight { ref_time: 18446744073709551615, proof_size: 18446744073709551615 }
-
-
-
-// nft::basic_xcmp A --> C
-// xcm::send_xcm: 
-//     dest: MultiLocation { parents: 1, interior: X1(Parachain(3)) }, 
-//     message: Xcm([
-//         WithdrawAsset(
-//                 MultiAssets(
-//                     [MultiAsset { 
-//                         id: Concrete(MultiLocation { parents: 0, interior: Here }), 
-//                         fun: Fungible(100000000000) }
-//                     ]
-//                 )
-//             ), 
-//         BuyExecution { 
-//             fees: MultiAsset { 
-//                 id: Concrete(MultiLocation { parents: 0, interior: Here }), 
-//                 fun: Fungible(100000000000) }, 
-//                 weight_limit: Unlimited 
-//             }, 
-//         Transact { 
-//             origin_kind: SovereignAccount, 
-//             require_weight_at_most: Weight { ref_time: 1000000000, proof_size: 1048576 }, 
-//             call: [0, 7, 12, 1, 2, 3] }
-//             ]
-//     )
-
-
-// para_to_para_reserve_transfer_and_back A --> B
-// ParaA::execute_with(|| {
-//     assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
-//         parachain::RuntimeOrigin::signed(ALICE),
-//         Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
-//         Box::new(
-//             X1(AccountId32 {
-//                 network: None,
-//                 id: ALICE.into()
-//             })
-//             .into_location()
-//             .into_versioned()
-//         ),
-//         Box::new((Here, withdraw_amount).into()),
-//         0,
-//     ));
-//
-// xcm::execute_xcm: 
-//     origin: MultiLocation { parents: 1, interior: X1(Parachain(1)) }, 
-//     message: Xcm([
-//             ReserveAssetDeposited(
-//                 MultiAssets(
-//                     [MultiAsset { 
-//                         id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }), 
-//                         fun: Fungible(567) 
-//                         }
-//                     ]
-//                 )
-//             ), 
-//             ClearOrigin, 
-//             BuyExecution { 
-//                 fees: MultiAsset { 
-//                         id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }), 
-//                         fun: Fungible(567) 
-//                     }, 
-//                 weight_limit: Limited(Weight { ref_time: 40, proof_size: 0 }) 
-//             }, 
-                        
-//             DepositAsset { 
-//                 assets: Wild(AllCounted(1)), 
-//                 beneficiary: MultiLocation { parents: 0, interior: X1(AccountId32 { network: None, id: [250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250] }) } }]), 
-//                 weight_limit: Weight { ref_time: 18446744073709551615, proof_size: 18446744073709551615 }  
-// Apr 15 19:17:07.561 DEBUG runtime: ########### ReserveAssetFilter ---------- reserve: 
-// MultiLocation { parents: 1, interior: X1(Parachain(1)) }    
-// Apr 15 19:17:07.561 DEBUG runtime: ReserveAssetFilter ---------- origin: 
-// MultiLocation { parents: 1, interior: X1(Parachain(1)) }    
+  
