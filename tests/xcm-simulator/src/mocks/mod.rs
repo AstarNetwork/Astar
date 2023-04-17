@@ -20,10 +20,11 @@ pub(crate) mod msg_queue;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
 
-use frame_support::traits::{Currency, OnFinalize, OnInitialize};
+use frame_support::traits::{Currency, IsType, OnFinalize, OnInitialize};
 use frame_support::weights::Weight;
 use pallet_contracts_primitives::Code;
-use sp_runtime::traits::Hash;
+use sp_runtime::traits::{Bounded, Hash, StaticLookup};
+use sp_runtime::DispatchResult;
 use xcm::latest::prelude::*;
 use xcm_executor::traits::Convert;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
@@ -183,6 +184,55 @@ fn issue_dapps_staking_rewards() -> (parachain::NegativeImbalance, parachain::Ne
     (
         parachain::Balances::issue(DAPP_STAKER_REWARD_PER_BLOCK),
         parachain::Balances::issue(DAPP_STAKER_DEV_PER_BLOCK),
+    )
+}
+
+/// Register and configure the asset for use in XCM
+/// It first create the asset in `pallet_assets` and then register the asset multilocation
+/// mapping in `pallet_xc_asset_config`, and lastly set the asset per second for calculating
+/// XCM execution cost (only applicable if `is_sufficent` is true)
+pub fn register_and_setup_xcm_asset<Runtime, AssetId>(
+    origin: Runtime::RuntimeOrigin,
+    // AssetId for the new asset
+    asset_id: AssetId,
+    // Asset multilocation
+    asset_location: impl Into<MultiLocation> + Clone,
+    // Asset controller
+    asset_controller: <Runtime::Lookup as StaticLookup>::Source,
+    // make asset payable, default true
+    is_sufficent: Option<bool>,
+    // minimum balance for account to exist (ED), default, 0
+    min_balance: Option<Runtime::Balance>,
+    // Asset unit per second for calculating execution cost for XCM, default 1_000_000_000_000
+    units_per_second: Option<u128>,
+) -> DispatchResult
+where
+    Runtime: pallet_xc_asset_config::Config + pallet_assets::Config,
+    AssetId: IsType<<Runtime as pallet_xc_asset_config::Config>::AssetId>
+        + IsType<<Runtime as pallet_assets::Config>::AssetId>
+        + Clone,
+{
+    // Register the asset
+    pallet_assets::Pallet::<Runtime>::force_create(
+        origin.clone(),
+        <Runtime as pallet_assets::Config>::AssetIdParameter::from(asset_id.clone().into()),
+        asset_controller,
+        is_sufficent.unwrap_or(true),
+        min_balance.unwrap_or(Bounded::min_value()),
+    )?;
+
+    // Save the asset and multilocation mapping
+    pallet_xc_asset_config::Pallet::<Runtime>::register_asset_location(
+        origin.clone(),
+        Box::new(asset_location.clone().into().into_versioned()),
+        asset_id.into(),
+    )?;
+
+    // set the units per second for XCM cost
+    pallet_xc_asset_config::Pallet::<Runtime>::set_asset_units_per_second(
+        origin,
+        Box::new(asset_location.into().into_versioned()),
+        units_per_second.unwrap_or(1_000_000_000_000),
     )
 }
 

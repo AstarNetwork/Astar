@@ -18,50 +18,10 @@
 
 use crate::mocks::{msg_queue::mock_msg_queue, parachain, relay_chain, *};
 
-use frame_support::{assert_ok, traits::IsType, weights::Weight};
+use frame_support::{assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
-use sp_runtime::{
-    traits::{Bounded, StaticLookup},
-    DispatchResult,
-};
 use xcm::prelude::*;
 use xcm_simulator::TestExt;
-
-fn register_asset<Runtime, AssetId>(
-    origin: Runtime::RuntimeOrigin,
-    asset_id: AssetId,
-    asset_location: impl Into<MultiLocation> + Clone,
-    asset_controller: <Runtime::Lookup as StaticLookup>::Source,
-    is_sufficent: Option<bool>,
-    min_balance: Option<Runtime::Balance>,
-    units_per_second: Option<u128>,
-) -> DispatchResult
-where
-    Runtime: pallet_xc_asset_config::Config + pallet_assets::Config,
-    AssetId: IsType<<Runtime as pallet_xc_asset_config::Config>::AssetId>
-        + IsType<<Runtime as pallet_assets::Config>::AssetId>
-        + Clone,
-{
-    pallet_assets::Pallet::<Runtime>::force_create(
-        origin.clone(),
-        <Runtime as pallet_assets::Config>::AssetIdParameter::from(asset_id.clone().into()),
-        asset_controller,
-        is_sufficent.unwrap_or(true),
-        min_balance.unwrap_or(Bounded::min_value()),
-    )?;
-
-    pallet_xc_asset_config::Pallet::<Runtime>::register_asset_location(
-        origin.clone(),
-        Box::new(asset_location.clone().into().into_versioned()),
-        asset_id.into(),
-    )?;
-
-    pallet_xc_asset_config::Pallet::<Runtime>::set_asset_units_per_second(
-        origin,
-        Box::new(asset_location.into().into_versioned()),
-        units_per_second.unwrap_or(1_000_000_000_000),
-    )
-}
 
 #[test]
 fn basic_dmp() {
@@ -177,7 +137,7 @@ fn para_to_para_reserve_transfer_and_back() {
     // On parachain B create an asset which representes a derivative of parachain A native asset.
     // This asset is allowed as XCM execution fee payment asset.
     ParaB::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             sibling_asset_id,
             para_a_multiloc.clone(),
@@ -278,7 +238,7 @@ fn para_to_para_reserve_transfer_local_asset() {
         .unwrap();
 
     ParaA::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             asset_id,
             local_asset,
@@ -298,7 +258,7 @@ fn para_to_para_reserve_transfer_local_asset() {
     });
 
     ParaB::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             asset_id,
             para_a_local_asset,
@@ -346,7 +306,7 @@ fn receive_relay_asset_from_relay() {
     // On parachain A create an asset which representes a derivative of relay native asset.
     // This asset is allowed as XCM execution fee payment asset.
     ParaA::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
             source_location,
@@ -414,7 +374,7 @@ fn send_relay_asset_to_relay() {
     // This asset is allowed as XCM execution fee payment asset.
     // Register relay asset in paraA
     ParaA::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
             source_location,
@@ -493,7 +453,7 @@ fn para_a_send_relay_asset_to_para_b() {
     // This asset is allowed as XCM execution fee payment asset.
     // Register relay asset in ParaA
     ParaA::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
             source_location,
@@ -507,7 +467,7 @@ fn para_a_send_relay_asset_to_para_b() {
 
     // register relay asset in ParaB
     ParaB::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
             source_location,
@@ -604,7 +564,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
 
     // On parachain A create an asset which representes a derivative of relay native asset.
     ParaA::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
             source_location,
@@ -688,7 +648,7 @@ fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_ass
 
     // On parachain A create an asset which representes a derivative of relay native asset.
     ParaA::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
             source_location,
@@ -745,7 +705,7 @@ fn error_when_not_paying_enough() {
     // Lets put (25 * 1e12) as units per second, later it will be divided by 1e12
     // to calculate cost
     ParaA::execute_with(|| {
-        assert_ok!(register_asset::<parachain::Runtime, _>(
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             source_id,
             source_location,
