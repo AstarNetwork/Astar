@@ -23,8 +23,9 @@ use frame_support::{
     dispatch::DispatchClass,
     match_types, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance, EnsureOriginWithArg,
-        InstanceFilter, Nothing, OnUnbalanced, nonfungibles::{Inspect, Mutate, Transfer}, ContainsPair, EnsureOrigin, 
+        nonfungibles::{Inspect, Mutate, Transfer},
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, ContainsPair, Currency, EnsureOrigin,
+        EnsureOriginWithArg, Everything, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -36,16 +37,15 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureSigned,
 };
+use pallet_contracts::Determinism;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::{ConstBool, H256};
 use sp_runtime::{
-    DispatchResult,
     testing::Header,
     traits::{AccountIdConversion, Convert, IdentityLookup},
-    AccountId32, Perbill, RuntimeDebug,
+    AccountId32, DispatchResult, Perbill, RuntimeDebug,
 };
 use sp_std::prelude::*;
-use pallet_contracts::Determinism;
 
 use super::msg_queue::*;
 use xcm::latest::prelude::{AssetId as XcmAssetId, *};
@@ -53,18 +53,22 @@ use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
     EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, IsConcrete,
-    NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, NonFungiblesAdapter
+    NoChecking, NonFungiblesAdapter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
-use xcm_executor::{traits::{Convert as ExeConvert, JustTry}, XcmExecutor};
+use xcm_executor::{
+    traits::{Convert as ExeConvert, JustTry},
+    XcmExecutor,
+};
 
+use polkadot_parachain::primitives::Sibling;
 use xcm_primitives::{
-    AssetLocationIdConverter, FixedRateOfForeignAsset, 
-    // ReserveAssetFilter, 
+    AssetLocationIdConverter,
+    FixedRateOfForeignAsset,
+    // ReserveAssetFilter,
     XcmFungibleFeeHandler,
 };
-use polkadot_parachain::primitives::Sibling;
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -604,17 +608,17 @@ impl pallet_uniques::Config for Runtime {
     type ItemId = AssetInstance;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type CollectionDeposit = frame_support::traits::ConstU128<1_000>;
-	type ItemDeposit = frame_support::traits::ConstU128<1_000>;
-	type MetadataDepositBase = frame_support::traits::ConstU128<1_000>;
-	type AttributeDepositBase = frame_support::traits::ConstU128<1_000>;
-	type DepositPerByte = frame_support::traits::ConstU128<1>;
-	type StringLimit = frame_support::traits::ConstU32<64>;
-	type KeyLimit = frame_support::traits::ConstU32<64>;
-	type ValueLimit = frame_support::traits::ConstU32<128>;
-	type Locker = ();
-	type WeightInfo = ();
+    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type CollectionDeposit = frame_support::traits::ConstU128<1_000>;
+    type ItemDeposit = frame_support::traits::ConstU128<1_000>;
+    type MetadataDepositBase = frame_support::traits::ConstU128<1_000>;
+    type AttributeDepositBase = frame_support::traits::ConstU128<1_000>;
+    type DepositPerByte = frame_support::traits::ConstU128<1>;
+    type StringLimit = frame_support::traits::ConstU32<64>;
+    type KeyLimit = frame_support::traits::ConstU32<64>;
+    type ValueLimit = frame_support::traits::ConstU32<128>;
+    type Locker = ();
+    type WeightInfo = ();
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
@@ -635,8 +639,6 @@ pub type NonFungiblesTransactor = NonFungiblesAdapter<
     NoChecking,
     (),
 >;
-
-
 
 construct_runtime!(
     pub enum Runtime where

@@ -23,8 +23,9 @@ use frame_support::{
     dispatch::DispatchClass,
     match_types, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance,
-        InstanceFilter, Nothing, OnUnbalanced, nonfungibles::{Inspect, Mutate, Transfer}, ContainsPair, 
+        nonfungibles::{Inspect, Mutate, Transfer},
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, ContainsPair, Currency, Everything,
+        Imbalance, InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -36,16 +37,15 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureSigned,
 };
+use pallet_contracts::Determinism;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::{ConstBool, H256};
 use sp_runtime::{
-    DispatchResult,
     testing::Header,
     traits::{AccountIdConversion, Convert, IdentityLookup},
-    AccountId32, Perbill, RuntimeDebug,
+    AccountId32, DispatchResult, Perbill, RuntimeDebug,
 };
 use sp_std::prelude::*;
-use pallet_contracts::Determinism;
 
 use super::msg_queue::*;
 use xcm::latest::prelude::{AssetId as XcmAssetId, *};
@@ -53,18 +53,19 @@ use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
     EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, IsConcrete,
-    NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, NonFungiblesAdapter
+    NoChecking, NonFungiblesAdapter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
+use polkadot_parachain::primitives::Sibling;
 use xcm_primitives::{
-    AssetLocationIdConverter, FixedRateOfForeignAsset, 
-    // ReserveAssetFilter, 
+    AssetLocationIdConverter,
+    FixedRateOfForeignAsset,
+    // ReserveAssetFilter,
     XcmFungibleFeeHandler,
 };
-use polkadot_parachain::primitives::Sibling;
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -601,8 +602,6 @@ impl pallet_xcm::Config for Runtime {
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
-
-
 type CollectionId = MultiLocation;
 type ItemId = AssetInstance;
 
@@ -613,9 +612,8 @@ const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
 impl Mutate<AccountId> for NftAdapter {
     fn mint_into(collection_ml: &CollectionId, _item: &ItemId, _who: &AccountId) -> DispatchResult {
         log::debug!(target: "runtime", "########### ParaC mint_into \n###coll: {:?} \n###item: {:?} \n###who: {:?}", collection_ml, _item, _who);
-        let contract_id =  match collection_ml.interior()
-        {
-            X2(Parachain(..), Junction::AccountId32{id, ..}) => id,
+        let contract_id = match collection_ml.interior() {
+            X2(Parachain(..), Junction::AccountId32 { id, .. }) => id,
             _ => return Err("Invalid collection id".into()),
         };
 
@@ -668,7 +666,6 @@ impl Inspect<AccountId> for NftAdapter {
     }
 }
 
-
 pub type SovereignAccountOf = (
     SiblingParachainConvertsVia<Sibling, AccountId>,
     AccountId32Aliases<RelayNetwork, AccountId>,
@@ -684,8 +681,6 @@ pub type NonFungiblesTransactor = NonFungiblesAdapter<
     NoChecking,
     (),
 >;
-
-
 
 construct_runtime!(
     pub enum Runtime where

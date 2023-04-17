@@ -167,7 +167,6 @@ pub fn para_c_ext(para_id: u32) -> sp_io::TestExternalities {
             (ALICE, INITIAL_BALANCE),
             (sibling_account_id(1), INITIAL_BALANCE),
             (sibling_account_id(2), INITIAL_BALANCE),
-            (sibling_account_id(3), INITIAL_BALANCE),
         ],
     }
     .assimilate_storage(&mut t)
