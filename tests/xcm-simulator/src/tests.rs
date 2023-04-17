@@ -181,7 +181,7 @@ fn para_to_para_reserve_transfer_and_back() {
             parachain::RuntimeOrigin::root(),
             sibling_asset_id,
             para_a_multiloc.clone(),
-            sibling_account_id(1),
+            sibling_para_account_id(1),
             Some(true),
             Some(1),
             Some(1_000_000_000_000)
@@ -208,7 +208,7 @@ fn para_to_para_reserve_transfer_and_back() {
 
         // Parachain 2 sovereign account should have it's balance increased, while Alice balance should be decreased.
         assert_eq!(
-            parachain::Balances::free_balance(&sibling_account_id(2)),
+            parachain::Balances::free_balance(&sibling_para_account_id(2)),
             INITIAL_BALANCE + withdraw_amount
         );
         assert_eq!(
@@ -250,7 +250,7 @@ fn para_to_para_reserve_transfer_and_back() {
     ParaA::execute_with(|| {
         // ParaB soveregin account account should have only the execution cost
         assert_eq!(
-            parachain::Balances::free_balance(&sibling_account_id(2)),
+            parachain::Balances::free_balance(&sibling_para_account_id(2)),
             INITIAL_BALANCE + four_instructions_execution_cost
         );
         // ParaA alice should have initial amount backed subtracted with execution costs
@@ -302,7 +302,7 @@ fn para_to_para_reserve_transfer_local_asset() {
             parachain::RuntimeOrigin::root(),
             asset_id,
             para_a_local_asset,
-            sibling_account_id(1),
+            sibling_para_account_id(1),
             Some(true),
             Some(1),
             // free execution
@@ -377,7 +377,7 @@ fn receive_relay_asset_from_relay() {
 
         // Parachain A sovereign account should have it's balance increased, while Alice balance should be decreased.
         assert_eq!(
-            relay_chain::Balances::free_balance(&child_account_id(1)),
+            relay_chain::Balances::free_balance(&child_para_account_id(1)),
             INITIAL_BALANCE + withdraw_amount
         );
         assert_eq!(
@@ -479,7 +479,7 @@ fn send_relay_asset_to_relay() {
 
 // Send relay asset (like DOT) back from Parachain A to Parachain B
 #[test]
-fn send_relay_asset_to_para_b() {
+fn para_a_send_relay_asset_to_para_b() {
     MockNet::reset();
 
     let source_location = (Parent,);
@@ -817,7 +817,7 @@ fn remote_dapps_staking_staker_claim() {
         // Register para A sovereign account as proxy with dApps staking privileges
         assert_ok!(parachain::Proxy::add_proxy(
             parachain::RuntimeOrigin::signed(ALICE),
-            sibling_account_id(1),
+            sibling_para_account_id(1),
             parachain::ProxyType::StakerRewardClaim,
             0
         ));

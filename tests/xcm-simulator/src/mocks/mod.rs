@@ -79,7 +79,6 @@ pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
 pub type ParachainContracts = pallet_contracts::Pallet<parachain::Runtime>;
-// pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
 
 pub fn parent_account_id() -> parachain::AccountId {
     let location = (Parent,);
@@ -87,13 +86,13 @@ pub fn parent_account_id() -> parachain::AccountId {
 }
 
 /// Derive parachain sovereign account on relay chain, from parachain Id
-pub fn child_account_id(para: u32) -> relay_chain::AccountId {
+pub fn child_para_account_id(para: u32) -> relay_chain::AccountId {
     let location = (Parachain(para),);
     relay_chain::LocationToAccountId::convert(location.into()).unwrap()
 }
 
 /// Derive parachain sovereign account on a sibling parachain, from parachain Id
-pub fn sibling_account_id(para: u32) -> parachain::AccountId {
+pub fn sibling_para_account_id(para: u32) -> parachain::AccountId {
     let location = (Parent, X1(Parachain(para)));
     parachain::LocationToAccountId::convert(location.into()).unwrap()
 }
@@ -109,8 +108,8 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
     pallet_balances::GenesisConfig::<Runtime> {
         balances: vec![
             (ALICE, INITIAL_BALANCE),
-            (sibling_account_id(1), INITIAL_BALANCE),
-            (sibling_account_id(2), INITIAL_BALANCE),
+            (sibling_para_account_id(1), INITIAL_BALANCE),
+            (sibling_para_account_id(2), INITIAL_BALANCE),
         ],
     }
     .assimilate_storage(&mut t)
@@ -139,8 +138,8 @@ pub fn relay_ext() -> sp_io::TestExternalities {
     pallet_balances::GenesisConfig::<Runtime> {
         balances: vec![
             (ALICE, INITIAL_BALANCE),
-            (child_account_id(1), INITIAL_BALANCE),
-            (child_account_id(2), INITIAL_BALANCE),
+            (child_para_account_id(1), INITIAL_BALANCE),
+            (child_para_account_id(2), INITIAL_BALANCE),
         ],
     }
     .assimilate_storage(&mut t)
@@ -229,7 +228,7 @@ pub fn deploy_contract<T: pallet_contracts::Config>(
     // make sure it does not revert
     let result = outcome.result.unwrap();
     assert!(
-        result.result.did_revert() == false,
+        !result.result.did_revert(),
         "deploy_contract: reverted - {:?}",
         result
     );

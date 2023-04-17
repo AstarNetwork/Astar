@@ -16,7 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::mocks::{msg_queue::mock_msg_queue, parachain, *};
+use crate::mocks::{
+    msg_queue::mock_msg_queue,
+    parachain::{self, System},
+    *,
+};
 
 use frame_support::{assert_ok, weights::Weight};
 use pallet_contracts::Determinism;
@@ -28,7 +32,7 @@ use xcm_simulator::TestExt;
 const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
 
 #[test]
-fn basic_xcmp_outcome() {
+fn basic_xcmp_transact_outcome_query_resoonse() {
     MockNet::reset();
 
     // basic remark call
@@ -44,7 +48,9 @@ fn basic_xcmp_outcome() {
             items: vec![(vec![0], vec![1])],
         });
 
-    let send_transcat = |call: parachain::RuntimeCall, dest: MultiLocation| {
+    // Closure for sending Transact(call) expecting success to dest returning
+    // query id for response
+    let send_transact = |call: parachain::RuntimeCall, dest: MultiLocation| {
         let mut xcm = Xcm(vec![
             WithdrawAsset((Here, 100_000_000_000_u128).into()),
             BuyExecution {
@@ -60,7 +66,8 @@ fn basic_xcmp_outcome() {
         ]);
 
         // this will register the query and add `SetApendix` with `ReportError`.
-        ParachainPalletXcm::report_outcome(&mut xcm, dest, Bounded::max_value()).unwrap();
+        let query_id =
+            ParachainPalletXcm::report_outcome(&mut xcm, dest, Bounded::max_value()).unwrap();
         // We have to swap the appendix instruction with widthraw & buy execution
         // to make barrier(AllowTopLevelPaidExecutionFrom) happy.
         xcm.0.swap(0, 1);
@@ -68,13 +75,15 @@ fn basic_xcmp_outcome() {
 
         // send the XCM to ParaB
         assert_ok!(ParachainPalletXcm::send_xcm(Here, dest, xcm,));
+        query_id
     };
 
     // send the remark Transct to ParaB expecting success and have outcome back
     // TODO: do not use `pallet_xcm::report_outcome()` directly,
     //       build a mock pallet to wrap it in a dispatch
-    ParaA::execute_with(move || {
-        send_transcat(remark, (Parent, Parachain(2)).into());
+    let mut query_id_success = 999u64;
+    ParaA::execute_with(|| {
+        query_id_success = send_transact(remark, (Parent, Parachain(2)).into());
     });
 
     // check for if remark was executed in ParaB
@@ -85,21 +94,36 @@ fn basic_xcmp_outcome() {
             r.event,
             RuntimeEvent::System(frame_system::Event::Remarked { .. })
         )));
+
+        // clear the events
+        System::reset_events();
     });
 
     // check the outcome we recieved from ParaB
-    ParaA::execute_with(|| {
+    ParaA::execute_with(move || {
         let xcms = parachain::MsgQueue::received_xcmp();
         // sanity check
-        assert!(xcms.len() == 1 && xcms[0].len() == 1);
+        assert!(
+            xcms.len() == 1,
+            "Expected only one XCMP message, found {}",
+            xcms.len()
+        );
+        assert!(
+            xcms[0].len() == 1,
+            "Response XCM should only have one instruction, i.e QueryResponse, found {}",
+            xcms[0].len()
+        );
         assert!(matches!(
             xcms[0].0.as_slice(),
             &[QueryResponse {
-                query_id: 0,
+                query_id,
                 response: Response::ExecutionResult(None),
                 ..
-            }]
+            }] if query_id == query_id_success
         ));
+
+        // clear the events
+        System::reset_events();
     });
 
     //
@@ -109,8 +133,9 @@ fn basic_xcmp_outcome() {
     // send the root_call Transct to ParaB expecting failure and have outcome back
     // TODO: do not use `pallet_xcm::report_outcome()` directly,
     //       build a mock pallet to wrap it in a dispatch
-    ParaA::execute_with(move || {
-        send_transcat(root_call, (Parent, Parachain(2)).into());
+    let mut query_id_failure = 999u64;
+    ParaA::execute_with(|| {
+        query_id_failure = send_transact(root_call, (Parent, Parachain(2)).into());
     });
 
     // check for if remark was executed in ParaB
@@ -131,10 +156,10 @@ fn basic_xcmp_outcome() {
         assert!(matches!(
             xcms[1].0.as_slice(),
             &[QueryResponse {
-                query_id: 1,
+                query_id,
                 response: Response::ExecutionResult(Some((4, xcm::v3::Error::ExpectationFalse))),
                 ..
-            }]
+            }] if query_id == query_id_failure
         ));
     });
 }
@@ -173,7 +198,7 @@ fn xcm_remote_transact_contract() {
         );
         let res = outcome.result.unwrap();
         // check for revert
-        assert!(res.did_revert() == false);
+        assert!(!res.did_revert());
         // decode the return value
         let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
         assert_eq!(flag, Ok(true));
@@ -195,7 +220,6 @@ fn xcm_remote_transact_contract() {
                 fees: (Here, INITIAL_BALANCE).into(),
                 weight_limit: Unlimited,
             },
-            SetAppendix(Xcm(vec![RefundSurplus])),
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
                 require_weight_at_most: Weight::from_parts(100_000_000_000_000, 1024 * 1024 * 1024),
