@@ -14931,6 +14931,7 @@ dependencies = [
  "cumulus-pallet-xcm",
  "frame-support",
  "frame-system",
+ "hex-literal",
  "log",
  "pallet-assets",
  "pallet-balances",

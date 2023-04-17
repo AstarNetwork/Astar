@@ -12,6 +12,7 @@ log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
+hex-literal = "0.3.4"
 
 # Base functionality
 frame-support = { workspace = true }

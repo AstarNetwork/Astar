@@ -256,7 +256,7 @@ fn transfer_nft_to_smart_contract() {
             sibling_account_id(1),
             Some(true),
             Some(1),
-            Some(1_000)
+            Some(0)
         ));
         println!(
             "####### ParaC register_asset_id: {:?}, sibling_account_id(1): {:?}",
@@ -303,11 +303,11 @@ fn transfer_nft_to_smart_contract() {
             fun: Fungible(100_000_000_000),
         };
 
-        let all_assets: Vec<MultiAsset> = vec![nft_multiasset.clone(), native_multiasset.clone()];
+        let all_assets: Vec<MultiAsset> = vec![native_multiasset.clone(), nft_multiasset.clone()];
 
         // Alice transfers the NFT to ParaC
         assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
-            parachain::RuntimeOrigin::root(),
+            parachain::RuntimeOrigin::signed(ALICE),
             Box::new(MultiLocation::new(1, X1(Parachain(3))).into()),
             Box::new(
                 MultiLocation::new(

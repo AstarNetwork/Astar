@@ -612,10 +612,13 @@ const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
 impl Mutate<AccountId> for NftAdapter {
     fn mint_into(collection_ml: &CollectionId, _item: &ItemId, _who: &AccountId) -> DispatchResult {
         log::debug!(target: "runtime", "########### ParaC mint_into \n###coll: {:?} \n###item: {:?} \n###who: {:?}", collection_ml, _item, _who);
-        let contract_id = match collection_ml.interior() {
-            X2(Parachain(..), Junction::AccountId32 { id, .. }) => id,
+        let _collection_id = match collection_ml.interior() {
+            X3(Parachain(..), PalletInstance(..), GeneralIndex(id)) => id,
             _ => return Err("Invalid collection id".into()),
         };
+        let contract_id: AccountId32 =
+            hex_literal::hex!["f66ae551469a1fc9134253ba36e528126af1e4db971c8a26c9efc08beba258f5"]
+                .into();
 
         let _outcome = Contracts::bare_call(
             ALICE.into(),
