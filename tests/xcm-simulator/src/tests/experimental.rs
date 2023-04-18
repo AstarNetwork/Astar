@@ -51,12 +51,21 @@ fn basic_xcmp_transact_outcome_query_response() {
     // Closure for sending Transact(call) expecting success to dest returning
     // query id for response
     let send_transact = |call: parachain::RuntimeCall, dest: MultiLocation| {
-        let mut xcm = Xcm(vec![
+        // this will register the query and add `SetApendix` with `ReportError`.
+        let query_id = ParachainPalletXcm::new_query(dest, Bounded::max_value(), Here);
+
+        // build xcm message
+        let xcm = Xcm(vec![
             WithdrawAsset((Here, 100_000_000_000_u128).into()),
             BuyExecution {
                 fees: (Here, 100_000_000_000_u128).into(),
                 weight_limit: Unlimited,
             },
+            SetAppendix(Xcm(vec![ReportError(QueryResponseInfo {
+                destination: (Parent, Parachain(1)).into(),
+                query_id,
+                max_weight: Weight::zero(),
+            })])),
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
                 require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
@@ -65,22 +74,12 @@ fn basic_xcmp_transact_outcome_query_response() {
             ExpectTransactStatus(MaybeErrorCode::Success),
         ]);
 
-        // this will register the query and add `SetApendix` with `ReportError`.
-        let query_id =
-            ParachainPalletXcm::report_outcome(&mut xcm, dest, Bounded::max_value()).unwrap();
-        // We have to swap the appendix instruction with widthraw & buy execution
-        // to make barrier(AllowTopLevelPaidExecutionFrom) happy.
-        xcm.0.swap(0, 1);
-        xcm.0.swap(1, 2);
-
         // send the XCM to ParaB
         assert_ok!(ParachainPalletXcm::send_xcm(Here, dest, xcm,));
         query_id
     };
 
     // send the remark Transct to ParaB expecting success and have outcome back
-    // TODO: do not use `pallet_xcm::report_outcome()` directly,
-    //       build a mock pallet to wrap it in a dispatch
     let mut query_id_success = 999u64;
     ParaA::execute_with(|| {
         query_id_success = send_transact(remark, (Parent, Parachain(2)).into());
@@ -131,8 +130,6 @@ fn basic_xcmp_transact_outcome_query_response() {
     //
 
     // send the root_call Transct to ParaB expecting failure and have outcome back
-    // TODO: do not use `pallet_xcm::report_outcome()` directly,
-    //       build a mock pallet to wrap it in a dispatch
     let mut query_id_failure = 999u64;
     ParaA::execute_with(|| {
         query_id_failure = send_transact(root_call, (Parent, Parachain(2)).into());
