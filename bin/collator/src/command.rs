@@ -927,7 +927,8 @@ pub fn run() -> Result<()> {
                         enable_evm_rpc: cli.enable_evm_rpc,
                         proposer_block_size_limit: cli.proposer_block_size_limit,
                         proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                    },additional_config)
+                        additional_config
+                    })
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
@@ -940,7 +941,8 @@ pub fn run() -> Result<()> {
                         enable_evm_rpc: cli.enable_evm_rpc,
                         proposer_block_size_limit: cli.proposer_block_size_limit,
                         proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                    }, additional_config)
+                        additional_config
+                    })
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
@@ -953,7 +955,8 @@ pub fn run() -> Result<()> {
                         enable_evm_rpc: cli.enable_evm_rpc,
                         proposer_block_size_limit: cli.proposer_block_size_limit,
                         proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                    }, additional_config)
+                        additional_config
+                    })
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
