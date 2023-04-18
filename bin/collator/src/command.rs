@@ -21,9 +21,8 @@ use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
     local::{self, development_config},
     parachain::{
-        self, astar, chain_spec,
-        service::{AdditionalConfig, StartupConfiguration},
-        shibuya, shiden, start_astar_node, start_shibuya_node, start_shiden_node,
+        self, astar, chain_spec, service::AdditionalConfig, shibuya, shiden, start_astar_node,
+        start_shibuya_node, start_shiden_node,
     },
     primitives::Block,
 };
@@ -846,8 +845,12 @@ pub fn run() -> Result<()> {
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
+
+            #[cfg(not(feature = "evm-tracing"))]
             let additional_config = AdditionalConfig {
-                evm_tracing_config: None,
+                enable_evm_rpc: cli.enable_evm_rpc,
+                proposer_block_size_limit: cli.proposer_block_size_limit,
+                proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
             };
 
             #[cfg(feature = "evm-tracing")]
@@ -915,48 +918,39 @@ pub fn run() -> Result<()> {
 
                 #[cfg(feature = "evm-tracing")]
                 let additional_config = AdditionalConfig {
-                    evm_tracing_config: Some(evm_tracing_config),
+                    evm_tracing_config: evm_tracing_config,
+                    enable_evm_rpc: cli.enable_evm_rpc,
+                    proposer_block_size_limit: cli.proposer_block_size_limit,
+                    proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent
                 };
 
                 if config.chain_spec.is_astar() {
-                    start_astar_node( StartupConfiguration {
-                        parachain_config: config,
+                    start_astar_node(
+                        config,
                         polkadot_config,
                         collator_options,
-                        id: para_id,
-                        enable_evm_rpc: cli.enable_evm_rpc,
-                        proposer_block_size_limit: cli.proposer_block_size_limit,
-                        proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
+                        para_id,
                         additional_config
-                    })
+                    )
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shiden() {
-                    start_shiden_node( StartupConfiguration {
-                        parachain_config: config,
+                    start_shiden_node( config,
                         polkadot_config,
                         collator_options,
-                        id: para_id,
-                        enable_evm_rpc: cli.enable_evm_rpc,
-                        proposer_block_size_limit: cli.proposer_block_size_limit,
-                        proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
+                        para_id,
                         additional_config
-                    })
+                    )
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shibuya() {
-                    start_shibuya_node( StartupConfiguration {
-                        parachain_config: config,
+                    start_shibuya_node( config,
                         polkadot_config,
                         collator_options,
-                        id: para_id,
-                        enable_evm_rpc: cli.enable_evm_rpc,
-                        proposer_block_size_limit: cli.proposer_block_size_limit,
-                        proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-                        additional_config
-                    })
+                        para_id,
+                        additional_config)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)

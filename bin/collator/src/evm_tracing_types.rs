@@ -47,6 +47,8 @@ impl std::str::FromStr for EthApi {
     }
 }
 
+#[allow(dead_code)]
+#[derive(Clone)]
 /// EVM tracing CLI config.
 pub struct EvmTracingConfig {
     /// Enabled EVM tracing flags.
