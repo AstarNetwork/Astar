@@ -98,6 +98,23 @@ pub fn sibling_para_account_id(para: u32) -> parachain::AccountId {
     parachain::LocationToAccountId::convert(location.into()).unwrap()
 }
 
+/// Derive parachain's account's account on a sibling parachain
+pub fn sibling_para_account_account_id(
+    para: u32,
+    who: sp_runtime::AccountId32,
+) -> parachain::AccountId {
+    let location = (
+        Parent,
+        Parachain(para),
+        AccountId32 {
+            // we have kusama as relay in mock
+            network: Some(Kusama),
+            id: who.into(),
+        },
+    );
+    parachain::LocationToAccountId::convert(location.into()).unwrap()
+}
+
 /// Prepare parachain test externality
 pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
     use parachain::{MsgQueue, Runtime, System};
@@ -109,6 +126,8 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
     pallet_balances::GenesisConfig::<Runtime> {
         balances: vec![
             (ALICE, INITIAL_BALANCE),
+            (sibling_para_account_account_id(1, ALICE), INITIAL_BALANCE),
+            (sibling_para_account_account_id(2, ALICE), INITIAL_BALANCE),
             (sibling_para_account_id(1), INITIAL_BALANCE),
             (sibling_para_account_id(2), INITIAL_BALANCE),
         ],

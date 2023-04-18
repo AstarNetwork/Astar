@@ -57,7 +57,7 @@ pub mod mock_msg_queue {
 
     #[pallet::storage]
     #[pallet::getter(fn received_xcmp)]
-    /// A queue of received DMP messages
+    /// A queue of received XCMP messages
     pub(super) type ReceivedXcmp<T: Config> = StorageValue<_, Vec<Xcm<T::RuntimeCall>>, ValueQuery>;
 
     impl<T: Config> Get<ParaId> for Pallet<T> {

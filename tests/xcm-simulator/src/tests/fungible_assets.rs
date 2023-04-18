@@ -347,6 +347,8 @@ fn para_a_send_relay_asset_to_para_b() {
         );
     });
 
+    //TODO: Replace the manual XCM message with XTokens call
+    //      when we have it integrated.
     // send relay asset to ParaB
     ParaA::execute_with(|| {
         let xcm = Xcm(vec![

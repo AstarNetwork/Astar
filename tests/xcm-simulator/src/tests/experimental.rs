@@ -32,7 +32,7 @@ use xcm_simulator::TestExt;
 const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
 
 #[test]
-fn basic_xcmp_transact_outcome_query_resoonse() {
+fn basic_xcmp_transact_outcome_query_response() {
     MockNet::reset();
 
     // basic remark call
@@ -230,8 +230,7 @@ fn xcm_remote_transact_contract() {
 
         // send the XCM to ParaA
         assert_ok!(ParachainPalletXcm::send(
-            // only root origin can call because we don't support DescendOrigin yet
-            parachain::RuntimeOrigin::root(),
+            parachain::RuntimeOrigin::signed(ALICE),
             Box::new((Parent, Parachain(1)).into()),
             Box::new(VersionedXcm::V3(xcm)),
         ));
