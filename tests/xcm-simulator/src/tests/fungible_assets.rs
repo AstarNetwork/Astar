@@ -190,13 +190,19 @@ fn para_to_para_reserve_transfer_local_asset() {
         );
     });
 }
+
 // Send a relay asset (like DOT/KSM) to a parachain A
+// and send it back from Parachain A to relaychain
 #[test]
-fn receive_relay_asset_from_relay() {
+fn receive_relay_asset_from_relay_and_send_them_back() {
     MockNet::reset();
 
-    let relay_asset_id = 123 as u128;
     let source_location = (Parent,);
+    let relay_asset_id = 123_u128;
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
 
     // On parachain A create an asset which representes a derivative of relay native asset.
     // This asset is allowed as XCM execution fee payment asset.
@@ -218,14 +224,7 @@ fn receive_relay_asset_from_relay() {
         assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
-            Box::new(
-                AccountId32 {
-                    network: None,
-                    id: ALICE.into()
-                }
-                .into_location()
-                .into_versioned()
-            ),
+            Box::new(alice.into()),
             Box::new((Here, withdraw_amount).into()),
             0,
         ));
@@ -243,76 +242,33 @@ fn receive_relay_asset_from_relay() {
 
     // Parachain A should receive relay native assets and should mint their local derivate.
     // Portion of those assets should be taken as the XCM execution fee.
+    let four_instructions_execution_cost =
+        (parachain::UnitWeightCost::get() * 4).ref_time() as u128;
+    let para_a_alice_expected_balance = withdraw_amount - four_instructions_execution_cost;
     ParaA::execute_with(|| {
         // Ensure Alice received assets on ParaA (sent amount minus expenses)
-        let four_instructions_execution_cost = parachain::UnitWeightCost::get() * 4;
         assert_eq!(
             parachain::Assets::balance(relay_asset_id, ALICE),
-            withdraw_amount - four_instructions_execution_cost.ref_time() as u128
+            para_a_alice_expected_balance
         );
     });
-}
 
-// Send relay asset (like DOT) back from Parachain A to relaychain
-#[test]
-fn send_relay_asset_to_relay() {
-    MockNet::reset();
-
-    let source_location = (Parent,);
-    let relay_asset_id = 123_u128;
-    let alice = AccountId32 {
-        network: None,
-        id: ALICE.into(),
-    };
-
-    // On parachain A create an asset which representes a derivative of relay native asset.
-    // This asset is allowed as XCM execution fee payment asset.
-    // Register relay asset in paraA
-    ParaA::execute_with(|| {
-        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
-            parachain::RuntimeOrigin::root(),
-            relay_asset_id,
-            source_location,
-            parent_account_id(),
-            Some(true),
-            Some(123),
-            Some(0)
-        ));
-    });
-
-    // Next step is to send some of relay native asset to parachain A.
-    // same as previous test
-    let withdraw_amount = 54321;
-    Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
-            relay_chain::RuntimeOrigin::signed(ALICE),
-            Box::new(Parachain(1).into()),
-            Box::new(alice.into_location().into_versioned()),
-            Box::new((Here, withdraw_amount).into()),
-            0,
-        ));
-    });
-
-    ParaA::execute_with(|| {
-        // Free execution, full amount received
-        assert_eq!(
-            parachain::Assets::balance(relay_asset_id, ALICE),
-            withdraw_amount
-        );
-    });
+    //
+    // Send the relay assets back to relay
+    //
 
     // Lets gather the balance before sending back money
-    let mut balance_before_sending = 0;
+    let mut relay_alice_balance_before_sending = 0;
     Relay::execute_with(|| {
-        balance_before_sending = relay_chain::Balances::free_balance(&ALICE);
+        relay_alice_balance_before_sending = relay_chain::Balances::free_balance(&ALICE);
     });
 
     ParaA::execute_with(|| {
         assert_ok!(ParachainPalletXcm::reserve_withdraw_assets(
             parachain::RuntimeOrigin::signed(ALICE),
             Box::new(Parent.into()),
-            Box::new(alice.into_location().into_versioned()),
-            Box::new((Parent, withdraw_amount).into()),
+            Box::new(alice.into()),
+            Box::new((Parent, para_a_alice_expected_balance).into()),
             0,
         ));
     });
@@ -325,11 +281,8 @@ fn send_relay_asset_to_relay() {
     // Balances in the relay should have been received
     Relay::execute_with(|| {
         // free execution,x	 full amount received
-        assert!(relay_chain::Balances::free_balance(ALICE) > balance_before_sending);
+        assert!(relay_chain::Balances::free_balance(ALICE) > relay_alice_balance_before_sending);
     });
-
-    // // To get logs
-    // std::thread::sleep(std::time::Duration::from_millis(4000));
 }
 
 // Send relay asset (like DOT) back from Parachain A to Parachain B
