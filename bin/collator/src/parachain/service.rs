@@ -1746,7 +1746,7 @@ pub async fn start_shibuya_node(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
 )> {
-       start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
+    start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
         parachain_config,
         polkadot_config,
         collator_options,
