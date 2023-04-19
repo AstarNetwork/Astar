@@ -846,7 +846,6 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
-
             #[cfg(feature = "evm-tracing")]
             let evm_tracing_config = crate::evm_tracing_types::EvmTracingConfig {
                 ethapi: cli.eth_api_options.ethapi,
@@ -910,7 +909,6 @@ pub fn run() -> Result<()> {
                     }
                 );
 
-                
                 let additional_config = AdditionalConfig {
                     #[cfg(feature = "evm-tracing")]
                     evm_tracing_config: evm_tracing_config,
