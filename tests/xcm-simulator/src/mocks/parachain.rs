@@ -19,21 +19,29 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    construct_runtime, match_types, parameter_types,
+    construct_runtime,
+    dispatch::DispatchClass,
+    match_types, parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance,
         InstanceFilter, Nothing, OnUnbalanced,
     },
-    weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
+    weights::{
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
+        Weight,
+    },
     PalletId,
 };
-use frame_system::EnsureSigned;
+use frame_system::{
+    limits::{BlockLength, BlockWeights},
+    EnsureSigned,
+};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use sp_core::H256;
+use sp_core::{ConstBool, H256};
 use sp_runtime::{
     testing::Header,
-    traits::{AccountIdConversion, IdentityLookup},
-    AccountId32, RuntimeDebug,
+    traits::{AccountIdConversion, Convert, IdentityLookup},
+    AccountId32, Perbill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -45,7 +53,7 @@ use xcm_builder::{
     EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, IsConcrete,
     NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit,
+    SovereignSignedViaLocation, TakeWeightCredit, WithComputedOrigin,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -136,6 +144,100 @@ impl pallet_assets::Config for Runtime {
     type RemoveItemsLimit = ConstU32<100>;
     type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_timestamp::Config for Runtime {
+    type Moment = u64;
+    type OnTimestampSet = ();
+    type MinimumPeriod = ConstU64<1>;
+    type WeightInfo = ();
+}
+
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
+
+/// Constant values used within the runtime.
+pub const MICROSDN: Balance = 1_000_000_000_000;
+pub const MILLISDN: Balance = 1_000 * MICROSDN;
+/// We assume that ~10% of the block weight is consumed by `on_initalize` handlers.
+/// This is used to limit the maximal weight of a single extrinsic.
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
+/// by  Operational  extrinsics.
+const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+/// We allow for 0.5 seconds of compute with a 6 second average block time.
+const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
+    WEIGHT_REF_TIME_PER_SECOND.saturating_div(2),
+    polkadot_primitives::MAX_POV_SIZE as u64,
+);
+
+parameter_types! {
+    pub RuntimeBlockLength: BlockLength =
+        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+        .base_block(BlockExecutionWeight::get())
+        .for_class(DispatchClass::all(), |weights| {
+            weights.base_extrinsic = ExtrinsicBaseWeight::get();
+        })
+        .for_class(DispatchClass::Normal, |weights| {
+            weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+        })
+        .for_class(DispatchClass::Operational, |weights| {
+            weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+            // Operational transactions have some extra reserved space, so that they
+            // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+            weights.reserved = Some(
+                MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+            );
+        })
+        .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+        .build_or_panic();
+    pub SS58Prefix: u8 = 5;
+}
+
+// TODO: changing depost per item and per byte to `deposit` function will require storage migration it seems
+parameter_types! {
+    pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
+    pub const DepositPerByte: Balance = MILLISDN / 1_000_000;
+    // The lazy deletion runs inside on_initialize.
+    pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
+        RuntimeBlockWeights::get().max_block;
+    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
+}
+
+impl Convert<Weight, Balance> for Runtime {
+    fn convert(w: Weight) -> Balance {
+        w.ref_time().into()
+    }
+}
+
+impl pallet_contracts::Config for Runtime {
+    type Time = Timestamp;
+    type Randomness = Randomness;
+    type Currency = Balances;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    /// The safest default is to allow no calls at all.
+    ///
+    /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
+    /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
+    /// change because that would break already deployed contracts. The `Call` structure itself
+    /// is not allowed to change the indices of existing pallets, too.
+    type CallFilter = Nothing;
+    type DepositPerItem = DepositPerItem;
+    type DepositPerByte = DepositPerByte;
+    type CallStack = [pallet_contracts::Frame<Self>; 5];
+    /// We are not using the pallet_transaction_payment for simplicity
+    type WeightPrice = Self;
+    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
+    type ChainExtension = ();
+    type DeletionQueueDepth = ConstU32<128>;
+    type DeletionWeightLimit = DeletionWeightLimit;
+    type Schedule = Schedule;
+    type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+    type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
+    type MaxStorageKeyLen = ConstU32<128>;
+    type UnsafeUnstableInterface = ConstBool<false>;
+    type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
 pub struct BurnFees;
@@ -379,7 +481,8 @@ match_types! {
 
 pub type XcmBarrier = (
     TakeWeightCredit,
-    AllowTopLevelPaidExecutionFrom<Everything>,
+    // This will first calculate the derived origin, before checking it against the barrier implementation
+    WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, UniversalLocation, ConstU32<8>>,
     // Parent and its plurality get free execution
     AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
     // Expected responses are OK.
@@ -477,5 +580,8 @@ construct_runtime!(
         DappsStaking: pallet_dapps_staking::{Pallet, Call, Event<T>},
         Proxy: pallet_proxy::{Pallet, Call, Event<T>},
         Utility: pallet_utility::{Pallet, Call, Event},
+        Randomness: pallet_insecure_randomness_collective_flip::{Pallet, Storage},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
     }
 );

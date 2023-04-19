@@ -16,11 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::mocks::{parachain, relay_chain, *};
+use crate::mocks::{msg_queue::mock_msg_queue, parachain, relay_chain, *};
 
 use frame_support::{assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
-use xcm::latest::prelude::*;
+use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
 #[test]
@@ -91,72 +91,95 @@ fn basic_ump() {
 }
 
 #[test]
-fn para_to_para_reserve_transfer() {
+fn basic_xcmp() {
     MockNet::reset();
 
-    let sibling_asset_id = 123 as u128;
-    let para_a_multiloc = Box::new(MultiLocation::new(1, X1(Parachain(1))).into_versioned());
-
-    // On parachain B create an asset which representes a derivative of parachain A native asset.
-    // This asset is allowed as XCM execution fee payment asset.
-    ParaB::execute_with(|| {
-        assert_ok!(parachain::Assets::force_create(
-            parachain::RuntimeOrigin::root(),
-            sibling_asset_id,
-            sibling_para_account_id(1),
-            true,
-            1
-        ));
-        assert_ok!(ParachainXcAssetConfig::register_asset_location(
-            parachain::RuntimeOrigin::root(),
-            para_a_multiloc.clone(),
-            sibling_asset_id
-        ));
-        assert_ok!(ParachainXcAssetConfig::set_asset_units_per_second(
-            parachain::RuntimeOrigin::root(),
-            para_a_multiloc,
-            1_000_000_000_000, // each unit of weight charged exactly 1
+    let remark = parachain::RuntimeCall::System(
+        frame_system::Call::<parachain::Runtime>::remark_with_event {
+            remark: vec![1, 2, 3],
+        },
+    );
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainPalletXcm::send_xcm(
+            Here,
+            (Parent, Parachain(2)),
+            Xcm(vec![
+                WithdrawAsset((Here, 100_000_000_000_u128).into()),
+                BuyExecution {
+                    fees: (Here, 100_000_000_000_u128).into(),
+                    weight_limit: Unlimited
+                },
+                Transact {
+                    origin_kind: OriginKind::SovereignAccount,
+                    require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
+                    call: remark.encode().into(),
+                }
+            ]),
         ));
     });
 
-    // Next step is to send some of parachain A native asset to parachain B.
-    let withdraw_amount = 567;
+    ParaB::execute_with(|| {
+        use parachain::{RuntimeEvent, System};
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::System(frame_system::Event::Remarked { .. })
+        )));
+    });
+}
+
+#[test]
+fn error_when_not_paying_enough() {
+    MockNet::reset();
+
+    let source_location: MultiLocation = (Parent,).into();
+    let source_id: parachain::AssetId = 123;
+
+    let dest: MultiLocation = Junction::AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    }
+    .into();
+    // This time we are gonna put a rather high number of units per second
+    // Lets put (25 * 1e12) as units per second, later it will be divided by 1e12
+    // to calculate cost
     ParaA::execute_with(|| {
-        assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
-            parachain::RuntimeOrigin::signed(ALICE),
-            Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
-            Box::new(
-                X1(AccountId32 {
-                    network: None,
-                    id: ALICE.into()
-                })
-                .into_location()
-                .into_versioned()
-            ),
-            Box::new((Here, withdraw_amount).into()),
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            source_id,
+            source_location,
+            parent_account_id(),
+            Some(true),
+            Some(1),
+            Some(2_500_000_000_000u128)
+        ));
+    });
+
+    // We are sending 99 tokens from relay.
+    // we know the buy_execution will spend 4 * 25 = 100
+    Relay::execute_with(|| {
+        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+            relay_chain::RuntimeOrigin::signed(ALICE),
+            Box::new(Parachain(1).into()),
+            Box::new(VersionedMultiLocation::V3(dest).clone().into()),
+            Box::new((Here, 99).into()),
             0,
         ));
-
-        // Parachain 2 sovereign account should have it's balance increased, while Alice balance should be decreased.
-        assert_eq!(
-            parachain::Balances::free_balance(&sibling_para_account_id(2)),
-            INITIAL_BALANCE + withdraw_amount
-        );
-        assert_eq!(
-            parachain::Balances::free_balance(&ALICE),
-            INITIAL_BALANCE - withdraw_amount
-        );
     });
 
-    // Parachain B should receive parachain A native assets and should mint their local derivate.
-    // Portion of those assets should be taken as the XCM execution fee.
-    ParaB::execute_with(|| {
-        // Ensure Alice received assets on ParaB (sent amount minus expenses)
-        let four_instructions_execution_cost = parachain::UnitWeightCost::get() * 4;
-        assert_eq!(
-            parachain::Assets::balance(sibling_asset_id, ALICE),
-            withdraw_amount - four_instructions_execution_cost.ref_time() as u128
-        );
+    ParaA::execute_with(|| {
+        use parachain::{RuntimeEvent, System};
+
+        // check for xcm too expensive error
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::MsgQueue(mock_msg_queue::Event::ExecutedDownward(
+                _,
+                Outcome::Incomplete(_, XcmError::TooExpensive)
+            ))
+        )));
+
+        // amount not received as it is not paying enough
+        assert_eq!(ParachainAssets::balance(source_id, &ALICE.into()), 0);
     });
 }
 
@@ -228,7 +251,7 @@ fn remote_dapps_staking_staker_claim() {
                     origin_kind: OriginKind::SovereignAccount,
                     require_weight_at_most: Weight::from_parts(1_000_000_000, 1024 * 1024),
                     call: proxy_call.encode().into(),
-                }
+                },
             ]),
         ));
     });

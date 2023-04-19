@@ -55,6 +55,11 @@ pub mod mock_msg_queue {
     /// A queue of received DMP messages
     pub(super) type ReceivedDmp<T: Config> = StorageValue<_, Vec<Xcm<T::RuntimeCall>>, ValueQuery>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn received_xcmp)]
+    /// A queue of received XCMP messages
+    pub(super) type ReceivedXcmp<T: Config> = StorageValue<_, Vec<Xcm<T::RuntimeCall>>, ValueQuery>;
+
     impl<T: Config> Get<ParaId> for Pallet<T> {
         fn get() -> ParaId {
             Self::parachain_id()
@@ -101,16 +106,22 @@ pub mod mock_msg_queue {
             let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
                 Ok(xcm) => {
                     let location = (Parent, Parachain(sender.into()));
-                    match T::XcmExecutor::execute_xcm(location, xcm, message_hash, max_weight) {
+                    <ReceivedXcmp<T>>::append(xcm.clone());
+                    match T::XcmExecutor::execute_xcm(
+                        location,
+                        xcm.clone(),
+                        message_hash,
+                        max_weight,
+                    ) {
                         Outcome::Error(e) => {
-                            println!("Error in XCMP handling: {:?}", e);
+                            println!("Error in XCMP handling: {:?}, sender=Parachain({sender}), xcm={xcm:?}", e);
                             (Err(e.clone()), Event::Fail(Some(hash), e))
                         }
                         Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
                         // As far as the caller is concerned, this was dispatched without error, so
                         // we just report the weight used.
                         Outcome::Incomplete(w, e) => {
-                            println!("Incomplete XCMP handling: {:?}", e);
+                            println!("Incomplete XCMP handling: {:?}, {sender}", e);
                             (Ok(w), Event::Fail(Some(hash), e))
                         }
                     }
