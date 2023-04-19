@@ -846,12 +846,6 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
-            #[cfg(not(feature = "evm-tracing"))]
-            let additional_config = AdditionalConfig {
-                enable_evm_rpc: cli.enable_evm_rpc,
-                proposer_block_size_limit: cli.proposer_block_size_limit,
-                proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
-            };
 
             #[cfg(feature = "evm-tracing")]
             let evm_tracing_config = crate::evm_tracing_types::EvmTracingConfig {
@@ -916,8 +910,9 @@ pub fn run() -> Result<()> {
                     }
                 );
 
-                #[cfg(feature = "evm-tracing")]
+                
                 let additional_config = AdditionalConfig {
+                    #[cfg(feature = "evm-tracing")]
                     evm_tracing_config: evm_tracing_config,
                     enable_evm_rpc: cli.enable_evm_rpc,
                     proposer_block_size_limit: cli.proposer_block_size_limit,
