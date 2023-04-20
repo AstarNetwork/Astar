@@ -169,7 +169,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 96,
+    spec_version: 97,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1176,6 +1176,15 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
+impl pallet_account::Config for Runtime {
+    type CustomOrigin = pallet_account::NativeAndEVM;
+    type CustomOriginKind = pallet_account::NativeAndEVMKind;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type WeightInfo = ();
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -1228,6 +1237,7 @@ construct_runtime!(
         Preimage: pallet_preimage = 84,
 
         Xvm: pallet_xvm = 90,
+        Account: pallet_account= 91,
 
         Sudo: pallet_sudo = 99,
     }

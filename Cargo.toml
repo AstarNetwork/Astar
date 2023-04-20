@@ -204,6 +204,7 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "r
 
 # Astar pallets & modules
 # (wasm)
+pallet-account = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/pallet-account", default-features = false }
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 pallet-collator-selection = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
