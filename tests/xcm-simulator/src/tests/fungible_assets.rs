@@ -120,6 +120,160 @@ fn para_to_para_reserve_transfer_and_back() {
 }
 
 #[test]
+fn para_to_para_reserve_transfer_and_back_with_extra_native() {
+
+    MockNet::reset();
+
+    let local_asset_id = 123 as u128;
+    let local_asset: MultiLocation = (PalletInstance(4u8), GeneralIndex(local_asset_id)).into();
+
+    let para_a_local_asset = local_asset
+        .clone()
+        .pushed_front_with_interior(Parachain(1))
+        .unwrap()
+        .prepended_with(Parent)
+        .unwrap();
+    
+    let para_b_native: MultiLocation = (Parent,Parachain(2)).into();
+    let para_b_native_on_para_a = 456;
+
+    let mint_amount = 300000000000000;
+
+    let alice = AccountId32 {
+        network: None,
+        id: ALICE.into(),
+    };
+
+    // Local Asset registeration and minting on Parachian A
+    ParaA::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            local_asset_id,
+            local_asset,
+            ALICE.into(),
+            Some(true),
+            Some(1),
+            // free execution
+            Some(0)
+        ));
+
+        assert_ok!(ParachainAssets::mint(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            local_asset_id,
+            ALICE.into(),
+            mint_amount
+        ));
+    });
+
+    // Registration of Local Asset of Para A on Para B
+    ParaB::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            local_asset_id,
+            para_a_local_asset,
+            sibling_para_account_id(1),
+            Some(true),
+            Some(1),
+            // free execution
+            Some(0)
+        ));
+    });
+
+    let send_amount = 123;
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            Box::new((Parent, Parachain(2)).into()),
+            Box::new(
+                AccountId32 {
+                    network: None,
+                    id: ALICE.into(),
+                }
+                .into(),
+            ),
+            Box::new((local_asset, send_amount).into()),
+            0,
+        ));
+    });
+
+    ParaB::execute_with(|| {
+        // free execution, full amount received
+        assert_eq!(
+            ParachainAssets::balance(local_asset_id, &ALICE.into()),
+            send_amount
+        );
+    });
+
+    // Registring Para B native asset on Para A
+    ParaA::execute_with(|| {
+        assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
+            parachain::RuntimeOrigin::root(),
+            para_b_native_on_para_a,
+            para_b_native.clone(),
+            sibling_para_account_id(2),
+            Some(true),
+            Some(1),
+            // free execution
+            Some(0)
+        ));
+    });
+
+    // Sending back Local Asset to Para A with some native asset of Para B
+    ParaB::execute_with( || {
+        let xcm = Xcm(vec![
+            WithdrawAsset((para_a_local_asset,send_amount).into()),
+            InitiateReserveWithdraw { 
+                assets: All.into(), 
+                reserve:(Parent,Parachain(1)).into(), 
+                xcm:  Xcm(vec![
+                    BuyExecution {
+                        fees : (local_asset,send_amount).into(),
+                        weight_limit: Unlimited
+                    },
+                    DepositAsset {
+                        assets : All.into(),
+                        beneficiary: alice.clone().into(),
+                    }
+                ]),
+            },
+            TransferReserveAsset {
+                assets: (Here,send_amount).into(),
+                dest : (Parent,Parachain(1)).into(),
+                xcm : Xcm(vec![
+                    BuyExecution {
+                        fees : (para_b_native,send_amount).into(),
+                        weight_limit: Unlimited
+                    },
+                    DepositAsset {
+                        assets : All.into(),
+                        beneficiary: alice.clone().into(),
+                    }
+                ])
+            },
+            
+        ]);
+
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            Box::new(VersionedXcm::V3(xcm)),
+            Weight::from_parts(100_000_000_000, 1024 * 1024)
+        ));
+    });
+
+    ParaA::execute_with( || {
+        assert_eq!(
+            parachain::Assets::balance(local_asset_id, ALICE),
+            mint_amount
+        );
+        assert_eq!(
+            parachain::Assets::balance(para_b_native_on_para_a, ALICE),
+            send_amount
+        );
+    })
+
+}
+
+#[test]
 fn para_to_para_reserve_transfer_local_asset() {
     MockNet::reset();
 
