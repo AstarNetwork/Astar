@@ -49,7 +49,8 @@ use substrate_prometheus_endpoint::Registry;
 
 use super::shell_upgrade::*;
 #[cfg(feature = "evm-tracing")]
-use crate::cli::{EthApi as EthApiCmd, EvmTracingConfig};
+use crate::evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig};
+
 use crate::primitives::*;
 #[cfg(feature = "evm-tracing")]
 use crate::rpc::tracing;
@@ -309,7 +310,7 @@ async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC>(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
-    enable_evm_rpc: bool,
+    additional_config: AdditionalConfig,
     build_import_queue: BIQ,
     build_consensus: BIC,
 ) -> sc_service::error::Result<(
@@ -500,7 +501,7 @@ where
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
-                enable_evm_rpc,
+                enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
             crate::rpc::create_full(deps, subscription).map_err(Into::into)
@@ -585,23 +586,12 @@ where
     Ok((task_manager, client))
 }
 
-/// Configuration used to start a node
-pub struct StartupConfiguration {
-    /// Parachain configuration
-    pub parachain_config: Configuration,
-
-    /// Relay chain configuration
-    pub polkadot_config: Configuration,
-
-    /// EVM tracing configuration
+#[derive(Clone)]
+/// To add additional config to start_xyz_node functions
+pub struct AdditionalConfig {
     #[cfg(feature = "evm-tracing")]
+    /// EVM tracing configuration
     pub evm_tracing_config: EvmTracingConfig,
-
-    /// Options specific to collators
-    pub collator_options: CollatorOptions,
-
-    /// Parachain ID to collate
-    pub id: ParaId,
 
     /// Whether EVM RPC be enabled
     pub enable_evm_rpc: bool,
@@ -621,10 +611,9 @@ pub struct StartupConfiguration {
 async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
-    evm_tracing_config: EvmTracingConfig,
     collator_options: CollatorOptions,
     id: ParaId,
-    enable_evm_rpc: bool,
+    additional_config: AdditionalConfig,
     build_import_queue: BIQ,
     build_consensus: BIC,
 ) -> sc_service::error::Result<(
@@ -746,11 +735,11 @@ where
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let overrides = fc_storage::overrides_handle(client.clone());
 
-    let ethapi_cmd = evm_tracing_config.ethapi.clone();
+    let ethapi_cmd = additional_config.evm_tracing_config.ethapi.clone();
     let tracing_requesters =
         if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
-                &evm_tracing_config,
+                &additional_config.evm_tracing_config,
                 tracing::SpawnTasksParams {
                     task_manager: &task_manager,
                     client: client.clone(),
@@ -825,7 +814,7 @@ where
         let transaction_pool = transaction_pool.clone();
         let rpc_config = crate::rpc::EvmTracingConfig {
             tracing_requesters,
-            trace_filter_max_count: evm_tracing_config.ethapi_trace_max_count,
+            trace_filter_max_count: additional_config.evm_tracing_config.ethapi_trace_max_count,
             enable_txpool: ethapi_cmd.contains(&EthApiCmd::TxPool),
         };
 
@@ -843,7 +832,7 @@ where
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
-                enable_evm_rpc,
+                enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
             crate::rpc::create_full(deps, subscription, rpc_config.clone()).map_err(Into::into)
@@ -1022,18 +1011,21 @@ where
 /// Start a parachain node for Astar.
 #[cfg(feature = "evm-tracing")]
 pub async fn start_astar_node(
-    configuration: StartupConfiguration,
+    parachain_config: Configuration,
+    polkadot_config: Configuration,
+    collator_options: CollatorOptions,
+    id: ParaId,
+    additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
 )> {
     start_node_impl::<astar::RuntimeApi, astar::Executor, _, _>(
-        configuration.parachain_config,
-        configuration.polkadot_config,
-        configuration.evm_tracing_config,
-        configuration.collator_options,
-        configuration.id,
-        configuration.enable_evm_rpc,
+        parachain_config,
+        polkadot_config,
+        collator_options,
+        id,
+        additional_config.clone(),
         |client,
          block_import,
          config,
@@ -1092,8 +1084,8 @@ pub async fn start_astar_node(
                     telemetry.clone(),
                 );
 
-            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
-            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
+            proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
             let relay_chain_for_aura = relay_chain_interface.clone();
 
@@ -1116,7 +1108,7 @@ pub async fn start_astar_node(
                                     relay_parent,
                                     &relay_chain_for_aura,
                                     &validation_data,
-                                    configuration.id,
+                                    id,
                                 ).await;
                             let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
                             let slot =
@@ -1153,17 +1145,21 @@ pub async fn start_astar_node(
 /// Start a parachain node for Astar.
 #[cfg(not(feature = "evm-tracing"))]
 pub async fn start_astar_node(
-    configuration: StartupConfiguration,
+    parachain_config: Configuration,
+    polkadot_config: Configuration,
+    collator_options: CollatorOptions,
+    id: ParaId,
+    additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
 )> {
     start_node_impl::<astar::RuntimeApi, astar::Executor, _, _>(
-        configuration.parachain_config,
-        configuration.polkadot_config,
-        configuration.collator_options,
-        configuration.id,
-        configuration.enable_evm_rpc,
+        parachain_config,
+        polkadot_config,
+        collator_options,
+        id,
+        additional_config.clone(),
         |client,
          block_import,
          config,
@@ -1222,8 +1218,8 @@ pub async fn start_astar_node(
                     telemetry.clone(),
                 );
 
-            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
-            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
+            proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
             let relay_chain_for_aura = relay_chain_interface.clone();
 
@@ -1246,7 +1242,7 @@ pub async fn start_astar_node(
                                     relay_parent,
                                     &relay_chain_for_aura,
                                     &validation_data,
-                                    configuration.id,
+                                    id,
                                 ).await;
                             let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
                             let slot =
@@ -1283,18 +1279,21 @@ pub async fn start_astar_node(
 /// Start a parachain node for Shiden.
 #[cfg(feature = "evm-tracing")]
 pub async fn start_shiden_node(
-    configuration: StartupConfiguration,
+    parachain_config: Configuration,
+    polkadot_config: Configuration,
+    collator_options: CollatorOptions,
+    id: ParaId,
+    additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
 )> {
     start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
-        configuration.parachain_config,
-        configuration.polkadot_config,
-        configuration.evm_tracing_config,
-        configuration.collator_options,
-        configuration.id,
-        configuration.enable_evm_rpc,
+        parachain_config,
+        polkadot_config,
+        collator_options,
+        id,
+        additional_config.clone(),
         build_import_queue,
         |client,
          block_import,
@@ -1330,8 +1329,8 @@ pub async fn start_shiden_node(
                             telemetry2.clone(),
                         );
 
-                    proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
-                    proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
+                    proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
+                    proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
                     AuraConsensus::build::<
                         sp_consensus_aura::sr25519::AuthorityPair,
@@ -1352,7 +1351,7 @@ pub async fn start_shiden_node(
                                             relay_parent,
                                             &relay_chain_for_aura,
                                             &validation_data,
-                                            configuration.id,
+                                            id,
                                         ).await;
                                     let timestamp =
                                         sp_timestamp::InherentDataProvider::from_system_time();
@@ -1397,13 +1396,13 @@ pub async fn start_shiden_node(
                     telemetry.clone(),
                 );
 
-            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
-            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
+            proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
             let relay_chain_consensus =
                 cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
                     cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
-                        para_id: configuration.id,
+                        para_id: id,
                         proposer_factory,
                         block_import: block_import, //client.clone(),
                         relay_chain_interface: relay_chain_interface.clone(),
@@ -1416,7 +1415,7 @@ pub async fn start_shiden_node(
                                             relay_parent,
                                             &relay_chain_for_aura,
                                             &validation_data,
-                                            configuration.id,
+                                            id,
                                         ).await;
                                     let parachain_inherent =
                                         parachain_inherent.ok_or_else(|| {
@@ -1443,17 +1442,21 @@ pub async fn start_shiden_node(
 /// Start a parachain node for Shiden.
 #[cfg(not(feature = "evm-tracing"))]
 pub async fn start_shiden_node(
-    configuration: StartupConfiguration,
+    parachain_config: Configuration,
+    polkadot_config: Configuration,
+    collator_options: CollatorOptions,
+    id: ParaId,
+    additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
 )> {
     start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
-        configuration.parachain_config,
-        configuration.polkadot_config,
-        configuration.collator_options,
-        configuration.id,
-        configuration.enable_evm_rpc,
+        parachain_config,
+        polkadot_config,
+        collator_options,
+        id,
+        additional_config.clone(),
         build_import_queue,
         |client,
          block_import,
@@ -1489,8 +1492,8 @@ pub async fn start_shiden_node(
                             telemetry2.clone(),
                         );
 
-                    proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
-                    proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
+                    proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
+                    proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
                     AuraConsensus::build::<
                         sp_consensus_aura::sr25519::AuthorityPair,
@@ -1511,7 +1514,7 @@ pub async fn start_shiden_node(
                                             relay_parent,
                                             &relay_chain_for_aura,
                                             &validation_data,
-                                            configuration.id,
+                                            id,
                                         ).await;
                                     let timestamp =
                                         sp_timestamp::InherentDataProvider::from_system_time();
@@ -1556,13 +1559,13 @@ pub async fn start_shiden_node(
                     telemetry.clone(),
                 );
 
-            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
-            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
+            proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
             let relay_chain_consensus =
                 cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
                     cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
-                        para_id: configuration.id,
+                        para_id: id,
                         proposer_factory,
                         block_import: block_import, //client.clone(),
                         relay_chain_interface: relay_chain_interface.clone(),
@@ -1575,7 +1578,7 @@ pub async fn start_shiden_node(
                                             relay_parent,
                                             &relay_chain_for_aura,
                                             &validation_data,
-                                            configuration.id,
+                                            id,
                                         ).await;
                                     let parachain_inherent =
                                         parachain_inherent.ok_or_else(|| {
@@ -1602,26 +1605,21 @@ pub async fn start_shiden_node(
 /// Start a parachain node for Shibuya.
 #[cfg(feature = "evm-tracing")]
 pub async fn start_shibuya_node(
-    configuration: StartupConfiguration,
-    // parachain_config: Configuration,
-    // polkadot_config: Configuration,
-    // evm_tracing_config: EvmTracingConfig,
-    // collator_options: CollatorOptions,
-    // id: ParaId,
-    // enable_evm_rpc: bool,
-    // proposer_block_size_limit: Option<usize>,
-    // proposer_soft_deadline_percent: Option<u8>,
+    parachain_config: Configuration,
+    polkadot_config: Configuration,
+    collator_options: CollatorOptions,
+    id: ParaId,
+    additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
 )> {
     start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
-        configuration.parachain_config,
-        configuration.polkadot_config,
-        configuration.evm_tracing_config,
-        configuration.collator_options,
-        configuration.id,
-        configuration.enable_evm_rpc,
+        parachain_config,
+        polkadot_config,
+        collator_options,
+        id,
+        additional_config.clone(),
         |client,
          block_import,
          config,
@@ -1680,8 +1678,8 @@ pub async fn start_shibuya_node(
                     telemetry.clone(),
                 );
 
-            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
-            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
+            proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
             Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
@@ -1702,7 +1700,7 @@ pub async fn start_shibuya_node(
                                     relay_parent,
                                     &relay_chain_for_aura,
                                     &validation_data,
-                                    configuration.id,
+                                    id,
                                 ).await;
                             let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
                             let slot =
@@ -1739,24 +1737,21 @@ pub async fn start_shibuya_node(
 /// Start a parachain node for Shibuya.
 #[cfg(not(feature = "evm-tracing"))]
 pub async fn start_shibuya_node(
-    configuration: StartupConfiguration,
-    // parachain_config: Configuration,
-    // polkadot_config: Configuration,
-    // collator_options: CollatorOptions,
-    // id: ParaId,
-    // enable_evm_rpc: bool,
-    // proposer_block_size_limit: Option<usize>,
-    // proposer_soft_deadline_percent: Option<u8>,
+    parachain_config: Configuration,
+    polkadot_config: Configuration,
+    collator_options: CollatorOptions,
+    id: ParaId,
+    additional_config: AdditionalConfig,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
 )> {
     start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
-        configuration.parachain_config,
-        configuration.polkadot_config,
-        configuration.collator_options,
-        configuration.id,
-        configuration.enable_evm_rpc,
+        parachain_config,
+        polkadot_config,
+        collator_options,
+        id,
+        additional_config.clone(),
         |client,
          block_import,
          config,
@@ -1815,8 +1810,8 @@ pub async fn start_shibuya_node(
                     telemetry.clone(),
                 );
 
-            proposer_factory.set_default_block_size_limit(configuration.proposer_block_size_limit);
-            proposer_factory.set_soft_deadline(Percent::from_percent(configuration.proposer_soft_deadline_percent));
+            proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
+            proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
             Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
@@ -1837,7 +1832,7 @@ pub async fn start_shibuya_node(
                                     relay_parent,
                                     &relay_chain_for_aura,
                                     &validation_data,
-                                    configuration.id,
+                                    id,
                                 ).await;
                             let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
                             let slot =
