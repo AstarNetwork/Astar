@@ -7,6 +7,9 @@ members = [
 	"runtime/shiden",
 	"runtime/shibuya",
 	"tests/xcm-simulator",
+	"xcm/pallet-xcm-transactor",
+	# "xcm/pallet-xcm-transactor/contracts-example",
+	"xcm/pallet-xcm-transactor/types",
 ]
 
 exclude = ["vendor"]
@@ -94,7 +97,7 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 
-# Substrate pallets 
+# Substrate pallets
 # (wasm)
 pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }

@@ -1,0 +1,30 @@
+[package]
+name = "xcm-ce-types"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+num_enum = { version = "0.6", default-features = false }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+# xcm
+xcm = { workspace = true }
+
+#ink
+ink_env = { version = "~4.1.0", default-features = false, optional = true }
+
+[features]
+default = ["std"]
+std = [
+	"num_enum/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"xcm/std",
+]
+# add ink dep for FromStatusCode trait impl
+ink-as-dependency = [
+	"ink_env",
+]

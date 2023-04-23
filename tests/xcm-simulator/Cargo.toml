@@ -49,6 +49,8 @@ xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 xcm-simulator = { workspace = true }
 
+pallet-xcm-transactor = { path = "../../xcm/pallet-xcm-transactor", default-features = false }
+
 [features]
 default = ["std"]
 std = [
@@ -73,6 +75,7 @@ std = [
 	"pallet-dapps-staking/std",
 	"pallet-proxy/std",
 	"pallet-utility/std",
+	"pallet-xcm-transactor/std",
 ]
 runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
@@ -85,4 +88,5 @@ runtime-benchmarks = [
 	"xcm-executor/runtime-benchmarks",
 	"polkadot-runtime-parachains/runtime-benchmarks",
 	"polkadot-parachain/runtime-benchmarks",
+    "pallet-xcm-transactor/runtime-benchmarks"
 ]

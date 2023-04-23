@@ -1,0 +1,63 @@
+[package]
+name = "pallet-xcm-transactor"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = { workspace = true }
+num_enum = { version = "0.6", default-features = false }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+# substrate core
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# frame dependencies
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+
+# pallets
+pallet-contracts = { workspace = true }
+pallet-xcm = { workspace = true }
+
+# xcm
+xcm = { workspace = true }
+xcm-executor = { workspace = true }
+
+# types
+xcm-ce-types = { path = "./types" }
+
+[features]
+default = ["std"]
+std = [
+	"num_enum/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+	"xcm/std",
+	"xcm-executor/std",
+	"pallet-xcm/std",
+	"pallet-contracts/std",
+	"xcm-ce-types/std",
+]
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-xcm/runtime-benchmarks",
+	"pallet-contracts/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"pallet-xcm/try-runtime",
+	"pallet-contracts/try-runtime",
+]

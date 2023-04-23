@@ -229,7 +229,7 @@ impl pallet_contracts::Config for Runtime {
     /// We are not using the pallet_transaction_payment for simplicity
     type WeightPrice = Self;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ();
+    type ChainExtension = pallet_xcm_transactor::chain_extension::Extension<Self>;
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -481,6 +481,7 @@ match_types! {
 
 pub type XcmBarrier = (
     TakeWeightCredit,
+    AllowTopLevelPaidExecutionFrom<Everything>,
     // This will first calculate the derived origin, before checking it against the barrier implementation
     WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, UniversalLocation, ConstU32<8>>,
     // Parent and its plurality get free execution
@@ -514,10 +515,10 @@ impl xcm_executor::Config for XcmConfig {
         FixedRateOfFungible<NativePerSecond, ()>,
         FixedRateOfForeignAsset<XcAssetConfig, ShidenXcmFungibleFeeHandler>,
     );
-    type ResponseHandler = ();
-    type AssetTrap = ();
-    type AssetClaims = ();
-    type SubscriptionService = ();
+    type ResponseHandler = PolkadotXcm;
+    type AssetTrap = PolkadotXcm;
+    type AssetClaims = PolkadotXcm;
+    type SubscriptionService = PolkadotXcm;
 
     type PalletInstancesInfo = AllPalletsWithSystem;
     type MaxAssetsIntoHolding = ConstU32<64>;
@@ -564,6 +565,19 @@ impl pallet_xcm::Config for Runtime {
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
+parameter_types! {
+    pub const CallbackGasLimit: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
+}
+
+impl pallet_xcm_transactor::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type CallbackHandler = XcmTransact;
+    type RuntimeCall = RuntimeCall;
+    type WasmGasLimit = CallbackGasLimit;
+    type Network = RelayNetwork;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -583,5 +597,6 @@ construct_runtime!(
         Randomness: pallet_insecure_randomness_collective_flip::{Pallet, Storage},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+        XcmTransact: pallet_xcm_transactor::{Pallet, Call, Storage, Event<T>},
     }
 );
