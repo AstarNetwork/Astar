@@ -45,7 +45,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-use super::msg_queue::*;
+use super::{msg_queue::*, relay_chain::XcmPallet};
 use xcm::latest::prelude::{AssetId as XcmAssetId, *};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -515,8 +515,8 @@ impl xcm_executor::Config for XcmConfig {
         FixedRateOfForeignAsset<XcAssetConfig, ShidenXcmFungibleFeeHandler>,
     );
     type ResponseHandler = ();
-    type AssetTrap = ();
-    type AssetClaims = ();
+    type AssetTrap = XcmPallet;
+    type AssetClaims = XcmPallet;
     type SubscriptionService = ();
 
     type PalletInstancesInfo = AllPalletsWithSystem;

@@ -19,6 +19,7 @@
 use crate::mocks::{parachain, relay_chain, *};
 
 use frame_support::{assert_ok, weights::Weight};
+pub use pallet_xcm::AssetTraps;
 use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
@@ -121,7 +122,6 @@ fn para_to_para_reserve_transfer_and_back() {
 
 #[test]
 fn para_to_para_reserve_transfer_and_back_with_extra_native() {
-
     MockNet::reset();
 
     let local_asset_id = 123 as u128;
@@ -133,8 +133,8 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
         .unwrap()
         .prepended_with(Parent)
         .unwrap();
-    
-    let para_b_native: MultiLocation = (Parent,Parachain(2)).into();
+
+    let para_b_native: MultiLocation = (Parent, Parachain(2)).into();
     let para_b_native_on_para_a = 456;
 
     let mint_amount = 300000000000000;
@@ -219,38 +219,37 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
     });
 
     // Sending back Local Asset to Para A with some native asset of Para B
-    ParaB::execute_with( || {
+    ParaB::execute_with(|| {
         let xcm = Xcm(vec![
-            WithdrawAsset((para_a_local_asset,send_amount).into()),
-            InitiateReserveWithdraw { 
-                assets: All.into(), 
-                reserve:(Parent,Parachain(1)).into(), 
-                xcm:  Xcm(vec![
+            WithdrawAsset((para_a_local_asset, send_amount).into()),
+            InitiateReserveWithdraw {
+                assets: All.into(),
+                reserve: (Parent, Parachain(1)).into(),
+                xcm: Xcm(vec![
                     BuyExecution {
-                        fees : (local_asset,send_amount).into(),
-                        weight_limit: Unlimited
+                        fees: (local_asset, send_amount).into(),
+                        weight_limit: Unlimited,
                     },
                     DepositAsset {
-                        assets : All.into(),
+                        assets: All.into(),
                         beneficiary: alice.clone().into(),
-                    }
+                    },
                 ]),
             },
             TransferReserveAsset {
-                assets: (Here,send_amount).into(),
-                dest : (Parent,Parachain(1)).into(),
-                xcm : Xcm(vec![
+                assets: (Here, send_amount).into(),
+                dest: (Parent, Parachain(1)).into(),
+                xcm: Xcm(vec![
                     BuyExecution {
-                        fees : (para_b_native,send_amount).into(),
-                        weight_limit: Unlimited
+                        fees: (para_b_native, send_amount).into(),
+                        weight_limit: Unlimited,
                     },
                     DepositAsset {
-                        assets : All.into(),
+                        assets: All.into(),
                         beneficiary: alice.clone().into(),
-                    }
-                ])
+                    },
+                ]),
             },
-            
         ]);
 
         assert_ok!(ParachainPalletXcm::execute(
@@ -260,7 +259,7 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
         ));
     });
 
-    ParaA::execute_with( || {
+    ParaA::execute_with(|| {
         assert_eq!(
             parachain::Assets::balance(local_asset_id, ALICE),
             mint_amount
@@ -270,7 +269,6 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
             send_amount
         );
     })
-
 }
 
 #[test]
@@ -569,7 +567,7 @@ fn send_relay_asset_to_para_b_with_extra_native() {
         id: ALICE.into(),
     };
 
-    let para_a_native: MultiLocation = (Parent,Parachain(1)).into();
+    let para_a_native: MultiLocation = (Parent, Parachain(1)).into();
     let para_a_native_on_para_b = 456;
 
     // On parachain A create an asset which representes a derivative of relay native asset.
@@ -587,8 +585,8 @@ fn send_relay_asset_to_para_b_with_extra_native() {
         ));
     });
 
-     // register relay asset in ParaB
-     ParaB::execute_with(|| {
+    // register relay asset in ParaB
+    ParaB::execute_with(|| {
         assert_ok!(register_and_setup_xcm_asset::<parachain::Runtime, _>(
             parachain::RuntimeOrigin::root(),
             relay_asset_id,
@@ -634,8 +632,8 @@ fn send_relay_asset_to_para_b_with_extra_native() {
         );
     });
 
-     // send relay asset with some Para A native to ParaB
-     ParaA::execute_with(|| {
+    // send relay asset with some Para A native to ParaB
+    ParaA::execute_with(|| {
         let xcm = Xcm(vec![
             // withdraw relay native asset
             WithdrawAsset((Parent, withdraw_amount).into()),
@@ -667,18 +665,19 @@ fn send_relay_asset_to_para_b_with_extra_native() {
                     },
                 ]),
             },
-            TransferReserveAsset { 
-                assets: (Here,withdraw_amount).into(), 
-                dest: (Parent,Parachain(2)).into(), 
+            TransferReserveAsset {
+                assets: (Here, withdraw_amount).into(),
+                dest: (Parent, Parachain(2)).into(),
                 xcm: Xcm(vec![
-                    BuyExecution { 
-                        fees: (para_a_native,withdraw_amount).into(), 
-                        weight_limit: Unlimited 
+                    BuyExecution {
+                        fees: (para_a_native, withdraw_amount).into(),
+                        weight_limit: Unlimited,
                     },
-                    DepositAsset { 
-                        assets: All.into(), 
-                        beneficiary: alice.clone().into() }
-                ])
+                    DepositAsset {
+                        assets: All.into(),
+                        beneficiary: alice.clone().into(),
+                    },
+                ]),
             },
         ]);
 
@@ -689,16 +688,25 @@ fn send_relay_asset_to_para_b_with_extra_native() {
         ));
     });
 
-     // Para A balances should have been substracted
-     ParaA::execute_with(|| {
+    // Para A balances should have been substracted
+    ParaA::execute_with(|| {
         assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), 0);
-        assert_eq!(parachain::Balances::free_balance(ALICE), INITIAL_BALANCE - withdraw_amount);
+        assert_eq!(
+            parachain::Balances::free_balance(ALICE),
+            INITIAL_BALANCE - withdraw_amount
+        );
     });
 
-     // Para B balances should have been added
-     ParaB::execute_with(|| {
-        assert_eq!(parachain::Assets::balance(relay_asset_id, ALICE), withdraw_amount);
-        assert_eq!(parachain::Assets::balance(para_a_native_on_para_b, ALICE), withdraw_amount);
+    // Para B balances should have been added
+    ParaB::execute_with(|| {
+        assert_eq!(
+            parachain::Assets::balance(relay_asset_id, ALICE),
+            withdraw_amount
+        );
+        assert_eq!(
+            parachain::Assets::balance(para_a_native_on_para_b, ALICE),
+            withdraw_amount
+        );
     });
 }
 
@@ -834,5 +842,65 @@ fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_ass
             ParachainAssets::balance(relay_asset_id, &fresh_account.into()),
             withdraw_amount
         );
+    });
+}
+
+#[test]
+fn para_asset_trap_and_claim() {
+    MockNet::reset();
+    let send_amount = 1222;
+
+    let bob = AccountId32 {
+        network: None,
+        id: BOB.into(),
+    };
+
+    // Asset Trapped
+    ParaA::execute_with(|| {
+        let xcm = Xcm(vec![WithdrawAsset((Here, send_amount).into())]);
+
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            Box::new(VersionedXcm::V3(xcm)),
+            Weight::from_parts(100_000_000_000, 1024 * 1024)
+        ));
+
+        //  Alice's Balnce is reduced by the sent amount
+        assert_eq!(
+            parachain::Balances::free_balance(ALICE),
+            INITIAL_BALANCE - send_amount
+        );
+        assert_eq!(parachain::Balances::free_balance(BOB), 0);
+        println!(
+            "Asset Trapped: {:?}",
+            AssetTraps::<parachain::Runtime>::iter().collect::<Vec<_>>()
+        );
+    });
+
+    ParaA::execute_with(|| {
+        // Claiming Trapped Assets
+        let xcm = Xcm(vec![
+            ClaimAsset {
+                assets: (Here, send_amount).into(),
+                ticket: (Here).into(),
+            },
+            BuyExecution {
+                fees: (Here, send_amount).into(),
+                weight_limit: Unlimited,
+            },
+            DepositAsset {
+                assets: All.into(),
+                beneficiary: bob.clone().into(),
+            },
+        ]);
+
+        assert_ok!(ParachainPalletXcm::execute(
+            parachain::RuntimeOrigin::signed(ALICE.into()),
+            Box::new(VersionedXcm::V3(xcm)),
+            Weight::from_parts(100_000_000_000, 1024 * 1024)
+        ));
+
+        // Bob's Balance increased after assets claimed
+        assert_eq!(parachain::Balances::free_balance(BOB), send_amount);
     });
 }
