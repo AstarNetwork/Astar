@@ -925,6 +925,15 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = ConstU128<{ MILLIAST * 660 }>;
 }
 
+impl pallet_account::Config for Runtime {
+    type CustomOrigin = pallet_account::NativeAndEVM;
+    type CustomOriginKind = pallet_account::NativeAndEVMKind;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type WeightInfo = ();
+}
+
 // TODO: remove this once https://github.com/paritytech/substrate/issues/12161 is resolved
 #[rustfmt::skip]
 construct_runtime!(
@@ -958,6 +967,7 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance2>,
         Treasury: pallet_treasury,
         Xvm: pallet_xvm,
+        Account: pallet_account,
         Proxy: pallet_proxy,
         Preimage: pallet_preimage,
     }

@@ -17,6 +17,7 @@ fp-self-contained = { workspace = true }
 frame-executive = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+pallet-account = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
@@ -103,6 +104,7 @@ std = [
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
+    "pallet-account/std",
 	"pallet-assets/std",
 	"pallet-aura/std",
 	"pallet-balances/std",

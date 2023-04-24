@@ -5292,6 +5292,7 @@ dependencies = [
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
+ "pallet-account",
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
