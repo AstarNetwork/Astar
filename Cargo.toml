@@ -235,7 +235,7 @@ moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", bran
 moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
 moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
 
-# InvArch Tinkernet Multisig dependencies
+# InvArch Tinkernet Multisig dependencies - NOTE: should only be used for Shibuya
 # (wasm)
 invarch-xcm-builder = { git = "https://github.com/InvArch/InvArch-XCM-Builder", branch = "polkadot-v0.9.39", default-features = false }
 
