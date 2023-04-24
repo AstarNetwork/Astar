@@ -81,6 +81,7 @@ moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
 # chain-extensions
 pallet-chain-extension-assets = { workspace = true }
+pallet-chain-extension-scheduler = { path = "../../../../astar/astar-frame-4/astar-frame/chain-extensions/pallet-scheduler", default-features = false }
 
 # benchmarking
 array-bytes = { workspace = true }
@@ -160,6 +161,7 @@ std = [
 	"moonbeam-rpc-primitives-txpool/std",
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
+"pallet-chain-extension-scheduler/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
