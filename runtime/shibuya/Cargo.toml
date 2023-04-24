@@ -126,7 +126,7 @@ frame-try-runtime = { workspace = true, optional = true }
 # TODO: remove this once we get rid of `pallet-xcm` fork & double dep
 polkadot-runtime = { workspace = true, optional = true }
 
-# InvArch Tinkernet Multisig dependencies
+# InvArch Tinkernet Multisig dependencies - NOTE: should only be used for Shibuya
 invarch-xcm-builder = { workspace = true }
 
 [build-dependencies]
