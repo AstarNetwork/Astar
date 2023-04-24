@@ -117,7 +117,9 @@ pub const MICROAST: Balance = 1_000_000_000_000;
 pub const MILLIAST: Balance = 1_000 * MICROAST;
 pub const AST: Balance = 1_000 * MILLIAST;
 
-pub const STORAGE_BYTE_FEE: Balance = 100 * MICROAST;
+pub const INIT_SUPPLY_FACTOR: Balance = 100;
+
+pub const STORAGE_BYTE_FEE: Balance = 20 * MICROAST * INIT_SUPPLY_FACTOR;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -130,7 +132,7 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 /// up by `pallet_aura` to implement `fn slot_duration()`.
 ///
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 2000;
+pub const MILLISECS_PER_BLOCK: u64 = 1000;
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 // Time is measured by number of blocks.
@@ -586,7 +588,7 @@ impl pallet_scheduler::Config for Runtime {
     type PalletsOrigin = OriginCaller;
     type RuntimeCall = RuntimeCall;
     type MaximumWeight = MaximumSchedulerWeight;
-    type ScheduleOrigin = EnsureRoot<AccountId>;
+    type ScheduleOrigin = EnsureSigned<AccountId>;
     type MaxScheduledPerBlock = ConstU32<50>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
@@ -767,9 +769,17 @@ impl pallet_vesting::Config for Runtime {
     const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
+/// Charge fee for stored bytes and items as part of `pallet-contracts`.
+///
+/// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
+/// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
+pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
+    items as Balance * 4 * MILLIAST * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
+}
+
 parameter_types! {
-    pub const DepositPerItem: Balance = deposit(1, 0);
-    pub const DepositPerByte: Balance = deposit(0, 1);
+    pub const DepositPerItem: Balance = contracts_deposit(1, 0);
+    pub const DepositPerByte: Balance = contracts_deposit(0, 1);
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
         RuntimeBlockWeights::get().max_block;
@@ -798,7 +808,7 @@ impl pallet_contracts::Config for Runtime {
         DappsStakingExtension<Self>,
         XvmExtension<Self>,
         AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
-        SchedulerExtension<Self>,
+        SchedulerExtension<Self, pallet_chain_extension_scheduler::weights::SubstrateWeight<Self>>,
     );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;

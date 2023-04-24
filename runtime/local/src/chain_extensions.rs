@@ -43,6 +43,8 @@ impl<W: pallet_chain_extension_assets::weights::WeightInfo> RegisteredChainExten
     const ID: u16 = 02;
 }
 
-impl RegisteredChainExtension<Runtime> for SchedulerExtension<Runtime> {
+impl<W: pallet_chain_extension_scheduler::weights::WeightInfo> RegisteredChainExtension<Runtime>
+for SchedulerExtension<Runtime, W>
+{
         const ID: u16 = 03;
     }
