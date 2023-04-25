@@ -25,29 +25,6 @@ macro_rules! unwrap {
     };
 }
 
-// #[derive(Decode)]
-// struct ValidateSendInput {
-//     dest: VersionedMultiLocation,
-//     xcm: VersionedXcm<()>,
-// }
-
-// pub struct PreparedExecution<Call> {
-//     xcm: Xcm<Call>,
-//     weight: Weight,
-// }
-
-// pub struct ValidatedSend {
-//     dest: MultiLocation,
-//     xcm: Xcm<()>,
-// }
-
-// #[repr(u32)]
-// #[derive(num_enum::IntoPrimitive)]
-// enum Error {
-//     Success = 0,
-//     NoResponse = 1,
-// }
-
 #[repr(u16)]
 #[derive(num_enum::TryFromPrimitive)]
 enum Command {
@@ -140,7 +117,7 @@ impl Command {
             .take()
             .ok_or(PalletError::<T>::PreparationMissing)?;
         // charge for xcm weight
-        env.charge_weight(input.weight)?;
+        let charged = env.charge_weight(input.weight)?;
 
         // TODO: find better way to get origin
         //       https://github.com/paritytech/substrate/pull/13708
@@ -159,6 +136,9 @@ impl Command {
             input.weight,
             input.weight,
         );
+
+        // adjust with actual weights used
+        env.adjust_weight(charged, outcome.weight_used());
         // revert for anything but a complete execution
         match outcome {
             Outcome::Complete(_) => (),
@@ -233,10 +213,11 @@ impl Command {
         <T as SysConfig>::AccountId: AsRef<[u8; 32]>,
     {
         let mut env = env.buf_in_buf_out();
+        let len = env.in_len();
         let (query_config, dest): (
             QueryConfig<T::AccountId, T::BlockNumber>,
             VersionedMultiLocation,
-        ) = env.read_as()?;
+        ) = env.read_as_unbounded(len)?;
 
         let dest: MultiLocation = dest
             .try_into()

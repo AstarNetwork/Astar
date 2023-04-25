@@ -1,9 +1,44 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use sp_core::H160;
 use xcm::{latest::Weight, prelude::*};
 
-#[derive(Encode, Decode)]
+/// Type copied from pallet, TODO: find ways to share types b/w sdk & pallet
+/// Type of XCM Response Query
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub enum QueryType<AccountId> {
+    // No callback, store the response for manual polling
+    NoCallback,
+    // Call Wasm contract's method on recieving response
+    // It expects the contract method to have following signature
+    //     -  (query_id: QueryId, responder: Multilocation, response: Response)
+    WASMContractCallback {
+        contract_id: AccountId,
+        selector: [u8; 4],
+    },
+    // Call Evm contract's method on recieving response
+    // It expects the contract method to have following signature
+    //     -  (query_id: QueryId, responder: Multilocation, response: Response)
+    EVMContractCallback {
+        contract_id: H160,
+        selector: [u8; 4],
+    },
+}
+
+/// Query config
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub struct QueryConfig<AccountId, BlockNumber> {
+    // query type
+    pub query_type: QueryType<AccountId>,
+    // blocknumber after which query will be expire
+    pub timeout: BlockNumber,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct ValidateSendInput {
     pub dest: VersionedMultiLocation,
     pub xcm: VersionedXcm<()>,

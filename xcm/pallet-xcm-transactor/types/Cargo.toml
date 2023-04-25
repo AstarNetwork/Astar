@@ -10,6 +10,9 @@ num_enum = { version = "0.6", default-features = false }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
+#substarte
+sp-core = { workspace = true }
+
 # xcm
 xcm = { workspace = true }
 
@@ -22,6 +25,7 @@ std = [
 	"num_enum/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
+    "sp-core/std",
 	"xcm/std",
 ]
 # add ink dep for FromStatusCode trait impl

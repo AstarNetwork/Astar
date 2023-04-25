@@ -37,9 +37,10 @@ use frame_system::{
     EnsureSigned,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use polkadot_core_primitives::BlakeTwo256;
 use sp_core::{ConstBool, H256};
 use sp_runtime::{
-    testing::Header,
+    generic::{Header},
     traits::{AccountIdConversion, Convert, IdentityLookup},
     AccountId32, Perbill, RuntimeDebug,
 };
@@ -70,19 +71,19 @@ pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalanc
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
+    pub const BlockHashCount: u32 = 250;
 }
 
 impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     type Index = u64;
-    type BlockNumber = u64;
+    type BlockNumber = u32;
     type Hash = H256;
     type Hashing = sp_runtime::traits::BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Header = Header<Self::BlockNumber, BlakeTwo256>;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type BlockWeights = ();
@@ -275,7 +276,7 @@ parameter_types! {
 
 impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
-    type BlockPerEra = ConstU64<5>;
+    type BlockPerEra = ConstU32<5>;
     type SmartContract = SmartContract;
     type RegisterDeposit = ConstU128<1>;
     type RuntimeEvent = RuntimeEvent;

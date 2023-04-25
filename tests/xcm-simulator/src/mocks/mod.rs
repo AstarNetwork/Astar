@@ -20,11 +20,14 @@ pub(crate) mod msg_queue;
 pub(crate) mod parachain;
 pub(crate) mod relay_chain;
 
+use frame_support::assert_ok;
 use frame_support::traits::{Currency, IsType, OnFinalize, OnInitialize};
 use frame_support::weights::Weight;
-use pallet_contracts_primitives::Code;
+use pallet_contracts::Determinism;
+use pallet_contracts_primitives::{Code, ContractExecResult, ExecReturnValue, ReturnFlags};
+use parity_scale_codec::Decode;
 use sp_runtime::traits::{Bounded, Hash, StaticLookup};
-use sp_runtime::DispatchResult;
+use sp_runtime::{DispatchError, DispatchResult};
 use xcm::latest::prelude::*;
 use xcm_executor::traits::Convert;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
@@ -172,7 +175,7 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 
 /// Advance parachain blocks until `block_number`.
 /// No effect if parachain is already at that number or exceeds it.
-pub fn advance_parachain_block_to(block_number: u64) {
+pub fn advance_parachain_block_to(block_number: u32) {
     while parachain::System::block_number() < block_number {
         // On Finalize
         let current_block_number = parachain::System::block_number();
@@ -302,4 +305,38 @@ pub fn deploy_contract<T: pallet_contracts::Config>(
         result
     );
     (result.account_id, hash)
+}
+
+pub fn call_contract_method<T: pallet_contracts::Config, V: Decode>(
+    origin: T::AccountId,
+    dest: T::AccountId,
+    value: ContractBalanceOf<T>,
+    gas_limit: Weight,
+    storage_deposit_limit: Option<ContractBalanceOf<T>>,
+    data: Vec<u8>,
+    debug: bool,
+) -> (V, ReturnFlags, Weight) {
+    let outcome = pallet_contracts::Pallet::<T>::bare_call(
+        origin,
+        dest,
+        value,
+        gas_limit,
+        storage_deposit_limit,
+        data,
+        debug,
+        Determinism::Deterministic,
+    );
+
+    if debug {
+        println!(
+            "Contract debug - {:?}",
+            String::from_utf8(outcome.debug_message.clone())
+        );
+    }
+
+    let res = outcome.result.unwrap();
+    // check for revert
+    assert!(!res.did_revert(), "Contract reverted!");
+
+    (V::decode(&mut res.data.as_ref()).unwrap(), res.flags, outcome.gas_consumed)
 }
