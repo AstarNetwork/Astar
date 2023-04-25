@@ -135,7 +135,7 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
     let para_b_native: MultiLocation = (Parent, Parachain(2)).into();
     let para_b_native_on_para_a = 456;
 
-    let mint_amount = 300000000000000;
+    let mint_amount = 300_000_000_000_000;
 
     let alice = AccountId32 {
         network: None,
@@ -182,13 +182,7 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
         assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
             parachain::RuntimeOrigin::signed(ALICE.into()),
             Box::new((Parent, Parachain(2)).into()),
-            Box::new(
-                AccountId32 {
-                    network: None,
-                    id: ALICE.into(),
-                }
-                .into(),
-            ),
+            Box::new(alice.clone().into(),),
             Box::new((local_asset, send_amount).into()),
             0,
         ));
@@ -244,7 +238,7 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
                     },
                     DepositAsset {
                         assets: All.into(),
-                        beneficiary: alice.clone().into(),
+                        beneficiary: alice.into(),
                     },
                 ]),
             },
