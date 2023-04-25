@@ -17,9 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::mocks::{parachain, relay_chain, *};
-
 use frame_support::{assert_ok, weights::Weight};
-pub use pallet_xcm::AssetTraps;
 use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
