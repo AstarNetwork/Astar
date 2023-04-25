@@ -139,10 +139,6 @@ fn basic_xcmp_transact_outcome_query_response() {
     ParaB::execute_with(|| {
         use parachain::{RuntimeEvent, System};
         // check queue failed events
-        for event in System::events() {
-            println!("{:?}\n", event);
-        }
-
         assert!(System::events().iter().any(|r| matches!(
             r.event,
             RuntimeEvent::MsgQueue(mock_msg_queue::Event::Fail(..))

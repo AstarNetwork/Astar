@@ -870,11 +870,8 @@ fn para_asset_trap_and_claim() {
             parachain::Balances::free_balance(ALICE),
             INITIAL_BALANCE - send_amount
         );
+        // Making sure that Bob doesn't have any free balance before transfer
         assert_eq!(parachain::Balances::free_balance(BOB), 0);
-        println!(
-            "Asset Trapped: {:?}",
-            AssetTraps::<parachain::Runtime>::iter().collect::<Vec<_>>()
-        );
     });
 
     ParaA::execute_with(|| {
