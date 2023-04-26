@@ -19,26 +19,25 @@ async function run(nodeName, networkInfo, args) {
 
     const tx = await api.tx.polkadotXcm.reserveTransferAssets(
         {
-            V1: {
+            V3: {
                 parents: 1,
                 interior: { X1: { Parachain: hrmpTo } },
             },
         },
         {
-            V1: {
+            V3: {
                 parents: 0,
                 interior: {
                     X1: {
                         AccountId32: {
                             id: decodeAddress(sender.address),
-                            network: "Any",
                         },
                     },
                 },
             },
         },
         {
-            V1: [
+            V3: [
                 {
                     fun: { Fungible: ONE.muln(21000) },
                     id: { Concrete: { parents: 0, interior: "Here" } },
