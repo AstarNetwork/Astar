@@ -515,8 +515,8 @@ impl xcm_executor::Config for XcmConfig {
         FixedRateOfForeignAsset<XcAssetConfig, ShidenXcmFungibleFeeHandler>,
     );
     type ResponseHandler = ();
-    type AssetTrap = ();
-    type AssetClaims = ();
+    type AssetTrap = PolkadotXcm;
+    type AssetClaims = PolkadotXcm;
     type SubscriptionService = ();
 
     type PalletInstancesInfo = AllPalletsWithSystem;
