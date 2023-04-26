@@ -21,7 +21,7 @@ pub(crate) mod parachain;
 pub(crate) mod parachain_c;
 pub(crate) mod relay_chain;
 
-use frame_support::traits::{Currency, OnFinalize, OnInitialize};
+use frame_support::traits::{Currency, OnInitialize};
 use frame_support::weights::Weight;
 use pallet_contracts_primitives::Code;
 use sp_runtime::traits::Hash;
@@ -87,18 +87,18 @@ decl_test_network! {
 pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
-pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
-pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
+// pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
+// pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
 pub type ParachainContracts = pallet_contracts::Pallet<parachain::Runtime>;
 
 pub type NftParachainPalletXcm = pallet_xcm::Pallet<parachain_c::Runtime>;
 pub type NftParachainContracts = pallet_contracts::Pallet<parachain_c::Runtime>;
 // pub type ParachainXcAssetConfig = pallet_xc_asset_config::Pallet<parachain::Runtime>;
 
-pub fn parent_account_id() -> parachain::AccountId {
-    let location = (Parent,);
-    parachain::LocationToAccountId::convert(location.into()).unwrap()
-}
+// pub fn parent_account_id() -> parachain::AccountId {
+//     let location = (Parent,);
+//     parachain::LocationToAccountId::convert(location.into()).unwrap()
+// }
 
 /// Derive parachain sovereign account on relay chain, from parachain Id
 pub fn child_account_id(para: u32) -> relay_chain::AccountId {
@@ -114,7 +114,7 @@ pub fn sibling_account_id(para: u32) -> parachain::AccountId {
 
 /// Prepare parachain test externality
 pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
-    use parachain::{MsgQueue, Runtime, RuntimeOrigin, System, Uniques};
+    use parachain::{MsgQueue, Runtime, System};
 
     let mut t = frame_system::GenesisConfig::default()
         .build_storage::<Runtime>()
@@ -204,33 +204,33 @@ pub fn relay_ext() -> sp_io::TestExternalities {
     ext
 }
 
-/// Advance parachain blocks until `block_number`.
-/// No effect if parachain is already at that number or exceeds it.
-pub fn advance_parachain_block_to(block_number: u64) {
-    while parachain::System::block_number() < block_number {
-        // On Finalize
-        let current_block_number = parachain::System::block_number();
-        parachain::PolkadotXcm::on_finalize(current_block_number);
-        parachain::Balances::on_finalize(current_block_number);
-        parachain::DappsStaking::on_finalize(current_block_number);
-        parachain::System::on_finalize(current_block_number);
+// Advance parachain blocks until `block_number`.
+// No effect if parachain is already at that number or exceeds it.
+// pub fn advance_parachain_block_to(block_number: u64) {
+//     while parachain::System::block_number() < block_number {
+//         // On Finalize
+//         let current_block_number = parachain::System::block_number();
+//         parachain::PolkadotXcm::on_finalize(current_block_number);
+//         parachain::Balances::on_finalize(current_block_number);
+//         parachain::DappsStaking::on_finalize(current_block_number);
+//         parachain::System::on_finalize(current_block_number);
 
-        // Forward 1 block
-        let current_block_number = current_block_number + 1;
-        parachain::System::set_block_number(current_block_number);
-        parachain::System::reset_events();
+//         // Forward 1 block
+//         let current_block_number = current_block_number + 1;
+//         parachain::System::set_block_number(current_block_number);
+//         parachain::System::reset_events();
 
-        // On Initialize
-        parachain::System::on_initialize(current_block_number);
-        {
-            parachain::DappsStaking::on_initialize(current_block_number);
-            let (staker_rewards, dev_rewards) = issue_dapps_staking_rewards();
-            parachain::DappsStaking::rewards(staker_rewards, dev_rewards);
-        }
-        parachain::Balances::on_initialize(current_block_number);
-        parachain::PolkadotXcm::on_initialize(current_block_number);
-    }
-}
+//         // On Initialize
+//         parachain::System::on_initialize(current_block_number);
+//         {
+//             parachain::DappsStaking::on_initialize(current_block_number);
+//             let (staker_rewards, dev_rewards) = issue_dapps_staking_rewards();
+//             parachain::DappsStaking::rewards(staker_rewards, dev_rewards);
+//         }
+//         parachain::Balances::on_initialize(current_block_number);
+//         parachain::PolkadotXcm::on_initialize(current_block_number);
+//     }
+// }
 
 /// Issues and returns negative imbalances of (staker rewards, developer rewards)
 fn issue_dapps_staking_rewards() -> (parachain::NegativeImbalance, parachain::NegativeImbalance) {

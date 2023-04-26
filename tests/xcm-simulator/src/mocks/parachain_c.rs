@@ -607,18 +607,29 @@ type ItemId = AssetInstance;
 
 pub struct NftAdapter;
 const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
-// const SELECTOR_GET: [u8; 4] = [0x2f, 0x86, 0x5b, 0xd9];
+use xcm::VersionedMultiLocation::V3;
 
 impl Mutate<AccountId> for NftAdapter {
     fn mint_into(collection_ml: &CollectionId, _item: &ItemId, _who: &AccountId) -> DispatchResult {
         log::debug!(target: "runtime", "########### ParaC mint_into \n###coll: {:?} \n###item: {:?} \n###who: {:?}", collection_ml, _item, _who);
-        let _collection_id = match collection_ml.interior() {
-            X3(Parachain(..), PalletInstance(..), GeneralIndex(id)) => id,
-            _ => return Err("Invalid collection id".into()),
+        let contract_ml = XcAssetConfig::reserve_to_local(collection_ml.clone().into_versioned())
+            .ok_or("Collection not registered")?;
+
+        let contract_id = match contract_ml {
+            V3(MultiLocation {
+                parents: 0,
+                interior: X1(Junction::AccountId32 { id, .. }),
+            }) => id, //mint_into_native(id, _item, _who)?,
+            // V3(MultiLocation {
+            //     parents: 0,
+            //     interior: X1(Junction::AccountKey20 { key, .. }),
+            // }) => key, // mint_into_evm(id, _item, _who)?,
+            _ => return Err("Unexpected MultiLocation format".into()),
         };
-        let contract_id: AccountId32 =
-            hex_literal::hex!["f66ae551469a1fc9134253ba36e528126af1e4db971c8a26c9efc08beba258f5"]
-                .into();
+        log::debug!(target: "runtime", "########### contract_id: {:?}", contract_id);
+        // let contract_id: AccountId32 =
+        //     hex_literal::hex!["f66ae551469a1fc9134253ba36e528126af1e4db971c8a26c9efc08beba258f5"]
+        //         .into();
 
         let _outcome = Contracts::bare_call(
             ALICE.into(),

@@ -23,20 +23,24 @@ use pallet_contracts::Determinism;
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{
     traits::{Bounded, StaticLookup},
-    DispatchResult,
+    // DispatchResult,
+    DispatchError,
 };
 use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
-fn register_asset<Runtime, AssetId>(
+const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
+const SELECTOR_CONSTRUCTOR: [u8; 4] = [0x9b, 0xae, 0x9d, 0x5e];
+const SELECTOR_GET: [u8; 4] = [0x2f, 0x86, 0x5b, 0xd9];
+
+fn register_nonfungible_native<Runtime, AssetId>(
     origin: Runtime::RuntimeOrigin,
-    asset_id: AssetId,
-    asset_location: impl Into<MultiLocation> + Clone,
+    reserve_nonfungible_location: impl Into<MultiLocation> + Clone,
+    payment_asset_location: impl Into<MultiLocation> + Clone,
+    payment_asset_id: AssetId,
     asset_controller: <Runtime::Lookup as StaticLookup>::Source,
-    is_sufficent: Option<bool>,
     min_balance: Option<Runtime::Balance>,
-    units_per_second: Option<u128>,
-) -> DispatchResult
+) -> Result<[u8; 32], DispatchError>
 where
     Runtime: pallet_xc_asset_config::Config + pallet_assets::Config,
     AssetId: IsType<<Runtime as pallet_xc_asset_config::Config>::AssetId>
@@ -45,23 +49,69 @@ where
 {
     pallet_assets::Pallet::<Runtime>::force_create(
         origin.clone(),
-        <Runtime as pallet_assets::Config>::AssetIdParameter::from(asset_id.clone().into()),
+        <Runtime as pallet_assets::Config>::AssetIdParameter::from(payment_asset_id.clone().into()),
         asset_controller,
-        is_sufficent.unwrap_or(true),
+        true,
         min_balance.unwrap_or(Bounded::min_value()),
     )?;
 
+    let contract_id;
+    (contract_id, _) = deploy_contract::<parachain_c::Runtime>(
+        "flipper",
+        ALICE.into(),
+        0,
+        GAS_LIMIT,
+        None,
+        // selector + true
+        [SELECTOR_CONSTRUCTOR.to_vec(), vec![0x01]].concat(),
+    );
+
+    let local_contract_ml = MultiLocation {
+        parents: 0,
+        interior: X1(Junction::AccountId32 {
+            network: None,
+            id: contract_id.clone().into(),
+        }),
+    };
+    // check for flip status
+    let outcome = NftParachainContracts::bare_call(
+        ALICE.into(),
+        contract_id.clone(),
+        0,
+        GAS_LIMIT,
+        None,
+        SELECTOR_GET.to_vec(),
+        true,
+        Determinism::Deterministic,
+    );
+    let res = outcome.result.unwrap();
+    assert!(res.did_revert() == false);
+    let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
+    assert_eq!(flag, Ok(true));
+
+    pallet_xc_asset_config::Pallet::<Runtime>::register_nonfungible_location(
+        origin.clone(),
+        Box::new(reserve_nonfungible_location.clone().into().into_versioned()),
+        Box::new(local_contract_ml.into_versioned()),
+    )?;
+    println!(
+        "!!!!!!!! reserve_nonfungible_location: {:?}",
+        reserve_nonfungible_location.clone().into().into_versioned()
+    );
+
     pallet_xc_asset_config::Pallet::<Runtime>::register_asset_location(
         origin.clone(),
-        Box::new(asset_location.clone().into().into_versioned()),
-        asset_id.into(),
+        Box::new(payment_asset_location.clone().into().into_versioned()),
+        payment_asset_id.into(),
     )?;
 
     pallet_xc_asset_config::Pallet::<Runtime>::set_asset_units_per_second(
         origin,
-        Box::new(asset_location.into().into_versioned()),
-        units_per_second.unwrap_or(1_000_000_000_000),
-    )
+        Box::new(payment_asset_location.into().into_versioned()),
+        1_000_000_000_000,
+    )?;
+
+    Ok(contract_id.into())
 }
 
 #[test]
@@ -203,72 +253,47 @@ fn basic_xcmp() {
 fn transfer_nft_to_smart_contract() {
     MockNet::reset();
     let uniques_pallet_instance = 13u8;
-    let collection_junction = X2(PalletInstance(uniques_pallet_instance), GeneralIndex(1u128));
-    let collection_ml: MultiLocation = MultiLocation {
-        parents: 0,
+    let collection_junction = X3(
+        Parachain(1),
+        PalletInstance(uniques_pallet_instance),
+        GeneralIndex(1u128),
+    );
+    let reserve_collection_ml: MultiLocation = MultiLocation {
+        parents: 1,
         interior: collection_junction,
     };
     let item = 42;
 
     // Deploy and initialize flipper contract with `true` in ParaC
-    const SELECTOR_CONSTRUCTOR: [u8; 4] = [0x9b, 0xae, 0x9d, 0x5e];
-    const SELECTOR_GET: [u8; 4] = [0x2f, 0x86, 0x5b, 0xd9];
-    const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
     let mut contract_id = [0u8; 32].into();
     ParaC::execute_with(|| {
-        (contract_id, _) = deploy_contract::<parachain_c::Runtime>(
-            "flipper",
-            ALICE.into(),
-            0,
-            GAS_LIMIT,
-            None,
-            // selector + true
-            [SELECTOR_CONSTRUCTOR.to_vec(), vec![0x01]].concat(),
-        );
-        println!("####### ParaC deployed Contract ID: {:?}", contract_id);
-
-        // check for flip status
-        let outcome = NftParachainContracts::bare_call(
-            ALICE.into(),
-            contract_id.clone(),
-            0,
-            GAS_LIMIT,
-            None,
-            SELECTOR_GET.to_vec(),
-            true,
-            Determinism::Deterministic,
-        );
-        let res = outcome.result.unwrap();
-        assert!(res.did_revert() == false);
-        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
-        assert_eq!(flag, Ok(true));
-
         // Register ParaA nft item as asset on ParaC
         let sibling_asset_id = 123 as u128;
         let para_a_multiloc = (Parent, Parachain(1));
 
         // On parachain C create an asset which represents a derivative of parachain A native asset.
         // This asset is allowed as XCM execution fee payment asset.
-        assert_ok!(register_asset::<parachain::Runtime, _>(
-            parachain::RuntimeOrigin::root(),
-            sibling_asset_id,
+        contract_id = register_nonfungible_native::<parachain_c::Runtime, _>(
+            parachain_c::RuntimeOrigin::root(),
+            reserve_collection_ml,
             para_a_multiloc.clone(),
-            sibling_account_id(1),
-            Some(true),
-            Some(1),
-            Some(0)
-        ));
-        println!(
-            "####### ParaC register_asset_id: {:?}, sibling_account_id(1): {:?}",
             sibling_asset_id,
-            sibling_account_id(1)
-        );
+            sibling_account_id(1),
+            // Some(true),
+            Some(1),
+            // Some(1_000_000_000_000)
+        )
+        .unwrap();
     });
 
     // Alice mints and transfers the NFT to Alice on ParaC
     ParaA::execute_with(|| {
         println!("--------------ParaA reserve_transfer_assets  -------------\n");
-
+        let collection_junction = X2(PalletInstance(uniques_pallet_instance), GeneralIndex(1u128));
+        let collection_ml: MultiLocation = MultiLocation {
+            parents: 0,
+            interior: collection_junction,
+        };
         // Mint nft on ParaA
         use parachain::{RuntimeOrigin, Uniques};
         assert_ok!(Uniques::force_create(
@@ -300,7 +325,7 @@ fn transfer_nft_to_smart_contract() {
                 parents: 0,
                 interior: Here,
             }),
-            fun: Fungible(100_000_000_000),
+            fun: Fungible(900_000_000_000),
         };
 
         let all_assets: Vec<MultiAsset> = vec![native_multiasset.clone(), nft_multiasset.clone()];
@@ -322,25 +347,19 @@ fn transfer_nft_to_smart_contract() {
             Box::new((all_assets).into()),
             0,
         ));
-        println!(
-            "Alice balance on ParaA: {:?}",
-            parachain::Balances::free_balance(ALICE)
-        );
-        println!(
-            "SiblingC account balance on ParaA: {:?}",
-            parachain::Balances::free_balance(sibling_account_id(3))
-        );
-        println!("--------------ParaA Events -------------\n");
-        for e in parachain::System::events() {
-            println!("{:?}\n\n", e);
-        }
+        // println!("--------------ParaA Events -------------\n");
+        // for e in parachain::System::events() {
+        //     println!("A {:?}\n", e.event);
+        // }
     });
 
     // check for flip status, it should be false
     ParaC::execute_with(|| {
+        println!("####### calling deployed Contract ID: {:?}", contract_id);
+
         let outcome = ParachainContracts::bare_call(
             ALICE.into(),
-            contract_id.clone(),
+            contract_id.into(),
             0,
             GAS_LIMIT,
             None,
@@ -355,37 +374,20 @@ fn transfer_nft_to_smart_contract() {
     });
 }
 
-// xcm::process_instruction: ===
-//     TransferReserveAsset {
-//         assets: MultiAssets(
-//             [MultiAsset {
-//                 id: Concrete(MultiLocation { parents: 0, interior: Here }),
-//                 fun: Fungible(1000000000) },
-//             MultiAsset {
-//                 id: Concrete(MultiLocation { parents: 0, interior: X2(PalletInstance(13), GeneralIndex(1)) }),
-//                 fun: NonFungible(Index(42)) }]
-//         ),
-//         dest: MultiLocation { parents: 1, interior: X1(Parachain(3)) },
-//         xcm: Xcm([
-//             BuyExecution {
-//                 fees: MultiAsset {
-//                     id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }),
-//                     fun: Fungible(1000000000) },
-//                 weight_limit: Limited(Weight { ref_time: 40, proof_size: 0 })
-//             },
-//             DepositAsset {
-//                 assets: Wild(AllCounted(2)),
-//                 beneficiary: MultiLocation {
-//                     parents: 0,
-//                     interior: X1(AccountId32 { network: None, id: [250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250] }) } }]) }
-
-// xcm::currency_adapter:
-// internal_transfer_asset
-// asset: MultiAsset {
-//     id: Concrete(MultiLocation { parents: 0, interior: Here }),
-//     fun: Fungible(1000000000)
-// },
-// from: MultiLocation { parents: 0, interior: Here },
-// to: MultiLocation { parents: 1, interior: X1(Parachain(3)) }
-
-// xcm::execute: !!! ERROR: FailedToTransactAsset("InsufficientBalance")
+// xcm::execute_xcm: 
+// origin: MultiLocation { parents: 1, interior: X1(Parachain(1)) }, 
+// message: Xcm([
+//     ReserveAssetDeposited(
+//         MultiAssets([
+//             MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }), 
+//             fun: Fungible(900000000000) }, 
+//             MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X3(Parachain(1), PalletInstance(13), GeneralIndex(1)) }), 
+//             fun: NonFungible(Index(42)) }])), 
+//     ClearOrigin, 
+//     BuyExecution { 
+//         fees: MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }), 
+//         fun: Fungible(900000000000) }, weight_limit: Limited(Weight { ref_time: 40, proof_size: 0 }) }, 
+//     DepositAsset { 
+//         assets: Wild(AllCounted(2)), 
+//         beneficiary: MultiLocation { parents: 0, interior: X1(AccountId32 { network: None, id: [250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250] }) } }]), 
+// weight_limit: Weight { ref_time: 18446744073709551615, proof_size: 18446744073709551615 }   

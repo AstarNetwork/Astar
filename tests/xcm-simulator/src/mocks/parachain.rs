@@ -23,9 +23,8 @@ use frame_support::{
     dispatch::DispatchClass,
     match_types, parameter_types,
     traits::{
-        nonfungibles::{Inspect, Mutate, Transfer},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, ContainsPair, Currency, EnsureOrigin,
-        EnsureOriginWithArg, Everything, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, ContainsPair, Currency,
+        Everything, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -37,13 +36,12 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureSigned,
 };
-use pallet_contracts::Determinism;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::{ConstBool, H256};
 use sp_runtime::{
     testing::Header,
     traits::{AccountIdConversion, Convert, IdentityLookup},
-    AccountId32, DispatchResult, Perbill, RuntimeDebug,
+    AccountId32, Perbill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -58,7 +56,7 @@ use xcm_builder::{
     SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{
-    traits::{Convert as ExeConvert, JustTry},
+    traits::JustTry,
     XcmExecutor,
 };
 
@@ -73,7 +71,6 @@ use xcm_primitives::{
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 pub type AssetId = u128;
-pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFAu8; 32]);
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
