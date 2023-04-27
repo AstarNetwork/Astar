@@ -30,8 +30,9 @@ use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
 const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
-const SELECTOR_CONSTRUCTOR: [u8; 4] = [0x9b, 0xae, 0x9d, 0x5e];
 const SELECTOR_GET: [u8; 4] = [0x2f, 0x86, 0x5b, 0xd9];
+const SELECTOR_CONSTRUCTOR: [u8; 4] = [0x9b, 0xae, 0x9d, 0x5e];
+const SELECTOR_SUPPLY: [u8; 4] = [0x62, 0x84, 0x13, 0xfe];
 
 fn register_nonfungible_native<Runtime, AssetId>(
     origin: Runtime::RuntimeOrigin,
@@ -55,16 +56,25 @@ where
         min_balance.unwrap_or(Bounded::min_value()),
     )?;
 
+    let name: Vec<u8> = "xcDerivative".into();
+    let symbol: Vec<u8> = "XD".into();
+    let baseuri: Vec<u8> = "http://baseuri".into();
+
     let contract_id;
     (contract_id, _) = deploy_contract::<parachain_c::Runtime>(
-        "flipper",
-        ALICE.into(),
+        "xcm_nft_psp34",
+        sibling_account_id(1),
         0,
         GAS_LIMIT,
         None,
-        // selector + true
-        [SELECTOR_CONSTRUCTOR.to_vec(), vec![0x01]].concat(),
+        // selector + params
+        [
+            SELECTOR_CONSTRUCTOR.to_vec(),
+            (name.clone(), symbol.clone(), baseuri.clone()).encode(),
+        ]
+        .concat(),
     );
+    get_contract_owner(contract_id.clone().into());
 
     let local_contract_ml = MultiLocation {
         parents: 0,
@@ -73,21 +83,8 @@ where
             id: contract_id.clone().into(),
         }),
     };
-    // check for flip status
-    let outcome = NftParachainContracts::bare_call(
-        ALICE.into(),
-        contract_id.clone(),
-        0,
-        GAS_LIMIT,
-        None,
-        SELECTOR_GET.to_vec(),
-        true,
-        Determinism::Deterministic,
-    );
-    let res = outcome.result.unwrap();
-    assert!(res.did_revert() == false);
-    let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
-    assert_eq!(flag, Ok(true));
+    // check for supply status
+    ensure_total_supply(contract_id.clone().into(), GAS_LIMIT, 0);
 
     pallet_xc_asset_config::Pallet::<Runtime>::register_nonfungible_location(
         origin.clone(),
@@ -112,6 +109,44 @@ where
     )?;
 
     Ok(contract_id.into())
+}
+
+fn ensure_total_supply(contract_id: [u8; 32], gas_limit: Weight, expected_supply: u64) {
+    let outcome = NftParachainContracts::bare_call(
+        ALICE.into(),
+        contract_id.into(),
+        0,
+        GAS_LIMIT,
+        None,
+        SELECTOR_SUPPLY.to_vec(),
+        true,
+        Determinism::Deterministic,
+    );
+    let res = outcome.result.unwrap();
+    assert!(res.did_revert() == false);
+    let supply = Result::<u64, ()>::decode(&mut res.data.as_ref()).unwrap();
+    assert_eq!(supply, Ok(expected_supply));
+    println!("!!!!!!!! Total Supply: {:?}", supply);
+}
+
+fn get_contract_owner(contract_id: [u8; 32]) -> [u8; 32]{
+    let SELECTOR_GET_OWNER = [0x4f, 0xa4, 0x3c, 0x8c];
+    let outcome = NftParachainContracts::bare_call(
+        ALICE.into(),
+        contract_id.into(),
+        0,
+        GAS_LIMIT,
+        None,
+        SELECTOR_GET_OWNER.to_vec(),
+        true,
+        Determinism::Deterministic,
+    );
+    let res = outcome.result.unwrap();
+    assert!(res.did_revert() == false);
+    let owner = Result::<[u8; 32], ()>::decode(&mut res.data.as_ref()).unwrap();
+    println!("!!!!!!!! Contract Owner: {:?}", owner);
+
+    owner.unwrap()
 }
 
 #[test]
@@ -357,37 +392,25 @@ fn transfer_nft_to_smart_contract() {
     ParaC::execute_with(|| {
         println!("####### calling deployed Contract ID: {:?}", contract_id);
 
-        let outcome = ParachainContracts::bare_call(
-            ALICE.into(),
-            contract_id.into(),
-            0,
-            GAS_LIMIT,
-            None,
-            SELECTOR_GET.to_vec(),
-            true,
-            Determinism::Deterministic,
-        );
-        let res = outcome.result.unwrap();
-        assert!(res.did_revert() == false);
-        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
-        assert_eq!(flag, Ok(false));
+        // check for supply status
+        ensure_total_supply(contract_id.clone().into(), GAS_LIMIT, 1);
     });
 }
 
-// xcm::execute_xcm: 
-// origin: MultiLocation { parents: 1, interior: X1(Parachain(1)) }, 
+// xcm::execute_xcm:
+// origin: MultiLocation { parents: 1, interior: X1(Parachain(1)) },
 // message: Xcm([
 //     ReserveAssetDeposited(
 //         MultiAssets([
-//             MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }), 
-//             fun: Fungible(900000000000) }, 
-//             MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X3(Parachain(1), PalletInstance(13), GeneralIndex(1)) }), 
-//             fun: NonFungible(Index(42)) }])), 
-//     ClearOrigin, 
-//     BuyExecution { 
-//         fees: MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }), 
-//         fun: Fungible(900000000000) }, weight_limit: Limited(Weight { ref_time: 40, proof_size: 0 }) }, 
-//     DepositAsset { 
-//         assets: Wild(AllCounted(2)), 
-//         beneficiary: MultiLocation { parents: 0, interior: X1(AccountId32 { network: None, id: [250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250] }) } }]), 
-// weight_limit: Weight { ref_time: 18446744073709551615, proof_size: 18446744073709551615 }   
+//             MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }),
+//             fun: Fungible(900000000000) },
+//             MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X3(Parachain(1), PalletInstance(13), GeneralIndex(1)) }),
+//             fun: NonFungible(Index(42)) }])),
+//     ClearOrigin,
+//     BuyExecution {
+//         fees: MultiAsset { id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(1)) }),
+//         fun: Fungible(900000000000) }, weight_limit: Limited(Weight { ref_time: 40, proof_size: 0 }) },
+//     DepositAsset {
+//         assets: Wild(AllCounted(2)),
+//         beneficiary: MultiLocation { parents: 0, interior: X1(AccountId32 { network: None, id: [250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250] }) } }]),
+// weight_limit: Weight { ref_time: 18446744073709551615, proof_size: 18446744073709551615 }

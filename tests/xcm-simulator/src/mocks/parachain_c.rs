@@ -47,6 +47,8 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+use crate::mocks::sibling_account_id;
+
 use super::msg_queue::*;
 use xcm::latest::prelude::{AssetId as XcmAssetId, *};
 use xcm_builder::{
@@ -606,7 +608,6 @@ type CollectionId = MultiLocation;
 type ItemId = AssetInstance;
 
 pub struct NftAdapter;
-const SELECTOR_FLIP: [u8; 4] = [0x63, 0x3a, 0xa5, 0x51];
 use xcm::VersionedMultiLocation::V3;
 
 impl Mutate<AccountId> for NftAdapter {
@@ -619,33 +620,17 @@ impl Mutate<AccountId> for NftAdapter {
             V3(MultiLocation {
                 parents: 0,
                 interior: X1(Junction::AccountId32 { id, .. }),
-            }) => id, //mint_into_native(id, _item, _who)?,
+            }) =>         MintingHelper::mint_native(id.into(), _item.clone(), _who.clone()),
             // V3(MultiLocation {
             //     parents: 0,
             //     interior: X1(Junction::AccountKey20 { key, .. }),
             // }) => key, // mint_into_evm(id, _item, _who)?,
             _ => return Err("Unexpected MultiLocation format".into()),
         };
-        log::debug!(target: "runtime", "########### contract_id: {:?}", contract_id);
+        log::debug!(target: "runtime", "########### parsed contract_id from collection_ml: {:?}", contract_id);
         // let contract_id: AccountId32 =
         //     hex_literal::hex!["f66ae551469a1fc9134253ba36e528126af1e4db971c8a26c9efc08beba258f5"]
         //         .into();
-
-        let _outcome = Contracts::bare_call(
-            ALICE.into(),
-            contract_id.clone().into(),
-            0,
-            Weight::from_parts(100_000_000_000, 1024 * 1024),
-            None,
-            SELECTOR_FLIP.to_vec(),
-            true,
-            Determinism::Deterministic,
-        );
-        // let res = outcome.result.unwrap();
-        log::debug!(target: "runtime", "########### ParaC mint_into \noutcome:{:?} \ncontract_id:{:?}", _outcome, contract_id);
-
-        // check for revert
-        // assert!(res.did_revert() == false);
 
         Ok(())
     }
@@ -669,6 +654,47 @@ impl Transfer<AccountId> for NftAdapter {
         log::trace!(target: "runtime", "########### transfer {:?} {:?} {:?}", _collection, _item, _destination);
         Ok(())
     }
+}
+
+pub struct MintingHelper;
+impl MintingHelper {
+    fn mint_native(
+        contract_id: AccountId,
+        item: ItemId,
+        who: AccountId,
+    ) -> DispatchResult {
+        const SELECTOR_MINT: [u8; 4] = [0x6c, 0x41, 0xf2, 0xec];
+        let owner = sibling_account_id(1);
+        let _outcome = Contracts::bare_call(
+            owner.into(),
+            contract_id.clone().into(),
+            0,
+            Weight::from_parts(100_000_000_000, 1024 * 1024),
+            None,
+            // mint selector and parameters
+            [
+                SELECTOR_MINT.to_vec(),
+                (who.clone(), OpenBrushId::U64(42)).encode(),
+            ].concat(),
+
+            true,
+            Determinism::Deterministic,
+        );
+        // let res = outcome.result.unwrap();
+        log::debug!(target: "runtime", "########### ParaC mint_native \noutcome:{:?} \ncontract_id:{:?}", _outcome, contract_id);
+
+        // check for revert
+        // assert!(res.did_revert() == false);
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen)]
+pub enum OpenBrushId {
+    U8(u8),
+    U16(u16),
+    U32(u32),
+    U64(u64),
 }
 
 impl Inspect<AccountId> for NftAdapter {

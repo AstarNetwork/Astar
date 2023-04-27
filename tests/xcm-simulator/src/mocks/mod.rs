@@ -266,6 +266,8 @@ pub fn deploy_contract<T: pallet_contracts::Config>(
     storage_deposit_limit: Option<ContractBalanceOf<T>>,
     data: Vec<u8>,
 ) -> (T::AccountId, <T::Hashing as Hash>::Output) {
+    println!("+++++++++++++++++contract_name: {:?}", contract_name);
+    println!("+++++++++++++++++data: {:x?}", data);
     let (code, hash) = load_module::<T>(contract_name).unwrap();
     let outcome = pallet_contracts::Pallet::<T>::bare_instantiate(
         origin,
