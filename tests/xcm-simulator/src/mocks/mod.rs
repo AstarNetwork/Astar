@@ -89,7 +89,7 @@ pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 // pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 // pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
-pub type ParachainContracts = pallet_contracts::Pallet<parachain::Runtime>;
+// pub type ParachainContracts = pallet_contracts::Pallet<parachain::Runtime>;
 
 pub type NftParachainPalletXcm = pallet_xcm::Pallet<parachain_c::Runtime>;
 pub type NftParachainContracts = pallet_contracts::Pallet<parachain_c::Runtime>;

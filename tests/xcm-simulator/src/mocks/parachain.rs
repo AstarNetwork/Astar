@@ -23,8 +23,8 @@ use frame_support::{
     dispatch::DispatchClass,
     match_types, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, ContainsPair, Currency,
-        Everything, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, ContainsPair, Currency, Everything,
+        Imbalance, InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -55,10 +55,7 @@ use xcm_builder::{
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
     SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
-use xcm_executor::{
-    traits::JustTry,
-    XcmExecutor,
-};
+use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use polkadot_parachain::primitives::Sibling;
 use xcm_primitives::{

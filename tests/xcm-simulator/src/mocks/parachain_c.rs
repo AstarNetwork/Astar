@@ -24,8 +24,8 @@ use frame_support::{
     match_types, parameter_types,
     traits::{
         nonfungibles::{Inspect, Mutate, Transfer},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, ContainsPair, Currency, Everything,
-        Imbalance, InstanceFilter, Nothing, OnUnbalanced,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance,
+        InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -63,16 +63,12 @@ use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use polkadot_parachain::primitives::Sibling;
 use xcm_primitives::{
-    AssetLocationIdConverter,
-    FixedRateOfForeignAsset,
-    // ReserveAssetFilter,
-    XcmFungibleFeeHandler,
+    AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 pub type AssetId = u128;
-pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFAu8; 32]);
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -511,41 +507,13 @@ pub type ShidenXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     TreasuryAccountId,
 >;
 
-pub struct AstarReserveAssetFilter;
-impl ContainsPair<MultiAsset, MultiLocation> for AstarReserveAssetFilter {
-    fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-        // We assume that relay chain and sibling parachain assets are trusted reserves for their assets
-        let reserve_location = if let Concrete(location) = &asset.id {
-            // log::debug!(target: "runtime", "########### ParaC ReserveAssetFilter reserve_location: \n{:?}", location);
-            match (location.parents, location.first_interior()) {
-                // sibling parachain
-                (1, Some(Parachain(id))) => Some(MultiLocation::new(1, X1(Parachain(*id)))),
-                // relay chain
-                (1, _) => Some(MultiLocation::parent()),
-                _ => None,
-            }
-        } else {
-            None
-        };
-
-        if let Some(ref reserve) = reserve_location {
-            log::debug!(target: "runtime", "########### ParaC ReserveAssetFilter ---------- reserve: \n{:?}", reserve);
-            log::debug!(target: "runtime", "ParaC ReserveAssetFilter ---------- origin: \n{:?}", origin);
-            origin == reserve
-        } else {
-            log::debug!(target: "runtime", "ParaC ReserveAssetFilter ---------- \nfalse -----------");
-            false
-        }
-    }
-}
-
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = AstarReserveAssetFilter;
+    type IsReserve = ReserveAssetFilter;
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
@@ -612,25 +580,36 @@ use xcm::VersionedMultiLocation::V3;
 
 impl Mutate<AccountId> for NftAdapter {
     fn mint_into(collection_ml: &CollectionId, _item: &ItemId, _who: &AccountId) -> DispatchResult {
-        log::debug!(target: "runtime", "########### ParaC mint_into \n###coll: {:?} \n###item: {:?} \n###who: {:?}", collection_ml, _item, _who);
+        log::debug!(target: "runtime", "########### ParaC mint_into \n###collection: {:?} \n###item: {:?} \n###who: {:?}", collection_ml, _item, _who);
         let contract_ml = XcAssetConfig::reserve_to_local(collection_ml.clone().into_versioned())
             .ok_or("Collection not registered")?;
+        let origin_parachain_id = match collection_ml.interior() {
+            X3(Parachain(para), PalletInstance(..), GeneralIndex(..)) => para,
+            _ => return Err("Unexpected Collection MultiLocation format".into()),
+        };
+        println!("########### Call from parachain: {:?}", origin_parachain_id);
 
-        let contract_id = match contract_ml {
+        match contract_ml {
             V3(MultiLocation {
                 parents: 0,
                 interior: X1(Junction::AccountId32 { id, .. }),
-            }) =>         MintingHelper::mint_native(id.into(), _item.clone(), _who.clone()),
-            // V3(MultiLocation {
-            //     parents: 0,
-            //     interior: X1(Junction::AccountKey20 { key, .. }),
-            // }) => key, // mint_into_evm(id, _item, _who)?,
-            _ => return Err("Unexpected MultiLocation format".into()),
-        };
-        log::debug!(target: "runtime", "########### parsed contract_id from collection_ml: {:?}", contract_id);
-        // let contract_id: AccountId32 =
-        //     hex_literal::hex!["f66ae551469a1fc9134253ba36e528126af1e4db971c8a26c9efc08beba258f5"]
-        //         .into();
+            }) => MintingHelper::mint_native(
+                *origin_parachain_id,
+                id.into(),
+                _item.clone(),
+                _who.clone(),
+            ),
+            V3(MultiLocation {
+                parents: 0,
+                interior: X1(Junction::AccountKey20 { key, .. }),
+            }) => MintingHelper::mint_evm(
+                *origin_parachain_id,
+                key.into(),
+                _item.clone(),
+                _who.clone(),
+            ),
+            _ => return Err("Unexpected Contract MultiLocation format".into()),
+        }?;
 
         Ok(())
     }
@@ -658,14 +637,16 @@ impl Transfer<AccountId> for NftAdapter {
 
 pub struct MintingHelper;
 impl MintingHelper {
+    // Mint NFT on native contract. Contract is stored in fixtures folder
     fn mint_native(
+        origin_parachain_id: u32,
         contract_id: AccountId,
-        item: ItemId,
+        _item: ItemId,
         who: AccountId,
     ) -> DispatchResult {
         const SELECTOR_MINT: [u8; 4] = [0x6c, 0x41, 0xf2, 0xec];
-        let owner = sibling_account_id(1);
-        let _outcome = Contracts::bare_call(
+        let owner = sibling_account_id(origin_parachain_id); // Sibling account is used to create contract
+        let outcome = Contracts::bare_call(
             owner.into(),
             contract_id.clone().into(),
             0,
@@ -674,17 +655,31 @@ impl MintingHelper {
             // mint selector and parameters
             [
                 SELECTOR_MINT.to_vec(),
-                (who.clone(), OpenBrushId::U64(42)).encode(),
-            ].concat(),
-
+                (who.clone(), OpenBrushId::U64(42)).encode(), // TODO AssetInstance to Id
+            ]
+            .concat(),
             true,
             Determinism::Deterministic,
         );
-        // let res = outcome.result.unwrap();
-        log::debug!(target: "runtime", "########### ParaC mint_native \noutcome:{:?} \ncontract_id:{:?}", _outcome, contract_id);
 
         // check for revert
-        // assert!(res.did_revert() == false);
+        let res = outcome.result.unwrap();
+        assert!(res.did_revert() == false);
+
+        Ok(())
+    }
+
+    fn mint_evm(
+        origin_parachain_id: u32,
+        _contract_id: [u8; 20],
+        _item: ItemId,
+        _who: AccountId,
+    ) -> DispatchResult {
+        // const SELECTOR_MINT: [u8; 4] = [0x00, 0x00, 0x00, 0x00];
+        let _owner = sibling_account_id(origin_parachain_id);
+
+        // TODO
+
         Ok(())
     }
 }
