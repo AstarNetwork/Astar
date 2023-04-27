@@ -413,7 +413,7 @@ jobs:
     - name: Create download folder
       run: |
         mkdir -p ${{ matrix.os }}-${{ matrix.arch }}-bin
-        mkdir -p ubuntu-tracing
+        mkdir -p ubuntu-tracing-bin
 
     - name: Download pre-built collator binary
       uses: actions/download-artifact@v3
@@ -425,7 +425,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: astar-ubuntu-tracing-latest
-        path: ubuntu-tracing
+        path: ubuntu-tracing-bin
 
     - name: Make binary executable and tar gzip
       run: |
@@ -433,11 +433,11 @@ jobs:
         chmod +x astar-collator
         tar zcvf astar-collator.tar.gz astar-collator
 
-    - name: Make tracing binary executable and tar gzip
+    - name: Make evm tracing binary executable and tar gzip
       run: |
         cd ubuntu-tracing-bin
         chmod +x astar-collator
-        tar zcvf astar-collator.tar.gz astar-collator
+        tar zcvf astar-collator-tracing.tar.gz astar-collator
 
     - name: Upload binary artifact
       uses: actions/upload-release-asset@v1
@@ -449,13 +449,13 @@ jobs:
         asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
         asset_content_type: application/gzip
 
-    - name: Upload tracing binary artifact
+    - name: Upload evm tracing binary artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ubuntu-tracing-bin/astar-collator.tar.gz
+        asset_path: ubuntu-tracing-bin/astar-collator-tracing.tar.gz
         asset_name: astar-collator-${{ github.ref_name }}-tracing-ubuntu-x86_64.tar.gz
         asset_content_type: application/gzip
 
