@@ -896,19 +896,18 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
                         // Skip entire EthCall pallet
-                        | RuntimeCall::BaseFee(..)
-                        // Skip entire Contracts pallet
+                        | RuntimeCall::BaseFee(..) // Skip entire Contracts pallet
                 )
-            },
+            }
             ProxyType::Balances => {
                 matches!(c, RuntimeCall::Balances(..))
-            },
+            }
             ProxyType::IdentityJudgement => {
                 matches!(
                     c,
                     RuntimeCall::Identity(pallet_identity::Call::provide_judgement { .. })
                 )
-            },
+            }
             ProxyType::CancelProxy => {
                 matches!(
                     c,
@@ -922,13 +921,13 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
     }
 
     fn is_superset(&self, o: &Self) -> bool {
-		match (self, o) {
-			(x, y) if x == y => true,
-			(ProxyType::Any, _) => true,
-			(_, ProxyType::Any) => false,
-			_ => false,
-		}
-	}
+        match (self, o) {
+            (x, y) if x == y => true,
+            (ProxyType::Any, _) => true,
+            (_, ProxyType::Any) => false,
+            _ => false,
+        }
+    }
 }
 
 parameter_types! {
