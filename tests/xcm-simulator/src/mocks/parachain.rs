@@ -573,8 +573,9 @@ parameter_types! {
 impl pallet_xcm_transactor::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
-    type CallbackHandler = XcmTransact;
     type RuntimeCall = RuntimeCall;
+    type CallbackHandler = XcmTransact;
+    type RegisterQueryOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type WasmGasLimit = CallbackGasLimit;
     type Network = RelayNetwork;
 }

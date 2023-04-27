@@ -1,5 +1,5 @@
 use crate::{Config, Error as PalletError, Pallet, QueryConfig};
-use frame_support::{traits::EnsureOrigin, weights::Weight, DefaultNoBound};
+use frame_support::{traits::EnsureOrigin, DefaultNoBound};
 use frame_system::RawOrigin;
 // use log;
 use pallet_contracts::chain_extension::{
@@ -7,11 +7,11 @@ use pallet_contracts::chain_extension::{
     Result as DispatchResult, RetVal, SysConfig,
 };
 use pallet_xcm::{Pallet as XcmPallet, WeightInfo};
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::Encode;
 use sp_core::Get;
 use sp_std::prelude::*;
 use xcm::prelude::*;
-pub use xcm_ce_types::{Error, PreparedExecution, ValidateSendInput, ValidatedSend};
+pub use xcm_ce_primitives::{Error, PreparedExecution, ValidateSendInput, ValidatedSend};
 use xcm_executor::traits::WeightBounds;
 
 type RuntimeCallOf<T> = <T as SysConfig>::RuntimeCall;
@@ -34,6 +34,7 @@ enum Command {
     Send = 3,
     NewQuery = 4,
     TakeResponse = 5,
+    PalletAccountId = 6,
 }
 
 #[derive(DefaultNoBound)]
@@ -79,6 +80,7 @@ impl Command {
             Self::Send => self.send(ext, env),
             Self::NewQuery => self.new_query(env),
             Self::TakeResponse => self.take_response(env),
+            Self::PalletAccountId => self.pallet_account_id(env),
         }
     }
 
@@ -229,8 +231,7 @@ impl Command {
             AccountId32 {
                 id: *env.ext().address().as_ref(),
                 network: T::Network::get(),
-            }
-            .into(),
+            },
             dest,
         )?;
 
@@ -253,6 +254,15 @@ impl Command {
             Error::NoResponse
         );
         VersionedResponse::from(response).using_encoded(|r| env.write(r, true, None))?;
+
+        Ok(RetVal::Converging(Error::Success.into()))
+    }
+    fn pallet_account_id<T: Config, E: Ext<T = T>>(
+        &self,
+        env: Environment<E, InitState>,
+    ) -> DispatchResult<RetVal> {
+        let mut env = env.buf_in_buf_out();
+        Pallet::<T>::account_id().using_encoded(|r| env.write(r, true, None))?;
 
         Ok(RetVal::Converging(Error::Success.into()))
     }

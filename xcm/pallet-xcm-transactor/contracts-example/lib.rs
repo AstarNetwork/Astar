@@ -8,7 +8,7 @@ mod contracts {
     use super::*;
     use ink::{env::DefaultEnvironment, storage::Mapping};
     use xcm::{latest::Weight, prelude::*};
-    use xcm_ce_types::{Error as XcmCEError, QueryConfig, ValidateSendInput};
+    use xcm_ce_primitives::{Error as XcmCEError, QueryConfig, ValidateSendInput};
 
     type XcmExtension = _XcmExtension<DefaultEnvironment>;
 
@@ -82,7 +82,7 @@ mod contracts {
             _response: Response,
         ) {
             ink::env::debug_println!("[1/1] Response Recieved for QueryId - {query_id}");
-            // TODO: check whether reponose comes from pallet
+            assert!(XcmExtension::pallet_account_id() == self.env().caller());
             match self.expecting_query.get(query_id) {
                 Some(expecting) if expecting == true => {
                     // NOTE: do not delete storage, because storage deposit

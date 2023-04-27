@@ -17,38 +17,9 @@ pub mod chain_extension;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
+    use frame_system::Config as SysConfig;
     use pallet_xcm::ensure_response;
-
-    /// Type of XCM Response Query
-    #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-    pub enum QueryType<AccountId> {
-        // No callback, store the response for manual polling
-        NoCallback,
-        // Call Wasm contract's method on recieving response
-        // It expects the contract method to have following signature
-        //     -  (query_id: QueryId, responder: Multilocation, response: Response)
-        WASMContractCallback {
-            contract_id: AccountId,
-            selector: MethodSelector,
-        },
-        // Call Evm contract's method on recieving response
-        // It expects the contract method to have following signature
-        //     -  (query_id: QueryId, responder: Multilocation, response: Response)
-        EVMContractCallback {
-            contract_id: H160,
-            selector: MethodSelector,
-        },
-    }
-
-    /// Query config
-    #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-    pub struct QueryConfig<AccountId, BlockNumber> {
-        // query type
-        pub query_type: QueryType<AccountId>,
-        // blocknumber after which query will be expire
-        pub timeout: BlockNumber,
-    }
+    pub use xcm_ce_primitives::{QueryConfig, QueryType};
 
     // Response info
     #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -68,21 +39,24 @@ pub mod pallet {
 
         /// The overarching call type.
         type RuntimeCall: Parameter
-            + Dispatchable<
-                RuntimeOrigin = <Self as Config>::RuntimeOrigin,
-                PostInfo = PostDispatchInfo,
-            > + GetDispatchInfo
             + From<Call<Self>>
-            + IsType<<Self as frame_system::Config>::RuntimeCall>;
+            + IsType<<Self as pallet_xcm::Config>::RuntimeCall>;
 
         /// The overaching origin type
         type RuntimeOrigin: Into<Result<pallet_xcm::Origin, <Self as Config>::RuntimeOrigin>>
-            + From<<Self as frame_system::Config>::RuntimeOrigin>;
+            + IsType<<Self as frame_system::Config>::RuntimeOrigin>;
 
         /// Query Handler for creating quries and handling response
         type CallbackHandler: OnCallback<
             AccountId = Self::AccountId,
             BlockNumber = Self::BlockNumber,
+        >;
+
+        /// Required origin for sending registering new queries. If successful, it resolves to `MultiLocation`
+        /// which exists as an interior location within this chain's XCM context.
+        type RegisterQueryOrigin: EnsureOrigin<
+            <Self as SysConfig>::RuntimeOrigin,
+            Success = MultiLocation,
         >;
 
         /// Gas limit for WASM callback
@@ -105,6 +79,11 @@ pub mod pallet {
     pub enum Event<T: Config> {
         // successfully handled callback
         CallbackSuccess(QueryType<T::AccountId>),
+        // new query registered
+        QueryPrepared {
+            query_type: QueryType<T::AccountId>,
+            query_id: QueryId,
+        },
     }
 
     #[pallet::error]
@@ -117,19 +96,23 @@ pub mod pallet {
         ExecutionFailed,
         SendValidateFailed,
         SendFailed,
-        // Query not found in storage
+        /// The version of the Versioned value used is not able to be interpreted.
+        BadVersion,
+        /// Origin not allow for registering queries
+        InvalidOrigin,
+        /// Query not found in storage
         UnexpectedQueryResponse,
-        // Does not support the given query type
+        /// Does not support the given query type
         NotSupported,
-        // Callback out of gas
-        // TODO: use it
+        /// Callback out of gas
+        /// TODO: use it
         OutOfGas,
-        // WASM Contract reverted
+        /// WASM Contract reverted
         WASMContractReverted,
-        // EVM Contract reverted
+        /// EVM Contract reverted
         EVMContractReverted,
-        // callback failed due to unkown reasons
-        // TODO: split this error into known errors
+        /// callback failed due to unkown reasons
+        /// TODO: split this error into known errors
         CallbackFailed,
     }
 
@@ -137,8 +120,10 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Dispatch for recieving callback from pallet_xcm's notify
         /// and handle their routing
+        /// TODO: Weights,
+        ///       (callback weight) + 1 DB read + 1 event + some extra (from benchmarking)
         #[pallet::call_index(0)]
-        #[pallet::weight(100_000)]
+        #[pallet::weight(Weight::from_parts(1_000_000, 1_000_000))]
         pub fn on_callback_recieved(
             origin: OriginFor<T>,
             query_id: QueryId,
@@ -167,6 +152,36 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::CallbackSuccess(query_type));
             Ok(())
         }
+
+
+        /// Register a new query
+        /// TODO: Weights,
+        ///       (1 DB read + 3 DB write + 1 event + some extra (need benchmarking))
+        ///       Weight for this does not take callback weights into account. That should be
+        ///       done via XcmWeigher using WeightBounds, where all query instructions's
+        ///       `QueryResponseInfo` `max_weight` is taken into account.
+        #[pallet::call_index(1)]
+        #[pallet::weight(Weight::from_parts(1_000_000, 1_000_000))]
+        pub fn prepare_new_query(
+            origin: OriginFor<T>,
+            config: QueryConfig<T::AccountId, T::BlockNumber>,
+            dest: Box<VersionedMultiLocation>,
+        ) -> DispatchResult {
+            let origin_location = T::RegisterQueryOrigin::ensure_origin(origin)?;
+            let interior: Junctions = origin_location
+                .try_into()
+                .map_err(|_| Error::<T>::InvalidOrigin)?;
+            let query_type = config.query_type.clone();
+            let dest = MultiLocation::try_from(*dest).map_err(|()| Error::<T>::BadVersion)?;
+
+            // register query
+            let query_id = Self::new_query(config, interior, dest)?;
+            Self::deposit_event(Event::<T>::QueryPrepared {
+                query_type,
+                query_id,
+            });
+            Ok(())
+        }
     }
 }
 
@@ -179,6 +194,16 @@ pub trait OnCallback {
     // blocknumber type
     type BlockNumber;
 
+    // TODO: Query type itself should be generic like
+    //
+    // type QueryType: Member + Parameter + MaybeSerializeDeserialize + MaxEncodedLen + Convert<Self, Weight>
+    // type CallbackHandler: OnResponse<QueryType = T::QueryType>
+    //
+    // #[derive(RuntimeDebug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
+    // enum MyQueryType {}
+    //
+    // impl Convert<Self, Weight> for MyQueryType {}
+
     /// Check whether query type is supported or not
     fn can_handle(query_type: &QueryType<Self::AccountId>) -> bool;
 
@@ -186,7 +211,7 @@ pub trait OnCallback {
     fn on_callback(
         responder: impl Into<MultiLocation>,
         response_info: ResponseInfo<Self::AccountId>,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<Weight, Self::Error>;
 }
 
 impl<T: Config> OnCallback for Pallet<T> {
@@ -206,7 +231,7 @@ impl<T: Config> OnCallback for Pallet<T> {
     fn on_callback(
         responder: impl Into<MultiLocation>,
         response_info: ResponseInfo<Self::AccountId>,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<Weight, Self::Error> {
         let ResponseInfo {
             query_id,
             query_type,
@@ -214,34 +239,31 @@ impl<T: Config> OnCallback for Pallet<T> {
         } = response_info;
 
         match query_type {
-            QueryType::NoCallback => { /*  TODO: Nothing to do, maybe error? */ }
+            QueryType::NoCallback => {
+                // TODO: Nothing to do, maybe error?
+                Ok(Weight::zero())
+            }
             QueryType::WASMContractCallback {
                 contract_id,
                 selector,
-            } => {
-                Self::call_wasm_contract_method(
-                    contract_id,
-                    selector,
-                    query_id,
-                    responder.into(),
-                    response,
-                )?;
-            }
+            } => Self::call_wasm_contract_method(
+                contract_id,
+                selector,
+                query_id,
+                responder.into(),
+                response,
+            ),
             QueryType::EVMContractCallback {
                 contract_id,
                 selector,
-            } => {
-                Self::call_evm_contract_method(
-                    contract_id,
-                    selector,
-                    query_id,
-                    responder.into(),
-                    response,
-                )?;
-            }
+            } => Self::call_evm_contract_method(
+                contract_id,
+                selector,
+                query_id,
+                responder.into(),
+                response,
+            ),
         }
-
-        Ok(())
     }
 }
 
@@ -254,31 +276,33 @@ impl<T: Config> Pallet<T> {
 
     /// Register new query originating from querier to dest
     pub fn new_query(
-        config: QueryConfig<T::AccountId, T::BlockNumber>,
-        querier: Junctions,
+        QueryConfig {
+            query_type,
+            timeout,
+        }: QueryConfig<T::AccountId, T::BlockNumber>,
+        querier: impl Into<Junctions>,
         dest: impl Into<MultiLocation>,
     ) -> Result<QueryId, Error<T>> {
-        if Self::can_handle(&config.query_type) {
-            let QueryConfig {
-                query_type,
-                timeout,
-            } = config;
-            Ok(match query_type.clone() {
-                QueryType::NoCallback => PalletXcm::<T>::new_query(dest, timeout, querier),
-                _ => {
-                    let call: <T as Config>::RuntimeCall = Call::on_callback_recieved {
-                        query_id: 0,
-                        response: Response::Null,
-                    }
-                    .into();
-                    let id = PalletXcm::<T>::new_notify_query(dest, call.into(), timeout, querier);
-                    CallbackQueries::<T>::insert(id, query_type);
-                    id
-                }
-            })
-        } else {
-            Err(Error::NotSupported)
+        let querier = querier.into();
+
+        // check if with callback handler
+        if !(T::CallbackHandler::can_handle(&query_type)) {
+            return Err(Error::NotSupported);
         }
+
+        Ok(match query_type.clone() {
+            QueryType::NoCallback => PalletXcm::<T>::new_query(dest, timeout, querier),
+            QueryType::WASMContractCallback { .. } | QueryType::EVMContractCallback { .. } => {
+                let call: <T as Config>::RuntimeCall = Call::on_callback_recieved {
+                    query_id: 0,
+                    response: Response::Null,
+                }
+                .into();
+                let id = PalletXcm::<T>::new_notify_query(dest, call, timeout, querier);
+                CallbackQueries::<T>::insert(id, query_type);
+                id
+            }
+        })
     }
 
     fn call_wasm_contract_method(

@@ -1,12 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use sp_core::H160;
+use sp_core::{H160, RuntimeDebug};
 use xcm::{latest::Weight, prelude::*};
 
 /// Type copied from pallet, TODO: find ways to share types b/w sdk & pallet
 /// Type of XCM Response Query
-#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
+#[derive(RuntimeDebug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum QueryType<AccountId> {
     // No callback, store the response for manual polling
@@ -28,7 +28,7 @@ pub enum QueryType<AccountId> {
 }
 
 /// Query config
-#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
+#[derive(RuntimeDebug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct QueryConfig<AccountId, BlockNumber> {
     // query type

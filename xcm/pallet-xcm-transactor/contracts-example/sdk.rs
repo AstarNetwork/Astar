@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 use ink::env::{DefaultEnvironment, Environment};
 use xcm::{latest::Weight, prelude::*};
-use xcm_ce_types::{Error, QueryConfig, ValidateSendInput};
+use xcm_ce_primitives::{Error, QueryConfig, ValidateSendInput};
 
 /// XCM Chain Extension Interface
 pub struct XcmExtension<E: Environment = DefaultEnvironment, const ID: u16 = 10>(PhantomData<E>);
@@ -69,5 +69,14 @@ impl<E: Environment, const ID: u16> XcmExtension<E, ID> {
             .output::<Response, false>()
             .handle_error_code::<Error>()
             .call(&(query_id))
+    }
+
+    pub fn pallet_account_id() -> E::AccountId {
+        let func_id = Self::get_func_id(6);
+        ::ink::env::chain_extension::ChainExtensionMethod::build(func_id)
+            .input::<()>()
+            .output::<E::AccountId, false>()
+            .ignore_error_code()
+            .call(&())
     }
 }

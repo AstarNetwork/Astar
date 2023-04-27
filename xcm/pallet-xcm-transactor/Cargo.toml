@@ -30,7 +30,7 @@ xcm = { workspace = true }
 xcm-executor = { workspace = true }
 
 # types
-xcm-ce-types = { path = "./types" }
+xcm-ce-primitives = { path = "./primitives" }
 
 [features]
 default = ["std"]
@@ -48,7 +48,7 @@ std = [
 	"xcm-executor/std",
 	"pallet-xcm/std",
 	"pallet-contracts/std",
-	"xcm-ce-types/std",
+	"xcm-ce-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
