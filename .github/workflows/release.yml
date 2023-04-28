@@ -132,7 +132,7 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: astar-ubuntu-tracing-latest
+        name: astar-ubuntu-tracing-latest-x86_64-unknown-linux-gnu
         path: target/x86_64-unknown-linux-gnu/release/astar-collator
 
     - name: rename tracing runtimes
@@ -424,7 +424,7 @@ jobs:
     - name: Download pre-built collator binary for evm tracing
       uses: actions/download-artifact@v3
       with:
-        name: astar-ubuntu-tracing-latest
+        name: astar-ubuntu-tracing-latest-x86_64-unknown-linux-gnu
         path: ubuntu-tracing-bin
 
     - name: Make binary executable and tar gzip
