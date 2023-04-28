@@ -102,9 +102,6 @@ jobs:
   evm-tracing-native-linux:
     needs: checks-and-tests
     runs-on: [self-hosted, Linux, X64]
-    strategy:
-      matrix:
-        chain: ["astar", "shiden", "shibuya"]
     steps:
 
     - name: Checkout the source code
@@ -137,13 +134,24 @@ jobs:
 
     - name: rename tracing runtimes
       run: |
-        cd target/x86_64-unknown-linux-gnu/wbuild/${{ matrix.chain }}-runtime
-        mv ${{ matrix.chain }}_runtime.compact.compressed.wasm ${{ matrix.chain }}_tracing_runtime.compact.compressed.wasm
+        mv target/x86_64-unknown-linux-gnu/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/wbuild/astar-runtime/astar_tracing_runtime.compact.compressed.wasm
+        mv target/x86_64-unknown-linux-gnu/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/wbuild/shiden-runtime/shiden_tracing_runtime.compact.compressed.wasm
+        mv target/x86_64-unknown-linux-gnu/wbuild/shibuya-runtime/shibuya_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/wbuild/shibuya-runtime/shibuya_tracing_runtime.compact.compressed.wasm
 
     - uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.chain }}-tracing-runtime
-        path: target/x86_64-unknown-linux-gnu/wbuild/${{ matrix.chain }}-runtime/${{ matrix.chain }}_tracing_runtime.compact.compressed.wasm
+        name: astar-tracing-runtime
+        path: target/x86_64-unknown-linux-gnu/wbuild/astar-runtime/astar_tracing_runtime.compact.compressed.wasm
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: shiden-tracing-runtime
+        path: target/x86_64-unknown-linux-gnu/wbuild/shiden-runtime/shiden_tracing_runtime.compact.compressed.wasm
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: shibuya-tracing-runtime
+        path: target/x86_64-unknown-linux-gnu/wbuild/shibuya-runtime/shibuya_tracing_runtime.compact.compressed.wasm
 
   rpc-tests:
     needs: native-linux
