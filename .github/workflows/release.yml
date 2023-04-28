@@ -347,7 +347,7 @@ jobs:
           ${{ matrix.chain }}-diff.txt
 
   publish-release-draft:
-    needs: [native-linux, native-macOS, docker, srtool]
+    needs: [native-linux, evm-tracing-native-linux, native-macOS, docker, srtool]
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
