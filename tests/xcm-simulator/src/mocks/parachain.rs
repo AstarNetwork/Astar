@@ -36,11 +36,12 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureSigned,
 };
+use pallet_contracts::chain_extension::RegisteredChainExtension;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use polkadot_core_primitives::BlakeTwo256;
 use sp_core::{ConstBool, H256};
 use sp_runtime::{
-    generic::{Header},
+    generic::Header,
     traits::{AccountIdConversion, Convert, IdentityLookup},
     AccountId32, Perbill, RuntimeDebug,
 };
@@ -230,7 +231,7 @@ impl pallet_contracts::Config for Runtime {
     /// We are not using the pallet_transaction_payment for simplicity
     type WeightPrice = Self;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = pallet_xcm_transactor::chain_extension::Extension<Self>;
+    type ChainExtension = pallet_xcm_transactor::chain_extension::XCMExtension<Self>;
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -578,6 +579,12 @@ impl pallet_xcm_transactor::Config for Runtime {
     type RegisterQueryOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type WasmGasLimit = CallbackGasLimit;
     type Network = RelayNetwork;
+}
+
+impl RegisteredChainExtension<Runtime>
+    for pallet_xcm_transactor::chain_extension::XCMExtension<Runtime>
+{
+    const ID: u16 = 10;
 }
 
 construct_runtime!(

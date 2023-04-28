@@ -3,15 +3,14 @@ use frame_support::{traits::EnsureOrigin, DefaultNoBound};
 use frame_system::RawOrigin;
 // use log;
 use pallet_contracts::chain_extension::{
-    ChainExtension, Environment, Ext, InitState, RegisteredChainExtension,
-    Result as DispatchResult, RetVal, SysConfig,
+    ChainExtension, Environment, Ext, InitState, Result as DispatchResult, RetVal, SysConfig,
 };
 use pallet_xcm::{Pallet as XcmPallet, WeightInfo};
 use parity_scale_codec::Encode;
 use sp_core::Get;
 use sp_std::prelude::*;
 use xcm::prelude::*;
-pub use xcm_ce_primitives::{Error, PreparedExecution, ValidateSendInput, ValidatedSend};
+pub use xcm_ce_primitives::{Error, PreparedExecution, ValidateSendInput, ValidatedSend, Command};
 use xcm_executor::traits::WeightBounds;
 
 type RuntimeCallOf<T> = <T as SysConfig>::RuntimeCall;
@@ -25,25 +24,13 @@ macro_rules! unwrap {
     };
 }
 
-#[repr(u16)]
-#[derive(num_enum::TryFromPrimitive)]
-enum Command {
-    PrepareExecute = 0,
-    Execute = 1,
-    ValidateSend = 2,
-    Send = 3,
-    NewQuery = 4,
-    TakeResponse = 5,
-    PalletAccountId = 6,
-}
-
 #[derive(DefaultNoBound)]
-pub struct Extension<T: Config> {
+pub struct XCMExtension<T: Config> {
     prepared_execute: Option<PreparedExecution<RuntimeCallOf<T>>>,
     validated_send: Option<ValidatedSend>,
 }
 
-impl<T: Config> ChainExtension<T> for Extension<T>
+impl<T: Config> ChainExtension<T> for XCMExtension<T>
 where
     <T as SysConfig>::AccountId: AsRef<[u8; 32]>,
 {
@@ -51,42 +38,21 @@ where
     where
         E: Ext<T = T>,
     {
-        Command::try_from(env.func_id())
-            .map_err(|_| PalletError::<T>::InvalidCommand)?
-            .process_command(self, env)
-    }
-}
-
-impl<T: Config> RegisteredChainExtension<T> for Extension<T>
-where
-    <T as SysConfig>::AccountId: AsRef<[u8; 32]>,
-{
-    const ID: u16 = 10;
-}
-
-impl Command {
-    pub fn process_command<T: Config, E: Ext<T = T>>(
-        &self,
-        ext: &mut Extension<T>,
-        env: Environment<E, InitState>,
-    ) -> DispatchResult<RetVal>
-    where
-        <T as SysConfig>::AccountId: AsRef<[u8; 32]>,
-    {
-        match self {
-            Self::PrepareExecute => self.prepare_execute(ext, env),
-            Self::Execute => self.execute(ext, env),
-            Self::ValidateSend => self.validate_send(ext, env),
-            Self::Send => self.send(ext, env),
-            Self::NewQuery => self.new_query(env),
-            Self::TakeResponse => self.take_response(env),
-            Self::PalletAccountId => self.pallet_account_id(env),
+        match Command::try_from(env.func_id()).map_err(|_| PalletError::<T>::InvalidCommand)? {
+            Command::PrepareExecute => self.prepare_execute(env),
+            Command::Execute => self.execute(env),
+            Command::ValidateSend => self.validate_send(env),
+            Command::Send => self.send(env),
+            Command::NewQuery => self.new_query(env),
+            Command::TakeResponse => self.take_response(env),
+            Command::PalletAccountId => self.pallet_account_id(env),
         }
     }
+}
 
-    fn prepare_execute<T: Config, E: Ext<T = T>>(
-        &self,
-        ext: &mut Extension<T>,
+impl<T: Config> XCMExtension<T> {
+    fn prepare_execute<E: Ext<T = T>>(
+        &mut self,
         env: Environment<E, InitState>,
     ) -> DispatchResult<RetVal> {
         let mut env = env.buf_in_buf_out();
@@ -101,19 +67,18 @@ impl Command {
         let weight = T::Weigher::weight(&mut xcm).map_err(|_| PalletError::<T>::CannotWeigh)?;
 
         // save the prepared xcm
-        ext.prepared_execute = Some(PreparedExecution { xcm, weight });
+        self.prepared_execute = Some(PreparedExecution { xcm, weight });
         // write the output to buffer
         weight.using_encoded(|w| env.write(w, true, None))?;
 
         Ok(RetVal::Converging(Error::Success.into()))
     }
 
-    fn execute<T: Config, E: Ext<T = T>>(
-        &self,
-        ext: &mut Extension<T>,
+    fn execute<E: Ext<T = T>>(
+        &mut self,
         mut env: Environment<E, InitState>,
     ) -> DispatchResult<RetVal> {
-        let input = ext
+        let input = self
             .prepared_execute
             .as_ref()
             .take()
@@ -150,9 +115,8 @@ impl Command {
         Ok(RetVal::Converging(Error::Success.into()))
     }
 
-    fn validate_send<T: Config, E: Ext<T = T>>(
-        &self,
-        ext: &mut Extension<T>,
+    fn validate_send<E: Ext<T = T>>(
+        &mut self,
         env: Environment<E, InitState>,
     ) -> DispatchResult<RetVal> {
         let mut env = env.buf_in_buf_out();
@@ -172,19 +136,18 @@ impl Command {
             .map_err(|_| PalletError::<T>::SendValidateFailed)?;
 
         // save the validated input
-        ext.validated_send = Some(ValidatedSend { dest, xcm });
+        self.validated_send = Some(ValidatedSend { dest, xcm });
         // write the fees to output
         VersionedMultiAssets::from(asset).using_encoded(|a| env.write(a, true, None))?;
 
         Ok(RetVal::Converging(Error::Success.into()))
     }
 
-    fn send<T: Config, E: Ext<T = T>>(
-        &self,
-        ext: &mut Extension<T>,
+    fn send<E: Ext<T = T>>(
+        &mut self,
         mut env: Environment<E, InitState>,
     ) -> DispatchResult<RetVal> {
-        let input = ext
+        let input = self
             .validated_send
             .as_ref()
             .take()
@@ -207,10 +170,7 @@ impl Command {
         Ok(RetVal::Converging(Error::Success.into()))
     }
 
-    fn new_query<T: Config, E: Ext<T = T>>(
-        &self,
-        env: Environment<E, InitState>,
-    ) -> DispatchResult<RetVal>
+    fn new_query<E: Ext<T = T>>(&self, env: Environment<E, InitState>) -> DispatchResult<RetVal>
     where
         <T as SysConfig>::AccountId: AsRef<[u8; 32]>,
     {
@@ -241,7 +201,7 @@ impl Command {
         Ok(RetVal::Converging(Error::Success.into()))
     }
 
-    fn take_response<T: Config, E: Ext<T = T>>(
+    fn take_response<E: Ext<T = T>>(
         &self,
         env: Environment<E, InitState>,
     ) -> DispatchResult<RetVal> {
@@ -257,7 +217,8 @@ impl Command {
 
         Ok(RetVal::Converging(Error::Success.into()))
     }
-    fn pallet_account_id<T: Config, E: Ext<T = T>>(
+
+    fn pallet_account_id<E: Ext<T = T>>(
         &self,
         env: Environment<E, InitState>,
     ) -> DispatchResult<RetVal> {

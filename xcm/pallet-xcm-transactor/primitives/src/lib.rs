@@ -1,13 +1,26 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use sp_core::{H160, RuntimeDebug};
+use scale_info::TypeInfo;
+use sp_core::{RuntimeDebug, H160};
 use xcm::{latest::Weight, prelude::*};
 
-/// Type copied from pallet, TODO: find ways to share types b/w sdk & pallet
+#[repr(u16)]
+#[derive(TryFromPrimitive, IntoPrimitive)]
+pub enum Command {
+    PrepareExecute = 0,
+    Execute = 1,
+    ValidateSend = 2,
+    Send = 3,
+    NewQuery = 4,
+    TakeResponse = 5,
+    PalletAccountId = 6,
+}
+
 /// Type of XCM Response Query
-#[derive(RuntimeDebug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+#[derive(RuntimeDebug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+// #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum QueryType<AccountId> {
     // No callback, store the response for manual polling
     NoCallback,
@@ -28,8 +41,8 @@ pub enum QueryType<AccountId> {
 }
 
 /// Query config
-#[derive(RuntimeDebug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+#[derive(RuntimeDebug, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+// #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct QueryConfig<AccountId, BlockNumber> {
     // query type
     pub query_type: QueryType<AccountId>,
@@ -55,18 +68,8 @@ pub struct ValidatedSend {
 }
 
 #[repr(u32)]
-#[derive(
-    PartialEq,
-    Eq,
-    Copy,
-    Clone,
-    Encode,
-    Decode,
-    Debug,
-    num_enum::IntoPrimitive,
-    num_enum::FromPrimitive,
-)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, IntoPrimitive, FromPrimitive)]
+#[cfg_attr(feature = "std", derive(TypeInfo))]
 pub enum Error {
     Success = 0,
     NoResponse = 1,

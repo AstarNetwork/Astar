@@ -1,10 +1,10 @@
 {
   "source": {
-    "hash": "0x9a4d359404e5f487bae1ab420edbd3cc943583fe680bb6c8c9ffe861c0bd0b07",
+    "hash": "0x4864b8c67a2c7bb1f8806bb9083476f6c37f00581d14201d84e8420bc61f5b31",
     "language": "ink! 4.1.0",
     "compiler": "rustc 1.68.0-nightly",
     "build_info": {
-      "build_mode": "Debug",
+      "build_mode": "Release",
       "cargo_contract_version": "2.0.0",
       "rust_toolchain": "nightly-x86_64-unknown-linux-gnu",
       "wasm_opt_settings": {
@@ -4586,7 +4586,7 @@
           }
         },
         "path": [
-          "xcm_ce_types",
+          "xcm_ce_primitives",
           "Error"
         ]
       }
@@ -4611,7 +4611,7 @@
           }
         },
         "path": [
-          "xcm_ce_types",
+          "xcm_ce_primitives",
           "ValidateSendInput"
         ]
       }
@@ -4800,7 +4800,7 @@
           }
         ],
         "path": [
-          "xcm_ce_types",
+          "xcm_ce_primitives",
           "QueryConfig"
         ]
       }
@@ -4877,7 +4877,7 @@
           }
         ],
         "path": [
-          "xcm_ce_types",
+          "xcm_ce_primitives",
           "QueryType"
         ]
       }
