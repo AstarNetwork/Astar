@@ -59,9 +59,9 @@ pub mod pallet {
             Success = MultiLocation,
         >;
 
-        /// Gas limit for WASM callback
+        /// Max weight for callback
         #[pallet::constant]
-        type WasmGasLimit: Get<Weight>;
+        type MaxCallbackWeight: Get<Weight>;
 
         /// Relay network id
         #[pallet::constant]
@@ -121,9 +121,9 @@ pub mod pallet {
         /// Dispatch for recieving callback from pallet_xcm's notify
         /// and handle their routing
         /// TODO: Weights,
-        ///       (callback weight) + 1 DB read + 1 event + some extra (from benchmarking)
+        ///       (max callback weight) + 1 DB read + 1 event + some extra (from benchmarking)
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::from_parts(1_000_000, 1_000_000))]
+        #[pallet::weight(T::MaxCallbackWeight::get())]
         pub fn on_callback_recieved(
             origin: OriginFor<T>,
             query_id: QueryId,
@@ -135,6 +135,9 @@ pub mod pallet {
             let query_type =
                 CallbackQueries::<T>::get(query_id).ok_or(Error::<T>::UnexpectedQueryResponse)?;
             // handle the response routing
+            // TODO: in case of error, maybe save the response for manual
+            // polling as fallback. This will require taking into weight of storing
+            // response in storage in the weights of `prepare_new_query` dispatch
             T::CallbackHandler::on_callback(
                 responder,
                 ResponseInfo {
@@ -152,7 +155,6 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::CallbackSuccess(query_type));
             Ok(())
         }
-
 
         /// Register a new query
         /// TODO: Weights,
@@ -317,9 +319,10 @@ impl<T: Config> Pallet<T> {
             Self::account_id(),
             contract_id,
             Zero::zero(),
-            T::WasmGasLimit::get(),
+            T::MaxCallbackWeight::get(),
             None,
             [selector.to_vec(), (query_id, responder, response).encode()].concat(),
+            // TODO: should not be true
             true,
             pallet_contracts::Determinism::Deterministic,
         );

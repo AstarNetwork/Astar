@@ -17,7 +17,7 @@ sp-core = { workspace = true }
 xcm = { workspace = true }
 
 #ink
-ink_env = { version = "~4.1.0", default-features = false, optional = true }
+ink_env = { version = "~4.2.0", default-features = false, optional = true }
 
 [features]
 default = ["std"]

@@ -577,14 +577,14 @@ impl pallet_xcm_transactor::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type CallbackHandler = XcmTransact;
     type RegisterQueryOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-    type WasmGasLimit = CallbackGasLimit;
+    type MaxCallbackWeight = CallbackGasLimit;
     type Network = RelayNetwork;
 }
 
 impl RegisteredChainExtension<Runtime>
     for pallet_xcm_transactor::chain_extension::XCMExtension<Runtime>
 {
-    const ID: u16 = 10;
+    const ID: u16 = pallet_xcm_transactor::chain_extension::XCM_EXTENSION_ID;
 }
 
 construct_runtime!(

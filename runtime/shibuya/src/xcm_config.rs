@@ -19,14 +19,15 @@
 use super::{
     AccountId, AllPalletsWithSystem, AssetId, Assets, Balance, Balances, DealWithFees,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-    ShibuyaAssetLocationIdConverter, TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
+    ShibuyaAssetLocationIdConverter, TreasuryAccountId, WeightToFee, XcAssetConfig, XcmTransact,
+    XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use frame_support::{
     match_types, parameter_types,
     traits::{ConstU32, Everything, Nothing},
     weights::Weight,
 };
+use sp_runtime::Perbill;
 use frame_system::EnsureRoot;
 
 // Polkadot imports
@@ -259,4 +260,18 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+}
+
+parameter_types! {
+    pub CallbackGasLimit: Weight = MAXIMUM_BLOCK_WEIGHT * Perbill::from_percent(20);
+}
+
+impl pallet_xcm_transactor::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
+    type CallbackHandler = XcmTransact;
+    type RegisterQueryOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+    type MaxCallbackWeight = CallbackGasLimit;
+    type Network = RelayNetwork;
 }

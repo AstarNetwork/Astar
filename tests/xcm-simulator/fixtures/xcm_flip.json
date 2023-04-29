@@ -1,10 +1,10 @@
 {
   "source": {
-    "hash": "0x4864b8c67a2c7bb1f8806bb9083476f6c37f00581d14201d84e8420bc61f5b31",
-    "language": "ink! 4.1.0",
+    "hash": "0x5412decbffecfd35f9ffad8f1cac7fa6932b62d7d21313320616945f6b51524c",
+    "language": "ink! 4.2.0",
     "compiler": "rustc 1.68.0-nightly",
     "build_info": {
-      "build_mode": "Release",
+      "build_mode": "Debug",
       "cargo_contract_version": "2.0.0",
       "rust_toolchain": "nightly-x86_64-unknown-linux-gnu",
       "wasm_opt_settings": {
@@ -24,6 +24,7 @@
     "constructors": [
       {
         "args": [],
+        "default": false,
         "docs": [],
         "label": "default",
         "payable": false,
@@ -38,6 +39,45 @@
       }
     ],
     "docs": [],
+    "environment": {
+      "accountId": {
+        "displayName": [
+          "AccountId"
+        ],
+        "type": 86
+      },
+      "balance": {
+        "displayName": [
+          "Balance"
+        ],
+        "type": 26
+      },
+      "blockNumber": {
+        "displayName": [
+          "BlockNumber"
+        ],
+        "type": 17
+      },
+      "chainExtension": {
+        "displayName": [
+          "ChainExtension"
+        ],
+        "type": 97
+      },
+      "hash": {
+        "displayName": [
+          "Hash"
+        ],
+        "type": 96
+      },
+      "maxEventTopics": 4,
+      "timestamp": {
+        "displayName": [
+          "Timestamp"
+        ],
+        "type": 23
+      }
+    },
     "events": [],
     "lang_error": {
       "displayName": [
@@ -59,6 +99,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "execute",
         "mutates": true,
@@ -84,6 +125,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "send",
         "mutates": true,
@@ -118,6 +160,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "query",
         "mutates": true,
@@ -143,6 +186,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "poll_response",
         "mutates": true,
@@ -177,7 +221,7 @@
             }
           },
           {
-            "label": "_response",
+            "label": "response",
             "type": {
               "displayName": [
                 "Response"
@@ -186,6 +230,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [],
         "label": "handle_response",
         "mutates": true,
@@ -201,6 +246,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [],
         "label": "get",
         "mutates": false,
@@ -213,6 +259,32 @@
           "type": 93
         },
         "selector": "0x66666666"
+      },
+      {
+        "args": [
+          {
+            "label": "account",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 86
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "account_to_string",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 94
+        },
+        "selector": "0xc4c38ab6"
       }
     ]
   },
@@ -5108,6 +5180,89 @@
         ],
         "path": [
           "Result"
+        ]
+      }
+    },
+    {
+      "id": 94,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 95
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 3
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 95
+          },
+          {
+            "name": "E",
+            "type": 3
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 95,
+      "type": {
+        "def": {
+          "primitive": "str"
+        }
+      }
+    },
+    {
+      "id": 96,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 21,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "Hash"
+        ]
+      }
+    },
+    {
+      "id": 97,
+      "type": {
+        "def": {
+          "variant": {}
+        },
+        "path": [
+          "ink_env",
+          "types",
+          "NoChainExtension"
         ]
       }
     }

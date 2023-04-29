@@ -26,6 +26,8 @@ use pallet_contracts::chain_extension::RegisteredChainExtension;
 pub use pallet_chain_extension_dapps_staking::DappsStakingExtension;
 pub use pallet_chain_extension_xvm::XvmExtension;
 
+pub use pallet_xcm_transactor::chain_extension::{XCMExtension, XCM_EXTENSION_ID};
+
 // Following impls defines chain extension IDs.
 
 impl RegisteredChainExtension<Runtime> for DappsStakingExtension<Runtime> {
@@ -40,4 +42,8 @@ impl<W: pallet_chain_extension_assets::weights::WeightInfo> RegisteredChainExten
     for AssetsExtension<Runtime, W>
 {
     const ID: u16 = 02;
+}
+
+impl RegisteredChainExtension<Runtime> for XCMExtension<Runtime> {
+    const ID: u16 = XCM_EXTENSION_ID;
 }

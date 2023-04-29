@@ -8,7 +8,7 @@ members = [
 	"runtime/shibuya",
 	"tests/xcm-simulator",
 	"xcm/pallet-xcm-transactor",
-	"xcm/pallet-xcm-transactor/contracts-example",
+	# "xcm/pallet-xcm-transactor/contracts-example",
 	"xcm/pallet-xcm-transactor/primitives",
 ]
 

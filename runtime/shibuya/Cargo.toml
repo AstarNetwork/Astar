@@ -126,6 +126,8 @@ frame-try-runtime = { workspace = true, optional = true }
 # TODO: remove this once we get rid of `pallet-xcm` fork & double dep
 polkadot-runtime = { workspace = true, optional = true }
 
+pallet-xcm-transactor = { path = "../../xcm/pallet-xcm-transactor", default-features = false }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -223,6 +225,7 @@ std = [
 	"xcm-primitives/std",
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
+	"pallet-xcm-transactor/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -242,6 +245,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
+	"pallet-xcm-transactor/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -287,6 +291,7 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
+	"pallet-xcm-transactor/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

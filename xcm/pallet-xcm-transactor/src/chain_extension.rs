@@ -10,7 +10,7 @@ use parity_scale_codec::Encode;
 use sp_core::Get;
 use sp_std::prelude::*;
 use xcm::prelude::*;
-pub use xcm_ce_primitives::{Error, PreparedExecution, ValidateSendInput, ValidatedSend, Command};
+pub use xcm_ce_primitives::{Command, Error, PreparedExecution, ValidateSendInput, ValidatedSend, XCM_EXTENSION_ID};
 use xcm_executor::traits::WeightBounds;
 
 type RuntimeCallOf<T> = <T as SysConfig>::RuntimeCall;
@@ -38,7 +38,7 @@ where
     where
         E: Ext<T = T>,
     {
-        match Command::try_from(env.func_id()).map_err(|_| PalletError::<T>::InvalidCommand)? {
+        match env.func_id().try_into().map_err(|_| PalletError::<T>::InvalidCommand)? {
             Command::PrepareExecute => self.prepare_execute(env),
             Command::Execute => self.execute(env),
             Command::ValidateSend => self.validate_send(env),
@@ -131,7 +131,7 @@ impl<T: Config> XCMExtension<T> {
             .xcm
             .try_into()
             .map_err(|_| PalletError::<T>::XcmVersionNotSupported)?;
-        // validate and ger fees required to send
+        // validate and get fees required to send
         let (_, asset) = validate_send::<T::XcmRouter>(dest, xcm.clone())
             .map_err(|_| PalletError::<T>::SendValidateFailed)?;
 
@@ -184,6 +184,12 @@ impl<T: Config> XCMExtension<T> {
         let dest: MultiLocation = dest
             .try_into()
             .map_err(|_| PalletError::<T>::XcmVersionNotSupported)?;
+
+        // TODO: find better way to get origin
+        //       https://github.com/paritytech/substrate/pull/13708
+        let origin = RawOrigin::Signed(env.ext().address().clone());
+        // ensure origin is allowed to make queries
+        T::RegisterQueryOrigin::ensure_origin(origin.into())?;
 
         // register the query
         let query_id: u64 = Pallet::<T>::new_query(

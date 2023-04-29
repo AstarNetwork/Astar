@@ -684,6 +684,7 @@ impl pallet_contracts::Config for Runtime {
         DappsStakingExtension<Self>,
         XvmExtension<Self>,
         AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
+        XCMExtension<Self>,
     );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
@@ -1228,6 +1229,7 @@ construct_runtime!(
         Preimage: pallet_preimage = 84,
 
         Xvm: pallet_xvm = 90,
+        XcmTransact: pallet_xcm_transactor = 91,
 
         Sudo: pallet_sudo = 99,
     }

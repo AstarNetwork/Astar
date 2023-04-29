@@ -30,7 +30,7 @@ xcm = { workspace = true }
 xcm-executor = { workspace = true }
 
 # types
-xcm-ce-primitives = { path = "./primitives" }
+xcm-ce-primitives = { path = "./primitives", default-features = false}
 
 [features]
 default = ["std"]

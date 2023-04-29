@@ -35,6 +35,7 @@ cumulus_based = true
   name = "collator1"
   command = "./astar-collator"
   rpc_port = 8545
+  ws_port = 9545
   args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
 
 # For this one you can download or build some other para and run it.
@@ -47,6 +48,8 @@ cumulus_based = true
   [[parachains.collators]]
   name = "collator2"
   command = "./astar-collator"
+  rpc_port = 8546
+  ws_port = 9546
   args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
 
 [[hrmp_channels]]
@@ -54,7 +57,7 @@ cumulus_based = true
   recipient = 2007
   max_capacity = 8
   max_message_size = 512
-  
+
 [[hrmp_channels]]
   sender = 2007
   recipient = 2000

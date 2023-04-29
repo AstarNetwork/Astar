@@ -1,10 +1,10 @@
 use core::marker::PhantomData;
 use ink::env::{DefaultEnvironment, Environment};
 use xcm::{latest::Weight, prelude::*};
-use xcm_ce_primitives::{Command, Error, QueryConfig, ValidateSendInput};
+use xcm_ce_primitives::{Command, Error, QueryConfig, ValidateSendInput, XCM_EXTENSION_ID};
 
 /// XCM Chain Extension Interface
-pub struct XcmExtension<E = DefaultEnvironment, const ID: u16 = 10>(PhantomData<E>);
+pub struct XcmExtension<E = DefaultEnvironment, const ID: u16 = XCM_EXTENSION_ID>(PhantomData<E>);
 
 impl<E: Environment, const ID: u16> XcmExtension<E, ID> {
     const fn get_func_id(idx: u16) -> u32 {
