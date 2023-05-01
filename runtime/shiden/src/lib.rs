@@ -139,7 +139,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 96,
+    spec_version: 97,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -851,6 +851,7 @@ pub enum ProxyType {
     Any,
     NonTransfer,
     Balances,
+    Assets,
     IdentityJudgement,
     CancelProxy,
     DappsStaking,
@@ -873,7 +874,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 matches!(
                     c,
                     RuntimeCall::System(..)
-                        | RuntimeCall::Utility(..)
                         | RuntimeCall::Identity(..)
                         | RuntimeCall::Timestamp(..)
                         | RuntimeCall::Multisig(..)
@@ -901,6 +901,9 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             }
             ProxyType::Balances => {
                 matches!(c, RuntimeCall::Balances(..))
+            }
+            ProxyType::Assets => {
+                matches!(c, RuntimeCall::Assets(..))
             }
             ProxyType::IdentityJudgement => {
                 matches!(
