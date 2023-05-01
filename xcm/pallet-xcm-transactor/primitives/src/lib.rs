@@ -6,7 +6,7 @@ use scale_info::TypeInfo;
 use sp_core::{RuntimeDebug, H160};
 use xcm::{latest::Weight, prelude::*};
 
-pub const XCM_EXTENSION_ID: u16 = 10;
+pub const XCM_EXTENSION_ID: u16 = 04;
 
 #[repr(u16)]
 #[derive(TryFromPrimitive, IntoPrimitive)]

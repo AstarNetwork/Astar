@@ -10,7 +10,10 @@ use parity_scale_codec::Encode;
 use sp_core::Get;
 use sp_std::prelude::*;
 use xcm::prelude::*;
-pub use xcm_ce_primitives::{Command, Error, PreparedExecution, ValidateSendInput, ValidatedSend, XCM_EXTENSION_ID};
+pub use xcm_ce_primitives::{
+    Command::{self, *},
+    Error, PreparedExecution, ValidateSendInput, ValidatedSend, XCM_EXTENSION_ID,
+};
 use xcm_executor::traits::WeightBounds;
 
 type RuntimeCallOf<T> = <T as SysConfig>::RuntimeCall;
@@ -34,18 +37,26 @@ impl<T: Config> ChainExtension<T> for XCMExtension<T>
 where
     <T as SysConfig>::AccountId: AsRef<[u8; 32]>,
 {
+    fn enabled() -> bool {
+        true
+    }
+
     fn call<E>(&mut self, env: Environment<E, InitState>) -> DispatchResult<RetVal>
     where
         E: Ext<T = T>,
     {
-        match env.func_id().try_into().map_err(|_| PalletError::<T>::InvalidCommand)? {
-            Command::PrepareExecute => self.prepare_execute(env),
-            Command::Execute => self.execute(env),
-            Command::ValidateSend => self.validate_send(env),
-            Command::Send => self.send(env),
-            Command::NewQuery => self.new_query(env),
-            Command::TakeResponse => self.take_response(env),
-            Command::PalletAccountId => self.pallet_account_id(env),
+        match env
+            .func_id()
+            .try_into()
+            .map_err(|_| PalletError::<T>::InvalidCommand)?
+        {
+            PrepareExecute => self.prepare_execute(env),
+            Execute => self.execute(env),
+            ValidateSend => self.validate_send(env),
+            Send => self.send(env),
+            NewQuery => self.new_query(env),
+            TakeResponse => self.take_response(env),
+            PalletAccountId => self.pallet_account_id(env),
         }
     }
 }

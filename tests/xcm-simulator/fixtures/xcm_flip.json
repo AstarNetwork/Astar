@@ -1,7 +1,7 @@
 {
   "source": {
-    "hash": "0x5412decbffecfd35f9ffad8f1cac7fa6932b62d7d21313320616945f6b51524c",
-    "language": "ink! 4.2.0",
+    "hash": "0xed3e8d190cb58ed9107e6ced014b361a98c4f703990044280c33d4fe89581ee7",
+    "language": "ink! 4.1.0",
     "compiler": "rustc 1.68.0-nightly",
     "build_info": {
       "build_mode": "Debug",
@@ -62,13 +62,13 @@
         "displayName": [
           "ChainExtension"
         ],
-        "type": 97
+        "type": 95
       },
       "hash": {
         "displayName": [
           "Hash"
         ],
-        "type": 96
+        "type": 94
       },
       "maxEventTopics": 4,
       "timestamp": {
@@ -221,7 +221,7 @@
             }
           },
           {
-            "label": "response",
+            "label": "_response",
             "type": {
               "displayName": [
                 "Response"
@@ -259,32 +259,6 @@
           "type": 93
         },
         "selector": "0x66666666"
-      },
-      {
-        "args": [
-          {
-            "label": "account",
-            "type": {
-              "displayName": [
-                "AccountId"
-              ],
-              "type": 86
-            }
-          }
-        ],
-        "default": false,
-        "docs": [],
-        "label": "account_to_string",
-        "mutates": false,
-        "payable": false,
-        "returnType": {
-          "displayName": [
-            "ink",
-            "MessageResult"
-          ],
-          "type": 94
-        },
-        "selector": "0xc4c38ab6"
       }
     ]
   },
@@ -5187,56 +5161,6 @@
       "id": 94,
       "type": {
         "def": {
-          "variant": {
-            "variants": [
-              {
-                "fields": [
-                  {
-                    "type": 95
-                  }
-                ],
-                "index": 0,
-                "name": "Ok"
-              },
-              {
-                "fields": [
-                  {
-                    "type": 3
-                  }
-                ],
-                "index": 1,
-                "name": "Err"
-              }
-            ]
-          }
-        },
-        "params": [
-          {
-            "name": "T",
-            "type": 95
-          },
-          {
-            "name": "E",
-            "type": 3
-          }
-        ],
-        "path": [
-          "Result"
-        ]
-      }
-    },
-    {
-      "id": 95,
-      "type": {
-        "def": {
-          "primitive": "str"
-        }
-      }
-    },
-    {
-      "id": 96,
-      "type": {
-        "def": {
           "composite": {
             "fields": [
               {
@@ -5254,7 +5178,7 @@
       }
     },
     {
-      "id": 97,
+      "id": 95,
       "type": {
         "def": {
           "variant": {}
