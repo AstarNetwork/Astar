@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{RuntimeDebug, H160};
@@ -69,22 +69,31 @@ pub struct ValidatedSend {
     pub xcm: Xcm<()>,
 }
 
-#[repr(u32)]
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, IntoPrimitive, FromPrimitive)]
-#[cfg_attr(feature = "std", derive(TypeInfo))]
-pub enum Error {
-    Success = 0,
-    NoResponse = 1,
-    #[num_enum(default)]
-    RuntimeError = 2,
+#[macro_export]
+macro_rules! create_error_enum {
+    ($vis:vis $type_name:ident) => {
+        #[repr(u32)]
+        #[derive(
+            ::core::cmp::PartialEq,
+            ::core::cmp::Eq,
+            ::core::marker::Copy,
+            ::core::clone::Clone,
+            // crate name mismatch, 'parity-scale-codec' is crate name but in ink! contract
+            // it is usually renamed to `scale`
+            Encode,
+            Decode,
+            ::core::fmt::Debug,
+            ::num_enum::IntoPrimitive,
+            ::num_enum::FromPrimitive,
+        )]
+        #[cfg_attr(feature = "std", derive(::scale_info::TypeInfo))]
+        $vis enum $type_name {
+            Success = 0,
+            NoResponse = 1,
+            #[num_enum(default)]
+            RuntimeError = 2,
+        }
+    };
 }
 
-#[cfg(feature = "ink-as-dependency")]
-impl ink_env::chain_extension::FromStatusCode for Error {
-    fn from_status_code(status_code: u32) -> Result<(), Self> {
-        match status_code {
-            0 => Ok(()),
-            code => Err(code.into()),
-        }
-    }
-}
+create_error_enum!(pub Error);

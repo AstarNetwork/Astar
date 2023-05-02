@@ -9,10 +9,11 @@ edition = "2021"
 [dependencies]
 ink = { version = "~4.1.0", default-features = false }
 
+num_enum = { version = "0.6", default-features = false }
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3", default-features = false, features = ["derive"], optional = true }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false }
-xcm-ce-primitives = { path = "../primitives", default-features = false, features = ["ink-as-dependency"] }
+xcm-ce-primitives = { path = "../primitives", default-features = false }
 
 [lib]
 path = "lib.rs"
@@ -24,6 +25,7 @@ overflow-checks = false # Disable integer overflow checks.
 default = ["std"]
 std = [
 	"ink/std",
+	"num_enum/std",
 	"scale/std",
 	"scale-info/std",
 	"xcm/std",

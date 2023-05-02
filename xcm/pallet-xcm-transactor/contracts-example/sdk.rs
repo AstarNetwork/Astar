@@ -1,7 +1,21 @@
 use core::marker::PhantomData;
-use ink::env::{DefaultEnvironment, Environment};
+use ink::env::{chain_extension::FromStatusCode, DefaultEnvironment, Environment};
+use scale::{Decode, Encode};
 use xcm::{latest::Weight, prelude::*};
-use xcm_ce_primitives::{Command, Error, QueryConfig, ValidateSendInput, XCM_EXTENSION_ID};
+use xcm_ce_primitives::{
+    create_error_enum, Command, QueryConfig, ValidateSendInput, XCM_EXTENSION_ID,
+};
+
+create_error_enum!(pub Error);
+
+impl FromStatusCode for Error {
+    fn from_status_code(status_code: u32) -> Result<(), Self> {
+        match status_code {
+            0 => Ok(()),
+            code => Err(code.into()),
+        }
+    }
+}
 
 /// XCM Chain Extension Interface
 pub struct XcmExtension<E = DefaultEnvironment, const ID: u16 = XCM_EXTENSION_ID>(PhantomData<E>);

@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0xed3e8d190cb58ed9107e6ced014b361a98c4f703990044280c33d4fe89581ee7",
+    "hash": "0xb53f65b20a11c687464e0ecf95ed2abb4a3a41fd64ecfa8458b97cdfd5f8c01d",
     "language": "ink! 4.1.0",
     "compiler": "rustc 1.68.0-nightly",
     "build_info": {
@@ -4632,7 +4632,8 @@
           }
         },
         "path": [
-          "xcm_ce_primitives",
+          "contracts_example",
+          "sdk",
           "Error"
         ]
       }

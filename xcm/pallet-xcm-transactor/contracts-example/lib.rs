@@ -1,14 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod sdk;
-pub use sdk::XcmExtension as _XcmExtension;
+pub use sdk::{Error as XcmCEError, XcmExtension as _XcmExtension};
 
 #[ink::contract]
 mod contracts {
     use super::*;
     use ink::{env::DefaultEnvironment, storage::Mapping};
     use xcm::{latest::Weight, prelude::*};
-    use xcm_ce_primitives::{Error as XcmCEError, QueryConfig, ValidateSendInput};
+    use xcm_ce_primitives::{QueryConfig, ValidateSendInput};
 
     type XcmExtension = _XcmExtension<DefaultEnvironment>;
 
