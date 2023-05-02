@@ -284,6 +284,8 @@ jobs:
     - name: Srtool build
       id: srtool_build
       uses: chevdor/srtool-actions@v0.7.0
+      env:
+        BUILD_OPTS: -Z unstable-options
       with:
         chain: ${{ matrix.chain }}
         runtime_dir: runtime/${{ matrix.chain }}
