@@ -79,6 +79,10 @@ pub mod pallet {
     pub enum Event<T: Config> {
         // successfully handled callback
         CallbackSuccess(QueryType<T::AccountId>),
+        CallbackFailed {
+            query_type: QueryType<T::AccountId>,
+            query_id: QueryId,
+        },
         // new query registered
         QueryPrepared {
             query_type: QueryType<T::AccountId>,
@@ -138,15 +142,20 @@ pub mod pallet {
             // TODO: in case of error, maybe save the response for manual
             // polling as fallback. This will require taking into weight of storing
             // response in storage in the weights of `prepare_new_query` dispatch
-            T::CallbackHandler::on_callback(
+            if let Err(e) = T::CallbackHandler::on_callback(
                 responder,
                 ResponseInfo {
                     query_id,
                     query_type: query_type.clone(),
                     response,
                 },
-            )
-            .map_err(|e| e.into())?;
+            ) {
+                Self::deposit_event(Event::<T>::CallbackFailed {
+                    query_type,
+                    query_id,
+                });
+                return Err(e.into());
+            }
 
             // remove query from storage
             CallbackQueries::<T>::remove(query_id);
