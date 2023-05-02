@@ -836,12 +836,28 @@ parameter_types! {
     pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
 }
 
+/// Ensure that the origin is EVM compatible.
+pub struct EnsureEvmOrigin;
+impl<OuterOrigin> pallet_evm::EnsureAddressOrigin<OuterOrigin> for EnsureEvmOrigin
+where
+    OuterOrigin: Into<Result<pallet_account::NativeAndEVM, OuterOrigin>>
+        + From<pallet_account::NativeAndEVM>,
+{
+    type Success = ();
+    fn try_address_origin(address: &H160, origin: OuterOrigin) -> Result<(), OuterOrigin> {
+        origin.into().and_then(|o| match o {
+            pallet_account::NativeAndEVM::H160(a) if *address == a => Ok(()),
+            r => Err(OuterOrigin::from(r)),
+        })
+    }
+}
+
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = BaseFee;
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
-    type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
+    type CallOrigin = EnsureEvmOrigin;
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
