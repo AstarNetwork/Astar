@@ -848,12 +848,20 @@ impl pallet_xc_asset_config::Config for Runtime {
     scale_info::TypeInfo,
 )]
 pub enum ProxyType {
+    /// Allows all runtime calls for proxy account
     Any,
+    /// Allows only NonTransfer runtime calls for proxy account
+    /// To know exact calls check InstanceFilter inmplementation for ProxyTypes
     NonTransfer,
+    /// All Runtime calls from Pallet Balances allowed for proxy account
     Balances,
+    /// All Runtime calls from Pallet Assets allowed for proxy account
     Assets,
+    /// Only provide_judgement call from pallet identity allowed for proxy account
     IdentityJudgement,
+    /// Only reject_announcement call from pallet proxy allowed for proxy account
     CancelProxy,
+    /// All runtime calls from pallet DappStaking allowed for proxy account
     DappsStaking,
 }
 
@@ -869,10 +877,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             // Always allowed RuntimeCall::Utility no matter type.
             // Only transactions allowed by Proxy.filter can be executed
             _ if matches!(c, RuntimeCall::Utility(..)) => true,
-
-            // Allows all runtime calls for proxy account
             ProxyType::Any => true,
-            // Allows only NonTransfer runtime calls for proxy account
             ProxyType::NonTransfer => {
                 matches!(
                     c,
@@ -902,29 +907,24 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::BaseFee(..) // Skip entire Contracts pallet
                 )
             }
-            //All Runtime calls from Pallet Balances allowed for proxy account
             ProxyType::Balances => {
                 matches!(c, RuntimeCall::Balances(..))
             }
-            // All Runtime calls from Pallet Assets allowed for proxy account
             ProxyType::Assets => {
                 matches!(c, RuntimeCall::Assets(..))
             }
-            // Only provide_judgement call from pallet identity allowed for proxy account
             ProxyType::IdentityJudgement => {
                 matches!(
                     c,
                     RuntimeCall::Identity(pallet_identity::Call::provide_judgement { .. })
                 )
             }
-            // Only reject_announcement call from pallet proxy allowed for proxy account
             ProxyType::CancelProxy => {
                 matches!(
                     c,
                     RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
                 )
             }
-            // All runtime calls from pallet DappStaking allowed for proxy account
             ProxyType::DappsStaking => {
                 matches!(c, RuntimeCall::DappsStaking(..))
             }
