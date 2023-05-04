@@ -940,201 +940,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
         }
     }
 }
-#[cfg(test)]
-mod proxy_test {
-    use super::*;
-    use frame_support::*;
-    use pallet_balances::Call as BalancesCall;
-    use pallet_proxy::Event as ProxyEvent;
-    use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
-    use sp_runtime::AccountId32;
-
-    type SystemError = frame_system::Error<Runtime>;
-
-    const INITIAL_AMOUNT: u128 = 100_000_000_000_000_000_000;
-    const ALICE: AccountId32 = AccountId32::new([1_u8; 32]);
-    const BOB: AccountId32 = AccountId32::new([2_u8; 32]);
-    const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
-
-    pub fn new_test_ext() -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
-            .unwrap();
-        pallet_balances::GenesisConfig::<Runtime> {
-            balances: vec![
-                (ALICE, INITIAL_AMOUNT),
-                (BOB, INITIAL_AMOUNT),
-                (CAT, INITIAL_AMOUNT),
-            ],
-        }
-        .assimilate_storage(&mut t)
-        .unwrap();
-        let mut ext = sp_io::TestExternalities::new(t);
-        ext.execute_with(|| System::set_block_number(1));
-        ext
-    }
-
-    fn last_events(n: usize) -> Vec<RuntimeEvent> {
-        frame_system::Pallet::<Runtime>::events()
-            .into_iter()
-            .rev()
-            .take(n)
-            .rev()
-            .map(|e| e.event)
-            .collect()
-    }
-
-    fn expect_events(e: Vec<RuntimeEvent>) {
-        assert_eq!(last_events(e.len()), e);
-    }
-
-    #[test]
-    fn test_utility_call_pass_for_any() {
-        new_test_ext().execute_with(|| {
-            // Any proxy should be allowed to make balance transfer call
-            assert_ok!(Proxy::add_proxy(
-                RuntimeOrigin::signed(ALICE),
-                sp_runtime::MultiAddress::Id(BOB),
-                ProxyType::Any,
-                0
-            ));
-
-            // Preparing Utility call
-            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
-                dest: sp_runtime::MultiAddress::Id(CAT),
-                value: 100_000_000_000,
-            });
-            let inner = Box::new(transfer_call);
-            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
-                calls: vec![*inner],
-            }));
-
-            // Utility call passed through filter
-            assert_ok!(Proxy::proxy(
-                RuntimeOrigin::signed(BOB),
-                sp_runtime::MultiAddress::Id(ALICE),
-                None,
-                call.clone()
-            ));
-            expect_events(vec![
-                UtilityEvent::BatchCompleted.into(),
-                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
-            ]);
-        });
-    }
-    #[test]
-    fn test_utility_call_pass_for_balances() {
-        new_test_ext().execute_with(|| {
-            // Balances proxy should be allowed to make balance transfer call
-            assert_ok!(Proxy::add_proxy(
-                RuntimeOrigin::signed(ALICE),
-                sp_runtime::MultiAddress::Id(BOB),
-                ProxyType::Balances,
-                0
-            ));
-
-            // Preparing Utility call
-            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
-                dest: sp_runtime::MultiAddress::Id(CAT),
-                value: 100_000_000_000,
-            });
-            let inner = Box::new(transfer_call);
-            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
-                calls: vec![*inner],
-            }));
-
-            // Utility call passed through filter
-            assert_ok!(Proxy::proxy(
-                RuntimeOrigin::signed(BOB),
-                sp_runtime::MultiAddress::Id(ALICE),
-                None,
-                call.clone()
-            ));
-            expect_events(vec![
-                UtilityEvent::BatchCompleted.into(),
-                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
-            ]);
-        });
-    }
-
-    #[test]
-    fn test_utility_call_fail_non_transfer() {
-        new_test_ext().execute_with(|| {
-            // NonTransfer proxy shouldn't be allowed to make balance transfer call
-            assert_ok!(Proxy::add_proxy(
-                RuntimeOrigin::signed(ALICE),
-                sp_runtime::MultiAddress::Id(BOB),
-                ProxyType::NonTransfer,
-                0
-            ));
-
-            // Preparing Utility call
-            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
-                dest: sp_runtime::MultiAddress::Id(CAT),
-                value: 100_000_000_000,
-            });
-            let inner = Box::new(transfer_call);
-            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
-                calls: vec![*inner],
-            }));
-
-            assert_ok!(Proxy::proxy(
-                RuntimeOrigin::signed(BOB),
-                sp_runtime::MultiAddress::Id(ALICE),
-                None,
-                call.clone()
-            ));
-
-            // Utility call filtered out
-            expect_events(vec![
-                UtilityEvent::BatchInterrupted {
-                    index: 0,
-                    error: SystemError::CallFiltered.into(),
-                }
-                .into(),
-                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
-            ]);
-        });
-    }
-    #[test]
-    fn test_utility_call_fail_for_dappstaking() {
-        new_test_ext().execute_with(|| {
-            // Dappstaking proxy shouldn't be allowed to make balance transfer call
-            assert_ok!(Proxy::add_proxy(
-                RuntimeOrigin::signed(ALICE),
-                sp_runtime::MultiAddress::Id(BOB),
-                ProxyType::DappsStaking,
-                0
-            ));
-
-            // Preparing Utility call
-            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
-                dest: sp_runtime::MultiAddress::Id(CAT),
-                value: 100_000_000_000,
-            });
-            let inner = Box::new(transfer_call);
-            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
-                calls: vec![*inner],
-            }));
-
-            assert_ok!(Proxy::proxy(
-                RuntimeOrigin::signed(BOB),
-                sp_runtime::MultiAddress::Id(ALICE),
-                None,
-                call.clone()
-            ));
-            // Utility call filtered out
-            expect_events(vec![
-                UtilityEvent::BatchInterrupted {
-                    index: 0,
-                    error: SystemError::CallFiltered.into(),
-                }
-                .into(),
-                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
-            ]);
-        });
-    }
-}
 
 parameter_types! {
     // One storage item; key size 32, value size 8; .
@@ -1868,4 +1673,200 @@ cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
+}
+
+#[cfg(test)]
+mod proxy_test {
+    use super::*;
+    use frame_support::*;
+    use pallet_balances::Call as BalancesCall;
+    use pallet_proxy::Event as ProxyEvent;
+    use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
+    use sp_runtime::AccountId32;
+
+    type SystemError = frame_system::Error<Runtime>;
+
+    const INITIAL_AMOUNT: u128 = 100_000_000_000_000_000_000;
+    const ALICE: AccountId32 = AccountId32::new([1_u8; 32]);
+    const BOB: AccountId32 = AccountId32::new([2_u8; 32]);
+    const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
+
+    pub fn new_test_ext() -> sp_io::TestExternalities {
+        let mut t = frame_system::GenesisConfig::default()
+            .build_storage::<Runtime>()
+            .unwrap();
+        pallet_balances::GenesisConfig::<Runtime> {
+            balances: vec![
+                (ALICE, INITIAL_AMOUNT),
+                (BOB, INITIAL_AMOUNT),
+                (CAT, INITIAL_AMOUNT),
+            ],
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
+
+    fn last_events(n: usize) -> Vec<RuntimeEvent> {
+        frame_system::Pallet::<Runtime>::events()
+            .into_iter()
+            .rev()
+            .take(n)
+            .rev()
+            .map(|e| e.event)
+            .collect()
+    }
+
+    fn expect_events(e: Vec<RuntimeEvent>) {
+        assert_eq!(last_events(e.len()), e);
+    }
+
+    #[test]
+    fn test_utility_call_pass_for_any() {
+        new_test_ext().execute_with(|| {
+            // Any proxy should be allowed to make balance transfer call
+            assert_ok!(Proxy::add_proxy(
+                RuntimeOrigin::signed(ALICE),
+                sp_runtime::MultiAddress::Id(BOB),
+                ProxyType::Any,
+                0
+            ));
+
+            // Preparing Utility call
+            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+                dest: sp_runtime::MultiAddress::Id(CAT),
+                value: 100_000_000_000,
+            });
+            let inner = Box::new(transfer_call);
+            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+                calls: vec![*inner],
+            }));
+
+            // Utility call passed through filter
+            assert_ok!(Proxy::proxy(
+                RuntimeOrigin::signed(BOB),
+                sp_runtime::MultiAddress::Id(ALICE),
+                None,
+                call.clone()
+            ));
+            expect_events(vec![
+                UtilityEvent::BatchCompleted.into(),
+                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
+            ]);
+        });
+    }
+    #[test]
+    fn test_utility_call_pass_for_balances() {
+        new_test_ext().execute_with(|| {
+            // Balances proxy should be allowed to make balance transfer call
+            assert_ok!(Proxy::add_proxy(
+                RuntimeOrigin::signed(ALICE),
+                sp_runtime::MultiAddress::Id(BOB),
+                ProxyType::Balances,
+                0
+            ));
+
+            // Preparing Utility call
+            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+                dest: sp_runtime::MultiAddress::Id(CAT),
+                value: 100_000_000_000,
+            });
+            let inner = Box::new(transfer_call);
+            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+                calls: vec![*inner],
+            }));
+
+            // Utility call passed through filter
+            assert_ok!(Proxy::proxy(
+                RuntimeOrigin::signed(BOB),
+                sp_runtime::MultiAddress::Id(ALICE),
+                None,
+                call.clone()
+            ));
+            expect_events(vec![
+                UtilityEvent::BatchCompleted.into(),
+                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
+            ]);
+        });
+    }
+
+    #[test]
+    fn test_utility_call_fail_non_transfer() {
+        new_test_ext().execute_with(|| {
+            // NonTransfer proxy shouldn't be allowed to make balance transfer call
+            assert_ok!(Proxy::add_proxy(
+                RuntimeOrigin::signed(ALICE),
+                sp_runtime::MultiAddress::Id(BOB),
+                ProxyType::NonTransfer,
+                0
+            ));
+
+            // Preparing Utility call
+            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+                dest: sp_runtime::MultiAddress::Id(CAT),
+                value: 100_000_000_000,
+            });
+            let inner = Box::new(transfer_call);
+            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+                calls: vec![*inner],
+            }));
+
+            assert_ok!(Proxy::proxy(
+                RuntimeOrigin::signed(BOB),
+                sp_runtime::MultiAddress::Id(ALICE),
+                None,
+                call.clone()
+            ));
+
+            // Utility call filtered out
+            expect_events(vec![
+                UtilityEvent::BatchInterrupted {
+                    index: 0,
+                    error: SystemError::CallFiltered.into(),
+                }
+                .into(),
+                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
+            ]);
+        });
+    }
+    #[test]
+    fn test_utility_call_fail_for_dappstaking() {
+        new_test_ext().execute_with(|| {
+            // Dappstaking proxy shouldn't be allowed to make balance transfer call
+            assert_ok!(Proxy::add_proxy(
+                RuntimeOrigin::signed(ALICE),
+                sp_runtime::MultiAddress::Id(BOB),
+                ProxyType::DappsStaking,
+                0
+            ));
+
+            // Preparing Utility call
+            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+                dest: sp_runtime::MultiAddress::Id(CAT),
+                value: 100_000_000_000,
+            });
+            let inner = Box::new(transfer_call);
+            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+                calls: vec![*inner],
+            }));
+
+            assert_ok!(Proxy::proxy(
+                RuntimeOrigin::signed(BOB),
+                sp_runtime::MultiAddress::Id(ALICE),
+                None,
+                call.clone()
+            ));
+            // Utility call filtered out
+            expect_events(vec![
+                UtilityEvent::BatchInterrupted {
+                    index: 0,
+                    error: SystemError::CallFiltered.into(),
+                }
+                .into(),
+                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
+            ]);
+        });
+    }
 }
