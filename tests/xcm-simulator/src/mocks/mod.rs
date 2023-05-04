@@ -81,6 +81,7 @@ pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
 pub type ParachainContracts = pallet_contracts::Pallet<parachain::Runtime>;
+pub type ParachainXtokens = orml_xtokens::Pallet<parachain::Runtime>;
 
 pub fn parent_account_id() -> parachain::AccountId {
     let location = (Parent,);
