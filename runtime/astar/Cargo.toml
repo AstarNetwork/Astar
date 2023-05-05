@@ -41,7 +41,7 @@ pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
-pallet-proxy = {workspace = true }
+pallet-proxy = { workspace = true }
 pallet-base-fee = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
