@@ -28,7 +28,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
-        Nothing, OnUnbalanced, Randomness, WithdrawReasons, InstanceFilter
+        InstanceFilter, Nothing, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
