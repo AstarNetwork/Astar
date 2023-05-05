@@ -271,6 +271,7 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
+/// Convert `AccountId` to `MultiLocation`.
 pub struct AccountIdToMultiLocation;
 impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
     fn convert(account: AccountId) -> MultiLocation {
@@ -283,6 +284,7 @@ impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
 }
 
 parameter_types! {
+    /// The absolute location in perspective of the whole network.
     pub ShibuyaLocationAbsolute: MultiLocation = MultiLocation {
         parents: 1,
         interior: X1(
@@ -292,6 +294,8 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 2;
 }
 
+/// Convert `AssetId` to optional `MultiLocation`. The impl is a wrapper
+/// on `ShibuyaAssetLocationIdConverter`.
 pub struct AssetIdConvert;
 impl Convert<AssetId, Option<MultiLocation>> for AssetIdConvert {
     fn convert(asset_id: AssetId) -> Option<MultiLocation> {
@@ -311,6 +315,7 @@ impl orml_xtokens::Config for Runtime {
     type BaseXcmWeight = UnitWeightCost;
     type UniversalLocation = UniversalLocation;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
+    // Default impl. Refer to `orml-xtokens` docs for more details.
     type MinXcmFee = DisabledParachainFee;
     type MultiLocationsFilter = Everything;
     type ReserveProvider = AbsoluteReserveProvider;

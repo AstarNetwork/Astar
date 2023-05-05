@@ -127,7 +127,7 @@ fn para_to_para_reserve_transfer_and_back() {
     let para_a_multiloc = (Parent, Parachain(1));
     let alice = AccountId32 {
         network: None,
-        id: ALICE.into()
+        id: ALICE.into(),
     };
 
     // On parachain B create an asset which representes a derivative of parachain A native asset.
@@ -150,11 +150,7 @@ fn para_to_para_reserve_transfer_and_back() {
         assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
             parachain::RuntimeOrigin::signed(ALICE),
             Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
-            Box::new(
-                X1(alice)
-                .into_location()
-                .into_versioned()
-            ),
+            Box::new(X1(alice).into_location().into_versioned()),
             Box::new((Here, withdraw_amount).into()),
             0,
         ));
@@ -189,14 +185,7 @@ fn para_to_para_reserve_transfer_and_back() {
             parachain::RuntimeOrigin::signed(ALICE),
             sibling_asset_id,
             remaining,
-            Box::new(
-                (
-                    Parent,
-                    Parachain(1),
-                    alice,
-                )
-                    .into()
-            ),
+            Box::new((Parent, Parachain(1), alice,).into()),
             Unlimited
         ));
     });
