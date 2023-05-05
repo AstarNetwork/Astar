@@ -441,6 +441,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
+ "substrate-state-trie-migration-rpc",
  "tokio",
  "try-runtime-cli",
  "url",
@@ -468,6 +469,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "hex-literal 0.4.1",
  "log",
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
@@ -501,6 +503,7 @@ dependencies = [
  "pallet-multisig",
  "pallet-precompile-dapps-staking",
  "pallet-session",
+ "pallet-state-trie-migration",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -3857,6 +3860,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
 
 [[package]]
+name = "hex-literal"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
+
+[[package]]
 name = "hkdf"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4426,7 +4435,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal",
+ "hex-literal 0.3.4",
  "kusama-runtime-constants",
  "log",
  "pallet-authority-discovery",
@@ -5648,7 +5657,7 @@ dependencies = [
  "fc-storage",
  "fp-rpc",
  "futures 0.3.27",
- "hex-literal",
+ "hex-literal 0.3.4",
  "jsonrpsee",
  "moonbeam-client-evm-tracing",
  "moonbeam-rpc-core-debug",
@@ -8812,7 +8821,7 @@ version = "0.9.39-1"
 source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.39#c22e1c4173bf6966f5d1980f4299f7abe836f0c1"
 dependencies = [
  "bitvec",
- "hex-literal",
+ "hex-literal 0.3.4",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
@@ -8878,7 +8887,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal",
+ "hex-literal 0.3.4",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -9083,7 +9092,7 @@ dependencies = [
  "frame-support",
  "frame-system-rpc-runtime-api",
  "futures 0.3.27",
- "hex-literal",
+ "hex-literal 0.3.4",
  "kusama-runtime",
  "kvdb",
  "kvdb-rocksdb",
@@ -9914,7 +9923,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal",
+ "hex-literal 0.3.4",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -11625,6 +11634,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "hex-literal 0.4.1",
  "log",
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
@@ -11668,6 +11678,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
+ "pallet-state-trie-migration",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -11728,6 +11739,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
+ "hex-literal 0.4.1",
  "log",
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
@@ -11763,6 +11775,7 @@ dependencies = [
  "pallet-precompile-dapps-staking",
  "pallet-proxy",
  "pallet-session",
+ "pallet-state-trie-migration",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -14449,7 +14462,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal",
+ "hex-literal 0.3.4",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",

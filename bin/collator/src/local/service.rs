@@ -569,6 +569,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         let client = client.clone();
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
+        let backend = backend.clone();
 
         Box::new(move |deny_unsafe, subscription| {
             let deps = crate::rpc::FullDeps {
@@ -587,7 +588,8 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
             };
 
-            crate::rpc::create_full(deps, subscription).map_err::<ServiceError, _>(Into::into)
+            crate::rpc::create_full(deps, subscription, backend.clone())
+                .map_err::<ServiceError, _>(Into::into)
         })
     };
 

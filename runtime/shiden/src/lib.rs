@@ -42,7 +42,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureSigned,
+    EnsureRoot, EnsureSigned,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, Runner};
@@ -290,8 +290,8 @@ impl pallet_identity::Config for Runtime {
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type Slashed = ();
-    type ForceOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
-    type RegistrarOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type ForceOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type RegistrarOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
@@ -447,7 +447,7 @@ parameter_types! {
 impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type UpdateOrigin = frame_system::EnsureRoot<AccountId>;
+    type UpdateOrigin = EnsureRoot<AccountId>;
     type PotId = PotId;
     type MaxCandidates = MaxCandidates;
     type MinCandidates = MinCandidates;
@@ -575,7 +575,7 @@ impl pallet_assets::Config for Runtime {
     type AssetId = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -829,7 +829,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
@@ -967,6 +967,29 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
+parameter_types! {
+    // The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
+    pub const MigrationSignedDepositPerItem: Balance = 10 * MILLISDN;
+    pub const MigrationSignedDepositBase: Balance = 1 * SDN;
+}
+
+// TODO: agree on the proper key with the team, we'll need it for the script!
+frame_support::ord_parameter_types! {
+    pub const MigController: AccountId = AccountId::from(hex_literal::hex!("da972864c23a0d8a12b1664ae6644acc9ff653539db696f1813e21f8e1f5fc3b"));
+}
+
+impl pallet_state_trie_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type SignedDepositPerItem = MigrationSignedDepositPerItem;
+    type SignedDepositBase = MigrationSignedDepositBase;
+    type ControlOrigin = EnsureRoot<AccountId>;
+    // specific account for the migration, can trigger the signed migrations.
+    type SignedFilter = frame_system::EnsureSignedBy<MigController, AccountId>;
+    type WeightInfo = pallet_state_trie_migration::weights::SubstrateWeight<Runtime>;
+    type MaxKeyLen = ConstU32<512>;
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -1011,6 +1034,9 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 71,
 
         Sudo: pallet_sudo = 99,
+
+        // TODO: remove this after migration is finished
+        StateTrieMigration: pallet_state_trie_migration = 200,
     }
 );
 

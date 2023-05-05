@@ -847,6 +847,29 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
+parameter_types! {
+    // The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
+    pub const MigrationSignedDepositPerItem: Balance = 1 * ASTR;
+    pub const MigrationSignedDepositBase: Balance = 100 * ASTR;
+}
+
+// TODO: agree on the proper key with the team, we'll need it for the script!
+frame_support::ord_parameter_types! {
+    pub const MigController: AccountId = AccountId::from(hex_literal::hex!("da972864c23a0d8a12b1664ae6644acc9ff653539db696f1813e21f8e1f5fc3b"));
+}
+
+impl pallet_state_trie_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type SignedDepositPerItem = MigrationSignedDepositPerItem;
+    type SignedDepositBase = MigrationSignedDepositBase;
+    type ControlOrigin = EnsureRoot<AccountId>;
+    // specific account for the migration, can trigger the signed migrations.
+    type SignedFilter = frame_system::EnsureSignedBy<MigController, AccountId>;
+    type WeightInfo = pallet_state_trie_migration::weights::SubstrateWeight<Runtime>;
+    type MaxKeyLen = ConstU32<512>;
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -889,6 +912,9 @@ construct_runtime!(
         Contracts: pallet_contracts = 70,
 
         Sudo: pallet_sudo = 99,
+
+        // TODO: remove this after migration is finished
+        StateTrieMigration: pallet_state_trie_migration = 200,
     }
 );
 

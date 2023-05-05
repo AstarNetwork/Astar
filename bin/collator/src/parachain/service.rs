@@ -486,6 +486,7 @@ where
         let client = client.clone();
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
+        let backend = backend.clone();
 
         Box::new(move |deny_unsafe, subscription| {
             let deps = crate::rpc::FullDeps {
@@ -504,7 +505,7 @@ where
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            crate::rpc::create_full(deps, subscription).map_err(Into::into)
+            crate::rpc::create_full(deps, subscription, backend.clone()).map_err(Into::into)
         })
     };
 
@@ -835,7 +836,8 @@ where
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            crate::rpc::create_full(deps, subscription, rpc_config.clone()).map_err(Into::into)
+            crate::rpc::create_full(deps, subscription, backend.clone(), rpc_config.clone())
+                .map_err(Into::into)
         })
     };
 

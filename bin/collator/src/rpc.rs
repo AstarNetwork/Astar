@@ -39,6 +39,7 @@ use sp_blockchain::{
 use sp_runtime::traits::BlakeTwo256;
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
+use substrate_state_trie_migration_rpc::{StateMigration, StateMigrationApiServer};
 
 #[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_debug::{Debug, DebugServer};
@@ -124,6 +125,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    backend: BE,
     tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
@@ -153,7 +155,7 @@ where
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
 
-    let mut io = create_full_rpc(deps, subscription_task_executor)?;
+    let mut io = create_full_rpc(deps, subscription_task_executor, backend)?;
 
     if tracing_config.enable_txpool {
         io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
@@ -182,6 +184,7 @@ where
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    backend: Arc<BE>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -200,17 +203,18 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
-    BE: Backend<Block> + 'static,
+    BE: Backend<Block> + Send + Sync + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
     A: ChainApi<Block = Block> + 'static,
 {
-    create_full_rpc(deps, subscription_task_executor)
+    create_full_rpc(deps, subscription_task_executor, backend)
 }
 
 fn create_full_rpc<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    backend: Arc<BE>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -254,6 +258,9 @@ where
     io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
     io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
+
+    // TODO: once state trie migration has been completed, this can be removed, together with the deps.
+    io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 
     if !enable_evm_rpc {
         return Ok(io);
