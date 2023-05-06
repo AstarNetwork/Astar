@@ -21,9 +21,9 @@ use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{ParachainBlockImport, ParachainConsensus};
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
-use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
-    prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+    prepare_node_config, start_collator, start_full_node, BuildNetworkParams, StartCollatorParams,
+    StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
@@ -406,7 +406,6 @@ where
         RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
         s => format!("{}", s).into(),
     })?;
-    let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
     let force_authoring = parachain_config.force_authoring;
     let is_authority = parachain_config.role.is_authority();
@@ -414,17 +413,16 @@ where
     let transaction_pool = params.transaction_pool.clone();
     let import_queue_service = params.import_queue.service();
     let (network, system_rpc_tx, tx_handler_controller, start_network) =
-        sc_service::build_network(sc_service::BuildNetworkParams {
-            config: &parachain_config,
+        cumulus_client_service::build_network(BuildNetworkParams {
+            parachain_config: &parachain_config,
+            para_id: id,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
             import_queue: params.import_queue,
-            block_announce_validator_builder: Some(Box::new(|_| {
-                Box::new(block_announce_validator)
-            })),
-            warp_sync_params: None,
-        })?;
+            relay_chain_interface: relay_chain_interface.clone(),
+        })
+        .await?;
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
@@ -711,7 +709,6 @@ where
         RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
         s => format!("{}", s).into(),
     })?;
-    let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
     let force_authoring = parachain_config.force_authoring;
     let is_authority = parachain_config.role.is_authority();
@@ -719,17 +716,16 @@ where
     let transaction_pool = params.transaction_pool.clone();
     let import_queue_service = params.import_queue.service();
     let (network, system_rpc_tx, tx_handler_controller, start_network) =
-        sc_service::build_network(sc_service::BuildNetworkParams {
-            config: &parachain_config,
+        cumulus_client_service::build_network(BuildNetworkParams {
+            parachain_config: &parachain_config,
+            para_id: id,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
             import_queue: params.import_queue,
-            block_announce_validator_builder: Some(Box::new(|_| {
-                Box::new(block_announce_validator)
-            })),
-            warp_sync_params: None,
-        })?;
+            relay_chain_interface: relay_chain_interface.clone(),
+        })
+        .await?;
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));

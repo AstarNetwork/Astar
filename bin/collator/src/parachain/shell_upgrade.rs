@@ -21,7 +21,7 @@
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_primitives_core::relay_chain::{Hash as PHash, PersistedValidationData};
 use futures::lock::Mutex;
-use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams};
+use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams, ForkChoiceStrategy};
 use sp_api::ApiExt;
 use sp_consensus::CacheKeyId;
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
@@ -113,7 +113,7 @@ where
 {
     async fn verify(
         &mut self,
-        block_import: BlockImportParams<Block, ()>,
+        mut block_import: BlockImportParams<Block, ()>,
     ) -> Result<
         (
             BlockImportParams<Block, ()>,
@@ -121,6 +121,17 @@ where
         ),
         String,
     > {
+        // Skip checks that include execution, if being told so or when importing only state.
+        //
+        // This is done for example when gap syncing and it is expected that the block after the gap
+        // was checked/chosen properly, e.g. by warp syncing to this block using a finality proof.
+        // Or when we are importing state only and can not verify the seal.
+        if block_import.with_state() || block_import.state_action.skip_execution_checks() {
+            // When we are importing only the state of a block, it will be the best block.
+            block_import.fork_choice = Some(ForkChoiceStrategy::Custom(block_import.with_state()));
+            return Ok((block_import, None));
+        }
+
         let block_hash = *block_import.header.parent_hash();
 
         if self
