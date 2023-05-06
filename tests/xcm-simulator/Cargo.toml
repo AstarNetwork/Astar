@@ -1,7 +1,7 @@
 [package]
 name = "xcm-simulator-tests"
 version = "0.1.0"
-description = "Examples of xcm-simulator usage."
+description = "Astar XCM Simulator tests"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -18,7 +18,11 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
+pallet-contracts = { workspace = true }
+pallet-contracts-primitives = { workspace = true }
+pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-proxy = { workspace = true }
+pallet-timestamp = { workspace = true }
 pallet-utility = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
@@ -30,6 +34,9 @@ sp-tracing = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 xcm-primitives = { workspace = true }
+
+# polkadot deps
+polkadot-primitives = { workspace = true }
 
 # XCM
 cumulus-pallet-xcm = { workspace = true }
@@ -54,10 +61,15 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
+	"pallet-timestamp/std",
+	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
+	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-xcm/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-assets/std",
 	"xcm-primitives/std",
+	"polkadot-primitives/std",
 	"pallet-dapps-staking/std",
 	"pallet-proxy/std",
 	"pallet-utility/std",
@@ -66,6 +78,8 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
+	"pallet-contracts/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",

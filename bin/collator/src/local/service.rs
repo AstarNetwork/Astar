@@ -184,9 +184,9 @@ pub fn new_partial(
 #[cfg(feature = "evm-tracing")]
 pub fn start_node(
     config: Configuration,
-    evm_tracing_config: crate::EvmTracingConfig,
+    evm_tracing_config: crate::evm_tracing_types::EvmTracingConfig,
 ) -> Result<TaskManager, ServiceError> {
-    use crate::cli::EthApi as EthApiCmd;
+    use crate::evm_tracing_types::EthApi as EthApiCmd;
     use crate::rpc::tracing;
 
     let sc_service::PartialComponents {

@@ -15,7 +15,7 @@ async function run(nodeName, networkInfo, args) {
 
     const tx0 = await api.tx.assets.forceCreate(assetId, {id: sender.address}, true, 1);
 
-    const assetLocation = `{"v1":{"parents":1,"interior":{"x1":{"parachain":${hrmpTo}}}}}`;
+    const assetLocation = `{"v3":{"parents":1,"interior":{"x1":{"parachain":${hrmpTo}}}}}`;
     const tx1 = await api.tx.xcAssetConfig.registerAssetLocation(JSON.parse(assetLocation), assetId);
 
     const unitsPerSecond = 7000000000;

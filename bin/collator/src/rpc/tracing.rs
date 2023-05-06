@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 ///! EVM tracing RPC support.
-use crate::cli::EthApi as EthApiCmd;
+use crate::evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig};
 
 use fc_rpc::OverrideHandle;
 use fc_rpc_core::types::FilterPool;
@@ -53,7 +53,7 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
 
 /// Spawn the tasks that are required to run a EVM tracing.
 pub fn spawn_tracing_tasks<B, C, BE>(
-    rpc_config: &crate::cli::EvmTracingConfig,
+    rpc_config: &EvmTracingConfig,
     params: SpawnTasksParams<B, C, BE>,
 ) -> RpcRequesters
 where
