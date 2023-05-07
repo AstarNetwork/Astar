@@ -448,6 +448,9 @@ jobs:
         asset_content_type: application/gzip
 
   upload-evm-tracing-binaries:
+    needs: publish-release-draft
+    runs-on: ubuntu-latest
+    steps:
     - name: Download pre-built collator binary for evm tracing
       uses: actions/download-artifact@v3
       with:
