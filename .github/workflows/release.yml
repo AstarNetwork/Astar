@@ -488,7 +488,7 @@ jobs:
     - name: Download evm tracing runtime
       uses: actions/download-artifact@v3
       with:
-        name: ${{ matrix.chain }}-tracing-runtime
+        name: ${{ matrix.chain }}-evm-tracing-runtime
 
     - name: Get runtime version
       id: get-runtime-version
