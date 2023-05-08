@@ -973,9 +973,8 @@ parameter_types! {
     pub const MigrationSignedDepositBase: Balance = 1 * SDN;
 }
 
-// TODO: agree on the proper key with the team, we'll need it for the script!
 frame_support::ord_parameter_types! {
-    pub const MigController: AccountId = AccountId::from(hex_literal::hex!("da972864c23a0d8a12b1664ae6644acc9ff653539db696f1813e21f8e1f5fc3b"));
+    pub const MigController: AccountId = AccountId::from(hex_literal::hex!("8ea88e403abea19c5eedeb366e9338fd969e5053f117c18872725aed5423d43c"));
 }
 
 impl pallet_state_trie_migration::Config for Runtime {
