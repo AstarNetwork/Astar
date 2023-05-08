@@ -447,32 +447,6 @@ jobs:
         asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
         asset_content_type: application/gzip
 
-  upload-evm-tracing-binaries:
-    needs: publish-release-draft
-    runs-on: ubuntu-latest
-    steps:
-    - name: Download pre-built collator binary for evm tracing
-      uses: actions/download-artifact@v3
-      with:
-        name: astar-evm-tracing-ubuntu-latest-x86_64-unknown-linux-gnu
-        path: evm-tracing-ubuntu-x86_64-bin
-    
-    - name: Make evm tracing binary executable and tar gzip
-      run: |
-        cd evm-tracing-ubuntu-x86_64-bin
-        chmod +x astar-collator
-        tar zcvf astar-collator-evm-tracing.tar.gz astar-collator
-
-    - name: Upload evm tracing binary artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path:  evm-tracing-ubuntu-x86_64-bin/astar-collator-evm-tracing.tar.gz
-        asset_name: astar-collator-${{ github.ref_name }}-evm-tracing-ubuntu-x86_64.tar.gz
-        asset_content_type: application/gzip
-
   upload-runtimes:
     needs: publish-release-draft
     runs-on: ubuntu-latest
@@ -484,11 +458,6 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: ${{ matrix.chain }}-runtime
-
-    - name: Download evm tracing runtime
-      uses: actions/download-artifact@v3
-      with:
-        name: ${{ matrix.chain }}-evm-tracing-runtime
 
     - name: Get runtime version
       id: get-runtime-version
@@ -507,16 +476,6 @@ jobs:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
         asset_path: ${{ matrix.chain }}_runtime.compact.compressed.wasm
         asset_name: ${{ steps.get-runtime-version.outputs.runtime_version }}.wasm
-        asset_content_type: application/wasm
-
-    - name: Upload ${{ matrix.chain }} Wasm override for evm tracing
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ${{ matrix.chain }}_evm_tracing_runtime.compact.compressed.wasm
-        asset_name: ${{ steps.get-runtime-version.outputs.runtime_version }}-substitute-evm-tracing.wasm
         asset_content_type: application/wasm
 
     - name: Upload ${{ matrix.chain }} Metadata
@@ -548,3 +507,47 @@ jobs:
         asset_path: ${{ matrix.chain }}-srtool-digest.json
         asset_name: ${{ matrix.chain }}-srtool-digest.json
         asset_content_type: application/json
+
+  upload-evm-tracing-artifacts:
+    needs: publish-release-draft
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download pre-built collator binary for evm tracing
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-evm-tracing-ubuntu-latest-x86_64-unknown-linux-gnu
+        path: evm-tracing-artifacts
+    
+    - name: Make evm tracing binary executable and tar gzip
+      run: |
+        cd evm-tracing-artifacts
+        chmod +x astar-collator
+        tar zcvf astar-collator-evm-tracing.tar.gz astar-collator
+
+    - name: Download evm tracing runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-evm-tracing-runtime
+        path: evm-tracing-artifacts
+
+    - name: Download evm tracing runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: shiden-evm-tracing-runtime
+        path: evm-tracing-artifacts
+    
+    - name: Download evm tracing runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: shibuya-evm-tracing-runtime
+        path: evm-tracing-artifacts
+
+    - name: Upload evm tracing binary artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+        asset_path:  evm-tracing-artifacts
+        asset_name: evm-tracing-artifacts.tar.gz
+        asset_content_type: application/gzip
