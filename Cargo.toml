@@ -94,7 +94,6 @@ substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", 
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
-substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 
 # Substrate pallets 
 # (wasm)
