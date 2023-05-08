@@ -50,9 +50,9 @@ xcm-executor = { workspace = true }
 xcm-simulator = { workspace = true }
 
 # ORML
-orml-xtokens = { workspace = true }
 orml-traits = { workspace = true }
 orml-xcm-support = { workspace = true }
+orml-xtokens = { workspace = true }
 
 [features]
 default = ["std"]
