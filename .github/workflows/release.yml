@@ -522,7 +522,6 @@ jobs:
       run: |
         cd evm-tracing-artifacts
         chmod +x astar-collator
-        tar zcvf astar-collator-evm-tracing.tar.gz astar-collator
 
     - name: Download evm tracing runtime
       uses: actions/download-artifact@v3
@@ -542,12 +541,16 @@ jobs:
         name: shibuya-evm-tracing-runtime
         path: evm-tracing-artifacts
 
+    - name: Compress folder
+      run: |
+        tar zcvf evm-tracing-artifacts.tar.gz evm-tracing-artifacts
+
     - name: Upload evm tracing binary artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path:  evm-tracing-artifacts
+        asset_path:  evm-tracing-artifacts.tar.gz
         asset_name: evm-tracing-artifacts.tar.gz
         asset_content_type: application/gzip
