@@ -9,5 +9,5 @@ jobs:
     steps:
     - uses: yogevbd/enforce-label-action@2.1.0
       with:
-        REQUIRED_LABELS_ANY: "client,runtime,breaksapi,ci,bug"
-        REQUIRED_LABELS_ANY_DESCRIPTION: "Select at least one label ['client', 'runtime','breaksapi','ci','bug']"
+        REQUIRED_LABELS_ANY: "client,runtime,ci,tests,other"
+        REQUIRED_LABELS_ANY_DESCRIPTION: "Select at least one label ['client','runtime','ci','tests','other']"
