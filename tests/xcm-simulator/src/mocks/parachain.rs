@@ -40,9 +40,10 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::{ConstBool, H256};
 use sp_runtime::{
     testing::Header,
-    traits::{AccountIdConversion, Convert, IdentityLookup},
+    traits::{AccountIdConversion, Convert, Get, IdentityLookup},
     AccountId32, Perbill, RuntimeDebug,
 };
+use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 
 use super::msg_queue::*;
@@ -56,7 +57,7 @@ use xcm_builder::{
     SovereignSignedViaLocation, TakeWeightCredit, WithComputedOrigin,
 };
 
-use orml_traits::location::AbsoluteReserveProvider;
+use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_xcm_support::DisabledParachainFee;
 
 use xcm_executor::{
@@ -597,15 +598,34 @@ parameter_types! {
             Parachain(MsgQueue::parachain_id().into())
         )
     };
+    /// Max asset types for one cross-chain transfer. `2` covers all current use cases.
+    /// Can be updated with extra test cases in the future if needed.
     pub const MaxAssetsForTransfer: usize = 2;
 }
 
 /// Convert `AssetId` to optional `MultiLocation`. The impl is a wrapper
-/// on `ShibuyaAssetLocationIdConverter`.
+/// on `ShidenAssetLocationIdConverter`.
 pub struct AssetIdConvert;
 impl Convert<AssetId, Option<MultiLocation>> for AssetIdConvert {
     fn convert(asset_id: AssetId) -> Option<MultiLocation> {
         ShidenAssetLocationIdConverter::reverse_ref(&asset_id).ok()
+    }
+}
+
+/// `MultiAsset` reserve location provider. It's based on `RelativeReserveProvider` and in
+/// addition will convert self absolute location to relative location.
+pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
+impl<AbsoluteLocation: Get<MultiLocation>> Reserve
+    for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
+{
+    fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
+        RelativeReserveProvider::reserve(asset).map(|reserve_location| {
+            if reserve_location == AbsoluteLocation::get() {
+                MultiLocation::here()
+            } else {
+                reserve_location
+            }
+        })
     }
 }
 
@@ -615,7 +635,7 @@ impl orml_xtokens::Config for Runtime {
     type CurrencyId = AssetId;
     type CurrencyIdConvert = AssetIdConvert;
     type AccountIdToMultiLocation = AccountIdToMultiLocation;
-    type SelfLocation = ShidenLocationAbsolute;
+    type SelfLocation = ShidenLocation;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type Weigher = Weigher;
     type BaseXcmWeight = UnitWeightCost;
@@ -624,7 +644,7 @@ impl orml_xtokens::Config for Runtime {
     // Default impl. Refer to `orml-xtokens` docs for more details.
     type MinXcmFee = DisabledParachainFee;
     type MultiLocationsFilter = Everything;
-    type ReserveProvider = AbsoluteReserveProvider;
+    type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShidenLocationAbsolute>;
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
