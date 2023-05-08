@@ -260,6 +260,7 @@ try-runtime = [
 	"parachain-info/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
+	"pallet-state-trie-migration/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

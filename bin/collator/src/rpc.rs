@@ -200,7 +200,7 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
-    BE: Backend<Block> + Send + Sync + 'static,
+    BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
     A: ChainApi<Block = Block> + 'static,

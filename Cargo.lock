@@ -441,7 +441,6 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
- "substrate-state-trie-migration-rpc",
  "tokio",
  "try-runtime-cli",
  "url",
