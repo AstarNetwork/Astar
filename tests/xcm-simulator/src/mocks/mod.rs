@@ -34,6 +34,7 @@ type ContractBalanceOf<T> = <<T as pallet_contracts::Config>::Currency as Curren
 >>::Balance;
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFAu8; 32]);
+pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFBu8; 32]);
 pub const INITIAL_BALANCE: u128 = 1_000_000_000_000_000_000_000_000;
 pub const DAPP_STAKER_REWARD_PER_BLOCK: parachain::Balance = 1_000;
 pub const DAPP_STAKER_DEV_PER_BLOCK: parachain::Balance = 250;

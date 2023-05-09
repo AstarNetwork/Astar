@@ -169,7 +169,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 97,
+    spec_version: 99,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1058,6 +1058,8 @@ parameter_types! {
 pub enum ProxyType {
     Any,
     NonTransfer,
+    Balances,
+    Assets,
     Governance,
     IdentityJudgement,
     CancelProxy,
@@ -1073,12 +1075,16 @@ impl Default for ProxyType {
 impl InstanceFilter<RuntimeCall> for ProxyType {
     fn filter(&self, c: &RuntimeCall) -> bool {
         match self {
+            // Always allowed RuntimeCall::Utility no matter type.
+            // Only transactions allowed by Proxy.filter can be executed
+            _ if matches!(c, RuntimeCall::Utility(..)) => true,
+            // Allows all runtime calls for proxy account
             ProxyType::Any => true,
+            // Allows only NonTransfer runtime calls for proxy account
             ProxyType::NonTransfer => {
                 matches!(
                     c,
                     RuntimeCall::System(..)
-                        | RuntimeCall::Utility(..)
                         | RuntimeCall::Identity(..)
                         | RuntimeCall::Timestamp(..)
                         | RuntimeCall::Multisig(..)
@@ -1111,6 +1117,14 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::Xvm(..)
                 )
             }
+            // All Runtime calls from Pallet Balances allowed for proxy account
+            ProxyType::Balances => {
+                matches!(c, RuntimeCall::Balances(..))
+            }
+            // All Runtime calls from Pallet Assets allowed for proxy account
+            ProxyType::Assets => {
+                matches!(c, RuntimeCall::Assets(..))
+            }
             ProxyType::Governance => {
                 matches!(
                     c,
@@ -1118,24 +1132,25 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::Council(..)
                         | RuntimeCall::TechnicalCommittee(..)
                         | RuntimeCall::Treasury(..)
-                        | RuntimeCall::Utility(..)
                 )
             }
+            // Only provide_judgement call from pallet identity allowed for proxy account
             ProxyType::IdentityJudgement => {
                 matches!(
                     c,
                     RuntimeCall::Identity(pallet_identity::Call::provide_judgement { .. })
-                        | RuntimeCall::Utility(..)
                 )
             }
+            // Only reject_announcement call from pallet proxy allowed for proxy account
             ProxyType::CancelProxy => {
                 matches!(
                     c,
                     RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
                 )
             }
+            // All runtime calls from pallet DappStaking allowed for proxy account
             ProxyType::DappsStaking => {
-                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+                matches!(c, RuntimeCall::DappsStaking(..))
             }
         }
     }
