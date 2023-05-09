@@ -109,6 +109,24 @@ Defining _features_ in the root `Cargo.toml` is additive with the features defin
 2. Add `new_dependecy = { workspace = true }` to the required crate
 3. In case dependency is defined with `default-features = false` but you need it in _std_ context, add `features = ["std"]` to the required crate.
  
+## Contributing
+
+We welcome contributions to this repository! To get started, please read the following guidelines carefully.
+
+
+### Submitting a Pull Request
+
+When submitting a Pull Request (PR), please make sure to include the necessary labels to help us categorize and prioritize your changes. PRs should contain at least one of the following mandatory labels:
+
+- **runtime**: Use this label for changes or additions to the code that relate to runtime **(shiden, astar, shibuya, local)**
+- **client**: PRs related to client.
+- **ci**: PRs related to CI (workflows).
+- **tests**: PRs related to xcm-simulator tests,rpc-tests or any other kind of test.
+- **other**: PRs related to third-party, scripts and all other things which don't have a definite label.
+
+
+By including these labels in your PR submission, you can help us to streamline the development process and ensure that your changes are properly reviewed and merged into the codebase.
+
 
 ## Further Reading
 
