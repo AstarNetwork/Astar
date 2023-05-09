@@ -554,3 +554,4 @@ jobs:
         asset_path:  evm-tracing-artifacts.tar.gz
         asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
         asset_content_type: application/gzip
+
