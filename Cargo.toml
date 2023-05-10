@@ -44,6 +44,7 @@ tokio = { version = "1.24.2", features = ["macros", "sync"] }
 url = "2.2.2"
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 hex = "0.4.3"
+hex-literal = "0.4.1"
 regex = "1.6.0"
 
 # Substrate
@@ -126,6 +127,7 @@ pallet-preimage = { git = "https://github.com/paritytech/substrate", branch = "p
 pallet-scheduler = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
+pallet-state-trie-migration = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 
 # Frontier
 # (wasm)

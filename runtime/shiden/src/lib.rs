@@ -42,7 +42,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureSigned,
+    EnsureRoot, EnsureSigned,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, Runner};
@@ -139,7 +139,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 96,
+    spec_version: 98,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -290,8 +290,8 @@ impl pallet_identity::Config for Runtime {
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
     type Slashed = ();
-    type ForceOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
-    type RegistrarOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type ForceOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type RegistrarOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
@@ -447,7 +447,7 @@ parameter_types! {
 impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type UpdateOrigin = frame_system::EnsureRoot<AccountId>;
+    type UpdateOrigin = EnsureRoot<AccountId>;
     type PotId = PotId;
     type MaxCandidates = MaxCandidates;
     type MinCandidates = MinCandidates;
@@ -575,7 +575,7 @@ impl pallet_assets::Config for Runtime {
     type AssetId = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -829,7 +829,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type XcAssetChanged = EvmRevertCodeHandler;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
@@ -848,19 +848,77 @@ impl pallet_xc_asset_config::Config for Runtime {
     scale_info::TypeInfo,
 )]
 pub enum ProxyType {
+    /// Allows all runtime calls for proxy account
+    Any,
+    /// Allows only NonTransfer runtime calls for proxy account
+    /// To know exact calls check InstanceFilter inmplementation for ProxyTypes
+    NonTransfer,
+    /// All Runtime calls from Pallet Balances allowed for proxy account
+    Balances,
+    /// All Runtime calls from Pallet Assets allowed for proxy account
+    Assets,
+    /// Only provide_judgement call from pallet identity allowed for proxy account
+    IdentityJudgement,
+    /// Only reject_announcement call from pallet proxy allowed for proxy account
     CancelProxy,
+    /// All runtime calls from pallet DappStaking allowed for proxy account
     DappsStaking,
 }
 
 impl Default for ProxyType {
     fn default() -> Self {
-        Self::CancelProxy
+        Self::Any
     }
 }
 
 impl InstanceFilter<RuntimeCall> for ProxyType {
     fn filter(&self, c: &RuntimeCall) -> bool {
         match self {
+            // Always allowed RuntimeCall::Utility no matter type.
+            // Only transactions allowed by Proxy.filter can be executed
+            _ if matches!(c, RuntimeCall::Utility(..)) => true,
+            ProxyType::Any => true,
+            ProxyType::NonTransfer => {
+                matches!(
+                    c,
+                    RuntimeCall::System(..)
+                        | RuntimeCall::Identity(..)
+                        | RuntimeCall::Timestamp(..)
+                        | RuntimeCall::Multisig(..)
+                        | RuntimeCall::Proxy(..)
+                        | RuntimeCall::ParachainSystem(..)
+                        | RuntimeCall::ParachainInfo(..)
+                        // Skip entire Balances pallet
+                        | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
+				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
+				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
+                        | RuntimeCall::DappsStaking(..)
+                        // Skip entire Assets pallet
+                        | RuntimeCall::CollatorSelection(..)
+                        | RuntimeCall::Session(..)
+                        | RuntimeCall::XcmpQueue(..)
+                        | RuntimeCall::PolkadotXcm(..)
+                        | RuntimeCall::CumulusXcm(..)
+                        | RuntimeCall::DmpQueue(..)
+                        | RuntimeCall::XcAssetConfig(..)
+                        // Skip entire EVM pallet
+                        // Skip entire Ethereum pallet
+                        // Skip entire EthCall pallet
+                        | RuntimeCall::BaseFee(..) // Skip entire Contracts pallet
+                )
+            }
+            ProxyType::Balances => {
+                matches!(c, RuntimeCall::Balances(..))
+            }
+            ProxyType::Assets => {
+                matches!(c, RuntimeCall::Assets(..))
+            }
+            ProxyType::IdentityJudgement => {
+                matches!(
+                    c,
+                    RuntimeCall::Identity(pallet_identity::Call::provide_judgement { .. })
+                )
+            }
             ProxyType::CancelProxy => {
                 matches!(
                     c,
@@ -868,7 +926,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 )
             }
             ProxyType::DappsStaking => {
-                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+                matches!(c, RuntimeCall::DappsStaking(..))
             }
         }
     }
@@ -876,6 +934,8 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
     fn is_superset(&self, o: &Self) -> bool {
         match (self, o) {
             (x, y) if x == y => true,
+            (ProxyType::Any, _) => true,
+            (_, ProxyType::Any) => false,
             _ => false,
         }
     }
@@ -905,6 +965,28 @@ impl pallet_proxy::Config for Runtime {
     type CallHasher = BlakeTwo256;
     type AnnouncementDepositBase = AnnouncementDepositBase;
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
+}
+
+parameter_types! {
+    // The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
+    pub const MigrationSignedDepositPerItem: Balance = 10 * MILLISDN;
+    pub const MigrationSignedDepositBase: Balance = 1 * SDN;
+}
+
+frame_support::ord_parameter_types! {
+    pub const MigController: AccountId = AccountId::from(hex_literal::hex!("8ea88e403abea19c5eedeb366e9338fd969e5053f117c18872725aed5423d43c"));
+}
+
+impl pallet_state_trie_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type SignedDepositPerItem = MigrationSignedDepositPerItem;
+    type SignedDepositBase = MigrationSignedDepositBase;
+    type ControlOrigin = EnsureRoot<AccountId>;
+    // specific account for the migration, can trigger the signed migrations.
+    type SignedFilter = frame_system::EnsureSignedBy<MigController, AccountId>;
+    type WeightInfo = pallet_state_trie_migration::weights::SubstrateWeight<Runtime>;
+    type MaxKeyLen = ConstU32<512>;
 }
 
 construct_runtime!(
@@ -951,6 +1033,9 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 71,
 
         Sudo: pallet_sudo = 99,
+
+        // TODO: remove this after migration is finished
+        StateTrieMigration: pallet_state_trie_migration = 200,
     }
 );
 
@@ -1008,10 +1093,7 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    pallet_xc_asset_config::migrations::MigrationXcmV3<Runtime>,
-    pallet_xcm::migration::v1::MigrateToV1<Runtime>,
-);
+pub type Migrations = ();
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
@@ -1613,4 +1695,200 @@ cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
+}
+
+#[cfg(test)]
+mod proxy_test {
+    use super::*;
+    use frame_support::*;
+    use pallet_balances::Call as BalancesCall;
+    use pallet_proxy::Event as ProxyEvent;
+    use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
+    use sp_runtime::AccountId32;
+
+    type SystemError = frame_system::Error<Runtime>;
+
+    const INITIAL_AMOUNT: u128 = 100_000_000_000_000_000_000;
+    const ALICE: AccountId32 = AccountId32::new([1_u8; 32]);
+    const BOB: AccountId32 = AccountId32::new([2_u8; 32]);
+    const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
+
+    pub fn new_test_ext() -> sp_io::TestExternalities {
+        let mut t = frame_system::GenesisConfig::default()
+            .build_storage::<Runtime>()
+            .unwrap();
+        pallet_balances::GenesisConfig::<Runtime> {
+            balances: vec![
+                (ALICE, INITIAL_AMOUNT),
+                (BOB, INITIAL_AMOUNT),
+                (CAT, INITIAL_AMOUNT),
+            ],
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
+
+    fn last_events(n: usize) -> Vec<RuntimeEvent> {
+        frame_system::Pallet::<Runtime>::events()
+            .into_iter()
+            .rev()
+            .take(n)
+            .rev()
+            .map(|e| e.event)
+            .collect()
+    }
+
+    fn expect_events(e: Vec<RuntimeEvent>) {
+        assert_eq!(last_events(e.len()), e);
+    }
+
+    #[test]
+    fn test_utility_call_pass_for_any() {
+        new_test_ext().execute_with(|| {
+            // Any proxy should be allowed to make balance transfer call
+            assert_ok!(Proxy::add_proxy(
+                RuntimeOrigin::signed(ALICE),
+                sp_runtime::MultiAddress::Id(BOB),
+                ProxyType::Any,
+                0
+            ));
+
+            // Preparing Utility call
+            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+                dest: sp_runtime::MultiAddress::Id(CAT),
+                value: 100_000_000_000,
+            });
+            let inner = Box::new(transfer_call);
+            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+                calls: vec![*inner],
+            }));
+
+            // Utility call passed through filter
+            assert_ok!(Proxy::proxy(
+                RuntimeOrigin::signed(BOB),
+                sp_runtime::MultiAddress::Id(ALICE),
+                None,
+                call.clone()
+            ));
+            expect_events(vec![
+                UtilityEvent::BatchCompleted.into(),
+                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
+            ]);
+        });
+    }
+    #[test]
+    fn test_utility_call_pass_for_balances() {
+        new_test_ext().execute_with(|| {
+            // Balances proxy should be allowed to make balance transfer call
+            assert_ok!(Proxy::add_proxy(
+                RuntimeOrigin::signed(ALICE),
+                sp_runtime::MultiAddress::Id(BOB),
+                ProxyType::Balances,
+                0
+            ));
+
+            // Preparing Utility call
+            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+                dest: sp_runtime::MultiAddress::Id(CAT),
+                value: 100_000_000_000,
+            });
+            let inner = Box::new(transfer_call);
+            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+                calls: vec![*inner],
+            }));
+
+            // Utility call passed through filter
+            assert_ok!(Proxy::proxy(
+                RuntimeOrigin::signed(BOB),
+                sp_runtime::MultiAddress::Id(ALICE),
+                None,
+                call.clone()
+            ));
+            expect_events(vec![
+                UtilityEvent::BatchCompleted.into(),
+                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
+            ]);
+        });
+    }
+
+    #[test]
+    fn test_utility_call_fail_non_transfer() {
+        new_test_ext().execute_with(|| {
+            // NonTransfer proxy shouldn't be allowed to make balance transfer call
+            assert_ok!(Proxy::add_proxy(
+                RuntimeOrigin::signed(ALICE),
+                sp_runtime::MultiAddress::Id(BOB),
+                ProxyType::NonTransfer,
+                0
+            ));
+
+            // Preparing Utility call
+            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+                dest: sp_runtime::MultiAddress::Id(CAT),
+                value: 100_000_000_000,
+            });
+            let inner = Box::new(transfer_call);
+            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+                calls: vec![*inner],
+            }));
+
+            assert_ok!(Proxy::proxy(
+                RuntimeOrigin::signed(BOB),
+                sp_runtime::MultiAddress::Id(ALICE),
+                None,
+                call.clone()
+            ));
+
+            // Utility call filtered out
+            expect_events(vec![
+                UtilityEvent::BatchInterrupted {
+                    index: 0,
+                    error: SystemError::CallFiltered.into(),
+                }
+                .into(),
+                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
+            ]);
+        });
+    }
+    #[test]
+    fn test_utility_call_fail_for_dappstaking() {
+        new_test_ext().execute_with(|| {
+            // Dappstaking proxy shouldn't be allowed to make balance transfer call
+            assert_ok!(Proxy::add_proxy(
+                RuntimeOrigin::signed(ALICE),
+                sp_runtime::MultiAddress::Id(BOB),
+                ProxyType::DappsStaking,
+                0
+            ));
+
+            // Preparing Utility call
+            let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+                dest: sp_runtime::MultiAddress::Id(CAT),
+                value: 100_000_000_000,
+            });
+            let inner = Box::new(transfer_call);
+            let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+                calls: vec![*inner],
+            }));
+
+            assert_ok!(Proxy::proxy(
+                RuntimeOrigin::signed(BOB),
+                sp_runtime::MultiAddress::Id(ALICE),
+                None,
+                call.clone()
+            ));
+            // Utility call filtered out
+            expect_events(vec![
+                UtilityEvent::BatchInterrupted {
+                    index: 0,
+                    error: SystemError::CallFiltered.into(),
+                }
+                .into(),
+                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
+            ]);
+        });
+    }
 }
