@@ -11789,7 +11789,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.8.0"
+version = "5.9.0"
 dependencies = [
  "array-bytes 6.1.0",
  "cumulus-pallet-aura-ext",
