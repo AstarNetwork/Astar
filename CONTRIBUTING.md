@@ -33,10 +33,19 @@ In short:
 1. Open an issue regarding a bug fix or feature request (fill in our issue templates)
 2. Briefly describe how you plan to make changes to the code
 3. Fork the current default branch on _Astar_ or _astar-frame_ or both (depending on where you need to make changes) 
-4. Open a pull request to the default branch (fill in our pull request template)
+4. Open a pull request to the default branch (fill in our pull request template) and add the appropriate label.
 5. Ensure all workflow checks have passed
 6. Wait for the maintainers approval or change requests
 7. Your code will be merged
+
+### Mandatory PR Labels
+When submitting a Pull Request (PR), please make sure to include the necessary labels to help us categorize and prioritize your changes. PRs should contain at least one of the following mandatory labels:
+
+- **runtime**: Use this label for changes or additions to the code that relate to runtime **(shiden, astar, shibuya, local)**
+- **client**: PRs related to client.
+- **ci**: PRs related to CI (workflows).
+- **tests**: PRs related to xcm-simulator tests,rpc-tests or any other kind of test.
+- **other**: PRs related to third-party, scripts and all other things which don't have a definite label.
 
 ### Coding Styles
 
