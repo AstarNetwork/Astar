@@ -38,6 +38,8 @@ In short:
 6. Wait for the maintainers approval or change requests
 7. Your code will be merged
 
+Note: all the commits in your pull request are required to be signed and can be verified by GitHub. Refer to [this doc](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) for details.
+
 ### Coding Styles
 
 Contributors should adhere to the [`rustfmt` styles](https://github.com/rust-lang/rustfmt).
