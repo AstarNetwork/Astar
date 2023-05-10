@@ -95,7 +95,7 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 
-# Substrate pallets 
+# Substrate pallets
 # (wasm)
 pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
@@ -203,6 +203,12 @@ xcm-simulator = { git = "https://github.com/paritytech/polkadot", branch = "rele
 # (native)
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39" }
+
+# ORML
+# (wasm)
+orml-xtokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.39", default-features = false }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.39", default-features = false }
+orml-xcm-support = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.39", default-features = false }
 
 # Astar pallets & modules
 # (wasm)

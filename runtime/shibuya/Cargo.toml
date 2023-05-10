@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.8.0"
+version = "5.9.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -90,6 +90,11 @@ polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
+
+# orml dependencies
+orml-traits = { workspace = true }
+orml-xcm-support = { workspace = true }
+orml-xtokens = { workspace = true }
 
 # Astar pallets
 pallet-block-reward = { workspace = true }
@@ -226,6 +231,9 @@ std = [
 	"xcm-primitives/std",
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
+	"orml-xtokens/std",
+	"orml-traits/std",
+	"orml-xcm-support/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -245,6 +253,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
+	"orml-xtokens/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -291,6 +300,7 @@ try-runtime = [
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-state-trie-migration/try-runtime",
+	"orml-xtokens/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",
