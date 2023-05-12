@@ -68,6 +68,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
+use xcm_builder::MintLocation;
 use xcm_primitives::AssetLocationIdConverter;
 
 #[cfg(any(feature = "std", test))]
@@ -1402,7 +1403,10 @@ mod benches {
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
+        // XCM
         [pallet_xcm, PolkadotXcm]
+        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
     );
 }
 
@@ -1768,12 +1772,101 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
             use frame_system_benchmarking::Pallet as SystemBench;
             use baseline::Pallet as BaselineBench;
+            use xcm_config::{XcmConfig, LocationToAccountId};
+            use xcm::latest::prelude::*;
+            use xcm_builder::MintLocation;
 
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
+            impl pallet_xcm_benchmarks::Config for Runtime {
+                type XcmConfig = XcmConfig;
+                type AccountIdConverter = LocationToAccountId;
+
+                fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
+                    Ok( MultiLocation { parents: 1, interior: Here })
+                }
+                fn worst_case_holding(depositable_count: u32) -> MultiAssets {
+                    // for Shubiya (type MaxAssetsIntoHolding = ConstU32<64>;)
+                    // for worst case we should have double the amount into holding
+
+                    // TODO: make it worst case by adding assets
+                    let assets: Vec<MultiAsset> = vec![MultiAsset{
+                        id: Concrete(MultiLocation { parents: 1, interior: Here }),
+                        fun: Fungible(1_000_000 * SBY),
+                    }];
+
+                    assets.into()
+                }
+            }
+
+            parameter_types! {
+                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
+                    MultiLocation { parents: 1, interior: X1(Parachain(1000)) },
+                    MultiAsset { fun: Fungible(1 * SBY), id: Concrete(MultiLocation { parents: 1, interior: Here }) },
+                ));
+                pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
+                    MultiLocation { parents: 1, interior: X1(Parachain(1000)) },
+                    MultiAsset { fun: Fungible(1 * SBY), id: Concrete(MultiLocation { parents: 1, interior: Here }) },
+                ));
+                pub const DummyCheckingAccount : Option<(AccountId,MintLocation)> = None;
+            }
+
+            impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+                // not sure if any other fungible type should also be added (like assets)
+                type TransactAsset = Balances;
+
+                type CheckedAccount = DummyCheckingAccount;
+                type TrustedTeleporter = TrustedTeleporter;
+
+                // Give me a fungible asset that your asset transactor is going to accept.
+                fn get_multi_asset() -> MultiAsset {
+                    MultiAsset {
+                        id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(2084)) }),
+                        fun: Fungible(1 * SBY),
+                    }
+                }
+            }
+
+            impl pallet_xcm_benchmarks::generic::Config for Runtime {
+                type RuntimeCall = RuntimeCall;
+
+                fn worst_case_response() -> (u64, Response) {
+                    (0u64, Response::Version(Default::default()))
+                }
+
+                fn worst_case_asset_exchange() -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn transact_origin_and_runtime_call(
+                ) -> Result<(MultiLocation, <Self as pallet_xcm_benchmarks::generic::Config>::RuntimeCall), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(MultiLocation::new(1, X1(Parachain(1000))))
+                }
+
+                fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
+                    let origin = MultiLocation::new(1, X1(Parachain(1000)));
+                    let assets: MultiAssets = (Concrete(MultiLocation { parents: 1, interior: Here }), 1_000 * SBY).into();
+                    let ticket = MultiLocation { parents: 0, interior: Here };
+                    Ok((origin, ticket, assets))
+                }
+                /// Return an unlocker, owner and assets that can be locked and unlocked.
+		        fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+                    let origin = MultiLocation::new(1, X1(Parachain(1000)));
+                    let assets: MultiAsset = (Concrete(MultiLocation { parents: 1, interior: Here }), 1_000 * SBY).into();
+                    let ticket = MultiLocation { parents: 0, interior: Here };
+                    Ok((origin, ticket, assets))
+                }
+                fn universal_alias() -> Result<Junction, BenchmarkError> {
+                    Ok(Junction::Parachain(1000))
+                }
+            }
 
             use frame_support::traits::WhitelistedStorageKeys;
             let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();

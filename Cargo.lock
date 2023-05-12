@@ -11687,6 +11687,7 @@ dependencies = [
  "pallet-vesting",
  "pallet-xc-asset-config",
  "pallet-xcm 0.9.39",
+ "pallet-xcm-benchmarks",
  "pallet-xvm",
  "parachain-info",
  "parity-scale-codec",
