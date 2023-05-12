@@ -169,7 +169,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 100,
+    spec_version: 101,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1048,6 +1048,7 @@ pub enum ProxyType {
     IdentityJudgement,
     CancelProxy,
     DappsStaking,
+    StakerRewardClaim,
 }
 
 impl Default for ProxyType {
@@ -1136,6 +1137,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             ProxyType::DappsStaking => {
                 matches!(c, RuntimeCall::DappsStaking(..))
             }
+            ProxyType::StakerRewardClaim => {
+                matches!(
+                    c,
+                    RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
+                )
+            }
         }
     }
 
@@ -1145,6 +1152,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             (ProxyType::Any, _) => true,
             (_, ProxyType::Any) => false,
             (ProxyType::NonTransfer, _) => true,
+            (ProxyType::DappsStaking, ProxyType::StakerRewardClaim) => true,
             _ => false,
         }
     }

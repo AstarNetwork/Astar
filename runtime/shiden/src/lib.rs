@@ -139,7 +139,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 98,
+    spec_version: 99,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -863,6 +863,8 @@ pub enum ProxyType {
     CancelProxy,
     /// All runtime calls from pallet DappStaking allowed for proxy account
     DappsStaking,
+    /// Only claim_staker call from pallet DappStaking allowed for proxy account
+    StakerRewardClaim,
 }
 
 impl Default for ProxyType {
@@ -928,6 +930,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             ProxyType::DappsStaking => {
                 matches!(c, RuntimeCall::DappsStaking(..))
             }
+            ProxyType::StakerRewardClaim => {
+                matches!(
+                    c,
+                    RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
+                )
+            }
         }
     }
 
@@ -936,6 +944,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             (x, y) if x == y => true,
             (ProxyType::Any, _) => true,
             (_, ProxyType::Any) => false,
+            (ProxyType::DappsStaking, ProxyType::StakerRewardClaim) => true,
             _ => false,
         }
     }
