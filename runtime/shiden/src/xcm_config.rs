@@ -161,7 +161,6 @@ impl SafeCallFilter {
             RuntimeCall::System(..)
             | RuntimeCall::Identity(..)
             | RuntimeCall::Balances(..)
-            | RuntimeCall::Utility(pallet_utility::Call::as_derivative { .. })
             | RuntimeCall::Vesting(..)
             | RuntimeCall::DappsStaking(..)
             | RuntimeCall::Assets(..)
