@@ -69,6 +69,7 @@ use sp_std::prelude::*;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use xcm_builder::MintLocation;
+use xcm_config::ShibuyaLocation;
 use xcm_primitives::AssetLocationIdConverter;
 
 #[cfg(any(feature = "std", test))]
@@ -1794,7 +1795,7 @@ impl_runtime_apis! {
 
                     // TODO: make it worst case by adding assets
                     let assets: Vec<MultiAsset> = vec![MultiAsset{
-                        id: Concrete(MultiLocation { parents: 1, interior: Here }),
+                        id: Concrete(ShibuyaLocation::get()),
                         fun: Fungible(1_000_000 * SBY),
                     }];
 
@@ -1811,6 +1812,8 @@ impl_runtime_apis! {
                     MultiLocation { parents: 1, interior: X1(Parachain(1000)) },
                     MultiAsset { fun: Fungible(1 * SBY), id: Concrete(MultiLocation { parents: 1, interior: Here }) },
                 ));
+                pub const ShibuyaLocation:MultiLocation = Here.into_location();
+                pub const KsmLocation : MultiLocation = MultiLocation::parent();
                 pub const DummyCheckingAccount : Option<(AccountId,MintLocation)> = None;
             }
 
@@ -1824,8 +1827,8 @@ impl_runtime_apis! {
                 // Give me a fungible asset that your asset transactor is going to accept.
                 fn get_multi_asset() -> MultiAsset {
                     MultiAsset {
-                        id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(2084)) }),
-                        fun: Fungible(1 * SBY),
+                        id: Concrete(ShibuyaLocation::get()),
+                        fun: Fungible(1000 * SBY),
                     }
                 }
             }
@@ -1843,11 +1846,11 @@ impl_runtime_apis! {
 
                 fn transact_origin_and_runtime_call(
                 ) -> Result<(MultiLocation, <Self as pallet_xcm_benchmarks::generic::Config>::RuntimeCall), BenchmarkError> {
-                    Err(BenchmarkError::Skip)
+                    Ok((KsmLocation::get(),RuntimeCall::System(frame_system::Call::<Runtime>::remark_with_event { remark: vec![1, 2, 3] })))
                 }
 
                 fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(MultiLocation::new(1, X1(Parachain(1000))))
+                    Ok(KsmLocation::get())
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
