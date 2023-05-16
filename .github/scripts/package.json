@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "test": "LOG_LEVEL=error vitest",
+    "test": "LOG_LEVEL=error vitest --silent",
     "test:runtime-upgrade-shibuya": "RUNTIME=shibuya yarn test tests/runtime-upgrade.test.ts",
     "test:runtime-upgrade-shiden": "RUNTIME=shiden yarn test tests/runtime-upgrade.test.ts",
     "test:runtime-upgrade-astar": "RUNTIME=astar yarn test tests/runtime-upgrade.test.ts"
@@ -16,5 +16,9 @@
     "typescript": "^4.8.4",
     "vitest": "^0.31.0",
     "yargs": "^17.6.0"
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "singleQuote": true
   }
 }
