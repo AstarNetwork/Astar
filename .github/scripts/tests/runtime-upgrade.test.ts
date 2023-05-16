@@ -43,8 +43,17 @@ describe('runtime upgrade', async () => {
     // Execution hook after runtime upgrade. To verify storage migrations work, query the migrated
     // storage items or send transactions that interact with them.
     const afterUpgrade = async () => {
-        // Dummy test. Update it to test your storage migrations.
-        await api.tx.system.remark('Hello World').signAndSend(alice);
+        // Dummy test. Change it to test your storage migrations.
+        let isFinalized = false;
+        let unsub = await api.tx.system.remark('Hello World').signAndSend(alice, (result) => {
+            if (result.status.isFinalized) {
+                isFinalized = true;
+                unsub();
+            }
+        });
+        await dev.newBlock();
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        expect(isFinalized).toBe(true);
     };
 
     it('runtime upgrade works', async () => {
