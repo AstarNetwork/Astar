@@ -1,7 +1,7 @@
 name: Runtime upgrade test
 on:
   issue_comment:
-    types: [created]
+    types: [created, edited]
 jobs:
   check-permission:
     if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/runtime-upgrade-test')
