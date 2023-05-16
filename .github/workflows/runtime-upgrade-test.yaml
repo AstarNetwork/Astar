@@ -31,7 +31,7 @@ jobs:
     # run only when PR comments start with '/runtime-upgrade-test'.
     if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/runtime-upgrade-test')
     needs: check-permission
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     steps:
     - name: Validate and set inputs
       id: test-input
@@ -47,7 +47,12 @@ jobs:
             core.setFailed("Invalid input. It should be '/runtime-upgrade-test [runtime]'");
           }
 
-          core.setOutput("runtime", command[1]);
+          const runtime = command[1];
+          if (!['shibuya', 'shiden', 'astar'].includes(runtime)) {
+            core.setFailed("Invalid runtime. It should be 'shibuya', 'shiden', or 'astar'.");
+          }
+
+          core.setOutput("runtime", runtime);
 
     - name: Free disk space
       run: |
