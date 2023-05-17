@@ -829,13 +829,23 @@ impl pallet_sudo::Config for Runtime {
     scale_info::TypeInfo,
 )]
 pub enum ProxyType {
+    /// Allows all runtime calls for proxy account
     Any,
+    /// Allows only NonTransfer runtime calls for proxy account
+    /// To know exact calls check InstanceFilter implementation for ProxyTypes
     NonTransfer,
+    /// All Runtime calls from Pallet Balances allowed for proxy account
     Balances,
+    /// All Runtime calls from Pallet Assets allowed for proxy account
     Assets,
+    /// Only Runtime Calls related to goverance for proxy account
+    /// To know exact calls check InstanceFilter implementation for ProxyTypes
     Governance,
+    /// Only reject_announcement call from pallet proxy allowed for proxy account
     CancelProxy,
+    /// All runtime calls from pallet DappStaking allowed for proxy account
     DappsStaking,
+    /// Only claim_staker call from pallet DappStaking allowed for proxy account
     StakerRewardClaim,
 }
 
