@@ -62,6 +62,22 @@ jobs:
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
         df -h
 
+    - name: Get branch and sha
+      id: get-branch-sha
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        result-encoding: string
+        script: |
+          const pull_request = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number
+          })
+
+          core.setOutput("branch", pull_request.data.head.ref)
+          core.setOutput("sha", pull_request.data.head.sha)
+
     - name: Post starting comment
       uses: actions/github-script@v6
       env:
@@ -69,6 +85,8 @@ jobs:
           Runtime upgrade test is scheduled at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}.
           Please wait for a while.
           Runtime: ${{ steps.test-input.outputs.runtime }}
+          Branch: ${{ steps.get-branch-sha.outputs.branch }}
+          SHA: ${{ steps.get-branch-sha.outputs.sha }}
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         result-encoding: string
@@ -82,6 +100,9 @@ jobs:
 
     - name: Checkout the source code
       uses: actions/checkout@v3
+      with:
+        ref: ${{ steps.get-branch-sha.outputs.sha }}
+        submodules: true
 
     - name: Install deps
       run: sudo apt -y install protobuf-compiler
