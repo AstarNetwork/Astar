@@ -99,6 +99,7 @@ jobs:
       id: test
       run: |
         cd .github/scripts
+        yarn
         yarn test:runtime-upgrade-${{ steps.test-input.outputs.runtime }}
 
     - name: Post result comment
