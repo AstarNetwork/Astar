@@ -546,6 +546,7 @@ impl pallet_evm::Config for Runtime {
     type BlockGasLimit = BlockGasLimit;
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
+    type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
