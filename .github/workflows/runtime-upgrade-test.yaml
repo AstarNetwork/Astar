@@ -99,7 +99,7 @@ jobs:
       id: test
       run: |
         cd .github/scripts
-        yarn
+        yarn --frozen-lockfile
         yarn test:runtime-upgrade-${{ steps.test-input.outputs.runtime }} > ${{runner.temp}}/out.txt
 
     - name: Post result comment

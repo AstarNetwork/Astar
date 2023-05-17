@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "test": "LOG_LEVEL=error vitest --silent",
+    "test": "LOG_LEVEL=error vitest --silent --no-color",
     "test:runtime-upgrade-shibuya": "RUNTIME=shibuya yarn test tests/runtime-upgrade.test.ts",
     "test:runtime-upgrade-shiden": "RUNTIME=shiden yarn test tests/runtime-upgrade.test.ts",
     "test:runtime-upgrade-astar": "RUNTIME=astar yarn test tests/runtime-upgrade.test.ts"
