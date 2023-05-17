@@ -98,7 +98,7 @@ jobs:
     - name: Run runtime upgrade test
       id: test
       run: |
-        cd .github/scripts
+        cd tests/e2e
         yarn --frozen-lockfile
         yarn test:runtime-upgrade-${{ steps.test-input.outputs.runtime }} > ${{runner.temp}}/out.txt
 
