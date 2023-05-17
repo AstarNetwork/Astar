@@ -1711,13 +1711,15 @@ mod proxy_test {
     use super::*;
     use frame_support::*;
     use pallet_balances::Call as BalancesCall;
+    use pallet_dapps_staking as DappStakingCall;
     use pallet_proxy::Event as ProxyEvent;
     use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
     use sp_runtime::AccountId32;
+    use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks;
 
     type SystemError = frame_system::Error<Runtime>;
 
-    const INITIAL_AMOUNT: u128 = 100_000_000_000_000_000_000;
+    const INITIAL_AMOUNT: u128 = 100_000 * SDN;
     const ALICE: AccountId32 = AccountId32::new([1_u8; 32]);
     const BOB: AccountId32 = AccountId32::new([2_u8; 32]);
     const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
@@ -1752,6 +1754,14 @@ mod proxy_test {
 
     fn expect_events(e: Vec<RuntimeEvent>) {
         assert_eq!(last_events(e.len()), e);
+    }
+
+    pub fn run_to_block(n: u32) {
+        while System::block_number() < n {
+            <pallet_dapps_staking::Pallet<Runtime> as Hooks<BlockNumber>>::on_finalize(System::block_number());
+            System::set_block_number(System::block_number() + 1);
+            <pallet_dapps_staking::Pallet<Runtime> as Hooks<BlockNumber>>::on_initialize(System::block_number());
+        }
     }
 
     #[test]
@@ -1900,4 +1910,48 @@ mod proxy_test {
             ]);
         });
     }
+    #[test]
+    fn test_staker_reward_claim_proxy_works() {
+        new_test_ext().execute_with(|| {
+            // Make CAT delegate for StakerRewardClaim proxy
+            assert_ok!(Proxy::add_proxy(
+                RuntimeOrigin::signed(BOB),
+                sp_runtime::MultiAddress::Id(CAT),
+                ProxyType::StakerRewardClaim,
+                0
+            ));
+
+            let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+            let staker_reward_claim_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker { contract_id: contract.clone() });
+            let call = Box::new(staker_reward_claim_call);
+
+            // contract must be registered
+            assert_ok!(DappsStaking::register(
+                RuntimeOrigin::root(),
+                ALICE.clone(),
+                contract.clone()
+            ));
+
+            // some amount must be staked
+            assert_ok!(DappsStaking::bond_and_stake(
+                RuntimeOrigin::signed(BOB),
+                contract.clone(),
+                100 * SDN
+            ));
+            run_to_block(10);
+
+            // CAT making proxy call on behalf of staker (BOB)
+            assert_ok!(Proxy::proxy(
+                RuntimeOrigin::signed(CAT),
+                sp_runtime::MultiAddress::Id(BOB),
+                None,
+                call.clone()
+            ));
+
+            expect_events(vec![
+                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
+            ]);
+        })
+    }
+    
 }
