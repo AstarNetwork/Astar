@@ -100,7 +100,7 @@ jobs:
       run: |
         cd .github/scripts
         yarn
-        yarn test:runtime-upgrade-${{ steps.test-input.outputs.runtime }}
+        yarn test:runtime-upgrade-${{ steps.test-input.outputs.runtime }} > ${{runner.temp}}/out.txt
 
     - name: Post result comment
       uses: actions/github-script@v6
@@ -108,14 +108,20 @@ jobs:
         MESSAGE: |
           Runtime upgrade test finished:
 
-          ${{ steps.test.outputs }}
+          ${{ steps.test.outputs.result }}
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         result-encoding: string
         script: |
+          const fs = require('fs')
+          const output = fs.readFileSync('${{runner.temp}}/out.txt').toString();
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: process.env.MESSAGE
+            body: `
+            Runtime upgrade test finished:
+
+            ${output.trim()}
+            `
           })
