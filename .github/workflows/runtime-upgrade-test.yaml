@@ -49,7 +49,16 @@ jobs:
 
           const runtime = command[1];
           if (!['shibuya', 'shiden', 'astar'].includes(runtime)) {
-            core.setFailed("Invalid runtime. It should be 'shibuya', 'shiden', or 'astar'.");
+            const err = "Invalid runtime. It should be 'shibuya', 'shiden', or 'astar'.";
+            // Error message in Actions.
+            core.setFailed(err);
+            // PR comment.
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: err
+            });
           }
 
           core.setOutput("runtime", runtime);
