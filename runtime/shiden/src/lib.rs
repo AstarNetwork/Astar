@@ -1709,13 +1709,13 @@ cumulus_pallet_parachain_system::register_validate_block! {
 #[cfg(test)]
 mod proxy_test {
     use super::*;
+    use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks;
     use frame_support::*;
     use pallet_balances::Call as BalancesCall;
     use pallet_dapps_staking as DappStakingCall;
     use pallet_proxy::Event as ProxyEvent;
     use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
     use sp_runtime::AccountId32;
-    use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks;
 
     type SystemError = frame_system::Error<Runtime>;
 
@@ -1758,9 +1758,13 @@ mod proxy_test {
 
     pub fn run_to_block(n: u32) {
         while System::block_number() < n {
-            <pallet_dapps_staking::Pallet<Runtime> as Hooks<BlockNumber>>::on_finalize(System::block_number());
+            <pallet_dapps_staking::Pallet<Runtime> as Hooks<BlockNumber>>::on_finalize(
+                System::block_number(),
+            );
             System::set_block_number(System::block_number() + 1);
-            <pallet_dapps_staking::Pallet<Runtime> as Hooks<BlockNumber>>::on_initialize(System::block_number());
+            <pallet_dapps_staking::Pallet<Runtime> as Hooks<BlockNumber>>::on_initialize(
+                System::block_number(),
+            );
         }
     }
 
@@ -1922,7 +1926,10 @@ mod proxy_test {
             ));
 
             let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-            let staker_reward_claim_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker { contract_id: contract.clone() });
+            let staker_reward_claim_call =
+                RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+                    contract_id: contract.clone(),
+                });
             let call = Box::new(staker_reward_claim_call);
 
             // contract must be registered
@@ -1948,10 +1955,7 @@ mod proxy_test {
                 call.clone()
             ));
 
-            expect_events(vec![
-                ProxyEvent::ProxyExecuted { result: Ok(()) }.into(),
-            ]);
+            expect_events(vec![ProxyEvent::ProxyExecuted { result: Ok(()) }.into()]);
         })
     }
-    
 }
