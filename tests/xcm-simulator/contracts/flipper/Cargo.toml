@@ -1,0 +1,24 @@
+[package]
+name = "flipper"
+version = "0.1.0"
+authors = ["Ashutosh Varma <ashutoshvarma11@live.com>"]
+edition = "2021"
+
+[dependencies]
+ink = { version = "~4.2.0", default-features = false }
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2.6", default-features = false, features = ["derive"], optional = true }
+
+[lib]
+path = "lib.rs"
+
+[features]
+default = ["std"]
+std = [
+	"ink/std",
+	"scale/std",
+	"scale-info/std",
+]
+ink-as-dependency = []
+
+[workspace]
