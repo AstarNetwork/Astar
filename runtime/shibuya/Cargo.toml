@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.7.0"
+version = "5.9.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 # third-party dependencies
+hex-literal = { workspace = true }
 log = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
@@ -63,6 +64,7 @@ pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
+pallet-state-trie-migration = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
@@ -89,6 +91,11 @@ polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
+
+# orml dependencies
+orml-traits = { workspace = true }
+orml-xcm-support = { workspace = true }
+orml-xtokens = { workspace = true }
 
 # Astar pallets
 pallet-block-reward = { workspace = true }
@@ -201,6 +208,7 @@ std = [
 	"pallet-xc-asset-config/std",
 	"pallet-xvm/std",
 	"pallet-scheduler/std",
+	"pallet-state-trie-migration/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",
@@ -225,6 +233,9 @@ std = [
 	"xcm-primitives/std",
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
+	"orml-xtokens/std",
+	"orml-traits/std",
+	"orml-xcm-support/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -244,6 +255,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
+	"orml-xtokens/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -289,6 +301,8 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
+	"pallet-state-trie-migration/try-runtime",
+	"orml-xtokens/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

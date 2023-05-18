@@ -49,6 +49,11 @@ xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 xcm-simulator = { workspace = true }
 
+# ORML
+orml-traits = { workspace = true }
+orml-xcm-support = { workspace = true }
+orml-xtokens = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
@@ -73,6 +78,9 @@ std = [
 	"pallet-dapps-staking/std",
 	"pallet-proxy/std",
 	"pallet-utility/std",
+	"orml-xtokens/std",
+	"orml-traits/std",
+	"orml-xcm-support/std",
 ]
 runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",

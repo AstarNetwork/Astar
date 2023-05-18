@@ -99,6 +99,60 @@ jobs:
         name: ${{ steps.artifact-name.outputs.name }}
         path: target/${{ matrix.target }}/release/astar-collator
 
+  evm-tracing-native-linux:
+    needs: checks-and-tests
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
+
+    - name: x86_64 setup
+      run: |
+        mkdir -p .cargo
+        touch .cargo/config
+        printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-Clink-arg=-fuse-ld=lld"]' >> .cargo/config
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Build optimized binary with evm tracing
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target x86_64-unknown-linux-gnu --features evm-tracing --verbose --locked
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: astar-evm-tracing-ubuntu-latest-x86_64-unknown-linux-gnu
+        path: target/x86_64-unknown-linux-gnu/release/astar-collator
+
+    - name: rename evm tracing runtimes
+      run: |
+        mv target/x86_64-unknown-linux-gnu/release/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/release/wbuild/astar-runtime/astar_evm_tracing_runtime.compact.compressed.wasm
+        mv target/x86_64-unknown-linux-gnu/release/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/release/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
+        mv target/x86_64-unknown-linux-gnu/release/wbuild/shibuya-runtime/shibuya_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/release/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: astar-evm-tracing-runtime
+        path: target/x86_64-unknown-linux-gnu/release/wbuild/astar-runtime/astar_evm_tracing_runtime.compact.compressed.wasm
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: shiden-evm-tracing-runtime
+        path: target/x86_64-unknown-linux-gnu/release/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: shibuya-evm-tracing-runtime
+        path: target/x86_64-unknown-linux-gnu/release/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
+
   rpc-tests:
     needs: native-linux
     runs-on: [self-hosted, Linux, X64]
@@ -229,8 +283,10 @@ jobs:
 
     - name: Srtool build
       id: srtool_build
-      uses: chevdor/srtool-actions@v0.6.0
+      uses: chevdor/srtool-actions@v0.7.0
       with:
+        # TODO: Remove tag field once we uplifted to the latest polkadot 0.9.41.
+        tag: 1.66.1
         chain: ${{ matrix.chain }}
         runtime_dir: runtime/${{ matrix.chain }}
 
@@ -293,7 +349,7 @@ jobs:
           ${{ matrix.chain }}-diff.txt
 
   publish-release-draft:
-    needs: [native-linux, native-macOS, docker, srtool]
+    needs: [native-linux, evm-tracing-native-linux, native-macOS, docker, srtool]
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -367,6 +423,7 @@ jobs:
     - name: Create download folder
       run: |
         mkdir -p ${{ matrix.os }}-${{ matrix.arch }}-bin
+        mkdir -p ubuntu-tracing-bin
 
     - name: Download pre-built collator binary
       uses: actions/download-artifact@v3
@@ -450,3 +507,50 @@ jobs:
         asset_path: ${{ matrix.chain }}-srtool-digest.json
         asset_name: ${{ matrix.chain }}-srtool-digest.json
         asset_content_type: application/json
+
+  upload-evm-tracing-artifacts:
+    needs: publish-release-draft
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download pre-built collator binary for evm tracing
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-evm-tracing-ubuntu-latest-x86_64-unknown-linux-gnu
+        path: evm-tracing-artifacts
+    
+    - name: Make evm tracing binary executable and tar gzip
+      run: |
+        cd evm-tracing-artifacts
+        chmod +x astar-collator
+
+    - name: Download evm tracing runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-evm-tracing-runtime
+        path: evm-tracing-artifacts
+
+    - name: Download evm tracing runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: shiden-evm-tracing-runtime
+        path: evm-tracing-artifacts
+    
+    - name: Download evm tracing runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: shibuya-evm-tracing-runtime
+        path: evm-tracing-artifacts
+
+    - name: Compress folder
+      run: |
+        tar zcvf evm-tracing-artifacts.tar.gz evm-tracing-artifacts
+
+    - name: Upload evm tracing binary artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+        asset_path:  evm-tracing-artifacts.tar.gz
+        asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
+        asset_content_type: application/gzip

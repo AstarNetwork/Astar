@@ -139,7 +139,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 58,
+    spec_version: 59,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -809,6 +809,7 @@ impl pallet_evm::Config for Runtime {
     type BlockGasLimit = BlockGasLimit;
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
+    type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -845,6 +846,28 @@ impl pallet_xc_asset_config::Config for Runtime {
     type XcAssetChanged = EvmRevertCodeHandler;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
+}
+
+parameter_types! {
+    // The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
+    pub const MigrationSignedDepositPerItem: Balance = 1 * ASTR;
+    pub const MigrationSignedDepositBase: Balance = 100 * ASTR;
+}
+
+frame_support::ord_parameter_types! {
+    pub const MigController: AccountId = AccountId::from(hex_literal::hex!("8ea88e403abea19c5eedeb366e9338fd969e5053f117c18872725aed5423d43c"));
+}
+
+impl pallet_state_trie_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type SignedDepositPerItem = MigrationSignedDepositPerItem;
+    type SignedDepositBase = MigrationSignedDepositBase;
+    type ControlOrigin = EnsureRoot<AccountId>;
+    // specific account for the migration, can trigger the signed migrations.
+    type SignedFilter = frame_system::EnsureSignedBy<MigController, AccountId>;
+    type WeightInfo = pallet_state_trie_migration::weights::SubstrateWeight<Runtime>;
+    type MaxKeyLen = ConstU32<512>;
 }
 
 construct_runtime!(
@@ -889,6 +912,9 @@ construct_runtime!(
         Contracts: pallet_contracts = 70,
 
         Sudo: pallet_sudo = 99,
+
+        // TODO: remove this after migration is finished
+        StateTrieMigration: pallet_state_trie_migration = 200,
     }
 );
 
