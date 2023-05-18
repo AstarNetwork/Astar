@@ -23,8 +23,7 @@ use crate::mocks::{
 };
 
 use frame_support::{assert_ok, weights::Weight};
-use pallet_contracts::Determinism;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::Encode;
 use sp_runtime::traits::Bounded;
 use xcm::{prelude::*, v3::Response};
 use xcm_simulator::TestExt;
@@ -183,7 +182,7 @@ fn xcm_remote_transact_contract() {
         );
 
         // check for flip status
-        let outcome = ParachainContracts::bare_call(
+        let (res, _, _) = call_contract_method::<parachain::Runtime, Result<bool, ()>>(
             ALICE.into(),
             contract_id.clone(),
             0,
@@ -191,14 +190,8 @@ fn xcm_remote_transact_contract() {
             None,
             SELECTOR_GET.to_vec(),
             true,
-            Determinism::Deterministic,
         );
-        let res = outcome.result.unwrap();
-        // check for revert
-        assert!(!res.did_revert());
-        // decode the return value
-        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
-        assert_eq!(flag, Ok(true));
+        assert_eq!(res, Ok(true));
     });
 
     ParaB::execute_with(|| {
@@ -235,7 +228,7 @@ fn xcm_remote_transact_contract() {
 
     // check for flip status, it should be false
     ParaA::execute_with(|| {
-        let outcome = ParachainContracts::bare_call(
+        let (res, _, _) = call_contract_method::<parachain::Runtime, Result<bool, ()>>(
             ALICE.into(),
             contract_id.clone(),
             0,
@@ -243,13 +236,7 @@ fn xcm_remote_transact_contract() {
             None,
             SELECTOR_GET.to_vec(),
             true,
-            Determinism::Deterministic,
         );
-        let res = outcome.result.unwrap();
-        // check for revert
-        assert!(res.did_revert() == false);
-        // decode the return value, it should be false
-        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
-        assert_eq!(flag, Ok(false));
+        assert_eq!(res, Ok(false));
     });
 }
