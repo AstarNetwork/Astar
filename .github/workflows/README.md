@@ -37,3 +37,16 @@ Data disks
 Expansion cards
 Soft RAID
 ```
+
+## Runtime upgrade test
+
+Runtime upgrade test workflow does test automatically when detecting PR comments start with `/runtime-upgrade-test`.
+
+### How to execute
+
+Usage:
+
+```
+# [runtime] - shibuya, shiden, astar
+/runtime-upgrade-test shibuya
+```
