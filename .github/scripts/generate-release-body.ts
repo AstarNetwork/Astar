@@ -213,10 +213,12 @@ async function main() {
   const emptyLabelPRs = prByLabels[''] || [];
 
   const printPr = (pr) => {
-    if (pr.data.labels.includes(BREAKING_CHANGES_LABEL)) {
-        return "⚠️ " + pr.data.title + " (#" + pr.data.number + ")";
+    for (const label in pr.lables) {
+      if (label == BREAKING_CHANGES_LABEL) {
+        return "⚠️ " + pr.title + " (#" + pr.number + ")";
+      }
     }
-    return pr.data.title + " (#" + pr.data.number + ")";
+    return pr.title + " (#" + pr.number + ")";
   };
 
   const template = `
@@ -232,13 +234,13 @@ async function main() {
 
 ${runtimes.length > 0 ? `## Runtimes
 ${runtimes
-  .map(
-    (runtime) => `### ${capitalize(runtime.name)}
+        .map(
+          (runtime) => `### ${capitalize(runtime.name)}
 \`\`\`
 ✨ spec_version:                ${runtime.version}
 🏋 Runtime Size:                ${runtime.srtool.runtimes.compressed.size}
-🗜 Compressed:                  ${runtime.srtool.runtimes.compressed.subwasm.compression.compressed ? "Yes" : "No" }
-🎁 Metadata version:            ${ runtime.srtool.runtimes.compressed.subwasm.metadata_version }
+🗜 Compressed:                  ${runtime.srtool.runtimes.compressed.subwasm.compression.compressed ? "Yes" : "No"}
+🎁 Metadata version:            ${runtime.srtool.runtimes.compressed.subwasm.metadata_version}
 🗳️ sha256:                      ${runtime.srtool.runtimes.compressed.sha256}
 🗳️ blake2-256:                  ${runtime.srtool.runtimes.compressed.blake2_256}
 🗳️ proposal (authorizeUpgrade): ${runtime.srtool.runtimes.compressed.subwasm.parachain_authorize_upgrade_hash}
