@@ -214,7 +214,7 @@ async function main() {
   const printPr = (pr) => {
     if (pr.labels) {
       for (const label in pr.lables) {
-        if (label == BREAKING_CHANGES_LABEL) {
+      if (pr.labels.includes(BREAKING_CHANGES_LABEL)) {
           return "⚠️ " + pr.title + " (#" + pr.number + ")";
         }
       }
