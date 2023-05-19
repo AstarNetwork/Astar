@@ -153,6 +153,9 @@ function capitalize(s) {
 const CLIENT_CHANGES_LABEL = "client";
 const RUNTIME_CHANGES_LABEL = "runtime"
 const BREAKING_CHANGES_LABEL = "breaksapi";
+const TESTS_CHANGES_LABEL = "tests";
+const CI_CHANGES_LABEL = "ci";
+const OTHER_CHANGES_LABEL = "other";
 
 async function main() {
   const argv = yargs(process.argv.slice(2))
@@ -209,13 +212,16 @@ async function main() {
 
   const clientPRs = prByLabels[CLIENT_CHANGES_LABEL] || [];
   const runtimePRs = prByLabels[RUNTIME_CHANGES_LABEL] || [];
+  const testsPRs = prByLabels[TESTS_CHANGES_LABEL] || [];
+  const ciPRs = prByLabels[CI_CHANGES_LABEL] || [];
+  const otherPRs = prByLabels[OTHER_CHANGES_LABEL] || [];
   const emptyLabelPRs = prByLabels[''] || [];
 
   const printPr = (pr) => {
     if (pr.labels) {
       if (pr.labels.includes(BREAKING_CHANGES_LABEL)) {
-          return "⚠️ " + pr.title + " (#" + pr.number + ")";
-        }
+        return "⚠️ " + pr.title + " (#" + pr.number + ")";
+      }
       return pr.title + " (#" + pr.number + ")";
     }
     else {
@@ -263,8 +269,8 @@ ${runtimePRs.length > 0 ? `
 ${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
 ### Others
-${emptyLabelPRs.length > 0 ? `
-${emptyLabelPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
+${emptyLabelPRs.length + otherPRs.length + ciPRs.length + testsPRs.length > 0 ? `
+${emptyLabelPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}\n${otherPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}\n${ciPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}\n${testsPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
 
 ## Dependency Changes
