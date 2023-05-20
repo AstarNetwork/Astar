@@ -131,7 +131,7 @@ fn main() {
     fs::create_dir_all(&config.fixtures_dir).unwrap();
 
     // build all the contracts
-    build_contracts(&config, ["flipper"].to_vec());
+    build_contracts(&config, ["flipper", "async-xcm-call-no-ce"].to_vec());
 
     println!(
         "cargo:rerun-if-changed={}",

@@ -1,0 +1,30 @@
+[package]
+name = "contract"
+version = "0.1.0"
+authors = ["Ashutosh Varma <ashutoshvarma11@live.com>"]
+edition = "2021"
+
+[dependencies]
+ink = { version = "~4.2.0", default-features = false, features = ["call-runtime"] }
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2.6", default-features = false, features = ["derive"], optional = true }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.39", default-features = false }
+
+[lib]
+path = "lib.rs"
+
+[features]
+default = ["std"]
+std = [
+	"ink/std",
+	"scale/std",
+	"scale-info/std",
+	"xcm/std",
+]
+ink-as-dependency = []
+
+
+[profile.release]
+overflow-checks = false
+
+[workspace]
