@@ -331,9 +331,10 @@ pub fn call_contract_method<T: pallet_contracts::Config, V: Decode>(
 
     if debug {
         println!(
-            "Contract debug - {:?}",
+            "Contract debug buffer - {:?}",
             String::from_utf8(outcome.debug_message.clone())
         );
+        println!("Contract outcome - {outcome:?}");
     }
 
     let res = outcome.result.unwrap();

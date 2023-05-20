@@ -240,3 +240,130 @@ fn xcm_remote_transact_contract() {
         assert_eq!(res, Ok(false));
     });
 }
+
+#[test]
+fn test_async_xcm_contract_call_no_ce() {
+    #[derive(Encode, Debug, Clone)]
+    pub struct WeightsAndFees {
+        pub foreign_base_fee: MultiAsset,
+        pub foreign_transact_weight: Weight,
+        pub foreign_transcat_pallet_xcm: Weight,
+        pub here_callback_base_fee: MultiAsset,
+        pub here_callback_transact_weight: Weight,
+        pub here_callback_contract_weight: Weight,
+    }
+
+    const CONSTRUCTOR_SELECTOR: [u8; 4] = [0x00, 0x00, 0x11, 0x11];
+    const ATTEMPT_REMARK_SELECTOR: [u8; 4] = [0x00, 0x00, 0x22, 0x22];
+    const RESULT_REMARK_SELECTOR: [u8; 4] = [0x00, 0x00, 0xCC, 0xCC];
+
+    //
+    // Setup
+    //
+    let contract_id = ParaA::execute_with(|| {
+        // deploy contract
+        let (contract_id, _) = deploy_contract::<parachain::Runtime>(
+            "async-xcm-call-no-ce",
+            ALICE.into(),
+            0,
+            GAS_LIMIT,
+            None,
+            [CONSTRUCTOR_SELECTOR.to_vec(), 1.encode()].concat(),
+        );
+
+        // topup soverigin account of contract's derieve account in ParaB
+        assert_ok!(ParachainBalances::set_balance(
+            parachain::RuntimeOrigin::root(),
+            sibling_para_account_account_id(
+                2,
+                sibling_para_account_account_id(1, contract_id.clone())
+            ),
+            INITIAL_BALANCE,
+            100_000
+        ));
+
+        contract_id
+    });
+
+    ParaB::execute_with(|| {
+        // topup contract's ParaB derieve account
+        assert_ok!(ParachainBalances::set_balance(
+            parachain::RuntimeOrigin::root(),
+            sibling_para_account_account_id(1, contract_id.clone()),
+            INITIAL_BALANCE,
+            100_000
+        ));
+    });
+
+    //
+    // Send the XCM
+    //
+    ParaA::execute_with(|| {
+        assert_eq!(
+            call_contract_method::<parachain::Runtime, Result<bool, ()>>(
+                ALICE.into(),
+                contract_id.clone(),
+                0,
+                Weight::max_value(),
+                None,
+                [
+                    ATTEMPT_REMARK_SELECTOR.to_vec(),
+                    2u32.encode(),
+                    [1u8, 2u8, 3u8].to_vec().encode(),
+                    WeightsAndFees {
+                        foreign_base_fee: (Here, 100_000_000_000_000_000_000_u128).into(),
+                        foreign_transact_weight: Weight::from_parts(7_800_000, 0),
+                        foreign_transcat_pallet_xcm: Weight::from_parts(
+                            2_000_000_000_000,
+                            3 * 1024 * 1024
+                        ),
+                        here_callback_base_fee: (Here, 100_000_000_000_000_000_u128).into(),
+                        here_callback_contract_weight: Weight::from_parts(
+                            400_000_000_000,
+                            1024 * 1024,
+                        ),
+                        here_callback_transact_weight: Weight::from_parts(
+                            500_000_000_000,
+                            2 * 1024 * 1024
+                        ),
+                    }
+                    .encode(),
+                ]
+                .concat(),
+                true,
+            )
+            .0,
+            Ok(true)
+        );
+    });
+
+    // check for if remark was executed in ParaB
+    ParaB::execute_with(|| {
+        use parachain::{RuntimeEvent, System};
+        // check remark events
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::System(frame_system::Event::Remarked { .. })
+        )));
+
+        // clear the events
+        System::reset_events();
+    });
+
+    // Check for contract method called
+    ParaA::execute_with(|| {
+        assert_eq!(
+            call_contract_method::<parachain::Runtime, Result<Option<bool>, ()>>(
+                ALICE.into(),
+                contract_id.clone(),
+                0,
+                GAS_LIMIT,
+                None,
+                RESULT_REMARK_SELECTOR.to_vec(),
+                true,
+            )
+            .0,
+            Ok(Some(true))
+        );
+    });
+}
