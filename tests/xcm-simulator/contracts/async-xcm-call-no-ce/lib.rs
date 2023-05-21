@@ -17,6 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
+#![allow(clippy::large_enum_variant)]
 
 use async_xcm_call_no_ce::*;
 use ink::codegen::Env;
