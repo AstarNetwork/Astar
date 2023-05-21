@@ -24,6 +24,8 @@ use ink::prelude::{boxed::Box, vec, vec::Vec};
 use scale::{Decode, Encode};
 use xcm::{prelude::*, v3::Weight};
 
+///
+/// Foreign parachain types
 mod foreign {
     use super::*;
 
@@ -51,6 +53,7 @@ mod foreign {
     }
 }
 
+/// parachain types
 mod here {
     use super::*;
     use ink::primitives::AccountId;
@@ -93,18 +96,32 @@ mod async_xcm_call_no_ce {
     #[ink(storage)]
     #[derive(Default)]
     pub struct AsyncCall {
+        /// store the result of async XCM operation
         pub result: Option<bool>,
+        /// Parachain's Id on which contract is deployed
         pub here_para_id: u32,
     }
 
+
+    /// All the fees and weights values required for the whole
+    /// operation.
     #[derive(Encode, Decode, Debug, Clone)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub struct WeightsAndFees {
+        /// Max fee for whole XCM operation in foreign chain
+        /// This includes fees for sending XCM back to original
+        /// chain via Transact(pallet_xcm::send).
         pub foreign_base_fee: MultiAsset,
+        /// Max weight for operation (remark)
         pub foreign_transact_weight: Weight,
+        /// Max weight for Transact(pallet_xcm::send) operation
         pub foreign_transcat_pallet_xcm: Weight,
+        /// Max fee for the callback operation
+        /// send by foreign chain
         pub here_callback_base_fee: MultiAsset,
+        /// Max weight for Transact(pallet_contracts::call)
         pub here_callback_transact_weight: Weight,
+        /// Max weight for contract call
         pub here_callback_contract_weight: Weight,
     }
 
@@ -117,6 +134,8 @@ mod async_xcm_call_no_ce {
             }
         }
 
+        /// Attempt to perform remark operation on given parachain by
+        /// sending a XCM using `call_runtime`.
         #[ink(message, selector = 0x00002222)]
         pub fn attempt_remark_via_xcm(
             &mut self,
@@ -140,14 +159,14 @@ mod async_xcm_call_no_ce {
                 .is_ok()
         }
 
-        #[ink(message, selector = 0x0000BBBB)]
+        #[ink(message, selector = 0x00003333)]
         pub fn handle_response(&mut self, success: bool) {
             ink::env::debug_println!("[1/1] Inside handle_response...");
 
             self.result = Some(success);
         }
 
-        #[ink(message, selector = 0x0000CCCC)]
+        #[ink(message, selector = 0x00004444)]
         pub fn result(&self) -> Option<bool> {
             self.result
         }
@@ -172,7 +191,7 @@ impl AsyncCall {
                     value: 0u128,
                     gas_limit: weight_and_fees.here_callback_contract_weight,
                     storage_deposit_limit: None,
-                    data: [[0x00, 0x00, 0xBB, 0xBB].to_vec(), success.encode()].concat(),
+                    data: [[0x00, 0x00, 0x33, 0x33].to_vec(), success.encode()].concat(),
                 })
                 .encode()
                 .into(),

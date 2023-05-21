@@ -243,19 +243,30 @@ fn xcm_remote_transact_contract() {
 
 #[test]
 fn test_async_xcm_contract_call_no_ce() {
-    #[derive(Encode, Debug, Clone)]
+    /// All the fees and weights values required for the whole
+    /// operation.
+    #[derive(Encode)]
     pub struct WeightsAndFees {
+        /// Max fee for whole XCM operation in foreign chain
+        /// This includes fees for sending XCM back to original
+        /// chain via Transact(pallet_xcm::send).
         pub foreign_base_fee: MultiAsset,
+        /// Max weight for operation (remark)
         pub foreign_transact_weight: Weight,
+        /// Max weight for Transact(pallet_xcm::send) operation
         pub foreign_transcat_pallet_xcm: Weight,
+        /// Max fee for the callback operation
+        /// send by foreign chain
         pub here_callback_base_fee: MultiAsset,
+        /// Max weight for Transact(pallet_contracts::call)
         pub here_callback_transact_weight: Weight,
+        /// Max weight for contract call
         pub here_callback_contract_weight: Weight,
     }
 
     const CONSTRUCTOR_SELECTOR: [u8; 4] = [0x00, 0x00, 0x11, 0x11];
     const ATTEMPT_REMARK_SELECTOR: [u8; 4] = [0x00, 0x00, 0x22, 0x22];
-    const RESULT_REMARK_SELECTOR: [u8; 4] = [0x00, 0x00, 0xCC, 0xCC];
+    const RESULT_REMARK_SELECTOR: [u8; 4] = [0x00, 0x00, 0x44, 0x44];
 
     //
     // Setup
