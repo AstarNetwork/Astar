@@ -356,9 +356,6 @@ fn test_async_xcm_contract_call_no_ce() {
             r.event,
             RuntimeEvent::System(frame_system::Event::Remarked { .. })
         )));
-
-        // clear the events
-        System::reset_events();
     });
 
     // Check for contract method called

@@ -16,6 +16,37 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+//! Async XCM Call Contracrt
+//! This PoC contract showcase the scenario of sending a XCM to another parachain
+//! and get the results back of XCM execution, aka async operation.
+//! - Contract will send below XCM to foreign parachain using `call_runtime` to perform
+//!   some operation (`Transact(Remark)`).
+//! - If Error, a `Transact` instr will be used to send an XCM back to origin chain which
+//!   will call `handle_response(false)` contract method.
+//! - If Success, same as above but call `handle_response(true)` method.
+//!
+//! ```rust
+//! Xcm(vec![
+//! 	WithdrawAsset(..)
+//! 	BuyExecution(..)
+//! 	SetAppendix(Xcm(vec![
+//! 		Transcat { /* pallet_xcm::send() runtime call to call SUCCESS contract method in ParaA */ }
+//! 	]))
+//! 	SetErrorHandler(Xcm(vec![
+//! 		Transcat { /* pallet_xcm::send() runtime call to call ERROR contract method in ParaA */ }
+//! 	]))
+//! 	...
+//! ])
+//! ```
+//!
+//! # Methods
+//! - attempt_remark_via_xcm: This method when called will build the XCM call that
+//!   will be sent to given parachain. The XCM call will include necessary handler
+//!   to send the results back via calling the `handle_response` contract method
+//! - handle_response: This method will be called with operation result initiated by
+//!   XCM by foreign parachain.
+//! - result: This is a getter method to get current stored result.
+
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 #![allow(clippy::large_enum_variant)]
 
@@ -25,7 +56,6 @@ use ink::prelude::{boxed::Box, vec, vec::Vec};
 use scale::{Decode, Encode};
 use xcm::{prelude::*, v3::Weight};
 
-///
 /// Foreign parachain types
 mod foreign {
     use super::*;
@@ -102,7 +132,6 @@ mod async_xcm_call_no_ce {
         /// Parachain's Id on which contract is deployed
         pub here_para_id: u32,
     }
-
 
     /// All the fees and weights values required for the whole
     /// operation.

@@ -1,5 +1,5 @@
 [package]
-name = "contract"
+name = "async_xcm_call_contract"
 version = "0.1.0"
 authors = ["Ashutosh Varma <ashutoshvarma11@live.com>"]
 edition = "2021"
