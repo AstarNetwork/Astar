@@ -18,6 +18,7 @@
   "forkBlocks": null,
   "badBlocks": [
     "0xec49cf764e1ed93b5a9b7bac670a2c05a758240cfea1a1d9187edce501fe40db",
+    "0x868f1a6b4bcc191b5a6c46a81d31d47675e8aca87c398b3d025059493b1a42fe"
   ],
   "lightSyncState": null,
   "codeSubstitutes": {},
