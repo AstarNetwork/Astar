@@ -25,17 +25,17 @@
 //!   will call `handle_response(false)` contract method.
 //! - If Success, same as above but call `handle_response(true)` method.
 //!
-//! ```rust
+//! ```no_run
 //! Xcm(vec![
-//! 	WithdrawAsset(..)
-//! 	BuyExecution(..)
-//! 	SetAppendix(Xcm(vec![
-//! 		Transcat { /* pallet_xcm::send() runtime call to call SUCCESS contract method in ParaA */ }
-//! 	]))
-//! 	SetErrorHandler(Xcm(vec![
-//! 		Transcat { /* pallet_xcm::send() runtime call to call ERROR contract method in ParaA */ }
-//! 	]))
-//! 	...
+//!     WithdrawAsset(..)
+//!     BuyExecution(..)
+//!     SetAppendix(Xcm(vec![
+//!         Transcat { /* pallet_xcm::send() runtime call to call SUCCESS contract method in ParaA */ }
+//!     ]))
+//!     SetErrorHandler(Xcm(vec![
+//!         Transcat { /* pallet_xcm::send() runtime call to call ERROR contract method in ParaA */ }
+//!     ]))
+//!     ...
 //! ])
 //! ```
 //!
