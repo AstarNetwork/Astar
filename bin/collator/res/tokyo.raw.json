@@ -16,7 +16,9 @@
     "tokenSymbol": "TKY"
   },
   "forkBlocks": null,
-  "badBlocks": null,
+  "badBlocks": [
+    "0xec49cf764e1ed93b5a9b7bac670a2c05a758240cfea1a1d9187edce501fe40db",
+  ],
   "lightSyncState": null,
   "codeSubstitutes": {},
   "genesis": {
