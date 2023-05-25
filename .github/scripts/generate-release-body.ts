@@ -110,7 +110,6 @@ async function getCommitAndLabels(
               repo,
               pull_number: parseInt(foundPrsNumbers[1]),
             });
-
             if (pr.data.labels && pr.data.labels.length > 0) {
               for (const label of pr.data.labels) {
                 prByLabels[label.name] = prByLabels[label.name] || [];
@@ -151,6 +150,67 @@ function capitalize(s) {
   return s[0].toUpperCase() + s.slice(1);
 }
 
+// filters out the PR that has a tag `client` or `runtime` and returns all the remaining PRs
+function PRfilter(prLabels: any) {
+  // resulting array that contains all the filtered PRs
+  let otherPrs = [];
+
+  // storage item to make sure duplicate PRs don't get included
+  let included_pr_number = [];
+
+  // to make sure that PR that has already been included in `runtime` and `client`
+  // don't get included because of different labels
+  let client_pr_numbers = [];
+  let runtime_pr_numbers = [];
+
+  // make sure that there are some PRs for 'client' otherwise results in undefined
+  if (prLabels['client']) {
+    prLabels["client"].forEach(element => {
+      client_pr_numbers.push(element.number);
+    });
+  }
+
+  if (prLabels['runtime']) {
+    prLabels["runtime"].forEach(element => {
+      runtime_pr_numbers.push(element.number);
+    });
+  }
+
+  // empty label has a different api resposnse, so have to handle it differently
+  if (prLabels[""]) {
+    prLabels[""].forEach(element => {
+      if (included_pr_number.includes(element.data.number)) {
+        // do nothing
+      }
+      else {
+        included_pr_number.push(element.data.number);
+        otherPrs.push(element);
+      }
+    }
+    );
+  }
+
+  for (let label in prLabels) {
+    // already handled all these cases
+    if (label == 'runtime' || label == 'client' || label == "") {
+      continue;
+    }
+    else {
+      prLabels[label].forEach(element => {
+        if (included_pr_number.includes(element.number) || client_pr_numbers.includes(element.number) || runtime_pr_numbers.includes(element.number)) {
+          // do nothing, PR already sent to appropriate place.
+        }
+        else {
+          included_pr_number.push(element.number);
+          otherPrs.push(element);
+        }
+      }
+      )
+    }
+
+  }
+  return otherPrs;
+}
 const CLIENT_CHANGES_LABEL = "client";
 const RUNTIME_CHANGES_LABEL = "runtime"
 const BREAKING_CHANGES_LABEL = "breaksapi";
@@ -210,13 +270,18 @@ async function main() {
 
   const clientPRs = prByLabels[CLIENT_CHANGES_LABEL] || [];
   const runtimePRs = prByLabels[RUNTIME_CHANGES_LABEL] || [];
-  const emptyLabelPRs = prByLabels[''] || [];
+  let remainingPRs = PRfilter(prByLabels);
 
   const printPr = (pr) => {
-    if (pr.data.labels.includes(BREAKING_CHANGES_LABEL)) {
-        return "⚠️ " + pr.data.title + " (#" + pr.data.number + ")";
+    if (pr.labels) {
+      if (pr.labels.includes(BREAKING_CHANGES_LABEL)) {
+        return "⚠️ " + pr.title + " (#" + pr.number + ")";
+      }
+      return pr.title + " (#" + pr.number + ")";
     }
-    return pr.data.title + " (#" + pr.data.number + ")";
+    else {
+      return pr.data.title + " (#" + pr.data.number + ")";
+    }
   };
 
   const template = `
@@ -232,13 +297,13 @@ async function main() {
 
 ${runtimes.length > 0 ? `## Runtimes
 ${runtimes
-  .map(
-    (runtime) => `### ${capitalize(runtime.name)}
+        .map(
+          (runtime) => `### ${capitalize(runtime.name)}
 \`\`\`
 ✨ spec_version:                ${runtime.version}
 🏋 Runtime Size:                ${runtime.srtool.runtimes.compressed.size}
-🗜 Compressed:                  ${runtime.srtool.runtimes.compressed.subwasm.compression.compressed ? "Yes" : "No" }
-🎁 Metadata version:            ${ runtime.srtool.runtimes.compressed.subwasm.metadata_version }
+🗜 Compressed:                  ${runtime.srtool.runtimes.compressed.subwasm.compression.compressed ? "Yes" : "No"}
+🎁 Metadata version:            ${runtime.srtool.runtimes.compressed.subwasm.metadata_version}
 🗳️ sha256:                      ${runtime.srtool.runtimes.compressed.sha256}
 🗳️ blake2-256:                  ${runtime.srtool.runtimes.compressed.blake2_256}
 🗳️ proposal (authorizeUpgrade): ${runtime.srtool.runtimes.compressed.subwasm.parachain_authorize_upgrade_hash}
@@ -259,8 +324,8 @@ ${runtimePRs.length > 0 ? `
 ${runtimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
 ### Others
-${emptyLabelPRs.length > 0 ? `
-${emptyLabelPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
+${remainingPRs.length > 0 ? `
+${remainingPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : "None"}
 
 ## Dependency Changes
