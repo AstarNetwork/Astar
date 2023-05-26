@@ -41,7 +41,6 @@ pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
-pallet-proxy = { workspace = true }
 pallet-base-fee = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
@@ -56,6 +55,7 @@ pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-multisig = { workspace = true }
+pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
 pallet-state-trie-migration = { workspace = true }
 pallet-sudo = { workspace = true }
