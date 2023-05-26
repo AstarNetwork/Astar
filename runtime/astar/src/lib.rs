@@ -899,7 +899,7 @@ pub enum ProxyType {
     CancelProxy,
     /// All runtime calls from pallet DappStaking allowed for proxy account
     DappsStaking,
-     /// Only claim_staker call from pallet DappStaking allowed for proxy account
+    /// Only claim_staker call from pallet DappStaking allowed for proxy account
     StakerRewardClaim,
 }
 
@@ -974,7 +974,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             }
         }
     }
- 
 
     fn is_superset(&self, o: &Self) -> bool {
         match (self, o) {
@@ -985,8 +984,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             _ => false,
         }
     }
-    }
-
+}
 
 parameter_types! {
     // One storage item; key size 32, value size 8; .
