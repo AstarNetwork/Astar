@@ -1012,6 +1012,12 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
+parameter_types! {
+    // The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
+    pub const MigrationSignedDepositPerItem: Balance = 1 * ASTR;
+    pub const MigrationSignedDepositBase: Balance = 100 * ASTR;
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
