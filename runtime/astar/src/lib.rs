@@ -899,6 +899,8 @@ pub enum ProxyType {
     CancelProxy,
     /// All runtime calls from pallet DappStaking allowed for proxy account
     DappsStaking,
+     /// Only claim_staker call from pallet DappStaking allowed for proxy account
+    StakerRewardClaim,
 }
 
 impl Default for ProxyType {
@@ -964,18 +966,27 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             ProxyType::DappsStaking => {
                 matches!(c, RuntimeCall::DappsStaking(..))
             }
+            ProxyType::StakerRewardClaim => {
+                matches!(
+                    c,
+                    RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
+                )
+            }
         }
     }
+ 
 
     fn is_superset(&self, o: &Self) -> bool {
         match (self, o) {
             (x, y) if x == y => true,
             (ProxyType::Any, _) => true,
             (_, ProxyType::Any) => false,
+            (ProxyType::DappsStaking, ProxyType::StakerRewardClaim) => true,
             _ => false,
         }
     }
-}
+    }
+
 
 parameter_types! {
     // One storage item; key size 32, value size 8; .
