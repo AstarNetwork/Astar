@@ -147,7 +147,7 @@ pub const WRITE_WEIGHT: u64 = 7;
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
+        frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
     pub const TestWeights: RuntimeDbWeight = RuntimeDbWeight {
         read: READ_WEIGHT,
         write: WRITE_WEIGHT,
@@ -222,7 +222,7 @@ where
 
 parameter_types! {
     pub PrecompilesValue: DappPrecompile<TestRuntime> = DappPrecompile(Default::default());
-    pub WeightPerGas: Weight = Weight::from_ref_time(1);
+    pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
 impl pallet_evm::Config for TestRuntime {

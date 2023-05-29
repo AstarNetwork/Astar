@@ -71,8 +71,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: DappsStaking RegisteredDapps (max_values: None, max_size: Some(86), added: 2561, mode: MaxEncodedLen)
 	fn register() -> Weight {
 		// Minimum execution time: 25_265 nanoseconds.
-		Weight::from_ref_time(26_091_000)
-			.saturating_add(Weight::from_proof_size(5117))
+		Weight::from_parts(26_091_000, 0)
+			.saturating_add(Weight::from_parts(0, 5117))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -82,8 +82,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn unregister() -> Weight {
 		// Minimum execution time: 27_241 nanoseconds.
-		Weight::from_ref_time(27_411_000)
-			.saturating_add(Weight::from_proof_size(5164))
+		Weight::from_parts(27_411_000, 0)
+			.saturating_add(Weight::from_parts(0, 5164))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -101,8 +101,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: DappsStaking GeneralEraInfo (max_values: None, max_size: Some(76), added: 2551, mode: MaxEncodedLen)
 	fn withdraw_from_unregistered() -> Weight {
 		// Minimum execution time: 44_491 nanoseconds.
-		Weight::from_ref_time(45_042_000)
-			.saturating_add(Weight::from_proof_size(17003))
+		Weight::from_parts(45_042_000, 0)
+			.saturating_add(Weight::from_parts(0, 17003))
 			.saturating_add(T::DbWeight::get().reads(6_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -120,8 +120,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn bond_and_stake() -> Weight {
 		// Minimum execution time: 43_099 nanoseconds.
-		Weight::from_ref_time(43_939_000)
-			.saturating_add(Weight::from_proof_size(16957))
+		Weight::from_parts(43_939_000, 0)
+			.saturating_add(Weight::from_parts(0, 16957))
 			.saturating_add(T::DbWeight::get().reads(6_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -139,8 +139,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: DappsStaking GeneralEraInfo (max_values: None, max_size: Some(76), added: 2551, mode: MaxEncodedLen)
 	fn unbond_and_unstake() -> Weight {
 		// Minimum execution time: 46_783 nanoseconds.
-		Weight::from_ref_time(47_487_000)
-			.saturating_add(Weight::from_proof_size(16957))
+		Weight::from_parts(47_487_000, 0)
+			.saturating_add(Weight::from_parts(0, 16957))
 			.saturating_add(T::DbWeight::get().reads(6_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -152,8 +152,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: DappsStaking GeneralEraInfo (max_values: None, max_size: Some(76), added: 2551, mode: MaxEncodedLen)
 	fn withdraw_unbonded() -> Weight {
 		// Minimum execution time: 30_952 nanoseconds.
-		Weight::from_ref_time(31_615_000)
-			.saturating_add(Weight::from_proof_size(9066))
+		Weight::from_parts(31_615_000, 0)
+			.saturating_add(Weight::from_parts(0, 9066))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -165,8 +165,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: DappsStaking ContractEraStake (max_values: None, max_size: Some(82), added: 2557, mode: MaxEncodedLen)
 	fn nomination_transfer() -> Weight {
 		// Minimum execution time: 38_247 nanoseconds.
-		Weight::from_ref_time(38_832_000)
-			.saturating_add(Weight::from_proof_size(15782))
+		Weight::from_parts(38_832_000, 0)
+			.saturating_add(Weight::from_parts(0, 15782))
 			.saturating_add(T::DbWeight::get().reads(6_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
@@ -186,8 +186,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn claim_staker_with_restake() -> Weight {
 		// Minimum execution time: 60_558 nanoseconds.
-		Weight::from_ref_time(61_264_000)
-			.saturating_add(Weight::from_proof_size(24668))
+		Weight::from_parts(61_264_000, 0)
+			.saturating_add(Weight::from_parts(0, 24668))
 			.saturating_add(T::DbWeight::get().reads(9_u64))
 			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
@@ -203,8 +203,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: DappsStaking Ledger (max_values: None, max_size: Some(266), added: 2741, mode: MaxEncodedLen)
 	fn claim_staker_without_restake() -> Weight {
 		// Minimum execution time: 33_178 nanoseconds.
-		Weight::from_ref_time(33_576_000)
-			.saturating_add(Weight::from_proof_size(13183))
+		Weight::from_parts(33_576_000, 0)
+			.saturating_add(Weight::from_parts(0, 13183))
 			.saturating_add(T::DbWeight::get().reads(5_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -216,27 +216,27 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: DappsStaking GeneralEraInfo (max_values: None, max_size: Some(76), added: 2551, mode: MaxEncodedLen)
 	fn claim_dapp() -> Weight {
 		// Minimum execution time: 25_126 nanoseconds.
-		Weight::from_ref_time(25_489_000)
-			.saturating_add(Weight::from_proof_size(7669))
+		Weight::from_parts(25_489_000, 0)
+			.saturating_add(Weight::from_parts(0, 7669))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	fn force_new_era() -> Weight {
 		// Minimum execution time: 3_446 nanoseconds.
-		Weight::from_ref_time(3_676_000)
-			.saturating_add(Weight::from_proof_size(0))
+		Weight::from_parts(3_676_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
 	}
 	fn maintenance_mode() -> Weight {
 		// Minimum execution time: 7_871 nanoseconds.
-		Weight::from_ref_time(8_137_000)
-			.saturating_add(Weight::from_proof_size(0))
+		Weight::from_parts(8_137_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
 	}
 	// Storage: DappsStaking Ledger (r:1 w:1)
 	// Proof: DappsStaking Ledger (max_values: None, max_size: Some(266), added: 2741, mode: MaxEncodedLen)
 	fn set_reward_destination() -> Weight {
 		// Minimum execution time: 15_697 nanoseconds.
-		Weight::from_ref_time(16_009_000)
-			.saturating_add(Weight::from_proof_size(2741))
+		Weight::from_parts(16_009_000, 0)
+			.saturating_add(Weight::from_parts(0, 2741))
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -250,8 +250,8 @@ impl WeightInfo for () {
 	// Proof: DappsStaking RegisteredDapps (max_values: None, max_size: Some(86), added: 2561, mode: MaxEncodedLen)
 	fn register() -> Weight {
 		// Minimum execution time: 25_265 nanoseconds.
-		Weight::from_ref_time(26_091_000)
-			.saturating_add(Weight::from_proof_size(5117))
+		Weight::from_parts(26_091_000, 0)
+			.saturating_add(Weight::from_parts(0, 5117))
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
@@ -261,8 +261,8 @@ impl WeightInfo for () {
 	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn unregister() -> Weight {
 		// Minimum execution time: 27_241 nanoseconds.
-		Weight::from_ref_time(27_411_000)
-			.saturating_add(Weight::from_proof_size(5164))
+		Weight::from_parts(27_411_000, 0)
+			.saturating_add(Weight::from_parts(0, 5164))
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
@@ -280,8 +280,8 @@ impl WeightInfo for () {
 	// Proof: DappsStaking GeneralEraInfo (max_values: None, max_size: Some(76), added: 2551, mode: MaxEncodedLen)
 	fn withdraw_from_unregistered() -> Weight {
 		// Minimum execution time: 44_491 nanoseconds.
-		Weight::from_ref_time(45_042_000)
-			.saturating_add(Weight::from_proof_size(17003))
+		Weight::from_parts(45_042_000, 0)
+			.saturating_add(Weight::from_parts(0, 17003))
 			.saturating_add(RocksDbWeight::get().reads(6_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
@@ -299,8 +299,8 @@ impl WeightInfo for () {
 	// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn bond_and_stake() -> Weight {
 		// Minimum execution time: 43_099 nanoseconds.
-		Weight::from_ref_time(43_939_000)
-			.saturating_add(Weight::from_proof_size(16957))
+		Weight::from_parts(43_939_000, 0)
+			.saturating_add(Weight::from_parts(0, 16957))
 			.saturating_add(RocksDbWeight::get().reads(6_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
@@ -318,8 +318,8 @@ impl WeightInfo for () {
 	// Proof: DappsStaking GeneralEraInfo (max_values: None, max_size: Some(76), added: 2551, mode: MaxEncodedLen)
 	fn unbond_and_unstake() -> Weight {
 		// Minimum execution time: 46_783 nanoseconds.
-		Weight::from_ref_time(47_487_000)
-			.saturating_add(Weight::from_proof_size(16957))
+		Weight::from_parts(47_487_000, 0)
+			.saturating_add(Weight::from_parts(0, 16957))
 			.saturating_add(RocksDbWeight::get().reads(6_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
@@ -331,8 +331,8 @@ impl WeightInfo for () {
 	// Proof: DappsStaking GeneralEraInfo (max_values: None, max_size: Some(76), added: 2551, mode: MaxEncodedLen)
 	fn withdraw_unbonded() -> Weight {
 		// Minimum execution time: 30_952 nanoseconds.
-		Weight::from_ref_time(31_615_000)
-			.saturating_add(Weight::from_proof_size(9066))
+		Weight::from_parts(31_615_000, 0)
+			.saturating_add(Weight::from_parts(0, 9066))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
@@ -344,8 +344,8 @@ impl WeightInfo for () {
 	// Proof: DappsStaking ContractEraStake (max_values: None, max_size: Some(82), added: 2557, mode: MaxEncodedLen)
 	fn nomination_transfer() -> Weight {
 		// Minimum execution time: 38_247 nanoseconds.
-		Weight::from_ref_time(38_832_000)
-			.saturating_add(Weight::from_proof_size(15782))
+		Weight::from_parts(38_832_000, 0)
+			.saturating_add(Weight::from_parts(0, 15782))
 			.saturating_add(RocksDbWeight::get().reads(6_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
@@ -365,8 +365,8 @@ impl WeightInfo for () {
 	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn claim_staker_with_restake() -> Weight {
 		// Minimum execution time: 60_558 nanoseconds.
-		Weight::from_ref_time(61_264_000)
-			.saturating_add(Weight::from_proof_size(24668))
+		Weight::from_parts(61_264_000, 0)
+			.saturating_add(Weight::from_parts(0, 24668))
 			.saturating_add(RocksDbWeight::get().reads(9_u64))
 			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
@@ -382,8 +382,8 @@ impl WeightInfo for () {
 	// Proof: DappsStaking Ledger (max_values: None, max_size: Some(266), added: 2741, mode: MaxEncodedLen)
 	fn claim_staker_without_restake() -> Weight {
 		// Minimum execution time: 33_178 nanoseconds.
-		Weight::from_ref_time(33_576_000)
-			.saturating_add(Weight::from_proof_size(13183))
+		Weight::from_parts(33_576_000, 0)
+			.saturating_add(Weight::from_parts(0, 13183))
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
@@ -395,27 +395,27 @@ impl WeightInfo for () {
 	// Proof: DappsStaking GeneralEraInfo (max_values: None, max_size: Some(76), added: 2551, mode: MaxEncodedLen)
 	fn claim_dapp() -> Weight {
 		// Minimum execution time: 25_126 nanoseconds.
-		Weight::from_ref_time(25_489_000)
-			.saturating_add(Weight::from_proof_size(7669))
+		Weight::from_parts(25_489_000, 0)
+			.saturating_add(Weight::from_parts(0, 7669))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	fn force_new_era() -> Weight {
 		// Minimum execution time: 3_446 nanoseconds.
-		Weight::from_ref_time(3_676_000)
-			.saturating_add(Weight::from_proof_size(0))
+		Weight::from_parts(3_676_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
 	}
 	fn maintenance_mode() -> Weight {
 		// Minimum execution time: 7_871 nanoseconds.
-		Weight::from_ref_time(8_137_000)
-			.saturating_add(Weight::from_proof_size(0))
+		Weight::from_parts(8_137_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
 	}
 	// Storage: DappsStaking Ledger (r:1 w:1)
 	// Proof: DappsStaking Ledger (max_values: None, max_size: Some(266), added: 2741, mode: MaxEncodedLen)
 	fn set_reward_destination() -> Weight {
 		// Minimum execution time: 15_697 nanoseconds.
-		Weight::from_ref_time(16_009_000)
-			.saturating_add(Weight::from_proof_size(2741))
+		Weight::from_parts(16_009_000, 0)
+			.saturating_add(Weight::from_parts(0, 2741))
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}

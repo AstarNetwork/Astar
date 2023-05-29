@@ -89,8 +89,7 @@ where
                     pallet_xvm::Pallet::<T>::xvm_bare_call(xvm_context, caller, to, input);
 
                 let actual_weight = pallet_xvm::consumed_weight(&call_result);
-                // TODO: implement proof of size refund.
-                env.adjust_weight(charged_weight, Weight::from_ref_time(actual_weight));
+                env.adjust_weight(charged_weight, Weight::from_parts(actual_weight, 0));
 
                 match call_result {
                     Ok(success) => {
