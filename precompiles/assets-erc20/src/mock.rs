@@ -238,6 +238,7 @@ impl pallet_evm::Config for Runtime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Erc20AssetsPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
+    type Timestamp = Timestamp;
     type ChainId = ();
     type OnChargeTransaction = ();
     type BlockGasLimit = ();

@@ -18,6 +18,7 @@
 
 use super::*;
 
+use fp_evm::IsPrecompileResult;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, OnFinalize, OnInitialize},
@@ -215,8 +216,11 @@ where
         }
     }
 
-    fn is_precompile(&self, address: sp_core::H160) -> bool {
-        address == precompile_address()
+    fn is_precompile(&self, address: sp_core::H160, _gas: u64) -> IsPrecompileResult {
+        IsPrecompileResult::Answer {
+            is_precompile: address == precompile_address(),
+            extra_cost: 0,
+        }
     }
 }
 
@@ -237,6 +241,7 @@ impl pallet_evm::Config for TestRuntime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = DappPrecompile<TestRuntime>;
     type PrecompilesValue = PrecompilesValue;
+    type Timestamp = Timestamp;
     type ChainId = ();
     type OnChargeTransaction = ();
     type BlockGasLimit = ();
