@@ -115,7 +115,7 @@ type LocalOriginConverter = (
 );
 
 parameter_types! {
-    pub const BaseXcmWeight: Weight = Weight::from_ref_time(1_000);
+    pub const BaseXcmWeight: Weight = Weight::from_parts(1_000, 0);
     pub KsmPerSecond: (AssetId, u128, u128) = (Concrete(KsmLocation::get()), 1, 1024 * 1024);
     pub const MaxInstructions: u32 = 100;
 }

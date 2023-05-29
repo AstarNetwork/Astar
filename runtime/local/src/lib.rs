@@ -525,7 +525,7 @@ parameter_types! {
         NORMAL_DISPATCH_RATIO * WEIGHT_REF_TIME_PER_SECOND / WEIGHT_PER_GAS
     );
     pub PrecompilesValue: Precompiles = LocalNetworkPrecompiles::<_>::new();
-    pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
+    pub WeightPerGas: Weight = Weight::from_parts(WEIGHT_PER_GAS, 0);
 }
 
 impl pallet_evm::Config for Runtime {
