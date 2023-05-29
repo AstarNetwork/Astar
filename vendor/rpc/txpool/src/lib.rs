@@ -73,21 +73,20 @@ where
             .collect();
 
         // Use the runtime to match the (here) opaque extrinsics against ethereum transactions.
-        let best_block_hash = self.client.info().best_hash;
+        let best_block = self.client.info().best_hash;
         let api = self.client.runtime_api();
-        let api_version = if let Ok(Some(api_version)) =
-            api.api_version::<dyn TxPoolRuntimeApi<B>>(best_block_hash)
-        {
-            api_version
-        } else {
-            return Err(internal_err(
-                "failed to retrieve Runtime Api version".to_string(),
-            ));
-        };
+        let api_version =
+            if let Ok(Some(api_version)) = api.api_version::<dyn TxPoolRuntimeApi<B>>(best_block) {
+                api_version
+            } else {
+                return Err(internal_err(
+                    "failed to retrieve Runtime Api version".to_string(),
+                ));
+            };
         let ethereum_txns: TxPoolResponse = if api_version == 1 {
             #[allow(deprecated)]
             let res = api
-                .extrinsic_filter_before_version_2(best_block_hash, txs_ready, txs_future)
+                .extrinsic_filter_before_version_2(best_block, txs_ready, txs_future)
                 .map_err(|err| {
                     internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
                 })?;
@@ -104,7 +103,7 @@ where
                     .collect(),
             }
         } else {
-            api.extrinsic_filter(best_block_hash, txs_ready, txs_future)
+            api.extrinsic_filter(best_block, txs_ready, txs_future)
                 .map_err(|err| {
                     internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
                 })?
