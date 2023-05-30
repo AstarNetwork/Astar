@@ -793,6 +793,7 @@ impl pallet_evm::Config for Runtime {
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
+    type Timestamp = Timestamp;
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
@@ -800,12 +801,15 @@ impl pallet_evm::Config for Runtime {
 
 parameter_types! {
     pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+    // Maximum length (in bytes) of revert message to include in Executed event
+    pub const ExtraDataLength: u32 = 30;
 }
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
     type PostLogContent = PostBlockAndTxnHashes;
+    type ExtraDataLength = ExtraDataLength;
 }
 
 impl pallet_sudo::Config for Runtime {

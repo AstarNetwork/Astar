@@ -28,7 +28,7 @@ use frame_support::{
     construct_runtime, parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, KeyOwnerProofSystem, Nothing,
+        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing,
         WithdrawReasons,
     },
     weights::{
@@ -254,17 +254,8 @@ impl pallet_aura::Config for Runtime {
 impl pallet_grandpa::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
 
-    type KeyOwnerProofSystem = ();
-
-    type KeyOwnerProof =
-        <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-
-    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-        KeyTypeId,
-        GrandpaId,
-    )>>::IdentificationTuple;
-
-    type HandleEquivocation = ();
+    type KeyOwnerProof = sp_core::Void;
+    type EquivocationReportSystem = ();
 
     type WeightInfo = ();
     type MaxAuthorities = MaxAuthorities;
@@ -544,6 +535,7 @@ impl pallet_evm::Config for Runtime {
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ()>;
     type BlockGasLimit = BlockGasLimit;
+    type Timestamp = Timestamp;
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
@@ -551,12 +543,15 @@ impl pallet_evm::Config for Runtime {
 
 parameter_types! {
     pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+    // Maximum length (in bytes) of revert message to include in Executed event
+    pub const ExtraDataLength: u32 = 30;
 }
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
     type PostLogContent = PostBlockAndTxnHashes;
+    type ExtraDataLength = ExtraDataLength;
 }
 
 parameter_types! {
