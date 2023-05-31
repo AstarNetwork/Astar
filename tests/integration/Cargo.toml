@@ -1,0 +1,32 @@
+[package]
+name = "integration-tests"
+version = "0.1.0"
+description = "Astar integration tests."
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+# frame dependencies
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-dapps-staking = { workspace = true }
+pallet-proxy = { workspace = true }
+pallet-utility = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+
+# runtime
+astar-runtime = { path = "../../runtime/astar", optional = true }
+shibuya-runtime = { path = "../../runtime/shibuya", optional = true }
+shiden-runtime = { path = "../../runtime/shiden", optional = true }
+
+[features]
+default = ["std"]
+std = []
+shibuya = ["shibuya-runtime"]
+shiden = ["shiden-runtime"]
+astar = ["astar-runtime"]

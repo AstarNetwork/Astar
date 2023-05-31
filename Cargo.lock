@@ -4247,6 +4247,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration-tests"
+version = "0.1.0"
+dependencies = [
+ "astar-runtime",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-dapps-staking",
+ "pallet-proxy",
+ "pallet-utility",
+ "shibuya-runtime",
+ "shiden-runtime",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
 name = "interceptor"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
