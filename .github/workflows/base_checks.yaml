@@ -35,3 +35,6 @@ jobs:
 
     - name: Check EVM tracing features compilation
       run: cargo check --verbose --features evm-tracing --locked
+
+    - name: Runtime integration tests
+      run: make test-runtimes
