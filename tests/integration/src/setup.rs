@@ -20,7 +20,8 @@
 
 pub use frame_support::{
     assert_ok,
-    traits::{OnFinalize, OnInitialize},
+    traits::{OnFinalize, OnIdle, OnInitialize},
+    weights::Weight,
 };
 pub use sp_core::H160;
 pub use sp_runtime::{AccountId32, MultiAddress};
@@ -110,11 +111,37 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .build()
 }
 
+// Block time: 12 seconds.
+pub const BLOCK_TIME: u64 = 12_000;
+
 pub fn run_to_block(n: u32) {
     while System::block_number() < n {
-        DappsStaking::on_finalize(System::block_number());
-        System::set_block_number(System::block_number() + 1);
-        DappsStaking::on_initialize(System::block_number());
+        let block_number = System::block_number();
+        Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
+        DappsStaking::on_finalize(block_number);
+        Authorship::on_finalize(block_number);
+        Session::on_finalize(block_number);
+        AuraExt::on_finalize(block_number);
+        PolkadotXcm::on_finalize(block_number);
+        Ethereum::on_finalize(block_number);
+        BaseFee::on_finalize(block_number);
+
+        System::set_block_number(block_number + 1);
+
+        TransactionPayment::on_initialize(block_number);
+        DappsStaking::on_initialize(block_number);
+        Authorship::on_initialize(block_number);
+        Aura::on_initialize(block_number);
+        AuraExt::on_initialize(block_number);
+        Ethereum::on_initialize(block_number);
+        BaseFee::on_initialize(block_number);
+        #[cfg(any(feature = "shibuya", feature = "shiden"))]
+        RandomnessCollectiveFlip::on_initialize(block_number);
+        StateTrieMigration::on_initialize(block_number);
+
+        XcmpQueue::on_idle(block_number, Weight::MAX);
+        DmpQueue::on_idle(block_number, Weight::MAX);
+        Contracts::on_idle(block_number, Weight::MAX);
     }
 }
 

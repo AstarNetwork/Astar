@@ -20,6 +20,6 @@ make test-runtimes
 
 ## Development guidelines
 
-General imports and configures that are shared across tests should be added to `setup.rs`.
+General imports and configures that are shared across tests should be added to `setup.rs`. When new pallets are added to runtime, their hooks need to be checked and added to `run_to_block` if needed.
 
 For specific tests like `pallet-proxy`, group them in one source file like `proxy.rs`. Then add the module to `lib.rs` with proper features config.
