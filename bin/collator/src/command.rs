@@ -416,7 +416,7 @@ pub fn run() -> Result<()> {
                         parachain::build_import_queue,
                     )?;
                     let aux_revert = Box::new(|client, _, blocks| {
-                        sc_finality_grandpa::revert(client, blocks)?;
+                        sc_consensus_grandpa::revert(client, blocks)?;
                         Ok(())
                     });
                     Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
@@ -433,7 +433,7 @@ pub fn run() -> Result<()> {
                         parachain::build_import_queue,
                     )?;
                     let aux_revert = Box::new(|client, _, blocks| {
-                        sc_finality_grandpa::revert(client, blocks)?;
+                        sc_consensus_grandpa::revert(client, blocks)?;
                         Ok(())
                     });
                     Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
@@ -450,7 +450,7 @@ pub fn run() -> Result<()> {
                         parachain::build_import_queue,
                     )?;
                     let aux_revert = Box::new(|client, _, blocks| {
-                        sc_finality_grandpa::revert(client, blocks)?;
+                        sc_consensus_grandpa::revert(client, blocks)?;
                         Ok(())
                     });
                     Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
