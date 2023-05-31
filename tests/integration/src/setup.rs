@@ -23,8 +23,7 @@ pub use frame_support::{
     traits::{OnFinalize, OnInitialize},
 };
 pub use sp_core::H160;
-pub use sp_runtime::AccountId32;
-pub use sp_runtime::MultiAddress;
+pub use sp_runtime::{AccountId32, MultiAddress};
 
 #[cfg(feature = "shibuya")]
 pub use shibuya::*;
