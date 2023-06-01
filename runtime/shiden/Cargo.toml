@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "5.9.0"
+version = "5.10.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -85,6 +85,11 @@ polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
+
+# orml dependencies
+orml-traits = { workspace = true }
+orml-xcm-support = { workspace = true }
+orml-xtokens = { workspace = true }
 
 # benchmarking
 array-bytes = { workspace = true }
@@ -204,6 +209,9 @@ std = [
 	"pallet-xc-asset-config/std",
 	"xcm-primitives/std",
 	"substrate-wasm-builder",
+	"orml-xtokens/std",
+	"orml-traits/std",
+	"orml-xcm-support/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -261,6 +269,7 @@ try-runtime = [
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-state-trie-migration/try-runtime",
+	"orml-xtokens/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

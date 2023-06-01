@@ -11897,7 +11897,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.9.0"
+version = "5.10.0"
 dependencies = [
  "array-bytes 6.1.0",
  "cumulus-pallet-aura-ext",
@@ -11922,6 +11922,9 @@ dependencies = [
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
+ "orml-traits",
+ "orml-xcm-support",
+ "orml-xtokens",
  "pallet-assets",
  "pallet-aura",
  "pallet-authorship",

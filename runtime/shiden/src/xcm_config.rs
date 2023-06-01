@@ -28,6 +28,9 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::EnsureRoot;
+use sp_runtime::traits::{Convert, Get};
+use sp_std::marker::PhantomData;
+
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -39,9 +42,13 @@ use xcm_builder::{
     SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{
-    traits::{JustTry, WithOriginFilter},
+    traits::{Convert as XcmConvert, JustTry, WithOriginFilter},
     XcmExecutor,
 };
+
+// ORML imports
+use orml_traits::location::{RelativeReserveProvider, Reserve};
+use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
 use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
@@ -249,7 +256,7 @@ impl xcm_executor::Config for XcmConfig {
     type IsTeleporter = ();
     type UniversalLocation = UniversalLocation;
     type Barrier = XcmBarrier;
-    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+    type Weigher = Weigher;
     type Trader = (
         UsingComponents<WeightToFee, ShidenLocation, AccountId, Balances, BurnFees>,
         FixedRateOfForeignAsset<XcAssetConfig, ShidenXcmFungibleFeeHandler>,
@@ -291,6 +298,8 @@ parameter_types! {
     pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
+pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+
 impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 
@@ -302,7 +311,7 @@ impl pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Everything;
-    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+    type Weigher = Weigher;
     type UniversalLocation = UniversalLocation;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
@@ -339,4 +348,73 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+}
+
+/// Convert `AccountId` to `MultiLocation`.
+pub struct AccountIdToMultiLocation;
+impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
+    fn convert(account: AccountId) -> MultiLocation {
+        X1(AccountId32 {
+            network: None,
+            id: account.into(),
+        })
+        .into()
+    }
+}
+
+parameter_types! {
+    /// The absolute location in perspective of the whole network.
+    pub ShidenLocationAbsolute: MultiLocation = MultiLocation {
+        parents: 1,
+        interior: X1(
+            Parachain(ParachainInfo::parachain_id().into())
+        )
+    };
+    /// Max asset types for one cross-chain transfer. `2` covers all current use cases.
+    /// Can be updated with extra test cases in the future if needed.
+    pub const MaxAssetsForTransfer: usize = 2;
+}
+
+/// Convert `AssetId` to optional `MultiLocation`. The impl is a wrapper
+/// on `ShidenAssetLocationIdConverter`.
+pub struct AssetIdConvert;
+impl Convert<AssetId, Option<MultiLocation>> for AssetIdConvert {
+    fn convert(asset_id: AssetId) -> Option<MultiLocation> {
+        ShidenAssetLocationIdConverter::reverse_ref(&asset_id).ok()
+    }
+}
+
+/// `MultiAsset` reserve location provider. It's based on `RelativeReserveProvider` and in
+/// addition will convert self absolute location to relative location.
+pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
+impl<AbsoluteLocation: Get<MultiLocation>> Reserve
+    for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
+{
+    fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
+        RelativeReserveProvider::reserve(asset).map(|reserve_location| {
+            if reserve_location == AbsoluteLocation::get() {
+                MultiLocation::here()
+            } else {
+                reserve_location
+            }
+        })
+    }
+}
+
+impl orml_xtokens::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Balance = Balance;
+    type CurrencyId = AssetId;
+    type CurrencyIdConvert = AssetIdConvert;
+    type AccountIdToMultiLocation = AccountIdToMultiLocation;
+    type SelfLocation = ShidenLocation;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+    type Weigher = Weigher;
+    type BaseXcmWeight = UnitWeightCost;
+    type UniversalLocation = UniversalLocation;
+    type MaxAssetsForTransfer = MaxAssetsForTransfer;
+    // Default impl. Refer to `orml-xtokens` docs for more details.
+    type MinXcmFee = DisabledParachainFee;
+    type MultiLocationsFilter = Everything;
+    type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShidenLocationAbsolute>;
 }
