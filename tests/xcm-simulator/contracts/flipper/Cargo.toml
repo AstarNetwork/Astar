@@ -1,8 +1,10 @@
 [package]
 name = "flipper"
 version = "0.1.0"
-authors = ["Ashutosh Varma <ashutoshvarma11@live.com>"]
+authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
+homepage = "https://astar.network"
+repository = "https://github.com/AstarNetwork/Astar"
 
 [dependencies]
 ink = { version = "~4.2.0", default-features = false }
