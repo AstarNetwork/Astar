@@ -246,3 +246,10 @@ moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", bra
 # Build deps
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
+# Currently using patched version due to issue with `RUSTFLAGS` inside build script.
+# cargo-build sets the `RUSTFLAGS` for adding linker flags which are not applied when
+# invoking it inside a build script, thus contract compilation fails.
+# Fix - use `CARGO_ENCODED_RUSTFLAGS` instead of `RUSTFLAGS`
+# https://github.com/rust-lang/cargo/issues/10111
+# TODO: remove this once it is merged in upstream
+contract-build = { git = "https://github.com/ashutoshvarma/cargo-contract", branch = "patch/fix-rustflags" }
