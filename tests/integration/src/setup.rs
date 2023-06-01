@@ -135,7 +135,7 @@ pub fn run_to_block(n: u32) {
         AuraExt::on_initialize(block_number);
         Ethereum::on_initialize(block_number);
         BaseFee::on_initialize(block_number);
-        #[cfg(any(feature = "shibuya", feature = "shiden"))]
+        #[cfg(any(feature = "shibuya", feature = "shiden", features = "astar"))]
         RandomnessCollectiveFlip::on_initialize(block_number);
         StateTrieMigration::on_initialize(block_number);
 

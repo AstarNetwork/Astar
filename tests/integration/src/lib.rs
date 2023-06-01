@@ -23,5 +23,5 @@
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod setup;
 
-#[cfg(any(feature = "shibuya", feature = "shiden"))]
+#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod proxy;
