@@ -71,62 +71,63 @@ impl BuildConfig {
             skip_wasm_validation: std::env::var("CB_SKIP_WASM_VALIDATION").is_ok(),
         }
     }
-}
 
-/// Build the contracts and copy the artifacts to fixtures dir
-fn build_contracts(config: &BuildConfig) -> io::Result<()> {
-    for dir in config.contracts_dir.read_dir()? {
-        let dir = dir?;
-        let contract = dir.file_name().to_os_string().into_string().unwrap();
-        println!("[build.rs] Building Contract - {contract}");
-        let build = with_directory(&dir.path(), || {
-            let manifest_path = ManifestPath::new("Cargo.toml").unwrap();
-            let verbosity = if config.is_verbose {
-                Verbosity::Verbose
-            } else {
-                Verbosity::Default
-            };
-            let build_artifact = if config.build_metadata {
-                BuildArtifacts::All
-            } else {
-                BuildArtifacts::CodeOnly
-            };
-            let args = contract_build::ExecuteArgs {
-                manifest_path,
-                verbosity,
-                build_artifact,
-                skip_wasm_validation: config.skip_wasm_validation,
-                build_mode: BuildMode::Debug,
-                features: Features::default(),
-                network: Network::Online,
-                unstable_flags: UnstableFlags::default(),
-                optimization_passes: Some(OptimizationPasses::default()),
-                keep_debug_symbols: true,
-                lint: false,
-                output_type: OutputType::HumanReadable,
-                target: Target::Wasm,
-            };
-            contract_build::execute(args).expect(&format!("Failed to build contract at - {dir:?}"))
-        });
+    /// Build the contracts and copy the artifacts to fixtures dir
+    fn build_contracts(&self) -> io::Result<()> {
+        for dir in self.contracts_dir.read_dir()? {
+            let dir = dir?;
+            let contract = dir.file_name().to_os_string().into_string().unwrap();
+            println!("[build.rs] Building Contract - {contract}");
+            let build = with_directory(&dir.path(), || {
+                let manifest_path = ManifestPath::new("Cargo.toml").unwrap();
+                let verbosity = if self.is_verbose {
+                    Verbosity::Verbose
+                } else {
+                    Verbosity::Default
+                };
+                let build_artifact = if self.build_metadata {
+                    BuildArtifacts::All
+                } else {
+                    BuildArtifacts::CodeOnly
+                };
+                let args = contract_build::ExecuteArgs {
+                    manifest_path,
+                    verbosity,
+                    build_artifact,
+                    skip_wasm_validation: self.skip_wasm_validation,
+                    build_mode: BuildMode::Debug,
+                    features: Features::default(),
+                    network: Network::Online,
+                    unstable_flags: UnstableFlags::default(),
+                    optimization_passes: Some(OptimizationPasses::default()),
+                    keep_debug_symbols: true,
+                    lint: false,
+                    output_type: OutputType::HumanReadable,
+                    target: Target::Wasm,
+                };
+                contract_build::execute(args)
+                    .expect(&format!("Failed to build contract at - {dir:?}"))
+            });
 
-        // copy wasm artifact
-        fs::copy(
-            build.dest_wasm.unwrap(),
-            config.fixtures_dir.join(format!("{contract}.wasm")),
-        )
-        .unwrap();
-
-        // copy metadata
-        if let Some(res) = build.metadata_result {
+            // copy wasm artifact
             fs::copy(
-                res.dest_metadata,
-                config.fixtures_dir.join(format!("{contract}.json")),
+                build.dest_wasm.unwrap(),
+                self.fixtures_dir.join(format!("{contract}.wasm")),
             )
             .unwrap();
-        }
-    }
 
-    Ok(())
+            // copy metadata
+            if let Some(res) = build.metadata_result {
+                fs::copy(
+                    res.dest_metadata,
+                    self.fixtures_dir.join(format!("{contract}.json")),
+                )
+                .unwrap();
+            }
+        }
+
+        Ok(())
+    }
 }
 
 fn main() {
@@ -135,7 +136,7 @@ fn main() {
     fs::create_dir_all(&config.fixtures_dir).unwrap();
 
     // build all the contracts
-    build_contracts(&config).unwrap();
+    config.build_contracts().unwrap();
 
     println!(
         "cargo:rerun-if-changed={}",
