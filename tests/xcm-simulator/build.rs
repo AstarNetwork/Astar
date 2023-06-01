@@ -20,7 +20,7 @@
 /// Compile and copy the contract artifacts to be used as fixture
 /// in tests
 use std::{
-    fs,
+    fs, io,
     path::{Path, PathBuf},
 };
 
@@ -48,6 +48,7 @@ struct BuildConfig {
     /// Directory where artifacts will be copied to after compilation
     fixtures_dir: PathBuf,
     /// Directory where individual contract are present, each on it's own sub-directory
+    /// All the sub-folders inside this directory will be treated as ink! contracts.
     contracts_dir: PathBuf,
     is_verbose: bool,
     /// Whether to build the metadata json along with WASM blob
@@ -73,11 +74,12 @@ impl BuildConfig {
 }
 
 /// Build the contracts and copy the artifacts to fixtures dir
-fn build_contracts(config: &BuildConfig, contacts: Vec<&str>) {
-    for contract in contacts {
-        let dir = &config.contracts_dir.join(contract);
+fn build_contracts(config: &BuildConfig) -> io::Result<()> {
+    for dir in config.contracts_dir.read_dir()? {
+        let dir = dir?;
+        let contract = dir.file_name().to_os_string().into_string().unwrap();
         println!("[build.rs] Building Contract - {contract}");
-        let build = with_directory(dir, || {
+        let build = with_directory(&dir.path(), || {
             let manifest_path = ManifestPath::new("Cargo.toml").unwrap();
             let verbosity = if config.is_verbose {
                 Verbosity::Verbose
@@ -123,6 +125,8 @@ fn build_contracts(config: &BuildConfig, contacts: Vec<&str>) {
             .unwrap();
         }
     }
+
+    Ok(())
 }
 
 fn main() {
@@ -131,7 +135,7 @@ fn main() {
     fs::create_dir_all(&config.fixtures_dir).unwrap();
 
     // build all the contracts
-    build_contracts(&config, ["flipper", "async-xcm-call-no-ce"].to_vec());
+    build_contracts(&config).unwrap();
 
     println!(
         "cargo:rerun-if-changed={}",
