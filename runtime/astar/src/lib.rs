@@ -868,7 +868,7 @@ impl pallet_state_trie_migration::Config for Runtime {
     type SignedFilter = frame_system::EnsureSignedBy<MigController, AccountId>;
     type WeightInfo = pallet_state_trie_migration::weights::SubstrateWeight<Runtime>;
     type MaxKeyLen = ConstU32<512>;
-
+}
 /// The type used to represent the kinds of proxying allowed.
 #[derive(
     Copy,
@@ -1010,12 +1010,6 @@ impl pallet_proxy::Config for Runtime {
     type CallHasher = BlakeTwo256;
     type AnnouncementDepositBase = AnnouncementDepositBase;
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
-}
-
-parameter_types! {
-    // The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
-    pub const MigrationSignedDepositPerItem: Balance = 1 * ASTR;
-    pub const MigrationSignedDepositBase: Balance = 100 * ASTR;
 }
 
 construct_runtime!(
