@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "5.9.0"
+version = "5.10.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -55,6 +55,7 @@ pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-multisig = { workspace = true }
+pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
 pallet-state-trie-migration = { workspace = true }
 pallet-sudo = { workspace = true }
@@ -142,6 +143,7 @@ std = [
 	"pallet-authorship/std",
 	"pallet-aura/std",
 	"pallet-balances/std",
+	"pallet-proxy/std",
 	"pallet-block-reward/std",
 	"pallet-custom-signatures/std",
 	"pallet-dapps-staking/std",
@@ -206,6 +208,7 @@ runtime-benchmarks = [
 	'frame-system/runtime-benchmarks',
 	'sp-runtime/runtime-benchmarks',
 	'pallet-balances/runtime-benchmarks',
+	"pallet-proxy/runtime-benchmarks",
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-collective/runtime-benchmarks',
 	"pallet-ethereum/runtime-benchmarks",
@@ -226,6 +229,7 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
+	"pallet-proxy/try-runtime",
 	"pallet-block-reward/try-runtime",
 	"pallet-custom-signatures/try-runtime",
 	"pallet-dapps-staking/try-runtime",

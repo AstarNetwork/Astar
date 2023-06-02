@@ -196,7 +196,7 @@ fn test_staker_reward_claim_proxy_works() {
         assert_ok!(DappsStaking::bond_and_stake(
             RuntimeOrigin::signed(BOB),
             contract.clone(),
-            100 * UNIT
+            600 * UNIT
         ));
         run_to_block(10);
 
