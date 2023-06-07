@@ -39,6 +39,13 @@ jobs:
     - name: Install deps
       run: sudo apt -y install protobuf-compiler
 
+    - name: free disk space
+      run: |
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        sudo apt clean
+        docker rmi $(docker image ls -aq)
+
     - name: Install & display rust toolchain
       run: rustup show
 
