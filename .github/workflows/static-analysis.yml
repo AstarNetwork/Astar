@@ -3,7 +3,8 @@ on: [push, workflow_dispatch]
 jobs:
   fmt:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v3
@@ -44,7 +45,6 @@ jobs:
         sudo swapoff -a
         sudo rm -f /swapfile
         sudo apt clean
-        docker rmi $(docker image ls -aq)
 
     - name: Install & display rust toolchain
       run: rustup show
