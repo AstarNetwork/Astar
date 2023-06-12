@@ -20,7 +20,3 @@ It's possible that in the future we decide to define a different runtime type (p
 Running tests is same as with any other unit tests:
 
 `cargo test -p xcm-simulator-tests`
-
-# ink! Contract fixtures
-All the contract used in XCM Scenarios should be placed in [contracts](../contracts/) dir. The [cargo build script](../build.rs) will pick them and build them before executing tests automatically.
-Please refer the env variables used in build script to configure the contract building - [`build.rs`](../build.rs).
