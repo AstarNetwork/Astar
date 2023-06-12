@@ -54,9 +54,6 @@ orml-traits = { workspace = true }
 orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 
-[build-dependencies]
-contract-build = { workspace = true }
-
 [features]
 default = ["std"]
 std = [
