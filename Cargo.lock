@@ -405,7 +405,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.10.0"
+version = "5.11.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -506,7 +506,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.10.0"
+version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
  "cumulus-pallet-aura-ext",
@@ -5271,7 +5271,7 @@ checksum = "ece97ea872ece730aed82664c424eb4c8291e1ff2480247ccf7409044bc6479f"
 
 [[package]]
 name = "local-runtime"
-version = "5.10.0"
+version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
  "fp-rpc",
@@ -11808,7 +11808,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.10.0"
+version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
  "cumulus-pallet-aura-ext",
@@ -11916,7 +11916,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.10.0"
+version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
  "cumulus-pallet-aura-ext",

@@ -144,17 +144,10 @@ match_types! {
 
 /// A call filter for the XCM Transact instruction. This is a temporary measure until we properly
 /// account for proof size weights.
-///
-/// Calls that are allowed through this filter must:
-/// 1. Have a fixed weight;
-/// 2. Cannot lead to another call being made
-/// 3. Have a defined proof size weight, e.g. no unbounded vecs in call parameters. - TODO: shouldn't max XCM weight handle this?
 pub struct SafeCallFilter;
-
 impl SafeCallFilter {
-    // 1. RuntimeCall::Multisig(..) - contains `Vec` in argument so we should avoid this
-    // 2. RuntimeCall::EVM(..) & RuntimeCall::Ethereum(..) have to be prohibited since we cannot measure PoV size properly
-    // 3. RuntimeCall::Contracts(..) it should be safe to allow for such calls but perhaps it's better to do more delibrate testing on Shibuya/RocStar.
+    // 1. RuntimeCall::EVM(..) & RuntimeCall::Ethereum(..) have to be prohibited since we cannot measure PoV size properly
+    // 2. RuntimeCall::Contracts(..) can be allowed, but it hasn't been tested properly yet.
 
     /// Checks whether the base (non-composite) call is allowed to be executed via `Transact` XCM instruction.
     pub fn allow_base_call(call: &RuntimeCall) -> bool {
@@ -166,7 +159,50 @@ impl SafeCallFilter {
             | RuntimeCall::DappsStaking(..)
             | RuntimeCall::Assets(..)
             | RuntimeCall::PolkadotXcm(..)
-            | RuntimeCall::Session(..) => true,
+            | RuntimeCall::Session(..)
+            | RuntimeCall::Proxy(
+                pallet_proxy::Call::add_proxy { .. }
+                | pallet_proxy::Call::remove_proxy { .. }
+                | pallet_proxy::Call::remove_proxies { .. }
+                | pallet_proxy::Call::create_pure { .. }
+                | pallet_proxy::Call::kill_pure { .. }
+                | pallet_proxy::Call::announce { .. }
+                | pallet_proxy::Call::remove_announcement { .. }
+                | pallet_proxy::Call::reject_announcement { .. },
+            )
+            | RuntimeCall::Multisig(
+                pallet_multisig::Call::approve_as_multi { .. }
+                | pallet_multisig::Call::cancel_as_multi { .. },
+            ) => true,
+            _ => false,
+        }
+    }
+    /// Checks whether composite call is allowed to be executed via `Transact` XCM instruction.
+    ///
+    /// Each composite call's subcalls are checked against base call filter. No nesting of composite calls is allowed.
+    pub fn allow_composite_call(call: &RuntimeCall) -> bool {
+        match call {
+            RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) => {
+                Self::allow_base_call(call)
+            }
+            RuntimeCall::Proxy(pallet_proxy::Call::proxy_announced { call, .. }) => {
+                Self::allow_base_call(call)
+            }
+            RuntimeCall::Utility(pallet_utility::Call::batch { calls, .. }) => {
+                calls.iter().all(|call| Self::allow_base_call(call))
+            }
+            RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) => {
+                calls.iter().all(|call| Self::allow_base_call(call))
+            }
+            RuntimeCall::Utility(pallet_utility::Call::as_derivative { call, .. }) => {
+                Self::allow_base_call(call)
+            }
+            RuntimeCall::Multisig(pallet_multisig::Call::as_multi_threshold_1 { call, .. }) => {
+                Self::allow_base_call(call)
+            }
+            RuntimeCall::Multisig(pallet_multisig::Call::as_multi { call, .. }) => {
+                Self::allow_base_call(call)
+            }
             _ => false,
         }
     }
@@ -174,17 +210,7 @@ impl SafeCallFilter {
 
 impl Contains<RuntimeCall> for SafeCallFilter {
     fn contains(call: &RuntimeCall) -> bool {
-        #[cfg(feature = "runtime-benchmarks")]
-        {
-            if matches!(
-                call,
-                RuntimeCall::System(frame_system::Call::remark_with_event { .. })
-            ) {
-                return true;
-            }
-        }
-
-        Self::allow_base_call(call)
+        Self::allow_base_call(call) || Self::allow_composite_call(call)
     }
 }
 
