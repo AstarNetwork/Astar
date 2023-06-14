@@ -291,6 +291,11 @@ assets-chain-extension-types = { path = "./chain-extensions/types/assets", defau
 
 precompile-utils = { path = "./precompiles/utils", default-features = false }
 
+local-runtime = { path = "./runtime/local", default-features = false }
+shibuya-runtime = { path = "./runtime/shibuya", default-features = false }
+shiden-runtime = { path = "./runtime/shiden", default-features = false }
+astar-runtime = { path = "./runtime/astar", default-features = false }
+
 ## Moonbeam tracing
 ## (wasm)
 moonbeam-evm-tracer = { path = "./vendor/runtime/evm-tracer", default-features = false }

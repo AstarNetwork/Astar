@@ -86,10 +86,10 @@ fp-evm = { workspace = true, features = ["std"] }
 fp-storage = { workspace = true }
 
 # astar-specific dependencies
-astar-runtime = { path = "../../runtime/astar" }
-local-runtime = { path = "../../runtime/local" }
-shibuya-runtime = { path = "../../runtime/shibuya" }
-shiden-runtime = { path = "../../runtime/shiden" }
+astar-runtime = { workspace = true }
+local-runtime = { workspace = true }
+shibuya-runtime = { workspace = true }
+shiden-runtime = { workspace = true }
 
 # astar pallets dependencies
 pallet-block-reward = { workspace = true }
