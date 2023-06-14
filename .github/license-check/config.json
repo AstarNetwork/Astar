@@ -4,8 +4,8 @@
             "**/*.rs"
         ],
         "exclude": [
-            "frame/collator-selection/**",
-            "frame/custom-signatures/**",
+            "pallets/collator-selection/**",
+            "pallets/custom-signatures/**",
             "precompiles/utils/**",
             "vendor/**"
         ],
@@ -13,8 +13,8 @@
     },
     {
         "include": [
-            "frame/collator-selection/*.rs",
-            "frame/custom-signatures/*.rs"
+            "pallets/collator-selection/*.rs",
+            "pallets/custom-signatures/*.rs"
         ],
         "license": "./.github/license-check/headers/HEADER-APACHE2"
     }
