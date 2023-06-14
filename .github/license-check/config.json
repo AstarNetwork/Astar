@@ -3,6 +3,19 @@
         "include": [
             "**/*.rs"
         ],
+        "exclude": [
+            "frame/collator-selection/**",
+            "frame/custom-signatures/**",
+            "precompiles/utils/**",
+            "vendor/**"
+        ],
         "license": "./.github/license-check/headers/HEADER-GNUv3"
+    },
+    {
+        "include": [
+            "frame/collator-selection/*.rs",
+            "frame/custom-signatures/*.rs"
+        ],
+        "license": "./.github/license-check/headers/HEADER-APACHE2"
     }
 ]
