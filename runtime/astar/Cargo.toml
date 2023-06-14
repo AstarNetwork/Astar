@@ -99,10 +99,10 @@ pallet-collator-selection = { workspace = true }
 pallet-custom-signatures = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
+pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
-pallet-precompile-dapps-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 xcm-primitives = { workspace = true }
@@ -147,7 +147,7 @@ std = [
 	"pallet-block-reward/std",
 	"pallet-custom-signatures/std",
 	"pallet-dapps-staking/std",
-	"pallet-precompile-dapps-staking/std",
+	"pallet-evm-precompile-dapps-staking/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",

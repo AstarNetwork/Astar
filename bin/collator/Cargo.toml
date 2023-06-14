@@ -91,7 +91,7 @@ local-runtime = { path = "../../runtime/local" }
 shibuya-runtime = { path = "../../runtime/shibuya" }
 shiden-runtime = { path = "../../runtime/shiden" }
 
-# astar-frame dependencies
+# astar pallets dependencies
 pallet-block-reward = { workspace = true }
 
 # frame dependencies

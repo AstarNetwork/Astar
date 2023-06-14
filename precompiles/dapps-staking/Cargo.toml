@@ -1,0 +1,55 @@
+[package]
+name = "pallet-evm-precompile-dapps-staking"
+version = "3.6.3"
+license = "Apache-2.0"
+description = "dApps Staking EVM precompiles"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+log = { workspace = true }
+num_enum = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# Astar
+pallet-dapps-staking = { workspace = true }
+precompile-utils = { workspace = true, default-features = false }
+
+# Frontier
+fp-evm = { workspace = true }
+pallet-evm = { workspace = true }
+
+[dev-dependencies]
+derive_more = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-timestamp = { workspace = true }
+precompile-utils = { workspace = true, features = ["testing"] }
+serde = { workspace = true }
+sha3 = { workspace = true }
+sp-io = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-std/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"fp-evm/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-dapps-staking/std",
+	"pallet-evm/std",
+	"precompile-utils/std",
+]

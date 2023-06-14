@@ -1,0 +1,27 @@
+[package]
+name = "assets-chain-extension-types"
+version = "0.1.0"
+license = "Apache-2.0"
+description = "Types definitions for assets chain-extension"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+frame-system = { workspace = true }
+pallet-contracts = { workspace = true }
+sp-runtime = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"scale-info/std",
+	"parity-scale-codec/std",
+	"pallet-contracts/std",
+	"sp-runtime/std",
+	"frame-system/std",
+]
