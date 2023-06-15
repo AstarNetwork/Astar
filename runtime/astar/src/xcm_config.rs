@@ -177,7 +177,7 @@ impl SafeCallFilter {
             _ => false,
         }
     }
-/// Checks whether composite call is allowed to be executed via `Transact` XCM instruction.
+    /// Checks whether composite call is allowed to be executed via `Transact` XCM instruction.
     ///
     /// Each composite call's subcalls are checked against base call filter. No nesting of composite calls is allowed.
     pub fn allow_composite_call(call: &RuntimeCall) -> bool {
