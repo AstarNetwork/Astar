@@ -1029,7 +1029,7 @@ construct_runtime!(
         AuraExt: cumulus_pallet_aura_ext = 44,
 
         XcmpQueue: cumulus_pallet_xcmp_queue = 50,
-        PolkadotXcm: pallet_xcm = 51,
+        PolkadotXcm: astar_xcm = 51,
         CumulusXcm: cumulus_pallet_xcm = 52,
         DmpQueue: cumulus_pallet_dmp_queue = 53,
         XcAssetConfig: pallet_xc_asset_config = 54,
@@ -1179,7 +1179,7 @@ mod benches {
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
-        [pallet_xcm, PolkadotXcm]
+        [astar_xcm, PolkadotXcm]
     );
 }
 

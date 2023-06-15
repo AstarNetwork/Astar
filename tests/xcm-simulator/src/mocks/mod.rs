@@ -75,9 +75,9 @@ decl_test_network! {
     }
 }
 
-pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
+pub type RelayChainPalletXcm = astar_xcm::Pallet<relay_chain::Runtime>;
 
-pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
+pub type ParachainPalletXcm = astar_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
 pub type ParachainContracts = pallet_contracts::Pallet<parachain::Runtime>;

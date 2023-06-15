@@ -121,7 +121,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
     // transaction from the Root origin.
     ParentAsSuperuser<RuntimeOrigin>,
     // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-    pallet_xcm::XcmPassthrough<RuntimeOrigin>,
+    astar_xcm::XcmPassthrough<RuntimeOrigin>,
     // Native signed account converter; this just converts an `AccountId32` origin into a normal
     // `Origin::Signed` origin of the same 32-byte value.
     SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
@@ -177,7 +177,7 @@ impl SafeCallFilter {
             _ => false,
         }
     }
-    /// Checks whether composite call is allowed to be executed via `Transact` XCM instruction.
+/// Checks whether composite call is allowed to be executed via `Transact` XCM instruction.
     ///
     /// Each composite call's subcalls are checked against base call filter. No nesting of composite calls is allowed.
     pub fn allow_composite_call(call: &RuntimeCall) -> bool {
@@ -285,7 +285,7 @@ parameter_types! {
     pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
-impl pallet_xcm::Config for Runtime {
+impl astar_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 
     type RuntimeEvent = RuntimeEvent;
@@ -300,14 +300,14 @@ impl pallet_xcm::Config for Runtime {
     type UniversalLocation = UniversalLocation;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion; // TODO:OR should we keep this at 2?
+    type AdvertisedXcmVersion = astar_xcm::CurrentXcmVersion; // TODO:OR should we keep this at 2?
 
     type Currency = Balances;
     type CurrencyMatcher = ();
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<0>;
-    type WeightInfo = pallet_xcm::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = astar_xcm::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
 }

@@ -46,6 +46,7 @@ use frame_system::{
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, Runner};
+use pallet_nomination_pool_staking::AccountIdConvertor;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
@@ -424,6 +425,39 @@ impl pallet_dapps_staking::Config for Runtime {
     type UnregisteredDappRewardRetention = ConstU32<10>;
 }
 
+pub struct WrapperAccountId(AccountId);
+
+impl AccountIdConvertor<WrapperAccountId> for WrapperAccountId {
+    fn to_32(account_id: WrapperAccountId) -> sp_runtime::AccountId32 {
+        account_id.0.into()
+    }
+}
+
+// Not sure why we need this as well...
+impl AccountIdConvertor<sp_runtime::AccountId32> for WrapperAccountId {
+    fn to_32(account_id: sp_runtime::AccountId32) -> sp_runtime::AccountId32 {
+        account_id
+    }
+}
+
+impl pallet_nomination_pool_staking::Config for Runtime {
+    type AccountIdConvertor = WrapperAccountId;
+    type Currency = Balances;
+    type BlockPerEra = BlockPerEra;
+    type SmartContract = SmartContract<AccountId>;
+    type RegisterDeposit = RegisterDeposit;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_nomination_pool_staking::weights::SubstrateWeight<Runtime>;
+    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = NominationPoolStakingPalletId;
+    type MaxUnlockingChunks = MaxUnlockingChunks;
+    type UnbondingPeriod = UnbondingPeriod;
+    type MinimumRemainingAmount = MinimumRemainingAmount;
+    type MaxEraStakeValues = MaxEraStakeValues;
+    type UnregisteredDappRewardRetention = ConstU32<10>;
+}
+
 /// Multi-VM pointer to smart contract instance.
 #[derive(
     PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, MaxEncodedLen, scale_info::TypeInfo,
@@ -537,6 +571,7 @@ impl pallet_collator_selection::Config for Runtime {
 parameter_types! {
     pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
     pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
+    pub const NominationPoolStakingPalletId: PalletId = PalletId(*b"py/npstk");
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
@@ -682,6 +717,7 @@ impl pallet_contracts::Config for Runtime {
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = (
         DappsStakingExtension<Self>,
+        NominationPoolStakingExtension<Self>,
         XvmExtension<Self>,
         AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
     );
@@ -1258,6 +1294,7 @@ construct_runtime!(
         DappsStaking: pallet_dapps_staking = 34,
         BlockReward: pallet_block_reward = 35,
         Assets: pallet_assets = 36,
+        NominationPoolStaking: pallet_nomination_pool_staking = 37,
 
         Authorship: pallet_authorship = 40,
         CollatorSelection: pallet_collator_selection = 41,
@@ -1266,7 +1303,7 @@ construct_runtime!(
         AuraExt: cumulus_pallet_aura_ext = 44,
 
         XcmpQueue: cumulus_pallet_xcmp_queue = 50,
-        PolkadotXcm: pallet_xcm = 51,
+        PolkadotXcm: astar_xcm = 51,
         CumulusXcm: cumulus_pallet_xcm = 52,
         DmpQueue: cumulus_pallet_dmp_queue = 53,
         XcAssetConfig: pallet_xc_asset_config = 54,
@@ -1423,7 +1460,7 @@ mod benches {
         [pallet_block_reward, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
-        [pallet_xcm, PolkadotXcm]
+        [astar_xcm, PolkadotXcm]
     );
 }
 

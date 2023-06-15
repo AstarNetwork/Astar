@@ -466,7 +466,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
     // transaction from the Root origin.
     ParentAsSuperuser<RuntimeOrigin>,
     // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-    pallet_xcm::XcmPassthrough<RuntimeOrigin>,
+    astar_xcm::XcmPassthrough<RuntimeOrigin>,
     // Native signed account converter; this just converts an `AccountId32` origin into a normal
     // `Origin::Signed` origin of the same 32-byte value.
     SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
@@ -552,7 +552,7 @@ parameter_types! {
     pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
-impl pallet_xcm::Config for Runtime {
+impl astar_xcm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
@@ -566,14 +566,14 @@ impl pallet_xcm::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
-    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+    type AdvertisedXcmVersion = astar_xcm::CurrentXcmVersion;
 
     type Currency = Balances;
     type CurrencyMatcher = ();
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<0>;
-    type WeightInfo = pallet_xcm::TestWeightInfo;
+    type WeightInfo = astar_xcm::TestWeightInfo;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
 }
@@ -659,7 +659,7 @@ construct_runtime!(
         System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         MsgQueue: mock_msg_queue::{Pallet, Storage, Event<T>},
-        PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
+        PolkadotXcm: astar_xcm::{Pallet, Call, Event<T>, Origin},
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
         XcAssetConfig: pallet_xc_asset_config::{Pallet, Call, Storage, Event<T>},
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},

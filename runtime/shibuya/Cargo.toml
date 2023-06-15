@@ -8,6 +8,8 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+getrandom = { workspace = true }
+
 # third-party dependencies
 hex-literal = { workspace = true }
 log = { workspace = true, optional = true }
@@ -97,8 +99,10 @@ orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 
 # Astar pallets
+astar-xcm = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
+pallet-chain-extension-nomination-pool-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-custom-signatures = { workspace = true }
@@ -108,9 +112,9 @@ pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
+pallet-nomination-pool-staking = { workspace = true }
 pallet-precompile-dapps-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
-pallet-xcm = { workspace = true }
 pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
 xcm-primitives = { workspace = true }
 
@@ -139,6 +143,7 @@ substrate-wasm-builder = { workspace = true, optional = true }
 [features]
 default = ["std"]
 std = [
+	"getrandom/std",
 	"parity-scale-codec/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
@@ -165,6 +170,7 @@ std = [
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
 	"pallet-chain-extension-dapps-staking/std",
+	"pallet-chain-extension-nomination-pool-staking/std",
 	"pallet-chain-extension-xvm/std",
 	"pallet-custom-signatures/std",
 	"pallet-base-fee/std",
@@ -186,6 +192,7 @@ std = [
 	"pallet-evm-precompile-xcm/std",
 	"pallet-evm-precompile-xvm/std",
 	"pallet-dapps-staking/std",
+	"pallet-nomination-pool-staking/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",
 	"pallet-insecure-randomness-collective-flip/std",
@@ -202,7 +209,7 @@ std = [
 	"pallet-sudo/std",
 	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
-	"pallet-xcm/std",
+	"astar-xcm/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xvm/std",
 	"pallet-scheduler/std",
@@ -247,7 +254,7 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
-	"pallet-xcm/runtime-benchmarks",
+	"astar-xcm/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
@@ -267,6 +274,7 @@ try-runtime = [
 	"pallet-block-reward/try-runtime",
 	"pallet-custom-signatures/try-runtime",
 	"pallet-dapps-staking/try-runtime",
+	"pallet-nomination-pool-staking/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
@@ -278,7 +286,7 @@ try-runtime = [
 	"pallet-authorship/try-runtime",
 	"pallet-collator-selection/try-runtime",
 	"pallet-session/try-runtime",
-	"pallet-xcm/try-runtime",
+	"astar-xcm/try-runtime",
 	"pallet-identity/try-runtime",
 	"pallet-multisig/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",

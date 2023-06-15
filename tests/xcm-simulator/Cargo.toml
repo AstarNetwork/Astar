@@ -39,8 +39,8 @@ xcm-primitives = { workspace = true }
 polkadot-primitives = { workspace = true }
 
 # XCM
+astar-xcm = { workspace = true }
 cumulus-pallet-xcm = { workspace = true }
-pallet-xcm = { workspace = true }
 polkadot-core-primitives = { workspace = true }
 polkadot-parachain = { workspace = true }
 polkadot-runtime-parachains = { workspace = true }
@@ -70,7 +70,7 @@ std = [
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
 	"pallet-insecure-randomness-collective-flip/std",
-	"pallet-xcm/std",
+	"astar-xcm/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-assets/std",
 	"xcm-primitives/std",

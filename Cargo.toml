@@ -47,6 +47,7 @@ jsonrpsee = { version = "0.16.2", features = ["server"] }
 hex = "0.4.3"
 hex-literal = "0.4.1"
 regex = "1.6.0"
+getrandom = { version = "0.2", features = ["js"] }
 
 # Substrate
 # (wasm)
@@ -223,14 +224,16 @@ pallet-evm-precompile-xcm = { git = "https://github.com/AstarNetwork/astar-frame
 pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-nomination-pool-staking = { path = "../astar-frame/frame/nomination-pool-staking", default-features = false }
 pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+astar-xcm = { path = "../astar-frame/frame/pallet-xcm", default-features = false }
 
 pallet-chain-extension-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 pallet-chain-extension-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
 pallet-chain-extension-assets = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-chain-extension-nomination-pool-staking = { path = "../astar-frame/chain-extensions/nomination-pool-staking", default-features = false }
 
 ## Moonbeam tracing
 ## (wasm)

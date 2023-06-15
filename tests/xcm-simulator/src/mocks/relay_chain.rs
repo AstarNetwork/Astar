@@ -160,7 +160,7 @@ parameter_types! {
     pub ReachableDest: Option<MultiLocation> = Some(Parachain(1).into());
 }
 
-impl pallet_xcm::Config for Runtime {
+impl astar_xcm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SendXcmOrigin = xcm_builder::EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
@@ -175,14 +175,14 @@ impl pallet_xcm::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
-    type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+    type AdvertisedXcmVersion = astar_xcm::CurrentXcmVersion;
 
     type Currency = Balances;
     type CurrencyMatcher = ();
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<0>;
-    type WeightInfo = pallet_xcm::TestWeightInfo;
+    type WeightInfo = astar_xcm::TestWeightInfo;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
 }
@@ -214,6 +214,6 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         ParasOrigin: origin::{Pallet, Origin},
         ParasUmp: ump::{Pallet, Call, Storage, Event},
-        XcmPallet: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
+        XcmPallet: astar_xcm::{Pallet, Call, Storage, Event<T>, Origin},
     }
 );

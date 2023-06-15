@@ -101,6 +101,7 @@ pallet-collective = { workspace = true, optional = true }
 frame-try-runtime = { workspace = true, optional = true }
 
 # Astar pallets
+astar-xcm = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-custom-signatures = { workspace = true }
@@ -111,7 +112,6 @@ pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
 pallet-precompile-dapps-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
-pallet-xcm = { workspace = true }
 xcm-primitives = { workspace = true }
 
 # Moonbeam tracing
@@ -184,7 +184,7 @@ std = [
 	"pallet-sudo/std",
 	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
-	"pallet-xcm/std",
+	"astar-xcm/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",

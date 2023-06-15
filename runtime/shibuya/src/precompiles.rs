@@ -76,7 +76,7 @@ where
     Dispatch<R>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config
-        + pallet_xcm::Config
+        + astar_xcm::Config
         + pallet_xvm::Config
         + AddressToAssetId<<R as pallet_assets::Config>::AssetId>,
     C: xcm_executor::traits::Convert<MultiLocation, <R as pallet_assets::Config>::AssetId>,
