@@ -88,7 +88,7 @@ runtime-benchmarks = [
 	"pallet-balances/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-contracts/runtime-benchmarks",
-	"pallet-xcm/runtime-benchmarks",
+	"astar-xcm/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
 	"polkadot-runtime-parachains/runtime-benchmarks",
