@@ -425,21 +425,6 @@ impl pallet_dapps_staking::Config for Runtime {
     type UnregisteredDappRewardRetention = ConstU32<10>;
 }
 
-pub struct WrapperAccountId(AccountId);
-
-impl AccountIdConvertor<WrapperAccountId> for WrapperAccountId {
-    fn to_32(account_id: WrapperAccountId) -> sp_runtime::AccountId32 {
-        account_id.0.into()
-    }
-}
-
-// Not sure why we need this as well...
-impl AccountIdConvertor<sp_runtime::AccountId32> for WrapperAccountId {
-    fn to_32(account_id: sp_runtime::AccountId32) -> sp_runtime::AccountId32 {
-        account_id
-    }
-}
-
 impl pallet_nomination_pool_staking::Config for Runtime {
     type AccountIdConvertor = WrapperAccountId;
     type Currency = Balances;
