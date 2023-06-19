@@ -1,0 +1,36 @@
+[package]
+name = "evm-tracing-events"
+authors = ["PureStake"]
+edition = "2021"
+homepage = "https://moonbeam.network"
+license = "GPL-3.0-only"
+repository = "https://github.com/PureStake/moonbeam/"
+version = "0.1.0"
+
+[dependencies]
+environmental = { workspace = true }
+
+# Substrate
+parity-scale-codec = { workspace = true }
+sp-runtime-interface = { workspace = true }
+
+# Ethereum
+ethereum = { workspace = true, features = ["with-codec"] }
+ethereum-types = { workspace = true }
+evm = { workspace = true, features = ["with-codec"] }
+evm-gasometer = { workspace = true }
+evm-runtime = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"environmental/std",
+	"ethereum-types/std",
+	"ethereum/std",
+	"evm-gasometer/std",
+	"evm-runtime/std",
+	"evm/std",
+	"sp-runtime-interface/std",
+]
+evm-tracing = ["evm-gasometer/tracing", "evm-runtime/tracing", "evm/tracing"]

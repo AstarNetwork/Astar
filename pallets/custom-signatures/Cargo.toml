@@ -1,0 +1,42 @@
+[package]
+name = "pallet-custom-signatures"
+version = "4.6.0"
+license = "Apache-2.0"
+description = "FRAME pallet for user defined extrinsic signatures"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+[dev-dependencies]
+assert_matches = { workspace = true }
+hex-literal = { workspace = true }
+libsecp256k1 = { workspace = true }
+pallet-balances = { workspace = true }
+sp-keyring = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-io/std",
+	"sp-std/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+]
+try-runtime = ["frame-support/try-runtime"]
