@@ -176,11 +176,11 @@ pallet-state-trie-migration = { git = "https://github.com/paritytech/substrate",
 
 # EVM & Ethereum
 # (wasm)
-evm = { version = "0.37.0", default-features = false }
+evm = { version = "0.39.0", default-features = false }
 ethereum-types = { version = "0.14", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
-evm-gasometer = { version = "0.37.0", default-features = false }
-evm-runtime = { version = "0.37.0", default-features = false }
+evm-gasometer = { version = "0.39.0", default-features = false }
+evm-runtime = { version = "0.39.0", default-features = false }
 
 # Frontier
 # (wasm)

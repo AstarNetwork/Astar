@@ -2746,27 +2746,6 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "evm"
-version = "0.37.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4448c65b71e8e2b9718232d84d09045eeaaccb2320494e6bd6dbf7e58fec8ff"
-dependencies = [
- "auto_impl",
- "environmental",
- "ethereum",
- "evm-core 0.37.0",
- "evm-gasometer 0.37.0",
- "evm-runtime 0.37.0",
- "log",
- "parity-scale-codec",
- "primitive-types",
- "rlp",
- "scale-info",
- "serde",
- "sha3",
-]
-
-[[package]]
-name = "evm"
 version = "0.39.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a49a4e11987c51220aa89dbe1a5cc877f5079fa6864c0a5b4533331db44e9365"
@@ -2774,9 +2753,9 @@ dependencies = [
  "auto_impl",
  "environmental",
  "ethereum",
- "evm-core 0.39.0",
- "evm-gasometer 0.39.0",
- "evm-runtime 0.39.0",
+ "evm-core",
+ "evm-gasometer",
+ "evm-runtime",
  "log",
  "parity-scale-codec",
  "primitive-types",
@@ -2784,18 +2763,6 @@ dependencies = [
  "scale-info",
  "serde",
  "sha3",
-]
-
-[[package]]
-name = "evm-core"
-version = "0.37.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64c51bec0eb68a891c2575c758eaaa1d61373fc51f7caaf216b1fb5c3fea3b5d"
-dependencies = [
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
- "serde",
 ]
 
 [[package]]
@@ -2812,39 +2779,14 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.37.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8b93c59c54fc26522d842f0e0d3f8e8be331c776df18ff3e540b53c2f64d509"
-dependencies = [
- "environmental",
- "evm-core 0.37.0",
- "evm-runtime 0.37.0",
- "primitive-types",
-]
-
-[[package]]
-name = "evm-gasometer"
 version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d43eadc395bd1a52990787ca1495c26b0248165444912be075c28909a853b8c"
 dependencies = [
  "environmental",
- "evm-core 0.39.0",
- "evm-runtime 0.39.0",
+ "evm-core",
+ "evm-runtime",
  "primitive-types",
-]
-
-[[package]]
-name = "evm-runtime"
-version = "0.37.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c79b9459ce64f1a28688397c4013764ce53cd57bb84efc16b5187fa9b05b13ad"
-dependencies = [
- "auto_impl",
- "environmental",
- "evm-core 0.37.0",
- "primitive-types",
- "sha3",
 ]
 
 [[package]]
@@ -2855,7 +2797,7 @@ checksum = "2aa5b32f59ec582a5651978004e5c784920291263b7dcb6de418047438e37f4f"
 dependencies = [
  "auto_impl",
  "environmental",
- "evm-core 0.39.0",
+ "evm-core",
  "primitive-types",
  "sha3",
 ]
@@ -2867,9 +2809,9 @@ dependencies = [
  "environmental",
  "ethereum",
  "ethereum-types",
- "evm 0.37.0",
- "evm-gasometer 0.37.0",
- "evm-runtime 0.37.0",
+ "evm",
+ "evm-gasometer",
+ "evm-runtime",
  "parity-scale-codec",
  "sp-runtime-interface",
 ]
@@ -3037,7 +2979,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#c
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm 0.39.1",
+ "evm",
  "fc-db",
  "fc-mapping-sync",
  "fc-rpc-core",
@@ -3283,7 +3225,7 @@ name = "fp-evm"
 version = "3.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
- "evm 0.39.1",
+ "evm",
  "frame-support",
  "parity-scale-codec",
  "serde",
@@ -5733,9 +5675,9 @@ name = "moonbeam-evm-tracer"
 version = "0.1.0"
 dependencies = [
  "ethereum-types",
- "evm 0.37.0",
- "evm-gasometer 0.37.0",
- "evm-runtime 0.37.0",
+ "evm",
+ "evm-gasometer",
+ "evm-runtime",
  "evm-tracing-events",
  "fp-evm",
  "moonbeam-primitives-ext",
@@ -7032,7 +6974,7 @@ dependencies = [
  "environmental",
  "ethereum",
  "ethereum-types",
- "evm 0.39.1",
+ "evm",
  "fp-consensus",
  "fp-ethereum",
  "fp-evm",
@@ -7054,7 +6996,7 @@ version = "6.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "environmental",
- "evm 0.39.1",
+ "evm",
  "fp-account",
  "fp-evm",
  "frame-benchmarking",
@@ -9550,7 +9492,7 @@ name = "precompile-utils"
 version = "0.4.3"
 dependencies = [
  "assert_matches",
- "evm 0.37.0",
+ "evm",
  "fp-evm",
  "frame-support",
  "frame-system",
