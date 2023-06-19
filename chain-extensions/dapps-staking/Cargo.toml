@@ -1,0 +1,43 @@
+[package]
+name = "pallet-chain-extension-dapps-staking"
+version = "1.1.0"
+license = "Apache-2.0"
+description = "dApps Staking chain extension for WASM contracts"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+num-traits = { workspace = true }
+pallet-contracts = { workspace = true }
+pallet-contracts-primitives = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# Astar
+dapps-staking-chain-extension-types = { workspace = true }
+pallet-dapps-staking = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"dapps-staking-chain-extension-types/std",
+	"frame-support/std",
+	"frame-system/std",
+	"num-traits/std",
+	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
+	"pallet-dapps-staking/std",
+	"scale-info/std",
+	"sp-std/std",
+	"sp-core/std",
+	"sp-runtime/std",
+]

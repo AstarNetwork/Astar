@@ -255,7 +255,7 @@ async function main() {
     getRuntimeInfo(argv["srtool-report-folder"], runtimeName)
   );
 
-  const moduleLinks = ["substrate", "polkadot", "cumulus", "frontier", "astar-frame"].map((repoName) => ({
+  const moduleLinks = ["substrate", "polkadot", "cumulus", "frontier"].map((repoName) => ({
     name: repoName,
     link: getCompareLink(repoName, previousTag, newTag),
   }));
@@ -339,7 +339,7 @@ ${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).j
 | \`Ubuntu x86_64\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-ubuntu-x86_64.tar.gz) |
 | \`Ubuntu aarch64\` | [Download](https://github.com/AstarNetwork/Astar/releases/download/${newTag}/astar-collator-${newTag}-ubuntu-aarch64.tar.gz) |
 
-[<img src="https://github.com/AstarNetwork/Astar/blob/master/.github/images/docker.webp" height="200px">](https://hub.docker.com/r/staketechnologies/astar-collator/tags) 
+[<img src="https://github.com/AstarNetwork/Astar/blob/master/.github/images/docker.webp" height="200px">](https://hub.docker.com/r/staketechnologies/astar-collator/tags)
 `
 
   console.log(template);

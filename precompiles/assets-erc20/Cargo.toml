@@ -1,0 +1,57 @@
+[package]
+name = "pallet-evm-precompile-assets-erc20"
+description = "A Precompile to expose a Assets pallet through an ERC20-compliant interface."
+version = "0.5.2"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+log = { workspace = true }
+num_enum = { workspace = true }
+slices = { workspace = true }
+
+precompile-utils = { workspace = true }
+
+# Substrate
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-assets = { workspace = true }
+pallet-balances = { workspace = true }
+parity-scale-codec = { workspace = true, features = ["max-encoded-len"] }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# Frontier
+fp-evm = { workspace = true }
+pallet-evm = { workspace = true }
+
+[dev-dependencies]
+derive_more = { workspace = true }
+serde = { workspace = true }
+sha3 = { workspace = true }
+
+precompile-utils = { workspace = true, features = ["testing"] }
+
+pallet-timestamp = { workspace = true }
+scale-info = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"fp-evm/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-assets/std",
+	"pallet-evm/std",
+	"pallet-balances/std",
+	"precompile-utils/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+]

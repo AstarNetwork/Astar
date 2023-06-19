@@ -8,6 +8,28 @@ members = [
 	"runtime/shibuya",
 	"tests/xcm-simulator",
 	"tests/integration",
+
+	"pallets/*",
+	"precompiles/*",
+
+	"chain-extensions/dapps-staking",
+	"chain-extensions/pallet-assets",
+	"chain-extensions/xvm",
+	"chain-extensions/types/*",
+
+	"vendor/evm-tracing",
+	"vendor/primitives/debug",
+	"vendor/primitives/evm-tracing-events",
+	"vendor/primitives/txpool",
+	"vendor/rpc/debug",
+	"vendor/rpc/trace",
+	"vendor/rpc/txpool",
+	"vendor/rpc-core/debug",
+	"vendor/rpc-core/trace",
+	"vendor/rpc-core/txpool",
+	"vendor/rpc-core/types",
+	"vendor/runtime/evm-tracer",
+	"vendor/runtime/ext",
 ]
 
 exclude = ["vendor"]
@@ -32,6 +54,12 @@ repository = "https://github.com/AstarNetwork/Astar"
 parity-scale-codec = { version = "3.4.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3.0", default-features = false, features = ["derive"] }
 log = { version = "0.4.17", default-features = false }
+environmental = { version = "1.1.2", default-features = false }
+sha3 = { version = "0.10.1", default-features = false }
+num_enum = { version = "0.5.3", default-features = false }
+num-traits = { version = "0.2", default-features = false }
+rand = { version = "0.8.5", default-features = false }
+bounded-collections = { version = "0.1.5", default-features = false }
 
 # (native)
 array-bytes = "6.0.0"
@@ -44,9 +72,20 @@ serde_json = "1.0.92"
 tokio = { version = "1.24.2", features = ["macros", "sync"] }
 url = "2.2.2"
 jsonrpsee = { version = "0.16.2", features = ["server"] }
-hex = "0.4.3"
+hex = { version = "0.4.3", features = ["serde"] }
 hex-literal = "0.4.1"
 regex = "1.6.0"
+rlp = "0.5"
+tracing = "0.1.34"
+similar-asserts = { version = "1.1.0" }
+assert_matches = "1.3.0"
+libsecp256k1 = "0.7.0"
+impl-trait-for-tuples = "0.2.2"
+slices = "0.2.0"
+derive_more = { version = "0.99" }
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "1.0" }
 
 # Substrate
 # (wasm)
@@ -64,6 +103,9 @@ sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 sp-version = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
+sp-staking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
+sp-externalities = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 
 # (native)
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
@@ -89,6 +131,7 @@ sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polk
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
+sc-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
@@ -129,6 +172,14 @@ pallet-scheduler = { git = "https://github.com/paritytech/substrate", branch = "
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 pallet-state-trie-migration = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
+
+# EVM & Ethereum
+# (wasm)
+evm = { version = "0.37.0", default-features = false }
+ethereum-types = { version = "0.14", default-features = false }
+ethereum = { version = "0.14.0", default-features = false }
+evm-gasometer = { version = "0.37.0", default-features = false }
+evm-runtime = { version = "0.37.0", default-features = false }
 
 # Frontier
 # (wasm)
@@ -213,36 +264,55 @@ orml-xcm-support = { git = "https://github.com/open-web3-stack/open-runtime-modu
 
 # Astar pallets & modules
 # (wasm)
-pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-collator-selection = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+pallet-block-reward = { path = "./pallets/block-reward", default-features = false }
+pallet-collator-selection = { path = "./pallets/collator-selection", default-features = false }
+pallet-custom-signatures = { path = "./pallets/custom-signatures", default-features = false }
+pallet-dapps-staking = { path = "./pallets/dapps-staking", default-features = false }
+pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features = false }
+pallet-xvm = { path = "./pallets/pallet-xvm", default-features = false }
+pallet-xcm = { path = "./pallets/pallet-xcm", default-features = false }
 
-pallet-chain-extension-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-chain-extension-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-pallet-chain-extension-assets = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+xcm-primitives = { path = "./primitives/xcm", default-features = false }
+
+pallet-evm-precompile-assets-erc20 = { path = "./precompiles/assets-erc20", default-features = false }
+pallet-evm-precompile-sr25519 = { path = "./precompiles/sr25519", default-features = false }
+pallet-evm-precompile-substrate-ecdsa = { path = "./precompiles/substrate-ecdsa", default-features = false }
+pallet-evm-precompile-xcm = { path = "./precompiles/xcm", default-features = false }
+pallet-evm-precompile-xvm = { path = "./precompiles/xvm", default-features = false }
+pallet-evm-precompile-dapps-staking = { path = "./precompiles/dapps-staking", default-features = false }
+
+pallet-chain-extension-dapps-staking = { path = "./chain-extensions/dapps-staking", default-features = false }
+pallet-chain-extension-xvm = { path = "./chain-extensions/xvm", default-features = false }
+pallet-chain-extension-assets = { path = "./chain-extensions/pallet-assets", default-features = false }
+
+dapps-staking-chain-extension-types = { path = "./chain-extensions/types/dapps-staking", default-features = false }
+xvm-chain-extension-types = { path = "./chain-extensions/types/xvm", default-features = false }
+assets-chain-extension-types = { path = "./chain-extensions/types/assets", default-features = false }
+
+precompile-utils = { path = "./precompiles/utils", default-features = false }
+
+local-runtime = { path = "./runtime/local", default-features = false }
+shibuya-runtime = { path = "./runtime/shibuya", default-features = false }
+shiden-runtime = { path = "./runtime/shiden", default-features = false }
+astar-runtime = { path = "./runtime/astar", default-features = false }
 
 ## Moonbeam tracing
 ## (wasm)
-moonbeam-evm-tracer = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-moonbeam-rpc-primitives-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
-moonbeam-rpc-primitives-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39", default-features = false }
+moonbeam-evm-tracer = { path = "./vendor/runtime/evm-tracer", default-features = false }
+moonbeam-rpc-primitives-debug = { path = "./vendor/primitives/debug", default-features = false }
+moonbeam-rpc-primitives-txpool = { path = "./vendor/primitives/txpool", default-features = false }
+evm-tracing-events = { path = "./vendor/primitives/evm-tracing-events", default-features = false }
+moonbeam-primitives-ext = { path = "./vendor/runtime/ext", default-features = false }
 
 ## (native)
-moonbeam-primitives-ext = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
-moonbeam-rpc-debug = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
-moonbeam-rpc-trace = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
-moonbeam-rpc-txpool = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.39" }
+moonbeam-rpc-debug = { path = "./vendor/rpc/debug" }
+moonbeam-rpc-trace = { path = "./vendor/rpc/trace" }
+moonbeam-rpc-txpool = { path = "./vendor/rpc/txpool" }
+moonbeam-client-evm-tracing = { path = "./vendor/evm-tracing" }
+moonbeam-rpc-core-types = { path = "./vendor/rpc-core/types" }
+moonbeam-rpc-core-txpool = { path = "./vendor/rpc-core/txpool" }
+moonbeam-rpc-core-trace = { path = "./vendor/rpc-core/trace" }
+moonbeam-rpc-core-debug = { path = "./vendor/rpc-core/debug" }
 
 # Build deps
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
