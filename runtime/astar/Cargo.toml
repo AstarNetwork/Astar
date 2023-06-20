@@ -106,6 +106,7 @@ pallet-evm-precompile-xcm = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 xcm-primitives = { workspace = true }
+astar-core-primitives = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -200,6 +201,7 @@ std = [
 	"pallet-xc-asset-config/std",
 	"xcm-primitives/std",
 	"substrate-wasm-builder",
+	"astar-core-primitives/std"
 ]
 runtime-benchmarks = [
 	'frame-benchmarking',

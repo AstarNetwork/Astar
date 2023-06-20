@@ -510,10 +510,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "astar-core-primitives"
+version = "0.1.0"
+dependencies = [
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "astar-runtime"
 version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
+ "astar-core-primitives",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",

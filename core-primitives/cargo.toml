@@ -1,0 +1,18 @@
+[package]
+name = "astar-core-primitives"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+sp-runtime = { workspace = true }
+sp-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "sp-runtime/std",
+    "sp-core/std"
+]
