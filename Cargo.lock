@@ -11902,6 +11902,7 @@ name = "shibuya-runtime"
 version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
+ "astar-core-primitives",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",

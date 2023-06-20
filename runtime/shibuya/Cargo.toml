@@ -113,6 +113,7 @@ pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
 xcm-primitives = { workspace = true }
+astar-core-primitives = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -234,6 +235,7 @@ std = [
 	"orml-xtokens/std",
 	"orml-traits/std",
 	"orml-xcm-support/std",
+	"astar-core-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
