@@ -73,6 +73,7 @@ pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
+astar-core-primitives = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -160,6 +161,7 @@ std = [
 	"moonbeam-rpc-primitives-txpool/std",
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
+	"astar-core-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
