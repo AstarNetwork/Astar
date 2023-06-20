@@ -22,6 +22,10 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+pub use astar_core_primitives::{
+    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+};
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
@@ -66,11 +70,6 @@ use sp_runtime::{
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
-pub use astar_core_primitives::{
-	AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
-	Index, Signature
-};
-use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use xcm_primitives::AssetLocationIdConverter;
@@ -531,7 +530,6 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
-
 
 impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {

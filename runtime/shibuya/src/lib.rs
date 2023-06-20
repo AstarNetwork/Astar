@@ -68,8 +68,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_core_primitives::{
-	AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
-	Index, Signature
+    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
@@ -124,7 +123,6 @@ pub const MILLISECS_PER_BLOCK: u64 = 12000;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
-
 
 impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {

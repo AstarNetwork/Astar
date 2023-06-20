@@ -68,8 +68,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_core_primitives::{
-	AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
-	Index, Signature
+    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
@@ -534,7 +533,6 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
-
 
 impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {

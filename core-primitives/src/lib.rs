@@ -22,11 +22,11 @@
 //!
 //! These core Astar types are used by the Shiden, Shibuya, Astar and Local runtime.
 
-use sp_runtime::{
-	generic,
-	traits::{IdentifyAccount, Verify},
-};
 use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::{
+    generic,
+    traits::{IdentifyAccount, Verify},
+};
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = sp_runtime::MultiSignature;
