@@ -412,6 +412,7 @@ dependencies = [
 name = "astar-collator"
 version = "5.11.0"
 dependencies = [
+ "astar-core-primitives",
  "astar-runtime",
  "async-trait",
  "clap",
