@@ -62,10 +62,8 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - uses: actions-rs/clippy-check@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --features try-runtime,runtime-benchmarks -- -D warnings
+    - name: Clippy check
+      run: cargo clippy --features try-runtime,runtime-benchmarks -- -D warnings
 
   check-license:
     if: github.event.pull_request.draft == false
