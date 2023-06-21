@@ -101,7 +101,7 @@ pallet-collective = { workspace = true, optional = true }
 frame-try-runtime = { workspace = true, optional = true }
 
 # Astar pallets
-astar-core-primitives = { workspace = true }
+astar-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-custom-signatures = { workspace = true }
@@ -213,7 +213,7 @@ std = [
 	"orml-xtokens/std",
 	"orml-traits/std",
 	"orml-xcm-support/std",
-	"astar-core-primitives/std",
+	"astar-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

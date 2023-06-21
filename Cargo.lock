@@ -412,7 +412,7 @@ dependencies = [
 name = "astar-collator"
 version = "5.11.0"
 dependencies = [
- "astar-core-primitives",
+ "astar-primitives",
  "astar-runtime",
  "async-trait",
  "clap",
@@ -511,7 +511,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "astar-core-primitives"
+name = "astar-primitives"
 version = "0.1.0"
 dependencies = [
  "sp-core",
@@ -523,7 +523,7 @@ name = "astar-runtime"
 version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
- "astar-core-primitives",
+ "astar-primitives",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -5315,7 +5315,7 @@ name = "local-runtime"
 version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
- "astar-core-primitives",
+ "astar-primitives",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -11904,7 +11904,7 @@ name = "shibuya-runtime"
 version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
- "astar-core-primitives",
+ "astar-primitives",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -12013,7 +12013,7 @@ name = "shiden-runtime"
 version = "5.11.0"
 dependencies = [
  "array-bytes 6.1.0",
- "astar-core-primitives",
+ "astar-primitives",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",

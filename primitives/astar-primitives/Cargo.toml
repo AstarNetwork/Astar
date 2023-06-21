@@ -1,5 +1,5 @@
 [package]
-name = "astar-core-primitives"
+name = "astar-primitives"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true

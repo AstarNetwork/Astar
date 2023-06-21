@@ -61,7 +61,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-pub use astar_core_primitives::{
+pub use astar_primitives::{
     AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 
