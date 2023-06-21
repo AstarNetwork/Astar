@@ -7,12 +7,12 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-sp-runtime = { workspace = true }
 sp-core = { workspace = true }
+sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-    "sp-runtime/std",
-    "sp-core/std"
+	"sp-runtime/std",
+	"sp-core/std",
 ]

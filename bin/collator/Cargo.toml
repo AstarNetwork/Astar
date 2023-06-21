@@ -92,8 +92,8 @@ shibuya-runtime = { workspace = true, features = ["std"] }
 shiden-runtime = { workspace = true, features = ["std"] }
 
 # astar pallets dependencies
-pallet-block-reward = { workspace = true }
 astar-core-primitives = { workspace = true }
+pallet-block-reward = { workspace = true }
 
 # frame dependencies
 frame-system = { workspace = true, features = ["std"] }

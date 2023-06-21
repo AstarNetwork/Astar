@@ -62,6 +62,7 @@ frame-system-rpc-runtime-api = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 
 # Astar pallets
+astar-core-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
@@ -73,7 +74,6 @@ pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
-astar-core-primitives = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }

@@ -94,6 +94,7 @@ pallet-collective = { workspace = true, optional = true }
 frame-try-runtime = { workspace = true, optional = true }
 
 # Astar pallets
+astar-core-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-custom-signatures = { workspace = true }
@@ -106,7 +107,6 @@ pallet-evm-precompile-xcm = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 xcm-primitives = { workspace = true }
-astar-core-primitives = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -201,7 +201,7 @@ std = [
 	"pallet-xc-asset-config/std",
 	"xcm-primitives/std",
 	"substrate-wasm-builder",
-	"astar-core-primitives/std"
+	"astar-core-primitives/std",
 ]
 runtime-benchmarks = [
 	'frame-benchmarking',

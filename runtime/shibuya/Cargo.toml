@@ -97,6 +97,7 @@ orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 
 # Astar pallets
+astar-core-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
@@ -113,7 +114,6 @@ pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
 xcm-primitives = { workspace = true }
-astar-core-primitives = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
