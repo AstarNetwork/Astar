@@ -13,7 +13,7 @@ jobs:
 
   fmt:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v3
@@ -41,7 +41,7 @@ jobs:
 
   clippy:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
       uses: actions/checkout@v3
@@ -69,7 +69,7 @@ jobs:
 
   check-license:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v3
