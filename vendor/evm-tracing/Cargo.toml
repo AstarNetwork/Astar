@@ -1,0 +1,22 @@
+[package]
+name = "moonbeam-client-evm-tracing"
+authors = ["PureStake"]
+edition = "2021"
+homepage = "https://moonbeam.network"
+license = "GPL-3.0-only"
+repository = "https://github.com/PureStake/moonbeam/"
+version = "0.1.0"
+
+[dependencies]
+ethereum-types = { workspace = true, features = ["std"] }
+hex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Moonbeam
+evm-tracing-events = { workspace = true, features = ["std"] }
+moonbeam-rpc-primitives-debug = { workspace = true }
+
+# Substrate
+parity-scale-codec = { workspace = true }
+sp-std = { workspace = true, features = ["std"] }

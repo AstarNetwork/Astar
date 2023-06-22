@@ -20,9 +20,9 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 
 # runtime
-astar-runtime = { path = "../../runtime/astar", optional = true }
-shibuya-runtime = { path = "../../runtime/shibuya", optional = true }
-shiden-runtime = { path = "../../runtime/shiden", optional = true }
+astar-runtime = { workspace = true, features = ["std"], optional = true }
+shibuya-runtime = { workspace = true, features = ["std"], optional = true }
+shiden-runtime = { workspace = true, features = ["std"], optional = true }
 
 [features]
 default = ["std"]

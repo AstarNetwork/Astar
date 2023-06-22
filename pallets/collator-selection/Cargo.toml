@@ -1,0 +1,64 @@
+[package]
+description = "Simple staking pallet with a fixed stake."
+license = "Apache-2.0"
+name = "pallet-collator-selection"
+readme = "README.md"
+version = "3.3.2"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+log = { workspace = true }
+parity-scale-codec = { workspace = true }
+rand = { workspace = true, features = ["std_rng"] }
+scale-info = { workspace = true }
+serde = { workspace = true }
+
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-authorship = { workspace = true }
+pallet-session = { workspace = true }
+sp-runtime = { workspace = true }
+sp-staking = { workspace = true }
+sp-std = { workspace = true }
+
+frame-benchmarking = { workspace = true, optional = true }
+
+[dev-dependencies]
+pallet-aura = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-timestamp = { workspace = true }
+sp-consensus-aura = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-tracing = { workspace = true }
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+]
+std = [
+	"parity-scale-codec/std",
+	"log/std",
+	"scale-info/std",
+	"rand/std",
+	"sp-runtime/std",
+	"sp-staking/std",
+	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+	"frame-benchmarking/std",
+	"pallet-authorship/std",
+	"pallet-session/std",
+	"pallet-aura/std",
+]
+
+try-runtime = ["frame-support/try-runtime"]
