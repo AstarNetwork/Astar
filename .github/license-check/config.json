@@ -3,6 +3,19 @@
         "include": [
             "**/*.rs"
         ],
+        "exclude": [
+            "pallets/collator-selection/**",
+            "pallets/custom-signatures/**",
+            "precompiles/utils/**",
+            "vendor/**"
+        ],
         "license": "./.github/license-check/headers/HEADER-GNUv3"
+    },
+    {
+        "include": [
+            "pallets/collator-selection/*.rs",
+            "pallets/custom-signatures/*.rs"
+        ],
+        "license": "./.github/license-check/headers/HEADER-APACHE2"
     }
 ]

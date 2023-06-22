@@ -1,0 +1,31 @@
+[package]
+name = "pallet-contracts-migration"
+version = "1.0.0"
+license = "Apache-2.0"
+description = "FRAME pallet for managing multi-block pallet contracts storage migration"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-contracts = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-contracts/std",
+]
+try-runtime = ["frame-support/try-runtime"]

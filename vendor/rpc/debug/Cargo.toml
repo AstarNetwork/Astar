@@ -1,0 +1,39 @@
+[package]
+name = "moonbeam-rpc-debug"
+authors = ["PureStake"]
+edition = "2021"
+homepage = "https://moonbeam.network"
+license = "GPL-3.0-only"
+repository = "https://github.com/PureStake/moonbeam/"
+version = "0.1.0"
+
+[dependencies]
+futures = { workspace = true, features = ["compat"] }
+hex-literal = { workspace = true }
+jsonrpsee = { workspace = true, features = ["macros", "server"] }
+tokio = { workspace = true, features = ["sync", "time"] }
+
+# Moonbeam
+moonbeam-client-evm-tracing = { workspace = true }
+moonbeam-rpc-core-debug = { workspace = true }
+moonbeam-rpc-core-types = { workspace = true }
+moonbeam-rpc-primitives-debug = { workspace = true }
+
+# Substrate
+sc-client-api = { workspace = true }
+sc-utils = { workspace = true }
+sp-api = { workspace = true, features = ["std"] }
+sp-block-builder = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-core = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }
+
+# Frontier
+ethereum = { workspace = true, features = ["with-codec"] }
+ethereum-types = { workspace = true, features = ["std"] }
+fc-consensus = { workspace = true }
+fc-db = { workspace = true }
+fc-rpc = { workspace = true, features = ["rpc-binary-search-estimate"] }
+fc-storage = { workspace = true }
+fp-rpc = { workspace = true }

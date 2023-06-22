@@ -1,0 +1,40 @@
+[package]
+name = "xcm-primitives"
+version = "0.4.1"
+description = "Common XCM primitives used by runtimes"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+
+# third-party dependencies
+log = { workspace = true }
+
+# Substrate dependencies
+frame-support = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# XCM dependencies
+xcm = { workspace = true }
+xcm-builder = { workspace = true }
+xcm-executor = { workspace = true }
+
+# Astar pallets
+pallet-xc-asset-config = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"log/std",
+	"frame-support/std",
+	"sp-std/std",
+	"sp-runtime/std",
+	"xcm/std",
+	"xcm-builder/std",
+	"xcm-executor/std",
+	"pallet-xc-asset-config/std",
+]
+runtime-benchmarks = ["xcm-builder/runtime-benchmarks"]

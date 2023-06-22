@@ -1,0 +1,44 @@
+name: Tests
+on:
+  push:
+    branches:
+    - '**'
+    tags-ignore:
+    - v[0-9]+.[0-9]+.[0-9]+*
+  workflow_dispatch:
+jobs:
+  clean-up-actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        # Only cancel non-master branch runs
+        if: ${{ github.ref != 'refs/heads/master' }}
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
+  test-runtimes:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        df -h
+
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Runtime integration tests
+      run: make test-runtimes
