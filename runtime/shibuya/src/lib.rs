@@ -535,6 +535,27 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
+    pub const NominationPoolsStakingPalletId: PalletId = PalletId(*b"py/npstg");
+}
+
+impl pallet_nomination_pools_staking::Config for Runtime {
+    type Currency = Balances;
+    type BlockPerEra = BlockPerEra;
+    type SmartContract = SmartContract<AccountId>;
+    type RegisterDeposit = RegisterDeposit;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_nomination_pools_staking::weights::SubstrateWeight<Runtime>;
+    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = NominationPoolsStakingPalletId;
+    type MaxUnlockingChunks = MaxUnlockingChunks;
+    type UnbondingPeriod = UnbondingPeriod;
+    type MinimumRemainingAmount = MinimumRemainingAmount;
+    type MaxEraStakeValues = MaxEraStakeValues;
+    type UnregisteredDappRewardRetention = ConstU32<10>;
+}
+
+parameter_types! {
     pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
     pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
@@ -684,6 +705,7 @@ impl pallet_contracts::Config for Runtime {
         DappsStakingExtension<Self>,
         XvmExtension<Self>,
         AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
+        NominationPoolsStakingExtension<Self>,
     );
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
@@ -1258,6 +1280,7 @@ construct_runtime!(
         DappsStaking: pallet_dapps_staking = 34,
         BlockReward: pallet_block_reward = 35,
         Assets: pallet_assets = 36,
+        NominationPoolsStaking: pallet_nomination_pools_staking = 37,
 
         Authorship: pallet_authorship = 40,
         CollatorSelection: pallet_collator_selection = 41,

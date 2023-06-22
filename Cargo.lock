@@ -6142,6 +6142,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "nomination-pools-staking-chain-extension-types"
+version = "1.1.0"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "normalize-line-endings"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6712,6 +6723,25 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapps-staking",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-chain-extension-nomination-pools-staking"
+version = "1.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "nomination-pools-staking-chain-extension-types",
+ "num-traits",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "pallet-nomination-pools-staking",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -7497,6 +7527,31 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-nomination-pools-staking"
+version = "3.9.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "pallet-xcm 0.9.39",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
 ]
 
 [[package]]
@@ -11926,6 +11981,7 @@ dependencies = [
  "pallet-block-reward",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
+ "pallet-chain-extension-nomination-pools-staking",
  "pallet-chain-extension-xvm",
  "pallet-collator-selection",
  "pallet-collective",
@@ -11953,6 +12009,7 @@ dependencies = [
  "pallet-identity",
  "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
+ "pallet-nomination-pools-staking",
  "pallet-preimage",
  "pallet-proxy",
  "pallet-scheduler",
