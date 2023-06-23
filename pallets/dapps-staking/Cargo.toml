@@ -21,6 +21,7 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-staking = { workspace = true }
 sp-std = { workspace = true }
+astar-primitives = {workspace = true}
 
 frame-benchmarking = { workspace = true, optional = true }
 
@@ -48,11 +49,13 @@ std = [
 	"pallet-timestamp/std",
 	"sp-staking/std",
 	"frame-benchmarking?/std",
+	"astar-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]

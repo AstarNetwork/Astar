@@ -6925,6 +6925,7 @@ dependencies = [
 name = "pallet-dapps-staking"
 version = "3.9.0"
 dependencies = [
+ "astar-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

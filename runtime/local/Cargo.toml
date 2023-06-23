@@ -176,6 +176,7 @@ runtime-benchmarks = [
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
