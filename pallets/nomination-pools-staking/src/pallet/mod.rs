@@ -251,16 +251,14 @@ pub mod pallet {
 
             let mut calls = Vec::new();
 
-            calls.push(Instruction::WithdrawAsset(
-                (Here, 10000000000000u128).into(),
-            ));
+            calls.push(Instruction::WithdrawAsset((Here, 10_000_000u64).into()));
             calls.push(Instruction::BuyExecution {
-                fees: (Here, 10000000000000u128).into(),
+                fees: (Here, 10_000_000u64).into(),
                 weight_limit: xcm::v3::WeightLimit::Unlimited,
             });
             calls.push(Instruction::Transact {
                 origin_kind: xcm::v3::OriginKind::Native,
-                require_weight_at_most: Weight::from_parts(4_000_0000u64, 1024 * 1024),
+                require_weight_at_most: Weight::from_parts(4_000_000u64, 1024 * 1024),
                 call: create_nomination_pool.encode().into(),
             });
 
