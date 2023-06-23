@@ -229,6 +229,7 @@ pub mod pallet {
         pub fn create_nomination_pool(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
+            value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
 
@@ -242,7 +243,7 @@ pub mod pallet {
             let staker_multi_address = T::Lookup::unlookup(staker.clone());
 
             let create_nomination_pool: NominationPoolsCall<T> = NominationPoolsCall::Create(
-                10000u32.into(),
+                value,
                 staker_multi_address.clone(),
                 staker_multi_address.clone(),
                 staker_multi_address.clone(),

@@ -21,7 +21,7 @@ use sp_runtime::DispatchError;
 
 use frame_support::traits::Currency;
 use frame_system::RawOrigin;
-use nomination_pools_staking_chain_extension_types::{NPSError, NominationPoolStakingValueInput};
+use nomination_pools_staking_chain_extension_types::{NPSError, NominationPoolsStakingValueInput};
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, SysConfig,
 };
@@ -32,16 +32,16 @@ type BalanceOf<T> = <<T as pallet_nomination_pools_staking::Config>::Currency as
     <T as frame_system::Config>::AccountId,
 >>::Balance;
 
-enum NominationPoolStakingFunc {
-    BondAndStake,
+enum NominationPoolsStakingFunc {
+    CreateNominationPool,
 }
 
-impl TryFrom<u16> for NominationPoolStakingFunc {
+impl TryFrom<u16> for NominationPoolsStakingFunc {
     type Error = DispatchError;
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
-            1 => Ok(NominationPoolStakingFunc::BondAndStake),
+            1 => Ok(NominationPoolsStakingFunc::CreateNominationPool),
             _ => Err(DispatchError::Other(
                 "NominationPoolsStakingExtension: Unimplemented func_id",
             )),
@@ -72,8 +72,8 @@ where
         let mut env = env.buf_in_buf_out();
 
         match func_id {
-            NominationPoolStakingFunc::BondAndStake => {
-                let args: NominationPoolStakingValueInput<BalanceOf<T>> = env.read_as()?;
+            NominationPoolsStakingFunc::CreateNominationPool => {
+                let args: NominationPoolsStakingValueInput<BalanceOf<T>> = env.read_as()?;
                 let contract = args.contract.into();
 
                 let base_weight =
@@ -89,6 +89,7 @@ where
                 > = pallet_nomination_pools_staking::Pallet::<T>::create_nomination_pool(
                     RawOrigin::Signed(caller).into(),
                     contract,
+                    args.value,
                 );
                 return match call_result {
                     Err(e) => {

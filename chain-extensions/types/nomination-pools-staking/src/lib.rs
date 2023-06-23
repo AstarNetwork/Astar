@@ -23,7 +23,6 @@ use sp_runtime::{DispatchError, ModuleError};
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-#[repr(u32)]
 pub enum NPSError {
     /// Success
     Success = 0,
@@ -43,26 +42,6 @@ impl From<NPSError> for u32 {
     }
 }
 
-// impl From<PausableError> for NPSError {
-//     fn from(pausable: PausableError) -> Self {
-//         match pausable {
-//             PausableError::Paused => NPSError::Custom(String::from("P::Paused")),
-//             PausableError::NotPaused => NPSError::Custom(String::from("P::NotPaused")),
-//         }
-//     }
-// }
-
-// impl ink_env::chain_extension::FromStatusCode for NPSError {
-//     fn from_status_code(status_code: u32) -> Result<(), Self> {
-//         match status_code {
-//             0 => Ok(()),
-//             1 => Err(NPSError::NotEnoughBalance),
-//             99 => Err(NPSError::UnknownError),
-//             _ => Err(NPSError::UnknownError),
-//         }
-//     }
-// }
-
 impl TryFrom<DispatchError> for NPSError {
     type Error = DispatchError;
 
@@ -78,7 +57,7 @@ impl TryFrom<DispatchError> for NPSError {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen)]
-pub struct NominationPoolStakingValueInput<Balance> {
+pub struct NominationPoolsStakingValueInput<Balance> {
     pub contract: [u8; 32],
     pub value: Balance,
 }

@@ -4,7 +4,7 @@ timeout = 1000
 # Used to start 4 validator nodes and 2 collator nodes for a single parachain.
 
 [relaychain]
-default_command = "./polkadot"
+default_command = "../polkadot/target/release/polkadot"
 default_args = [ "-l=parachain=debug,xcm=trace" ]
 chain = "rococo-local"
 
@@ -16,13 +16,13 @@ chain = "rococo-local"
   name = "bob"
   validator = true
 
-  [[relaychain.nodes]]
-  name = "charlie"
-  validator = true
+  # [[relaychain.nodes]]
+  # name = "charlie"
+  # validator = true
 
-  [[relaychain.nodes]]
-  name = "dave"
-  validator = true
+  # [[relaychain.nodes]]
+  # name = "dave"
+  # validator = true
 
 [[parachains]]
 # Right now this has to be 2000 but soon we might be able to use arbitrary para-id
@@ -33,11 +33,11 @@ cumulus_based = true
 
   [[parachains.collators]]
   name = "collator1"
-  command = "./astar-collator"
+  command = "./target/release/astar-collator"
   args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
   
 
-  [[parachains.collators]]
-  name = "collator2"
-  command = "./astar-collator"
-  args = [ "--enable-evm-rpc" ]
+  # [[parachains.collators]]
+  # name = "collator2"
+  # command = "/Users/snowmead/opt/projects/Astar/bin/collator"
+  # args = [ "--enable-evm-rpc" ]
