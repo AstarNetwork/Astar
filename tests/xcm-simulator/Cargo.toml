@@ -31,6 +31,7 @@ sp-std = { workspace = true }
 sp-tracing = { workspace = true }
 
 # Custom Astar inclusions
+astar-primitives = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 
