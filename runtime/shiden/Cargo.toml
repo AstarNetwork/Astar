@@ -113,7 +113,6 @@ pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
-xcm-primitives = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -208,7 +207,6 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
-	"xcm-primitives/std",
 	"substrate-wasm-builder",
 	"orml-xtokens/std",
 	"orml-traits/std",

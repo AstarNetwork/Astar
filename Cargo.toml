@@ -12,7 +12,7 @@ members = [
 	"pallets/*",
 	"precompiles/*",
 
-	"primitives/astar-primitives",
+	"primitives",
 
 	"chain-extensions/dapps-staking",
 	"chain-extensions/pallet-assets",
@@ -274,9 +274,7 @@ pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features 
 pallet-xvm = { path = "./pallets/pallet-xvm", default-features = false }
 pallet-xcm = { path = "./pallets/pallet-xcm", default-features = false }
 
-xcm-primitives = { path = "./primitives/xcm", default-features = false }
-
-astar-primitives = { path = "./primitives/astar-primitives", default-features = false }
+astar-primitives = { path = "./primitives", default-features = false }
 
 pallet-evm-precompile-assets-erc20 = { path = "./precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-sr25519 = { path = "./precompiles/sr25519", default-features = false }

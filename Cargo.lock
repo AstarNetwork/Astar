@@ -514,8 +514,15 @@ dependencies = [
 name = "astar-primitives"
 version = "0.1.0"
 dependencies = [
+ "frame-support",
+ "log",
+ "pallet-xc-asset-config",
  "sp-core",
  "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -610,7 +617,6 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xcm-primitives",
 ]
 
 [[package]]
@@ -12005,7 +12011,6 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xcm-primitives",
 ]
 
 [[package]]
@@ -12104,7 +12109,6 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xcm-primitives",
 ]
 
 [[package]]
@@ -15300,20 +15304,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "xcm-primitives"
-version = "0.4.1"
-dependencies = [
- "frame-support",
- "log",
- "pallet-xc-asset-config",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-builder",
- "xcm-executor",
-]
-
-[[package]]
 name = "xcm-procedural"
 version = "0.9.39-1"
 source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.39#c22e1c4173bf6966f5d1980f4299f7abe836f0c1"
@@ -15378,7 +15368,6 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xcm-primitives",
  "xcm-simulator",
 ]
 

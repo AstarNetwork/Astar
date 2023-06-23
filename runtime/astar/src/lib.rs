@@ -71,8 +71,8 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+use astar_primitives::xcm::AssetLocationIdConverter;
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
-use xcm_primitives::AssetLocationIdConverter;
 
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;

@@ -21,6 +21,7 @@
 //! Core Astar types.
 //!
 //! These core Astar types are used by the Shiden, Shibuya, Astar and Local runtime.
+pub mod xcm;
 
 use sp_runtime::traits::BlakeTwo256;
 use sp_runtime::{
@@ -54,3 +55,7 @@ pub type Hash = sp_core::H256;
 pub type AssetId = u128;
 /// Index of a transaction in the chain.
 pub type Index = u32;
+/// Block type.
+pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
+/// Index of a transaction in the chain.
+pub type Nonce = u32;

@@ -33,7 +33,6 @@ sp-tracing = { workspace = true }
 # Custom Astar inclusions
 pallet-dapps-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
-xcm-primitives = { workspace = true }
 
 # polkadot deps
 polkadot-primitives = { workspace = true }
@@ -73,7 +72,6 @@ std = [
 	"pallet-xcm/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-assets/std",
-	"xcm-primitives/std",
 	"polkadot-primitives/std",
 	"pallet-dapps-staking/std",
 	"pallet-proxy/std",
