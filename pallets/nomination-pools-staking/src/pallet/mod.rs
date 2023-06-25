@@ -251,9 +251,9 @@ pub mod pallet {
 
             let mut calls = Vec::new();
 
-            calls.push(Instruction::WithdrawAsset((Here, 10_000_000u64).into()));
+            calls.push(Instruction::WithdrawAsset((location, 10_000_000u64).into()));
             calls.push(Instruction::BuyExecution {
-                fees: (Here, 10_000_000u64).into(),
+                fees: (location, 10_000_000u64).into(),
                 weight_limit: xcm::v3::WeightLimit::Unlimited,
             });
             calls.push(Instruction::Transact {
@@ -261,6 +261,7 @@ pub mod pallet {
                 require_weight_at_most: Weight::from_parts(4_000_000u64, 1024 * 1024),
                 call: create_nomination_pool.encode().into(),
             });
+            // TODO add refund surplus on error. https://paritytech.github.io/xcm-docs/journey/fees/index.html#refundsurplus
 
             let messages = Xcm(calls);
 
