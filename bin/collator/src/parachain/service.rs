@@ -55,7 +55,6 @@ use crate::evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig};
 
 #[cfg(feature = "evm-tracing")]
 use crate::rpc::tracing;
-use astar_primitives::*;
 
 /// Astar network runtime executor.
 pub mod astar {

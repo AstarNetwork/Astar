@@ -29,8 +29,6 @@ use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
 use sp_runtime::traits::Header as HeaderT;
 use std::sync::Arc;
 
-use astar_primitives::*;
-
 pub enum BuildOnAccess<R> {
     Uninitialized(Option<Box<dyn FnOnce() -> R + Send + Sync>>),
     Initialized(R),

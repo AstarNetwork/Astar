@@ -17,10 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-use sp_runtime::{
-    traits::{Saturating, Zero},
-    DispatchError,
-};
+use sp_runtime::{traits::Zero, DispatchError};
 
 use dapps_staking_chain_extension_types::{
     DSError, DappsStakingAccountInput, DappsStakingEraInput, DappsStakingNominationInput,
