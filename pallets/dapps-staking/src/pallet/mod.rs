@@ -44,10 +44,6 @@ const STAKING_ID: LockIdentifier = *b"dapstake";
 pub mod pallet {
     use super::*;
 
-    /// The balance type of this pallet.
-    // pub type LockableCurrencyOf<T> =
-    //     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::LockableCurrency;
-
     #[pallet::pallet]
     #[pallet::generate_store(pub(crate) trait Store)]
     pub struct Pallet<T>(PhantomData<T>);

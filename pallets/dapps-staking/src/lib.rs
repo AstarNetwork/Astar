@@ -89,9 +89,6 @@ mod tests_lib;
 pub use pallet::pallet::*;
 pub use weights::WeightInfo;
 
-// pub type BalanceOf<T> =
-//     <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
-
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
