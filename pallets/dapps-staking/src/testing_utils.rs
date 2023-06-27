@@ -18,7 +18,7 @@
 
 use super::{pallet::pallet::Event, *};
 use frame_support::assert_ok;
-use mock::{Balance, EraIndex, *};
+use mock::{EraIndex, *};
 use sp_runtime::{traits::AccountIdConversion, Perbill};
 
 /// Helper struct used to store information relevant to era/contract/staker combination.
