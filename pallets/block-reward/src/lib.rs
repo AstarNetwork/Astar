@@ -77,6 +77,7 @@
 
 pub use pallet::*;
 
+use astar_primitives::Balance;
 use frame_support::pallet_prelude::*;
 use frame_support::{
     log,
@@ -95,7 +96,6 @@ pub mod benchmarking;
 mod mock;
 #[cfg(test)]
 mod tests;
-use astar_primitives::Balance;
 
 pub mod weights;
 pub use weights::WeightInfo;

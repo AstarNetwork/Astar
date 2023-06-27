@@ -158,7 +158,7 @@ benchmarks! {
         let (developer, contract_id) = register_contract::<T>(1)?;
         let stakers = prepare_bond_and_stake::<T>(1, &contract_id, SEED)?;
         let staker = stakers[0].clone();
-        let stake_amount = Balance::max_value() / u128::from(2u32);
+        let stake_amount = Balance::max_value() / 2u128;
 
         DappsStaking::<T>::bond_and_stake(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), stake_amount)?;
         DappsStaking::<T>::unregister(RawOrigin::Root.into(), contract_id.clone())?;
@@ -175,7 +175,7 @@ benchmarks! {
 
         let staker = whitelisted_caller();
         let _ = T::Currency::make_free_balance_be(&staker, Balance::max_value());
-        let amount = Balance::max_value() / u128::from(2u32);
+        let amount = Balance::max_value() / 2u128;
 
     }: _(RawOrigin::Signed(staker.clone()), contract_id.clone(), amount)
     verify {
@@ -189,7 +189,7 @@ benchmarks! {
 
         let staker = whitelisted_caller();
         let _ = T::Currency::make_free_balance_be(&staker, Balance::max_value());
-        let amount = Balance::max_value() / u128::from(2u32);
+        let amount = Balance::max_value() / 2u128;
 
         DappsStaking::<T>::bond_and_stake(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), amount)?;
 
@@ -205,8 +205,8 @@ benchmarks! {
 
         let staker = whitelisted_caller();
         let _ = T::Currency::make_free_balance_be(&staker, Balance::max_value());
-        let stake_amount = Balance::max_value() / u128::from(2u32);
-        let unstake_amount = stake_amount / u128::from(2u32);
+        let stake_amount = Balance::max_value() / 2u128;
+        let unstake_amount = stake_amount / 2u128;
 
         DappsStaking::<T>::bond_and_stake(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), stake_amount)?;
         DappsStaking::<T>::unbond_and_unstake(RawOrigin::Signed(staker.clone()).into(), contract_id, unstake_amount)?;
