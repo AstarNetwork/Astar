@@ -30,6 +30,7 @@ std = [
 	"ethereum-types/std",
 	"ethereum/std",
 	"fp-ethereum/std",
+	"fp-evm/std",
 	"pallet-evm/std",
 	"sp-std/std",
 	"sp-runtime/std",
