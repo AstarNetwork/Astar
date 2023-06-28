@@ -11,28 +11,28 @@ repository.workspace = true
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
-ethereum-types = { workspace = true }
 ethereum = { workspace = true }
+ethereum-types = { workspace = true }
 fp-ethereum = { workspace = true }
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
-sp-std = { workspace = true }
-sp-runtime = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-    "parity-scale-codec/std",
-    "scale-info/std",
-    "ethereum-types/std",
-    "ethereum/std",
-    "fp-ethereum/std",
-    "pallet-evm/std",
-    "sp-std/std",
-    "sp-runtime/std",
-    "frame-support/std",
-    "frame-system/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"ethereum-types/std",
+	"ethereum/std",
+	"fp-ethereum/std",
+	"pallet-evm/std",
+	"sp-std/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
 ]
