@@ -1,0 +1,38 @@
+[package]
+name = "pallet-ethereum-checked"
+version = "0.1.0"
+description = "Pallet for Ethereum like checked transactions"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+ethereum-types = { workspace = true }
+ethereum = { workspace = true }
+fp-ethereum = { workspace = true }
+fp-evm = { workspace = true }
+pallet-evm = { workspace = true }
+
+sp-std = { workspace = true }
+sp-runtime = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "ethereum-types/std",
+    "ethereum/std",
+    "fp-ethereum/std",
+    "pallet-evm/std",
+    "sp-std/std",
+    "sp-runtime/std",
+    "frame-support/std",
+    "frame-system/std",
+]

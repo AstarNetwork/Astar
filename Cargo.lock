@@ -7023,6 +7023,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-ethereum-checked"
+version = "0.1.0"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-ethereum",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-evm",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.39#873d9f5e64387a8b3d6972979e59c63626ab666e"
