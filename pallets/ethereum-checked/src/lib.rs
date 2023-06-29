@@ -112,6 +112,10 @@ fn dummy_rs() -> H256 {
     H256::from_low_u64_be(1u64)
 }
 
+pub trait CheckedEthereumTransact {
+    fn transact(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo;
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -142,10 +146,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
     /// Validate and execute the checked tx.
-    pub fn transact_checked(
-        source: H160,
-        checked_tx: CheckedEthereumTx,
-    ) -> DispatchResultWithPostInfo {
+    fn transact_checked(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
         let chain_id = T::ChainId::get();
         let nonce = Nonce::<T>::get();
         let tx = checked_tx.into_ethereum_tx(Nonce::<T>::get(), chain_id);
@@ -186,5 +187,11 @@ impl<T: Config> Pallet<T> {
             CheckedEthereumTxKind::Xvm => T::XvmTxWeightLimit::get(),
         };
         T::GasWeightMapping::weight_to_gas(weight_limit)
+    }
+}
+
+impl<T: Config> CheckedEthereumTransact for Pallet<T> {
+    fn transact(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
+        Self::transact_checked(source, checked_tx)
     }
 }
