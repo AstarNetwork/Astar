@@ -22,7 +22,8 @@ use super::*;
 use mock::*;
 
 use ethereum::ReceiptV3;
-use frame_support::assert_ok;
+use frame_support::{assert_noop, assert_ok};
+use sp_runtime::DispatchError;
 
 #[test]
 fn transact_works() {
@@ -44,7 +45,7 @@ fn transact_works() {
         ));
         assert_ok!(EthereumChecked::transact(
             RawOrigin::XcmEthereumTx(ALICE).into(),
-            store_tx.clone()
+            store_tx
         ));
         let pending = Ethereum::pending();
         assert_eq!(pending.len(), 2);
@@ -66,6 +67,35 @@ fn transact_works() {
             _ => panic!("unexpected transaction type"),
         }
         assert_eq!(Nonce::<TestRuntime>::get(), U256::from(2));
+    });
+}
+
+#[test]
+fn origin_check_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        let store_tx = XcmEthereumTx {
+            gas_limit: U256::from(1_000_000),
+            action: TransactionAction::Call(contract_address()),
+            value: U256::zero(),
+            // Calling `store(3)`
+            input: hex::decode(
+                "6057361d0000000000000000000000000000000000000000000000000000000000000003",
+            )
+            .unwrap(),
+            maybe_access_list: None,
+        };
+        assert_noop!(
+            EthereumChecked::transact(RuntimeOrigin::signed(ALICE), store_tx.clone()),
+            DispatchError::BadOrigin
+        );
+        assert_noop!(
+            EthereumChecked::transact(RuntimeOrigin::root(), store_tx.clone()),
+            DispatchError::BadOrigin
+        );
+        assert_noop!(
+            EthereumChecked::transact(RuntimeOrigin::none(), store_tx),
+            DispatchError::BadOrigin
+        );
     });
 }
 
