@@ -45,7 +45,8 @@ use frame_support::{
     dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
     pallet_prelude::*,
 };
-use sp_std::prelude::*;
+use frame_system::pallet_prelude::*;
+use sp_std::{marker::PhantomData, prelude::*};
 
 use pallet::*;
 
@@ -110,6 +111,71 @@ impl CheckedEthereumTx {
     }
 }
 
+impl From<XcmEthereumTx> for CheckedEthereumTx {
+    fn from(xcm_tx: XcmEthereumTx) -> Self {
+        let XcmEthereumTx {
+            gas_limit,
+            action,
+            value,
+            input,
+            maybe_access_list,
+        } = xcm_tx;
+        Self {
+            gas_limit,
+            action,
+            value,
+            input,
+            maybe_access_list,
+            kind: CheckedEthereumTxKind::Xcm,
+        }
+    }
+}
+
+/// XCM Ethereum transaction. Used for XCM remote call.
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct XcmEthereumTx {
+    /// Gas limit.
+    pub gas_limit: U256,
+    /// Action type, either `Call` or `Create`.
+    pub action: TransactionAction,
+    /// Amount to transfer.
+    pub value: U256,
+    /// Input of a contract call.
+    pub input: Vec<u8>,
+    /// Optional access list specified in EIP-2930.
+    pub maybe_access_list: Option<Vec<(H160, Vec<H256>)>>,
+}
+
+/// Mapping from `Account` to `H160`.
+pub trait AccountMapping<AccountId> {
+    fn into_h160(account: AccountId) -> H160;
+}
+
+/// Origin for dispatch-able calls.
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub enum RawOrigin<AccountId> {
+    XcmEthereumTx(AccountId),
+}
+
+/// Ensure the origin is with XCM calls.
+pub struct EnsureXcmEthereumTx<AccountId>(PhantomData<AccountId>);
+impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, AccountId>
+    EnsureOrigin<O> for EnsureXcmEthereumTx<AccountId>
+{
+    type Success = AccountId;
+
+    fn try_origin(o: O) -> Result<Self::Success, O> {
+        o.into().map(|o| match o {
+            RawOrigin::XcmEthereumTx(account_id) => account_id,
+        })
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn try_successful_origin() -> Result<O, ()> {
+        Ok(O::from(RawOrigin::XcmEthereumTx(Default::default())))
+    }
+}
+
 /// Dummy signature for all transactions.
 fn dummy_rs() -> H256 {
     H256::from_low_u64_be(1u64)
@@ -139,12 +205,31 @@ pub mod pallet {
 
         /// Validated tx execution.
         type ValidatedTransaction: ValidatedTransaction;
+
+        /// Account mapping.
+        type AccountMapping: AccountMapping<Self::AccountId>;
+
+        /// Origin for `transact` call.
+        type TransactOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
     }
+
+    #[pallet::origin]
+    pub type Origin<T> = RawOrigin<<T as frame_system::Config>::AccountId>;
 
     /// Global nonce for all transactions to avoid hash collision, which is
     /// caused by the same dummy signatures for all transactions.
     #[pallet::storage]
     pub type Nonce<T: Config> = StorageValue<_, U256, ValueQuery>;
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        #[pallet::weight(0)]
+        #[pallet::call_index(0)]
+        pub fn transact(origin: OriginFor<T>, tx: XcmEthereumTx) -> DispatchResultWithPostInfo {
+            let source = T::TransactOrigin::ensure_origin(origin)?;
+            Self::transact_checked(T::AccountMapping::into_h160(source), tx.into())
+        }
+    }
 }
 
 impl<T: Config> Pallet<T> {

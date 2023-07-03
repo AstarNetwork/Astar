@@ -7030,6 +7030,7 @@ dependencies = [
  "ethereum-types",
  "fp-ethereum",
  "fp-evm",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
@@ -7039,6 +7040,7 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

@@ -22,13 +22,14 @@ use super::*;
 use crate as pallet_ethereum_checked;
 
 use frame_support::{
-    construct_runtime, parameter_types,
+    assert_ok, construct_runtime, parameter_types,
     sp_io::TestExternalities,
     traits::{ConstU128, ConstU64, FindAuthor},
     weights::Weight,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{AddressMapping, FeeCalculator};
+use sp_io::hashing::blake2_256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -120,6 +121,24 @@ impl AddressMapping<AccountId32> for MockAddressMapping {
     }
 }
 
+pub struct MockAccountMapping;
+impl AccountMapping<AccountId32> for MockAccountMapping {
+    fn into_h160(account_id: AccountId) -> H160 {
+        if account_id == ALICE {
+            return ALICE_H160;
+        }
+        if account_id == BOB {
+            return BOB_H160;
+        }
+        if account_id == CHARLIE {
+            return CHARLIE_H160;
+        }
+
+        let data = (b"evm:", account_id);
+        return H160::from_slice(&data.using_encoded(blake2_256)[0..20]);
+    }
+}
+
 parameter_types! {
     pub WeightPerGas: Weight = Weight::from_ref_time(1);
     pub const BlockGasLimit: U256 = U256::MAX;
@@ -165,6 +184,8 @@ impl pallet_ethereum_checked::Config for TestRuntime {
     type XvmTxWeightLimit = TxWeightLimit;
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
+    type AccountMapping = MockAccountMapping;
+    type TransactOrigin = EnsureXcmEthereumTx<AccountId32>;
 }
 
 pub(crate) type AccountId = AccountId32;
@@ -189,13 +210,43 @@ construct_runtime!(
         Balances: pallet_balances,
         Evm: pallet_evm,
         Ethereum: pallet_ethereum,
-        EthereumChecked: pallet_ethereum_checked,
+        EthereumChecked: pallet_ethereum_checked::{Pallet, Call, Origin<T>},
     }
 );
 
 pub const ALICE_H160: H160 = H160::repeat_byte(1);
 pub const BOB_H160: H160 = H160::repeat_byte(2);
 pub const CHARLIE_H160: H160 = H160::repeat_byte(3);
+
+/* Testing contract
+
+pragma solidity >=0.8.2 <0.9.0;
+
+contract Storage {
+    uint256 number;
+
+    /**
+     * @dev Store value in variable
+     * @param num value to store
+     */
+    function store(uint256 num) public {
+        number = num;
+    }
+
+    /**
+     * @dev Return value
+     * @return value of 'number'
+     */
+    function retrieve() public view returns (uint256){
+        return number;
+    }
+}
+*/
+const STORAGE_CONTRACT: &str = "608060405234801561001057600080fd5b50610150806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80632e64cec11461003b5780636057361d14610059575b600080fd5b610043610075565b60405161005091906100a1565b60405180910390f35b610073600480360381019061006e91906100ed565b61007e565b005b60008054905090565b8060008190555050565b6000819050919050565b61009b81610088565b82525050565b60006020820190506100b66000830184610092565b92915050565b600080fd5b6100ca81610088565b81146100d557600080fd5b50565b6000813590506100e7816100c1565b92915050565b600060208284031215610103576101026100bc565b5b6000610111848285016100d8565b9150509291505056fea2646970667358221220322c78243e61b783558509c9cc22cb8493dde6925aa5e89a08cdf6e22f279ef164736f6c63430008120033";
+
+pub fn contract_address() -> H160 {
+    H160::from_slice(&hex::decode("dfb975d018f03994a3b943808e3aa0964bd78463").unwrap())
+}
 
 pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
@@ -226,7 +277,25 @@ impl ExtBuilder {
         .unwrap();
 
         let mut ext = TestExternalities::from(t);
-        ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(|| {
+            System::set_block_number(1);
+
+            assert_ok!(Evm::create2(
+                RuntimeOrigin::root(),
+                ALICE_H160,
+                hex::decode(STORAGE_CONTRACT).unwrap(),
+                H256::zero(),
+                U256::zero(),
+                1_000_000,
+                U256::one(),
+                None,
+                Some(U256::zero()),
+                vec![],
+            ));
+            System::assert_last_event(RuntimeEvent::Evm(pallet_evm::Event::Created {
+                address: contract_address(),
+            }));
+        });
         ext
     }
 }

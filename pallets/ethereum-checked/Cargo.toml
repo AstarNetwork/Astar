@@ -17,6 +17,7 @@ fp-ethereum = { workspace = true }
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
+frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-runtime = { workspace = true }
@@ -28,6 +29,7 @@ pallet-balances = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-timestamp = { workspace = true }
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]
@@ -41,6 +43,7 @@ std = [
 	"pallet-evm/std",
 	"sp-std/std",
 	"sp-runtime/std",
+	"sp-io/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
@@ -48,3 +51,10 @@ std = [
 	"pallet-evm/std",
 	"pallet-ethereum/std",
 ]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime"]
