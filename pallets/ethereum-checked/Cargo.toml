@@ -22,6 +22,13 @@ frame-system = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
+[dev-dependencies]
+hex = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-ethereum = { workspace = true }
+pallet-evm = { workspace = true }
+pallet-timestamp = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
@@ -36,4 +43,8 @@ std = [
 	"sp-runtime/std",
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-balances/std",
+	"pallet-timestamp/std",
+	"pallet-evm/std",
+	"pallet-ethereum/std",
 ]

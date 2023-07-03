@@ -49,6 +49,9 @@ use sp_std::prelude::*;
 
 use pallet::*;
 
+mod mock;
+mod tests;
+
 //TODO: move type definitions to primitives crate
 
 /// Transaction kind.
