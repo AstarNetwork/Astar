@@ -864,15 +864,14 @@ impl pallet_evm_chain_id::Config for Runtime {}
 
 parameter_types! {
     pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
-    // Maximum length (in bytes) of revert message to include in Executed event
-    pub const ExtraDataLength: u32 = 30;
 }
 
 impl pallet_ethereum::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
     type PostLogContent = PostBlockAndTxnHashes;
-    type ExtraDataLength = ExtraDataLength;
+    // Maximum length (in bytes) of revert message to include in Executed event
+    type ExtraDataLength = ConstU32<30>;
 }
 
 parameter_types! {
