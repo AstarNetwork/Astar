@@ -99,8 +99,7 @@ fn no_hash_collision() {
             ));
         }
 
-        let pending = Ethereum::pending();
-        let mut tx_hashes = pending
+        let mut tx_hashes = Ethereum::pending()
             .iter()
             .map(|(tx, _, _)| tx.hash())
             .collect::<Vec<_>>();

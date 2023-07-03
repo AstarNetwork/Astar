@@ -223,8 +223,9 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(0)]
         #[pallet::call_index(0)]
+        //TODO: weight
+        #[pallet::weight(0)]
         pub fn transact(origin: OriginFor<T>, tx: XcmEthereumTx) -> DispatchResultWithPostInfo {
             let source = T::TransactOrigin::ensure_origin(origin)?;
             Self::transact_checked(T::AccountMapping::into_h160(source), tx.into())
