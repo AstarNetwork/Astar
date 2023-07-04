@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "5.9.0"
+version = "5.11.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -86,6 +86,11 @@ xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
+# orml dependencies
+orml-traits = { workspace = true }
+orml-xcm-support = { workspace = true }
+orml-xtokens = { workspace = true }
+
 # benchmarking
 array-bytes = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
@@ -101,10 +106,10 @@ pallet-collator-selection = { workspace = true }
 pallet-custom-signatures = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
+pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
-pallet-precompile-dapps-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 xcm-primitives = { workspace = true }
@@ -160,7 +165,7 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-dapps-staking/std",
-	"pallet-precompile-dapps-staking/std",
+	"pallet-evm-precompile-dapps-staking/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
@@ -204,6 +209,9 @@ std = [
 	"pallet-xc-asset-config/std",
 	"xcm-primitives/std",
 	"substrate-wasm-builder",
+	"orml-xtokens/std",
+	"orml-traits/std",
+	"orml-xcm-support/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -261,6 +269,7 @@ try-runtime = [
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-state-trie-migration/try-runtime",
+	"orml-xtokens/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

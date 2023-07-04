@@ -1,9 +1,19 @@
 name: Static Analysis
 on: [push, workflow_dispatch]
 jobs:
+  clean-up-actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        # Only cancel non-master branch runs
+        if: ${{ github.ref != 'refs/heads/master' }}
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ github.token }}
+
   fmt:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v3
@@ -31,13 +41,19 @@ jobs:
 
   clippy:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
       uses: actions/checkout@v3
 
     - name: Install deps
       run: sudo apt -y install protobuf-compiler
+
+    - name: free disk space
+      run: |
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        sudo apt clean
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -52,12 +68,12 @@ jobs:
 
   check-license:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v3
 
-      - name: Check license    
+      - name: Check license
         uses: viperproject/check-license-header@v2
         with:
           path: ./

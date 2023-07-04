@@ -1,0 +1,58 @@
+[package]
+name = "pallet-xvm"
+version = "0.2.1"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+impl-trait-for-tuples = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true, optional = true }
+
+# Substrate
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# Benchmarks
+frame-benchmarking = { workspace = true, optional = true }
+
+# EVM support 
+pallet-evm = { workspace = true, optional = true }
+
+# Substrate WASM VM support
+pallet-contracts = { workspace = true, optional = true }
+
+[dev-dependencies]
+
+[features]
+default = ["std"]
+evm = [
+	"pallet-evm",
+]
+wasm = [
+	"pallet-contracts",
+]
+std = [
+	"parity-scale-codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-contracts/std",
+	"pallet-evm/std",
+	"scale-info/std",
+	"serde",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
+]
+
+runtime-benchmarks = [
+	"frame-benchmarking",
+]
+try-runtime = ["frame-support/try-runtime"]

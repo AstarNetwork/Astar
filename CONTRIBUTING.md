@@ -12,10 +12,6 @@ We welcome any types of contributions that can improve the project/network in an
 
 The Astar Network project uses GitHub as the main source control hosting service. Most forms of communication regarding changes to the code will be done within the issue board of the repository.
 
-The core of Astar Network codebase is split into two repositories:
-* [Astar](https://github.com/AstarNetwork/Astar)
-* [astar-frame](https://github.com/AstarNetwork/astar-frame)
-
 ### Opening an Issue
 
 Contributions within GitHub can take on the following forms:
@@ -32,7 +28,7 @@ In short:
 
 1. Open an issue regarding a bug fix or feature request (fill in our issue templates)
 2. Briefly describe how you plan to make changes to the code
-3. Fork the current default branch on _Astar_ or _astar-frame_ or both (depending on where you need to make changes)
+3. Fork the current default branch on _Astar_.
 4. Open a pull request to the default branch (fill in our pull request template) and add the appropriate label.
 5. Ensure all workflow checks have passed
 6. Wait for the maintainers approval or change requests
@@ -75,7 +71,7 @@ The expected flow is:
 
 ### Contributor Licenses
 
-By contributing, you agree that your contributions will be licensed under the [GNU General Public License v3.0](https://github.com/AstarNetwork/astar-frame/blob/polkadot-v0.9.19/LICENSE) as is with the Astar source code. If you have any concerns regarding this matter, please contact the maintainer.
+By contributing, you agree that your contributions will be licensed under the [GNU General Public License v3.0](https://github.com/AstarNetwork/Astar/blob/master/LICENSE) as is with the Astar source code. If you have any concerns regarding this matter, please contact the maintainer.
 
 ## Community Contribution
 
