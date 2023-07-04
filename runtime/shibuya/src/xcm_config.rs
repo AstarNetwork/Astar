@@ -51,7 +51,7 @@ use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
-use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
+use astar_primitives::xcm::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
 
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Rococo);

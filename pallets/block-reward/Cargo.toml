@@ -12,6 +12,7 @@ repository.workspace = true
 parity-scale-codec = { workspace = true }
 serde = { workspace = true }
 
+astar-primitives = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 scale-info = { workspace = true }
@@ -38,11 +39,13 @@ std = [
 	"frame-system/std",
 	"pallet-timestamp/std",
 	"pallet-balances/std",
+	"astar-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]

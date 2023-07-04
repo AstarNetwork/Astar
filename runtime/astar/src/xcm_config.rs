@@ -45,7 +45,7 @@ use xcm_executor::{
 };
 
 // Astar imports
-use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
+use astar_primitives::xcm::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
 
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Polkadot);

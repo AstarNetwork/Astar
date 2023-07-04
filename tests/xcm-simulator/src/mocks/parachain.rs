@@ -65,7 +65,7 @@ use xcm_executor::{
     XcmExecutor,
 };
 
-use xcm_primitives::{
+use astar_primitives::xcm::{
     AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 

@@ -97,6 +97,7 @@ orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 
 # Astar pallets
+astar-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
@@ -112,7 +113,6 @@ pallet-evm-precompile-xvm = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
-xcm-primitives = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -228,12 +228,12 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
-	"xcm-primitives/std",
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
 	"orml-xtokens/std",
 	"orml-traits/std",
 	"orml-xcm-support/std",
+	"astar-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -254,6 +254,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
