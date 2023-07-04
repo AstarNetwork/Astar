@@ -16,8 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//TODO: update docstring
-
 //! # Ethereum Checked Pallet
 //!
 //! ## Overview
@@ -26,6 +24,16 @@
 //! like XCM remote call, cross-VM call, etc.
 //!
 //! ## Interface
+//!
+//! ### Dispatch-able calls
+//!
+//! - `transact`: execute checked Ethereum tx. Similar to `pallet_ethereum::Transact`, but
+//!  is only for XCM remote call.
+//!
+//! ### Implementation
+//!
+//! - Implements `CheckedEthereumTransact` trait.
+//!   - `transact`: execute checked Ethereum tx. Use it for cross-VM call.
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
