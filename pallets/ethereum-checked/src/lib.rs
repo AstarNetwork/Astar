@@ -86,10 +86,8 @@ pub struct CheckedEthereumTx {
     pub value: U256,
     /// Input of a contract call.
     pub input: Vec<u8>,
-    /// Optional access list specified in EIP-2930.
+    /// Optional access list, specified in EIP-2930.
     pub maybe_access_list: Option<Vec<(H160, Vec<H256>)>>,
-    /// Transaction kind. For instance, XCM or XVM.
-    pub kind: CheckedEthereumTxKind,
 }
 
 impl CheckedEthereumTx {
@@ -120,41 +118,6 @@ impl CheckedEthereumTx {
             s: dummy_rs(),
         })
     }
-}
-
-impl From<XcmEthereumTx> for CheckedEthereumTx {
-    fn from(xcm_tx: XcmEthereumTx) -> Self {
-        let XcmEthereumTx {
-            gas_limit,
-            action,
-            value,
-            input,
-            maybe_access_list,
-        } = xcm_tx;
-        Self {
-            gas_limit,
-            action,
-            value,
-            input,
-            maybe_access_list,
-            kind: CheckedEthereumTxKind::Xcm,
-        }
-    }
-}
-
-/// XCM Ethereum transaction. Used for XCM remote call.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct XcmEthereumTx {
-    /// Gas limit.
-    pub gas_limit: U256,
-    /// Action type, either `Call` or `Create`.
-    pub action: TransactionAction,
-    /// Amount to transfer.
-    pub value: U256,
-    /// Input of a contract call.
-    pub input: Vec<u8>,
-    /// Optional access list specified in EIP-2930.
-    pub maybe_access_list: Option<Vec<(H160, Vec<H256>)>>,
 }
 
 /// Mapping from `Account` to `H160`.
@@ -194,8 +157,11 @@ fn dummy_rs() -> H256 {
     H256::from_low_u64_be(1u64)
 }
 
+/// Transact an checked Ethereum transaction. Similar to `pallet_ethereum::Transact` but
+/// doesn't require tx signature.
 pub trait CheckedEthereumTransact {
-    fn transact(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo;
+    /// Transact an checked Ethereum transaction in XVM.
+    fn xvm_transact(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo;
 }
 
 #[frame_support::pallet]
@@ -242,16 +208,24 @@ pub mod pallet {
             // `Nonce` storage read 1, write 1.
             weight_limit.saturating_add(T::DbWeight::get().reads_writes(1, 1))
         })]
-        pub fn transact(origin: OriginFor<T>, tx: XcmEthereumTx) -> DispatchResultWithPostInfo {
+        pub fn transact(origin: OriginFor<T>, tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
             let source = T::TransactOrigin::ensure_origin(origin)?;
-            Self::transact_checked(T::AccountMapping::into_h160(source), tx.into())
+            Self::do_transact(
+                T::AccountMapping::into_h160(source),
+                tx.into(),
+                CheckedEthereumTxKind::Xcm,
+            )
         }
     }
 }
 
 impl<T: Config> Pallet<T> {
     /// Validate and execute the checked tx.
-    fn transact_checked(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
+    fn do_transact(
+        source: H160,
+        checked_tx: CheckedEthereumTx,
+        tx_kind: CheckedEthereumTxKind,
+    ) -> DispatchResultWithPostInfo {
         let chain_id = T::ChainId::get();
         let nonce = Nonce::<T>::get();
         let tx = checked_tx.into_ethereum_tx(Nonce::<T>::get(), chain_id);
@@ -261,7 +235,7 @@ impl<T: Config> Pallet<T> {
         let _ = CheckEvmTransaction::<T::InvalidEvmTransactionError>::new(
             CheckEvmTransactionConfig {
                 evm_config: T::config(),
-                block_gas_limit: U256::from(Self::block_gas_limit(&checked_tx.kind)),
+                block_gas_limit: U256::from(Self::block_gas_limit(&tx_kind)),
                 base_fee: U256::zero(),
                 chain_id,
                 is_transactional: true,
@@ -296,7 +270,7 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> CheckedEthereumTransact for Pallet<T> {
-    fn transact(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
-        Self::transact_checked(source, checked_tx)
+    fn xvm_transact(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
+        Self::do_transact(source, checked_tx, CheckedEthereumTxKind::Xvm)
     }
 }

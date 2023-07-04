@@ -28,7 +28,7 @@ use sp_runtime::DispatchError;
 #[test]
 fn transact_works() {
     ExtBuilder::default().build().execute_with(|| {
-        let store_tx = XcmEthereumTx {
+        let store_tx = CheckedEthereumTx {
             gas_limit: U256::from(1_000_000),
             action: TransactionAction::Call(contract_address()),
             value: U256::zero(),
@@ -73,7 +73,7 @@ fn transact_works() {
 #[test]
 fn origin_check_works() {
     ExtBuilder::default().build().execute_with(|| {
-        let store_tx = XcmEthereumTx {
+        let store_tx = CheckedEthereumTx {
             gas_limit: U256::from(1_000_000),
             action: TransactionAction::Call(contract_address()),
             value: U256::zero(),
@@ -112,18 +112,17 @@ fn no_hash_collision() {
             )
             .unwrap(),
             maybe_access_list: None,
-            kind: CheckedEthereumTxKind::Xcm,
         };
         for _ in 0..5 {
-            assert_ok!(EthereumChecked::transact_checked(
-                ALICE_H160,
+            assert_ok!(EthereumChecked::transact(
+                RawOrigin::XcmEthereumTx(ALICE).into(),
                 store_tx.clone()
             ));
-            assert_ok!(EthereumChecked::transact_checked(
+            assert_ok!(<EthereumChecked as CheckedEthereumTransact>::xvm_transact(
                 BOB_H160,
                 store_tx.clone()
             ));
-            assert_ok!(EthereumChecked::transact_checked(
+            assert_ok!(<EthereumChecked as CheckedEthereumTransact>::xvm_transact(
                 CHARLIE_H160,
                 store_tx.clone()
             ));
