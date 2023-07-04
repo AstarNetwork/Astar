@@ -24,7 +24,7 @@ use crate::Pallet as DappsStaking;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::{Get, OnFinalize, OnInitialize};
 use frame_system::{Pallet as System, RawOrigin};
-use sp_runtime::traits::{Bounded, One, TrailingZeroInput};
+use sp_runtime::traits::{One, TrailingZeroInput};
 
 const SEED: u32 = 9000;
 const STAKER_BLOCK_REWARD: u32 = 1234u32;
@@ -94,7 +94,7 @@ fn register_contract<T: Config>(
 ) -> Result<(T::AccountId, T::SmartContract), &'static str> {
     let developer: T::AccountId = account("developer", index.into(), SEED);
     let smart_contract = smart_contract::<T>(index);
-    T::Currency::make_free_balance_be(&developer, BalanceOf::<T>::max_value());
+    T::Currency::make_free_balance_be(&developer, Balance::max_value());
     DappsStaking::<T>::register(
         RawOrigin::Root.into(),
         developer.clone(),
@@ -119,7 +119,7 @@ fn prepare_bond_and_stake<T: Config>(
     for id in 0..number_of_stakers {
         let staker_acc: T::AccountId = account("pre_staker", id, seed);
         stakers.push(staker_acc.clone());
-        T::Currency::make_free_balance_be(&staker_acc, BalanceOf::<T>::max_value());
+        T::Currency::make_free_balance_be(&staker_acc, Balance::max_value());
 
         DappsStaking::<T>::bond_and_stake(
             RawOrigin::Signed(staker_acc).into(),
@@ -137,7 +137,7 @@ benchmarks! {
         initialize::<T>();
         let developer_id = whitelisted_caller();
         let contract_id = T::SmartContract::default();
-        T::Currency::make_free_balance_be(&developer_id, BalanceOf::<T>::max_value());
+        T::Currency::make_free_balance_be(&developer_id, Balance::max_value());
     }: _(RawOrigin::Root, developer_id.clone(), contract_id.clone())
     verify {
         assert_last_event::<T>(Event::<T>::NewContract(developer_id, contract_id).into());
@@ -158,7 +158,7 @@ benchmarks! {
         let (developer, contract_id) = register_contract::<T>(1)?;
         let stakers = prepare_bond_and_stake::<T>(1, &contract_id, SEED)?;
         let staker = stakers[0].clone();
-        let stake_amount = BalanceOf::<T>::max_value() / 2u32.into();
+        let stake_amount = Balance::max_value() / 2u128;
 
         DappsStaking::<T>::bond_and_stake(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), stake_amount)?;
         DappsStaking::<T>::unregister(RawOrigin::Root.into(), contract_id.clone())?;
@@ -174,8 +174,8 @@ benchmarks! {
         let (_, contract_id) = register_contract::<T>(1)?;
 
         let staker = whitelisted_caller();
-        let _ = T::Currency::make_free_balance_be(&staker, BalanceOf::<T>::max_value());
-        let amount = BalanceOf::<T>::max_value() / 2u32.into();
+        let _ = T::Currency::make_free_balance_be(&staker, Balance::max_value());
+        let amount = Balance::max_value() / 2u128;
 
     }: _(RawOrigin::Signed(staker.clone()), contract_id.clone(), amount)
     verify {
@@ -188,8 +188,8 @@ benchmarks! {
         let (_, contract_id) = register_contract::<T>(1)?;
 
         let staker = whitelisted_caller();
-        let _ = T::Currency::make_free_balance_be(&staker, BalanceOf::<T>::max_value());
-        let amount = BalanceOf::<T>::max_value() / 2u32.into();
+        let _ = T::Currency::make_free_balance_be(&staker, Balance::max_value());
+        let amount = Balance::max_value() / 2u128;
 
         DappsStaking::<T>::bond_and_stake(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), amount)?;
 
@@ -204,9 +204,9 @@ benchmarks! {
         let (_, contract_id) = register_contract::<T>(1)?;
 
         let staker = whitelisted_caller();
-        let _ = T::Currency::make_free_balance_be(&staker, BalanceOf::<T>::max_value());
-        let stake_amount = BalanceOf::<T>::max_value() / 2u32.into();
-        let unstake_amount = stake_amount / 2u32.into();
+        let _ = T::Currency::make_free_balance_be(&staker, Balance::max_value());
+        let stake_amount = Balance::max_value() / 2u128;
+        let unstake_amount = stake_amount / 2u128;
 
         DappsStaking::<T>::bond_and_stake(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), stake_amount)?;
         DappsStaking::<T>::unbond_and_unstake(RawOrigin::Signed(staker.clone()).into(), contract_id, unstake_amount)?;

@@ -22,6 +22,10 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+pub use astar_primitives::{
+    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+};
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
@@ -67,10 +71,8 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-
+use astar_primitives::xcm::AssetLocationIdConverter;
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
-use xcm_primitives::AssetLocationIdConverter;
 
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
@@ -528,15 +530,6 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
-
-/// Id used for identifying assets.
-///
-/// AssetId allocation:
-/// [1; 2^32-1]     Custom user assets (permissionless)
-/// [2^32; 2^64-1]  Statemine assets (simple map)
-/// [2^64; 2^128-1] Ecosystem assets
-/// 2^128-1         Relay chain token (KSM)
-pub type AssetId = u128;
 
 impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {
@@ -1061,23 +1054,6 @@ construct_runtime!(
     }
 );
 
-/// Balance of an account.
-pub type Balance = u128;
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = sp_runtime::MultiSignature;
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as sp_runtime::traits::Verify>::Signer as sp_runtime::traits::IdentifyAccount>::AccountId;
-/// Index of a transaction in the chain.
-pub type Index = u32;
-/// A hash of some data used by the chain.
-pub type Hash = sp_core::H256;
-/// An index to a block.
-pub type BlockNumber = u32;
-/// The address format for describing accounts.
-pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
-/// Block header type as expected by this runtime.
-pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// A Block signed with a Justification

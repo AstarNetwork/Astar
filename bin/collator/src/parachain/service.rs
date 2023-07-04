@@ -17,6 +17,8 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! Parachain Service and ServiceFactory implementation.
+
+use astar_primitives::*;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{ParachainBlockImport, ParachainConsensus};
@@ -51,7 +53,6 @@ use super::shell_upgrade::*;
 #[cfg(feature = "evm-tracing")]
 use crate::evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig};
 
-use crate::primitives::*;
 #[cfg(feature = "evm-tracing")]
 use crate::rpc::tracing;
 

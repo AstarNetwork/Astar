@@ -35,7 +35,7 @@ use precompile_utils::{
     PrecompileHandleExt, RuntimeHelper,
 };
 use sp_core::H160;
-use sp_runtime::traits::{Saturating, Zero};
+use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 extern crate alloc;

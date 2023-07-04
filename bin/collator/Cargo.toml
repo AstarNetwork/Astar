@@ -92,6 +92,7 @@ shibuya-runtime = { workspace = true, features = ["std"] }
 shiden-runtime = { workspace = true, features = ["std"] }
 
 # astar pallets dependencies
+astar-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 
 # frame dependencies
@@ -161,6 +162,7 @@ runtime-benchmarks = [
 	"sp-keyring",
 	"cumulus-test-relay-sproof-builder",
 	"polkadot-runtime-common",
+	"astar-primitives/runtime-benchmarks",
 ]
 cli = ["try-runtime-cli"]
 try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]
