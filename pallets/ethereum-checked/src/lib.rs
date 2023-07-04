@@ -43,6 +43,7 @@ use pallet_evm::GasWeightMapping;
 
 use frame_support::{
     dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
+    sp_runtime::traits::UniqueSaturatedInto,
     pallet_prelude::*,
 };
 use frame_system::pallet_prelude::*;
@@ -224,8 +225,11 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        //TODO: weight
-        #[pallet::weight(0)]
+        #[pallet::weight({
+            let weight_limit = T::GasWeightMapping::gas_to_weight(tx.gas_limit.unique_saturated_into(), false);
+            // `Nonce` storage read 1, write 1.
+            weight_limit.saturating_add(T::DbWeight::get().reads_writes(1, 1))
+        })]
         pub fn transact(origin: OriginFor<T>, tx: XcmEthereumTx) -> DispatchResultWithPostInfo {
             let source = T::TransactOrigin::ensure_origin(origin)?;
             Self::transact_checked(T::AccountMapping::into_h160(source), tx.into())
@@ -256,8 +260,8 @@ impl<T: Config> Pallet<T> {
         .validate_common()
         .map_err(|_| DispatchErrorWithPostInfo {
             post_info: PostDispatchInfo {
-                //TODO: calculate weight on error
-                actual_weight: Some(Weight::default()),
+                // `Nonce` storage read 1.
+                actual_weight: Some(T::DbWeight::get().reads(1)),
                 pays_fee: Pays::Yes,
             },
             error: DispatchError::Other("Failed to validate Ethereum tx"),
