@@ -1,7 +1,6 @@
 import { Context } from '../networks/types'
 import { query, tx } from '../helpers/api'
 
-import { basilisk } from '../networks/hydraDX'
 import { shiden } from '../networks/astar'
 import { statemine } from '../networks/statemint'
 
