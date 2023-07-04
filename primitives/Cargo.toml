@@ -13,7 +13,7 @@ parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # Ethereum/Frontier dependencies
-ethereum = { workspace = true, features = [ "with-codec" ] }
+ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true }
 
 # Substrate dependencies
@@ -34,9 +34,9 @@ pallet-xc-asset-config = { workspace = true }
 default = ["std"]
 std = [
 	"log/std",
-    "parity-scale-codec/std",
-    "scale-info/std",
-    "ethereum-types/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"ethereum-types/std",
 	"ethereum/std",
 	"frame-support/std",
 	"sp-std/std",
