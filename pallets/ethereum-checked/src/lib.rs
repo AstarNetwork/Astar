@@ -32,8 +32,8 @@
 //!
 //! ### Dispatch-able calls
 //!
-//! - `transact`: execute checked Ethereum tx. Similar to `pallet_ethereum::Transact`, but
-//!  is only for XCM remote call.
+//! - `transact`: transact an Ethereum transaction. Similar to `pallet_ethereum::Transact`,
+//! but is only for XCM remote call.
 //!
 //! ### Implementation
 //!
@@ -143,6 +143,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Transact an Ethereum transaction. Similar to `pallet_ethereum::Transact`,
+        /// but is only for XCM remote call.
         #[pallet::call_index(0)]
         #[pallet::weight({
             let weight_limit = T::GasWeightMapping::gas_to_weight(tx.gas_limit.unique_saturated_into(), false);
