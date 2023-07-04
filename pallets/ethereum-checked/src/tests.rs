@@ -21,7 +21,7 @@
 use super::*;
 use mock::*;
 
-use ethereum::ReceiptV3;
+use ethereum::{ReceiptV3, TransactionAction, TransactionV2 as Transaction};
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 

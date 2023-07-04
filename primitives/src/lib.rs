@@ -23,6 +23,9 @@
 //! These core Astar types are used by the Shiden, Shibuya, Astar and Local runtime.
 pub mod xcm;
 
+/// Checked Ethereum transaction primitives.
+pub mod ethereum_checked;
+
 use sp_runtime::traits::BlakeTwo256;
 use sp_runtime::{
     generic,

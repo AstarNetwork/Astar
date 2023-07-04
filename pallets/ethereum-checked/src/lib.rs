@@ -38,7 +38,6 @@
 //! ### Implementation
 //!
 //! - Implements `CheckedEthereumTransact` trait.
-//!   - `transact`: execute checked Ethereum tx. Use it for cross-VM call.
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -46,10 +45,7 @@
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
-use ethereum::{
-    AccessListItem, EIP1559Transaction, TransactionAction, TransactionV2 as Transaction,
-};
-use ethereum_types::{H160, H256, U256};
+use ethereum_types::{H160, U256};
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use fp_evm::{CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError};
 use pallet_evm::GasWeightMapping;
@@ -62,78 +58,16 @@ use frame_system::pallet_prelude::*;
 #[cfg(feature = "runtime-benchmarks")]
 use sp_runtime::traits::TrailingZeroInput;
 use sp_runtime::traits::UniqueSaturatedInto;
-use sp_std::{marker::PhantomData, prelude::*};
+use sp_std::marker::PhantomData;
+
+use astar_primitives::ethereum_checked::{
+    AccountMapping, CheckedEthereumTransact, CheckedEthereumTx,
+};
 
 use pallet::*;
 
 mod mock;
 mod tests;
-
-//TODO: move type definitions to primitives crate
-
-/// Transaction kind.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub enum CheckedEthereumTxKind {
-    /// The tx is from XCM remote call.
-    Xcm,
-    /// The tx is from cross-VM call.
-    Xvm,
-}
-
-/// The checked Ethereum transaction.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct CheckedEthereumTx {
-    /// Gas limit.
-    pub gas_limit: U256,
-    /// Action type, either `Call` or `Create`.
-    pub action: TransactionAction,
-    /// Amount to transfer.
-    pub value: U256,
-    /// Input of a contract call.
-    pub input: Vec<u8>,
-    /// Optional access list, specified in EIP-2930.
-    pub maybe_access_list: Option<Vec<(H160, Vec<H256>)>>,
-}
-
-impl CheckedEthereumTx {
-    fn into_ethereum_tx(&self, nonce: U256, chain_id: u64) -> Transaction {
-        let access_list = if let Some(ref list) = self.maybe_access_list {
-            list.iter()
-                .map(|(address, storage_keys)| AccessListItem {
-                    address: *address,
-                    storage_keys: storage_keys.clone(),
-                })
-                .collect()
-        } else {
-            Vec::new()
-        };
-
-        Transaction::EIP1559(EIP1559Transaction {
-            chain_id,
-            nonce,
-            max_fee_per_gas: U256::zero(),
-            max_priority_fee_per_gas: U256::zero(),
-            gas_limit: self.gas_limit,
-            value: self.value,
-            action: self.action,
-            input: self.input.clone(),
-            access_list,
-            odd_y_parity: true,
-            r: dummy_rs(),
-            s: dummy_rs(),
-        })
-    }
-}
-
-/// Dummy signature for all transactions.
-fn dummy_rs() -> H256 {
-    H256::from_low_u64_be(1u64)
-}
-
-/// Mapping from `Account` to `H160`.
-pub trait AccountMapping<AccountId> {
-    fn into_h160(account: AccountId) -> H160;
-}
 
 /// Origin for dispatch-able calls.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -162,11 +96,13 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
     }
 }
 
-/// Transact an checked Ethereum transaction. Similar to `pallet_ethereum::Transact` but
-/// doesn't require tx signature.
-pub trait CheckedEthereumTransact {
-    /// Transact an checked Ethereum transaction in XVM.
-    fn xvm_transact(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo;
+/// Transaction kind.
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum CheckedEthereumTxKind {
+    /// The tx is from XCM remote call.
+    Xcm,
+    /// The tx is from cross-VM call.
+    Xvm,
 }
 
 #[frame_support::pallet]

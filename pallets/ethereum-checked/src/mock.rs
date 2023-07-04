@@ -21,6 +21,8 @@
 use super::*;
 use crate as pallet_ethereum_checked;
 
+use ethereum_types::H256;
+
 use frame_support::{
     assert_ok, construct_runtime, parameter_types,
     sp_io::TestExternalities,

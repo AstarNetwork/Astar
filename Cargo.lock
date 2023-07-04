@@ -514,9 +514,13 @@ dependencies = [
 name = "astar-primitives"
 version = "0.1.0"
 dependencies = [
+ "ethereum",
+ "ethereum-types",
  "frame-support",
  "log",
  "pallet-xc-asset-config",
+ "parity-scale-codec",
+ "scale-info",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -7045,6 +7049,7 @@ dependencies = [
 name = "pallet-ethereum-checked"
 version = "0.1.0"
 dependencies = [
+ "astar-primitives",
  "ethereum",
  "ethereum-types",
  "fp-ethereum",
