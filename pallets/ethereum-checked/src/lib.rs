@@ -43,10 +43,12 @@ use pallet_evm::GasWeightMapping;
 
 use frame_support::{
     dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
-    sp_runtime::traits::UniqueSaturatedInto,
     pallet_prelude::*,
 };
 use frame_system::pallet_prelude::*;
+#[cfg(feature = "runtime-benchmarks")]
+use sp_runtime::traits::TrailingZeroInput;
+use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{marker::PhantomData, prelude::*};
 
 use pallet::*;
@@ -160,7 +162,7 @@ pub enum RawOrigin<AccountId> {
 
 /// Ensure the origin is with XCM calls.
 pub struct EnsureXcmEthereumTx<AccountId>(PhantomData<AccountId>);
-impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, AccountId>
+impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, AccountId: Decode>
     EnsureOrigin<O> for EnsureXcmEthereumTx<AccountId>
 {
     type Success = AccountId;
@@ -173,7 +175,9 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
 
     #[cfg(feature = "runtime-benchmarks")]
     fn try_successful_origin() -> Result<O, ()> {
-        Ok(O::from(RawOrigin::XcmEthereumTx(Default::default())))
+        let zero_account_id =
+            AccountId::decode(&mut TrailingZeroInput::zeroes()).map_err(|_| ())?;
+        Ok(O::from(RawOrigin::XcmEthereumTx(zero_account_id)))
     }
 }
 
