@@ -1,0 +1,151 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`'statemint' -> 'astar' xcm transfer 'USDT' > xcmPallet transfer > balance on from chain 1`] = `
+{
+  "balance": 90000000,
+  "extra": null,
+  "isFrozen": false,
+  "reason": {
+    "consumer": null,
+  },
+}
+`;
+
+exports[`'statemint' -> 'astar' xcm transfer 'USDT' > xcmPallet transfer > balance on to chain 1`] = `
+{
+  "balance": "(rounded 10000000)",
+  "extra": null,
+  "isFrozen": false,
+  "reason": {
+    "sufficient": null,
+  },
+}
+`;
+
+exports[`'statemint' -> 'astar' xcm transfer 'USDT' > xcmPallet transfer > from chain hrmp messages 1`] = `
+[
+  {
+    "data": [
+      "ConcatenatedVersionedXcm",
+      {
+        "v3": [
+          {
+            "reserveAssetDeposited": [
+              {
+                "fun": {
+                  "fungible": 10000000,
+                },
+                "id": {
+                  "concrete": {
+                    "interior": {
+                      "x3": [
+                        {
+                          "parachain": 1000,
+                        },
+                        {
+                          "palletInstance": 50,
+                        },
+                        {
+                          "generalIndex": 1984,
+                        },
+                      ],
+                    },
+                    "parents": 1,
+                  },
+                },
+              },
+            ],
+          },
+          {
+            "clearOrigin": null,
+          },
+          {
+            "buyExecution": {
+              "fees": {
+                "fun": {
+                  "fungible": 10000000,
+                },
+                "id": {
+                  "concrete": {
+                    "interior": {
+                      "x3": [
+                        {
+                          "parachain": 1000,
+                        },
+                        {
+                          "palletInstance": 50,
+                        },
+                        {
+                          "generalIndex": 1984,
+                        },
+                      ],
+                    },
+                    "parents": 1,
+                  },
+                },
+              },
+              "weightLimit": {
+                "unlimited": null,
+              },
+            },
+          },
+          {
+            "depositAsset": {
+              "assets": {
+                "wild": {
+                  "allCounted": 1,
+                },
+              },
+              "beneficiary": {
+                "interior": {
+                  "x1": {
+                    "accountId32": {
+                      "id": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+                      "network": null,
+                    },
+                  },
+                },
+                "parents": 0,
+              },
+            },
+          },
+        ],
+      },
+    ],
+    "recipient": 2006,
+  },
+]
+`;
+
+exports[`'statemint' -> 'astar' xcm transfer 'USDT' > xcmPallet transfer > to chain xcm events 1`] = `
+[
+  {
+    "data": {
+      "messageHash": "(hash)",
+      "weight": {
+        "proofSize": "(rounded 4100)",
+        "refTime": 4000000000,
+      },
+    },
+    "method": "Success",
+    "section": "xcmpQueue",
+  },
+]
+`;
+
+exports[`'statemint' -> 'astar' xcm transfer 'USDT' > xcmPallet transfer > tx events 1`] = `
+[
+  {
+    "data": [
+      {
+        "Complete": {
+          "proofSize": "(rounded 6200)",
+          "refTime": "(rounded 674000000)",
+        },
+      },
+    ],
+    "method": "Attempted",
+    "section": "polkadotXcm",
+  },
+]
+`;

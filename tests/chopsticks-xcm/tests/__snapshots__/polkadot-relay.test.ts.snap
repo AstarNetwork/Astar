@@ -1,0 +1,80 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`'polkadot' -> 'astar' xcm transfer 'DOT' > xcmPallet transfer > balance on from chain 1`] = `
+{
+  "consumers": 0,
+  "data": {
+    "flags": "0x80000000000000000000000000000000",
+    "free": "(rounded 9000000000000)",
+    "frozen": 0,
+    "reserved": 0,
+  },
+  "nonce": 1,
+  "providers": 1,
+  "sufficients": 0,
+}
+`;
+
+exports[`'polkadot' -> 'astar' xcm transfer 'DOT' > xcmPallet transfer > balance on to chain 1`] = `
+{
+  "balance": "(rounded 11000000000000)",
+  "extra": null,
+  "isFrozen": false,
+  "reason": {
+    "consumer": null,
+  },
+}
+`;
+
+exports[`'polkadot' -> 'astar' xcm transfer 'DOT' > xcmPallet transfer > to chain dmp events 1`] = `
+[
+  {
+    "data": {
+      "count": 1,
+    },
+    "method": "DownwardMessagesReceived",
+    "section": "parachainSystem",
+  },
+  {
+    "data": {
+      "messageId": "(hash)",
+      "outcome": {
+        "Complete": {
+          "proofSize": "(rounded 4100)",
+          "refTime": 4000000000,
+        },
+      },
+    },
+    "method": "ExecutedDownward",
+    "section": "dmpQueue",
+  },
+  {
+    "data": {
+      "dmqHead": "(hash)",
+      "weightUsed": {
+        "proofSize": "(rounded 4100)",
+        "refTime": 4000000000,
+      },
+    },
+    "method": "DownwardMessagesProcessed",
+    "section": "parachainSystem",
+  },
+]
+`;
+
+exports[`'polkadot' -> 'astar' xcm transfer 'DOT' > xcmPallet transfer > tx events 1`] = `
+[
+  {
+    "data": [
+      {
+        "Complete": {
+          "proofSize": 0,
+          "refTime": 2000000000,
+        },
+      },
+    ],
+    "method": "Attempted",
+    "section": "xcmPallet",
+  },
+]
+`;
