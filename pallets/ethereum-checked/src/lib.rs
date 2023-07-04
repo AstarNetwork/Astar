@@ -23,6 +23,11 @@
 //! A `pallet-ethererum` like pallet that execute transactions from checked source,
 //! like XCM remote call, cross-VM call, etc.
 //!
+//! The checked source guarantees that transactions are valid with prior checks, so these
+//! transactions are not required to include valid signatures. Instead, `pallet-ethereum-checked`
+//! will add the same dummy signature to them. To avoid transaction hash collisions, a global
+//! nonce shared with all users are used.
+//!
 //! ## Interface
 //!
 //! ### Dispatch-able calls
@@ -120,6 +125,11 @@ impl CheckedEthereumTx {
     }
 }
 
+/// Dummy signature for all transactions.
+fn dummy_rs() -> H256 {
+    H256::from_low_u64_be(1u64)
+}
+
 /// Mapping from `Account` to `H160`.
 pub trait AccountMapping<AccountId> {
     fn into_h160(account: AccountId) -> H160;
@@ -150,11 +160,6 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
             AccountId::decode(&mut TrailingZeroInput::zeroes()).map_err(|_| ())?;
         Ok(O::from(RawOrigin::XcmEthereumTx(zero_account_id)))
     }
-}
-
-/// Dummy signature for all transactions.
-fn dummy_rs() -> H256 {
-    H256::from_low_u64_be(1u64)
 }
 
 /// Transact an checked Ethereum transaction. Similar to `pallet_ethereum::Transact` but
