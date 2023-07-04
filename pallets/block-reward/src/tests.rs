@@ -18,7 +18,7 @@
 
 use super::{pallet::Error, Event, *};
 use frame_support::{assert_noop, assert_ok, traits::OnTimestampSet};
-use mock::*;
+use mock::{Balance, *};
 use sp_runtime::{
     traits::{AccountIdConversion, BadOrigin, Zero},
     Perbill,

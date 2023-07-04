@@ -47,7 +47,7 @@ use moonbeam_rpc_trace::{Trace, TraceServer};
 #[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_txpool::{TxPool, TxPoolServer};
 
-use crate::primitives::*;
+use astar_primitives::*;
 
 #[cfg(feature = "evm-tracing")]
 pub mod tracing;

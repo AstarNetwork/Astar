@@ -77,6 +77,7 @@
 
 pub use pallet::*;
 
+use astar_primitives::Balance;
 use frame_support::pallet_prelude::*;
 use frame_support::{
     log,
@@ -107,10 +108,6 @@ pub mod pallet {
     #[pallet::pallet]
     pub struct Pallet<T>(PhantomData<T>);
 
-    /// The balance type of this pallet.
-    pub(crate) type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-
     // Negative imbalance type of this pallet.
     pub(crate) type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
         <T as frame_system::Config>::AccountId,
@@ -119,17 +116,17 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The currency trait.
-        type Currency: Currency<Self::AccountId>;
+        type Currency: Currency<Self::AccountId, Balance = Balance>;
 
         /// Provides information about how much value is locked by dapps staking
-        type DappsStakingTvlProvider: Get<BalanceOf<Self>>;
+        type DappsStakingTvlProvider: Get<Balance>;
 
         /// Used to payout rewards
         type BeneficiaryPayout: BeneficiaryPayout<NegativeImbalanceOf<Self>>;
 
         /// The amount of issuance for each block.
         #[pallet::constant]
-        type RewardAmount: Get<BalanceOf<Self>>;
+        type RewardAmount: Get<Balance>;
 
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;

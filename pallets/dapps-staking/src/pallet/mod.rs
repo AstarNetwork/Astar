@@ -32,7 +32,7 @@ use frame_support::{
 };
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
 use sp_runtime::{
-    traits::{AccountIdConversion, Saturating, Zero},
+    traits::{AccountIdConversion, Zero},
     Perbill,
 };
 use sp_std::{convert::From, mem};
@@ -43,10 +43,6 @@ const STAKING_ID: LockIdentifier = *b"dapstake";
 #[allow(clippy::module_inception)]
 pub mod pallet {
     use super::*;
-
-    /// The balance type of this pallet.
-    pub type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
     #[pallet::pallet]
     #[pallet::generate_store(pub(crate) trait Store)]
@@ -60,7 +56,8 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The staking balance.
-        type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
+        type Currency: Currency<Self::AccountId, Balance = Balance>
+            + LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
             + ReservableCurrency<Self::AccountId>;
 
         /// Describes smart contract in the context required by dapps staking.
@@ -72,7 +69,7 @@ pub mod pallet {
 
         /// Deposit that will be reserved as part of new contract registration.
         #[pallet::constant]
-        type RegisterDeposit: Get<BalanceOf<Self>>;
+        type RegisterDeposit: Get<Balance>;
 
         /// Maximum number of unique stakers per contract.
         #[pallet::constant]
@@ -81,7 +78,7 @@ pub mod pallet {
         /// Minimum amount user must have staked on contract.
         /// User can stake less if they already have the minimum staking amount staked on that particular contract.
         #[pallet::constant]
-        type MinimumStakingAmount: Get<BalanceOf<Self>>;
+        type MinimumStakingAmount: Get<Balance>;
 
         /// Dapps staking pallet Id
         #[pallet::constant]
@@ -90,7 +87,7 @@ pub mod pallet {
         /// Minimum amount that should be left on staker account after staking.
         /// Serves as a safeguard to prevent users from locking their entire free balance.
         #[pallet::constant]
-        type MinimumRemainingAmount: Get<BalanceOf<Self>>;
+        type MinimumRemainingAmount: Get<Balance>;
 
         /// Max number of unlocking chunks per account Id <-> contract Id pairing.
         /// If value is zero, unlocking becomes impossible.
@@ -136,7 +133,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
     pub type Ledger<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, AccountLedger<BalanceOf<T>>, ValueQuery>;
+        StorageMap<_, Blake2_128Concat, T::AccountId, AccountLedger, ValueQuery>;
 
     /// The current era index.
     #[pallet::storage]
@@ -147,7 +144,7 @@ pub mod pallet {
     /// Accumulator for block rewards during an era. It is reset at every new era
     #[pallet::storage]
     #[pallet::getter(fn block_reward_accumulator)]
-    pub type BlockRewardAccumulator<T> = StorageValue<_, RewardInfo<BalanceOf<T>>, ValueQuery>;
+    pub type BlockRewardAccumulator<T> = StorageValue<_, RewardInfo, ValueQuery>;
 
     #[pallet::type_value]
     pub fn ForceEraOnEmpty() -> Forcing {
@@ -181,8 +178,7 @@ pub mod pallet {
     /// General information about an era like TVL, total staked value, rewards.
     #[pallet::storage]
     #[pallet::getter(fn general_era_info)]
-    pub type GeneralEraInfo<T: Config> =
-        StorageMap<_, Twox64Concat, EraIndex, EraInfo<BalanceOf<T>>>;
+    pub type GeneralEraInfo<T: Config> = StorageMap<_, Twox64Concat, EraIndex, EraInfo>;
 
     /// Staking information about contract in a particular era.
     #[pallet::storage]
@@ -193,7 +189,7 @@ pub mod pallet {
         T::SmartContract,
         Twox64Concat,
         EraIndex,
-        ContractStakeInfo<BalanceOf<T>>,
+        ContractStakeInfo,
     >;
 
     /// Info about stakers stakes on particular contracts.
@@ -205,7 +201,7 @@ pub mod pallet {
         T::AccountId,
         Blake2_128Concat,
         T::SmartContract,
-        StakerInfo<BalanceOf<T>>,
+        StakerInfo,
         ValueQuery,
     >;
 
@@ -218,13 +214,13 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Account has bonded and staked funds on a smart contract.
-        BondAndStake(T::AccountId, T::SmartContract, BalanceOf<T>),
+        BondAndStake(T::AccountId, T::SmartContract, Balance),
         /// Account has unbonded & unstaked some funds. Unbonding process begins.
-        UnbondAndUnstake(T::AccountId, T::SmartContract, BalanceOf<T>),
+        UnbondAndUnstake(T::AccountId, T::SmartContract, Balance),
         /// Account has fully withdrawn all staked amount from an unregistered contract.
-        WithdrawFromUnregistered(T::AccountId, T::SmartContract, BalanceOf<T>),
+        WithdrawFromUnregistered(T::AccountId, T::SmartContract, Balance),
         /// Account has withdrawn unbonded funds.
-        Withdrawn(T::AccountId, BalanceOf<T>),
+        Withdrawn(T::AccountId, Balance),
         /// New contract added for staking.
         NewContract(T::AccountId, T::SmartContract),
         /// Contract removed from dapps staking.
@@ -232,7 +228,7 @@ pub mod pallet {
         /// New dapps staking era. Distribute era rewards to contracts.
         NewDappStakingEra(EraIndex),
         /// Reward paid to staker or developer.
-        Reward(T::AccountId, T::SmartContract, EraIndex, BalanceOf<T>),
+        Reward(T::AccountId, T::SmartContract, EraIndex, Balance),
         /// Maintenance mode has been enabled or disabled
         MaintenanceMode(bool),
         /// Reward handling modified
@@ -240,16 +236,11 @@ pub mod pallet {
         /// Nomination part has been transfered from one contract to another.
         ///
         /// \(staker account, origin smart contract, amount, target smart contract\)
-        NominationTransfer(
-            T::AccountId,
-            T::SmartContract,
-            BalanceOf<T>,
-            T::SmartContract,
-        ),
+        NominationTransfer(T::AccountId, T::SmartContract, Balance, T::SmartContract),
         /// Stale, unclaimed reward from an unregistered contract has been burned.
         ///
         /// \(developer account, smart contract, era, amount burned\)
-        StaleRewardBurned(T::AccountId, T::SmartContract, EraIndex, BalanceOf<T>),
+        StaleRewardBurned(T::AccountId, T::SmartContract, EraIndex, Balance),
     }
 
     #[pallet::error]
@@ -485,7 +476,7 @@ pub mod pallet {
         pub fn bond_and_stake(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
-            #[pallet::compact] value: BalanceOf<T>,
+            #[pallet::compact] value: Balance,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let staker = ensure_signed(origin)?;
@@ -552,7 +543,7 @@ pub mod pallet {
         pub fn unbond_and_unstake(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
-            #[pallet::compact] value: BalanceOf<T>,
+            #[pallet::compact] value: Balance,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let staker = ensure_signed(origin)?;
@@ -652,7 +643,7 @@ pub mod pallet {
         pub fn nomination_transfer(
             origin: OriginFor<T>,
             origin_contract_id: T::SmartContract,
-            #[pallet::compact] value: BalanceOf<T>,
+            #[pallet::compact] value: Balance,
             target_contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
@@ -934,7 +925,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             contract: T::SmartContract,
             era: EraIndex,
-            contract_stake_info: ContractStakeInfo<BalanceOf<T>>,
+            contract_stake_info: ContractStakeInfo,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
@@ -1001,10 +992,10 @@ pub mod pallet {
         /// If successfull, returns reward amount.
         /// In case reward cannot be claimed or was already claimed, an error is raised.
         fn calculate_dapp_reward(
-            contract_stake_info: &ContractStakeInfo<BalanceOf<T>>,
+            contract_stake_info: &ContractStakeInfo,
             dapp_info: &DAppInfo<T::AccountId>,
             era: EraIndex,
-        ) -> Result<BalanceOf<T>, Error<T>> {
+        ) -> Result<Balance, Error<T>> {
             let current_era = Self::current_era();
             if let DAppState::Unregistered(unregister_era) = dapp_info.state {
                 ensure!(era < unregister_era, Error::<T>::NotOperatedContract);
@@ -1047,9 +1038,9 @@ pub mod pallet {
         /// If not, an error is returned and structs are left in an undefined state.
         ///
         fn stake_on_contract(
-            staker_info: &mut StakerInfo<BalanceOf<T>>,
-            staking_info: &mut ContractStakeInfo<BalanceOf<T>>,
-            value: BalanceOf<T>,
+            staker_info: &mut StakerInfo,
+            staking_info: &mut ContractStakeInfo,
+            value: Balance,
             current_era: EraIndex,
         ) -> Result<(), Error<T>> {
             ensure!(
@@ -1101,11 +1092,11 @@ pub mod pallet {
         /// If not, an error is returned and structs are left in an undefined state.
         ///
         fn unstake_from_contract(
-            staker_info: &mut StakerInfo<BalanceOf<T>>,
-            contract_stake_info: &mut ContractStakeInfo<BalanceOf<T>>,
-            value: BalanceOf<T>,
+            staker_info: &mut StakerInfo,
+            contract_stake_info: &mut ContractStakeInfo,
+            value: Balance,
             current_era: EraIndex,
-        ) -> Result<BalanceOf<T>, Error<T>> {
+        ) -> Result<Balance, Error<T>> {
             let staked_value = staker_info.latest_staked_value();
             ensure!(staked_value > Zero::zero(), Error::<T>::NotStakedContract);
 
@@ -1154,7 +1145,7 @@ pub mod pallet {
 
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
-        fn update_ledger(staker: &T::AccountId, ledger: AccountLedger<BalanceOf<T>>) {
+        fn update_ledger(staker: &T::AccountId, ledger: AccountLedger) {
             if ledger.is_empty() {
                 Ledger::<T>::remove(&staker);
                 T::Currency::remove_lock(STAKING_ID, staker);
@@ -1169,7 +1160,7 @@ pub mod pallet {
         fn update_staker_info(
             staker: &T::AccountId,
             contract_id: &T::SmartContract,
-            staker_info: StakerInfo<BalanceOf<T>>,
+            staker_info: StakerInfo,
         ) {
             if staker_info.is_empty() {
                 GeneralStakerInfo::<T>::remove(staker, contract_id)
@@ -1183,7 +1174,7 @@ pub mod pallet {
         /// and stores it for future distribution
         ///
         /// This is called just at the beginning of an era.
-        fn reward_balance_snapshot(era: EraIndex, rewards: RewardInfo<BalanceOf<T>>) {
+        fn reward_balance_snapshot(era: EraIndex, rewards: RewardInfo) {
             // Get the reward and stake information for previous era
             let mut era_info = Self::general_era_info(era).unwrap_or_default();
 
@@ -1236,10 +1227,7 @@ pub mod pallet {
         }
 
         /// Returns available staking balance for the potential staker
-        fn available_staking_balance(
-            staker: &T::AccountId,
-            ledger: &AccountLedger<BalanceOf<T>>,
-        ) -> BalanceOf<T> {
+        fn available_staking_balance(staker: &T::AccountId, ledger: &AccountLedger) -> Balance {
             // Ensure that staker has enough balance to bond & stake.
             let free_balance =
                 T::Currency::free_balance(staker).saturating_sub(T::MinimumRemainingAmount::get());
@@ -1258,7 +1246,7 @@ pub mod pallet {
         pub(crate) fn should_restake_reward(
             reward_destination: RewardDestination,
             dapp_state: DAppState,
-            latest_staked_value: BalanceOf<T>,
+            latest_staked_value: Balance,
         ) -> bool {
             reward_destination == RewardDestination::StakeBalance
                 && dapp_state == DAppState::Registered
@@ -1269,9 +1257,9 @@ pub mod pallet {
         ///
         /// Returns (developer reward, joint stakers reward)
         pub(crate) fn dev_stakers_split(
-            contract_info: &ContractStakeInfo<BalanceOf<T>>,
-            era_info: &EraInfo<BalanceOf<T>>,
-        ) -> (BalanceOf<T>, BalanceOf<T>) {
+            contract_info: &ContractStakeInfo,
+            era_info: &EraInfo,
+        ) -> (Balance, Balance) {
             let contract_stake_portion =
                 Perbill::from_rational(contract_info.total, era_info.staked);
 
@@ -1298,7 +1286,7 @@ pub mod pallet {
         /// Returns total value locked by dapps-staking.
         ///
         /// Note that this can differ from _total staked value_ since some funds might be undergoing the unbonding period.
-        pub fn tvl() -> BalanceOf<T> {
+        pub fn tvl() -> Balance {
             let current_era = Self::current_era();
             if let Some(era_info) = Self::general_era_info(current_era) {
                 era_info.locked
