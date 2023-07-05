@@ -31,9 +31,9 @@ sp-std = { workspace = true }
 sp-tracing = { workspace = true }
 
 # Custom Astar inclusions
+astar-primitives = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
-xcm-primitives = { workspace = true }
 
 # polkadot deps
 polkadot-primitives = { workspace = true }
@@ -73,7 +73,6 @@ std = [
 	"pallet-xcm/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-assets/std",
-	"xcm-primitives/std",
 	"polkadot-primitives/std",
 	"pallet-dapps-staking/std",
 	"pallet-proxy/std",
@@ -93,4 +92,5 @@ runtime-benchmarks = [
 	"xcm-executor/runtime-benchmarks",
 	"polkadot-runtime-parachains/runtime-benchmarks",
 	"polkadot-parachain/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
 ]

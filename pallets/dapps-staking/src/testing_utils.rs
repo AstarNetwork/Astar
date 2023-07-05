@@ -18,17 +18,17 @@
 
 use super::{pallet::pallet::Event, *};
 use frame_support::assert_ok;
-use mock::{EraIndex, *};
+use mock::{Balance, EraIndex, *};
 use sp_runtime::{traits::AccountIdConversion, Perbill};
 
 /// Helper struct used to store information relevant to era/contract/staker combination.
 pub(crate) struct MemorySnapshot {
-    era_info: EraInfo<Balance>,
+    era_info: EraInfo,
     dapp_info: DAppInfo<AccountId>,
-    staker_info: StakerInfo<Balance>,
-    contract_info: ContractStakeInfo<Balance>,
+    staker_info: StakerInfo,
+    contract_info: ContractStakeInfo,
     free_balance: Balance,
-    ledger: AccountLedger<Balance>,
+    ledger: AccountLedger,
 }
 
 impl MemorySnapshot {

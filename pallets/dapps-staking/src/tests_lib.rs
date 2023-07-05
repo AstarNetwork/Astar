@@ -22,7 +22,7 @@ use mock::Balance;
 
 #[test]
 fn unbonding_info_test() {
-    let mut unbonding_info = UnbondingInfo::<Balance>::default();
+    let mut unbonding_info = UnbondingInfo::default();
 
     // assert basic ops on empty info
     assert!(unbonding_info.is_empty());
@@ -77,7 +77,7 @@ fn unbonding_info_test() {
 
 #[test]
 fn staker_info_basic() {
-    let staker_info = StakerInfo::<Balance>::default();
+    let staker_info = StakerInfo::default();
 
     assert!(staker_info.is_empty());
     assert_eq!(staker_info.len(), 0);
@@ -86,7 +86,7 @@ fn staker_info_basic() {
 
 #[test]
 fn staker_info_stake_ops() {
-    let mut staker_info = StakerInfo::<Balance>::default();
+    let mut staker_info = StakerInfo::default();
 
     // Do first stake and verify it
     let first_era = 1;
@@ -129,7 +129,7 @@ fn staker_info_stake_ops() {
 
 #[test]
 fn staker_info_stake_error() {
-    let mut staker_info = StakerInfo::<Balance>::default();
+    let mut staker_info = StakerInfo::default();
     assert_ok!(staker_info.stake(5, 100));
     if let Err(_) = staker_info.stake(4, 100) {
     } else {
@@ -139,7 +139,7 @@ fn staker_info_stake_error() {
 
 #[test]
 fn staker_info_unstake_ops() {
-    let mut staker_info = StakerInfo::<Balance>::default();
+    let mut staker_info = StakerInfo::default();
 
     // Unstake on empty staker_info
     assert!(staker_info.is_empty());
@@ -192,7 +192,7 @@ fn staker_info_unstake_ops() {
 
 #[test]
 fn stake_after_full_unstake() {
-    let mut staker_info = StakerInfo::<Balance>::default();
+    let mut staker_info = StakerInfo::default();
 
     // Stake some amount
     let first_era = 1;
@@ -216,7 +216,7 @@ fn stake_after_full_unstake() {
 
 #[test]
 fn staker_info_unstake_error() {
-    let mut staker_info = StakerInfo::<Balance>::default();
+    let mut staker_info = StakerInfo::default();
     assert_ok!(staker_info.stake(5, 100));
     if let Err(_) = staker_info.unstake(4, 100) {
     } else {
@@ -226,7 +226,7 @@ fn staker_info_unstake_error() {
 
 #[test]
 fn staker_info_claim_ops_basic() {
-    let mut staker_info = StakerInfo::<Balance>::default();
+    let mut staker_info = StakerInfo::default();
 
     // Empty staker info
     assert!(staker_info.is_empty());
@@ -241,7 +241,7 @@ fn staker_info_claim_ops_basic() {
     assert!(staker_info.is_empty());
 
     // Only one staked exists
-    staker_info = StakerInfo::<Balance>::default();
+    staker_info = StakerInfo::default();
     let stake_era = 1;
     let stake_value = 123;
     assert_ok!(staker_info.stake(stake_era, stake_value));
@@ -252,7 +252,7 @@ fn staker_info_claim_ops_basic() {
 
 #[test]
 fn staker_info_claim_ops_advanced() {
-    let mut staker_info = StakerInfo::<Balance>::default();
+    let mut staker_info = StakerInfo::default();
 
     // Two consecutive eras staked, third era contains a gap with the second one
     let (first_stake_era, second_stake_era, third_stake_era) = (1, 2, 4);

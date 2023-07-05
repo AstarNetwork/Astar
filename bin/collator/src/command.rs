@@ -24,8 +24,8 @@ use crate::{
         self, astar, chain_spec, service::AdditionalConfig, shibuya, shiden, start_astar_node,
         start_shibuya_node, start_shiden_node,
     },
-    primitives::Block,
 };
+use astar_primitives::*;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::{error, info};

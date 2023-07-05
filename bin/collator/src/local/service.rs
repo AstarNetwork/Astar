@@ -32,7 +32,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 pub use local_runtime::RuntimeApi;
 
-use crate::primitives::*;
+use astar_primitives::*;
 
 /// Local runtime native executor.
 pub struct Executor;
