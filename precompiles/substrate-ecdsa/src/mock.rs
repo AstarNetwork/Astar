@@ -20,6 +20,7 @@
 
 use super::*;
 
+use fp_evm::IsPrecompileResult;
 use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -148,8 +149,11 @@ where
         }
     }
 
-    fn is_precompile(&self, address: H160) -> bool {
-        address == PRECOMPILE_ADDRESS
+    fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
+        IsPrecompileResult::Answer {
+            is_precompile: address == PRECOMPILE_ADDRESS,
+            extra_cost: 0,
+        }
     }
 }
 
@@ -183,7 +187,7 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     pub const PrecompilesValue: TestPrecompileSet<Runtime> =
         TestPrecompileSet(PhantomData);
-    pub WeightPerGas: Weight = Weight::from_ref_time(1);
+    pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
 impl pallet_evm::Config for Runtime {
@@ -198,6 +202,7 @@ impl pallet_evm::Config for Runtime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = TestPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
+    type Timestamp = Timestamp;
     type ChainId = ();
     type OnChargeTransaction = ();
     type BlockGasLimit = ();

@@ -223,7 +223,7 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     pub const PrecompilesValue: Erc20AssetsPrecompileSet<Runtime> =
         Erc20AssetsPrecompileSet(PhantomData);
-    pub WeightPerGas: Weight = Weight::from_ref_time(1);
+    pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
 impl pallet_evm::Config for Runtime {
@@ -238,6 +238,7 @@ impl pallet_evm::Config for Runtime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Erc20AssetsPrecompileSet<Self>;
     type PrecompilesValue = PrecompilesValue;
+    type Timestamp = Timestamp;
     type ChainId = ();
     type OnChargeTransaction = ();
     type BlockGasLimit = ();

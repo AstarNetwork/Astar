@@ -29,7 +29,7 @@ use cumulus_client_service::{
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
@@ -38,7 +38,8 @@ use polkadot_service::CollatorPair;
 use sc_client_api::BlockchainEvents;
 use sc_consensus::{import_queue::BasicQueue, ImportQueue};
 use sc_executor::NativeElseWasmExecutor;
-use sc_network::{NetworkBlock, NetworkService};
+use sc_network::NetworkBlock;
+use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
@@ -380,7 +381,7 @@ where
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
         >,
-        Arc<NetworkService<Block, Hash>>,
+        Arc<SyncingService<Block>>,
         SyncCryptoStorePtr,
         bool,
     ) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
@@ -403,17 +404,14 @@ where
         collator_options.clone(),
     )
     .await
-    .map_err(|e| match e {
-        RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-        s => format!("{}", s).into(),
-    })?;
+    .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
     let force_authoring = parachain_config.force_authoring;
     let is_authority = parachain_config.role.is_authority();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let transaction_pool = params.transaction_pool.clone();
     let import_queue_service = params.import_queue.service();
-    let (network, system_rpc_tx, tx_handler_controller, start_network) =
+    let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
         cumulus_client_service::build_network(BuildNetworkParams {
             parachain_config: &parachain_config,
             para_id: id,
@@ -428,6 +426,15 @@ where
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let overrides = fc_storage::overrides_handle(client.clone());
+
+    // Sinks for pubsub notifications.
+    // Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
+    // The MappingSyncWorker sends through the channel on block import and the subscription emits a notification to the subscriber on receiving a message through this channel.
+    // This way we avoid race conditions when using native substrate block import notification stream.
+    let pubsub_notification_sinks: fc_mapping_sync::EthereumBlockNotificationSinks<
+        fc_mapping_sync::EthereumBlockNotification<Block>,
+    > = Default::default();
+    let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
 
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
@@ -444,6 +451,8 @@ where
             3,
             0,
             fc_mapping_sync::SyncStrategy::Parachain,
+            sync_service.clone(),
+            pubsub_notification_sinks.clone(),
         )
         .for_each(|()| futures::future::ready(())),
     );
@@ -485,6 +494,8 @@ where
         let client = client.clone();
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
+        let sync = sync_service.clone();
+        let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
         Box::new(move |deny_unsafe, subscription| {
             let deps = crate::rpc::FullDeps {
@@ -492,6 +503,7 @@ where
                 pool: transaction_pool.clone(),
                 graph: transaction_pool.pool().clone(),
                 network: network.clone(),
+                sync: sync.clone(),
                 is_authority,
                 deny_unsafe,
                 frontier_backend: frontier_backend.clone(),
@@ -503,7 +515,8 @@ where
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            crate::rpc::create_full(deps, subscription).map_err(Into::into)
+            crate::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
+                .map_err(Into::into)
         })
     };
 
@@ -518,13 +531,14 @@ where
         backend: backend.clone(),
         network: network.clone(),
         system_rpc_tx,
+        sync_service: sync_service.clone(),
         tx_handler_controller,
         telemetry: telemetry.as_mut(),
     })?;
 
     let announce_block = {
-        let network = network.clone();
-        Arc::new(move |hash, data| network.announce_block(hash, data))
+        let sync_service = sync_service.clone();
+        Arc::new(move |hash, data| sync_service.announce_block(hash, data))
     };
 
     let relay_chain_slot_duration = Duration::from_secs(6);
@@ -542,7 +556,7 @@ where
             &task_manager,
             relay_chain_interface.clone(),
             transaction_pool,
-            network,
+            sync_service,
             params.keystore_container.sync_keystore(),
             force_authoring,
         )?;
@@ -683,7 +697,7 @@ where
                 TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
             >,
         >,
-        Arc<NetworkService<Block, Hash>>,
+        Arc<SyncingService<Block>>,
         SyncCryptoStorePtr,
         bool,
     ) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
@@ -706,17 +720,14 @@ where
         collator_options.clone(),
     )
     .await
-    .map_err(|e| match e {
-        RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-        s => format!("{}", s).into(),
-    })?;
+    .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
     let force_authoring = parachain_config.force_authoring;
     let is_authority = parachain_config.role.is_authority();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let transaction_pool = params.transaction_pool.clone();
     let import_queue_service = params.import_queue.service();
-    let (network, system_rpc_tx, tx_handler_controller, start_network) =
+    let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
         cumulus_client_service::build_network(BuildNetworkParams {
             parachain_config: &parachain_config,
             para_id: id,
@@ -731,6 +742,15 @@ where
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let overrides = fc_storage::overrides_handle(client.clone());
+
+    // Sinks for pubsub notifications.
+    // Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
+    // The MappingSyncWorker sends through the channel on block import and the subscription emits a notification to the subscriber on receiving a message through this channel.
+    // This way we avoid race conditions when using native substrate block import notification stream.
+    let pubsub_notification_sinks: fc_mapping_sync::EthereumBlockNotificationSinks<
+        fc_mapping_sync::EthereumBlockNotification<Block>,
+    > = Default::default();
+    let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
 
     let ethapi_cmd = additional_config.evm_tracing_config.ethapi.clone();
     let tracing_requesters =
@@ -768,6 +788,8 @@ where
             3,
             0,
             fc_mapping_sync::SyncStrategy::Parachain,
+            sync_service.clone(),
+            pubsub_notification_sinks.clone(),
         )
         .for_each(|()| futures::future::ready(())),
     );
@@ -814,6 +836,8 @@ where
             trace_filter_max_count: additional_config.evm_tracing_config.ethapi_trace_max_count,
             enable_txpool: ethapi_cmd.contains(&EthApiCmd::TxPool),
         };
+        let sync = sync_service.clone();
+        let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
         Box::new(move |deny_unsafe, subscription| {
             let deps = crate::rpc::FullDeps {
@@ -821,6 +845,7 @@ where
                 pool: transaction_pool.clone(),
                 graph: transaction_pool.pool().clone(),
                 network: network.clone(),
+                sync: sync.clone(),
                 is_authority,
                 deny_unsafe,
                 frontier_backend: frontier_backend.clone(),
@@ -832,7 +857,13 @@ where
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            crate::rpc::create_full(deps, subscription, rpc_config.clone()).map_err(Into::into)
+            crate::rpc::create_full(
+                deps,
+                subscription,
+                pubsub_notification_sinks.clone(),
+                rpc_config.clone(),
+            )
+            .map_err(Into::into)
         })
     };
 
@@ -847,13 +878,14 @@ where
         backend: backend.clone(),
         network: network.clone(),
         system_rpc_tx,
+        sync_service: sync_service.clone(),
         tx_handler_controller,
         telemetry: telemetry.as_mut(),
     })?;
 
     let announce_block = {
-        let network = network.clone();
-        Arc::new(move |hash, data| network.announce_block(hash, data))
+        let sync_service = sync_service.clone();
+        Arc::new(move |hash, data| sync_service.announce_block(hash, data))
     };
 
     let relay_chain_slot_duration = Duration::from_secs(6);
@@ -871,7 +903,7 @@ where
             &task_manager,
             relay_chain_interface.clone(),
             transaction_pool,
-            network,
+            sync_service,
             params.keystore_container.sync_keystore(),
             force_authoring,
         )?;
@@ -1198,7 +1230,7 @@ pub async fn start_astar_node(
          task_manager,
          relay_chain_interface,
          transaction_pool,
-         sync_oracle,
+         sync_service,
          keystore,
          force_authoring| {
             let spawn_handle = task_manager.spawn_handle();
@@ -1256,13 +1288,13 @@ pub async fn start_astar_node(
                             Ok((slot, timestamp, parachain_inherent))
                         }
                     },
-                block_import: block_import,
+                block_import,
                 para_client: client,
                 backoff_authoring_blocks: Option::<()>::None,
-                sync_oracle,
                 keystore,
                 force_authoring,
                 slot_duration,
+                sync_oracle: sync_service.clone(),
                 // We got around 500ms for proposing
                 block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
                 // And a maximum of 750ms if slots are skipped

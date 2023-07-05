@@ -58,8 +58,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Proof: BlockReward RewardDistributionConfigStorage (max_values: Some(1), max_size: Some(24), added: 519, mode: MaxEncodedLen)
 	fn set_configuration() -> Weight {
 		// Minimum execution time: 9_085 nanoseconds.
-		Weight::from_ref_time(9_328_000)
-			.saturating_add(Weight::from_proof_size(0))
+		Weight::from_parts(9_328_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
@@ -70,8 +70,8 @@ impl WeightInfo for () {
 	// Proof: BlockReward RewardDistributionConfigStorage (max_values: Some(1), max_size: Some(24), added: 519, mode: MaxEncodedLen)
 	fn set_configuration() -> Weight {
 		// Minimum execution time: 9_085 nanoseconds.
-		Weight::from_ref_time(9_328_000)
-			.saturating_add(Weight::from_proof_size(0))
+		Weight::from_parts(9_328_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

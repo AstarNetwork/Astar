@@ -27,11 +27,12 @@ use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 use sc_client_api::{AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider};
 use sc_network::NetworkService;
+use sc_network_sync::SyncingService;
 use sc_rpc::dev::DevApiServer;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
@@ -99,6 +100,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub graph: Arc<Pool<A>>,
     /// Network service
     pub network: Arc<NetworkService<Block, Hash>>,
+    /// Chain syncing service
+    pub sync: Arc<SyncingService<Block>>,
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
     /// The Node authority flag
@@ -107,7 +110,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub frontier_backend: Arc<fc_db::Backend<Block>>,
     /// EthFilterApi pool.
     pub filter_pool: FilterPool,
-    /// Maximum fee history cache size.                                                                                    
+    /// Maximum fee history cache size.
     pub fee_history_limit: u64,
     /// Fee history cache.
     pub fee_history_cache: FeeHistoryCache,
@@ -124,11 +127,17 @@ pub struct FullDeps<C, P, A: ChainApi> {
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
     tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
         + HeaderMetadata<Block, Error = BlockChainError>
@@ -153,7 +162,7 @@ where
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
 
-    let mut io = create_full_rpc(deps, subscription_task_executor)?;
+    let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
 
     if tracing_config.enable_txpool {
         io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
@@ -182,10 +191,16 @@ where
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
         + HeaderMetadata<Block, Error = BlockChainError>
@@ -205,16 +220,22 @@ where
     BE::Blockchain: BlockchainBackend<Block>,
     A: ChainApi<Block = Block> + 'static,
 {
-    create_full_rpc(deps, subscription_task_executor)
+    create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
 }
 
 fn create_full_rpc<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
         + HeaderMetadata<Block, Error = BlockChainError>
@@ -240,6 +261,7 @@ where
         pool,
         graph,
         network,
+        sync,
         deny_unsafe,
         is_authority,
         frontier_backend,
@@ -267,7 +289,7 @@ where
             pool.clone(),
             graph.clone(),
             no_tx_converter,
-            network.clone(),
+            sync.clone(),
             Default::default(),
             overrides.clone(),
             frontier_backend.clone(),
@@ -303,9 +325,10 @@ where
         EthPubSub::new(
             pool,
             client.clone(),
-            network,
+            sync,
             subscription_task_executor,
             overrides,
+            pubsub_notification_sinks,
         )
         .into_rpc(),
     )?;

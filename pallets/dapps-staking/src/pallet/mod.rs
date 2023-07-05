@@ -45,7 +45,6 @@ pub mod pallet {
     use super::*;
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(crate) trait Store)]
     pub struct Pallet<T>(PhantomData<T>);
 
     // Negative imbalance type of this pallet.

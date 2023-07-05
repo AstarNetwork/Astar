@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "5.11.0"
+version = "5.12.0"
 description = "Astar collator implementation in Rust."
 build = "build.rs"
 default-run = "astar-collator"
@@ -55,9 +55,10 @@ sc-client-db = { workspace = true }
 sc-consensus = { workspace = true }
 sc-consensus-aura = { workspace = true }
 sc-consensus-babe = { workspace = true }
+sc-consensus-grandpa = { workspace = true }
 sc-executor = { workspace = true }
-sc-finality-grandpa = { workspace = true }
 sc-network = { workspace = true }
+sc-network-sync = { workspace = true }
 sc-offchain = { workspace = true }
 sc-rpc = { workspace = true }
 sc-service = { workspace = true }
