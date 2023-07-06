@@ -129,14 +129,7 @@ export const xcmPallet = {
   relaychainV3: (acc: any) => ({
     V3: {
       parents: 1,
-      interior: {
-        X1: {
-          AccountId32: {
-            network: 'Any',
-            id: acc,
-          },
-        },
-      },
+      interior: 'Here'
     },
   }),
   parachainV3: (parents: number, paraId: any) => ({
@@ -180,6 +173,34 @@ export const xcmPallet = {
     (token: any, amount: any, dest: any) =>
     ({ api }: { api: ApiPromise }, acc: any) =>
       (api.tx.xcmPallet || api.tx.polkadotXcm).limitedReserveTransferAssets(
+        dest,
+        {
+          V3: {
+            parents: 0,
+            interior: {
+              X1: {
+                AccountId32: {
+                  id: acc,
+                },
+              },
+            },
+          },
+        },
+        {
+          V3: [
+            {
+              id: token,
+              fun: { Fungible: amount },
+            },
+          ],
+        },
+        0,
+        'Unlimited'
+      ),
+      limitedReserveWithdrawAssetsV3:
+    (token: any, amount: any, dest: any) =>
+    ({ api }: { api: ApiPromise }, acc: any) =>
+      (api.tx.xcmPallet || api.tx.polkadotXcm).limitedReserveWithdrawAssets(
         dest,
         {
           V3: {

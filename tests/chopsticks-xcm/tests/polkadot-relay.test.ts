@@ -20,6 +20,18 @@ const tests = [
       },
     },
   },
+  {
+    from: 'astar',
+    to: 'polkadot',
+    name: 'DOT',
+    test: {
+      xcmPalletUp: {
+        tx: tx.xcmPallet.limitedReserveWithdrawAssetsV3(astar.dot_loc, 1e12, tx.xcmPallet.relaychainV3),
+        balance: query.assets(astar.dot),
+      },
+    },
+  },
+
 ] as const
 
 export type TestType = (typeof tests)[number]

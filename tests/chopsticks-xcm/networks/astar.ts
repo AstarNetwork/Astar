@@ -21,7 +21,7 @@ export default {
         Account: [[[alice.address], { data: { free: 1000n * 10n **18n } }]],
       },
       Assets: {
-        account: [[[relayToken, alice.address], { balance: 10 * 1e12 }]],
+        account: [[[relayToken, alice.address], { balance: 10n ** 18n }]],
       },
       Sudo: {
         key: alice.address,
@@ -41,6 +41,8 @@ export const astar = {
   astr: { Concrete: { parents: 0, interior: 'Here' } },
   aca: 18446744073709551616n,
   usdt: 4294969280n,
+  dot_loc : { Concrete: { parents: 1, interior: 'Here' } },
+  usdt_loc: { Concrete: { parents: 1, interior: { X3: [ { Parachain: 1000 }, { PalletInstance: 50 }, { GeneralIndex: 1984 }] } } },
 } as const
 
 export const shiden = {
@@ -51,13 +53,4 @@ export const shiden = {
   kar: 18446744073709551618n,
   usdt: 4294969280n,
   ausd: 18446744073709551616n,
-  usdt_asset : { Concrete : { parents: 1, interior: { X3: [ 
-    { Parachain : 1000 },
-    {
-      PalletInstance: 50
-    },
-    {
-      GeneralIndex : 1984
-    }
-  ]}}}
 } as const

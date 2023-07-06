@@ -17,7 +17,7 @@ exports[`'polkadot' -> 'astar' xcm transfer 'DOT' > xcmPallet transfer > balance
 
 exports[`'polkadot' -> 'astar' xcm transfer 'DOT' > xcmPallet transfer > balance on to chain 1`] = `
 {
-  "balance": "(rounded 11000000000000)",
+  "balance": "(rounded 1000000000000000000)",
   "extra": null,
   "isFrozen": false,
   "reason": {

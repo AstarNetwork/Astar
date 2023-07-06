@@ -17,7 +17,7 @@ exports[`'kusama' -> 'shiden' xcm transfer 'KSM' > xcmPallet transfer > balance 
 
 exports[`'kusama' -> 'shiden' xcm transfer 'KSM' > xcmPallet transfer > balance on to chain 1`] = `
 {
-  "balance": "(rounded 11000000000000)",
+  "balance": "(rounded 1000000000000000000)",
   "extra": null,
   "isFrozen": false,
   "reason": {
@@ -81,7 +81,7 @@ exports[`'kusama' -> 'shiden' xcm transfer 'KSM' > xcmPallet transfer > tx event
 
 exports[`'shiden' -> 'kusama' xcm transfer 'KSM' > xtokens transfer > balance on from chain 1`] = `
 {
-  "balance": 9000000000000,
+  "balance": "(rounded 1000000000000000000)",
   "extra": null,
   "isFrozen": false,
   "reason": {

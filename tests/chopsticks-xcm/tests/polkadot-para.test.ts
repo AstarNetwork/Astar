@@ -2,7 +2,6 @@ import { Context } from '../networks/types'
 import { query, tx } from '../helpers/api'
 
 import { acala } from '../networks/acala'
-import { hydraDX } from '../networks/hydraDX'
 import { moonbeam } from '../networks/moonbeam'
 import { statemint } from '../networks/statemint'
 import { astar } from '../networks/astar'
@@ -33,6 +32,24 @@ const tests = [
       },
     },
   },
+  {
+    from: 'astar',
+    to: 'statemint',
+    name: 'USDT',
+    fromStorage: ({ alice }: Context) => ({
+      Assets: {
+        account: [[[ astar.usdt, alice.address], { balance: 1e8 }]],
+      },
+    }),
+    test: {
+      xcmPalletHorizontal: {
+        tx: tx.xcmPallet.limitedReserveTransferAssetsV3(astar.usdt_loc, 1e7, tx.xcmPallet.parachainV3(1, statemint.paraId)),
+        fromBalance: query.assets(astar.usdt),
+        toBalance: query.assets(statemint.usdtIndex),
+      },
+    },
+  },
+
 ] as const
 
 export type TestType = (typeof tests)[number]

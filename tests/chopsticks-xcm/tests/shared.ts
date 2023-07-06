@@ -119,6 +119,29 @@ export default function buildTest(tests: ReadonlyArray<TestType>) {
       })
     }
 
+    if ('xcmPalletUp' in test) {
+      const { balance, tx } = test.xcmPalletUp
+
+      it('xcmPallet transfer', async () => {
+        const tx0 = await sendTransaction(tx(fromChain, toAccount.addressRaw).signAsync(fromAccount))
+
+        await fromChain.chain.newBlock()
+
+      //   await check(balance(fromChain, fromAccount.address))
+      //   .redact({ number: precision })
+      //   .toMatchSnapshot('balance on from chain')
+      //   await checkEvents(tx0, 'xcmPallet').redact({ number: precision }).toMatchSnapshot('tx events')
+      //   await checkUmp(fromChain).toMatchSnapshot('from chain ump messages')
+
+      //   await toChain.chain.newBlock()
+
+      //   await check(toChain.api.query.system.account(toAccount.address))
+      //     .redact({ number: precision })
+      //     .toMatchSnapshot('balance on to chain')
+      //     await checkSystemEvents(toChain, 'ump', 'messageQueue').toMatchSnapshot('to chain ump events')
+      })
+    }
+
     if ('xcmPalletHorizontal' in test) {
       const { fromBalance, toBalance, tx, ...testOpt } = test.xcmPalletHorizontal
 
