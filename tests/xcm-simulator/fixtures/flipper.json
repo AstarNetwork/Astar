@@ -1,14 +1,14 @@
 {
   "source": {
-    "hash": "0xdd6430401e759bba008f829d53364435923d211c22f3aa14434d306ea0dc3cbd",
-    "language": "ink! 4.1.0",
-    "compiler": "rustc 1.68.2",
+    "hash": "0xe8dbb2816fed4f8414c4a9fde5e9e89a00ab561c022cae1bd90c071aa0a1275a",
+    "language": "ink! 4.2.0",
+    "compiler": "rustc 1.68.0-nightly",
     "build_info": {
-      "build_mode": "Release",
-      "cargo_contract_version": "2.0.0",
-      "rust_toolchain": "stable-x86_64-unknown-linux-gnu",
+      "build_mode": "Debug",
+      "cargo_contract_version": "2.2.1",
+      "rust_toolchain": "nightly-aarch64-apple-darwin",
       "wasm_opt_settings": {
-        "keep_debug_symbols": false,
+        "keep_debug_symbols": true,
         "optimization_passes": "Z"
       }
     }
@@ -17,8 +17,10 @@
     "name": "flipper",
     "version": "0.1.0",
     "authors": [
-      "[your_name] <[your_email]>"
-    ]
+      "Stake Technologies <devops@stake.co.jp>"
+    ],
+    "repository": "https://github.com/AstarNetwork/Astar",
+    "homepage": "https://astar.network/"
   },
   "spec": {
     "constructors": [
@@ -34,6 +36,7 @@
             }
           }
         ],
+        "default": false,
         "docs": [
           "Constructor that initializes the `bool` value to the given `init_value`."
         ],
@@ -50,6 +53,45 @@
       }
     ],
     "docs": [],
+    "environment": {
+      "accountId": {
+        "displayName": [
+          "AccountId"
+        ],
+        "type": 5
+      },
+      "balance": {
+        "displayName": [
+          "Balance"
+        ],
+        "type": 8
+      },
+      "blockNumber": {
+        "displayName": [
+          "BlockNumber"
+        ],
+        "type": 11
+      },
+      "chainExtension": {
+        "displayName": [
+          "ChainExtension"
+        ],
+        "type": 12
+      },
+      "hash": {
+        "displayName": [
+          "Hash"
+        ],
+        "type": 9
+      },
+      "maxEventTopics": 4,
+      "timestamp": {
+        "displayName": [
+          "Timestamp"
+        ],
+        "type": 10
+      }
+    },
     "events": [],
     "lang_error": {
       "displayName": [
@@ -61,6 +103,7 @@
     "messages": [
       {
         "args": [],
+        "default": false,
         "docs": [
           " A message that can be called on instantiated contracts.",
           " This one flips the value of the stored `bool` from `true`",
@@ -80,6 +123,7 @@
       },
       {
         "args": [],
+        "default": false,
         "docs": [
           " Simply returns the current value of our `bool`."
         ],
@@ -235,6 +279,102 @@
         ],
         "path": [
           "Result"
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 6,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "AccountId"
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "type": {
+        "def": {
+          "array": {
+            "len": 32,
+            "type": 7
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": {
+        "def": {
+          "primitive": "u8"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": {
+        "def": {
+          "primitive": "u128"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 6,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "Hash"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": {
+        "def": {
+          "primitive": "u64"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": {
+        "def": {
+          "primitive": "u32"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": {
+        "def": {
+          "variant": {}
+        },
+        "path": [
+          "ink_env",
+          "types",
+          "NoChainExtension"
         ]
       }
     }

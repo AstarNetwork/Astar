@@ -92,5 +92,6 @@ runtime-benchmarks = [
 	"xcm-executor/runtime-benchmarks",
 	"polkadot-runtime-parachains/runtime-benchmarks",
 	"polkadot-parachain/runtime-benchmarks",
+	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 ]

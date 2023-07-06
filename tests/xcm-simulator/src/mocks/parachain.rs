@@ -23,8 +23,8 @@ use frame_support::{
     dispatch::DispatchClass,
     match_types, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance,
-        InstanceFilter, Nothing, OnUnbalanced,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, Currency, Everything,
+        Imbalance, InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -218,6 +218,18 @@ impl Convert<Weight, Balance> for Runtime {
     }
 }
 
+pub struct CallFilter;
+impl Contains<RuntimeCall> for CallFilter {
+    fn contains(call: &RuntimeCall) -> bool {
+        match call {
+            // allow pallet_xcm::send()
+            RuntimeCall::PolkadotXcm(pallet_xcm::Call::send { .. }) => true,
+            // no other calls allowed
+            _ => false,
+        }
+    }
+}
+
 impl pallet_contracts::Config for Runtime {
     type Time = Timestamp;
     type Randomness = Randomness;
@@ -230,7 +242,7 @@ impl pallet_contracts::Config for Runtime {
     /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
-    type CallFilter = Nothing;
+    type CallFilter = CallFilter;
     type DepositPerItem = DepositPerItem;
     type DepositPerByte = DepositPerByte;
     type CallStack = [pallet_contracts::Frame<Self>; 5];
@@ -244,7 +256,7 @@ impl pallet_contracts::Config for Runtime {
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
-    type UnsafeUnstableInterface = ConstBool<false>;
+    type UnsafeUnstableInterface = ConstBool<true>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
