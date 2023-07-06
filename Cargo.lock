@@ -2945,7 +2945,6 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "async-trait",
  "fc-db",
@@ -2962,7 +2961,6 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "fp-storage",
  "kvdb-rocksdb",
@@ -2981,7 +2979,6 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "fc-db",
  "fc-storage",
@@ -3002,7 +2999,6 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3051,7 +3047,6 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3064,7 +3059,6 @@ dependencies = [
 [[package]]
 name = "fc-storage"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3206,7 +3200,6 @@ dependencies = [
 [[package]]
 name = "fp-account"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "hex",
  "impl-serde",
@@ -3224,7 +3217,6 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -3236,7 +3228,6 @@ dependencies = [
 [[package]]
 name = "fp-ethereum"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3250,7 +3241,6 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "evm",
  "frame-support",
@@ -3264,7 +3254,6 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -3281,7 +3270,6 @@ dependencies = [
 [[package]]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -3293,7 +3281,6 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -4302,24 +4289,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "276ec31bcb4a9ee45f58bec6f9ec700ae4cf4f4f8f2fa7e06cb406bd5ffdd770"
 dependencies = [
  "num-traits",
-]
-
-[[package]]
-name = "integration-tests"
-version = "0.1.0"
-dependencies = [
- "astar-runtime",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-dapps-staking",
- "pallet-proxy",
- "pallet-utility",
- "shibuya-runtime",
- "shiden-runtime",
- "sp-core",
- "sp-io",
- "sp-runtime",
 ]
 
 [[package]]
@@ -6591,7 +6560,6 @@ dependencies = [
 [[package]]
 name = "pallet-base-fee"
 version = "1.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6816,7 +6784,6 @@ dependencies = [
  "pallet-contracts-proc-macro",
  "parity-scale-codec",
  "rand 0.8.5",
- "rand_pcg",
  "scale-info",
  "serde",
  "smallvec",
@@ -7002,7 +6969,6 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "environmental",
  "ethereum",
@@ -7025,8 +6991,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "6.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
+version = "6.0.1-dev"
 dependencies = [
  "environmental",
  "evm",
@@ -7050,7 +7015,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-chain-id"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7087,7 +7051,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "fp-evm",
 ]
@@ -7095,7 +7058,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -7130,7 +7092,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -7140,7 +7101,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "ed25519-dalek",
  "fp-evm",
@@ -7149,7 +7109,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "fp-evm",
  "num",
@@ -7158,7 +7117,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "fp-evm",
  "tiny-keccak",
@@ -7167,7 +7125,6 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#ca5c1a0210264b595e950100c39811fdfa6819a5"
 dependencies = [
  "fp-evm",
  "ripemd",
@@ -15375,64 +15332,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "xcm-simulator"
-version = "0.9.40"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.40#95fe4c8862810bffd68343231a517e62689c05c0"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "paste",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-runtime-parachains",
- "sp-io",
- "sp-std",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
-name = "xcm-simulator-tests"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "cumulus-pallet-xcm",
- "frame-support",
- "frame-system",
- "log",
- "orml-traits",
- "orml-xcm-support",
- "orml-xtokens",
- "pallet-assets",
- "pallet-balances",
- "pallet-contracts",
- "pallet-contracts-primitives",
- "pallet-dapps-staking",
- "pallet-insecure-randomness-collective-flip",
- "pallet-proxy",
- "pallet-timestamp",
- "pallet-utility",
- "pallet-xc-asset-config",
- "pallet-xcm 0.9.40",
- "parity-scale-codec",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-primitives",
- "polkadot-runtime-parachains",
- "scale-info",
- "smallvec",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "sp-tracing",
- "xcm",
- "xcm-builder",
- "xcm-executor",
- "xcm-simulator",
 ]
 
 [[package]]
