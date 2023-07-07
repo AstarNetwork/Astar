@@ -3,11 +3,12 @@
   "id": "shibuya",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/3.114.212.146/tcp/30333/p2p/12D3KooWEHWUJ3Rzf8RLRihohbgXafz3Y4LnnKSzFDeZ1sXnopJs",
-    "/ip4/20.40.146.211/tcp/30333/ws/p2p/12D3KooWBVXQ1WgLjHhWMn8mVEdpwF6uepMT1sYkDvAhYAomZvvx",
-    "/ip4/34.168.19.219/tcp/30333/ws/p2p/12D3KooWBwxyvhLfMLLBaC4umejNUZu2C1RiyCRAJSTxnNDzywQ4",
-    "/dns/wss-bootnode-02.shibuya.astar.network/tcp/443/wss/p2p/12D3KooWBVXQ1WgLjHhWMn8mVEdpwF6uepMT1sYkDvAhYAomZvvx",
-    "/dns/wss-bootnode-03.shibuya.astar.network/tcp/443/wss/p2p/12D3KooWBwxyvhLfMLLBaC4umejNUZu2C1RiyCRAJSTxnNDzywQ4"
+    "/ip4/65.108.46.114/tcp/38333/ws/p2p/12D3KooWLBLYreWVnWUvV5xvTgbhr5zSPn33LQhexGW28zj83GjH",
+    "/ip4/103.243.173.186/tcp/30333/ws/p2p/12D3KooWDuAQkahaTsN8XHg4k7qe8rttoXrTW5jpJke275S2YA1a",
+    "/ip4/80.253.161.89/tcp/30333/ws/p2p/12D3KooWNfADqVKZFtiTDvR4CYF6pro5KVXeBEKYBHh5ohLAHrqk",
+    "/dns/wss-bootnode-01.shibuya.astar.network/tcp/443/wss/p2p/12D3KooWLBLYreWVnWUvV5xvTgbhr5zSPn33LQhexGW28zj83GjH",
+    "/dns/wss-bootnode-02.shibuya.astar.network/tcp/443/wss/p2p/12D3KooWDuAQkahaTsN8XHg4k7qe8rttoXrTW5jpJke275S2YA1a",
+    "/dns/wss-bootnode-03.shibuya.astar.network/tcp/443/wss/p2p/12D3KooWNfADqVKZFtiTDvR4CYF6pro5KVXeBEKYBHh5ohLAHrqk"
   ],
   "telemetryEndpoints": null,
   "protocolId": "shibuya",

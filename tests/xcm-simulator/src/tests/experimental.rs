@@ -23,8 +23,7 @@ use crate::mocks::{
 };
 
 use frame_support::{assert_ok, weights::Weight};
-use pallet_contracts::Determinism;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::Encode;
 use sp_runtime::traits::Bounded;
 use xcm::{prelude::*, v3::Response};
 use xcm_simulator::TestExt;
@@ -183,7 +182,7 @@ fn xcm_remote_transact_contract() {
         );
 
         // check for flip status
-        let outcome = ParachainContracts::bare_call(
+        let (res, _, _) = call_contract_method::<parachain::Runtime, Result<bool, ()>>(
             ALICE.into(),
             contract_id.clone(),
             0,
@@ -191,14 +190,8 @@ fn xcm_remote_transact_contract() {
             None,
             SELECTOR_GET.to_vec(),
             true,
-            Determinism::Deterministic,
         );
-        let res = outcome.result.unwrap();
-        // check for revert
-        assert!(!res.did_revert());
-        // decode the return value
-        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
-        assert_eq!(flag, Ok(true));
+        assert_eq!(res, Ok(true));
     });
 
     ParaB::execute_with(|| {
@@ -235,7 +228,7 @@ fn xcm_remote_transact_contract() {
 
     // check for flip status, it should be false
     ParaA::execute_with(|| {
-        let outcome = ParachainContracts::bare_call(
+        let (res, _, _) = call_contract_method::<parachain::Runtime, Result<bool, ()>>(
             ALICE.into(),
             contract_id.clone(),
             0,
@@ -243,13 +236,142 @@ fn xcm_remote_transact_contract() {
             None,
             SELECTOR_GET.to_vec(),
             true,
-            Determinism::Deterministic,
         );
-        let res = outcome.result.unwrap();
-        // check for revert
-        assert!(res.did_revert() == false);
-        // decode the return value, it should be false
-        let flag = Result::<bool, ()>::decode(&mut res.data.as_ref()).unwrap();
-        assert_eq!(flag, Ok(false));
+        assert_eq!(res, Ok(false));
+    });
+}
+
+#[test]
+fn test_async_xcm_contract_call_no_ce() {
+    /// All the fees and weights values required for the whole
+    /// operation.
+    #[derive(Encode)]
+    pub struct WeightsAndFees {
+        /// Max fee for whole XCM operation in foreign chain
+        /// This includes fees for sending XCM back to original
+        /// chain via Transact(pallet_xcm::send).
+        pub foreign_base_fee: MultiAsset,
+        /// Max weight for operation (remark)
+        pub foreign_transact_weight: Weight,
+        /// Max weight for Transact(pallet_xcm::send) operation
+        pub foreign_transcat_pallet_xcm: Weight,
+        /// Max fee for the callback operation
+        /// send by foreign chain
+        pub here_callback_base_fee: MultiAsset,
+        /// Max weight for Transact(pallet_contracts::call)
+        pub here_callback_transact_weight: Weight,
+        /// Max weight for contract call
+        pub here_callback_contract_weight: Weight,
+    }
+
+    const CONSTRUCTOR_SELECTOR: [u8; 4] = [0x00, 0x00, 0x11, 0x11];
+    const ATTEMPT_REMARK_SELECTOR: [u8; 4] = [0x00, 0x00, 0x22, 0x22];
+    const RESULT_REMARK_SELECTOR: [u8; 4] = [0x00, 0x00, 0x44, 0x44];
+
+    //
+    // Setup
+    //
+    let contract_id = ParaA::execute_with(|| {
+        // deploy contract
+        let (contract_id, _) = deploy_contract::<parachain::Runtime>(
+            "async-xcm-call-no-ce",
+            ALICE.into(),
+            0,
+            GAS_LIMIT,
+            None,
+            [CONSTRUCTOR_SELECTOR.to_vec(), 1.encode()].concat(),
+        );
+
+        // topup soverigin account of contract's derieve account in ParaB
+        assert_ok!(ParachainBalances::set_balance(
+            parachain::RuntimeOrigin::root(),
+            sibling_para_account_account_id(
+                2,
+                sibling_para_account_account_id(1, contract_id.clone())
+            ),
+            INITIAL_BALANCE,
+            100_000
+        ));
+
+        contract_id
+    });
+
+    ParaB::execute_with(|| {
+        // topup contract's ParaB derieve account
+        assert_ok!(ParachainBalances::set_balance(
+            parachain::RuntimeOrigin::root(),
+            sibling_para_account_account_id(1, contract_id.clone()),
+            INITIAL_BALANCE,
+            100_000
+        ));
+    });
+
+    //
+    // Send the XCM
+    //
+    ParaA::execute_with(|| {
+        assert_eq!(
+            call_contract_method::<parachain::Runtime, Result<bool, ()>>(
+                ALICE.into(),
+                contract_id.clone(),
+                0,
+                Weight::max_value(),
+                None,
+                [
+                    ATTEMPT_REMARK_SELECTOR.to_vec(),
+                    2u32.encode(),
+                    [1u8, 2u8, 3u8].to_vec().encode(),
+                    WeightsAndFees {
+                        foreign_base_fee: (Here, 100_000_000_000_000_000_000_u128).into(),
+                        foreign_transact_weight: Weight::from_parts(7_800_000, 0),
+                        foreign_transcat_pallet_xcm: Weight::from_parts(
+                            2_000_000_000_000,
+                            3 * 1024 * 1024
+                        ),
+                        here_callback_base_fee: (Here, 100_000_000_000_000_000_u128).into(),
+                        here_callback_contract_weight: Weight::from_parts(
+                            400_000_000_000,
+                            1024 * 1024,
+                        ),
+                        here_callback_transact_weight: Weight::from_parts(
+                            500_000_000_000,
+                            2 * 1024 * 1024
+                        ),
+                    }
+                    .encode(),
+                ]
+                .concat(),
+                true,
+            )
+            .0,
+            Ok(true)
+        );
+    });
+
+    // check for if remark was executed in ParaB
+    ParaB::execute_with(|| {
+        use parachain::{RuntimeEvent, System};
+        // check remark events
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::System(frame_system::Event::Remarked { .. })
+        )));
+    });
+
+    // Check for contract method called
+    ParaA::execute_with(|| {
+        assert_eq!(
+            call_contract_method::<parachain::Runtime, Result<Option<bool>, ()>>(
+                ALICE.into(),
+                contract_id.clone(),
+                0,
+                GAS_LIMIT,
+                None,
+                RESULT_REMARK_SELECTOR.to_vec(),
+                true,
+            )
+            .0,
+            Ok(Some(true))
+        );
     });
 }

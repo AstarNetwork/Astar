@@ -134,7 +134,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
         id: xcm::latest::AssetId::Concrete(PARENT),
         fun: Fungibility::Fungible(total_payment),
     };
-    let weight: Weight = Weight::from_ref_time(1_000_000_000);
+    let weight: Weight = Weight::from_parts(1_000_000_000, 0);
 
     // Calculate the expected execution fee for the execution weight
     let expected_execution_fee = execution_fee(
@@ -168,7 +168,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
     // 2. Buy more weight, using the same trader and asset type. Verify it works as expected.
     let (old_weight, old_consumed) = (fixed_rate_trader.weight, fixed_rate_trader.consumed);
 
-    let weight: Weight = Weight::from_ref_time(3_500_000_000);
+    let weight: Weight = Weight::from_parts(3_500_000_000, 0);
     let expected_execution_fee = execution_fee(
         weight,
         ExecutionPayment::get_units_per_second(PARENT).unwrap(),
@@ -209,7 +209,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
         fun: Fungibility::Fungible(total_payment),
     };
 
-    let weight: Weight = Weight::from_ref_time(1_750_000_000);
+    let weight: Weight = Weight::from_parts(1_750_000_000, 0);
     let expected_execution_fee = execution_fee(
         weight,
         ExecutionPayment::get_units_per_second(PARACHAIN).unwrap(),
@@ -250,7 +250,7 @@ fn fixed_rate_of_foreign_asset_buy_execution_fails() {
         id: xcm::latest::AssetId::Concrete(PARENT),
         fun: Fungibility::Fungible(total_payment),
     };
-    let weight: Weight = Weight::from_ref_time(3_000_000_000);
+    let weight: Weight = Weight::from_parts(3_000_000_000, 0);
 
     // Calculate the expected execution fee for the execution weight
     let expected_execution_fee = execution_fee(
@@ -287,7 +287,7 @@ fn fixed_rate_of_foreign_asset_refund_is_ok() {
         id: xcm::latest::AssetId::Concrete(PARENT),
         fun: Fungibility::Fungible(total_payment),
     };
-    let weight: Weight = Weight::from_ref_time(1_000_000_000);
+    let weight: Weight = Weight::from_parts(1_000_000_000, 0);
 
     // Calculate the expected execution fee for the execution weight and buy it
     let expected_execution_fee = execution_fee(
@@ -313,7 +313,7 @@ fn fixed_rate_of_foreign_asset_refund_is_ok() {
     // Refund more than remains and expect it to pass (saturated)
     let assets_to_refund = fixed_rate_trader.consumed;
 
-    let result = fixed_rate_trader.refund_weight(weight + Weight::from_ref_time(10000));
+    let result = fixed_rate_trader.refund_weight(weight + Weight::from_parts(10000, 0));
     if let Some(asset_location) = result {
         assert_eq!(asset_location, (PARENT, assets_to_refund).into());
 
@@ -430,7 +430,7 @@ fn allow_paid_exec_with_descend_origin_works() {
     let res = AllowPaidExecWithDescendOriginFrom::<Everything>::should_execute(
         &Here.into(),
         &mut valid_message,
-        Weight::from_ref_time(150),
+        Weight::from_parts(150, 0),
         &mut Weight::zero(),
     );
     assert_eq!(res, Ok(()));
@@ -441,7 +441,7 @@ fn allow_paid_exec_with_descend_origin_works() {
     let res = AllowPaidExecWithDescendOriginFrom::<Everything>::should_execute(
         &Here.into(),
         &mut valid_message,
-        Weight::from_ref_time(100),
+        Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
     assert_eq!(res, Ok(()));
@@ -452,7 +452,7 @@ fn allow_paid_exec_with_descend_origin_with_weight_correction_works() {
     let mut valid_message = desc_origin_barrier_valid_sequence();
 
     // Ensure that `Limited` gets adjusted to the provided enforced_weight_limit
-    let enforced_weight_limit = Weight::from_ref_time(3);
+    let enforced_weight_limit = Weight::from_parts(3, 0);
     let res = AllowPaidExecWithDescendOriginFrom::<Everything>::should_execute(
         &Here.into(),
         &mut valid_message,
@@ -507,7 +507,7 @@ fn allow_paid_exec_with_descend_origin_with_unsupported_origin_fails() {
     let res = AllowPaidExecWithDescendOriginFrom::<Nothing>::should_execute(
         &Here.into(),
         &mut valid_message,
-        Weight::from_ref_time(100),
+        Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
     assert_eq!(res, Err(()));
@@ -520,7 +520,7 @@ fn allow_paid_exec_with_descend_origin_with_invalid_message_fails() {
     let res = AllowPaidExecWithDescendOriginFrom::<Everything>::should_execute(
         &Here.into(),
         &mut invalid_message,
-        Weight::from_ref_time(100),
+        Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
     assert_eq!(res, Err(()));
@@ -530,7 +530,7 @@ fn allow_paid_exec_with_descend_origin_with_invalid_message_fails() {
     let res = AllowPaidExecWithDescendOriginFrom::<Everything>::should_execute(
         &Here.into(),
         &mut invalid_message,
-        Weight::from_ref_time(100),
+        Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
     assert_eq!(res, Err(()));
@@ -539,7 +539,7 @@ fn allow_paid_exec_with_descend_origin_with_invalid_message_fails() {
 #[test]
 fn allow_paid_exec_with_descend_origin_too_small_weight_fails() {
     let mut valid_message = desc_origin_barrier_valid_sequence();
-    let enforced_weight_limit = Weight::from_ref_time(29);
+    let enforced_weight_limit = Weight::from_parts(29, 0);
 
     // Ensure that we use `BuyExecution` with `Limited` weight but with insufficient weight.
     // This means that not enough execution time (weight) is being bought compared to the

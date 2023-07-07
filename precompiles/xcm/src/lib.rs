@@ -266,7 +266,7 @@ where
             },
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_ref_time(transact_weight),
+                require_weight_at_most: Weight::from_parts(transact_weight, 0),
                 call: remote_call.into(),
             },
         ]);

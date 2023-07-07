@@ -24,7 +24,6 @@ use cumulus_primitives_core::relay_chain::{Hash as PHash, PersistedValidationDat
 use futures::lock::Mutex;
 use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams, ForkChoiceStrategy};
 use sp_api::ApiExt;
-use sp_consensus::CacheKeyId;
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
 use sp_runtime::traits::Header as HeaderT;
 use std::sync::Arc;
@@ -113,13 +112,7 @@ where
     async fn verify(
         &mut self,
         mut block_import: BlockImportParams<Block, ()>,
-    ) -> Result<
-        (
-            BlockImportParams<Block, ()>,
-            Option<Vec<(CacheKeyId, Vec<u8>)>>,
-        ),
-        String,
-    > {
+    ) -> Result<BlockImportParams<Block, ()>, String> {
         // Skip checks that include execution, if being told so or when importing only state.
         //
         // This is done for example when gap syncing and it is expected that the block after the gap
@@ -128,7 +121,7 @@ where
         if block_import.with_state() || block_import.state_action.skip_execution_checks() {
             // When we are importing only the state of a block, it will be the best block.
             block_import.fork_choice = Some(ForkChoiceStrategy::Custom(block_import.with_state()));
-            return Ok((block_import, None));
+            return Ok(block_import);
         }
 
         let block_hash = *block_import.header.parent_hash();

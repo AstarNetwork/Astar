@@ -22,7 +22,9 @@ pub(crate) mod relay_chain;
 
 use frame_support::traits::{Currency, IsType, OnFinalize, OnInitialize};
 use frame_support::weights::Weight;
-use pallet_contracts_primitives::Code;
+use pallet_contracts::Determinism;
+use pallet_contracts_primitives::{Code, ReturnFlags};
+use parity_scale_codec::Decode;
 use sp_runtime::traits::{Bounded, Hash, StaticLookup};
 use sp_runtime::DispatchResult;
 use xcm::latest::prelude::*;
@@ -80,7 +82,6 @@ pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
 pub type ParachainAssets = pallet_assets::Pallet<parachain::Runtime>;
 pub type ParachainBalances = pallet_balances::Pallet<parachain::Runtime>;
-pub type ParachainContracts = pallet_contracts::Pallet<parachain::Runtime>;
 pub type ParachainXtokens = orml_xtokens::Pallet<parachain::Runtime>;
 
 pub fn parent_account_id() -> parachain::AccountId {
@@ -304,4 +305,45 @@ pub fn deploy_contract<T: pallet_contracts::Config>(
         result
     );
     (result.account_id, hash)
+}
+
+/// Call the wasm contract method and returns the decoded return
+/// values along with return flags and consumed weight
+pub fn call_contract_method<T: pallet_contracts::Config, V: Decode>(
+    origin: T::AccountId,
+    dest: T::AccountId,
+    value: ContractBalanceOf<T>,
+    gas_limit: Weight,
+    storage_deposit_limit: Option<ContractBalanceOf<T>>,
+    data: Vec<u8>,
+    debug: bool,
+) -> (V, ReturnFlags, Weight) {
+    let outcome = pallet_contracts::Pallet::<T>::bare_call(
+        origin,
+        dest,
+        value,
+        gas_limit,
+        storage_deposit_limit,
+        data,
+        debug,
+        Determinism::Deterministic,
+    );
+
+    if debug {
+        println!(
+            "Contract debug buffer - {:?}",
+            String::from_utf8(outcome.debug_message.clone())
+        );
+        println!("Contract outcome - {outcome:?}");
+    }
+
+    let res = outcome.result.unwrap();
+    // check for revert
+    assert!(!res.did_revert(), "Contract reverted!");
+
+    (
+        V::decode(&mut res.data.as_ref()).unwrap(),
+        res.flags,
+        outcome.gas_consumed,
+    )
 }
