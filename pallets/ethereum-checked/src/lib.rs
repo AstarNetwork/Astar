@@ -64,7 +64,7 @@ use astar_primitives::ethereum_checked::{
     AccountMapping, CheckedEthereumTransact, CheckedEthereumTx,
 };
 
-use pallet::*;
+pub use pallet::*;
 
 mod mock;
 mod tests;
