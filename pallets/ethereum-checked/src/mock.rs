@@ -40,7 +40,7 @@ use sp_runtime::{
 
 parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
+        frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
 impl frame_system::Config for TestRuntime {
@@ -142,7 +142,7 @@ impl AccountMapping<AccountId32> for MockAccountMapping {
 }
 
 parameter_types! {
-    pub WeightPerGas: Weight = Weight::from_ref_time(1);
+    pub WeightPerGas: Weight = Weight::from_parts(1, 0);
     pub const BlockGasLimit: U256 = U256::MAX;
 }
 
@@ -164,6 +164,7 @@ impl pallet_evm::Config for TestRuntime {
     type BlockGasLimit = BlockGasLimit;
     type OnCreate = ();
     type FindAuthor = MockFindAuthor;
+    type Timestamp = Timestamp;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<TestRuntime>;
 }
 
@@ -175,10 +176,11 @@ impl pallet_ethereum::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
     type PostLogContent = PostBlockAndTxnHashes;
+    type ExtraDataLength = ConstU32<30>;
 }
 
 parameter_types! {
-    pub TxWeightLimit: Weight = Weight::from_ref_time(u64::max_value());
+    pub TxWeightLimit: Weight = Weight::from_parts(u64::max_value(), 0);
 }
 
 impl pallet_ethereum_checked::Config for TestRuntime {
@@ -209,6 +211,7 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system,
+        Timestamp: pallet_timestamp,
         Balances: pallet_balances,
         Evm: pallet_evm,
         Ethereum: pallet_ethereum,

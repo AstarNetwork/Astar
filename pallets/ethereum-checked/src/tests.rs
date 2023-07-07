@@ -47,7 +47,7 @@ fn transact_works() {
             RawOrigin::XcmEthereumTx(ALICE).into(),
             store_tx
         ));
-        let pending = Ethereum::pending();
+        let pending = pallet_ethereum::Pending::<TestRuntime>::get();
         assert_eq!(pending.len(), 2);
 
         match pending[0] {
@@ -128,7 +128,7 @@ fn no_hash_collision() {
             ));
         }
 
-        let mut tx_hashes = Ethereum::pending()
+        let mut tx_hashes = pallet_ethereum::Pending::<TestRuntime>::get()
             .iter()
             .map(|(tx, _, _)| tx.hash())
             .collect::<Vec<_>>();
