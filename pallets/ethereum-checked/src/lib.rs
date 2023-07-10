@@ -21,7 +21,8 @@
 //! ## Overview
 //!
 //! A `pallet-ethererum` like pallet that execute transactions from checked source,
-//! like XCM remote call, cross-VM call, etc.
+//! like XCM remote call, cross-VM call, etc. Only `Call` transactions are supported
+//! (no `Create`).
 //!
 //! The checked source guarantees that transactions are valid with prior checks, so these
 //! transactions are not required to include valid signatures. Instead, `pallet-ethereum-checked`
@@ -206,6 +207,7 @@ impl<T: Config> Pallet<T> {
         let (post_info, apply_info) = T::ValidatedTransaction::apply(source, tx)?;
         match apply_info {
             CallOrCreateInfo::Call(info) => Ok((post_info, info)),
+            // It is not possible to have a `Create` transaction via `CheckedEthereumTx`.
             CallOrCreateInfo::Create(_) => {
                 unreachable!("Cannot create a 'Create' transaction; qed")
             }
