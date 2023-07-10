@@ -47,7 +47,10 @@ use scale_info::TypeInfo;
 
 use ethereum_types::{H160, U256};
 use fp_ethereum::{TransactionData, ValidatedTransaction};
-use fp_evm::{CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError};
+use fp_evm::{
+    CallInfo, CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig,
+    InvalidEvmTransactionError,
+};
 use pallet_evm::GasWeightMapping;
 
 use frame_support::{
@@ -58,7 +61,7 @@ use frame_system::pallet_prelude::*;
 #[cfg(feature = "runtime-benchmarks")]
 use sp_runtime::traits::TrailingZeroInput;
 use sp_runtime::traits::UniqueSaturatedInto;
-use sp_std::marker::PhantomData;
+use sp_std::{marker::PhantomData, result::Result};
 
 use astar_primitives::ethereum_checked::{
     AccountMapping, CheckedEthereumTransact, CheckedEthereumTx,
@@ -158,17 +161,18 @@ pub mod pallet {
                 tx.into(),
                 CheckedEthereumTxKind::Xcm,
             )
+            .map(|(post_info, _)| post_info)
         }
     }
 }
 
 impl<T: Config> Pallet<T> {
-    /// Validate and execute the checked tx.
+    /// Validate and execute the checked tx. Only `Call` transaction action is allowed.
     fn do_transact(
         source: H160,
         checked_tx: CheckedEthereumTx,
         tx_kind: CheckedEthereumTxKind,
-    ) -> DispatchResultWithPostInfo {
+    ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo> {
         let chain_id = T::ChainId::get();
         let nonce = Nonce::<T>::get();
         let tx = checked_tx.into_ethereum_tx(Nonce::<T>::get(), chain_id);
@@ -199,7 +203,13 @@ impl<T: Config> Pallet<T> {
         Nonce::<T>::put(nonce.saturating_add(U256::one()));
 
         // Execute the tx.
-        T::ValidatedTransaction::apply(source, tx)
+        let (post_info, apply_info) = T::ValidatedTransaction::apply(source, tx)?;
+        match apply_info {
+            CallOrCreateInfo::Call(info) => Ok((post_info, info)),
+            CallOrCreateInfo::Create(_) => {
+                unreachable!("Cannot create a 'Create' transaction; qed")
+            }
+        }
     }
 
     /// Block gas limit calculation based on the tx kind.
@@ -213,7 +223,10 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> CheckedEthereumTransact for Pallet<T> {
-    fn xvm_transact(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
+    fn xvm_transact(
+        source: H160,
+        checked_tx: CheckedEthereumTx,
+    ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo> {
         Self::do_transact(source, checked_tx, CheckedEthereumTxKind::Xvm)
     }
 }

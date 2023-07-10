@@ -23,21 +23,25 @@ use ethereum::{
     AccessListItem, EIP1559Transaction, TransactionAction, TransactionV2 as Transaction,
 };
 use ethereum_types::{H160, H256, U256};
+use fp_evm::CallInfo;
 use frame_support::{
-    dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::ConstU32, BoundedVec,
+    dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
+    pallet_prelude::*,
+    traits::ConstU32,
+    BoundedVec,
 };
-use sp_std::prelude::*;
+use sp_std::{prelude::*, result::Result};
 
 /// Max Ethereum tx input size: 65_536 bytes
 pub const MAX_ETHEREUM_TX_INPUT_SIZE: u32 = 2u32.pow(16);
 
-/// The checked Ethereum transaction.
+/// The checked Ethereum transaction. Only contracts `call` is support(no `create`).
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct CheckedEthereumTx {
     /// Gas limit.
     pub gas_limit: U256,
-    /// Action type, either `Call` or `Create`.
-    pub action: TransactionAction,
+    /// Contract address to call.
+    pub target: H160,
     /// Amount to transfer.
     pub value: U256,
     /// Input of a contract call.
@@ -66,7 +70,7 @@ impl CheckedEthereumTx {
             max_priority_fee_per_gas: U256::zero(),
             gas_limit: self.gas_limit,
             value: self.value,
-            action: self.action,
+            action: TransactionAction::Call(self.target),
             input: self.input.to_vec(),
             access_list,
             odd_y_parity: true,
@@ -85,7 +89,10 @@ fn dummy_rs() -> H256 {
 /// doesn't require tx signature.
 pub trait CheckedEthereumTransact {
     /// Transact an checked Ethereum transaction in XVM.
-    fn xvm_transact(source: H160, checked_tx: CheckedEthereumTx) -> DispatchResultWithPostInfo;
+    fn xvm_transact(
+        source: H160,
+        checked_tx: CheckedEthereumTx,
+    ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo>;
 }
 
 /// Mapping from `Account` to `H160`.

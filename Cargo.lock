@@ -517,6 +517,7 @@ version = "0.1.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
+ "fp-evm",
  "frame-support",
  "log",
  "pallet-xc-asset-config",

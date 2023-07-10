@@ -15,6 +15,7 @@ scale-info = { workspace = true }
 # Ethereum/Frontier dependencies
 ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true }
+fp-evm = { workspace = true }
 
 # Substrate dependencies
 frame-support = { workspace = true }
@@ -38,6 +39,7 @@ std = [
 	"scale-info/std",
 	"ethereum-types/std",
 	"ethereum/std",
+	"fp-evm/std",
 	"frame-support/std",
 	"sp-std/std",
 	"sp-runtime/std",

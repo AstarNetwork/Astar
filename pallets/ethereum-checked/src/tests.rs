@@ -22,7 +22,7 @@ use super::*;
 use mock::*;
 
 use astar_primitives::ethereum_checked::MAX_ETHEREUM_TX_INPUT_SIZE;
-use ethereum::{ReceiptV3, TransactionAction, TransactionV2 as Transaction};
+use ethereum::{ReceiptV3, TransactionV2 as Transaction};
 use frame_support::{assert_noop, assert_ok, traits::ConstU32};
 use sp_runtime::DispatchError;
 
@@ -36,7 +36,7 @@ fn transact_works() {
     ExtBuilder::default().build().execute_with(|| {
         let store_tx = CheckedEthereumTx {
             gas_limit: U256::from(1_000_000),
-            action: TransactionAction::Call(contract_address()),
+            target: contract_address(),
             value: U256::zero(),
             // Calling `store(3)`
             input: bounded_input(
@@ -80,7 +80,7 @@ fn origin_check_works() {
     ExtBuilder::default().build().execute_with(|| {
         let store_tx = CheckedEthereumTx {
             gas_limit: U256::from(1_000_000),
-            action: TransactionAction::Call(contract_address()),
+            target: contract_address(),
             value: U256::zero(),
             // Calling `store(3)`
             input: bounded_input(
@@ -108,7 +108,7 @@ fn no_hash_collision() {
     ExtBuilder::default().build().execute_with(|| {
         let store_tx = CheckedEthereumTx {
             gas_limit: U256::from(1_000_000),
-            action: TransactionAction::Call(contract_address()),
+            target: contract_address(),
             value: U256::zero(),
             // Calling `store(3)`
             input: bounded_input(
