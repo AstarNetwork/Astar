@@ -189,7 +189,7 @@ impl pallet_ethereum_checked::Config for TestRuntime {
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
     type AccountMapping = MockAccountMapping;
-    type TransactOrigin = EnsureXcmEthereumTx<AccountId32>;
+    type XcmTransactOrigin = EnsureXcmEthereumTx<AccountId32>;
 }
 
 pub(crate) type AccountId = AccountId32;

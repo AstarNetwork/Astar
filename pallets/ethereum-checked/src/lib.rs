@@ -133,7 +133,7 @@ pub mod pallet {
         type AccountMapping: AccountMapping<Self::AccountId>;
 
         /// Origin for `transact` call.
-        type TransactOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
+        type XcmTransactOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
     }
 
     #[pallet::origin]
@@ -155,7 +155,7 @@ pub mod pallet {
             weight_limit.saturating_add(T::DbWeight::get().reads_writes(1, 1))
         })]
         pub fn transact(origin: OriginFor<T>, tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
-            let source = T::TransactOrigin::ensure_origin(origin)?;
+            let source = T::XcmTransactOrigin::ensure_origin(origin)?;
             Self::do_transact(
                 T::AccountMapping::into_h160(source),
                 tx.into(),
