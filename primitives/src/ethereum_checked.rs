@@ -23,8 +23,13 @@ use ethereum::{
     AccessListItem, EIP1559Transaction, TransactionAction, TransactionV2 as Transaction,
 };
 use ethereum_types::{H160, H256, U256};
-use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::ConstU32, BoundedVec,
+};
 use sp_std::prelude::*;
+
+/// Max Ethereum tx input size: 65_536 bytes
+pub const MAX_ETHEREUM_TX_INPUT_SIZE: u32 = 2u32.pow(16);
 
 /// The checked Ethereum transaction.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -36,7 +41,7 @@ pub struct CheckedEthereumTx {
     /// Amount to transfer.
     pub value: U256,
     /// Input of a contract call.
-    pub input: Vec<u8>,
+    pub input: BoundedVec<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>,
     /// Optional access list, specified in EIP-2930.
     pub maybe_access_list: Option<Vec<(H160, Vec<H256>)>>,
 }
@@ -62,7 +67,7 @@ impl CheckedEthereumTx {
             gas_limit: self.gas_limit,
             value: self.value,
             action: self.action,
-            input: self.input.clone(),
+            input: self.input.to_vec(),
             access_list,
             odd_y_parity: true,
             r: dummy_rs(),

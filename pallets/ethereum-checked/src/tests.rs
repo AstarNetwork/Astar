@@ -21,9 +21,15 @@
 use super::*;
 use mock::*;
 
+use astar_primitives::ethereum_checked::MAX_ETHEREUM_TX_INPUT_SIZE;
 use ethereum::{ReceiptV3, TransactionAction, TransactionV2 as Transaction};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::ConstU32};
 use sp_runtime::DispatchError;
+
+fn bounded_input(data: &'static str) -> BoundedVec<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>> {
+    BoundedVec::<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>::try_from(hex::decode(data).unwrap())
+        .unwrap()
+}
 
 #[test]
 fn transact_works() {
@@ -33,10 +39,9 @@ fn transact_works() {
             action: TransactionAction::Call(contract_address()),
             value: U256::zero(),
             // Calling `store(3)`
-            input: hex::decode(
+            input: bounded_input(
                 "6057361d0000000000000000000000000000000000000000000000000000000000000003",
-            )
-            .unwrap(),
+            ),
             maybe_access_list: None,
         };
         assert_ok!(EthereumChecked::transact(
@@ -78,10 +83,9 @@ fn origin_check_works() {
             action: TransactionAction::Call(contract_address()),
             value: U256::zero(),
             // Calling `store(3)`
-            input: hex::decode(
+            input: bounded_input(
                 "6057361d0000000000000000000000000000000000000000000000000000000000000003",
-            )
-            .unwrap(),
+            ),
             maybe_access_list: None,
         };
         assert_noop!(
@@ -107,10 +111,9 @@ fn no_hash_collision() {
             action: TransactionAction::Call(contract_address()),
             value: U256::zero(),
             // Calling `store(3)`
-            input: hex::decode(
+            input: bounded_input(
                 "6057361d0000000000000000000000000000000000000000000000000000000000000003",
-            )
-            .unwrap(),
+            ),
             maybe_access_list: None,
         };
         for _ in 0..5 {
