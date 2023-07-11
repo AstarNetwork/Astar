@@ -200,6 +200,7 @@ pallet-evm-precompile-simple = { git = "https://github.com/AstarNetwork/frontier
 pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.40", default-features = false }
 pallet-evm-chain-id = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.40", default-features = false }
 fp-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.40", default-features = false }
+fp-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.40", default-features = false }
 
 # (native)
 fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.40" }
