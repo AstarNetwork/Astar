@@ -17,7 +17,11 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::{pallet::pallet::Error, pallet::pallet::Event, *};
-use frame_support::{assert_noop, assert_ok, traits::{OnInitialize, Currency}, weights::Weight};
+use frame_support::{
+    assert_noop, assert_ok,
+    traits::{Currency, OnInitialize},
+    weights::Weight,
+};
 use mock::{Balance, Balances, MockSmartContract, *};
 use sp_core::H160;
 use sp_runtime::{
