@@ -541,7 +541,7 @@ pub enum RewardDestination {
 
 impl Default for RewardDestination {
     fn default() -> Self {
-        RewardDestination::StakeBalance
+        RewardDestination::FreeBalance
     }
 }
 

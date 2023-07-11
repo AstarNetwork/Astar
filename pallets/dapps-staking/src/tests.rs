@@ -1912,6 +1912,19 @@ fn changing_reward_destination_for_empty_ledger_is_not_ok() {
 }
 
 #[test]
+fn default_reward_destination_is_free_balance() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let staker = 1;
+        assert_eq!(
+            DappsStaking::ledger(&staker).reward_destination,
+            RewardDestination::FreeBalance
+        );
+    });
+}
+
+#[test]
 fn claim_dapp_with_zero_stake_periods_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
