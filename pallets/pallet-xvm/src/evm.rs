@@ -77,7 +77,7 @@ where
             },
         )
         .map_err(|e| {
-            let consumed_weight = e.post_info.actual_weight.unwrap_or_default().ref_time();
+            let consumed_weight = e.post_info.actual_weight.unwrap_or_default();
             XvmCallError {
                 error: XvmError::ExecutionError(Into::<&str>::into(e.error).into()),
                 consumed_weight,
@@ -91,10 +91,7 @@ where
 
         Ok(XvmCallOk {
             output: call_info.value,
-            consumed_weight: post_dispatch_info
-                .actual_weight
-                .unwrap_or_default()
-                .ref_time(),
+            consumed_weight: post_dispatch_info.actual_weight.unwrap_or_default(),
         })
     }
 }
