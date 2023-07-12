@@ -34,7 +34,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureSigned,
+    EnsureSigned, EnsureRoot,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::{ConstBool, H256};
@@ -140,7 +140,7 @@ impl pallet_assets::Config for Runtime {
     type AssetIdParameter = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = ConstU128<10>;
     type MetadataDepositBase = ConstU128<10>;
     type MetadataDepositPerByte = ConstU128<1>;
@@ -391,7 +391,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type XcAssetChanged = ();
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Runtime>;
 }
 
@@ -588,6 +588,7 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = pallet_xcm::TestWeightInfo;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
+    type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 /// Convert `AccountId` to `MultiLocation`.

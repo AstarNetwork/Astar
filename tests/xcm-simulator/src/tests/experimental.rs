@@ -283,7 +283,7 @@ fn test_async_xcm_contract_call_no_ce() {
         );
 
         // topup soverigin account of contract's derieve account in ParaB
-        assert_ok!(ParachainBalances::set_balance(
+        assert_ok!(ParachainBalances::force_set_balance(
             parachain::RuntimeOrigin::root(),
             sibling_para_account_account_id(
                 2,
@@ -298,7 +298,7 @@ fn test_async_xcm_contract_call_no_ce() {
 
     ParaB::execute_with(|| {
         // topup contract's ParaB derieve account
-        assert_ok!(ParachainBalances::set_balance(
+        assert_ok!(ParachainBalances::force_set_balance(
             parachain::RuntimeOrigin::root(),
             sibling_para_account_account_id(1, contract_id.clone()),
             INITIAL_BALANCE,

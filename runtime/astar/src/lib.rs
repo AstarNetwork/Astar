@@ -1220,6 +1220,14 @@ impl_runtime_apis! {
         fn metadata() -> OpaqueMetadata {
             OpaqueMetadata::new(Runtime::metadata().into())
         }
+
+        fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> sp_std::vec::Vec<u32> {
+			Runtime::metadata_versions()
+		}
     }
 
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
@@ -1506,7 +1514,7 @@ impl_runtime_apis! {
             input_data: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
             let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
-            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
+            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Enforced)
         }
 
         fn instantiate(

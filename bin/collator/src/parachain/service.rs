@@ -527,7 +527,7 @@ where
         transaction_pool: transaction_pool.clone(),
         task_manager: &mut task_manager,
         config: parachain_config,
-        keystore: params.keystore_container.sync_keystore(),
+        keystore: params.keystore_container.keystore(),
         backend: backend.clone(),
         network: network.clone(),
         system_rpc_tx,
@@ -557,7 +557,7 @@ where
             relay_chain_interface.clone(),
             transaction_pool,
             sync_service,
-            params.keystore_container.sync_keystore(),
+            params.keystore_container.keystore(),
             force_authoring,
         )?;
 
@@ -874,7 +874,7 @@ where
         transaction_pool: transaction_pool.clone(),
         task_manager: &mut task_manager,
         config: parachain_config,
-        keystore: params.keystore_container.sync_keystore(),
+        keystore: params.keystore_container.keystore(),
         backend: backend.clone(),
         network: network.clone(),
         system_rpc_tx,
@@ -904,7 +904,7 @@ where
             relay_chain_interface.clone(),
             transaction_pool,
             sync_service,
-            params.keystore_container.sync_keystore(),
+            params.keystore_container.keystore(),
             force_authoring,
         )?;
 

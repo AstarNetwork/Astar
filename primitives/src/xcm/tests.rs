@@ -510,7 +510,7 @@ fn allow_paid_exec_with_descend_origin_with_unsupported_origin_fails() {
         Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
-    assert_eq!(res, Err(()));
+    assert_eq!(res, Err(ProcessMessageError::Unsupported));
 }
 
 #[test]
@@ -523,7 +523,7 @@ fn allow_paid_exec_with_descend_origin_with_invalid_message_fails() {
         Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
-    assert_eq!(res, Err(()));
+    assert_eq!(res, Err(ProcessMessageError::Unsupported));
 
     // Should still fail, even if correct sequence follows next
     invalid_message.append(&mut desc_origin_barrier_valid_sequence());
@@ -533,7 +533,7 @@ fn allow_paid_exec_with_descend_origin_with_invalid_message_fails() {
         Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
-    assert_eq!(res, Err(()));
+    assert_eq!(res, Err(ProcessMessageError::Unsupported));
 }
 
 #[test]
@@ -558,5 +558,5 @@ fn allow_paid_exec_with_descend_origin_too_small_weight_fails() {
         enforced_weight_limit,
         &mut Weight::zero(),
     );
-    assert_eq!(res, Err(()));
+    assert_eq!(res, Err(ProcessMessageError::Unsupported));
 }

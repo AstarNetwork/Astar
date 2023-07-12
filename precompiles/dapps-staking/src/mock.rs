@@ -195,6 +195,11 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    // TODO: set this properly
+    type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ();
+	type MaxFreezes = ();
 }
 
 pub fn precompile_address() -> H160 {

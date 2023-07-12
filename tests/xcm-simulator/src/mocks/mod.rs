@@ -326,7 +326,7 @@ pub fn call_contract_method<T: pallet_contracts::Config, V: Decode>(
         storage_deposit_limit,
         data,
         debug,
-        Determinism::Deterministic,
+        Determinism::Enforced,
     );
 
     if debug {

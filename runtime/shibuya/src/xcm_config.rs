@@ -247,6 +247,7 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = pallet_xcm::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
+    type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

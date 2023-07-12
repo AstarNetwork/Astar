@@ -174,7 +174,7 @@ pub mod pallet {
                                 initial: old.initial,
                                 maximum: old.maximum,
                                 code: old.code,
-                                determinism: Determinism::Deterministic,
+                                determinism: pallet_contracts::Enforced,
                             })
                         });
 
@@ -297,7 +297,7 @@ pub mod pallet {
         fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
             for value in CodeStorage::<T>::iter_values() {
                 ensure!(
-                    value.determinism == Determinism::Deterministic,
+                    value.determinism == Determinism::Enforced,
                     "All pre-existing codes need to be deterministic."
                 );
             }

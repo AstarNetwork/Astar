@@ -84,12 +84,6 @@ pub fn new_partial(
     >,
     ServiceError,
 > {
-    if config.keystore_remote.is_some() {
-        return Err(ServiceError::Other(
-            "Remote Keystores are not supported.".to_string(),
-        ));
-    }
-
     let telemetry = config
         .telemetry_endpoints
         .clone()
@@ -368,7 +362,7 @@ pub fn start_node(
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         network: network.clone(),
         client: client.clone(),
-        keystore: keystore_container.sync_keystore(),
+        keystore: keystore_container.keystore(),
         task_manager: &mut task_manager,
         transaction_pool: transaction_pool.clone(),
         rpc_builder: rpc_extensions_builder,
@@ -411,7 +405,7 @@ pub fn start_node(
                 },
                 force_authoring,
                 backoff_authoring_blocks,
-                keystore: keystore_container.sync_keystore(),
+                keystore: keystore_container.keystore(),
                 sync_oracle: sync_service.clone(),
                 justification_sync_link: sync_service.clone(),
                 block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
@@ -431,7 +425,7 @@ pub fn start_node(
     // if the node isn't actively participating in consensus then it doesn't
     // need a keystore, regardless of which protocol we use below.
     let keystore = if role.is_authority() {
-        Some(keystore_container.sync_keystore())
+        Some(keystore_container.keystore())
     } else {
         None
     };
@@ -630,7 +624,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         network: network.clone(),
         client: client.clone(),
-        keystore: keystore_container.sync_keystore(),
+        keystore: keystore_container.keystore(),
         task_manager: &mut task_manager,
         transaction_pool: transaction_pool.clone(),
         rpc_builder: rpc_extensions_builder,
@@ -673,7 +667,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 },
                 force_authoring,
                 backoff_authoring_blocks,
-                keystore: keystore_container.sync_keystore(),
+                keystore: keystore_container.keystore(),
                 sync_oracle: sync_service.clone(),
                 justification_sync_link: sync_service.clone(),
                 block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
@@ -693,7 +687,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     // if the node isn't actively participating in consensus then it doesn't
     // need a keystore, regardless of which protocol we use below.
     let keystore = if role.is_authority() {
-        Some(keystore_container.sync_keystore())
+        Some(keystore_container.keystore())
     } else {
         None
     };

@@ -26,6 +26,7 @@ use frame_support::{
     traits::{AsEnsureOriginWithArg, Everything, Nothing},
     weights::Weight,
 };
+use frame_system::EnsureRoot;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
@@ -233,6 +234,10 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ();
+	type MaxFreezes = ();
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments
@@ -451,6 +456,7 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = pallet_xcm::TestWeightInfo;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
+    type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 // Configure a mock runtime to test the pallet.

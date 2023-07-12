@@ -111,6 +111,10 @@ impl pallet_balances::Config for Runtime {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ();
+	type MaxFreezes = ();
 }
 
 const MAGIC_NUMBER: u16 = 0xff50;

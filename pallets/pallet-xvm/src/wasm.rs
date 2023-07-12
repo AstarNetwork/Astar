@@ -68,7 +68,7 @@ where
             None,
             input,
             false,
-            pallet_contracts::Determinism::Deterministic,
+            pallet_contracts::Determinism::Enforced,
         );
 
         log::trace!(

@@ -34,7 +34,7 @@
 
 use frame_support::{
     ensure,
-    traits::{tokens::fungibles, Contains, ContainsPair, Get},
+    traits::{tokens::fungibles, Contains, ContainsPair, Get, ProcessMessageError},
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 use sp_runtime::traits::{Bounded, Zero};
@@ -281,13 +281,13 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowPaidExecWithDescendOrigi
         message: &mut [Instruction<RuntimeCall>],
         max_weight: Weight,
         _weight_credit: &mut Weight,
-    ) -> Result<(), ()> {
+    ) -> Result<(), ProcessMessageError> {
         log::trace!(
             target: "xcm::barriers",
             "AllowPaidExecWithDescendOriginFrom origin: {:?}, message: {:?}, max_weight: {:?}, weight_credit: {:?}",
             origin, message, max_weight, _weight_credit,
         );
-        ensure!(T::contains(origin), ());
+        ensure!(T::contains(origin), ProcessMessageError::Unsupported);
 
         match message
             .iter_mut()
@@ -311,7 +311,7 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowPaidExecWithDescendOrigi
                 Ok(())
             }
 
-            _ => return Err(()),
+            _ => return Err(ProcessMessageError::Unsupported),
         }
     }
 }
