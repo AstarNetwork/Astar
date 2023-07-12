@@ -61,6 +61,7 @@ pub enum XvmError {
     ContextConversionFailed,
     OutOfGas,
     ExecutionError(Vec<u8>),
+    InputTooLarge,
     // extend this list as part of improved error handling
 }
 
