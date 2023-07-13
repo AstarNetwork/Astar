@@ -8,6 +8,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+hex = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
@@ -26,7 +27,6 @@ astar-primitives = { workspace = true }
 
 [dev-dependencies]
 ethereum = { workspace = true }
-hex = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
@@ -36,6 +36,7 @@ sp-io = { workspace = true }
 [features]
 default = ["std"]
 std = [
+	"hex/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"ethereum/std",
@@ -55,9 +56,12 @@ std = [
 	"astar-primitives/std",
 ]
 runtime-benchmarks = [
+	"hex",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"pallet-ethereum/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]

@@ -254,6 +254,7 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-ethereum-checked/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
@@ -303,6 +304,7 @@ try-runtime = [
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-state-trie-migration/try-runtime",
+	"pallet-ethereum-checked/try-runtime",
 	"orml-xtokens/try-runtime",
 ]
 evm-tracing = [

@@ -1432,6 +1432,7 @@ mod benches {
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
+        [pallet_ethereum_checked, EthereumChecked]
     );
 }
 

@@ -49,8 +49,8 @@ use scale_info::TypeInfo;
 use ethereum_types::{H160, U256};
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use fp_evm::{
-    CallInfo, CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig,
-    InvalidEvmTransactionError,
+    CallInfo, CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, ExitReason,
+    ExitSucceed, InvalidEvmTransactionError,
 };
 use pallet_evm::GasWeightMapping;
 
@@ -69,6 +69,12 @@ use astar_primitives::ethereum_checked::{
 };
 
 pub use pallet::*;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+// pub mod weights;
+// pub use weights::WeightInfo;
 
 mod mock;
 mod tests;
@@ -135,6 +141,9 @@ pub mod pallet {
 
         /// Origin for `transact` call.
         type XcmTransactOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
+
+        // /// Weight information for extrinsics in this pallet.
+        // type WeightInfo: WeightInfo;
     }
 
     #[pallet::origin]
@@ -161,6 +170,25 @@ pub mod pallet {
                 T::AccountMapping::into_h160(source),
                 tx.into(),
                 CheckedEthereumTxKind::Xcm,
+                false,
+            )
+            .map(|(post_info, _)| post_info)
+        }
+
+        /// Transact an Ethereum transaction but not to apply it. This call is meant only for
+        /// benchmarks, to get the weight overhead before apply.
+        #[pallet::call_index(100)]
+        #[pallet::weight(0)]
+        pub fn transact_without_apply(
+            origin: OriginFor<T>,
+            tx: CheckedEthereumTx,
+        ) -> DispatchResultWithPostInfo {
+            let source = T::XcmTransactOrigin::ensure_origin(origin)?;
+            Self::do_transact(
+                T::AccountMapping::into_h160(source),
+                tx.into(),
+                CheckedEthereumTxKind::Xcm,
+                true,
             )
             .map(|(post_info, _)| post_info)
         }
@@ -173,6 +201,7 @@ impl<T: Config> Pallet<T> {
         source: H160,
         checked_tx: CheckedEthereumTx,
         tx_kind: CheckedEthereumTxKind,
+        skip_apply: bool,
     ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo> {
         let chain_id = T::ChainId::get();
         let nonce = Nonce::<T>::get();
@@ -203,6 +232,18 @@ impl<T: Config> Pallet<T> {
 
         Nonce::<T>::put(nonce.saturating_add(U256::one()));
 
+        if skip_apply {
+            return Ok((
+                PostDispatchInfo::default(),
+                CallInfo {
+                    exit_reason: ExitReason::Succeed(ExitSucceed::Stopped),
+                    value: Default::default(),
+                    used_gas: checked_tx.gas_limit,
+                    logs: Default::default(),
+                },
+            ));
+        }
+
         // Execute the tx.
         let (post_info, apply_info) = T::ValidatedTransaction::apply(source, tx)?;
         match apply_info {
@@ -229,6 +270,6 @@ impl<T: Config> CheckedEthereumTransact for Pallet<T> {
         source: H160,
         checked_tx: CheckedEthereumTx,
     ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo> {
-        Self::do_transact(source, checked_tx, CheckedEthereumTxKind::Xvm)
+        Self::do_transact(source, checked_tx, CheckedEthereumTxKind::Xvm, false)
     }
 }
