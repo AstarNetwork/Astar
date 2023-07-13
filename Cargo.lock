@@ -6055,6 +6055,7 @@ version = "0.6.0"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
+ "scale-info",
  "sp-api",
  "sp-io",
  "sp-runtime",

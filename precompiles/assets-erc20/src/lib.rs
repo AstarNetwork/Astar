@@ -144,7 +144,9 @@ where
         if let Some(asset_id) = Runtime::address_to_asset_id(address) {
             // We check maybe_total_supply. This function returns Some if the asset exists,
             // which is all we care about at this point
-            if pallet_assets::Pallet::<Runtime, Instance>::maybe_total_supply(asset_id).is_some() {
+            if pallet_assets::Pallet::<Runtime, Instance>::maybe_total_supply(asset_id.clone())
+                .is_some()
+            {
                 let result = {
                     let selector = match handle.read_selector() {
                         Ok(selector) => selector,
@@ -297,14 +299,17 @@ where
             handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
 
             // If previous approval exists, we need to clean it
-            if pallet_assets::Pallet::<Runtime, Instance>::allowance(asset_id, &origin, &spender)
-                != 0u32.into()
+            if pallet_assets::Pallet::<Runtime, Instance>::allowance(
+                asset_id.clone(),
+                &origin,
+                &spender,
+            ) != 0u32.into()
             {
                 RuntimeHelper::<Runtime>::try_dispatch(
                     handle,
                     Some(origin.clone()).into(),
                     pallet_assets::Call::<Runtime, Instance>::cancel_approval {
-                        id: asset_id.into(),
+                        id: asset_id.clone().into(),
                         delegate: Runtime::Lookup::unlookup(spender.clone()),
                     },
                 )?;

@@ -95,26 +95,7 @@ pub fn new_partial(
         })
         .transpose()?;
 
-    let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
-        config.wasm_method,
-        config.default_heap_pages,
-        config.max_runtime_instances,
-        config.runtime_cache_size,
-    );
-
-    let heap_pages = config
-        .default_heap_pages
-        .map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static {
-            extra_pages: h as _,
-        });
-
-    let executor = sc_executor::WasmExecutor::<HostFunctions>::builder()
-        .with_execution_method(config.wasm_method)
-        .with_max_runtime_instances(config.max_runtime_instances)
-        .with_runtime_cache_size(config.runtime_cache_size)
-        .with_onchain_heap_alloc_strategy(heap_pages)
-        .with_offchain_heap_alloc_strategy(heap_pages)
-        .build();
+    let executor = sc_service::new_native_or_wasm_executor(&config);
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(

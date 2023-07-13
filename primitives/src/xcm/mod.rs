@@ -245,7 +245,8 @@ impl<
         match Matcher::matches_fungibles(&revenue) {
             Ok((asset_id, amount)) => {
                 if amount > Zero::zero() {
-                    if let Err(error) = Assets::mint_into(asset_id, &FeeDestination::get(), amount)
+                    if let Err(error) =
+                        Assets::mint_into(asset_id.clone(), &FeeDestination::get(), amount)
                     {
                         log::error!(
                             target: "xcm::weight",
