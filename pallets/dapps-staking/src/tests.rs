@@ -17,7 +17,11 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::{pallet::pallet::Error, pallet::pallet::Event, *};
-use frame_support::{assert_noop, assert_ok, traits::OnInitialize, weights::Weight};
+use frame_support::{
+    assert_noop, assert_ok,
+    traits::{Currency, OnInitialize},
+    weights::Weight,
+};
 use mock::{Balance, Balances, MockSmartContract, *};
 use sp_core::H160;
 use sp_runtime::{
@@ -1907,6 +1911,19 @@ fn changing_reward_destination_for_empty_ledger_is_not_ok() {
                 RewardDestination::FreeBalance
             ),
             Error::<TestRuntime>::NotActiveStaker
+        );
+    });
+}
+
+#[test]
+fn default_reward_destination_is_free_balance() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let staker = 1;
+        assert_eq!(
+            DappsStaking::ledger(&staker).reward_destination,
+            RewardDestination::FreeBalance
         );
     });
 }

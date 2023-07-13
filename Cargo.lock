@@ -410,7 +410,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.12.0"
+version = "5.13.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -533,7 +533,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.12.0"
+version = "5.13.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -6917,7 +6917,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "3.9.0"
+version = "3.10.0"
 dependencies = [
  "astar-primitives",
  "frame-benchmarking",
@@ -12018,7 +12018,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.12.0"
+version = "5.13.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -12126,7 +12126,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.12.0"
+version = "5.13.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",

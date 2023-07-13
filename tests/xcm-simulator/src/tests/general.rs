@@ -207,6 +207,10 @@ fn remote_dapps_staking_staker_claim() {
             smart_contract.clone(),
             stake_amount,
         ));
+        assert_ok!(parachain::DappsStaking::set_reward_destination(
+            parachain::RuntimeOrigin::signed(ALICE),
+            pallet_dapps_staking::RewardDestination::StakeBalance,
+        ));
 
         // advance enough blocks so we at least get to era 4
         advance_parachain_block_to(20);

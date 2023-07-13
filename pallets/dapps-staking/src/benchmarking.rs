@@ -22,7 +22,7 @@ use super::*;
 use crate::Pallet as DappsStaking;
 
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::traits::{Get, OnFinalize, OnInitialize};
+use frame_support::traits::{Currency, Get, OnFinalize, OnInitialize};
 use frame_system::{Pallet as System, RawOrigin};
 use sp_runtime::traits::{One, TrailingZeroInput};
 
