@@ -462,6 +462,7 @@ impl pallet_ethereum_checked::Config for Runtime {
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
     type AccountMapping = HashedAccountMapping;
     type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
+    type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {

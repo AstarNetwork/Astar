@@ -190,6 +190,7 @@ impl pallet_ethereum_checked::Config for TestRuntime {
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
     type AccountMapping = MockAccountMapping;
     type XcmTransactOrigin = EnsureXcmEthereumTx<AccountId32>;
+    type WeightInfo = ();
 }
 
 pub(crate) type AccountId = AccountId32;

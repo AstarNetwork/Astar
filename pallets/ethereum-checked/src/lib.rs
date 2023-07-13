@@ -73,11 +73,13 @@ pub use pallet::*;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-// pub mod weights;
-// pub use weights::WeightInfo;
+pub mod weights;
+pub use weights::WeightInfo;
 
 mod mock;
 mod tests;
+
+pub type WeightInfoOf<T> = <T as Config>::WeightInfo;
 
 /// Origin for dispatch-able calls.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -142,8 +144,8 @@ pub mod pallet {
         /// Origin for `transact` call.
         type XcmTransactOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 
-        // /// Weight information for extrinsics in this pallet.
-        // type WeightInfo: WeightInfo;
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::origin]
@@ -161,8 +163,7 @@ pub mod pallet {
         #[pallet::call_index(0)]
         #[pallet::weight({
             let weight_limit = T::GasWeightMapping::gas_to_weight(tx.gas_limit.unique_saturated_into(), false);
-            // `Nonce` storage read 1, write 1.
-            weight_limit.saturating_add(T::DbWeight::get().reads_writes(1, 1))
+            weight_limit.saturating_add(WeightInfoOf::<T>::transact_without_apply())
         })]
         pub fn transact(origin: OriginFor<T>, tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
             let source = T::XcmTransactOrigin::ensure_origin(origin)?;
@@ -178,7 +179,7 @@ pub mod pallet {
         /// Transact an Ethereum transaction but not to apply it. This call is meant only for
         /// benchmarks, to get the weight overhead before apply.
         #[pallet::call_index(100)]
-        #[pallet::weight(0)]
+        #[pallet::weight(WeightInfoOf::<T>::transact_without_apply())]
         pub fn transact_without_apply(
             origin: OriginFor<T>,
             tx: CheckedEthereumTx,
@@ -223,8 +224,11 @@ impl<T: Config> Pallet<T> {
         .validate_common()
         .map_err(|_| DispatchErrorWithPostInfo {
             post_info: PostDispatchInfo {
-                // `Nonce` storage read 1.
-                actual_weight: Some(T::DbWeight::get().reads(1)),
+                // actual_weight = overhead - nonce_write_1
+                actual_weight: Some(
+                    WeightInfoOf::<T>::transact_without_apply()
+                        .saturating_sub(T::DbWeight::get().writes(1)),
+                ),
                 pays_fee: Pays::Yes,
             },
             error: DispatchError::Other("Failed to validate Ethereum tx"),
@@ -234,7 +238,10 @@ impl<T: Config> Pallet<T> {
 
         if skip_apply {
             return Ok((
-                PostDispatchInfo::default(),
+                PostDispatchInfo {
+                    actual_weight: Some(WeightInfoOf::<T>::transact_without_apply()),
+                    pays_fee: Pays::Yes,
+                },
                 CallInfo {
                     exit_reason: ExitReason::Succeed(ExitSucceed::Stopped),
                     value: Default::default(),
