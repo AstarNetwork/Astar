@@ -29,7 +29,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly,
-        FindAuthor, Get, Imbalance, InstanceFilter, OnFinalize, OnUnbalanced, WithdrawReasons,
+        FindAuthor, Get, Imbalance, InstanceFilter, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
