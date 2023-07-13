@@ -67,7 +67,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use astar_primitives::Balance;
-use frame_support::traits::Currency;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Zero, RuntimeDebug};
@@ -541,7 +540,7 @@ pub enum RewardDestination {
 
 impl Default for RewardDestination {
     fn default() -> Self {
-        RewardDestination::StakeBalance
+        RewardDestination::FreeBalance
     }
 }
 
