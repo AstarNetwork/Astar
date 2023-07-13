@@ -177,7 +177,7 @@ pub mod pallet {
         }
 
         /// Transact an Ethereum transaction but not to apply it. This call is meant only for
-        /// benchmarks, to get the weight overhead before apply.
+        /// benchmarks, to get the weight overhead(in addition to `gas_limit`).
         #[pallet::call_index(100)]
         #[pallet::weight(WeightInfoOf::<T>::transact_without_apply())]
         pub fn transact_without_apply(
@@ -243,7 +243,7 @@ impl<T: Config> Pallet<T> {
                     pays_fee: Pays::Yes,
                 },
                 CallInfo {
-                    exit_reason: ExitReason::Succeed(ExitSucceed::Stopped),
+                    exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
                     value: Default::default(),
                     used_gas: checked_tx.gas_limit,
                     logs: Default::default(),
