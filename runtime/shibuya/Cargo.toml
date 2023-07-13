@@ -63,7 +63,6 @@ pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
-pallet-state-trie-migration = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
@@ -206,7 +205,6 @@ std = [
 	"pallet-xc-asset-config/std",
 	"pallet-xvm/std",
 	"pallet-scheduler/std",
-	"pallet-state-trie-migration/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",
@@ -300,7 +298,6 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
-	"pallet-state-trie-migration/try-runtime",
 	"orml-xtokens/try-runtime",
 ]
 evm-tracing = [

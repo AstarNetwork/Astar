@@ -845,7 +845,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
 
     // Send native token to fresh_account
     ParaA::execute_with(|| {
-        assert_ok!(ParachainBalances::transfer(
+        assert_ok!(ParachainBalances::transfer_allow_death(
             parachain::RuntimeOrigin::signed(ALICE.into()),
             fresh_account.into(),
             100

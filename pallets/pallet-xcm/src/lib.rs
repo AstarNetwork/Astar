@@ -55,7 +55,8 @@ use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use xcm_executor::{
     traits::{
-        ClaimAssets, DropAssets, MatchesFungible, OnResponse, VersionChangeNotifier, WeightBounds, CheckSuspension,
+        CheckSuspension, ClaimAssets, DropAssets, MatchesFungible, OnResponse,
+        VersionChangeNotifier, WeightBounds,
     },
     Assets,
 };
@@ -116,8 +117,8 @@ impl WeightInfo for TestWeightInfo {
     }
 
     fn force_suspension() -> Weight {
-		Weight::from_parts(100_000_000, 0)
-	}
+        Weight::from_parts(100_000_000, 0)
+    }
 
     fn migrate_supported_version() -> Weight {
         Weight::from_parts(100_000_000, 0)
@@ -265,7 +266,6 @@ pub mod pallet {
 
         /// The origin that is allowed to call privileged operations on the XCM pallet
         type AdminOrigin: EnsureOrigin<<Self as SysConfig>::RuntimeOrigin>;
-
     }
 
     #[pallet::event]
@@ -1131,17 +1131,17 @@ pub mod pallet {
             )
         }
 
-	    /// Set or unset the global suspension state of the XCM executor.
-		///
-		/// - `origin`: Must be an origin specified by AdminOrigin.
-		/// - `suspended`: `true` to suspend, `false` to resume.
-		#[pallet::call_index(10)]
-		#[pallet::weight(T::WeightInfo::force_suspension())]
-		pub fn force_suspension(origin: OriginFor<T>, suspended: bool) -> DispatchResult {
-			T::AdminOrigin::ensure_origin(origin)?;
-			XcmExecutionSuspended::<T>::set(suspended);
-			Ok(())
-		}
+        /// Set or unset the global suspension state of the XCM executor.
+        ///
+        /// - `origin`: Must be an origin specified by AdminOrigin.
+        /// - `suspended`: `true` to suspend, `false` to resume.
+        #[pallet::call_index(10)]
+        #[pallet::weight(T::WeightInfo::force_suspension())]
+        pub fn force_suspension(origin: OriginFor<T>, suspended: bool) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+            XcmExecutionSuspended::<T>::set(suspended);
+            Ok(())
+        }
 
         /// Transfer some assets from sovereign account to reserve holder chain and
         /// forward a notification XCM.
@@ -2390,14 +2390,14 @@ impl<T: Config> OnResponse for Pallet<T> {
 }
 
 impl<T: Config> CheckSuspension for Pallet<T> {
-	fn is_suspended<Call>(
-		_origin: &MultiLocation,
-		_instructions: &mut [Instruction<Call>],
-		_max_weight: Weight,
-		_weight_credit: &mut Weight,
-	) -> bool {
-		XcmExecutionSuspended::<T>::get()
-	}
+    fn is_suspended<Call>(
+        _origin: &MultiLocation,
+        _instructions: &mut [Instruction<Call>],
+        _max_weight: Weight,
+        _weight_credit: &mut Weight,
+    ) -> bool {
+        XcmExecutionSuspended::<T>::get()
+    }
 }
 
 /// Ensure that the origin `o` represents an XCM (`Transact`) origin.

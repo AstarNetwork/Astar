@@ -112,9 +112,9 @@ impl pallet_balances::Config for Runtime {
     type MaxReserves = ();
     type ReserveIdentifier = ();
     type HoldIdentifier = ();
-	type FreezeIdentifier = ();
-	type MaxHolds = ();
-	type MaxFreezes = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 const MAGIC_NUMBER: u16 = 0xff50;

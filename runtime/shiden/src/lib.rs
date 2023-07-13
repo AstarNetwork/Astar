@@ -532,6 +532,10 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 impl AddressToAssetId<AssetId> for Runtime {
@@ -975,28 +979,6 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
-parameter_types! {
-    // The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
-    pub const MigrationSignedDepositPerItem: Balance = 10 * MILLISDN;
-    pub const MigrationSignedDepositBase: Balance = 1 * SDN;
-}
-
-frame_support::ord_parameter_types! {
-    pub const MigController: AccountId = AccountId::from(hex_literal::hex!("8ea88e403abea19c5eedeb366e9338fd969e5053f117c18872725aed5423d43c"));
-}
-
-impl pallet_state_trie_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type SignedDepositPerItem = MigrationSignedDepositPerItem;
-    type SignedDepositBase = MigrationSignedDepositBase;
-    type ControlOrigin = EnsureRoot<AccountId>;
-    // specific account for the migration, can trigger the signed migrations.
-    type SignedFilter = frame_system::EnsureSignedBy<MigController, AccountId>;
-    type WeightInfo = pallet_state_trie_migration::weights::SubstrateWeight<Runtime>;
-    type MaxKeyLen = ConstU32<512>;
-}
-
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -1042,9 +1024,6 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 71,
 
         Sudo: pallet_sudo = 99,
-
-        // TODO: remove this after migration is finished
-        StateTrieMigration: pallet_state_trie_migration = 200,
     }
 );
 
@@ -1082,10 +1061,16 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+// Used to cleanup StateTrieMigration storage - remove once cleanup is done.
+parameter_types! {
+    pub const StateTrieMigrationStr: &'static str = "StateTrieMigration";
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = ();
+pub type Migrations =
+    (frame_support::migrations::RemovePallet<StateTrieMigrationStr, RocksDbWeight>,);
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
@@ -1185,12 +1170,12 @@ impl_runtime_apis! {
         }
 
         fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
-			Runtime::metadata_at_version(version)
-		}
+            Runtime::metadata_at_version(version)
+        }
 
-		fn metadata_versions() -> sp_std::vec::Vec<u32> {
-			Runtime::metadata_versions()
-		}
+        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+            Runtime::metadata_versions()
+        }
     }
 
     impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
