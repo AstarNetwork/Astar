@@ -5344,7 +5344,7 @@ checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 
 [[package]]
 name = "local-runtime"
-version = "5.12.0"
+version = "5.13.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -12022,7 +12022,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.13.0"
+version = "5.1.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
