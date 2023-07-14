@@ -242,6 +242,18 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(Weight::from_parts(0, 3102))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 	}
+	/// C/P from PolkadotXcm, should be measured independently.
+	/// Storage: XcmPallet XcmExecutionSuspended (r:0 w:1)
+	/// Proof Skipped: XcmPallet XcmExecutionSuspended (max_values: Some(1), max_size: None, mode: Measured)
+	fn force_suspension() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_849_000 picoseconds.
+		Weight::from_parts(3_018_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
 }
 
 // For backwards compatibility and tests
@@ -437,5 +449,17 @@ impl WeightInfo for () {
 		Weight::from_parts(32_452_000, 0)
 			.saturating_add(Weight::from_parts(0, 3102))
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
+	}
+	/// C/P from PolkadotXcm, should be measured independently.
+	/// Storage: XcmPallet XcmExecutionSuspended (r:0 w:1)
+	/// Proof Skipped: XcmPallet XcmExecutionSuspended (max_values: Some(1), max_size: None, mode: Measured)
+	fn force_suspension() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_849_000 picoseconds.
+		Weight::from_parts(3_018_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 }
