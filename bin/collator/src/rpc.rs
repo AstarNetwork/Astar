@@ -66,20 +66,14 @@ pub struct EvmTracingConfig {
 pub fn open_frontier_backend<C>(
     client: Arc<C>,
     config: &sc_service::Configuration,
-) -> Result<Arc<fc_db::Backend<Block>>, String>
+) -> Result<Arc<fc_db::kv::Backend<Block>>, String>
 where
     C: sp_blockchain::HeaderBackend<Block>,
 {
-    let config_dir = config
-        .base_path
-        .as_ref()
-        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
-        .unwrap_or_else(|| {
-            sc_service::BasePath::from_project("", "", "astar").config_dir(config.chain_spec.id())
-        });
+    let config_dir = config.base_path.config_dir(config.chain_spec.id());
     let path = config_dir.join("frontier").join("db");
 
-    Ok(Arc::new(fc_db::Backend::<Block>::new(
+    Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
         client,
         &fc_db::kv::DatabaseSettings {
             source: fc_db::DatabaseSource::RocksDb {
@@ -107,7 +101,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
     /// The Node authority flag
     pub is_authority: bool,
     /// Frontier Backend.
-    pub frontier_backend: Arc<fc_db::Backend<Block>>,
+    pub frontier_backend: Arc<dyn fc_db::BackendReader<Block> + Send + Sync>,
     /// EthFilterApi pool.
     pub filter_pool: FilterPool,
     /// Maximum fee history cache size.
@@ -299,6 +293,7 @@ where
             fee_history_limit,
             // Allow 10x max allowed weight for non-transactional calls
             10,
+            None,
         )
         .into_rpc(),
     )?;

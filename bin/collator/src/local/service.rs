@@ -79,7 +79,7 @@ pub fn new_partial(
             >,
             sc_consensus_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
             Option<Telemetry>,
-            Arc<fc_db::Backend<Block>>,
+            Arc<fc_db::kv::Backend<Block>>,
         ),
     >,
     ServiceError,
@@ -125,11 +125,8 @@ pub fn new_partial(
         telemetry.as_ref().map(|x| x.handle()),
     )?;
     let frontier_backend = crate::rpc::open_frontier_backend(client.clone(), config)?;
-    let frontier_block_import = FrontierBlockImport::new(
-        grandpa_block_import.clone(),
-        client.clone(),
-        frontier_backend.clone(),
-    );
+    let frontier_block_import =
+        FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
     let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
         ImportQueueParams {

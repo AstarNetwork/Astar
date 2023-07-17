@@ -155,7 +155,7 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
             >,
             Option<Telemetry>,
             Option<TelemetryWorkerHandle>,
-            Arc<fc_db::Backend<Block>>,
+            Arc<fc_db::kv::Backend<Block>>,
         ),
     >,
     sc_service::Error,
@@ -237,8 +237,7 @@ where
     );
 
     let frontier_backend = crate::rpc::open_frontier_backend(client.clone(), config)?;
-    let frontier_block_import =
-        FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
+    let frontier_block_import = FrontierBlockImport::new(client.clone(), client.clone());
 
     let parachain_block_import: ParachainBlockImport<_, _, _> =
         ParachainBlockImport::new(frontier_block_import, backend.clone());
