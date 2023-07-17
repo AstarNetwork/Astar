@@ -35,7 +35,6 @@
 // along with AssetsERC20.  If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(test, feature(assert_matches))]
 
 use fp_evm::{IsPrecompileResult, PrecompileHandle, PrecompileOutput};
 use frame_support::traits::fungibles::approvals::Inspect as ApprovalInspect;

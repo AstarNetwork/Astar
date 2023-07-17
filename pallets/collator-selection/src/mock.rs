@@ -19,7 +19,7 @@ use super::*;
 use crate as collator_selection;
 use frame_support::{
     ord_parameter_types, parameter_types,
-    traits::{FindAuthor, GenesisBuild, ValidatorRegistration},
+    traits::{ConstU32, FindAuthor, GenesisBuild, ValidatorRegistration},
     PalletId,
 };
 use frame_system as system;

@@ -170,6 +170,7 @@ impl pallet_evm::Config for TestRuntime {
     type FindAuthor = MockFindAuthor;
     type Timestamp = Timestamp;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<TestRuntime>;
+    type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
 parameter_types! {

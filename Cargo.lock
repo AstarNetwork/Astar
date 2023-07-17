@@ -7460,6 +7460,7 @@ dependencies = [
 name = "pallet-evm-precompile-substrate-ecdsa"
 version = "1.2.2"
 dependencies = [
+ "assert_matches",
  "derive_more",
  "fp-evm",
  "frame-support",
@@ -7484,6 +7485,7 @@ dependencies = [
 name = "pallet-evm-precompile-xcm"
 version = "0.9.0"
 dependencies = [
+ "assert_matches",
  "derive_more",
  "fp-evm",
  "frame-support",
@@ -15863,6 +15865,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-dapps-staking",
  "pallet-insecure-randomness-collective-flip",
+ "pallet-message-queue",
  "pallet-proxy",
  "pallet-timestamp",
  "pallet-utility",

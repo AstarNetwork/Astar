@@ -210,9 +210,7 @@ parameter_types! {
 parameter_types! {
     pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
     pub const DepositPerByte: Balance = MILLISDN / 1_000_000;
-    // The lazy deletion runs inside on_initialize.
-    pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
-        RuntimeBlockWeights::get().max_block;
+    pub const DefaultDepositLimit: Balance = 1000 * MILLISDN;
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
@@ -249,13 +247,12 @@ impl pallet_contracts::Config for Runtime {
     type CallFilter = CallFilter;
     type DepositPerItem = DepositPerItem;
     type DepositPerByte = DepositPerByte;
+    type DefaultDepositLimit = DefaultDepositLimit;
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     /// We are not using the pallet_transaction_payment for simplicity
     type WeightPrice = Self;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = ();
-    type DeletionQueueDepth = ConstU32<128>;
-    type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
