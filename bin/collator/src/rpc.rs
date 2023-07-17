@@ -48,7 +48,7 @@ use moonbeam_rpc_debug::{Debug, DebugServer};
 use moonbeam_rpc_trace::{Trace, TraceServer};
 // TODO: get rid of this completely now that it's part of frontier?
 #[cfg(feature = "evm-tracing")]
-use moonbeam_rpc_txpool::{TxPool, TxPoolServer};
+use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
 use astar_primitives::*;
 
@@ -144,8 +144,8 @@ where
     C: sc_client_api::BlockBackend<Block>,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + ConvertTransactionRuntimeApi<Block>
-        + EthereumRuntimeRPCApi<Block>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
@@ -161,7 +161,7 @@ where
     let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
 
     if tracing_config.enable_txpool {
-        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
+        io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
     }
 
     if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
