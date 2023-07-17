@@ -20,7 +20,8 @@
 
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, TxPool, TxPoolApiServer, Web3,
+    Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
@@ -45,6 +46,7 @@ use substrate_frame_rpc_system::{System, SystemApiServer};
 use moonbeam_rpc_debug::{Debug, DebugServer};
 #[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_trace::{Trace, TraceServer};
+// TODO: get rid of this completely now that it's part of frontier?
 #[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_txpool::{TxPool, TxPoolServer};
 
@@ -142,8 +144,8 @@ where
     C: sc_client_api::BlockBackend<Block>,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + fp_rpc::ConvertTransactionRuntimeApi<Block>
-        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + ConvertTransactionRuntimeApi<Block>
+        + EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
@@ -300,10 +302,12 @@ where
 
     let max_past_logs: u32 = 10_000;
     let max_stored_filters: usize = 500;
+    let tx_pool = TxPool::new(client.clone(), graph);
     io.merge(
         EthFilter::new(
             client.clone(),
             frontier_backend,
+            tx_pool.clone(),
             filter_pool,
             max_stored_filters,
             max_past_logs,
@@ -327,6 +331,7 @@ where
         )
         .into_rpc(),
     )?;
+    io.merge(tx_pool.into_rpc())?;
 
     Ok(io)
 }

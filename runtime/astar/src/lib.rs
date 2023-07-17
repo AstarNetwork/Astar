@@ -32,7 +32,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
-        InstanceFilter, Nothing, OnUnbalanced, Randomness, WithdrawReasons,
+        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -1093,30 +1093,6 @@ type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
     <Runtime as frame_system::Config>::Hash,
 >;
-
-use frame_support::pallet_prelude::*;
-pub struct PalletContractsV9<T: pallet_contracts::Config>(PhantomData<T>);
-impl<T: pallet_contracts::Config> frame_support::traits::OnRuntimeUpgrade for PalletContractsV9<T> {
-    fn on_runtime_upgrade() -> Weight {
-        let version = <pallet_contracts::Pallet<T>>::on_chain_storage_version();
-
-        if version >= 9 {
-            return T::DbWeight::get().reads(1);
-        }
-
-        StorageVersion::new(9).put::<pallet_contracts::Pallet<T>>();
-        T::DbWeight::get().reads_writes(1, 1)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-        ensure!(
-            <pallet_contracts::Pallet<T>>::on_chain_storage_version() == 9,
-            "pallet-contracts storage version must be 9 at the end of migration"
-        );
-        Ok(())
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
     type SignedInfo = H160;
