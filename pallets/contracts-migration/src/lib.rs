@@ -174,7 +174,7 @@ pub mod pallet {
                                 initial: old.initial,
                                 maximum: old.maximum,
                                 code: old.code,
-                                determinism: pallet_contracts::Enforced,
+                                determinism: pallet_contracts::Determinism::Enforced,
                             })
                         });
 

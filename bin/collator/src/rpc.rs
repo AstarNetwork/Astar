@@ -81,7 +81,7 @@ where
 
     Ok(Arc::new(fc_db::Backend::<Block>::new(
         client,
-        &fc_db::DatabaseSettings {
+        &fc_db::kv::DatabaseSettings {
             source: fc_db::DatabaseSource::RocksDb {
                 path,
                 cache_size: 0,

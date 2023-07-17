@@ -28,7 +28,7 @@ use frame_support::{
     construct_runtime, parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, WithdrawReasons,
+        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
         constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -172,9 +172,6 @@ pub fn native_version() -> NativeVersion {
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-/// We assume that ~10% of the block weight is consumed by `on_initalize` handlers.
-/// This is used to limit the maximal weight of a single extrinsic.
-const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -616,6 +613,7 @@ impl pallet_preimage::Config for Runtime {
 
 parameter_types! {
     pub CouncilMotionDuration: BlockNumber = 3 * MINUTES;
+    pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -629,6 +627,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
     type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
 }
 
 parameter_types! {
@@ -646,6 +645,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
     type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
 }
 
 parameter_types! {
@@ -778,7 +778,7 @@ parameter_types! {
     pub const DepositPerItem: Balance = deposit(1, 0);
     pub const DepositPerByte: Balance = deposit(0, 1);
     // Fallback value if storage deposit limit not set by the user
-    pub const DefaultDepositLimit: Balance = contracts_deposit(1024, 1024 * 1024);
+    pub const DefaultDepositLimit: Balance = deposit(1024, 1024 * 1024);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
@@ -1509,7 +1509,7 @@ impl_runtime_apis! {
 
         fn pending_block(
             xts: Vec<<Block as BlockT>::Extrinsic>,
-        ) -> (Option<pallet_ethereum::Block>, Option<Vec<TransactionStatus>>) {
+        ) -> (Option<pallet_ethereum::Block>, Option<Vec<fp_rpc::TransactionStatus>>) {
             for ext in xts.into_iter() {
                 let _ = Executive::apply_extrinsic(ext);
             }

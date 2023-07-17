@@ -44,7 +44,7 @@ use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, Ta
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_keystore::SyncCryptoStorePtr;
+use sp_keystore::KeystorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use sp_runtime::Percent;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
@@ -377,7 +377,7 @@ where
             >,
         >,
         Arc<SyncingService<Block>>,
-        SyncCryptoStorePtr,
+        KeystorePtr,
         bool,
     ) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
@@ -386,6 +386,7 @@ where
     let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
     let (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend) =
         params.other;
+    let net_config = sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
 
     let client = params.client.clone();
     let backend = params.backend.clone();
@@ -409,6 +410,7 @@ where
     let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
         cumulus_client_service::build_network(BuildNetworkParams {
             parachain_config: &parachain_config,
+            net_config,
             para_id: id,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
@@ -436,7 +438,7 @@ where
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
         Some("frontier"),
-        fc_mapping_sync::MappingSyncWorker::new(
+        fc_mapping_sync::kv::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
             client.clone(),
@@ -695,7 +697,7 @@ where
             >,
         >,
         Arc<SyncingService<Block>>,
-        SyncCryptoStorePtr,
+        KeystorePtr,
         bool,
     ) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
@@ -704,6 +706,7 @@ where
     let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
     let (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend) =
         params.other;
+    let net_config = sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
 
     let client = params.client.clone();
     let backend = params.backend.clone();
@@ -727,6 +730,7 @@ where
     let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
         cumulus_client_service::build_network(BuildNetworkParams {
             parachain_config: &parachain_config,
+            net_config,
             para_id: id,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
@@ -775,7 +779,7 @@ where
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
         Some("frontier"),
-        fc_mapping_sync::MappingSyncWorker::new(
+        fc_mapping_sync::kv::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
             client.clone(),

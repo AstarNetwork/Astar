@@ -29,7 +29,8 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly,
-        FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnUnbalanced, WithdrawReasons,
+        FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced,
+        WithdrawReasons,
     },
     weights::{
         constants::{
@@ -113,7 +114,7 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 /// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
 ///
 /// TODO: using this requires storage migration (good to test on Shibuya first!)
-pub const fn _contracts_deposit(items: u32, bytes: u32) -> Balance {
+pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * 4 * MILLISBY + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
@@ -881,6 +882,7 @@ impl pallet_ethereum::Config for Runtime {
 
 parameter_types! {
     pub CouncilMotionDuration: BlockNumber = 36 * HOURS;
+    pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -894,6 +896,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
     type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
 }
 
 parameter_types! {
@@ -911,6 +914,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
     type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
 }
 
 parameter_types! {
@@ -1771,7 +1775,7 @@ impl_runtime_apis! {
 
         fn pending_block(
             xts: Vec<<Block as BlockT>::Extrinsic>,
-        ) -> (Option<pallet_ethereum::Block>, Option<Vec<TransactionStatus>>) {
+        ) -> (Option<pallet_ethereum::Block>, Option<Vec<fp_rpc::TransactionStatus>>) {
             for ext in xts.into_iter() {
                 let _ = Executive::apply_extrinsic(ext);
             }

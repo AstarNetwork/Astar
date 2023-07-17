@@ -29,7 +29,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, InstanceFilter,
-        Nothing, OnUnbalanced, WithdrawReasons,
+        Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -112,7 +112,7 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 /// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
 ///
 /// TODO: using this requires some storage migration since we're using some old, legacy values ATM
-pub const fn _contracts_deposit(items: u32, bytes: u32) -> Balance {
+pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * 4 * MILLISDN * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
@@ -1527,7 +1527,7 @@ impl_runtime_apis! {
 
         fn pending_block(
             xts: Vec<<Block as BlockT>::Extrinsic>,
-        ) -> (Option<pallet_ethereum::Block>, Option<Vec<TransactionStatus>>) {
+        ) -> (Option<pallet_ethereum::Block>, Option<Vec<fp_rpc::TransactionStatus>>) {
             for ext in xts.into_iter() {
                 let _ = Executive::apply_extrinsic(ext);
             }
@@ -1595,6 +1595,16 @@ impl_runtime_apis! {
                 pallet_contracts::DebugInfo::UnsafeDebug,
                 pallet_contracts::CollectEvents::UnsafeCollect,
             )
+        }
+
+        fn upload_code(
+            origin: AccountId,
+            code: Vec<u8>,
+            storage_deposit_limit: Option<Balance>,
+            determinism: pallet_contracts::Determinism,
+        ) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
+        {
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
         }
 
         fn get_storage(

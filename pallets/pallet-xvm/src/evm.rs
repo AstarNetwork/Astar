@@ -72,6 +72,10 @@ where
             Vec::new(),
             is_transactional,
             validate,
+            // TODO: set this properly before merging the PR
+            None,
+            // TODO: set this properly before merging the PR
+            None,
             T::config(),
         )
         .map_err(|e| {
@@ -90,7 +94,8 @@ where
         Ok(XvmCallOk {
             output: info.value,
             consumed_weight: T::GasWeightMapping::gas_to_weight(
-                info.used_gas.unique_saturated_into(),
+                // Temporary, will be updated once XVM is adjusted for the new code
+                info.used_gas.effective.unique_saturated_into(),
                 false,
             )
             .ref_time(),
