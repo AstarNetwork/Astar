@@ -19,19 +19,23 @@
 use super::*;
 
 use astar_primitives::ethereum_checked::MAX_ETHEREUM_TX_INPUT_SIZE;
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, BenchmarkError};
+use frame_benchmarking::v2::*;
 
-benchmarks! {
-    transact_without_apply {
-        let origin = T::XcmTransactOrigin::try_successful_origin().map_err(|_| BenchmarkError::Weightless)?;
+#[benchmarks]
+mod benchmarks {
+    use super::*;
 
-        let target = H160::from_slice(
-            &hex::decode("dfb975d018f03994a3b943808e3aa0964bd78463").unwrap()
-        );
+    #[benchmark]
+    fn transact_without_apply() {
+        let origin = T::XcmTransactOrigin::try_successful_origin().unwrap();
+        let target =
+            H160::from_slice(&hex::decode("dfb975d018f03994a3b943808e3aa0964bd78463").unwrap());
+        // Calling `store(3)`
         let input = BoundedVec::<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>::try_from(
-                hex::decode("6057361d0000000000000000000000000000000000000000000000000000000000000003").unwrap()
-            )
-            .unwrap();
+            hex::decode("6057361d0000000000000000000000000000000000000000000000000000000000000003")
+                .unwrap(),
+        )
+        .unwrap();
         let checked_tx = CheckedEthereumTx {
             gas_limit: U256::from(1_000_000),
             target,
@@ -39,10 +43,20 @@ benchmarks! {
             input,
             maybe_access_list: None,
         };
-    }: _<T::RuntimeOrigin>(origin, checked_tx)
-    verify {
+
+        #[block]
+        {
+            Pallet::<T>::transact_without_apply(origin, checked_tx).unwrap();
+        }
+
         assert_eq!(Nonce::<T>::get(), U256::one())
     }
+
+    impl_benchmark_test_suite!(
+        Pallet,
+        crate::benchmarking::tests::new_test_ext(),
+        crate::mock::TestRuntime,
+    );
 }
 
 #[cfg(test)]
@@ -54,9 +68,3 @@ mod tests {
         mock::ExtBuilder::default().build()
     }
 }
-
-impl_benchmark_test_suite!(
-    Pallet,
-    crate::benchmarking::tests::new_test_ext(),
-    crate::mock::TestRuntime,
-);

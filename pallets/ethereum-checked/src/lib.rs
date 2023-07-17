@@ -73,6 +73,8 @@ pub use pallet::*;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+// TODO: after integrated into Astar/Shiden runtime, redo benchmarking with them.
+// The reason is that `EVMChainId` storage read only happens in Shibuya
 pub mod weights;
 pub use weights::WeightInfo;
 
@@ -175,24 +177,6 @@ pub mod pallet {
             )
             .map(|(post_info, _)| post_info)
         }
-
-        /// Transact an Ethereum transaction but not to apply it. This call is meant only for
-        /// benchmarks, to get the weight overhead(in addition to `gas_limit`).
-        #[pallet::call_index(100)]
-        #[pallet::weight(WeightInfoOf::<T>::transact_without_apply())]
-        pub fn transact_without_apply(
-            origin: OriginFor<T>,
-            tx: CheckedEthereumTx,
-        ) -> DispatchResultWithPostInfo {
-            let source = T::XcmTransactOrigin::ensure_origin(origin)?;
-            Self::do_transact(
-                T::AccountMapping::into_h160(source),
-                tx.into(),
-                CheckedEthereumTxKind::Xcm,
-                true,
-            )
-            .map(|(post_info, _)| post_info)
-        }
     }
 }
 
@@ -269,6 +253,23 @@ impl<T: Config> Pallet<T> {
             CheckedEthereumTxKind::Xvm => T::XvmTxWeightLimit::get(),
         };
         T::GasWeightMapping::weight_to_gas(weight_limit)
+    }
+
+    /// Similar to `transact` dispatch-able call that transacts an Ethereum transaction,
+    /// but not to apply it. This is to benchmark the weight overhead in addition to `gas_limit`.
+    #[cfg(feature = "runtime-benchmarks")]
+    pub fn transact_without_apply(
+        origin: OriginFor<T>,
+        tx: CheckedEthereumTx,
+    ) -> DispatchResultWithPostInfo {
+        let source = T::XcmTransactOrigin::ensure_origin(origin)?;
+        Self::do_transact(
+            T::AccountMapping::into_h160(source),
+            tx.into(),
+            CheckedEthereumTxKind::Xcm,
+            true,
+        )
+        .map(|(post_info, _)| post_info)
     }
 }
 
