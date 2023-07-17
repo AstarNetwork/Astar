@@ -867,7 +867,10 @@ impl pallet_ethereum::Config for Runtime {
     type PostLogContent = PostBlockAndTxnHashes;
     // Maximum length (in bytes) of revert message to include in Executed event
     type ExtraDataLength = ConstU32<30>;
+    type Firehose = DeepMind;
 }
+
+impl deepmind::Config for Runtime {}
 
 parameter_types! {
     pub CouncilMotionDuration: BlockNumber = 36 * HOURS;
@@ -1274,6 +1277,7 @@ construct_runtime!(
         Ethereum: pallet_ethereum = 61,
         BaseFee: pallet_base_fee = 62,
         EVMChainId: pallet_evm_chain_id = 63,
+        DeepMind: deepmind = 64,
 
         Contracts: pallet_contracts = 70,
 

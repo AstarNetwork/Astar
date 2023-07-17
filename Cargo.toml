@@ -186,6 +186,7 @@ evm-runtime = { version = "0.39.0", default-features = false }
 
 # Frontier
 # (wasm)
+deepmind = { path = "../frontier/frame/deepmind", default-features = false  }
 fp-rpc = { path = "../frontier/primitives/rpc", default-features = false }
 fp-self-contained = { path = "../frontier/primitives/self-contained", default-features = false }
 pallet-ethereum = { path = "../frontier/frame/ethereum", default-features = false, features = ["forbid-evm-reentrancy"] }

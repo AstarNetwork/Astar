@@ -47,6 +47,7 @@ pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
+deepmind = {  workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
 pallet-evm-precompile-blake2 = { workspace = true }

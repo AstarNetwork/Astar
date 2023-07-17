@@ -551,7 +551,10 @@ impl pallet_ethereum::Config for Runtime {
     type PostLogContent = PostBlockAndTxnHashes;
     // Maximum length (in bytes) of revert message to include in Executed event
     type ExtraDataLength = ConstU32<30>;
+    type Firehose = DeepMind;
 }
+
+impl deepmind::Config for Runtime {}
 
 parameter_types! {
     pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
@@ -974,6 +977,7 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment,
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,
+        DeepMind: deepmind,
         EthCall: pallet_custom_signatures,
         BaseFee: pallet_base_fee,
         Contracts: pallet_contracts,

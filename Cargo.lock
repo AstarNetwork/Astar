@@ -540,6 +540,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "deepmind",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -2292,6 +2293,21 @@ checksum = "8fdf3fce3ce863539ec1d7fd1b6dcc3c645663376b43ed376bbf887733e4f772"
 dependencies = [
  "data-encoding",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "deepmind"
+version = "0.0.1"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-ethereum",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5306,6 +5322,7 @@ version = "5.12.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
+ "deepmind",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -6970,6 +6987,7 @@ dependencies = [
 name = "pallet-ethereum"
 version = "4.0.0-dev"
 dependencies = [
+ "deepmind",
  "environmental",
  "ethereum",
  "ethereum-types",
@@ -11940,6 +11958,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "deepmind",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -12048,6 +12067,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "deepmind",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
