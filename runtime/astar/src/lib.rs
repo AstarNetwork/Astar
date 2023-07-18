@@ -1086,8 +1086,10 @@ parameter_types! {
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations =
-    (frame_support::migrations::RemovePallet<StateTrieMigrationStr, RocksDbWeight>,);
+pub type Migrations = (
+    frame_support::migrations::RemovePallet<StateTrieMigrationStr, RocksDbWeight>,
+    pallet_contracts::Migration<Runtime>,
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
