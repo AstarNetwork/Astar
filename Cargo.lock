@@ -2877,27 +2877,6 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "evm"
 version = "0.39.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a49a4e11987c51220aa89dbe1a5cc877f5079fa6864c0a5b4533331db44e9365"
-dependencies = [
- "auto_impl",
- "environmental",
- "ethereum",
- "evm-core 0.39.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "evm-gasometer 0.39.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "evm-runtime 0.39.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log",
- "parity-scale-codec",
- "primitive-types",
- "rlp",
- "scale-info",
- "serde",
- "sha3",
-]
-
-[[package]]
-name = "evm"
-version = "0.39.1"
 source = "git+https://github.com/rust-blockchain/evm?rev=b7b82c7e1fc57b7449d6dfa6826600de37cc1e65#b7b82c7e1fc57b7449d6dfa6826600de37cc1e65"
 dependencies = [
  "auto_impl",
@@ -2993,7 +2972,7 @@ dependencies = [
  "environmental",
  "ethereum",
  "ethereum-types",
- "evm 0.39.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "evm",
  "evm-gasometer 0.39.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "evm-runtime 0.39.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec",
@@ -3175,7 +3154,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.43#4
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm 0.39.1 (git+https://github.com/rust-blockchain/evm?rev=b7b82c7e1fc57b7449d6dfa6826600de37cc1e65)",
+ "evm",
  "fc-db",
  "fc-mapping-sync",
  "fc-rpc-core",
@@ -3433,7 +3412,7 @@ name = "fp-evm"
 version = "3.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.43#46cd85967849be241dac2bb72f561b942a463729"
 dependencies = [
- "evm 0.39.1 (git+https://github.com/rust-blockchain/evm?rev=b7b82c7e1fc57b7449d6dfa6826600de37cc1e65)",
+ "evm",
  "frame-support",
  "parity-scale-codec",
  "scale-info",
@@ -5928,7 +5907,7 @@ name = "moonbeam-evm-tracer"
 version = "0.1.0"
 dependencies = [
  "ethereum-types",
- "evm 0.39.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "evm",
  "evm-gasometer 0.39.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "evm-runtime 0.39.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "evm-tracing-events",
@@ -7240,7 +7219,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.43#4
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm 0.39.1 (git+https://github.com/rust-blockchain/evm?rev=b7b82c7e1fc57b7449d6dfa6826600de37cc1e65)",
+ "evm",
  "fp-consensus",
  "fp-ethereum",
  "fp-evm",
@@ -7286,7 +7265,7 @@ version = "6.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.43#46cd85967849be241dac2bb72f561b942a463729"
 dependencies = [
  "environmental",
- "evm 0.39.1 (git+https://github.com/rust-blockchain/evm?rev=b7b82c7e1fc57b7449d6dfa6826600de37cc1e65)",
+ "evm",
  "fp-account",
  "fp-evm",
  "frame-benchmarking",
@@ -9857,7 +9836,7 @@ name = "precompile-utils"
 version = "0.4.3"
 dependencies = [
  "assert_matches",
- "evm 0.39.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "evm",
  "fp-evm",
  "frame-support",
  "frame-system",
@@ -14453,7 +14432,7 @@ checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if",
  "digest 0.10.7",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 

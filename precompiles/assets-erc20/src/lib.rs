@@ -52,7 +52,7 @@ use precompile_utils::{
 };
 use sp_runtime::traits::{Bounded, Zero};
 
-use sp_core::{H160, U256};
+use sp_core::{Get, MaxEncodedLen, H160, U256};
 use sp_std::{
     convert::{TryFrom, TryInto},
     marker::PhantomData,
@@ -222,7 +222,10 @@ where
         asset_id: AssetIdOf<Runtime, Instance>,
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: Asset:
+        // Blake2_128(16) + AssetId(16) + AssetDetails((4 * AccountId(32)) + (3 * Balance(16)) + 15)
+        handle.record_db_read::<Runtime>(223)?;
 
         // Fetch info.
         let amount: U256 =
@@ -235,7 +238,12 @@ where
         asset_id: AssetIdOf<Runtime, Instance>,
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: Account:
+        // Blake2_128(16) + AssetId(16) + Blake2_128(16) + AccountId(32) + AssetAccount(19 + Extra)
+        handle.record_db_read::<Runtime>(
+            99 + <Runtime as pallet_assets::Config<Instance>>::Extra::max_encoded_len(),
+        )?;
 
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;
@@ -255,7 +263,10 @@ where
         asset_id: AssetIdOf<Runtime, Instance>,
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: Approvals:
+        // Blake2_128(16) + AssetId(16) + (2 * Blake2_128(16) + AccountId(20)) + Approval(32)
+        handle.record_db_read::<Runtime>(148)?;
 
         let mut input = handle.read_input()?;
         input.expect_arguments(2)?;
@@ -440,7 +451,13 @@ where
         asset_id: AssetIdOf<Runtime, Instance>,
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: Metadata:
+        // Blake2_128(16) + AssetId(16) + AssetMetadata[deposit(16) + name(StringLimit)
+        // + symbol(StringLimit) + decimals(1) + is_frozen(1)]
+        handle.record_db_read::<Runtime>(
+            50 + (2 * <Runtime as pallet_assets::Config<Instance>>::StringLimit::get()) as usize,
+        )?;
 
         Ok(succeed(
             EvmDataWriter::new()
@@ -457,7 +474,13 @@ where
         asset_id: AssetIdOf<Runtime, Instance>,
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: Metadata:
+        // Blake2_128(16) + AssetId(16) + AssetMetadata[deposit(16) + name(StringLimit)
+        // + symbol(StringLimit) + decimals(1) + is_frozen(1)]
+        handle.record_db_read::<Runtime>(
+            50 + (2 * <Runtime as pallet_assets::Config<Instance>>::StringLimit::get()) as usize,
+        )?;
 
         // Build output.
         Ok(succeed(
@@ -475,7 +498,13 @@ where
         asset_id: AssetIdOf<Runtime, Instance>,
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: Metadata:
+        // Blake2_128(16) + AssetId(16) + AssetMetadata[deposit(16) + name(StringLimit)
+        // + symbol(StringLimit) + decimals(1) + is_frozen(1)]
+        handle.record_db_read::<Runtime>(
+            50 + (2 * <Runtime as pallet_assets::Config<Instance>>::StringLimit::get()) as usize,
+        )?;
 
         // Build output.
         Ok(succeed(
@@ -491,7 +520,10 @@ where
         asset_id: AssetIdOf<Runtime, Instance>,
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: AssetDetails:
+        // Blake2_128(16) + AssetDetails((4 * AccountId(32)) + (3 * Balance(16)) + 15)
+        handle.record_db_read::<Runtime>(207)?;
 
         let min_balance: U256 =
             pallet_assets::Pallet::<Runtime, Instance>::minimum_balance(asset_id).into();
