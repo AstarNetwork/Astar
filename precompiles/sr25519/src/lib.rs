@@ -59,8 +59,6 @@ impl<Runtime: pallet_evm::Config> Precompile for Sr25519Precompile<Runtime> {
 
 impl<Runtime: pallet_evm::Config> Sr25519Precompile<Runtime> {
     fn verify(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
-
         let mut input = handle.read_input()?;
         input.expect_arguments(3)?;
 

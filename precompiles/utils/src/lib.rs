@@ -304,7 +304,7 @@ pub trait PrecompileHandleExt: PrecompileHandle {
     fn record_db_read<Runtime: pallet_evm::Config>(
         &mut self,
         data_max_encoded_len: usize,
-    ) -> Result<(), evm::ExitError>;
+    ) -> Result<(), ExitError>;
 }
 
 pub fn log_costs(topics: usize, data_len: usize) -> EvmResult<u64> {
@@ -384,7 +384,7 @@ impl<T: PrecompileHandle> PrecompileHandleExt for T {
     fn record_db_read<Runtime: pallet_evm::Config>(
         &mut self,
         data_max_encoded_len: usize,
-    ) -> Result<(), evm::ExitError> {
+    ) -> Result<(), ExitError> {
         self.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
         self.record_external_cost(None, Some(data_max_encoded_len as u64))
     }
