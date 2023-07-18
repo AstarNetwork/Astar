@@ -185,7 +185,6 @@ evm-runtime = { git = "https://github.com/rust-blockchain/evm", rev = "b7b82c7e1
 ethereum-types = { version = "0.14", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
 
-
 # Frontier
 # (wasm)
 fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
