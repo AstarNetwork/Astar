@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.13.0"
+version = "5.14.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -104,6 +104,7 @@ pallet-chain-extension-xvm = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-custom-signatures = { workspace = true }
 pallet-dapps-staking = { workspace = true }
+pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
@@ -205,6 +206,7 @@ std = [
 	"pallet-xcm/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xvm/std",
+	"pallet-ethereum-checked/std",
 	"pallet-scheduler/std",
 	"pallet-state-trie-migration/std",
 	"parachain-info/std",
@@ -252,6 +254,7 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-ethereum-checked/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
@@ -301,6 +304,7 @@ try-runtime = [
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-state-trie-migration/try-runtime",
+	"pallet-ethereum-checked/try-runtime",
 	"orml-xtokens/try-runtime",
 ]
 evm-tracing = [

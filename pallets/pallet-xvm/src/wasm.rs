@@ -76,7 +76,7 @@ where
             "WASM XVM call result: {:?}", call_result
         );
 
-        let consumed_weight = call_result.gas_consumed.ref_time();
+        let consumed_weight = call_result.gas_consumed;
 
         match call_result.result {
             Ok(success) => Ok(XvmCallOk {

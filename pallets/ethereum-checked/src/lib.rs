@@ -49,8 +49,8 @@ use scale_info::TypeInfo;
 use ethereum_types::{H160, U256};
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use fp_evm::{
-    CallInfo, CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig,
-    InvalidEvmTransactionError,
+    CallInfo, CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, ExitReason,
+    ExitSucceed, InvalidEvmTransactionError,
 };
 use pallet_evm::GasWeightMapping;
 
@@ -70,8 +70,18 @@ use astar_primitives::ethereum_checked::{
 
 pub use pallet::*;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+// TODO: after integrated into Astar/Shiden runtime, redo benchmarking with them.
+// The reason is that `EVMChainId` storage read only happens in Shibuya
+pub mod weights;
+pub use weights::WeightInfo;
+
 mod mock;
 mod tests;
+
+pub type WeightInfoOf<T> = <T as Config>::WeightInfo;
 
 /// Origin for dispatch-able calls.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -135,6 +145,9 @@ pub mod pallet {
 
         /// Origin for `transact` call.
         type XcmTransactOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::origin]
@@ -152,8 +165,7 @@ pub mod pallet {
         #[pallet::call_index(0)]
         #[pallet::weight({
             let weight_limit = T::GasWeightMapping::gas_to_weight(tx.gas_limit.unique_saturated_into(), false);
-            // `Nonce` storage read 1, write 1.
-            weight_limit.saturating_add(T::DbWeight::get().reads_writes(1, 1))
+            weight_limit.saturating_add(WeightInfoOf::<T>::transact_without_apply())
         })]
         pub fn transact(origin: OriginFor<T>, tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
             let source = T::XcmTransactOrigin::ensure_origin(origin)?;
@@ -161,6 +173,7 @@ pub mod pallet {
                 T::AccountMapping::into_h160(source),
                 tx.into(),
                 CheckedEthereumTxKind::Xcm,
+                false,
             )
             .map(|(post_info, _)| post_info)
         }
@@ -173,6 +186,7 @@ impl<T: Config> Pallet<T> {
         source: H160,
         checked_tx: CheckedEthereumTx,
         tx_kind: CheckedEthereumTxKind,
+        skip_apply: bool,
     ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo> {
         let chain_id = T::ChainId::get();
         let nonce = Nonce::<T>::get();
@@ -194,14 +208,32 @@ impl<T: Config> Pallet<T> {
         .validate_common()
         .map_err(|_| DispatchErrorWithPostInfo {
             post_info: PostDispatchInfo {
-                // `Nonce` storage read 1.
-                actual_weight: Some(T::DbWeight::get().reads(1)),
+                // actual_weight = overhead - nonce_write_1
+                actual_weight: Some(
+                    WeightInfoOf::<T>::transact_without_apply()
+                        .saturating_sub(T::DbWeight::get().writes(1)),
+                ),
                 pays_fee: Pays::Yes,
             },
             error: DispatchError::Other("Failed to validate Ethereum tx"),
         })?;
 
         Nonce::<T>::put(nonce.saturating_add(U256::one()));
+
+        if skip_apply {
+            return Ok((
+                PostDispatchInfo {
+                    actual_weight: Some(WeightInfoOf::<T>::transact_without_apply()),
+                    pays_fee: Pays::Yes,
+                },
+                CallInfo {
+                    exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
+                    value: Default::default(),
+                    used_gas: checked_tx.gas_limit,
+                    logs: Default::default(),
+                },
+            ));
+        }
 
         // Execute the tx.
         let (post_info, apply_info) = T::ValidatedTransaction::apply(source, tx)?;
@@ -222,6 +254,23 @@ impl<T: Config> Pallet<T> {
         };
         T::GasWeightMapping::weight_to_gas(weight_limit)
     }
+
+    /// Similar to `transact` dispatch-able call that transacts an Ethereum transaction,
+    /// but not to apply it. This is to benchmark the weight overhead in addition to `gas_limit`.
+    #[cfg(feature = "runtime-benchmarks")]
+    pub fn transact_without_apply(
+        origin: OriginFor<T>,
+        tx: CheckedEthereumTx,
+    ) -> DispatchResultWithPostInfo {
+        let source = T::XcmTransactOrigin::ensure_origin(origin)?;
+        Self::do_transact(
+            T::AccountMapping::into_h160(source),
+            tx.into(),
+            CheckedEthereumTxKind::Xcm,
+            true,
+        )
+        .map(|(post_info, _)| post_info)
+    }
 }
 
 impl<T: Config> CheckedEthereumTransact for Pallet<T> {
@@ -229,6 +278,6 @@ impl<T: Config> CheckedEthereumTransact for Pallet<T> {
         source: H160,
         checked_tx: CheckedEthereumTx,
     ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo> {
-        Self::do_transact(source, checked_tx, CheckedEthereumTxKind::Xvm)
+        Self::do_transact(source, checked_tx, CheckedEthereumTxKind::Xvm, false)
     }
 }

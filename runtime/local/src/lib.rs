@@ -440,6 +440,31 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
+///TODO: Placeholder account mapping. This would be replaced once account abstraction is finished.
+pub struct HashedAccountMapping;
+impl astar_primitives::ethereum_checked::AccountMapping<AccountId> for HashedAccountMapping {
+    fn into_h160(account_id: AccountId) -> H160 {
+        let data = (b"evm:", account_id);
+        return H160::from_slice(&data.using_encoded(sp_io::hashing::blake2_256)[0..20]);
+    }
+}
+
+parameter_types! {
+    /// Equal to normal class dispatch weight limit.
+    pub XvmTxWeightLimit: Weight = NORMAL_DISPATCH_RATIO * Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND, u64::MAX);
+    pub ReservedXcmpWeight: Weight = Weight::zero();
+}
+
+impl pallet_ethereum_checked::Config for Runtime {
+    type ReservedXcmpWeight = ReservedXcmpWeight;
+    type XvmTxWeightLimit = XvmTxWeightLimit;
+    type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
+    type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
+    type AccountMapping = HashedAccountMapping;
+    type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
+    type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
+}
+
 parameter_types! {
     pub EvmId: u8 = 0x0F;
     pub WasmId: u8 = 0x1F;
@@ -447,7 +472,10 @@ parameter_types! {
 
 use pallet_xvm::{evm, wasm};
 impl pallet_xvm::Config for Runtime {
-    type SyncVM = (evm::EVM<EvmId, Self>, wasm::WASM<WasmId, Self>);
+    type SyncVM = (
+        evm::EVM<EvmId, Self, EthereumChecked>,
+        wasm::WASM<WasmId, Self>,
+    );
     type AsyncVM = ();
     type RuntimeEvent = RuntimeEvent;
 }
@@ -987,6 +1015,7 @@ construct_runtime!(
         Xvm: pallet_xvm,
         Proxy: pallet_proxy,
         Preimage: pallet_preimage,
+        EthereumChecked: pallet_ethereum_checked,
     }
 );
 
@@ -1094,6 +1123,7 @@ mod benches {
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]
         [pallet_block_reward, BlockReward]
+        [pallet_ethereum_checked, EthereumChecked]
     );
 }
 

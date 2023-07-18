@@ -48,5 +48,6 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
+	"fp-evm/std",
 ]
 runtime-benchmarks = ["xcm-builder/runtime-benchmarks"]

@@ -164,7 +164,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 103,
+    spec_version: 104,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -758,6 +758,30 @@ impl pallet_transaction_payment::Config for Runtime {
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 }
 
+///TODO: Placeholder account mapping. This would be replaced once account abstraction is finished.
+pub struct HashedAccountMapping;
+impl astar_primitives::ethereum_checked::AccountMapping<AccountId> for HashedAccountMapping {
+    fn into_h160(account_id: AccountId) -> H160 {
+        let data = (b"evm:", account_id);
+        return H160::from_slice(&data.using_encoded(sp_io::hashing::blake2_256)[0..20]);
+    }
+}
+
+parameter_types! {
+    /// Equal to normal class dispatch weight limit.
+    pub XvmTxWeightLimit: Weight = NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT;
+}
+
+impl pallet_ethereum_checked::Config for Runtime {
+    type ReservedXcmpWeight = ReservedXcmpWeight;
+    type XvmTxWeightLimit = XvmTxWeightLimit;
+    type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
+    type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
+    type AccountMapping = HashedAccountMapping;
+    type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
+    type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
+}
+
 parameter_types! {
     pub EvmId: u8 = 0x0F;
     pub WasmId: u8 = 0x1F;
@@ -766,7 +790,10 @@ parameter_types! {
 use pallet_xvm::{evm, wasm};
 impl pallet_xvm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type SyncVM = (evm::EVM<EvmId, Self>, wasm::WASM<WasmId, Self>);
+    type SyncVM = (
+        evm::EVM<EvmId, Runtime, EthereumChecked>,
+        wasm::WASM<WasmId, Self>,
+    );
     type AsyncVM = ();
 }
 
@@ -1274,6 +1301,7 @@ construct_runtime!(
         Ethereum: pallet_ethereum = 61,
         BaseFee: pallet_base_fee = 62,
         EVMChainId: pallet_evm_chain_id = 63,
+        EthereumChecked: pallet_ethereum_checked = 64,
 
         Contracts: pallet_contracts = 70,
 
@@ -1405,6 +1433,7 @@ mod benches {
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
+        [pallet_ethereum_checked, EthereumChecked]
     );
 }
 

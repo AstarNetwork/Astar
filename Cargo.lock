@@ -5344,7 +5344,7 @@ checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 
 [[package]]
 name = "local-runtime"
-version = "5.12.0"
+version = "5.13.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -5376,6 +5376,7 @@ dependencies = [
  "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-ethereum",
+ "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
@@ -5409,6 +5410,7 @@ dependencies = [
  "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -8042,12 +8044,14 @@ dependencies = [
 name = "pallet-xvm"
 version = "0.2.1"
 dependencies = [
+ "astar-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
  "log",
  "pallet-contracts",
+ "pallet-ethereum-checked",
  "pallet-evm",
  "parity-scale-codec",
  "scale-info",
@@ -12018,7 +12022,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.13.0"
+version = "5.14.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -12064,6 +12068,7 @@ dependencies = [
  "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-ethereum",
+ "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-evm-chain-id",
  "pallet-evm-precompile-assets-erc20",

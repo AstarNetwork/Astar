@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.12.0"
+version = "5.13.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -26,6 +26,7 @@ pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
+pallet-ethereum-checked = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-precompile-blake2 = { workspace = true }
 pallet-evm-precompile-bn128 = { workspace = true }
@@ -50,6 +51,7 @@ sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
 sp-inherents = { workspace = true }
+sp-io = { workspace = true }
 sp-offchain = { workspace = true }
 sp-runtime = { workspace = true }
 sp-session = { workspace = true }
@@ -149,6 +151,7 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
+	"sp-io/std",
 	"frame-benchmarking/std",
 	"frame-try-runtime/std",
 	"pallet-collective/std",
@@ -156,6 +159,7 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-treasury/std",
 	"pallet-xvm/std",
+	"pallet-ethereum-checked/std",
 	"moonbeam-evm-tracer/std",
 	"moonbeam-rpc-primitives-debug/std",
 	"moonbeam-rpc-primitives-txpool/std",
@@ -176,6 +180,7 @@ runtime-benchmarks = [
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
+	"pallet-ethereum-checked/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 ]
 try-runtime = [
@@ -209,6 +214,7 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
+	"pallet-ethereum-checked/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

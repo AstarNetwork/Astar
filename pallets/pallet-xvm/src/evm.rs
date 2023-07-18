@@ -19,20 +19,27 @@
 //! EVM support for XVM pallet.
 
 use crate::*;
-use pallet_evm::{GasWeightMapping, Runner};
-use sp_core::{H160, U256};
-use sp_runtime::traits::{Get, UniqueSaturatedInto};
+use frame_support::{traits::ConstU32, BoundedVec};
+use pallet_evm::GasWeightMapping;
+use sp_core::U256;
+use sp_runtime::traits::Get;
+
+use astar_primitives::ethereum_checked::{
+    AccountMapping as AccountMappingT, CheckedEthereumTransact, CheckedEthereumTx,
+    MAX_ETHEREUM_TX_INPUT_SIZE,
+};
 
 /// EVM adapter for XVM calls.
 ///
 /// This adapter supports generic XVM calls and encode it into EVM native calls
 /// using Solidity ABI codec (https://docs.soliditylang.org/en/v0.8.16/abi-spec.html).
-pub struct EVM<I, T>(sp_std::marker::PhantomData<(I, T)>);
+pub struct EVM<I, T, Transact>(sp_std::marker::PhantomData<(I, T, Transact)>);
 
-impl<I, T> SyncVM<T::AccountId> for EVM<I, T>
+impl<I, T, Transact> SyncVM<T::AccountId> for EVM<I, T, Transact>
 where
     I: Get<VmId>,
-    T: pallet_evm::Config + frame_system::Config,
+    T: frame_system::Config + pallet_evm::Config + pallet_ethereum_checked::Config,
+    Transact: CheckedEthereumTransact,
 {
     fn id() -> VmId {
         I::get()
@@ -44,56 +51,47 @@ where
             "Start EVM XVM: {:?}, {:?}, {:?}",
             from, to, input,
         );
-        let value = U256::zero();
 
-        // Tells the EVM executor that no fees should be charged for this execution.
-        let max_fee_per_gas = U256::zero();
+        let value = U256::zero();
         let gas_limit = T::GasWeightMapping::weight_to_gas(context.max_weight);
-        log::trace!(
-            target: "xvm::EVM::xvm_call",
-            "EVM xvm call gas limit: {:?} or as weight: {:?}", gas_limit, context.max_weight);
-        let evm_to = Decode::decode(&mut to.as_ref()).map_err(|_| XvmCallError {
+
+        let source = T::AccountMapping::into_h160(from);
+        let target = Decode::decode(&mut to.as_ref()).map_err(|_| XvmCallError {
             error: XvmError::EncodingFailure,
             consumed_weight: PLACEHOLDER_WEIGHT,
         })?;
+        let bounded_input = BoundedVec::<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>::try_from(input)
+            .map_err(|_| XvmCallError {
+                error: XvmError::InputTooLarge,
+                consumed_weight: PLACEHOLDER_WEIGHT,
+            })?;
 
-        let is_transactional = true;
-        // Since this is in the context of XVM, no standard validation is required.
-        let validate = false;
-        let info = T::Runner::call(
-            H160::from_slice(&from.encode()[0..20]),
-            evm_to,
-            input,
-            value,
-            gas_limit,
-            Some(max_fee_per_gas),
-            None,
-            None,
-            Vec::new(),
-            is_transactional,
-            validate,
-            T::config(),
+        let (post_dispatch_info, call_info) = Transact::xvm_transact(
+            source,
+            CheckedEthereumTx {
+                gas_limit: U256::from(gas_limit),
+                target,
+                value,
+                input: bounded_input,
+                maybe_access_list: None,
+            },
         )
         .map_err(|e| {
-            let consumed_weight = e.weight.ref_time();
+            let consumed_weight = e.post_info.actual_weight.unwrap_or_default();
             XvmCallError {
-                error: XvmError::ExecutionError(Into::<&str>::into(e.error.into()).into()),
+                error: XvmError::ExecutionError(Into::<&str>::into(e.error).into()),
                 consumed_weight,
             }
         })?;
 
         log::trace!(
             target: "xvm::EVM::xvm_call",
-            "EVM XVM call result: exit_reason: {:?}, used_gas: {:?}", info.exit_reason, info.used_gas,
+            "EVM XVM call result: exit_reason: {:?}, used_gas: {:?}", call_info.exit_reason, call_info.used_gas,
         );
 
         Ok(XvmCallOk {
-            output: info.value,
-            consumed_weight: T::GasWeightMapping::gas_to_weight(
-                info.used_gas.unique_saturated_into(),
-                false,
-            )
-            .ref_time(),
+            output: call_info.value,
+            consumed_weight: post_dispatch_info.actual_weight.unwrap_or_default(),
         })
     }
 }
