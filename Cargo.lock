@@ -6737,6 +6737,7 @@ dependencies = [
 name = "pallet-chain-extension-xvm"
 version = "0.1.0"
 dependencies = [
+ "astar-primitives",
  "frame-support",
  "frame-system",
  "log",

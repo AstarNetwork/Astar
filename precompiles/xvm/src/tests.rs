@@ -50,6 +50,7 @@ fn wrong_argument_reverts() {
                     .write(Bytes(b"".to_vec()))
                     .write(Bytes(b"".to_vec()))
                     .write(Bytes(b"".to_vec()))
+                    .write(Bytes(b"".to_vec()))
                     .build(),
             )
             .expect_no_logs()
@@ -67,6 +68,7 @@ fn correct_arguments_works() {
                 PRECOMPILE_ADDRESS,
                 EvmDataWriter::new_with_selector(Action::XvmCall)
                     .write(Bytes(context.encode()))
+                    .write(Bytes(b"".to_vec()))
                     .write(Bytes(b"".to_vec()))
                     .write(Bytes(b"".to_vec()))
                     .write(Bytes(b"".to_vec()))

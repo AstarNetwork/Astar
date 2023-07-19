@@ -31,6 +31,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use astar_primitives::Balance;
 use frame_support::weights::Weight;
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{traits::Member, RuntimeDebug};
@@ -133,7 +134,13 @@ pub trait SyncVM<AccountId> {
     /// Make a call to VM contract and return result or error.
     ///
     ///
-    fn xvm_call(context: XvmContext, from: AccountId, to: Vec<u8>, input: Vec<u8>) -> XvmResult;
+    fn xvm_call(
+        context: XvmContext,
+        from: AccountId,
+        to: Vec<u8>,
+        input: Vec<u8>,
+        value: Balance,
+    ) -> XvmResult;
 }
 
 #[impl_trait_for_tuples::impl_for_tuples(30)]
@@ -142,15 +149,21 @@ impl<AccountId: Member> SyncVM<AccountId> for Tuple {
         Default::default()
     }
 
-    fn xvm_call(context: XvmContext, from: AccountId, to: Vec<u8>, input: Vec<u8>) -> XvmResult {
+    fn xvm_call(
+        context: XvmContext,
+        from: AccountId,
+        to: Vec<u8>,
+        input: Vec<u8>,
+        value: Balance,
+    ) -> XvmResult {
         for_tuples!( #(
             if Tuple::id() == context.id {
                 log::trace!(
                     target: "xvm::SyncVm::xvm_call",
-                    "VM found, run XVM call: {:?}, {:?}, {:?}, {:?}",
-                    context, from, to, input,
+                    "VM found, run XVM call: {:?}, {:?}, {:?}, {:?}, {:?}",
+                    context, from, to, input, value
                 );
-                return Tuple::xvm_call(context, from, to, input)
+                return Tuple::xvm_call(context, from, to, input, value)
             }
         )* );
         log::trace!(

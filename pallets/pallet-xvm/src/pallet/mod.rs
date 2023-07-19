@@ -74,8 +74,9 @@ pub mod pallet {
             from: T::AccountId,
             to: Vec<u8>,
             input: Vec<u8>,
+            value: Balance,
         ) -> XvmResult {
-            let result = T::SyncVM::xvm_call(context, from, to, input);
+            let result = T::SyncVM::xvm_call(context, from, to, input, value);
 
             log::trace!(
                 target: "xvm::pallet::xvm_bare_call",
@@ -95,6 +96,7 @@ pub mod pallet {
             context: XvmContext,
             to: Vec<u8>,
             input: Vec<u8>,
+            value: Balance,
         ) -> DispatchResultWithPostInfo {
             let from = ensure_signed(origin)?;
 
@@ -102,7 +104,7 @@ pub mod pallet {
             // TODO: fix
             //context.max_weight = context.max_weight - PLACEHOLDER_WEIGHT;
 
-            let result = T::SyncVM::xvm_call(context, from, to, input);
+            let result = T::SyncVM::xvm_call(context, from, to, input, value);
             let consumed_weight = consumed_weight(&result);
 
             log::trace!(

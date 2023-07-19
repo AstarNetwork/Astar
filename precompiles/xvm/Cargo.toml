@@ -52,4 +52,5 @@ std = [
 	"sp-std/std",
 	"sp-io/std",
 	"sp-runtime/std",
+	"pallet-balances/std",
 ]

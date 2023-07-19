@@ -18,7 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::dispatch::Encode;
+use astar_primitives::Balance;
+use frame_support::{dispatch::Encode, traits::Currency};
 use pallet_contracts::chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal};
 use pallet_xvm::XvmContext;
 use sp_runtime::DispatchError;
@@ -55,6 +56,8 @@ impl<T> Default for XvmExtension<T> {
 impl<T> ChainExtension<T> for XvmExtension<T>
 where
     T: pallet_contracts::Config + pallet_xvm::Config,
+    <T as pallet_contracts::Config>::Currency:
+        Currency<<T as frame_system::Config>::AccountId, Balance = Balance>,
 {
     fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
     where
@@ -77,7 +80,7 @@ where
                 let XvmCallArgs { vm_id, to, input } = env.read_as_unbounded(env.in_len())?;
 
                 let _origin_address = env.ext().address().clone();
-                let _value = env.ext().value_transferred();
+                let value = env.ext().value_transferred();
                 let xvm_context = XvmContext {
                     id: vm_id,
                     max_weight: remaining_weight,
@@ -85,7 +88,7 @@ where
                 };
 
                 let call_result =
-                    pallet_xvm::Pallet::<T>::xvm_bare_call(xvm_context, caller, to, input);
+                    pallet_xvm::Pallet::<T>::xvm_bare_call(xvm_context, caller, to, input, value);
 
                 let actual_weight = pallet_xvm::consumed_weight(&call_result);
                 env.adjust_weight(charged_weight, actual_weight);

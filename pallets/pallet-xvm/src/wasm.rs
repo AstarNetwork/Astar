@@ -19,29 +19,31 @@
 //! WASM (substrate contracts) support for XVM pallet.
 
 use crate::*;
+use astar_primitives::Balance;
 use frame_support::traits::Currency;
-use parity_scale_codec::HasCompact;
-use scale_info::TypeInfo;
 use sp_runtime::traits::Get;
 use sp_runtime::traits::StaticLookup;
-use sp_std::fmt::Debug;
-pub struct WASM<I, T>(sp_std::marker::PhantomData<(I, T)>);
 
-type BalanceOf<T> = <<T as pallet_contracts::Config>::Currency as Currency<
-    <T as frame_system::Config>::AccountId,
->>::Balance;
+pub struct WASM<I, T>(sp_std::marker::PhantomData<(I, T)>);
 
 impl<I, T> SyncVM<T::AccountId> for WASM<I, T>
 where
     I: Get<VmId>,
     T: pallet_contracts::Config + frame_system::Config,
-    <BalanceOf<T> as HasCompact>::Type: Clone + Eq + PartialEq + Debug + TypeInfo + Encode,
+    <T as pallet_contracts::Config>::Currency:
+        Currency<<T as frame_system::Config>::AccountId, Balance = Balance>,
 {
     fn id() -> VmId {
         I::get()
     }
 
-    fn xvm_call(context: XvmContext, from: T::AccountId, to: Vec<u8>, input: Vec<u8>) -> XvmResult {
+    fn xvm_call(
+        context: XvmContext,
+        from: T::AccountId,
+        to: Vec<u8>,
+        input: Vec<u8>,
+        value: Balance,
+    ) -> XvmResult {
         log::trace!(
             target: "xvm::WASM::xvm_call",
             "Start WASM XVM: {:?}, {:?}, {:?}",
@@ -63,7 +65,7 @@ where
         let call_result = pallet_contracts::Pallet::<T>::bare_call(
             from, // no need to check origin, we consider it signed here
             dest,
-            Default::default(),
+            value,
             gas_limit.into(),
             None,
             input,

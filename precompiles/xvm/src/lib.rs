@@ -24,7 +24,8 @@ use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 use pallet_evm::{AddressMapping, Precompile};
 use pallet_xvm::XvmContext;
 use parity_scale_codec::Decode;
-use sp_runtime::codec::Encode;
+use sp_core::U256;
+use sp_runtime::{codec::Encode, traits::UniqueSaturatedInto};
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 
@@ -40,7 +41,7 @@ mod tests;
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
 pub enum Action {
-    XvmCall = "xvm_call(bytes,bytes,bytes)",
+    XvmCall = "xvm_call(bytes,bytes,bytes,uint256)",
 }
 
 /// A precompile that expose XVM related functions.
@@ -94,9 +95,16 @@ where
 
         let call_to = input.read::<Bytes>()?.0;
         let call_input = input.read::<Bytes>()?.0;
+        let value = input.read::<U256>()?;
 
         let from = R::AddressMapping::into_account_id(handle.context().caller);
-        match &pallet_xvm::Pallet::<R>::xvm_bare_call(context, from, call_to, call_input) {
+        match &pallet_xvm::Pallet::<R>::xvm_bare_call(
+            context,
+            from,
+            call_to,
+            call_input,
+            value.unique_saturated_into(),
+        ) {
             Ok(success) => {
                 log::trace!(
                     target: "xvm-precompile::xvm_call",

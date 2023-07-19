@@ -19,15 +19,17 @@
 //! EVM support for XVM pallet.
 
 use crate::*;
+use astar_primitives::{
+    ethereum_checked::{
+        AccountMapping as AccountMappingT, CheckedEthereumTransact, CheckedEthereumTx,
+        MAX_ETHEREUM_TX_INPUT_SIZE,
+    },
+    Balance,
+};
 use frame_support::{traits::ConstU32, BoundedVec};
 use pallet_evm::GasWeightMapping;
 use sp_core::U256;
 use sp_runtime::traits::Get;
-
-use astar_primitives::ethereum_checked::{
-    AccountMapping as AccountMappingT, CheckedEthereumTransact, CheckedEthereumTx,
-    MAX_ETHEREUM_TX_INPUT_SIZE,
-};
 
 /// EVM adapter for XVM calls.
 ///
@@ -45,14 +47,19 @@ where
         I::get()
     }
 
-    fn xvm_call(context: XvmContext, from: T::AccountId, to: Vec<u8>, input: Vec<u8>) -> XvmResult {
+    fn xvm_call(
+        context: XvmContext,
+        from: T::AccountId,
+        to: Vec<u8>,
+        input: Vec<u8>,
+        value: Balance,
+    ) -> XvmResult {
         log::trace!(
             target: "xvm::EVM::xvm_call",
-            "Start EVM XVM: {:?}, {:?}, {:?}",
-            from, to, input,
+            "Start EVM XVM: {:?}, {:?}, {:?}, {:?}",
+            from, to, input, value,
         );
 
-        let value = U256::zero();
         let gas_limit = T::GasWeightMapping::weight_to_gas(context.max_weight);
 
         let source = T::AccountMapping::into_h160(from);
@@ -71,7 +78,7 @@ where
             CheckedEthereumTx {
                 gas_limit: U256::from(gas_limit),
                 target,
-                value,
+                value: value.into(),
                 input: bounded_input,
                 maybe_access_list: None,
             },
