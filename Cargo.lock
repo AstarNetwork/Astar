@@ -15837,6 +15837,7 @@ dependencies = [
 name = "xcm-tools"
 version = "0.6.0"
 dependencies = [
+ "astar-primitives",
  "clap",
  "cumulus-primitives-core",
  "hex",

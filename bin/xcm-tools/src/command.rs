@@ -25,10 +25,12 @@ use cumulus_primitives_core::ParaId;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_primitives::AccountId;
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::{AccountIdConversion, Get};
+use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
-use xcm_builder::{Account32Hash, ParentIsPreset, SiblingParachainConvertsVia};
+use xcm_builder::{ParentIsPreset, SiblingParachainConvertsVia};
 use xcm_executor::traits::Convert;
+
+use astar_primitives::xcm::{DescribeAllTerminal, DescribeFamily, HashedDescription};
 
 /// CLI error type.
 pub type Error = String;
@@ -64,18 +66,7 @@ pub fn run() -> Result<(), Error> {
             println!("pallet_assets: {}", cmd.asset_id);
             println!("EVM XC20: 0x{}", HexDisplay::from(&data));
         }
-        Some(Subcommand::Account32Hash(cmd)) => {
-            let network = if let Some(ref id) = cmd.network_id {
-                match id.to_lowercase().as_str() {
-                    "none" => None,
-                    "polkadot" => Some(NetworkId::Polkadot),
-                    "kusama" => Some(NetworkId::Kusama),
-                    _ => return Err("Unexpected network Id value.".into()),
-                }
-            } else {
-                None
-            };
-
+        Some(Subcommand::AccountId32(cmd)) => {
             let mut sender_multilocation = MultiLocation::parent();
 
             if let Some(parachain_id) = cmd.parachain_id {
@@ -86,22 +77,21 @@ pub fn run() -> Result<(), Error> {
 
             sender_multilocation
                 .append_with(X1(AccountId32 {
-                    network,
                     id: cmd.account_id_32,
+                    // network is not relevant for account derivation
+                    network: None,
                 }))
                 .expect("infallible, short sequence");
 
-            // Not important for the functionality, totally redundant
-            struct AnyNetwork;
-            impl Get<Option<NetworkId>> for AnyNetwork {
-                fn get() -> Option<NetworkId> {
-                    None
-                }
-            }
-
             let derived_acc =
-                Account32Hash::<AnyNetwork, AccountId>::convert_ref(&sender_multilocation).unwrap();
-            println!("{}", derived_acc);
+                HashedDescription::<AccountId, DescribeFamily<DescribeAllTerminal>>::convert(
+                    sender_multilocation,
+                );
+            if let Ok(derived_acc) = derived_acc {
+                println!("{}", derived_acc);
+            } else {
+                println!("Failed to derive account Id.");
+            }
         }
         None => {}
     }

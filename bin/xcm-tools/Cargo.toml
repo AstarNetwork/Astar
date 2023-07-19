@@ -13,6 +13,7 @@ name = "xcm-tools"
 path = "src/main.rs"
 
 [dependencies]
+astar-primitives = { workspace = true, features = ["std"] }
 clap = { workspace = true }
 cumulus-primitives-core = { workspace = true, features = ["std"] }
 polkadot-parachain = { workspace = true, features = ["std"] }
