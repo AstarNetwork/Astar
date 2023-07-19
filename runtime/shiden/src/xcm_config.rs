@@ -34,7 +34,7 @@ use sp_std::marker::PhantomData;
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
     EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,

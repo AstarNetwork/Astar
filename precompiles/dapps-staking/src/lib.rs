@@ -73,7 +73,7 @@ where
         // TODO: benchmark this function so we can measure ref time & PoV correctly
         // Storage item: CurrentEra:
         // Twox64(8) + EraIndex(4)
-        handle.record_db_read::<R>(16)?;
+        handle.record_db_read::<R>(12)?;
 
         let current_era = pallet_dapps_staking::CurrentEra::<R>::get();
 

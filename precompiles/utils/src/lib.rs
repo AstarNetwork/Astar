@@ -299,11 +299,11 @@ pub trait PrecompileHandleExt: PrecompileHandle {
     fn read_input(&self) -> EvmResult<EvmDataReader>;
 
     /// Record cost of one DB read manually.
-    /// The max encoded lenght of the data that will be read should be provided.
+    /// The expected key & value data length should be provided.
     #[must_use]
     fn record_db_read<Runtime: pallet_evm::Config>(
         &mut self,
-        data_max_encoded_len: usize,
+        data_length: usize,
     ) -> Result<(), ExitError>;
 }
 
@@ -383,10 +383,10 @@ impl<T: PrecompileHandle> PrecompileHandleExt for T {
     #[must_use]
     fn record_db_read<Runtime: pallet_evm::Config>(
         &mut self,
-        data_max_encoded_len: usize,
+        data_length: usize,
     ) -> Result<(), ExitError> {
         self.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
-        self.record_external_cost(None, Some(data_max_encoded_len as u64))
+        self.record_external_cost(None, Some(data_length as u64))
     }
 }
 
