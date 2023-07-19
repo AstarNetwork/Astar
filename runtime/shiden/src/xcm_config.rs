@@ -39,7 +39,7 @@ use xcm_builder::{
     EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{Convert as XcmConvert, JustTry, WithOriginFilter},
@@ -51,7 +51,10 @@ use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
-use astar_primitives::xcm::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
+use astar_primitives::xcm::{
+    DescribeAllTerminal, DescribeFamily, FixedRateOfForeignAsset, HashedDescription,
+    ReserveAssetFilter, XcmFungibleFeeHandler,
+};
 
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Kusama);
@@ -72,8 +75,9 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<polkadot_parachain::primitives::Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
-    // Derives a private `Account32` by hashing `("multiloc", received multilocation)`
-    Account32Hash<RelayNetwork, AccountId>,
+    // Generates private `AccountId`s from `MultiLocation`s, in a stable & safe way.
+    // Replaces the old `Account32Hash` approach.
+    HashedDescription<AccountId, DescribeFamily<DescribeAllTerminal>>,
 );
 
 /// Means for transacting the native currency on this chain.
@@ -223,6 +227,8 @@ impl Contains<RuntimeCall> for SafeCallFilter {
 pub type XcmBarrier = (
     TakeWeightCredit,
     AllowTopLevelPaidExecutionFrom<Everything>,
+    // This will first calculate the derived origin, before checking it against the barrier implementation
+    WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, UniversalLocation, ConstU32<8>>,
     // Parent and its plurality get free execution
     AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
     // Expected responses are OK.

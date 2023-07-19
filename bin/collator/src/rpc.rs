@@ -331,6 +331,7 @@ where
         )
         .into_rpc(),
     )?;
+    // TODO: remove this? This would mean we have two distinct tx pool implementations! What is the difference?
     io.merge(tx_pool.into_rpc())?;
 
     Ok(io)
