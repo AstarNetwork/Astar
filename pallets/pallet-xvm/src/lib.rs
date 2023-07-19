@@ -52,7 +52,7 @@ pub type VmId = u8;
 
 // TODO: remove later after solution is properly benchmarked
 // Just a arbitrary weight constant to avoid having ZERO weight in some parts of execution
-pub const PLACEHOLDER_WEIGHT: u64 = 1_000_000;
+pub const PLACEHOLDER_WEIGHT: Weight = Weight::from_parts(1_000_000, 0);
 
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
 pub enum XvmError {
@@ -61,6 +61,7 @@ pub enum XvmError {
     ContextConversionFailed,
     OutOfGas,
     ExecutionError(Vec<u8>),
+    InputTooLarge,
     // extend this list as part of improved error handling
 }
 
@@ -77,7 +78,7 @@ pub struct XvmCallOk {
     /// Output of XVM call. E.g. if call was a query, this will contain query response.
     output: Vec<u8>,
     /// Total consumed weight. This is in context of Substrate (1 unit of weight ~ 1 ps of execution time)
-    consumed_weight: u64,
+    consumed_weight: Weight,
 }
 
 impl XvmCallOk {
@@ -93,7 +94,7 @@ pub struct XvmCallError {
     // TODO: use XvmError enum from pallet? Perhaps that's a better approach. Or at least provide mapping?
     error: XvmError,
     /// Total consumed weight. This is in context of Substrate (1 unit of weight ~ 1 ps of execution time)
-    consumed_weight: u64,
+    consumed_weight: Weight,
 }
 
 impl XvmCallError {
@@ -105,7 +106,7 @@ impl XvmCallError {
 /// Result for executing X-VM calls
 pub type XvmResult = Result<XvmCallOk, XvmCallError>;
 
-pub fn consumed_weight(result: &XvmResult) -> u64 {
+pub fn consumed_weight(result: &XvmResult) -> Weight {
     match result {
         Ok(res) => res.consumed_weight,
         Err(err) => err.consumed_weight,

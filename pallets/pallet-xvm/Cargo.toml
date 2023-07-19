@@ -23,11 +23,15 @@ sp-std = { workspace = true }
 # Benchmarks
 frame-benchmarking = { workspace = true, optional = true }
 
-# EVM support 
+# EVM
 pallet-evm = { workspace = true, optional = true }
 
 # Substrate WASM VM support
 pallet-contracts = { workspace = true, optional = true }
+
+# Astar
+astar-primitives = { workspace = true }
+pallet-ethereum-checked = { workspace = true, optional = true }
 
 [dev-dependencies]
 
@@ -35,6 +39,7 @@ pallet-contracts = { workspace = true, optional = true }
 default = ["std"]
 evm = [
 	"pallet-evm",
+	"pallet-ethereum-checked",
 ]
 wasm = [
 	"pallet-contracts",
@@ -50,9 +55,12 @@ std = [
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"astar-primitives/std",
+	"pallet-ethereum-checked/std",
 ]
 
 runtime-benchmarks = [
 	"frame-benchmarking",
+	"pallet-ethereum-checked/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]

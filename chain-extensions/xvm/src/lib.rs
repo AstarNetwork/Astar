@@ -18,8 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::dispatch::Encode;
-use frame_support::weights::Weight;
+use frame_support::{dispatch::Encode, weights::Weight};
 use pallet_contracts::{
     chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal},
     Origin,
@@ -102,8 +101,7 @@ where
                     pallet_xvm::Pallet::<T>::xvm_bare_call(xvm_context, caller, to, input);
 
                 let actual_weight = pallet_xvm::consumed_weight(&call_result);
-                // TODO: implement proof of size refund.
-                env.adjust_weight(charged_weight, Weight::from_parts(actual_weight, 0));
+                env.adjust_weight(charged_weight, actual_weight);
 
                 match call_result {
                     Ok(success) => {

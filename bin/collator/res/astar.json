@@ -3,11 +3,12 @@
   "id": "astar",
   "chainType": "Live",
   "bootNodes": [
-    "/dnsaddr/bootnode.astar.network/p2p/12D3KooWMaG4prEjqt1C6Mfas8LCFs31f5k11jw4nRuV52KR3yaB",
-    "/ip4/51.91.105.142/tcp/30333/ws/p2p/12D3KooWGrSwcPyA5V9qCR4RiiXZ7ErERiZ6jnpp1PhjYgxP8qSL",
-    "/ip4/35.197.38.107/tcp/30333/ws/p2p/12D3KooWHV4YxifTpBkLWPPaF8EfoMSXeGNWWxXqUokGsBGxwioK",
-    "/dns/wss-bootnode-02.astar.network/tcp/443/wss/p2p/12D3KooWGrSwcPyA5V9qCR4RiiXZ7ErERiZ6jnpp1PhjYgxP8qSL",
-    "/dns/wss-bootnode-03.astar.network/tcp/443/wss/p2p/12D3KooWHV4YxifTpBkLWPPaF8EfoMSXeGNWWxXqUokGsBGxwioK",
+    "/ip4/109.238.14.102/tcp/30333/ws/p2p/12D3KooWPH9bkXRkPcHGKd7DSgYfLLVE1Cw7QNr2M4kKwdVwGZXN",
+    "/ip4/199.85.208.179/tcp/30333/ws/p2p/12D3KooWMwrAXhSuzCrtiwfVQuB4oLAZj3CLxVzMrqBJB4GKjnQa",
+    "/ip4/131.153.79.50/tcp/30333/ws/p2p/12D3KooWB2XY9Uw1ZR8qtD5DQ4TKivJkQdqM5c6hyY9ixSDAASBa",
+    "/dns/bootnode-01.astar.network/tcp/443/wss/p2p/12D3KooWPH9bkXRkPcHGKd7DSgYfLLVE1Cw7QNr2M4kKwdVwGZXN",
+    "/dns/bootnode-02.astar.network/tcp/443/wss/p2p/12D3KooWMwrAXhSuzCrtiwfVQuB4oLAZj3CLxVzMrqBJB4GKjnQa",
+    "/dns/bootnode-03.astar.network/tcp/443/wss/p2p/12D3KooWB2XY9Uw1ZR8qtD5DQ4TKivJkQdqM5c6hyY9ixSDAASBa",
     "/dns4/astar-bootnode-1-tls.p2p.onfinality.io/tcp/443/wss/p2p/12D3KooWERrQFE8ss7zYfcHp8ULVCc1N7gur7GqZ8ESuZB1Nmioh"
   ],
   "telemetryEndpoints": null,
