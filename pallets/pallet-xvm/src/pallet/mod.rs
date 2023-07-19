@@ -104,8 +104,6 @@ pub mod pallet {
 
             let result = T::SyncVM::xvm_call(context, from, to, input);
             let consumed_weight = consumed_weight(&result);
-            // TODO: solve this before merging the uplift PR - XVM should work with 2D weights!!!
-            let consumed_weight = Weight::from_parts(consumed_weight, 0);
 
             log::trace!(
                 target: "xvm::pallet::xvm_call",

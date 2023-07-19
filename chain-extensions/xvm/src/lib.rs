@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{dispatch::Encode, weights::Weight};
+use frame_support::dispatch::Encode;
 use pallet_contracts::{
     chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal},
     Origin,
