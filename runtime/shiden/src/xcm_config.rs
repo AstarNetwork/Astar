@@ -139,9 +139,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    // The default POV size used by Polkadot/Kusama was 64 kB but that has been updated here: https://github.com/paritytech/polkadot/pull/7081
-    // We should properly benchmark instructions and get rid of fixed weights.
-    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 1024);
+    // For the PoV size, we estimate 64 kB per instruction - which will is once again very conservative.
+    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
     pub const MaxInstructions: u32 = 100;
 }
 

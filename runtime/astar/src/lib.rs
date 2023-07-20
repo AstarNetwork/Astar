@@ -608,7 +608,7 @@ parameter_types! {
     pub const DepositPerItem: Balance = contracts_deposit(1, 0);
     pub const DepositPerByte: Balance = contracts_deposit(0, 1);
     // Fallback value if storage deposit limit not set by the user
-    pub const DefaultDepositLimit: Balance = contracts_deposit(1024, 1024 * 1024);
+    pub const DefaultDepositLimit: Balance = contracts_deposit(16, 16 * 1024);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
