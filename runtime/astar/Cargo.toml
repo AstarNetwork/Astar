@@ -138,6 +138,7 @@ std = [
 	"frame-executive/std",
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",
+	"frame-try-runtime/std",
 	"pallet-assets/std",
 	"pallet-authorship/std",
 	"pallet-aura/std",
