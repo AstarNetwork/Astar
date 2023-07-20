@@ -43,6 +43,8 @@ use astar_primitives::ethereum_checked::{
 
 pub use pallet::*;
 
+// TODO: move types and traits to `astar-primitives`.
+
 /// XVM call info on success.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct CallInfo {
