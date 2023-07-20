@@ -8062,6 +8062,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-xvm-v2"
+version = "0.2.1"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "pallet-contracts",
+ "pallet-ethereum-checked",
+ "pallet-evm",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "parachain-info"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.40#e05c8d7f71734ed71188337c6cb0d30715f6320f"
