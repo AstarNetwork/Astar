@@ -79,17 +79,20 @@ pub struct CallErrorWithWeight {
 /// XVM call result.
 pub type XvmCallResult = Result<CallInfo, CallErrorWithWeight>;
 
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum Vm {
     Evm,
     Wasm,
 }
 
+// TODO: Note caller shouldn't be able to specify `source_vm`.
 /// XVM context.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct XvmContext {
     /// The source VM of the call.
     pub source_vm: Vm,
+    /// The target VM of the call.
+    pub target_vm: Vm,
     /// Max weight limit.
     pub weight_limit: Weight,
     /// Optional encoded execution environment.
@@ -97,28 +100,14 @@ pub struct XvmContext {
 }
 
 pub trait XvmCall<AccountId> {
-    /// Call a contract in EVM.
+    /// Call a contract in XVM.
     ///
     /// Parameters:
     /// - `context`: XVM context.
     /// - `source`: Caller Id.
     /// - `target`: Target contract address.
     /// - `input`: call input data.
-    fn evm_call(
-        context: XvmContext,
-        source: AccountId,
-        target: Vec<u8>,
-        input: Vec<u8>,
-    ) -> XvmCallResult;
-
-    /// Call a contract in EVM.
-    ///
-    /// Parameters:
-    /// - `context`: XVM context.
-    /// - `source`: Caller Id.
-    /// - `target`: Target contract address.
-    /// - `input`: call input data.
-    fn wasm_call(
+    fn xvm_call(
         context: XvmContext,
         source: AccountId,
         target: Vec<u8>,
@@ -146,22 +135,13 @@ pub mod pallet {
 }
 
 impl<T: Config> XvmCall<T::AccountId> for Pallet<T> {
-    fn evm_call(
+    fn xvm_call(
         context: XvmContext,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
     ) -> XvmCallResult {
-        Pallet::<T>::do_evm_call(context, source, target, input, false)
-    }
-
-    fn wasm_call(
-        context: XvmContext,
-        source: T::AccountId,
-        target: Vec<u8>,
-        input: Vec<u8>,
-    ) -> XvmCallResult {
-        Pallet::<T>::do_wasm_call(context, source, target, input, false)
+        Pallet::<T>::do_xvm_call(context, source, target, input, false)
     }
 }
 
@@ -169,7 +149,27 @@ impl<T: Config> XvmCall<T::AccountId> for Pallet<T> {
 pub const PLACEHOLDER_WEIGHT: Weight = Weight::from_parts(1_000_000, 1024);
 
 impl<T: Config> Pallet<T> {
-    fn do_evm_call(
+    fn do_xvm_call(
+        context: XvmContext,
+        source: T::AccountId,
+        target: Vec<u8>,
+        input: Vec<u8>,
+        skip_apply: bool,
+    ) -> XvmCallResult {
+        if context.source_vm == context.target_vm {
+            return Err(CallErrorWithWeight {
+                error: CallError::SameVmCallNotAllowed,
+                used_weight: PLACEHOLDER_WEIGHT,
+            });
+        }
+
+        match context.source_vm {
+            Vm::Evm => Pallet::<T>::evm_call(context, source, target, input, skip_apply),
+            Vm::Wasm => Pallet::<T>::wasm_call(context, source, target, input, skip_apply),
+        }
+    }
+
+    fn evm_call(
         context: XvmContext,
         source: T::AccountId,
         target: Vec<u8>,
@@ -181,13 +181,6 @@ impl<T: Config> Pallet<T> {
             "Calling EVM: {:?} {:?}, {:?}, {:?}",
             context, source, target, input,
         );
-
-        if context.source_vm == Vm::Evm {
-            return Err(CallErrorWithWeight {
-                error: CallError::SameVmCallNotAllowed,
-                used_weight: PLACEHOLDER_WEIGHT,
-            });
-        }
 
         let value = U256::zero();
         let gas_limit = T::GasWeightMapping::weight_to_gas(context.weight_limit);
@@ -240,7 +233,7 @@ impl<T: Config> Pallet<T> {
         })
     }
 
-    fn do_wasm_call(
+    fn wasm_call(
         context: XvmContext,
         source: T::AccountId,
         target: Vec<u8>,
@@ -252,13 +245,6 @@ impl<T: Config> Pallet<T> {
             "Calling WASM: {:?} {:?}, {:?}, {:?}",
             context, source, target, input,
         );
-
-        if context.source_vm == Vm::Wasm {
-            return Err(CallErrorWithWeight {
-                error: CallError::SameVmCallNotAllowed,
-                used_weight: PLACEHOLDER_WEIGHT,
-            });
-        }
 
         let dest = {
             let error = CallErrorWithWeight {
@@ -303,25 +289,14 @@ impl<T: Config> Pallet<T> {
             }),
         }
     }
-}
 
-#[cfg(feature = "runtime-benchmarks")]
-impl<T: Config> Pallet<T> {
-    pub fn evm_call_without_apply(
+    #[cfg(feature = "runtime-benchmarks")]
+    pub fn xvm_call_without_apply(
         context: XvmContext,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
     ) -> XvmCallResult {
         Self::do_evm_call(context, source, target, input, true)
-    }
-
-    pub fn wasm_call_without_apply(
-        context: XvmContext,
-        source: T::AccountId,
-        target: Vec<u8>,
-        input: Vec<u8>,
-    ) -> XvmCallResult {
-        Self::do_wasm_call(context, source, target, input, true)
     }
 }
