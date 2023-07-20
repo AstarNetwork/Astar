@@ -154,7 +154,7 @@ impl<T: Config> Pallet<T> {
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
-        skip_apply: bool,
+        skip_execution: bool,
     ) -> XvmCallResult {
         if context.source_vm == context.target_vm {
             return Err(CallErrorWithWeight {
@@ -164,8 +164,8 @@ impl<T: Config> Pallet<T> {
         }
 
         match context.source_vm {
-            Vm::Evm => Pallet::<T>::evm_call(context, source, target, input, skip_apply),
-            Vm::Wasm => Pallet::<T>::wasm_call(context, source, target, input, skip_apply),
+            Vm::Evm => Pallet::<T>::evm_call(context, source, target, input, skip_execution),
+            Vm::Wasm => Pallet::<T>::wasm_call(context, source, target, input, skip_execution),
         }
     }
 
@@ -174,7 +174,7 @@ impl<T: Config> Pallet<T> {
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
-        skip_apply: bool,
+        skip_execution: bool,
     ) -> XvmCallResult {
         log::trace!(
             target: "xvm::evm_call",
@@ -196,7 +196,7 @@ impl<T: Config> Pallet<T> {
                 used_weight: PLACEHOLDER_WEIGHT,
             })?;
 
-        if skip_apply {
+        if skip_execution {
             return Ok(CallInfo {
                 output: vec![],
                 used_weight: PLACEHOLDER_WEIGHT,
@@ -238,7 +238,7 @@ impl<T: Config> Pallet<T> {
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
-        skip_apply: bool,
+        skip_execution: bool,
     ) -> XvmCallResult {
         log::trace!(
             target: "xvm::wasm_call",
@@ -255,7 +255,7 @@ impl<T: Config> Pallet<T> {
             T::Lookup::lookup(decoded).map_err(|_| error)
         }?;
 
-        if skip_apply {
+        if skip_execution {
             return Ok(CallInfo {
                 output: vec![],
                 used_weight: PLACEHOLDER_WEIGHT,
@@ -291,12 +291,12 @@ impl<T: Config> Pallet<T> {
     }
 
     #[cfg(feature = "runtime-benchmarks")]
-    pub fn xvm_call_without_apply(
+    pub fn xvm_call_without_execution(
         context: XvmContext,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
     ) -> XvmCallResult {
-        Self::do_evm_call(context, source, target, input, true)
+        Self::do_xvm_call(context, source, target, input, true)
     }
 }
