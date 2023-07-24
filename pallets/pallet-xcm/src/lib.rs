@@ -61,25 +61,7 @@ use xcm_executor::{
     Assets,
 };
 
-pub trait WeightInfo {
-    fn send() -> Weight;
-    fn teleport_assets() -> Weight;
-    fn reserve_transfer_assets() -> Weight;
-    fn execute() -> Weight;
-    fn force_xcm_version() -> Weight;
-    fn force_default_xcm_version() -> Weight;
-    fn force_subscribe_version_notify() -> Weight;
-    fn force_unsubscribe_version_notify() -> Weight;
-    fn force_suspension() -> Weight;
-    fn migrate_supported_version() -> Weight;
-    fn migrate_version_notifiers() -> Weight;
-    fn already_notified_target() -> Weight;
-    fn notify_current_targets() -> Weight;
-    fn notify_target_migration_fail() -> Weight;
-    fn migrate_version_notify_targets() -> Weight;
-    fn migrate_and_notify_old_targets() -> Weight;
-    fn reserve_withdraw_assets() -> Weight;
-}
+use weights::WeightInfo;
 
 /// fallback implementation
 pub struct TestWeightInfo;
