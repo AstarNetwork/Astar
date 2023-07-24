@@ -93,6 +93,7 @@ impl<T, W> Default for AssetsExtension<T, W> {
 impl<T, W> ChainExtension<T> for AssetsExtension<T, W>
 where
     T: pallet_assets::Config + pallet_contracts::Config,
+    <T as pallet_assets::Config>::AssetId: Copy,
     <<T as SysConfig>::Lookup as StaticLookup>::Source: From<<T as SysConfig>::AccountId>,
     <T as SysConfig>::AccountId: From<[u8; 32]>,
     W: weights::WeightInfo,
@@ -364,7 +365,7 @@ where
                 let base_weight = <W as weights::WeightInfo>::metadata_name();
                 env.charge_weight(base_weight)?;
 
-                let name = pallet_assets::Pallet::<T>::name(id.clone());
+                let name = pallet_assets::Pallet::<T>::name(id);
                 env.write(&name.encode(), false, None)?;
             }
             AssetsFunc::MetadataSymbol => {
@@ -373,7 +374,7 @@ where
                 let base_weight = <W as weights::WeightInfo>::metadata_symbol();
                 env.charge_weight(base_weight)?;
 
-                let symbol = pallet_assets::Pallet::<T>::symbol(id.clone());
+                let symbol = pallet_assets::Pallet::<T>::symbol(id);
                 env.write(&symbol.encode(), false, None)?;
             }
             AssetsFunc::MetadataDecimals => {
@@ -382,7 +383,7 @@ where
                 let base_weight = <W as weights::WeightInfo>::metadata_decimals();
                 env.charge_weight(base_weight)?;
 
-                let decimals = pallet_assets::Pallet::<T>::decimals(id.clone());
+                let decimals = pallet_assets::Pallet::<T>::decimals(id);
                 env.write(&decimals.encode(), false, None)?;
             }
             AssetsFunc::TransferOwnership => {

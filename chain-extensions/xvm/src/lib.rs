@@ -82,7 +82,7 @@ where
                             target: "xvm-extension::xvm_call",
                             "root origin not supported"
                         );
-
+                        // TODO: expand XvmErrors with BadOrigin
                         return Ok(RetVal::Converging(XvmExecutionResult::UnknownError as u32));
                     }
                 };
