@@ -25,7 +25,6 @@ xcm-builder = { workspace = true, features = ["std"] }
 xcm-executor = { workspace = true, features = ["std"] }
 
 hex = { workspace = true }
-regex = { workspace = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

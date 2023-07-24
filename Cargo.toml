@@ -76,7 +76,6 @@ tokio = { version = "1.24.2", features = ["macros", "sync"] }
 url = "2.2.2"
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 hex-literal = "0.4.1"
-regex = "1.6.0"
 rlp = "0.5"
 tracing = "0.1.34"
 similar-asserts = { version = "1.1.0" }

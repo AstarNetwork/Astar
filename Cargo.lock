@@ -15848,7 +15848,6 @@ dependencies = [
  "hex",
  "polkadot-parachain",
  "polkadot-primitives",
- "regex",
  "sp-core",
  "sp-runtime",
  "substrate-build-script-utils",

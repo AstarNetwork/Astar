@@ -16,8 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use regex::Regex;
-
 /// Astar XCM tools.
 #[derive(Debug, clap::Parser)]
 #[clap(subcommand_required = true)]
@@ -30,21 +28,19 @@ pub struct Cli {
 /// Possible subcommands of the main binary.
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
-    /// Prints relay-chain AccountId
+    /// Prints relay-chain SS58 account Id
     RelayChainAccount,
-    /// Prints parachain AccountId.
-    ParachainAccount(ParachainAccountCmd),
+    /// Prints parachains sovereign SS58 account Id.
+    SovereignAccount(SovereignAccountCmd),
     /// Prints AssetId for desired parachain asset.
     AssetId(AssetIdCmd),
-    /// Prints AccountId32 for the derived multilocation.
-    /// In case parachain-id is provided, multilocation is in format { parents: 1, X2(Parachain, AccountId32) }.
-    /// In case parachain-id is omitted, multilocation is in format  { parents: 1, X1(AccountId32) }.
-    AccountId32(AccountId32Cmd),
+    /// Prints derived remote SS58 account for the derived multilocation.
+    RemoteAccount(RemoteAccountCmd),
 }
 
 /// Helper that prints AccountId of parachain.
 #[derive(Debug, clap::Parser)]
-pub struct ParachainAccountCmd {
+pub struct SovereignAccountCmd {
     /// Print address for sibling parachain [child by default].
     #[clap(short)]
     pub sibling: bool,
@@ -63,33 +59,79 @@ pub struct AssetIdCmd {
 
 /// Helper that prints the derived AccountId32 value for the multilocation.
 #[derive(Debug, clap::Parser)]
-pub struct AccountId32Cmd {
+pub struct RemoteAccountCmd {
     /// Parachain id in case sender is from a sibling parachain.
     #[clap(short, long, default_value = None)]
     pub parachain_id: Option<u32>,
-    /// AccountId32 (SS58 scheme, public key) of the sender account.
-    #[clap(short, long, value_parser = account_id_32_parser)]
-    pub account_id_32: [u8; 32],
+    /// Public key (SS58 or H160) in hex format. Must be either 32 or 20 bytes long.
+    #[clap(short, long)]
+    pub account_key: AccountWrapper,
 }
 
-/// Used to parse AccountId32 as [u8; 32] from the received string.
-fn account_id_32_parser(account_str: &str) -> Result<[u8; 32], String> {
-    let re = Regex::new(r"^0x([0-9a-fA-F]{64})$").map_err(|e| e.to_string())?;
-    if !re.is_match(account_str) {
-        return Err(
-            "Invalid AccountId32 received. Expected format is '0x1234...4321' (64 hex digits)."
-                .into(),
-        );
+#[derive(Debug, Clone)]
+pub struct AccountWrapper {
+    account: [u8; 32],
+    is_32: bool,
+}
+
+impl AccountWrapper {
+    /// Get AccountId32 public key (SS58) or error if it is not 32 bytes long.
+    pub fn get_account_id_32(&self) -> Result<[u8; 32], &str> {
+        if self.is_32 {
+            Ok(self.account)
+        } else {
+            Err("Account is not 32 bytes long")
+        }
     }
 
-    let hex_acc = re
-        .captures(account_str)
-        .expect("Regex match confirmed above.")
-        .get(1)
-        .expect("Group 1 confirmed in match above.")
-        .as_str();
-    let decoded_hex = hex::decode(hex_acc).expect("Regex ensures correctness; infallible.");
+    /// Get AccountKey20 public key (H160) or error if it is not 20 bytes long.
+    pub fn get_account_key_20(&self) -> Result<[u8; 20], &str> {
+        if !self.is_32 {
+            let mut account = [0u8; 20];
+            account.copy_from_slice(&self.account[0..20]);
+            Ok(account)
+        } else {
+            Err("Account is not 20 bytes long")
+        }
+    }
 
-    TryInto::<[u8; 32]>::try_into(decoded_hex)
-        .map_err(|_| "Failed to create [u8; 32] array from received account Id string.".into())
+    /// `true` if AccountId32, `false` if AccountKey20.
+    pub fn is_32_bytes(&self) -> bool {
+        self.is_32
+    }
+}
+
+impl std::str::FromStr for AccountWrapper {
+    type Err = String;
+
+    fn from_str(account_pub_key: &str) -> Result<Self, Self::Err> {
+        if let Some(rest) = account_pub_key.strip_prefix("0x") {
+            if let Some(pos) = rest.chars().position(|c| !c.is_ascii_hexdigit()) {
+                Err(format!(
+					"Expected account public key in hex format, found illegal hex character at position: {}",
+					2 + pos,
+				))
+            } else {
+                if rest.len() == 40 {
+                    let mut account = [0u8; 32];
+                    account[0..20].copy_from_slice(&hex::decode(rest).unwrap());
+                    Ok(AccountWrapper {
+                        account,
+                        is_32: false,
+                    })
+                } else if rest.len() == 64 {
+                    let mut account = [0u8; 32];
+                    account.copy_from_slice(&hex::decode(rest).unwrap());
+                    Ok(AccountWrapper {
+                        account,
+                        is_32: true,
+                    })
+                } else {
+                    Err("Account key should be 20 or 32 bytes long".into())
+                }
+            }
+        } else {
+            Err("Account key should start with '0x'".into())
+        }
+    }
 }

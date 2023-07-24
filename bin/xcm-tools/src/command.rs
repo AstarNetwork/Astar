@@ -45,7 +45,7 @@ pub fn run() -> Result<(), Error> {
                 ParentIsPreset::<AccountId>::convert_ref(&MultiLocation::parent()).unwrap();
             println!("{}", relay_account);
         }
-        Some(Subcommand::ParachainAccount(cmd)) => {
+        Some(Subcommand::SovereignAccount(cmd)) => {
             let parachain_account = if cmd.sibling {
                 let location = MultiLocation {
                     parents: 1,
@@ -66,7 +66,7 @@ pub fn run() -> Result<(), Error> {
             println!("pallet_assets: {}", cmd.asset_id);
             println!("EVM XC20: 0x{}", HexDisplay::from(&data));
         }
-        Some(Subcommand::AccountId32(cmd)) => {
+        Some(Subcommand::RemoteAccount(cmd)) => {
             let mut sender_multilocation = MultiLocation::parent();
 
             if let Some(parachain_id) = cmd.parachain_id {
@@ -75,13 +75,23 @@ pub fn run() -> Result<(), Error> {
                     .expect("infallible, short sequence");
             }
 
-            sender_multilocation
-                .append_with(X1(AccountId32 {
-                    id: cmd.account_id_32,
-                    // network is not relevant for account derivation
-                    network: None,
-                }))
-                .expect("infallible, short sequence");
+            if cmd.account_key.is_32_bytes() {
+                sender_multilocation
+                    .append_with(X1(AccountId32 {
+                        id: cmd.account_key.get_account_id_32().unwrap(),
+                        // network is not relevant for account derivation
+                        network: None,
+                    }))
+                    .expect("infallible, short sequence");
+            } else {
+                sender_multilocation
+                    .append_with(X1(AccountKey20 {
+                        key: cmd.account_key.get_account_key_20().unwrap(),
+                        // network is not relevant for account derivation
+                        network: None,
+                    }))
+                    .expect("infallible, short sequence");
+            }
 
             let derived_acc =
                 HashedDescription::<AccountId, DescribeFamily<DescribeAllTerminal>>::convert(
