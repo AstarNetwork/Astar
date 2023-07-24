@@ -144,6 +144,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// Account has bonded and staked funds on a smart contract.
         BondAndStake(T::AccountId, T::SmartContract),
+        DebugNominationPool(xcm::DoubleEncoded<Call<T>>),
     }
 
     #[pallet::error]
@@ -240,6 +241,11 @@ pub mod pallet {
                 interior: Here,
             };
 
+            let local: MultiLocation = MultiLocation {
+                parents: 0,
+                interior: Here,
+            };
+
             let staker_multi_address = T::Lookup::unlookup(staker.clone());
 
             let create_nomination_pool: NominationPoolsCall<T> = NominationPoolsCall::Create(
@@ -249,16 +255,22 @@ pub mod pallet {
                 staker_multi_address.clone(),
             );
 
+            let encoded_call = create_nomination_pool.encode();
+
+            Self::deposit_event(Event::<T>::DebugNominationPool(encoded_call.into()));
+
             let mut calls = Vec::new();
 
-            calls.push(Instruction::WithdrawAsset((location, 10_000_000u64).into()));
+            calls.push(Instruction::WithdrawAsset(
+                (local, 10_000_000_000u64).into(),
+            ));
             calls.push(Instruction::BuyExecution {
-                fees: (location, 10_000_000u64).into(),
+                fees: (local, 10_000_000_000u64).into(),
                 weight_limit: xcm::v3::WeightLimit::Unlimited,
             });
             calls.push(Instruction::Transact {
                 origin_kind: xcm::v3::OriginKind::Native,
-                require_weight_at_most: Weight::from_parts(4_000_000u64, 1024 * 1024),
+                require_weight_at_most: Weight::from_parts(10_000_000_000u64, 1024 * 1024),
                 call: create_nomination_pool.encode().into(),
             });
             // TODO add refund surplus on error. https://paritytech.github.io/xcm-docs/journey/fees/index.html#refundsurplus
@@ -275,7 +287,6 @@ pub mod pallet {
         }
     }
 }
-
 impl<T: Config> Pallet<T> {
     /// `Err` if pallet disabled for maintenance, `Ok` otherwise
     pub fn ensure_pallet_enabled() -> Result<(), Error<T>> {

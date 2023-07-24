@@ -16,13 +16,13 @@ chain = "rococo-local"
   name = "bob"
   validator = true
 
-  # [[relaychain.nodes]]
-  # name = "charlie"
-  # validator = true
+  [[relaychain.nodes]]
+  name = "charlie"
+  validator = true
 
-  # [[relaychain.nodes]]
-  # name = "dave"
-  # validator = true
+  [[relaychain.nodes]]
+  name = "dave"
+  validator = true
 
 [[parachains]]
 # Right now this has to be 2000 but soon we might be able to use arbitrary para-id
@@ -37,7 +37,7 @@ cumulus_based = true
   args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
   
 
-  # [[parachains.collators]]
-  # name = "collator2"
-  # command = "/Users/snowmead/opt/projects/Astar/bin/collator"
-  # args = [ "--enable-evm-rpc" ]
+  [[parachains.collators]]
+  name = "collator2"
+  command = "./target/release/astar-collator"
+  args = [ "--enable-evm-rpc" ]
