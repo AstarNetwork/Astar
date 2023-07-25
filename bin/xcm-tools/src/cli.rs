@@ -68,33 +68,27 @@ pub struct RemoteAccountCmd {
     pub account_key: AccountWrapper,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct AccountWrapper {
     account: [u8; 32],
     is_32: bool,
 }
 
+impl Into<[u8; 32]> for AccountWrapper {
+    fn into(self) -> [u8; 32] {
+        self.account
+    }
+}
+
+impl Into<[u8; 20]> for AccountWrapper {
+    fn into(self) -> [u8; 20] {
+        self.account[0..20]
+            .try_into()
+            .expect("Slice is of length 20; qed.")
+    }
+}
+
 impl AccountWrapper {
-    /// Get AccountId32 public key (SS58) or error if it is not 32 bytes long.
-    pub fn get_account_id_32(&self) -> Result<[u8; 32], &str> {
-        if self.is_32 {
-            Ok(self.account)
-        } else {
-            Err("Account is not 32 bytes long")
-        }
-    }
-
-    /// Get AccountKey20 public key (H160) or error if it is not 20 bytes long.
-    pub fn get_account_key_20(&self) -> Result<[u8; 20], &str> {
-        if !self.is_32 {
-            let mut account = [0u8; 20];
-            account.copy_from_slice(&self.account[0..20]);
-            Ok(account)
-        } else {
-            Err("Account is not 20 bytes long")
-        }
-    }
-
     /// `true` if AccountId32, `false` if AccountKey20.
     pub fn is_32_bytes(&self) -> bool {
         self.is_32

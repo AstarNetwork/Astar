@@ -78,7 +78,7 @@ pub fn run() -> Result<(), Error> {
             if cmd.account_key.is_32_bytes() {
                 sender_multilocation
                     .append_with(X1(AccountId32 {
-                        id: cmd.account_key.get_account_id_32().unwrap(),
+                        id: cmd.account_key.into(),
                         // network is not relevant for account derivation
                         network: None,
                     }))
@@ -86,7 +86,7 @@ pub fn run() -> Result<(), Error> {
             } else {
                 sender_multilocation
                     .append_with(X1(AccountKey20 {
-                        key: cmd.account_key.get_account_key_20().unwrap(),
+                        key: cmd.account_key.into(),
                         // network is not relevant for account derivation
                         network: None,
                     }))
