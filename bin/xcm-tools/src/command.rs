@@ -75,22 +75,25 @@ pub fn run() -> Result<(), Error> {
                     .expect("infallible, short sequence");
             }
 
-            if cmd.account_key.is_32_bytes() {
-                sender_multilocation
-                    .append_with(X1(AccountId32 {
-                        id: cmd.account_key.into(),
-                        // network is not relevant for account derivation
-                        network: None,
-                    }))
-                    .expect("infallible, short sequence");
-            } else {
-                sender_multilocation
-                    .append_with(X1(AccountKey20 {
-                        key: cmd.account_key.into(),
-                        // network is not relevant for account derivation
-                        network: None,
-                    }))
-                    .expect("infallible, short sequence");
+            match cmd.account_key {
+                AccountWrapper::SS58(id) => {
+                    sender_multilocation
+                        .append_with(X1(AccountId32 {
+                            id,
+                            // network is not relevant for account derivation
+                            network: None,
+                        }))
+                        .expect("infallible, short sequence");
+                }
+                AccountWrapper::H160(key) => {
+                    sender_multilocation
+                        .append_with(X1(AccountKey20 {
+                            key,
+                            // network is not relevant for account derivation
+                            network: None,
+                        }))
+                        .expect("infallible, short sequence");
+                }
             }
 
             let derived_acc =

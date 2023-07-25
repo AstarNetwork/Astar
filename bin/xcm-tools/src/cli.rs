@@ -69,30 +69,9 @@ pub struct RemoteAccountCmd {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct AccountWrapper {
-    account: [u8; 32],
-    is_32: bool,
-}
-
-impl Into<[u8; 32]> for AccountWrapper {
-    fn into(self) -> [u8; 32] {
-        self.account
-    }
-}
-
-impl Into<[u8; 20]> for AccountWrapper {
-    fn into(self) -> [u8; 20] {
-        self.account[0..20]
-            .try_into()
-            .expect("Slice is of length 20; qed.")
-    }
-}
-
-impl AccountWrapper {
-    /// `true` if AccountId32, `false` if AccountKey20.
-    pub fn is_32_bytes(&self) -> bool {
-        self.is_32
-    }
+pub enum AccountWrapper {
+    SS58([u8; 32]),
+    H160([u8; 20]),
 }
 
 impl std::str::FromStr for AccountWrapper {
@@ -106,20 +85,19 @@ impl std::str::FromStr for AccountWrapper {
 					2 + pos,
 				))
             } else {
+                let account = hex::decode(rest).expect("Ensured in previous check it's hex; QED");
                 if rest.len() == 40 {
-                    let mut account = [0u8; 32];
-                    account[0..20].copy_from_slice(&hex::decode(rest).unwrap());
-                    Ok(AccountWrapper {
-                        account,
-                        is_32: false,
-                    })
+                    Ok(AccountWrapper::H160(
+                        account
+                            .try_into()
+                            .expect("Ensured length in previous check; QED"),
+                    ))
                 } else if rest.len() == 64 {
-                    let mut account = [0u8; 32];
-                    account.copy_from_slice(&hex::decode(rest).unwrap());
-                    Ok(AccountWrapper {
-                        account,
-                        is_32: true,
-                    })
+                    Ok(AccountWrapper::SS58(
+                        account
+                            .try_into()
+                            .expect("Ensured length in previous check; QED"),
+                    ))
                 } else {
                     Err("Account key should be 20 or 32 bytes long".into())
                 }
