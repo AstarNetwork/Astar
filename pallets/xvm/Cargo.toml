@@ -1,13 +1,12 @@
 [package]
-name = "pallet-xvm-v2"
-version = "0.2.1"
+name = "pallet-xvm"
+version = "0.2.2"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-impl-trait-for-tuples = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true, optional = true }
 
@@ -38,22 +37,29 @@ pallet-ethereum-checked = { workspace = true }
 [features]
 default = ["std"]
 std = [
+	"log/std",
 	"parity-scale-codec/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-contracts/std",
 	"pallet-evm/std",
 	"scale-info/std",
-	"serde",
+	"serde/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"astar-primitives/std",
 	"pallet-ethereum-checked/std",
+	"frame-benchmarking?/std",
 ]
 
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"pallet-ethereum-checked/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"pallet-contracts/try-runtime",
+	"pallet-evm/try-runtime",
+	"pallet-ethereum-checked/try-runtime",
+]

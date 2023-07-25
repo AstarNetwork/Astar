@@ -29,91 +29,23 @@
 //!
 //!
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use frame_support::{pallet_prelude::*, traits::ConstU32, BoundedVec};
 use pallet_evm::GasWeightMapping;
-use parity_scale_codec::{Decode, Encode};
-use scale_info::TypeInfo;
+use parity_scale_codec::Decode;
 use sp_core::U256;
-use sp_runtime::{traits::StaticLookup, RuntimeDebug};
-use sp_std::{marker::PhantomData, prelude::*, result::Result};
+use sp_runtime::traits::StaticLookup;
+use sp_std::{marker::PhantomData, prelude::*};
 
-use astar_primitives::ethereum_checked::{
-    AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, MAX_ETHEREUM_TX_INPUT_SIZE,
+use astar_primitives::{
+    ethereum_checked::{
+        AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, MAX_ETHEREUM_TX_INPUT_SIZE,
+    },
+    xvm::{CallError, CallErrorWithWeight, CallInfo, Context, VmId, XvmCall, XvmCallResult},
 };
 
 pub use pallet::*;
-
-// TODO: move types and traits to `astar-primitives`.
-
-/// XVM call info on success.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct CallInfo {
-    /// Output of the call.
-    pub output: Vec<u8>,
-    /// Actual used weight.
-    pub used_weight: Weight,
-}
-
-/// XVM call error on failure.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum CallError {
-    /// The call failed on EVM or WASM execution.
-    ExecutionFailed(Vec<u8>),
-    /// Input is too large.
-    InputTooLarge,
-    /// Target contract address is invalid.
-    InvalidTarget,
-    /// Calling the contracts in the same VM is not allowed.
-    SameVmCallNotAllowed,
-}
-
-/// XVM call error with used weight info.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct CallErrorWithWeight {
-    /// Error info.
-    pub error: CallError,
-    /// Actual used weight.
-    pub used_weight: Weight,
-}
-
-/// XVM call result.
-pub type XvmCallResult = Result<CallInfo, CallErrorWithWeight>;
-
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum Vm {
-    Evm,
-    Wasm,
-}
-
-// TODO: Note caller shouldn't be able to specify `source_vm`.
-/// XVM context.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct XvmContext {
-    /// The source VM of the call.
-    pub source_vm: Vm,
-    /// The target VM of the call.
-    pub target_vm: Vm,
-    /// Max weight limit.
-    pub weight_limit: Weight,
-    /// Optional encoded execution environment.
-    pub env: Option<Vec<u8>>,
-}
-
-pub trait XvmCall<AccountId> {
-    /// Call a contract in XVM.
-    ///
-    /// Parameters:
-    /// - `context`: XVM context.
-    /// - `source`: Caller Id.
-    /// - `target`: Target contract address.
-    /// - `input`: call input data.
-    fn xvm_call(
-        context: XvmContext,
-        source: AccountId,
-        target: Vec<u8>,
-        input: Vec<u8>,
-    ) -> XvmCallResult;
-}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -135,13 +67,14 @@ pub mod pallet {
 }
 
 impl<T: Config> XvmCall<T::AccountId> for Pallet<T> {
-    fn xvm_call(
-        context: XvmContext,
+    fn call(
+        context: Context,
+        vm_id: VmId,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
     ) -> XvmCallResult {
-        Pallet::<T>::do_xvm_call(context, source, target, input, false)
+        Pallet::<T>::do_call(context, vm_id, source, target, input, false)
     }
 }
 
@@ -149,28 +82,29 @@ impl<T: Config> XvmCall<T::AccountId> for Pallet<T> {
 pub const PLACEHOLDER_WEIGHT: Weight = Weight::from_parts(1_000_000, 1024);
 
 impl<T: Config> Pallet<T> {
-    fn do_xvm_call(
-        context: XvmContext,
+    fn do_call(
+        context: Context,
+        vm_id: VmId,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
         skip_execution: bool,
     ) -> XvmCallResult {
-        if context.source_vm == context.target_vm {
+        if context.source_vm_id == vm_id {
             return Err(CallErrorWithWeight {
                 error: CallError::SameVmCallNotAllowed,
                 used_weight: PLACEHOLDER_WEIGHT,
             });
         }
 
-        match context.source_vm {
-            Vm::Evm => Pallet::<T>::evm_call(context, source, target, input, skip_execution),
-            Vm::Wasm => Pallet::<T>::wasm_call(context, source, target, input, skip_execution),
+        match context.source_vm_id {
+            VmId::Evm => Pallet::<T>::evm_call(context, source, target, input, skip_execution),
+            VmId::Wasm => Pallet::<T>::wasm_call(context, source, target, input, skip_execution),
         }
     }
 
     fn evm_call(
-        context: XvmContext,
+        context: Context,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
@@ -234,7 +168,7 @@ impl<T: Config> Pallet<T> {
     }
 
     fn wasm_call(
-        context: XvmContext,
+        context: Context,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
@@ -292,11 +226,12 @@ impl<T: Config> Pallet<T> {
 
     #[cfg(feature = "runtime-benchmarks")]
     pub fn xvm_call_without_execution(
-        context: XvmContext,
+        context: Context,
+        vm_id: VmId,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
     ) -> XvmCallResult {
-        Self::do_xvm_call(context, source, target, input, true)
+        Self::do_call(context, vm_id, source, target, input, true)
     }
 }

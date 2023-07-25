@@ -6735,8 +6735,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-chain-extension-xvm"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
+ "astar-primitives",
  "frame-support",
  "frame-system",
  "log",
@@ -7291,8 +7292,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-xvm"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
+ "astar-primitives",
  "derive_more",
  "fp-evm",
  "frame-support",
@@ -7301,6 +7303,8 @@ dependencies = [
  "log",
  "num_enum",
  "pallet-balances",
+ "pallet-contracts",
+ "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-timestamp",
  "pallet-xvm",
@@ -8042,34 +8046,12 @@ dependencies = [
 
 [[package]]
 name = "pallet-xvm"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "astar-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
- "log",
- "pallet-contracts",
- "pallet-ethereum-checked",
- "pallet-evm",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-xvm-v2"
-version = "0.2.1"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
  "log",
  "pallet-contracts",
  "pallet-ethereum-checked",

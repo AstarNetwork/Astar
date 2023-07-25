@@ -273,7 +273,7 @@ pallet-collator-selection = { path = "./pallets/collator-selection", default-fea
 pallet-custom-signatures = { path = "./pallets/custom-signatures", default-features = false }
 pallet-dapps-staking = { path = "./pallets/dapps-staking", default-features = false }
 pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features = false }
-pallet-xvm = { path = "./pallets/pallet-xvm", default-features = false }
+pallet-xvm = { path = "./pallets/xvm", default-features = false }
 pallet-xcm = { path = "./pallets/pallet-xcm", default-features = false }
 pallet-ethereum-checked = { path = "./pallets/ethereum-checked", default-features = false }
 

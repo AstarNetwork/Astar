@@ -1,6 +1,6 @@
 [package]
 name = "pallet-chain-extension-xvm"
-version = "0.1.0"
+version = "0.1.1"
 license = "Apache-2.0"
 description = "Chain extension for XVM"
 authors.workspace = true
@@ -22,6 +22,7 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
 # Astar
+astar-primitives = { workspace = true }
 pallet-xvm = { workspace = true }
 xvm-chain-extension-types = { workspace = true }
 
@@ -40,4 +41,5 @@ std = [
 	"sp-runtime/std",
 	# Astar
 	"pallet-xvm/std",
+	"astar-primitives/std",
 ]

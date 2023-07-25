@@ -18,15 +18,15 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use astar_primitives::xvm::{Context, VmId, XvmCall};
 use frame_support::dispatch::Encode;
 use pallet_contracts::chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal};
-use pallet_xvm::XvmContext;
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
 use xvm_chain_extension_types::{XvmCallArgs, XvmExecutionResult};
 
 enum XvmFuncId {
-    XvmCall,
+    Call,
     // TODO: expand with other calls too
 }
 
@@ -35,7 +35,7 @@ impl TryFrom<u16> for XvmFuncId {
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
-            1 => Ok(XvmFuncId::XvmCall),
+            1 => Ok(XvmFuncId::Call),
             _ => Err(DispatchError::Other(
                 "Unsupported func id in Xvm chain extension",
             )),
@@ -64,13 +64,13 @@ where
         let mut env = env.buf_in_buf_out();
 
         match func_id {
-            XvmFuncId::XvmCall => {
+            XvmFuncId::Call => {
                 // We need to immediately charge for the worst case scenario. Gas equals Weight in pallet-contracts context.
-                let remaining_weight = env.ext().gas_meter().gas_left();
+                let weight_limit = env.ext().gas_meter().gas_left();
+                // TODO: track proof size in align fees ticket
                 // We don't track used proof size, so we can't refund after.
                 // So we will charge a 32KB dummy value as a temporary replacement.
-                let charged_weight =
-                    env.charge_weight(remaining_weight.set_proof_size(32 * 1024))?;
+                let charged_weight = env.charge_weight(weight_limit.set_proof_size(32 * 1024))?;
 
                 let caller = env.ext().caller().clone();
 
@@ -78,16 +78,28 @@ where
 
                 let _origin_address = env.ext().address().clone();
                 let _value = env.ext().value_transferred();
-                let xvm_context = XvmContext {
-                    id: vm_id,
-                    max_weight: remaining_weight,
-                    env: None,
+                let xvm_context = Context {
+                    source_vm_id: VmId::Wasm,
+                    weight_limit,
                 };
 
+                let vm_id = {
+                    let result = vm_id.try_into();
+                    match result {
+                        Ok(id) => id,
+                        Err(_) => {
+                            // TODO: Propagate error
+                            return Ok(RetVal::Converging(XvmExecutionResult::UnknownError as u32));
+                        }
+                    }
+                };
                 let call_result =
-                    pallet_xvm::Pallet::<T>::xvm_bare_call(xvm_context, caller, to, input);
+                    pallet_xvm::Pallet::<T>::call(xvm_context, vm_id, caller, to, input);
 
-                let actual_weight = pallet_xvm::consumed_weight(&call_result);
+                let actual_weight = match call_result {
+                    Ok(ref info) => info.used_weight,
+                    Err(ref err) => err.used_weight,
+                };
                 env.adjust_weight(charged_weight, actual_weight);
 
                 match call_result {
@@ -97,7 +109,7 @@ where
                             "success: {:?}", success
                         );
 
-                        let buffer: sp_std::vec::Vec<_> = success.output().encode();
+                        let buffer: sp_std::vec::Vec<_> = success.output.encode();
                         env.write(&buffer, false, None)?;
                         Ok(RetVal::Converging(XvmExecutionResult::Success as u32))
                     }
