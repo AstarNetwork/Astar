@@ -39,7 +39,7 @@ mod tests;
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
 pub enum Action {
-    XvmCall = "xvm_call(bytes,bytes,bytes)",
+    XvmCall = "xvm_call(uint8,bytes,bytes)",
 }
 
 /// A precompile that expose XVM related functions.
@@ -73,7 +73,7 @@ where
 {
     fn xvm_call(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(4)?;
+        input.expect_arguments(3)?;
 
         let vm_id = {
             let id = input.read::<u8>()?;
@@ -91,7 +91,7 @@ where
         let call_input = input.read::<Bytes>()?.0;
 
         let from = R::AddressMapping::into_account_id(handle.context().caller);
-        match &pallet_xvm::Pallet::<R>::call(xvm_context, vm_id, from, call_to, call_input) {
+        match pallet_xvm::Pallet::<R>::call(xvm_context, vm_id, from, call_to, call_input) {
             Ok(success) => {
                 log::trace!(
                     target: "xvm-precompile::xvm_call",
@@ -101,7 +101,7 @@ where
                 Ok(succeed(
                     EvmDataWriter::new()
                         .write(true)
-                        .write(Bytes(success.output.to_vec())) // TODO redundant clone
+                        .write(Bytes(success.output))
                         .build(),
                 ))
             }
@@ -112,13 +112,10 @@ where
                     "failure: {:?}", failure
                 );
 
-                let mut error_buffer = Vec::new();
-                failure.error.encode_to(&mut error_buffer);
-
                 Ok(succeed(
                     EvmDataWriter::new()
                         .write(false)
-                        .write(Bytes(error_buffer))
+                        .write(Bytes(failure.error.encode()))
                         .build(),
                 ))
             }
