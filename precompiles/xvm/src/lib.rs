@@ -43,13 +43,14 @@ pub enum Action {
 }
 
 /// A precompile that expose XVM related functions.
-pub struct XvmPrecompile<T>(PhantomData<T>);
+pub struct XvmPrecompile<T, XC>(PhantomData<(T, XC)>);
 
-impl<R> Precompile for XvmPrecompile<R>
+impl<R, XC> Precompile for XvmPrecompile<R, XC>
 where
-    R: pallet_evm::Config + pallet_xvm::Config,
+    R: pallet_evm::Config,
     <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
         From<Option<R::AccountId>>,
+    XC: XvmCall<R::AccountId>,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         log::trace!(target: "xvm-precompile", "In XVM precompile");
@@ -65,11 +66,12 @@ where
     }
 }
 
-impl<R> XvmPrecompile<R>
+impl<R, XC> XvmPrecompile<R, XC>
 where
-    R: pallet_evm::Config + pallet_xvm::Config,
+    R: pallet_evm::Config,
     <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
         From<Option<R::AccountId>>,
+    XC: XvmCall<R::AccountId>,
 {
     fn xvm_call(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
@@ -91,7 +93,7 @@ where
         let call_input = input.read::<Bytes>()?.0;
 
         let from = R::AddressMapping::into_account_id(handle.context().caller);
-        match pallet_xvm::Pallet::<R>::call(xvm_context, vm_id, from, call_to, call_input) {
+        match XC::call(xvm_context, vm_id, from, call_to, call_input) {
             Ok(success) => {
                 log::trace!(
                     target: "xvm-precompile::xvm_call",

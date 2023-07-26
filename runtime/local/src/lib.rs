@@ -813,7 +813,7 @@ impl pallet_contracts::Config for Runtime {
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = (
         DappsStakingExtension<Self>,
-        XvmExtension<Self>,
+        XvmExtension<Self, Xvm>,
         AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
     );
     type DeletionQueueDepth = ConstU32<128>;

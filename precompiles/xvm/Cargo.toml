@@ -27,7 +27,6 @@ pallet-evm = { workspace = true }
 
 # Astar
 astar-primitives = { workspace = true }
-pallet-xvm = { workspace = true }
 
 [dev-dependencies]
 derive_more = { workspace = true }
@@ -37,11 +36,8 @@ serde = { workspace = true }
 
 precompile-utils = { workspace = true, features = ["testing"] }
 
-pallet-balances = { workspace = true }
-pallet-contracts = { workspace = true }
-pallet-ethereum = { workspace = true }
-pallet-ethereum-checked = { workspace = true }
-pallet-insecure-randomness-collective-flip = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-contracts = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true }
 sp-runtime = { workspace = true }
 
@@ -58,8 +54,5 @@ std = [
 	"sp-std/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"pallet-xvm/std",
 	"astar-primitives/std",
-	"pallet-balances/std",
-	"pallet-ethereum/std",
 ]

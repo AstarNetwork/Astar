@@ -44,17 +44,18 @@ impl TryFrom<u16> for XvmFuncId {
 }
 
 /// XVM chain extension.
-pub struct XvmExtension<T>(PhantomData<T>);
+pub struct XvmExtension<T, XC>(PhantomData<(T, XC)>);
 
-impl<T> Default for XvmExtension<T> {
+impl<T, XC> Default for XvmExtension<T, XC> {
     fn default() -> Self {
         XvmExtension(PhantomData)
     }
 }
 
-impl<T> ChainExtension<T> for XvmExtension<T>
+impl<T, XC> ChainExtension<T> for XvmExtension<T, XC>
 where
-    T: pallet_contracts::Config + pallet_xvm::Config,
+    T: pallet_contracts::Config,
+    XC: XvmCall<T::AccountId>,
 {
     fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
     where
@@ -93,8 +94,7 @@ where
                         }
                     }
                 };
-                let call_result =
-                    pallet_xvm::Pallet::<T>::call(xvm_context, vm_id, caller, to, input);
+                let call_result = XC::call(xvm_context, vm_id, caller, to, input);
 
                 let actual_weight = match call_result {
                     Ok(ref info) => info.used_weight,

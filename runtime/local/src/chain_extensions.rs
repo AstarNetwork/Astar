@@ -16,10 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//!
-use super::Runtime;
+use super::{Runtime, Xvm};
+
 /// Registered WASM contracts chain extensions.
-///
 pub use pallet_chain_extension_assets::AssetsExtension;
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 
@@ -32,7 +31,7 @@ impl RegisteredChainExtension<Runtime> for DappsStakingExtension<Runtime> {
     const ID: u16 = 00;
 }
 
-impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime> {
+impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime, Xvm> {
     const ID: u16 = 01;
 }
 

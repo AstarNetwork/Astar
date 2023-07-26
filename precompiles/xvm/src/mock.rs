@@ -22,9 +22,7 @@ use super::*;
 
 use fp_evm::IsPrecompileResult;
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{ConstBool, ConstU32, Everything, Nothing},
-    weights::Weight,
+    construct_runtime, ensure, parameter_types, traits::Everything, weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -38,6 +36,8 @@ use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
+
+use astar_primitives::xvm::{CallError::*, CallErrorWithWeight, CallInfo, XvmCallResult};
 
 pub type AccountId = TestAccount;
 pub type Balance = u128;
@@ -154,12 +154,14 @@ pub struct TestPrecompileSet<R>(PhantomData<R>);
 
 impl<R> PrecompileSet for TestPrecompileSet<R>
 where
-    R: pallet_evm::Config + pallet_xvm::Config,
-    XvmPrecompile<R>: Precompile,
+    R: pallet_evm::Config,
+    XvmPrecompile<R, MockXvmWithArgsCheck>: Precompile,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         match handle.code_address() {
-            a if a == PRECOMPILE_ADDRESS => Some(XvmPrecompile::<R>::execute(handle)),
+            a if a == PRECOMPILE_ADDRESS => {
+                Some(XvmPrecompile::<R, MockXvmWithArgsCheck>::execute(handle))
+            }
             _ => None,
         }
     }
@@ -227,69 +229,41 @@ impl pallet_evm::Config for Runtime {
     type WeightInfo = ();
 }
 
-impl pallet_ethereum::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
-    type PostLogContent = ();
-    type ExtraDataLength = ConstU32<30>;
-}
-
-impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
-
-parameter_types! {
-    pub const DepositPerItem: Balance = 1_000;
-    pub const DepositPerByte: Balance = 1_000;
-    pub DeletionWeightLimit: Weight = Weight::from_parts(u64::MAX, u64::MAX);
-    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
-}
-
-impl pallet_contracts::Config for Runtime {
-    type Time = Timestamp;
-    type Randomness = RandomnessCollectiveFlip;
-    type Currency = Balances;
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type CallFilter = Nothing;
-    type DepositPerItem = DepositPerItem;
-    type DepositPerByte = DepositPerByte;
-    type CallStack = [pallet_contracts::Frame<Self>; 5];
-    type WeightPrice = ();
-    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ();
-    type DeletionQueueDepth = ConstU32<128>;
-    type DeletionWeightLimit = DeletionWeightLimit;
-    type Schedule = Schedule;
-    type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-    type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
-    type MaxStorageKeyLen = ConstU32<128>;
-    type UnsafeUnstableInterface = ConstBool<true>;
-    type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
-}
-
-pub struct HashedAccountMapping;
-impl astar_primitives::ethereum_checked::AccountMapping<AccountId> for HashedAccountMapping {
-    fn into_h160(account_id: AccountId) -> H160 {
-        let data = (b"evm:", account_id);
-        return H160::from_slice(&data.using_encoded(sp_io::hashing::blake2_256)[0..20]);
+struct MockXvmWithArgsCheck;
+impl XvmCall<AccountId> for MockXvmWithArgsCheck {
+    fn call(
+        _context: Context,
+        vm_id: VmId,
+        _source: AccountId,
+        target: Vec<u8>,
+        input: Vec<u8>,
+    ) -> XvmCallResult {
+        ensure!(
+            vm_id != VmId::Evm,
+            CallErrorWithWeight {
+                error: SameVmCallNotAllowed,
+                used_weight: Weight::zero()
+            }
+        );
+        ensure!(
+            target.len() == 20,
+            CallErrorWithWeight {
+                error: InvalidTarget,
+                used_weight: Weight::zero()
+            }
+        );
+        ensure!(
+            input.len() <= 1024,
+            CallErrorWithWeight {
+                error: InputTooLarge,
+                used_weight: Weight::zero()
+            }
+        );
+        Ok(CallInfo {
+            output: vec![],
+            used_weight: Weight::zero(),
+        })
     }
-}
-
-parameter_types! {
-    pub XvmTxWeightLimit: Weight = Weight::from_parts(u64::MAX, u64::MAX);
-}
-
-impl pallet_ethereum_checked::Config for Runtime {
-    type ReservedXcmpWeight = XvmTxWeightLimit;
-    type XvmTxWeightLimit = XvmTxWeightLimit;
-    type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
-    type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
-    type AccountMapping = HashedAccountMapping;
-    type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
-    type WeightInfo = ();
-}
-
-impl pallet_xvm::Config for Runtime {
-    type EthereumTransact = EthereumChecked;
 }
 
 // Configure a mock runtime to test the pallet.
@@ -303,11 +277,6 @@ construct_runtime!(
         Balances: pallet_balances,
         Evm: pallet_evm,
         Timestamp: pallet_timestamp,
-        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
-        Contracts: pallet_contracts,
-        Ethereum: pallet_ethereum,
-        EthereumChecked: pallet_ethereum_checked,
-        Xvm: pallet_xvm,
     }
 );
 
