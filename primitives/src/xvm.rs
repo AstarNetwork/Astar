@@ -78,7 +78,7 @@ pub struct CallErrorWithWeight {
 }
 
 /// XVM call result.
-pub type XvmCallResult = Result<CallInfo, CallErrorWithWeight>;
+pub type CallResult = Result<CallInfo, CallErrorWithWeight>;
 
 /// XVM context.
 ///
@@ -106,5 +106,5 @@ pub trait XvmCall<AccountId> {
         source: AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
-    ) -> XvmCallResult;
+    ) -> CallResult;
 }

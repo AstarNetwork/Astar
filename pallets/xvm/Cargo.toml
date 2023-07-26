@@ -30,9 +30,13 @@ pallet-contracts = { workspace = true }
 
 # Astar
 astar-primitives = { workspace = true }
-pallet-ethereum-checked = { workspace = true }
 
 [dev-dependencies]
+sp-io = { workspace = true }
+fp-evm = { workspace = true }
+pallet-timestamp = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-insecure-randomness-collective-flip = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]
@@ -43,22 +47,20 @@ std = [
 	"frame-system/std",
 	"pallet-contracts/std",
 	"pallet-evm/std",
+    "pallet-insecure-randomness-collective-flip/std",
 	"scale-info/std",
 	"serde",
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"astar-primitives/std",
-	"pallet-ethereum-checked/std",
 ]
 
 runtime-benchmarks = [
 	"frame-benchmarking",
-	"pallet-ethereum-checked/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-evm/try-runtime",
-	"pallet-ethereum-checked/try-runtime",
 ]

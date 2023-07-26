@@ -37,7 +37,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
 };
 
-use astar_primitives::xvm::{CallError::*, CallErrorWithWeight, CallInfo, XvmCallResult};
+use astar_primitives::xvm::{CallError::*, CallErrorWithWeight, CallInfo, CallResult};
 
 pub type AccountId = TestAccount;
 pub type Balance = u128;
@@ -237,7 +237,7 @@ impl XvmCall<AccountId> for MockXvmWithArgsCheck {
         _source: AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
-    ) -> XvmCallResult {
+    ) -> CallResult {
         ensure!(
             vm_id != VmId::Evm,
             CallErrorWithWeight {

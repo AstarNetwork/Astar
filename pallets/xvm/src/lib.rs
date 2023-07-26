@@ -42,8 +42,14 @@ use astar_primitives::{
     ethereum_checked::{
         AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, MAX_ETHEREUM_TX_INPUT_SIZE,
     },
-    xvm::{CallError, CallErrorWithWeight, CallInfo, Context, VmId, XvmCall, XvmCallResult},
+    xvm::{CallError, CallErrorWithWeight, CallInfo, CallResult, Context, VmId, XvmCall},
 };
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+#[cfg(test)]
+mod mock;
 
 pub use pallet::*;
 
@@ -55,12 +61,11 @@ pub mod pallet {
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::config]
-    pub trait Config:
-        frame_system::Config
-        + pallet_evm::Config
-        + pallet_ethereum_checked::Config
-        + pallet_contracts::Config
-    {
+    pub trait Config: frame_system::Config + pallet_contracts::Config {
+        /// Mapping from `Account` to `H160`.
+        type AccountMapping: AccountMapping<Self::AccountId>;
+        /// Mapping from Ethereum gas to Substrate weight.
+        type GasWeightMapping: GasWeightMapping;
         /// `CheckedEthereumTransact` implementation.
         type EthereumTransact: CheckedEthereumTransact;
     }
@@ -73,7 +78,7 @@ impl<T: Config> XvmCall<T::AccountId> for Pallet<T> {
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
-    ) -> XvmCallResult {
+    ) -> CallResult {
         Pallet::<T>::do_call(context, vm_id, source, target, input, false)
     }
 }
@@ -89,7 +94,7 @@ impl<T: Config> Pallet<T> {
         target: Vec<u8>,
         input: Vec<u8>,
         skip_execution: bool,
-    ) -> XvmCallResult {
+    ) -> CallResult {
         ensure!(
             context.source_vm_id != vm_id,
             CallErrorWithWeight {
@@ -98,7 +103,7 @@ impl<T: Config> Pallet<T> {
             }
         );
 
-        match context.source_vm_id {
+        match vm_id {
             VmId::Evm => Pallet::<T>::evm_call(context, source, target, input, skip_execution),
             VmId::Wasm => Pallet::<T>::wasm_call(context, source, target, input, skip_execution),
         }
@@ -110,7 +115,7 @@ impl<T: Config> Pallet<T> {
         target: Vec<u8>,
         input: Vec<u8>,
         skip_execution: bool,
-    ) -> XvmCallResult {
+    ) -> CallResult {
         log::trace!(
             target: "xvm::evm_call",
             "Calling EVM: {:?} {:?}, {:?}, {:?}",
@@ -174,7 +179,7 @@ impl<T: Config> Pallet<T> {
         target: Vec<u8>,
         input: Vec<u8>,
         skip_execution: bool,
-    ) -> XvmCallResult {
+    ) -> CallResult {
         log::trace!(
             target: "xvm::wasm_call",
             "Calling WASM: {:?} {:?}, {:?}, {:?}",
@@ -226,13 +231,13 @@ impl<T: Config> Pallet<T> {
     }
 
     #[cfg(feature = "runtime-benchmarks")]
-    pub fn xvm_call_without_execution(
+    pub fn call_without_execution(
         context: Context,
         vm_id: VmId,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
-    ) -> XvmCallResult {
+    ) -> CallResult {
         Self::do_call(context, vm_id, source, target, input, true)
     }
 }

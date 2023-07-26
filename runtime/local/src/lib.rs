@@ -471,6 +471,8 @@ parameter_types! {
 }
 
 impl pallet_xvm::Config for Runtime {
+    type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+    type AccountMapping = HashedAccountMapping;
     type EthereumTransact = EthereumChecked;
 }
 

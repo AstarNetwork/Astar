@@ -8045,17 +8045,21 @@ name = "pallet-xvm"
 version = "0.2.2"
 dependencies = [
  "astar-primitives",
+ "fp-evm",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
+ "pallet-balances",
  "pallet-contracts",
- "pallet-ethereum-checked",
  "pallet-evm",
+ "pallet-insecure-randomness-collective-flip",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "serde",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

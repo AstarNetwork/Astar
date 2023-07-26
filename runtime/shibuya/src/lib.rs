@@ -784,6 +784,8 @@ impl pallet_ethereum_checked::Config for Runtime {
 }
 
 impl pallet_xvm::Config for Runtime {
+    type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+    type AccountMapping = HashedAccountMapping;
     type EthereumTransact = EthereumChecked;
 }
 
@@ -1423,6 +1425,7 @@ mod benches {
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
         [pallet_ethereum_checked, EthereumChecked]
+        [pallet_xvm, Xvm]
     );
 }
 

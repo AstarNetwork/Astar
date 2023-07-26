@@ -20,7 +20,7 @@
 //!
 //! ## Overview
 //!
-//! A `pallet-ethererum` like pallet that execute transactions from checked source,
+//! A `pallet-ethereum like pallet that execute transactions from checked source,
 //! like XCM remote call, cross-VM call, etc. Only `Call` transactions are supported
 //! (no `Create`).
 //!
