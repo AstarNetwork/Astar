@@ -84,12 +84,12 @@ where
                 };
 
                 let vm_id = {
-                    let result = vm_id.try_into();
-                    match result {
+                    match TryInto::<VmId>::try_into(vm_id) {
                         Ok(id) => id,
-                        Err(_) => {
+                        Err(err) => {
                             // TODO: Propagate error
-                            return Ok(RetVal::Converging(XvmExecutionResult::UnknownError as u32));
+                            let result = Into::<XvmExecutionResult>::into(err);
+                            return Ok(RetVal::Converging(result.into()));
                         }
                     }
                 };
@@ -103,25 +103,26 @@ where
                 env.adjust_weight(charged_weight, actual_weight);
 
                 match call_result {
-                    Ok(success) => {
+                    Ok(info) => {
                         log::trace!(
                             target: "xvm-extension::xvm_call",
-                            "success: {:?}", success
+                            "info: {:?}", info
                         );
 
-                        let buffer: sp_std::vec::Vec<_> = success.output.encode();
+                        let buffer: sp_std::vec::Vec<_> = info.output.encode();
                         env.write(&buffer, false, None)?;
-                        Ok(RetVal::Converging(XvmExecutionResult::Success as u32))
+                        Ok(RetVal::Converging(XvmExecutionResult::Ok.into()))
                     }
 
-                    Err(failure) => {
+                    Err(err) => {
                         log::trace!(
                             target: "xvm-extension::xvm_call",
-                            "failure: {:?}", failure
+                            "err: {:?}", err
                         );
 
                         // TODO Propagate error
-                        Ok(RetVal::Converging(XvmExecutionResult::UnknownError as u32))
+                        let result = Into::<XvmExecutionResult>::into(err.error);
+                        Ok(RetVal::Converging(result.into()))
                     }
                 }
             }

@@ -39,10 +39,10 @@ precompile-utils = { workspace = true, features = ["testing"] }
 
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-timestamp = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
+pallet-timestamp = { workspace = true }
 sp-runtime = { workspace = true }
 
 [features]
@@ -60,6 +60,6 @@ std = [
 	"sp-runtime/std",
 	"pallet-xvm/std",
 	"astar-primitives/std",
-    "pallet-balances/std",
-    "pallet-ethereum/std",
+	"pallet-balances/std",
+	"pallet-ethereum/std",
 ]

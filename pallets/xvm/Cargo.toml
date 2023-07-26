@@ -44,13 +44,12 @@ std = [
 	"pallet-contracts/std",
 	"pallet-evm/std",
 	"scale-info/std",
-	"serde/std",
+	"serde",
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"astar-primitives/std",
 	"pallet-ethereum-checked/std",
-	"frame-benchmarking?/std",
 ]
 
 runtime-benchmarks = [

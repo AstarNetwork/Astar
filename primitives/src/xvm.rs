@@ -58,14 +58,14 @@ pub struct CallInfo {
 pub enum CallError {
     /// Invalid VM id.
     InvalidVmId,
-    /// The call failed on EVM or WASM execution.
-    ExecutionFailed(Vec<u8>),
-    /// Input is too large.
-    InputTooLarge,
-    /// Target contract address is invalid.
-    InvalidTarget,
     /// Calling the contracts in the same VM is not allowed.
     SameVmCallNotAllowed,
+    /// Target contract address is invalid.
+    InvalidTarget,
+    /// Input is too large.
+    InputTooLarge,
+    /// The call failed on EVM or WASM execution.
+    ExecutionFailed(Vec<u8>),
 }
 
 /// XVM call error with used weight info.

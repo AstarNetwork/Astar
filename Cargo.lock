@@ -15514,6 +15514,7 @@ dependencies = [
 name = "xvm-chain-extension-types"
 version = "0.1.0"
 dependencies = [
+ "astar-primitives",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
