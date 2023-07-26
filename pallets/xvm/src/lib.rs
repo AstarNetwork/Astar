@@ -31,7 +31,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{pallet_prelude::*, traits::ConstU32, BoundedVec};
+use frame_support::{ensure, pallet_prelude::*, traits::ConstU32, BoundedVec};
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
 use sp_core::U256;
@@ -90,12 +90,13 @@ impl<T: Config> Pallet<T> {
         input: Vec<u8>,
         skip_execution: bool,
     ) -> XvmCallResult {
-        if context.source_vm_id == vm_id {
-            return Err(CallErrorWithWeight {
+        ensure!(
+            context.source_vm_id != vm_id,
+            CallErrorWithWeight {
                 error: CallError::SameVmCallNotAllowed,
                 used_weight: PLACEHOLDER_WEIGHT,
-            });
-        }
+            }
+        );
 
         match context.source_vm_id {
             VmId::Evm => Pallet::<T>::evm_call(context, source, target, input, skip_execution),

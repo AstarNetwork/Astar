@@ -7302,7 +7302,6 @@ dependencies = [
  "log",
  "num_enum",
  "pallet-balances",
- "pallet-contracts",
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
