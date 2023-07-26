@@ -8,6 +8,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+assert_matches = { workspace = true }
 log = { workspace = true }
 num_enum = { workspace = true }
 precompile-utils = { workspace = true, default-features = false }

@@ -40,6 +40,7 @@ polkadot-primitives = { workspace = true }
 
 # XCM
 cumulus-pallet-xcm = { workspace = true }
+pallet-message-queue = { workspace = true }
 pallet-xcm = { workspace = true }
 polkadot-core-primitives = { workspace = true }
 polkadot-parachain = { workspace = true }
@@ -77,6 +78,7 @@ std = [
 	"pallet-dapps-staking/std",
 	"pallet-proxy/std",
 	"pallet-utility/std",
+	"pallet-message-queue/std",
 	"orml-xtokens/std",
 	"orml-traits/std",
 	"orml-xcm-support/std",
@@ -94,4 +96,5 @@ runtime-benchmarks = [
 	"polkadot-parachain/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
+	"pallet-message-queue/runtime-benchmarks",
 ]

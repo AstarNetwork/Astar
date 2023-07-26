@@ -20,7 +20,7 @@
 
 use astar_primitives::xvm::{Context, VmId, XvmCall};
 use frame_support::dispatch::Encode;
-use pallet_contracts::chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal};
+use pallet_contracts::{chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal}, Origin};
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
 use xvm_chain_extension_types::{XvmCallArgs, XvmExecutionResult};
@@ -73,7 +73,17 @@ where
                 // So we will charge a 32KB dummy value as a temporary replacement.
                 let charged_weight = env.charge_weight(weight_limit.set_proof_size(32 * 1024))?;
 
-                let caller = env.ext().caller().clone();
+                let caller = match env.ext().caller().clone() {
+                    Origin::Signed(address) => address,
+                    Origin::Root => {
+                        log::trace!(
+                            target: "xvm-extension::xvm_call",
+                            "root origin not supported"
+                        );
+                        // TODO: expand XvmErrors with BadOrigin
+                        return Ok(RetVal::Converging(XvmExecutionResult::UnknownError as u32));
+                    }
+                };
 
                 let XvmCallArgs { vm_id, to, input } = env.read_as_unbounded(env.in_len())?;
 

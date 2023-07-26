@@ -125,6 +125,8 @@ benchmarks! {
         Pallet::<T>::check_xcm_version_change(VersionMigrationStage::MigrateSupportedVersion, Weight::zero());
     }
 
+    force_suspension {}: _(RawOrigin::Root, true)
+
     migrate_version_notifiers {
         let old_version = XCM_VERSION - 1;
         let loc = VersionedMultiLocation::from(MultiLocation::from(Parent));

@@ -283,14 +283,13 @@ fn test_async_xcm_contract_call_no_ce() {
         );
 
         // topup soverigin account of contract's derieve account in ParaB
-        assert_ok!(ParachainBalances::set_balance(
+        assert_ok!(ParachainBalances::force_set_balance(
             parachain::RuntimeOrigin::root(),
             sibling_para_account_account_id(
                 2,
                 sibling_para_account_account_id(1, contract_id.clone())
             ),
             INITIAL_BALANCE,
-            100_000
         ));
 
         contract_id
@@ -298,11 +297,10 @@ fn test_async_xcm_contract_call_no_ce() {
 
     ParaB::execute_with(|| {
         // topup contract's ParaB derieve account
-        assert_ok!(ParachainBalances::set_balance(
+        assert_ok!(ParachainBalances::force_set_balance(
             parachain::RuntimeOrigin::root(),
             sibling_para_account_account_id(1, contract_id.clone()),
             INITIAL_BALANCE,
-            100_000
         ));
     });
 
@@ -323,7 +321,7 @@ fn test_async_xcm_contract_call_no_ce() {
                     [1u8, 2u8, 3u8].to_vec().encode(),
                     WeightsAndFees {
                         foreign_base_fee: (Here, 100_000_000_000_000_000_000_u128).into(),
-                        foreign_transact_weight: Weight::from_parts(7_800_000, 0),
+                        foreign_transact_weight: GAS_LIMIT,
                         foreign_transcat_pallet_xcm: Weight::from_parts(
                             2_000_000_000_000,
                             3 * 1024 * 1024
