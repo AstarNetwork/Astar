@@ -67,8 +67,9 @@ where
             gas_limit.into(),
             None,
             input,
-            false,
-            pallet_contracts::Determinism::Deterministic,
+            pallet_contracts::DebugInfo::Skip,
+            pallet_contracts::CollectEvents::Skip,
+            pallet_contracts::Determinism::Enforced,
         );
 
         log::trace!(

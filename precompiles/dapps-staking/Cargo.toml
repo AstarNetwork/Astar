@@ -52,4 +52,5 @@ std = [
 	"pallet-dapps-staking/std",
 	"pallet-evm/std",
 	"precompile-utils/std",
+	"pallet-balances/std",
 ]

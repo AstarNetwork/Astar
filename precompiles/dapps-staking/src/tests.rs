@@ -79,7 +79,7 @@ fn read_unbonding_period_is_ok() {
                 precompile_address(),
                 EvmDataWriter::new_with_selector(Action::ReadUnbondingPeriod).build(),
             )
-            .expect_cost(READ_WEIGHT)
+            .expect_cost(0)
             .expect_no_logs()
             .execute_returns(EvmDataWriter::new().write(UNBONDING_PERIOD).build());
     });

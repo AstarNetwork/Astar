@@ -34,7 +34,7 @@ use sp_std::marker::PhantomData;
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
     EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
@@ -51,7 +51,10 @@ use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
-use astar_primitives::xcm::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
+use astar_primitives::xcm::{
+    DescribeAllTerminal, DescribeFamily, FixedRateOfForeignAsset, HashedDescription,
+    ReserveAssetFilter, XcmFungibleFeeHandler,
+};
 
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
@@ -72,8 +75,9 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<polkadot_parachain::primitives::Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
-    // Derives a private `Account32` by hashing `("multiloc", received multilocation)`
-    Account32Hash<RelayNetwork, AccountId>,
+    // Generates private `AccountId`s from `MultiLocation`s, in a stable & safe way.
+    // Replaces the old `Account32Hash` approach.
+    HashedDescription<AccountId, DescribeFamily<DescribeAllTerminal>>,
 );
 
 /// Means for transacting the native currency on this chain.
@@ -135,9 +139,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    // The default POV size used by Polkadot/Kusama was 64 kB but that has been updated here: https://github.com/paritytech/polkadot/pull/7081
-    // We should properly benchmark instructions and get rid of fixed weights.
-    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 1024);
+    // For the PoV size, we estimate 64 kB per instruction - which will is once again very conservative.
+    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -247,6 +250,7 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = pallet_xcm::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
+    type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

@@ -19,10 +19,9 @@
 //! Astar dApps staking interface.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(test, feature(assert_matches))]
 
 use fp_evm::{PrecompileHandle, PrecompileOutput};
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
@@ -71,7 +70,10 @@ where
 {
     /// Fetch current era from CurrentEra storage map
     fn read_current_era(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: CurrentEra:
+        // Twox64(8) + EraIndex(4)
+        handle.record_db_read::<R>(12)?;
 
         let current_era = pallet_dapps_staking::CurrentEra::<R>::get();
 
@@ -79,9 +81,8 @@ where
     }
 
     /// Fetch unbonding period
-    fn read_unbonding_period(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
-
+    fn read_unbonding_period(_: &impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // constant, no DB read
         let unbonding_period = R::UnbondingPeriod::get();
 
         Ok(succeed(
@@ -91,7 +92,10 @@ where
 
     /// Fetch reward from EraRewardsAndStakes storage map
     fn read_era_reward(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: GeneralEraInfo:
+        // Twox64Concat(8) + EraIndex(4) + EraInfo::max_encoded_len
+        handle.record_db_read::<R>(12 + pallet_dapps_staking::EraInfo::max_encoded_len())?;
 
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;
@@ -110,7 +114,10 @@ where
 
     /// Fetch total staked amount from EraRewardsAndStakes storage map
     fn read_era_staked(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: GeneralEraInfo:
+        // Twox64Concat(8) + EraIndex(4) + EraInfo::max_encoded_len
+        handle.record_db_read::<R>(12 + pallet_dapps_staking::EraInfo::max_encoded_len())?;
 
         // parse input parameters for pallet-dapps-staking call
         let mut input = handle.read_input()?;
@@ -128,7 +135,10 @@ where
 
     /// Fetch Ledger storage map for an account
     fn read_staked_amount(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: Ledger:
+        // Blake2_128Concat(16 + 32) + Ledger::max_encoded_len
+        handle.record_db_read::<R>(48 + pallet_dapps_staking::AccountLedger::max_encoded_len())?;
 
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;
@@ -148,7 +158,13 @@ where
     fn read_staked_amount_on_contract(
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(RuntimeHelper::<R>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: GeneralStakerInfo:
+        // Blake2_128Concat(16 + 32) + Blake2_128Concat(16 + SmartContract::max_encoded_len) + StakerInfo::max_encoded_len
+        handle.record_db_read::<R>(
+            64 + <R as pallet_dapps_staking::Config>::SmartContract::max_encoded_len()
+                + pallet_dapps_staking::StakerInfo::max_encoded_len(),
+        )?;
 
         let mut input = handle.read_input()?;
         input.expect_arguments(2)?;
@@ -171,7 +187,17 @@ where
 
     /// Read the amount staked on contract in the given era
     fn read_contract_stake(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        handle.record_cost(2 * RuntimeHelper::<R>::db_read_gas_cost())?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: CurrentEra:
+        // Twox64(8) + EraIndex(4)
+        handle.record_db_read::<R>(16)?;
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: ContractEraStake:
+        // Blake2_128Concat(16 + SmartContract::max_encoded_len) + Twox64Concat(8 + 4) + ContractStakeInfo::max_encoded_len
+        handle.record_db_read::<R>(
+            28 + <R as pallet_dapps_staking::Config>::SmartContract::max_encoded_len()
+                + pallet_dapps_staking::ContractStakeInfo::max_encoded_len(),
+        )?;
 
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;

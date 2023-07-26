@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "5.13.0"
+version = "5.15.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -57,7 +57,6 @@ pallet-identity = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
-pallet-state-trie-migration = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
@@ -139,6 +138,7 @@ std = [
 	"frame-executive/std",
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",
+	"frame-try-runtime/std",
 	"pallet-assets/std",
 	"pallet-authorship/std",
 	"pallet-aura/std",
@@ -165,7 +165,6 @@ std = [
 	"pallet-identity/std",
 	"pallet-multisig/std",
 	"pallet-session/std",
-	"pallet-state-trie-migration/std",
 	"pallet-utility/std",
 	"pallet-timestamp/std",
 	"pallet-vesting/std",
@@ -258,7 +257,6 @@ try-runtime = [
 	"pallet-base-fee/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-evm/try-runtime",
-	"pallet-state-trie-migration/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

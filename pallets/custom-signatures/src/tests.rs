@@ -16,7 +16,7 @@ use crate as custom_signatures;
 use assert_matches::assert_matches;
 use custom_signatures::*;
 use frame_support::{
-    traits::Contains,
+    traits::{ConstU32, Contains},
     {assert_err, assert_ok, parameter_types},
 };
 use hex_literal::hex;
@@ -111,6 +111,10 @@ impl pallet_balances::Config for Runtime {
     type MaxLocks = ();
     type MaxReserves = ();
     type ReserveIdentifier = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 const MAGIC_NUMBER: u16 = 0xff50;
@@ -269,7 +273,8 @@ fn call_fixtures() {
 
     let dest =
         AccountId::from_ss58check("5GVwcV6EzxxYbXBm7H6dtxc9TCgL4oepMXtgqWYEc3VXJoaf").unwrap();
-    let call: RuntimeCall = pallet_balances::Call::<Runtime>::transfer { dest, value: 1000 }.into();
+    let call: RuntimeCall =
+        pallet_balances::Call::<Runtime>::transfer_allow_death { dest, value: 1000 }.into();
     assert_eq!(
         call.encode(),
         hex!["0000c4305fb88b6ccb43d6552dc11d18e7b0ee3185247adcc6e885eb284adf6c563da10f"],

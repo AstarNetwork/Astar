@@ -193,6 +193,19 @@ impl<T: Config> Pallet<T> {
         let tx = checked_tx.into_ethereum_tx(Nonce::<T>::get(), chain_id);
         let tx_data: TransactionData = (&tx).into();
 
+        let (weight_limit, proof_size_base_cost) =
+            match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+                tx_data.gas_limit.unique_saturated_into(),
+                true,
+            ) {
+                weight_limit if weight_limit.proof_size() > 0 => (
+                    Some(weight_limit),
+                    // measured PoV should be correct to use here
+                    Some(WeightInfoOf::<T>::transact_without_apply().proof_size()),
+                ),
+                _ => (None, None),
+            };
+
         // Validate the tx.
         let _ = CheckEvmTransaction::<T::InvalidEvmTransactionError>::new(
             CheckEvmTransactionConfig {
@@ -203,6 +216,8 @@ impl<T: Config> Pallet<T> {
                 is_transactional: true,
             },
             tx_data.into(),
+            weight_limit,
+            proof_size_base_cost,
         )
         // Gas limit validation. The fee payment has been validated as the tx is `checked`.
         .validate_common()
@@ -229,7 +244,11 @@ impl<T: Config> Pallet<T> {
                 CallInfo {
                     exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
                     value: Default::default(),
-                    used_gas: checked_tx.gas_limit,
+                    used_gas: fp_evm::UsedGas {
+                        standard: checked_tx.gas_limit,
+                        effective: checked_tx.gas_limit,
+                    },
+                    weight_info: None,
                     logs: Default::default(),
                 },
             ));

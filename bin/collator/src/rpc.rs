@@ -20,7 +20,8 @@
 
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, TxPool, TxPoolApiServer, Web3,
+    Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
@@ -45,8 +46,9 @@ use substrate_frame_rpc_system::{System, SystemApiServer};
 use moonbeam_rpc_debug::{Debug, DebugServer};
 #[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_trace::{Trace, TraceServer};
+// TODO: get rid of this completely now that it's part of frontier?
 #[cfg(feature = "evm-tracing")]
-use moonbeam_rpc_txpool::{TxPool, TxPoolServer};
+use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
 use astar_primitives::*;
 
@@ -66,22 +68,16 @@ pub struct EvmTracingConfig {
 pub fn open_frontier_backend<C>(
     client: Arc<C>,
     config: &sc_service::Configuration,
-) -> Result<Arc<fc_db::Backend<Block>>, String>
+) -> Result<Arc<fc_db::kv::Backend<Block>>, String>
 where
     C: sp_blockchain::HeaderBackend<Block>,
 {
-    let config_dir = config
-        .base_path
-        .as_ref()
-        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
-        .unwrap_or_else(|| {
-            sc_service::BasePath::from_project("", "", "astar").config_dir(config.chain_spec.id())
-        });
+    let config_dir = config.base_path.config_dir(config.chain_spec.id());
     let path = config_dir.join("frontier").join("db");
 
-    Ok(Arc::new(fc_db::Backend::<Block>::new(
+    Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
         client,
-        &fc_db::DatabaseSettings {
+        &fc_db::kv::DatabaseSettings {
             source: fc_db::DatabaseSource::RocksDb {
                 path,
                 cache_size: 0,
@@ -107,7 +103,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
     /// The Node authority flag
     pub is_authority: bool,
     /// Frontier Backend.
-    pub frontier_backend: Arc<fc_db::Backend<Block>>,
+    pub frontier_backend: Arc<dyn fc_db::BackendReader<Block> + Send + Sync>,
     /// EthFilterApi pool.
     pub filter_pool: FilterPool,
     /// Maximum fee history cache size.
@@ -165,7 +161,7 @@ where
     let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
 
     if tracing_config.enable_txpool {
-        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
+        io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
     }
 
     if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
@@ -299,16 +295,19 @@ where
             fee_history_limit,
             // Allow 10x max allowed weight for non-transactional calls
             10,
+            None,
         )
         .into_rpc(),
     )?;
 
     let max_past_logs: u32 = 10_000;
     let max_stored_filters: usize = 500;
+    let tx_pool = TxPool::new(client.clone(), graph);
     io.merge(
         EthFilter::new(
             client.clone(),
             frontier_backend,
+            tx_pool.clone(),
             filter_pool,
             max_stored_filters,
             max_past_logs,
@@ -332,6 +331,8 @@ where
         )
         .into_rpc(),
     )?;
+
+    io.merge(tx_pool.into_rpc())?;
 
     Ok(io)
 }

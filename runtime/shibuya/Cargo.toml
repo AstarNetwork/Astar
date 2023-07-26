@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.14.0"
+version = "5.15.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -63,7 +63,6 @@ pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
-pallet-state-trie-migration = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
@@ -208,7 +207,6 @@ std = [
 	"pallet-xvm/std",
 	"pallet-ethereum-checked/std",
 	"pallet-scheduler/std",
-	"pallet-state-trie-migration/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",
@@ -303,7 +301,6 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
-	"pallet-state-trie-migration/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
 	"orml-xtokens/try-runtime",
 ]
