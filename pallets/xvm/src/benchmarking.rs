@@ -19,6 +19,7 @@
 use super::*;
 
 use frame_benchmarking::v2::*;
+use frame_support::weights::Weight;
 use parity_scale_codec::Encode;
 use sp_core::H160;
 use sp_runtime::MultiAddress;

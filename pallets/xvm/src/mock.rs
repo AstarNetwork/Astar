@@ -25,10 +25,10 @@ use fp_evm::{CallInfo as EvmCallInfo, ExitReason, ExitSucceed, UsedGas};
 use frame_support::{
     construct_runtime,
     dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
+    pallet_prelude::*,
     parameter_types,
     sp_io::TestExternalities,
     traits::{ConstBool, ConstU128, ConstU64, Nothing},
-    weights::Weight,
 };
 use sp_core::{H160, H256};
 use sp_runtime::{
@@ -170,6 +170,7 @@ impl pallet_xvm::Config for TestRuntime {
     type GasWeightMapping = MockGasWeightMapping;
     type AccountMapping = HashedAccountMapping;
     type EthereumTransact = MockEthereumTransact;
+    type WeightInfo = ();
 }
 
 pub(crate) type AccountId = AccountId32;
