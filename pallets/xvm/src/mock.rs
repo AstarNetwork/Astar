@@ -33,7 +33,7 @@ use frame_support::{
 use sp_core::{H160, H256};
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{AccountIdLookup, BlakeTwo256},
     AccountId32,
 };
 
@@ -53,7 +53,7 @@ impl frame_system::Config for TestRuntime {
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
+    type Lookup = AccountIdLookup<Self::AccountId, ()>;
     type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU64<250>;

@@ -21,6 +21,7 @@ use super::*;
 use frame_benchmarking::v2::*;
 use parity_scale_codec::Encode;
 use sp_core::H160;
+use sp_runtime::MultiAddress;
 
 #[benchmarks]
 mod benchmarks {
@@ -51,7 +52,7 @@ mod benchmarks {
         };
         let vm_id = VmId::Wasm;
         let source = whitelisted_caller();
-        let target = whitelisted_caller::<T::AccountId>().encode();
+        let target = MultiAddress::<T::AccountId, ()>::Id(whitelisted_caller()).encode();
         let input = vec![1, 2, 3];
 
         #[block]
