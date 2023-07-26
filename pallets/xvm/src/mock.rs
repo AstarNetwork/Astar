@@ -21,7 +21,7 @@
 use super::*;
 use crate as pallet_xvm;
 
-use fp_evm::{CallInfo as EvmCallInfo, ExitReason, ExitSucceed};
+use fp_evm::{CallInfo as EvmCallInfo, ExitReason, ExitSucceed, UsedGas};
 use frame_support::{
     construct_runtime,
     dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
@@ -79,6 +79,10 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ConstU128<2>;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 impl pallet_timestamp::Config for TestRuntime {
@@ -93,7 +97,7 @@ impl pallet_insecure_randomness_collective_flip::Config for TestRuntime {}
 parameter_types! {
     pub const DepositPerItem: Balance = 1_000;
     pub const DepositPerByte: Balance = 1_000;
-    pub DeletionWeightLimit: Weight = Weight::from_parts(u64::MAX, u64::MAX);
+    pub const DefaultDepositLimit: Balance = 1_000;
     pub Schedule: pallet_contracts::Schedule<TestRuntime> = Default::default();
 }
 
@@ -106,12 +110,11 @@ impl pallet_contracts::Config for TestRuntime {
     type CallFilter = Nothing;
     type DepositPerItem = DepositPerItem;
     type DepositPerByte = DepositPerByte;
+    type DefaultDepositLimit = DefaultDepositLimit;
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     type WeightPrice = ();
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = ();
-    type DeletionQueueDepth = ConstU32<128>;
-    type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
@@ -142,8 +145,12 @@ impl CheckedEthereumTransact for MockEthereumTransact {
             EvmCallInfo {
                 exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
                 value: Default::default(),
-                used_gas: Default::default(),
+                used_gas: UsedGas {
+                    standard: Default::default(),
+                    effective: Default::default(),
+                },
                 logs: Default::default(),
+                weight_info: None,
             },
         ))
     }

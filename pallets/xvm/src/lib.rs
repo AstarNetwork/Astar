@@ -32,6 +32,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{ensure, pallet_prelude::*, traits::ConstU32, BoundedVec};
+use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
 use sp_core::U256;
@@ -209,8 +210,9 @@ impl<T: Config> Pallet<T> {
             context.weight_limit,
             None,
             input,
-            false,
-            pallet_contracts::Determinism::Deterministic,
+            DebugInfo::Skip,
+            CollectEvents::Skip,
+            Determinism::Enforced,
         );
         log::trace!(target: "xvm::wasm_call", "WASM call result: {:?}", call_result);
 

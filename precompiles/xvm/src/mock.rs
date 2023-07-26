@@ -22,7 +22,9 @@ use super::*;
 
 use fp_evm::IsPrecompileResult;
 use frame_support::{
-    construct_runtime, ensure, parameter_types, traits::{ConstU32, ConstU64, Everything}, weights::Weight,
+    construct_runtime, ensure, parameter_types,
+    traits::{ConstU32, ConstU64, Everything},
+    weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;

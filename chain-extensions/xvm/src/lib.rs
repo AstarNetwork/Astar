@@ -18,9 +18,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::xvm::{Context, VmId, XvmCall};
+use astar_primitives::xvm::{CallError, Context, VmId, XvmCall};
 use frame_support::dispatch::Encode;
-use pallet_contracts::{chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal}, Origin};
+use pallet_contracts::{
+    chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal},
+    Origin,
+};
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
 use xvm_chain_extension_types::{XvmCallArgs, XvmExecutionResult};
@@ -80,8 +83,9 @@ where
                             target: "xvm-extension::xvm_call",
                             "root origin not supported"
                         );
-                        // TODO: expand XvmErrors with BadOrigin
-                        return Ok(RetVal::Converging(XvmExecutionResult::UnknownError as u32));
+                        return Ok(RetVal::Converging(
+                            XvmExecutionResult::from(CallError::BadOrigin).into(),
+                        ));
                     }
                 };
 

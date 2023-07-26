@@ -32,11 +32,11 @@ pallet-contracts = { workspace = true }
 astar-primitives = { workspace = true }
 
 [dev-dependencies]
-sp-io = { workspace = true }
 fp-evm = { workspace = true }
-pallet-timestamp = { workspace = true, features = ["std"] }
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-insecure-randomness-collective-flip = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true, features = ["std"] }
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]
@@ -47,7 +47,7 @@ std = [
 	"frame-system/std",
 	"pallet-contracts/std",
 	"pallet-evm/std",
-    "pallet-insecure-randomness-collective-flip/std",
+	"pallet-insecure-randomness-collective-flip/std",
 	"scale-info/std",
 	"serde",
 	"sp-core/std",
