@@ -164,7 +164,7 @@ impl<T: Config> Pallet<T> {
             .saturating_sub(WeightInfoOf::<T>::evm_call_overheads());
         let gas_limit = U256::from(T::GasWeightMapping::weight_to_gas(weight_limit));
 
-        let (post_dispatch_info, call_info) = T::EthereumTransact::xvm_transact(
+        let transact_result = T::EthereumTransact::xvm_transact(
             T::AccountMapping::into_h160(source),
             CheckedEthereumTx {
                 gas_limit,
@@ -173,32 +173,34 @@ impl<T: Config> Pallet<T> {
                 input: bounded_input,
                 maybe_access_list: None,
             },
-        )
-        .map_err(|e| {
-            let used_weight = e
-                .post_info
-                .actual_weight
-                .unwrap_or_default()
-                .saturating_add(WeightInfoOf::<T>::evm_call_overheads());
-            CallErrorWithWeight {
-                error: CallError::ExecutionFailed(Into::<&str>::into(e.error).into()),
-                used_weight,
-            }
-        })?;
-
+        );
         log::trace!(
             target: "xvm::evm_call",
-            "EVM call result: exit_reason: {:?}, used_gas: {:?}", call_info.exit_reason, call_info.used_gas,
+            "EVM call result: {:?}", transact_result,
         );
 
-        let used_weight = post_dispatch_info
-            .actual_weight
-            .unwrap_or_default()
-            .saturating_add(WeightInfoOf::<T>::evm_call_overheads());
-        Ok(CallInfo {
-            output: call_info.value,
-            used_weight,
-        })
+        transact_result
+            .map(|(post_dispatch_info, call_info)| {
+                let used_weight = post_dispatch_info
+                    .actual_weight
+                    .unwrap_or_default()
+                    .saturating_add(WeightInfoOf::<T>::evm_call_overheads());
+                CallInfo {
+                    output: call_info.value,
+                    used_weight,
+                }
+            })
+            .map_err(|e| {
+                let used_weight = e
+                    .post_info
+                    .actual_weight
+                    .unwrap_or_default()
+                    .saturating_add(WeightInfoOf::<T>::evm_call_overheads());
+                CallErrorWithWeight {
+                    error: CallError::ExecutionFailed(Into::<&str>::into(e.error).into()),
+                    used_weight,
+                }
+            })
     }
 
     fn wasm_call(
