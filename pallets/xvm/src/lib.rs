@@ -18,15 +18,21 @@
 
 //! # XVM pallet
 //!
+//! A module to provide
+//!
 //! ## Overview
+//!
+//! The XVM pallet provides a runtime interface to call different VMs. It currently
+//! supports two VMs: EVM and WASM. With further development, more VMs can be added.
+//!
+//! Together with other functionalities like Chain Extension and precompiles,
+//! the XVM pallet enables the runtime to support cross-VM calls.
 //!
 //! ## Interface
 //!
-//! ### Dispatchable Function
+//! ### Implementation
 //!
-//!
-//! ### Other
-//!
+//! - Implements `XvmCall` trait.
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
