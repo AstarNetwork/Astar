@@ -99,6 +99,8 @@ where
                     "success: {:?}", success
                 );
 
+                handle.record_cost(R::GasWeightMapping::weight_to_gas(success.used_weight));
+
                 Ok(succeed(
                     EvmDataWriter::new()
                         .write(true)
@@ -112,6 +114,8 @@ where
                     target: "xvm-precompile::xvm_call",
                     "failure: {:?}", failure
                 );
+
+                handle.record_cost(R::GasWeightMapping::weight_to_gas(failure.used_weight));
 
                 Ok(succeed(
                     EvmDataWriter::new()
