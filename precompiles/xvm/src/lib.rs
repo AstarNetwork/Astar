@@ -90,16 +90,22 @@ where
 
         let call_to = input.read::<Bytes>()?.0;
         let call_input = input.read::<Bytes>()?.0;
-
         let from = R::AddressMapping::into_account_id(handle.context().caller);
-        match XC::call(xvm_context, vm_id, from, call_to, call_input) {
+
+        let call_result = XC::call(xvm_context, vm_id, from, call_to, call_input);
+
+        let used_weight = match &call_result {
+            Ok(s) => s.used_weight,
+            Err(f) => f.used_weight,
+        };
+        handle.record_cost(R::GasWeightMapping::weight_to_gas(used_weight))?;
+
+        match call_result {
             Ok(success) => {
                 log::trace!(
                     target: "xvm-precompile::xvm_call",
                     "success: {:?}", success
                 );
-
-                handle.record_cost(R::GasWeightMapping::weight_to_gas(success.used_weight));
 
                 Ok(succeed(
                     EvmDataWriter::new()
@@ -114,8 +120,6 @@ where
                     target: "xvm-precompile::xvm_call",
                     "failure: {:?}", failure
                 );
-
-                handle.record_cost(R::GasWeightMapping::weight_to_gas(failure.used_weight));
 
                 Ok(succeed(
                     EvmDataWriter::new()
