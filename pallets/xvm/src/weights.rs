@@ -59,15 +59,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 267_000 picoseconds.
-		Weight::from_parts(289_000, 0)
+		// Minimum execution time: 771_000 picoseconds.
+		Weight::from_parts(818_000, 0)
 	}
 	fn wasm_call_overheads() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 285_000 picoseconds.
-		Weight::from_parts(339_000, 0)
+		// Minimum execution time: 304_000 picoseconds.
+		Weight::from_parts(337_000, 0)
 	}
 }
 
@@ -77,14 +77,14 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 267_000 picoseconds.
-		Weight::from_parts(289_000, 0)
+		// Minimum execution time: 771_000 picoseconds.
+		Weight::from_parts(818_000, 0)
 	}
 	fn wasm_call_overheads() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 285_000 picoseconds.
-		Weight::from_parts(339_000, 0)
+		// Minimum execution time: 304_000 picoseconds.
+		Weight::from_parts(337_000, 0)
 	}
 }
