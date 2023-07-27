@@ -157,6 +157,17 @@ impl<T: Config> Pallet<T> {
             .saturating_sub(WeightInfoOf::<T>::evm_call_overheads());
         let gas_limit = U256::from(T::GasWeightMapping::weight_to_gas(weight_limit));
 
+        let source = T::AccountMapping::into_h160(source);
+        let tx = CheckedEthereumTx {
+            gas_limit,
+            target: target_decoded,
+            value,
+            input: bounded_input,
+            maybe_access_list: None,
+        };
+
+        // Note the skip execution check should be exactly before `T::EthereumTransact::xvm_transact`
+        // to benchmark the correct overheads.
         if skip_execution {
             return Ok(CallInfo {
                 output: vec![],
@@ -164,16 +175,7 @@ impl<T: Config> Pallet<T> {
             });
         }
 
-        let transact_result = T::EthereumTransact::xvm_transact(
-            T::AccountMapping::into_h160(source),
-            CheckedEthereumTx {
-                gas_limit,
-                target: target_decoded,
-                value,
-                input: bounded_input,
-                maybe_access_list: None,
-            },
-        );
+        let transact_result = T::EthereumTransact::xvm_transact(source, tx);
         log::trace!(
             target: "xvm::evm_call",
             "EVM call result: {:?}", transact_result,
@@ -225,6 +227,14 @@ impl<T: Config> Pallet<T> {
             T::Lookup::lookup(decoded).map_err(|_| error)
         }?;
 
+        // With overheads, less weight is available.
+        let weight_limit = context
+            .weight_limit
+            .saturating_sub(WeightInfoOf::<T>::wasm_call_overheads());
+        let value = Default::default();
+
+        // Note the skip execution check should be exactly before `pallet_contracts::bare_call`
+        // to benchmark the correct overheads.
         if skip_execution {
             return Ok(CallInfo {
                 output: vec![],
@@ -232,15 +242,10 @@ impl<T: Config> Pallet<T> {
             });
         }
 
-        // With overheads, less weight is available.
-        let weight_limit = context
-            .weight_limit
-            .saturating_sub(WeightInfoOf::<T>::wasm_call_overheads());
-
         let call_result = pallet_contracts::Pallet::<T>::bare_call(
             source,
             dest,
-            Default::default(),
+            value,
             weight_limit,
             None,
             input,
