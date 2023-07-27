@@ -183,7 +183,7 @@ jobs:
 
     - name: Copy zombinet testing binary
       run: |
-        wget https://github.com/paritytech/zombienet/releases/download/v1.3.35/zombienet-linux-x64
+        wget https://github.com/paritytech/zombienet/releases/download/v1.3.63/zombienet-linux-x64
         chmod +x ./zombienet-linux-x64
         mv zombienet-linux-x64 rpc-tests/bin/zombienet-linux-x64
 
