@@ -48,21 +48,21 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for pallet_xvm.
 pub trait WeightInfo {
-	fn evm_call_without_execution() -> Weight;
-	fn wasm_call_without_execution() -> Weight;
+	fn evm_call_overheads() -> Weight;
+	fn wasm_call_overheads() -> Weight;
 }
 
 /// Weights for pallet_xvm using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	fn evm_call_without_execution() -> Weight {
+	fn evm_call_overheads() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 284_000 picoseconds.
 		Weight::from_parts(325_000, 0)
 	}
-	fn wasm_call_without_execution() -> Weight {
+	fn wasm_call_overheads() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
@@ -73,14 +73,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	fn evm_call_without_execution() -> Weight {
+	fn evm_call_overheads() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 284_000 picoseconds.
 		Weight::from_parts(325_000, 0)
 	}
-	fn wasm_call_without_execution() -> Weight {
+	fn wasm_call_overheads() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`

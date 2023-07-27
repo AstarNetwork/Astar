@@ -29,7 +29,7 @@ mod benchmarks {
     use super::*;
 
     #[benchmark]
-    fn evm_call_without_execution() {
+    fn evm_call_overheads() {
         let context = Context {
             source_vm_id: VmId::Wasm,
             weight_limit: Weight::from_parts(1_000_000, 1_000_000),
@@ -46,7 +46,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn wasm_call_without_execution() {
+    fn wasm_call_overheads() {
         let context = Context {
             source_vm_id: VmId::Evm,
             weight_limit: Weight::from_parts(1_000_000, 1_000_000),
