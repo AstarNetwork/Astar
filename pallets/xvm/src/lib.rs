@@ -150,19 +150,19 @@ impl<T: Config> Pallet<T> {
                 used_weight: WeightInfoOf::<T>::evm_call_overheads(),
             })?;
 
-        if skip_execution {
-            return Ok(CallInfo {
-                output: vec![],
-                used_weight: WeightInfoOf::<T>::evm_call_overheads(),
-            });
-        }
-
         let value = U256::zero();
         // With overheads, less weight is available.
         let weight_limit = context
             .weight_limit
             .saturating_sub(WeightInfoOf::<T>::evm_call_overheads());
         let gas_limit = U256::from(T::GasWeightMapping::weight_to_gas(weight_limit));
+
+        if skip_execution {
+            return Ok(CallInfo {
+                output: vec![],
+                used_weight: WeightInfoOf::<T>::evm_call_overheads(),
+            });
+        }
 
         let transact_result = T::EthereumTransact::xvm_transact(
             T::AccountMapping::into_h160(source),

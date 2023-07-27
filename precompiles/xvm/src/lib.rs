@@ -99,6 +99,8 @@ where
             Err(f) => f.used_weight,
         };
         handle.record_cost(R::GasWeightMapping::weight_to_gas(used_weight))?;
+        handle
+            .record_external_cost(Some(used_weight.ref_time()), Some(used_weight.proof_size()))?;
 
         match call_result {
             Ok(success) => {
