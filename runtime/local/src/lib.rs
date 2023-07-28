@@ -471,14 +471,11 @@ parameter_types! {
     pub WasmId: u8 = 0x1F;
 }
 
-use pallet_xvm::{evm, wasm};
 impl pallet_xvm::Config for Runtime {
-    type SyncVM = (
-        evm::EVM<EvmId, Self, EthereumChecked>,
-        wasm::WASM<WasmId, Self>,
-    );
-    type AsyncVM = ();
-    type RuntimeEvent = RuntimeEvent;
+    type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+    type AccountMapping = HashedAccountMapping;
+    type EthereumTransact = EthereumChecked;
+    type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -831,7 +828,7 @@ impl pallet_contracts::Config for Runtime {
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = (
         DappsStakingExtension<Self>,
-        XvmExtension<Self>,
+        XvmExtension<Self, Xvm>,
         AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
     );
     type Schedule = Schedule;
@@ -920,7 +917,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::Council(..)
                         | RuntimeCall::TechnicalCommittee(..)
                         | RuntimeCall::Treasury(..)
-                        | RuntimeCall::Xvm(..)
                 )
             }
             // All Runtime calls from Pallet Balances allowed for proxy account

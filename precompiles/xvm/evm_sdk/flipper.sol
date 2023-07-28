@@ -2,7 +2,7 @@ pragma solidity ^0.8.0;
 
 interface XVM {
     function xvm_call(
-        bytes calldata context,
+        uint8 calldata vm_id,
         bytes calldata to,
         bytes calldata input,
     ) external;
@@ -13,6 +13,6 @@ library Flipper {
 
     function flip(bytes to) {
         bytes input = "0xcafecafe";
-        XVM_PRECOMPILE.xvm_call(0x1f00, to, input);
+        XVM_PRECOMPILE.xvm_call(0x1F, to, input);
     }
 }

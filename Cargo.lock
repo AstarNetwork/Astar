@@ -404,7 +404,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.15.0"
+version = "5.16.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -529,7 +529,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.15.0"
+version = "5.16.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -5475,7 +5475,7 @@ checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 
 [[package]]
 name = "local-runtime"
-version = "5.15.0"
+version = "5.16.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -6901,15 +6901,15 @@ dependencies = [
 
 [[package]]
 name = "pallet-chain-extension-xvm"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
+ "astar-primitives",
  "frame-support",
  "frame-system",
  "log",
  "num-traits",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-xvm",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -7460,8 +7460,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-xvm"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
+ "astar-primitives",
  "derive_more",
  "fp-evm",
  "frame-support",
@@ -7472,7 +7473,6 @@ dependencies = [
  "pallet-balances",
  "pallet-evm",
  "pallet-timestamp",
- "pallet-xvm",
  "parity-scale-codec",
  "precompile-utils",
  "scale-info",
@@ -8231,21 +8231,24 @@ dependencies = [
 
 [[package]]
 name = "pallet-xvm"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "astar-primitives",
+ "fp-evm",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
  "log",
+ "pallet-balances",
  "pallet-contracts",
- "pallet-ethereum-checked",
  "pallet-evm",
+ "pallet-insecure-randomness-collective-flip",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "serde",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -12296,7 +12299,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.15.0"
+version = "5.16.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -12404,7 +12407,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.15.0"
+version = "5.16.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -15860,6 +15863,7 @@ dependencies = [
 name = "xvm-chain-extension-types"
 version = "0.1.0"
 dependencies = [
+ "astar-primitives",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",

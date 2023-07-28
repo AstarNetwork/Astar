@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.15.0"
+version = "5.16.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -112,7 +112,7 @@ pallet-evm-precompile-xcm = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
-pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
+pallet-xvm = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -253,6 +253,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-ethereum-checked/runtime-benchmarks",
+	"pallet-xvm/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",

@@ -18,11 +18,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use astar_primitives::xvm::{Context, VmId, XvmCall};
 use fp_evm::{PrecompileHandle, PrecompileOutput};
-use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
-use pallet_evm::{AddressMapping, Precompile};
-use pallet_xvm::XvmContext;
-use parity_scale_codec::Decode;
+use frame_support::dispatch::Dispatchable;
+use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
 use sp_runtime::codec::Encode;
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
@@ -39,19 +38,18 @@ mod tests;
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
 pub enum Action {
-    XvmCall = "xvm_call(bytes,bytes,bytes)",
+    XvmCall = "xvm_call(uint8,bytes,bytes)",
 }
 
 /// A precompile that expose XVM related functions.
-pub struct XvmPrecompile<T>(PhantomData<T>);
+pub struct XvmPrecompile<T, XC>(PhantomData<(T, XC)>);
 
-impl<R> Precompile for XvmPrecompile<R>
+impl<R, XC> Precompile for XvmPrecompile<R, XC>
 where
-    R: pallet_evm::Config + pallet_xvm::Config,
+    R: pallet_evm::Config,
     <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
         From<Option<R::AccountId>>,
-    <R as frame_system::Config>::RuntimeCall:
-        From<pallet_xvm::Call<R>> + Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
+    XC: XvmCall<R::AccountId>,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         log::trace!(target: "xvm-precompile", "In XVM precompile");
@@ -67,35 +65,44 @@ where
     }
 }
 
-impl<R> XvmPrecompile<R>
+impl<R, XC> XvmPrecompile<R, XC>
 where
-    R: pallet_evm::Config + pallet_xvm::Config,
+    R: pallet_evm::Config,
     <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
         From<Option<R::AccountId>>,
-    <R as frame_system::Config>::RuntimeCall:
-        From<pallet_xvm::Call<R>> + Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
+    XC: XvmCall<R::AccountId>,
 {
     fn xvm_call(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(4)?;
+        input.expect_arguments(3)?;
 
-        // Read arguments and check it
-        // TODO: This approach probably needs to be revised - does contract call need to specify gas/weight? Usually it is implicit.
-        let context_raw = input.read::<Bytes>()?;
-        let context: XvmContext = Decode::decode(&mut context_raw.0.as_ref())
-            .map_err(|_| revert("can not decode XVM context"))?;
+        let vm_id = {
+            let id = input.read::<u8>()?;
+            id.try_into().map_err(|_| revert("invalid vm id"))
+        }?;
 
-        // Fetch the remaining gas (weight) available for execution
-        // TODO: rework
-        //let remaining_gas = handle.remaining_gas();
-        //let remaining_weight = R::GasWeightMapping::gas_to_weight(remaining_gas);
-        //context.max_weight = remaining_weight;
+        let remaining_gas = handle.remaining_gas();
+        let weight_limit = R::GasWeightMapping::gas_to_weight(remaining_gas, true);
+        let xvm_context = Context {
+            source_vm_id: VmId::Evm,
+            weight_limit,
+        };
 
         let call_to = input.read::<Bytes>()?.0;
         let call_input = input.read::<Bytes>()?.0;
-
         let from = R::AddressMapping::into_account_id(handle.context().caller);
-        match &pallet_xvm::Pallet::<R>::xvm_bare_call(context, from, call_to, call_input) {
+
+        let call_result = XC::call(xvm_context, vm_id, from, call_to, call_input);
+
+        let used_weight = match &call_result {
+            Ok(s) => s.used_weight,
+            Err(f) => f.used_weight,
+        };
+        handle.record_cost(R::GasWeightMapping::weight_to_gas(used_weight))?;
+        handle
+            .record_external_cost(Some(used_weight.ref_time()), Some(used_weight.proof_size()))?;
+
+        match call_result {
             Ok(success) => {
                 log::trace!(
                     target: "xvm-precompile::xvm_call",
@@ -105,7 +112,7 @@ where
                 Ok(succeed(
                     EvmDataWriter::new()
                         .write(true)
-                        .write(Bytes(success.output().to_vec())) // TODO redundant clone
+                        .write(Bytes(success.output))
                         .build(),
                 ))
             }
@@ -116,13 +123,10 @@ where
                     "failure: {:?}", failure
                 );
 
-                let mut error_buffer = Vec::new();
-                failure.error().encode_to(&mut error_buffer);
-
                 Ok(succeed(
                     EvmDataWriter::new()
                         .write(false)
-                        .write(Bytes(error_buffer))
+                        .write(Bytes(failure.error.encode()))
                         .build(),
                 ))
             }

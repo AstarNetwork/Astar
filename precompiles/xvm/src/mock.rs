@@ -22,7 +22,7 @@ use super::*;
 
 use fp_evm::IsPrecompileResult;
 use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime, ensure, parameter_types,
     traits::{ConstU32, ConstU64, Everything},
     weights::Weight,
 };
@@ -38,6 +38,8 @@ use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
+
+use astar_primitives::xvm::{CallError::*, CallErrorWithWeight, CallInfo, CallResult};
 
 pub type AccountId = TestAccount;
 pub type Balance = u128;
@@ -154,12 +156,14 @@ pub struct TestPrecompileSet<R>(PhantomData<R>);
 
 impl<R> PrecompileSet for TestPrecompileSet<R>
 where
-    R: pallet_evm::Config + pallet_xvm::Config,
-    XvmPrecompile<R>: Precompile,
+    R: pallet_evm::Config,
+    XvmPrecompile<R, MockXvmWithArgsCheck>: Precompile,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         match handle.code_address() {
-            a if a == PRECOMPILE_ADDRESS => Some(XvmPrecompile::<R>::execute(handle)),
+            a if a == PRECOMPILE_ADDRESS => {
+                Some(XvmPrecompile::<R, MockXvmWithArgsCheck>::execute(handle))
+            }
             _ => None,
         }
     }
@@ -232,10 +236,41 @@ impl pallet_evm::Config for Runtime {
     type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
-impl pallet_xvm::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type SyncVM = ();
-    type AsyncVM = ();
+struct MockXvmWithArgsCheck;
+impl XvmCall<AccountId> for MockXvmWithArgsCheck {
+    fn call(
+        _context: Context,
+        vm_id: VmId,
+        _source: AccountId,
+        target: Vec<u8>,
+        input: Vec<u8>,
+    ) -> CallResult {
+        ensure!(
+            vm_id != VmId::Evm,
+            CallErrorWithWeight {
+                error: SameVmCallNotAllowed,
+                used_weight: Weight::zero()
+            }
+        );
+        ensure!(
+            target.len() == 20,
+            CallErrorWithWeight {
+                error: InvalidTarget,
+                used_weight: Weight::zero()
+            }
+        );
+        ensure!(
+            input.len() <= 1024,
+            CallErrorWithWeight {
+                error: InputTooLarge,
+                used_weight: Weight::zero()
+            }
+        );
+        Ok(CallInfo {
+            output: vec![],
+            used_weight: Weight::zero(),
+        })
+    }
 }
 
 // Configure a mock runtime to test the pallet.
@@ -249,7 +284,6 @@ construct_runtime!(
         Balances: pallet_balances,
         Evm: pallet_evm,
         Timestamp: pallet_timestamp,
-        Xvm: pallet_xvm,
     }
 );
 

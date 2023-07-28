@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.15.0"
+version = "5.16.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -75,7 +75,7 @@ pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
-pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
+pallet-xvm = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }

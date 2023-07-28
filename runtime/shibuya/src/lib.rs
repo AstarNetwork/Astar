@@ -69,7 +69,8 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+    ethereum_checked::CheckedEthereumTransact, AccountId, Address, AssetId, Balance, BlockNumber,
+    Hash, Header, Index, Signature,
 };
 
 use astar_primitives::xcm::AssetLocationIdConverter;
@@ -165,7 +166,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 105,
+    spec_version: 106,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -682,7 +683,7 @@ impl pallet_contracts::Config for Runtime {
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = (
         DappsStakingExtension<Self>,
-        XvmExtension<Self>,
+        XvmExtension<Self, Xvm>,
         AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
     );
     type Schedule = Schedule;
@@ -785,19 +786,11 @@ impl pallet_ethereum_checked::Config for Runtime {
     type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    pub EvmId: u8 = 0x0F;
-    pub WasmId: u8 = 0x1F;
-}
-
-use pallet_xvm::{evm, wasm};
 impl pallet_xvm::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type SyncVM = (
-        evm::EVM<EvmId, Runtime, EthereumChecked>,
-        wasm::WASM<WasmId, Self>,
-    );
-    type AsyncVM = ();
+    type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+    type AccountMapping = HashedAccountMapping;
+    type EthereumTransact = EthereumChecked;
+    type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1151,7 +1144,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::Council(..)
                         | RuntimeCall::TechnicalCommittee(..)
                         | RuntimeCall::Treasury(..)
-                        | RuntimeCall::Xvm(..)
                 )
             }
             // All Runtime calls from Pallet Balances allowed for proxy account
@@ -1437,6 +1429,7 @@ mod benches {
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
         [pallet_ethereum_checked, EthereumChecked]
+        [pallet_xvm, Xvm]
     );
 }
 
