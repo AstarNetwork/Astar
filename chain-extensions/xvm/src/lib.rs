@@ -30,7 +30,6 @@ use xvm_chain_extension_types::{XvmCallArgs, XvmExecutionResult};
 
 enum XvmFuncId {
     Call,
-    // TODO: expand with other calls too
 }
 
 impl TryFrom<u16> for XvmFuncId {
@@ -89,7 +88,12 @@ where
                     }
                 };
 
-                let XvmCallArgs { vm_id, to, input } = env.read_as_unbounded(env.in_len())?;
+                let XvmCallArgs {
+                    vm_id,
+                    to,
+                    input,
+                    value,
+                } = env.read_as_unbounded(env.in_len())?;
 
                 let _origin_address = env.ext().address().clone();
                 let _value = env.ext().value_transferred();
@@ -108,7 +112,7 @@ where
                         }
                     }
                 };
-                let call_result = XC::call(xvm_context, vm_id, caller, to, input);
+                let call_result = XC::call(xvm_context, vm_id, caller, to, input, value);
 
                 let actual_weight = match call_result {
                     Ok(ref info) => info.used_weight,

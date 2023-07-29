@@ -65,4 +65,6 @@ pub struct XvmCallArgs {
     pub to: Vec<u8>,
     /// Encoded call params
     pub input: Vec<u8>,
+    /// Value to transfer
+    pub value: u128,
 }

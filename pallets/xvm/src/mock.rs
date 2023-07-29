@@ -175,7 +175,6 @@ impl pallet_xvm::Config for TestRuntime {
 
 pub(crate) type AccountId = AccountId32;
 pub(crate) type BlockNumber = u64;
-pub(crate) type Balance = u128;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;

@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+use crate::Balance;
+
 use frame_support::weights::Weight;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -108,5 +110,6 @@ pub trait XvmCall<AccountId> {
         source: AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
+        value: Balance,
     ) -> CallResult;
 }
