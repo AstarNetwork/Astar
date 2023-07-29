@@ -18,7 +18,7 @@
 
 use super::*;
 
-use astar_primitives::ethereum_checked::MAX_ETHEREUM_TX_INPUT_SIZE;
+use astar_primitives::ethereum_checked::EthereumTxInput;
 use frame_benchmarking::v2::*;
 
 #[benchmarks]
@@ -31,7 +31,7 @@ mod benchmarks {
         let target =
             H160::from_slice(&hex::decode("dfb975d018f03994a3b943808e3aa0964bd78463").unwrap());
         // Calling `store(3)`
-        let input = BoundedVec::<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>::try_from(
+        let input = EthereumTxInput::try_from(
             hex::decode("6057361d0000000000000000000000000000000000000000000000000000000000000003")
                 .unwrap(),
         )

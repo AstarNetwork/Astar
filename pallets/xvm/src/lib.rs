@@ -37,11 +37,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    ensure,
-    traits::{ConstU32, Currency},
-    BoundedVec,
-};
+use frame_support::{ensure, traits::Currency};
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
@@ -51,7 +47,7 @@ use sp_std::{marker::PhantomData, prelude::*};
 
 use astar_primitives::{
     ethereum_checked::{
-        AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, MAX_ETHEREUM_TX_INPUT_SIZE,
+        AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, EthereumTxInput,
     },
     xvm::{CallError, CallErrorWithWeight, CallInfo, CallResult, Context, VmId, XvmCall},
     Balance,
@@ -171,11 +167,10 @@ where
                 error: CallError::InvalidTarget,
                 used_weight: WeightInfoOf::<T>::evm_call_overheads(),
             })?;
-        let bounded_input = BoundedVec::<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>::try_from(input)
-            .map_err(|_| CallErrorWithWeight {
-                error: CallError::InputTooLarge,
-                used_weight: WeightInfoOf::<T>::evm_call_overheads(),
-            })?;
+        let bounded_input = EthereumTxInput::try_from(input).map_err(|_| CallErrorWithWeight {
+            error: CallError::InputTooLarge,
+            used_weight: WeightInfoOf::<T>::evm_call_overheads(),
+        })?;
 
         let value_u256 = U256::from(value);
         // With overheads, less weight is available.

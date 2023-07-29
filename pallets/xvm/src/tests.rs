@@ -151,8 +151,7 @@ fn evm_call_works() {
                 gas_limit: U256::from(182000),
                 target: H160::repeat_byte(0xFF),
                 value: U256::from(value),
-                input: BoundedVec::<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>::try_from(input)
-                    .unwrap(),
+                input: EthereumTxInput::try_from(input).unwrap(),
                 maybe_access_list: None,
             },
         );
