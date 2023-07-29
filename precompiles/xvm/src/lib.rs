@@ -18,13 +18,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::xvm::{Context, VmId, XvmCall};
+use astar_primitives::{xvm::{Context, VmId, XvmCall}, Balance};
 use fp_evm::{PrecompileHandle, PrecompileOutput};
 use frame_support::dispatch::Dispatchable;
 use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
 use sp_runtime::codec::Encode;
-use sp_std::marker::PhantomData;
-use sp_std::prelude::*;
+use sp_std::{marker::PhantomData, prelude::*};
 
 use precompile_utils::{
     revert, succeed, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
@@ -90,8 +89,7 @@ where
 
         let call_to = input.read::<Bytes>()?.0;
         let call_input = input.read::<Bytes>()?.0;
-        //TODO: type
-        let value = input.read::<u128>()?;
+        let value = input.read::<Balance>()?;
         let from = R::AddressMapping::into_account_id(handle.context().caller);
 
         let call_result = XC::call(xvm_context, vm_id, from, call_to, call_input, value);

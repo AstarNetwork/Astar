@@ -244,6 +244,7 @@ impl XvmCall<AccountId> for MockXvmWithArgsCheck {
         _source: AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
+        _value: Balance,
     ) -> CallResult {
         ensure!(
             vm_id != VmId::Evm,

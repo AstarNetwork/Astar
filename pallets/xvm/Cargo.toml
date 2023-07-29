@@ -39,7 +39,7 @@ pallet-timestamp = { workspace = true, features = ["std"] }
 sp-io = { workspace = true }
 
 [features]
-default = ["std", "runtime-benchmarks"]
+default = ["std"]
 std = [
 	"log/std",
 	"parity-scale-codec/std",

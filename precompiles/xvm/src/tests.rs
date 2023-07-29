@@ -23,6 +23,7 @@ use astar_primitives::xvm::CallError;
 use parity_scale_codec::Encode;
 use precompile_utils::testing::*;
 use precompile_utils::EvmDataWriter;
+use sp_core::U256;
 
 fn precompiles() -> TestPrecompileSet<Runtime> {
     PrecompilesValue::get()
@@ -50,6 +51,7 @@ fn wrong_argument_reverts() {
                     .write(0u8)
                     .write(Bytes(b"".to_vec()))
                     .write(Bytes(b"".to_vec()))
+                    .write(U256::one())
                     .build(),
             )
             .expect_no_logs()
@@ -68,6 +70,7 @@ fn correct_arguments_works() {
                     .write(0x1Fu8)
                     .write(Bytes(b"".to_vec()))
                     .write(Bytes(b"".to_vec()))
+                    .write(U256::one())
                     .build(),
             )
             .expect_no_logs()
