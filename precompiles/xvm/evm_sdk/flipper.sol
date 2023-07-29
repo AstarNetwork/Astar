@@ -5,6 +5,7 @@ interface XVM {
         uint8 calldata vm_id,
         bytes calldata to,
         bytes calldata input,
+        uint256 calldata value,
     ) external;
 }
 
@@ -13,6 +14,6 @@ library Flipper {
 
     function flip(bytes to) {
         bytes input = "0xcafecafe";
-        XVM_PRECOMPILE.xvm_call(0x1F, to, input);
+        XVM_PRECOMPILE.xvm_call(0x1F, to, input, 1000000);
     }
 }

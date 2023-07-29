@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::xvm::CallError;
+use astar_primitives::{xvm::CallError, Balance};
 use parity_scale_codec::{Decode, Encode};
 use sp_std::vec::Vec;
 
@@ -66,5 +66,5 @@ pub struct XvmCallArgs {
     /// Encoded call params
     pub input: Vec<u8>,
     /// Value to transfer
-    pub value: u128,
+    pub value: Balance,
 }
