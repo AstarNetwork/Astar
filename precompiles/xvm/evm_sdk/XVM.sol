@@ -17,6 +17,6 @@ interface XVM {
         uint8 calldata vm_id,
         bytes calldata to,
         bytes calldata input
-        uint256 value
+        uint256 calldata value
     ) external returns (bool success, bytes memory data);
 }

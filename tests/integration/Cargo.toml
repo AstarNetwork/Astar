@@ -8,6 +8,8 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+parity-scale-codec = { workspace = true }
+
 # frame dependencies
 frame-support = { workspace = true }
 frame-system = { workspace = true }
@@ -19,7 +21,8 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 
-# runtime
+# astar dependencies
+astar-primitives = { workspace = true }
 astar-runtime = { workspace = true, features = ["std"], optional = true }
 shibuya-runtime = { workspace = true, features = ["std"], optional = true }
 shiden-runtime = { workspace = true, features = ["std"], optional = true }

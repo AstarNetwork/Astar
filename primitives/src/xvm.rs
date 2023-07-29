@@ -104,6 +104,7 @@ pub trait XvmCall<AccountId> {
     /// - `source`: Caller Id.
     /// - `target`: Target contract address.
     /// - `input`: call input data.
+    /// - `value`: value to transfer.
     fn call(
         context: Context,
         vm_id: VmId,

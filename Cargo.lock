@@ -4456,6 +4456,7 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
+ "astar-primitives",
  "astar-runtime",
  "frame-support",
  "frame-system",
@@ -4463,6 +4464,7 @@ dependencies = [
  "pallet-dapps-staking",
  "pallet-proxy",
  "pallet-utility",
+ "parity-scale-codec",
  "shibuya-runtime",
  "shiden-runtime",
  "sp-core",
@@ -8238,6 +8240,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
  "log",
  "pallet-balances",
  "pallet-contracts",

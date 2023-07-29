@@ -45,7 +45,7 @@ use frame_support::{
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
-use sp_core::U256;
+use sp_core::{H160, U256};
 use sp_runtime::traits::StaticLookup;
 use sp_std::{marker::PhantomData, prelude::*};
 
@@ -64,6 +64,7 @@ pub mod weights;
 pub use weights::WeightInfo;
 
 mod mock;
+mod tests;
 
 pub use pallet::*;
 
@@ -158,6 +159,13 @@ where
             context, source, target, input,
         );
 
+        ensure!(
+            target.len() == H160::len_bytes(),
+            CallErrorWithWeight {
+                error: CallError::InvalidTarget,
+                used_weight: WeightInfoOf::<T>::evm_call_overheads(),
+            }
+        );
         let target_decoded =
             Decode::decode(&mut target.as_ref()).map_err(|_| CallErrorWithWeight {
                 error: CallError::InvalidTarget,

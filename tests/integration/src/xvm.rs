@@ -16,15 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! Runtime integration tests.
+use crate::setup::*;
 
-#![cfg(test)]
+// use astar_primitives::xvm::{Context, VmId, XvmCall};
+// use frame_support::weights::Weight;
+// use parity_scale_codec::Encode;
+// use sp_core::H160;
 
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod setup;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod proxy;
-
-#[cfg(feature = "shibuya")]
-mod xvm;
+#[test]
+fn cross_vm_payable_call() {
+    new_test_ext().execute_with(|| {});
+}

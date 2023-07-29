@@ -18,7 +18,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::{xvm::{Context, VmId, XvmCall}, Balance};
+use astar_primitives::{
+    xvm::{Context, VmId, XvmCall},
+    Balance,
+};
 use fp_evm::{PrecompileHandle, PrecompileOutput};
 use frame_support::dispatch::Dispatchable;
 use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
