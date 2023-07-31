@@ -37,7 +37,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{ensure, traits::Currency};
+use frame_support::{
+    ensure,
+    traits::{Currency, Get},
+};
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
@@ -83,6 +86,9 @@ pub mod pallet {
 
         /// `CheckedEthereumTransact` implementation.
         type EthereumTransact: CheckedEthereumTransact;
+
+        /// Existential deposit of currency for payable calls.
+        type ExistentialDeposit: Get<Balance>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -250,6 +256,11 @@ where
             T::Lookup::lookup(decoded).map_err(|_| error)
         }?;
 
+        // TODO: maybe max(source_balance - existential_deposit, value)? might be overkill
+        // Adjust value to account for existential deposit, as `pallet-contracts`
+        // respects it on transfer.
+        let adjusted_value = value.saturating_sub(T::ExistentialDeposit::get());
+
         // With overheads, less weight is available.
         let weight_limit = context
             .weight_limit
@@ -267,7 +278,7 @@ where
         let call_result = pallet_contracts::Pallet::<T>::bare_call(
             source,
             dest,
-            value,
+            adjusted_value,
             weight_limit,
             None,
             input,

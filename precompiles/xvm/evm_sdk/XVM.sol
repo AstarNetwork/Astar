@@ -14,9 +14,9 @@ interface XVM {
      * @return data - output data if successful, error data on error
      */
     function xvm_call(
-        uint8 calldata vm_id,
+        uint8 vm_id,
         bytes calldata to,
-        bytes calldata input
-        uint256 calldata value
-    ) external returns (bool success, bytes memory data);
+        bytes calldata input,
+        uint256 value
+    ) external payable returns (bool success, bytes memory data);
 }
