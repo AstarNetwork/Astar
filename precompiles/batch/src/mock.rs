@@ -133,7 +133,7 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type PrecompilesType = Precopiles<Runtime>;
+    type PrecompilesType = Precompiles<Runtime>;
     type PrecompilesValue = PrecompilesValue;
     type Timestamp = Timestamp;
     type ChainId = ();
