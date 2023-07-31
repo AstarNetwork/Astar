@@ -65,7 +65,6 @@ pub mod pallet {
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(crate) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
@@ -496,11 +495,10 @@ pub mod pallet {
         #[pallet::weight(Weight::zero())]
         pub fn withdraw_unlocked(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            let account = ensure_signed(origin)?;
+            let _account = ensure_signed(origin)?;
 
             Ok(())
         }
-
     }
 
     impl<T: Config> Pallet<T> {
