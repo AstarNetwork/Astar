@@ -7122,6 +7122,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-precompile-batch"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "evm",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "hex-literal 0.4.1",
+ "log",
+ "num_enum",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "paste",
+ "precompile-utils",
+ "scale-info",
+ "serde",
+ "sha3",
+ "slices",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.40#e2f5879d243f5d9b8272a1ae640669065c8546f2"
@@ -9564,6 +9592,8 @@ name = "precompile-utils"
 version = "0.4.3"
 dependencies = [
  "assert_matches",
+ "derive_more",
+ "environmental",
  "evm",
  "fp-evm",
  "frame-support",
@@ -9575,6 +9605,8 @@ dependencies = [
  "pallet-evm",
  "parity-scale-codec",
  "precompile-utils-macro",
+ "scale-info",
+ "serde",
  "sha3",
  "similar-asserts",
  "sp-core",

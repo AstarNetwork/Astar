@@ -25,6 +25,7 @@ use fp_evm::{
     ExitReason, ExitSucceed, PrecompileOutput, PrecompileResult, PrecompileSet, Transfer,
 };
 use sp_std::boxed::Box;
+extern crate evm;
 
 pub struct Subcall {
     pub address: H160,

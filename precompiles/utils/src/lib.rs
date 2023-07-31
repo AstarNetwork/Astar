@@ -36,14 +36,20 @@ use frame_support::{
 use pallet_evm::{GasWeightMapping, Log};
 use sp_core::{H160, H256, U256};
 use sp_std::{marker::PhantomData, vec, vec::Vec};
+pub use alloc::string::String;
 
-mod data;
+pub mod bytes;
+pub mod data;
+pub mod evm;
+pub mod precompile_set;
+pub mod substrate;
+pub mod testing;
 
 pub use data::{Address, Bytes, EvmData, EvmDataReader, EvmDataWriter};
 pub use precompile_utils_macro::{generate_function_selector, keccak256};
 
 #[cfg(feature = "testing")]
-pub mod testing;
+pub mod old_testing;
 #[cfg(test)]
 mod tests;
 
@@ -363,7 +369,7 @@ pub fn succeed(output: impl AsRef<[u8]>) -> PrecompileOutput {
 #[must_use]
 /// Check that a function call is compatible with the context it is
 /// called into.
-fn check_function_modifier(
+pub fn check_function_modifier(
     context: &Context,
     is_static: bool,
     modifier: FunctionModifier,
