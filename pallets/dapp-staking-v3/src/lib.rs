@@ -99,6 +99,10 @@ pub mod pallet {
         /// Minimum amount an account has to lock in dApp staking in order to participate.
         #[pallet::constant]
         type MinimumLockedAmount: Get<BalanceOf<Self>>;
+
+        /// Amount of blocks that need to pass before unlocking chunks can be claimed by the owner.
+        #[pallet::constant]
+        type UnlockingPeriod: Get<BlockNumberFor<Self>>;
     }
 
     #[pallet::event]
@@ -130,6 +134,12 @@ pub mod pallet {
             account: T::AccountId,
             amount: BalanceOf<T>,
         },
+        // TODO: do we also add unlocking block info to the event?
+        /// Account has started the unlocking process for some amount.
+        Unlocking {
+            account: T::AccountId,
+            amount: BalanceOf<T>,
+        },
     }
 
     #[pallet::error]
@@ -155,6 +165,10 @@ pub mod pallet {
         LockedAmountBelowThreshold,
         /// Cannot add additional locked balance chunks due to size limit.
         TooManyLockedBalanceChunks,
+        /// Cannot add additional unlocking chunks due to size limit
+        TooManyUnlockingChunks,
+        /// Remaining stake prevents entire balance of starting the unlocking process.
+        RemainingStakePreventsFullUnlock,
     }
 
     /// General information about dApp staking protocol state.
@@ -388,7 +402,7 @@ pub mod pallet {
 
             // Calculate & check amount available for locking
             let available_balance =
-                T::Currency::free_balance(&account).saturating_sub(ledger.locked_amount());
+                T::Currency::free_balance(&account).saturating_sub(ledger.active_locked_amount());
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 
@@ -398,13 +412,13 @@ pub mod pallet {
                 .add_lock_amount(amount_to_lock, lock_era)
                 .map_err(|_| Error::<T>::TooManyLockedBalanceChunks)?;
             ensure!(
-                ledger.locked_amount() >= T::MinimumLockedAmount::get(),
+                ledger.active_locked_amount() >= T::MinimumLockedAmount::get(),
                 Error::<T>::LockedAmountBelowThreshold
             );
 
             Self::update_ledger(&account, ledger);
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.total_locked.saturating_accrue(amount_to_lock);
+                era_info.add_locked(amount_to_lock);
             });
 
             Self::deposit_event(Event::<T>::Locked {
@@ -414,6 +428,79 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// Attempts to start the unlocking process for the specified amount.
+        ///
+        /// Only the amount that isn't actively used for staking can be unlocked.
+        /// If the amount is greater than the available amount for unlocking, everything is unlocked.
+        /// If the remaining locked amount would take the account below the minimum locked amount, everything is unlocked.
+        #[pallet::call_index(6)]
+        #[pallet::weight(Weight::zero())]
+        pub fn unlock(
+            origin: OriginFor<T>,
+            #[pallet::compact] amount: BalanceOf<T>,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            let state = ActiveProtocolState::<T>::get();
+            let mut ledger = Ledger::<T>::get(&account);
+
+            let available_for_unlocking = ledger.unlockable_amount(state.period);
+            let amount_to_unlock = available_for_unlocking.min(amount);
+
+            // Ensure we unlock everything if remaining amount is below threshold.
+            let remaining_amount = ledger
+                .active_locked_amount()
+                .saturating_sub(amount_to_unlock);
+            let amount_to_unlock = if remaining_amount < T::MinimumLockedAmount::get() {
+                ensure!(
+                    ledger.active_stake(state.period).is_zero(),
+                    Error::<T>::RemainingStakePreventsFullUnlock
+                );
+                ledger.active_locked_amount()
+            } else {
+                amount_to_unlock
+            };
+
+            // Sanity check
+            ensure!(!amount_to_unlock.is_zero(), Error::<T>::ZeroAmount);
+
+            // Update ledger with new lock and unlocking amounts
+            ledger
+                .subtract_lock_amount(amount_to_unlock, state.era)
+                .map_err(|_| Error::<T>::TooManyLockedBalanceChunks)?;
+
+            let current_block = frame_system::Pallet::<T>::block_number();
+            let unlock_block = current_block.saturating_add(T::UnlockingPeriod::get());
+            ledger
+                .add_unlocking_chunk(amount_to_unlock, unlock_block)
+                .map_err(|_| Error::<T>::TooManyUnlockingChunks)?;
+
+            // Update storage
+            Self::update_ledger(&account, ledger);
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.unlocking_started(amount_to_unlock);
+            });
+
+            Self::deposit_event(Event::<T>::Unlocking {
+                account,
+                amount: amount_to_unlock,
+            });
+
+            Ok(())
+        }
+
+        /// TODO: add documentation
+        #[pallet::call_index(7)]
+        #[pallet::weight(Weight::zero())]
+        pub fn withdraw_unlocked(origin: OriginFor<T>) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            Ok(())
+        }
+
     }
 
     impl<T: Config> Pallet<T> {
@@ -450,7 +537,7 @@ pub mod pallet {
                 T::Currency::set_lock(
                     STAKING_ID,
                     account,
-                    ledger.locked_amount(),
+                    ledger.active_locked_amount(),
                     WithdrawReasons::all(),
                 );
                 Ledger::<T>::insert(account, ledger);

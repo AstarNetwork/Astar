@@ -20,7 +20,7 @@ use crate::{self as pallet_dapp_staking, *};
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32},
+    traits::{ConstU128, ConstU16, ConstU32, ConstU64},
     weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -109,6 +109,7 @@ impl pallet_dapp_staking::Config for Test {
     type MaxLockedChunks = ConstU32<5>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
+    type UnlockingPeriod = ConstU64<20>;
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Hash)]
@@ -144,6 +145,15 @@ impl ExtBuilder {
         ext.execute_with(|| {
             System::set_block_number(1);
             DappStaking::on_initialize(System::block_number());
+
+            // TODO: remove this after proper on_init handling is implemented
+            pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
+                era: 1,
+                next_era_start: BlockNumber::from(101_u32),
+                period: 1,
+                period_type: PeriodType::Voting(16),
+                maintenance: false,
+            });
         });
 
         ext
@@ -163,7 +173,7 @@ pub(crate) fn _run_to_block(n: u64) {
 
 /// Run for the specified number of blocks.
 /// Function assumes first block has been initialized.
-pub(crate) fn _run_for_blocks(n: u64) {
+pub(crate) fn run_for_blocks(n: u64) {
     _run_to_block(System::block_number() + n);
 }
 
@@ -173,4 +183,12 @@ pub(crate) fn _run_for_blocks(n: u64) {
 pub(crate) fn advance_to_era(era: EraNumber) {
     // TODO: Properly implement this later when additional logic has been implemented
     ActiveProtocolState::<Test>::mutate(|state| state.era = era);
+}
+
+/// Advance blocks until the specified period has been reached.
+///
+/// Function has no effect if period is already passed.
+pub(crate) fn advance_to_period(period: PeriodNumber) {
+    // TODO: Properly implement this later when additional logic has been implemented
+    ActiveProtocolState::<Test>::mutate(|state| state.period = period);
 }

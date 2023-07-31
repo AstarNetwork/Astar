@@ -17,9 +17,14 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::test::mock::*;
-use crate::*;
+use crate::types::*;
+use crate::{
+    pallet as pallet_dapp_staking, ActiveProtocolState, BlockNumberFor, CurrentEraInfo, DAppId,
+    Event, IntegratedDApps, Ledger, NextDAppId,
+};
 
-use frame_support::assert_ok;
+use frame_support::{assert_ok, traits::Get};
+use sp_runtime::traits::Zero;
 use std::collections::HashMap;
 
 /// Helper struct used to store the entire pallet state snapshot.
@@ -29,7 +34,7 @@ pub(crate) struct MemorySnapshot {
     next_dapp_id: DAppId,
     current_era_info: EraInfo<BalanceOf<Test>>,
     integrated_dapps: HashMap<
-        <Test as pallet::Config>::SmartContract,
+        <Test as pallet_dapp_staking::Config>::SmartContract,
         DAppInfo<<Test as frame_system::Config>::AccountId>,
     >,
     ledger: HashMap<<Test as frame_system::Config>::AccountId, AccountLedgerFor<Test>>,
@@ -52,7 +57,7 @@ impl MemorySnapshot {
     pub fn locked_balance(&self, account: &AccountId) -> Balance {
         self.ledger
             .get(&account)
-            .map_or(Balance::zero(), |ledger| ledger.locked_amount())
+            .map_or(Balance::zero(), |ledger| ledger.active_locked_amount())
     }
 }
 
@@ -196,7 +201,7 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
             .ledger
             .get(&account)
             .expect("Ledger entry has to exist after succcessful lock call")
-            .era(),
+            .lock_era(),
         post_snapshot.active_protocol_state.era + 1
     );
 
@@ -209,5 +214,92 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
         post_snapshot.current_era_info.active_era_locked,
         pre_snapshot.current_era_info.active_era_locked,
         "Active era locked amount should remain exactly the same."
+    );
+}
+
+/// Lock funds into dApp staking and assert success.
+pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
+    let pre_snapshot = MemorySnapshot::new();
+
+    assert!(
+        pre_snapshot.ledger.contains_key(&account),
+        "Cannot unlock for non-existing ledger."
+    );
+
+    // Calculate expected unlock amount
+    let pre_ledger = &pre_snapshot.ledger[&account];
+    let expected_unlock_amount = {
+        // Cannot unlock more than is available
+        let possible_unlock_amount = pre_ledger
+            .unlockable_amount(pre_snapshot.active_protocol_state.period)
+            .min(amount);
+
+        // When unlocking would take accounn below the minimum lock threshold, unlock everything
+        let locked_amount = pre_ledger.active_locked_amount();
+        let min_locked_amount = <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
+        if locked_amount.saturating_sub(possible_unlock_amount) < min_locked_amount {
+            locked_amount
+        } else {
+            possible_unlock_amount
+        }
+    };
+
+    // Unlock funds
+    assert_ok!(DappStaking::unlock(RuntimeOrigin::signed(account), amount,));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::Unlocking {
+        account,
+        amount: expected_unlock_amount,
+    }));
+
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+
+    // Verify ledger is as expected
+    let period_number = pre_snapshot.active_protocol_state.period;
+    let post_ledger = &post_snapshot.ledger[&account];
+    assert_eq!(
+        pre_ledger.active_locked_amount(),
+        post_ledger.active_locked_amount() + expected_unlock_amount,
+        "Active locked amount should be decreased by the amount unlocked."
+    );
+    assert_eq!(
+        pre_ledger.unlocking_amount() + expected_unlock_amount,
+        post_ledger.unlocking_amount(),
+        "Total unlocking amount should be increased by the amount unlocked."
+    );
+    assert_eq!(
+        pre_ledger.total_locked_amount(),
+        post_ledger.total_locked_amount(),
+        "Total locked amount should remain exactly the same since the unlocking chunks are still locked."
+    );
+    assert_eq!(
+        pre_ledger.unlockable_amount(period_number),
+        post_ledger.unlockable_amount(period_number) + expected_unlock_amount,
+        "Unlockable amount should be decreased by the amount unlocked."
+    );
+
+    // In case ledger is empty, it should have been removed from the storage
+    if post_ledger.is_empty() {
+        assert!(!Ledger::<Test>::contains_key(&account));
+    }
+
+    // Verify era info post-state
+    let pre_era_info = &pre_snapshot.current_era_info;
+    let post_era_info = &post_snapshot.current_era_info;
+    assert_eq!(
+        pre_era_info.unlocking + expected_unlock_amount,
+        post_era_info.unlocking
+    );
+    assert_eq!(
+        pre_era_info
+            .total_locked
+            .saturating_sub(expected_unlock_amount),
+        post_era_info.total_locked
+    );
+    assert_eq!(
+        pre_era_info
+            .active_era_locked
+            .saturating_sub(expected_unlock_amount),
+        post_era_info.active_era_locked
     );
 }

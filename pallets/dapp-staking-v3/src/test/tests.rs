@@ -19,7 +19,8 @@
 use crate::test::mock::*;
 use crate::test::testing_utils::*;
 use crate::{
-    pallet as pallet_dapp_staking, ActiveProtocolState, DAppId, Error, IntegratedDApps, NextDAppId,
+    pallet as pallet_dapp_staking, ActiveProtocolState, DAppId, Error, IntegratedDApps, Ledger,
+    NextDAppId, StakeInfo,
 };
 
 use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
@@ -76,6 +77,10 @@ fn maintenace_mode_call_filtering_works() {
         );
         assert_noop!(
             DappStaking::lock(RuntimeOrigin::signed(1), 100),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::unlock(RuntimeOrigin::signed(1), 100),
             Error::<Test>::Disabled
         );
     })
@@ -359,6 +364,223 @@ fn lock_with_too_many_chunks_fails() {
         assert_noop!(
             DappStaking::lock(RuntimeOrigin::signed(locker), 1),
             Error::<Test>::TooManyLockedBalanceChunks,
+        );
+    })
+}
+
+#[test]
+fn unlock_basic_example_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock some amount
+        let account = 2;
+        let lock_amount = 101;
+        assert_lock(account, lock_amount);
+
+        // Unlock some amount in the same era that it was locked
+        let first_unlock_amount = 7;
+        assert_unlock(account, first_unlock_amount);
+
+        // Advance era and unlock additional amount
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        assert_unlock(account, first_unlock_amount);
+
+        // Lock a bit more, and unlock again
+        assert_lock(account, lock_amount);
+        assert_unlock(account, first_unlock_amount);
+    })
+}
+
+#[test]
+fn unlock_with_remaining_amount_below_threshold_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock some amount in a few eras
+        let account = 2;
+        let lock_amount = 101;
+        assert_lock(account, lock_amount);
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        assert_lock(account, lock_amount);
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
+
+        // Unlock such amount that remaining amount is below threshold, resulting in full unlock
+        let minimum_locked_amount: Balance =
+            <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
+        let ledger = Ledger::<Test>::get(&account);
+        assert_unlock(
+            account,
+            ledger.active_locked_amount() - minimum_locked_amount + 1,
+        );
+    })
+}
+
+#[test]
+fn unlock_with_amount_higher_than_avaiable_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock some amount in a few eras
+        let account = 2;
+        let lock_amount = 101;
+        assert_lock(account, lock_amount);
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        assert_lock(account, lock_amount);
+
+        // Hacky, maybe improve later when staking is implemented?
+        let stake_amount = 91;
+        Ledger::<Test>::mutate(&account, |ledger| {
+            ledger.staked = StakeInfo {
+                amount: stake_amount,
+                period: ActiveProtocolState::<Test>::get().period,
+            }
+        });
+
+        // Try to unlock more than is available, due to active staked amount
+        assert_unlock(account, lock_amount - stake_amount + 1);
+
+        // Ensure there is no effect of staked amount once we move to the following period
+        assert_lock(account, lock_amount - stake_amount); // restore previous state
+        advance_to_period(ActiveProtocolState::<Test>::get().period + 1);
+        assert_unlock(account, lock_amount - stake_amount + 1);
+    })
+}
+
+#[test]
+fn unlock_advanced_examples_are_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock some amount
+        let account = 2;
+        let lock_amount = 101;
+        assert_lock(account, lock_amount);
+
+        // Unlock some amount in the same era that it was locked
+        let unlock_amount = 7;
+        assert_unlock(account, unlock_amount);
+
+        // Advance era and unlock additional amount
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        assert_unlock(account, unlock_amount * 2);
+
+        // Advance few more eras, and unlock everything
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 7);
+        assert_unlock(account, lock_amount);
+        assert!(Ledger::<Test>::get(&account)
+            .active_locked_amount()
+            .is_zero());
+
+        // Advance one more era and ensure we can still lock & unlock
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        assert_lock(account, lock_amount);
+        assert_unlock(account, unlock_amount);
+    })
+}
+
+#[test]
+fn unlock_everything_with_active_stake_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let account = 2;
+        let lock_amount = 101;
+        assert_lock(account, lock_amount);
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+
+        // We stake so the amount is just below the minimum locked amount, causing full unlock impossible.
+        let minimum_locked_amount: Balance =
+            <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
+        let stake_amount = minimum_locked_amount - 1;
+        // Hacky, maybe improve later when staking is implemented?
+        Ledger::<Test>::mutate(&account, |ledger| {
+            ledger.staked = StakeInfo {
+                amount: stake_amount,
+                period: ActiveProtocolState::<Test>::get().period,
+            }
+        });
+
+        // Try to unlock more than is available, due to active staked amount
+        assert_noop!(
+            DappStaking::unlock(RuntimeOrigin::signed(account), lock_amount),
+            Error::<Test>::RemainingStakePreventsFullUnlock,
+        );
+    })
+}
+
+#[test]
+fn unlock_with_zero_amount_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let account = 2;
+        let lock_amount = 101;
+        assert_lock(account, lock_amount);
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+
+        // Unlock with zero fails
+        assert_noop!(
+            DappStaking::unlock(RuntimeOrigin::signed(account), 0),
+            Error::<Test>::ZeroAmount,
+        );
+
+        // Stake everything, so available unlock amount is always zero
+        // Hacky, maybe improve later when staking is implemented?
+        Ledger::<Test>::mutate(&account, |ledger| {
+            ledger.staked = StakeInfo {
+                amount: lock_amount,
+                period: ActiveProtocolState::<Test>::get().period,
+            }
+        });
+
+        // Try to unlock anything, expect zero amount error
+        assert_noop!(
+            DappStaking::unlock(RuntimeOrigin::signed(account), lock_amount),
+            Error::<Test>::ZeroAmount,
+        );
+    })
+}
+
+#[test]
+fn unlock_with_exceeding_locked_storage_limits_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let account = 2;
+        let lock_amount = 103;
+        assert_lock(account, lock_amount);
+
+        let unlock_amount = 3;
+        for _ in 0..<Test as pallet_dapp_staking::Config>::MaxLockedChunks::get() {
+            advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+            assert_unlock(account, unlock_amount);
+        }
+
+        // We can still unlock in the current era, theoretically
+        for _ in 0..5 {
+            assert_unlock(account, unlock_amount);
+        }
+
+        // Following unlock should fail due to exceeding storage limits
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        assert_noop!(
+            DappStaking::unlock(RuntimeOrigin::signed(account), unlock_amount),
+            Error::<Test>::TooManyLockedBalanceChunks,
+        );
+    })
+}
+
+#[test]
+fn unlock_with_exceeding_unlocking_chunks_storage_limits_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock some amount in a few eras
+        let account = 2;
+        let lock_amount = 103;
+        assert_lock(account, lock_amount);
+
+        let unlock_amount = 3;
+        for _ in 0..<Test as pallet_dapp_staking::Config>::MaxUnlockingChunks::get() {
+            run_for_blocks(1);
+            assert_unlock(account, unlock_amount);
+        }
+
+        // We can still unlock in the current erblocka, theoretically
+        for _ in 0..5 {
+            assert_unlock(account, unlock_amount);
+        }
+
+        // Following unlock should fail due to exceeding storage limits
+        run_for_blocks(1);
+        assert_noop!(
+            DappStaking::unlock(RuntimeOrigin::signed(account), unlock_amount),
+            Error::<Test>::TooManyUnlockingChunks,
         );
     })
 }
