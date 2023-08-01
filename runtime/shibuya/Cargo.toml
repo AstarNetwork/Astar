@@ -16,6 +16,7 @@ scale-info = { workspace = true }
 smallvec = { workspace = true }
 
 # primitives
+fp-account = { workspace = true }
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
 sp-api = { workspace = true }
@@ -140,6 +141,7 @@ substrate-wasm-builder = { workspace = true, optional = true }
 default = ["std"]
 std = [
 	"parity-scale-codec/std",
+	"fp-account/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
 	"sp-std/std",

@@ -19,9 +19,6 @@
 
 pub use pallet::*;
 
-/// Ethereum-compatible signatures (eth_sign API call).
-pub mod ethereum;
-
 #[cfg(test)]
 mod tests;
 
@@ -33,8 +30,10 @@ pub mod pallet {
         traits::{Currency, ExistenceRequirement, Get, OnUnbalanced, WithdrawReasons},
     };
     use frame_system::{ensure_none, pallet_prelude::*};
-    use sp_runtime::traits::{IdentifyAccount, Verify};
-    use sp_std::{convert::TryFrom, prelude::*};
+    use pallet_evm::AddressMapping;
+    use sp_core::H160;
+    use sp_runtime::traits::{IdentifyAccount, MaybeDisplay, Verify};
+    use sp_std::{convert::TryFrom, fmt::Debug, prelude::*};
 
     #[pallet::pallet]
     pub struct Pallet<T>(_);
@@ -56,8 +55,20 @@ pub mod pallet {
         /// User defined signature type.
         type Signature: Parameter + Verify<Signer = Self::Signer> + TryFrom<Vec<u8>>;
 
-        /// User defined signer type.
-        type Signer: IdentifyAccount<AccountId = Self::AccountId>;
+        // User defined signer
+        type Signer: IdentifyAccount<AccountId = Self::SignerAccountId>;
+
+        type AddressMapping: AddressMapping<Self::AccountId>;
+
+        // user defined accountid
+        type SignerAccountId: Parameter
+            + Member
+            + MaybeSerializeDeserialize
+            + Debug
+            + MaybeDisplay
+            + Ord
+            + MaxEncodedLen
+            + Into<H160>;
 
         /// The currency trait.
         type Currency: Currency<Self::AccountId>;
@@ -118,15 +129,17 @@ pub mod pallet {
         pub fn call(
             origin: OriginFor<T>,
             call: Box<<T as Config>::RuntimeCall>,
-            signer: T::AccountId,
+            signer: T::SignerAccountId,
             signature: Vec<u8>,
             #[pallet::compact] nonce: T::Index,
         ) -> DispatchResultWithPostInfo {
             ensure_none(origin)?;
 
+            let account = T::AddressMapping::into_account_id(signer.clone().into());
+
             // Ensure that transaction isn't stale
             ensure!(
-                nonce == frame_system::Pallet::<T>::account_nonce(signer.clone()),
+                nonce == frame_system::Pallet::<T>::account_nonce(account.clone()),
                 Error::<T>::BadNonce,
             );
 
@@ -140,11 +153,11 @@ pub mod pallet {
             );
 
             // Increment account nonce
-            frame_system::Pallet::<T>::inc_account_nonce(signer.clone());
+            frame_system::Pallet::<T>::inc_account_nonce(account.clone());
 
             // Processing fee
             let tx_fee = T::Currency::withdraw(
-                &signer,
+                &account,
                 T::CallFee::get(),
                 WithdrawReasons::FEE,
                 ExistenceRequirement::AllowDeath,
@@ -152,9 +165,14 @@ pub mod pallet {
             T::OnChargeTransaction::on_unbalanced(tx_fee);
 
             // Dispatch call
-            let new_origin = frame_system::RawOrigin::Signed(signer.clone()).into();
-            let res = call.dispatch(new_origin).map(|_| ());
-            Self::deposit_event(Event::Executed(signer, res.map_err(|e| e.error)));
+            let new_origin = frame_system::RawOrigin::Signed(account.clone()).into();
+            let res: Result<
+                (),
+                sp_runtime::DispatchErrorWithPostInfo<
+                    <<T as Config>::RuntimeCall as Dispatchable>::PostInfo,
+                >,
+            > = call.dispatch(new_origin).map(|_| ());
+            Self::deposit_event(Event::Executed(account, res.map_err(|e| e.error)));
 
             // Fee already charged
             Ok(Pays::No.into())
@@ -165,7 +183,7 @@ pub mod pallet {
         /// Verify custom signature and returns `true` if correct.
         pub fn valid_signature(
             call: &Box<<T as Config>::RuntimeCall>,
-            signer: &T::AccountId,
+            signer: &T::SignerAccountId,
             signature: &T::Signature,
             nonce: &T::Index,
         ) -> bool {
@@ -192,8 +210,10 @@ pub mod pallet {
                 _ => return InvalidTransaction::Call.into(),
             };
 
+            let account = T::AddressMapping::into_account_id(signer.clone().into());
+
             // Check that tx isn't stale
-            if *nonce != frame_system::Pallet::<T>::account_nonce(signer.clone()) {
+            if *nonce != frame_system::Pallet::<T>::account_nonce(account.clone()) {
                 return InvalidTransaction::Stale.into();
             }
 

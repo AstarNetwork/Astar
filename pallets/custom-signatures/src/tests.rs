@@ -153,27 +153,6 @@ fn new_test_ext() -> TestExternalities {
     ext
 }
 
-/// Simple `eth_sign` implementation, should be equal to exported by RPC
-fn eth_sign(seed: &[u8; 32], data: &[u8]) -> Vec<u8> {
-    let call_msg = ethereum::signable_message(data);
-    let ecdsa_msg = libsecp256k1::Message::parse(&keccak_256(&call_msg));
-    let secret = libsecp256k1::SecretKey::parse(&seed).expect("valid seed");
-    let (signature, recovery_id) = libsecp256k1::sign(&ecdsa_msg, &secret);
-    let mut out = Vec::new();
-    out.extend_from_slice(&signature.serialize()[..]);
-    // Fix recovery ID: Ethereum uses 27/28 notation
-    out.push(recovery_id.serialize() + 27);
-    out
-}
-
-#[test]
-fn eth_sign_works() {
-    let seed = hex!["ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"];
-    let text = b"Hello Astar";
-    let signature = hex!["0cc6d5de6db06727fe43a260e7c9a417be3daab9b0e4e65e276f543e5c2f3de67e9e26d903d5301181e13033f61692db2dca67c1f8992b62476eaf8cb3a597101c"];
-    assert_eq!(eth_sign(&seed, &text[..]), signature);
-}
-
 #[test]
 fn invalid_signature() {
     let bob: <Runtime as frame_system::Config>::AccountId = Keyring::Bob.into();

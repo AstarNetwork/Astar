@@ -325,8 +325,10 @@ parameter_types! {
 impl pallet_custom_signatures::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
-    type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
-    type Signer = <Signature as Verify>::Signer;
+    type Signature = fp_account::EthereumSignature;
+    type Signer = <fp_account::EthereumSignature as Verify>::Signer;
+    type SignerAccountId = fp_account::AccountId20;
+    type AddressMapping = <Self as pallet_evm::Config>::AddressMapping;
     type CallMagicNumber = CallMagicNumber;
     type Currency = Balances;
     type CallFee = CallFee;
