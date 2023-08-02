@@ -157,7 +157,7 @@ fn evm_payable_call_via_xvm_works() {
     new_test_ext().execute_with(|| {
         let evm_payable_addr = deploy_evm_contract(EVM_PAYABLE);
 
-        let value = 1_000_000_000;
+        let value = UNIT;
         assert_ok!(Xvm::call(
             Context {
                 source_vm_id: VmId::Wasm,
@@ -199,7 +199,8 @@ fn wasm_payable_call_via_xvm_works() {
     new_test_ext().execute_with(|| {
         let contract_addr = deploy_wasm_contract("payable");
 
-        let value = 1_000_000_000;
+        let prev_balance = Balances::free_balance(&contract_addr);
+        let value = UNIT;
         assert_ok!(Xvm::call(
             Context {
                 source_vm_id: VmId::Evm,
@@ -212,7 +213,10 @@ fn wasm_payable_call_via_xvm_works() {
             hex::decode("0000002a").unwrap(),
             value
         ));
-        assert_eq!(Balances::free_balance(contract_addr.clone()), value,);
+        assert_eq!(
+            Balances::free_balance(contract_addr.clone()),
+            value + prev_balance
+        );
     });
 }
 
@@ -239,10 +243,38 @@ fn calling_wasm_payable_from_evm_works() {
             vec![],
         ));
         // `pallet-contracts` respects the existential deposit of caller. The actual amount
-        // it got is `value - ExistentialDeposit`. Adding to its existing balance and we got `value`.
+        // it got is `value - ExistentialDeposit`. Adding to its existing balance results `value`.
         assert_eq!(
             Balances::free_balance(&wasm_payable_addr),
             value,
+        );
+        assert_eq!(
+            Balances::free_balance(&account_id_from(call_wasm_payable_addr)),
+            ExistentialDeposit::get(),
+        );
+
+        let value = 1_000_000_000;
+        assert_ok!(EVM::call(
+            RuntimeOrigin::root(),
+            alith(),
+            call_wasm_payable_addr.clone(),
+            // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
+            // input: 0x0000002a (deposit)
+            // value: 1000000000
+            hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000000002100a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").unwrap(),
+            U256::from(value),
+            1_000_000,
+            U256::from(DefaultBaseFeePerGas::get()),
+            None,
+            None,
+            vec![],
+        ));
+        // For the second call with the same value, the wasm payable contract will receive
+        // the full amount, as the EVM contract already has enough balance for existential
+        // deposit.
+        assert_eq!(
+            Balances::free_balance(&wasm_payable_addr),
+            2 * value,
         );
         assert_eq!(
             Balances::free_balance(&account_id_from(call_wasm_payable_addr)),

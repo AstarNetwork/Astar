@@ -181,7 +181,6 @@ impl pallet_xvm::Config for TestRuntime {
     type GasWeightMapping = MockGasWeightMapping;
     type AccountMapping = HashedAccountMapping;
     type EthereumTransact = MockEthereumTransact;
-    type ExistentialDeposit = ConstU128<2>;
     type WeightInfo = weights::SubstrateWeight<TestRuntime>;
 }
 
