@@ -157,3 +157,26 @@ fn evm_call_works() {
         );
     });
 }
+
+#[test]
+fn wasm_call_fails_if_invalid_target() {
+    ExtBuilder::default().build().execute_with(|| {
+        let context = Context {
+            source_vm_id: VmId::Evm,
+            weight_limit: Weight::from_parts(1_000_000, 1_000_000),
+        };
+        let vm_id = VmId::Wasm;
+        let target = vec![1, 2, 3];
+        let input = vec![1, 2, 3];
+        let value = 1_000_000u128;
+        let used_weight: Weight = weights::SubstrateWeight::<TestRuntime>::wasm_call_overheads();
+
+        assert_noop!(
+            Xvm::call(context, vm_id, ALICE, target.encode(), input, value),
+            CallErrorWithWeight {
+                error: CallError::InvalidTarget,
+                used_weight
+            },
+        );
+    });
+}
