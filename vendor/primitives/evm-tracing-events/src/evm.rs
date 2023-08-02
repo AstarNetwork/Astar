@@ -233,6 +233,7 @@ impl<'a> From<evm::tracing::Event<'a>> for EvmEvent {
                 gas_limit,
                 address,
             },
+            /*
             evm::tracing::Event::PrecompileSubcall {
                 code_address,
                 transfer,
@@ -252,6 +253,7 @@ impl<'a> From<evm::tracing::Event<'a>> for EvmEvent {
                 is_static,
                 context: context.clone().into(),
             },
+            */
         }
     }
 }

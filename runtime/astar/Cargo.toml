@@ -13,6 +13,7 @@ evm = { git = "https://github.com/PlasmNetwork/evm", branch = "polkadot-v0.9.13"
 smallvec = "1.6.1"
 
 # primitives
+ethereum = { git = "https://github.com/PlasmNetwork/ethereum", branch = "polkadot-v0.9.13", default-features = false, features = ["with-codec"] }
 fp-rpc = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.13", default-features = false }
 fp-self-contained = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.13", default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
@@ -82,7 +83,7 @@ pallet-precompile-staking = { path = "../../precompiles/staking", default-featur
 moonbeam-evm-tracer = { path = "../../vendor/runtime/evm-tracer", default-features = false }
 moonbeam-rpc-primitives-debug = { path = "../../vendor/primitives/debug", default-features = false }
 moonbeam-rpc-primitives-txpool = { path = "../../vendor/primitives/txpool", default-features = false }
-evm-tracing-events = { path = "../../vendor/primitives/evm-tracing-events", default-features = false }
+evm-tracing-events = { path = "../../vendor/primitives/evm-tracing-events", default-features = false, features = ["evm-tracing"] }
 moonbeam-primitives-ext = { path = "../../vendor/runtime/ext", default-features = false }
 
 [build-dependencies]
@@ -91,6 +92,12 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [features]
 default = ["std"]
 std = [
+    "moonbeam-evm-tracer/std",
+    "moonbeam-rpc-primitives-debug/std",
+    "moonbeam-rpc-primitives-txpool/std",
+    "evm-tracing-events/std",
+    "moonbeam-primitives-ext/std",
+    "ethereum/std",
     "codec/std",
     "evm/std",
     "fp-rpc/std",

@@ -8,18 +8,18 @@ repository = "https://github.com/PureStake/moonbeam/"
 version = "0.1.0"
 
 [dependencies]
-environmental = { workspace = true }
+environmental = { version = "1.1.2", default-features = false }
 
 # Substrate
-parity-scale-codec = { workspace = true }
-sp-runtime-interface = { workspace = true }
+parity-scale-codec = { version = "2.2.0", default-features = false, features = ["derive"] }
+sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 
 # Ethereum
-ethereum = { workspace = true, features = ["with-codec"] }
-ethereum-types = { workspace = true }
-evm = { workspace = true, features = ["with-codec"] }
-evm-gasometer = { workspace = true }
-evm-runtime = { workspace = true }
+ethereum = { git = "https://github.com/PlasmNetwork/ethereum", branch = "polkadot-v0.9.13", default-features = false, features = ["with-codec"] }
+ethereum-types = { version = "0.12", default-features = false }
+evm = { git = "https://github.com/PlasmNetwork/evm", branch = "polkadot-v0.9.13", default-features = false, features = ["with-codec"] }
+evm-gasometer = { git = "https://github.com/PlasmNetwork/evm", branch = "polkadot-v0.9.13", default-features = false }
+evm-runtime = { git = "https://github.com/PlasmNetwork/evm", branch = "polkadot-v0.9.13", default-features = false }
 
 [features]
 default = ["std"]

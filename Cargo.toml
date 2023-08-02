@@ -11,10 +11,32 @@ members = [
     "precompiles/staking",
 ]
 
-exclude = [
-    "vendor"
-]
-
 [profile.release]
 # Astar runtime requires unwinding.
 panic = "unwind"
+
+[patch.crates-io]
+evm = { git = "https://github.com/AstarNetwork/evm", rev = "d83f8f43699ceaa3f19f7c17d909dd079c482420" }
+evm-runtime = { git = "https://github.com/AstarNetwork/evm", rev = "d83f8f43699ceaa3f19f7c17d909dd079c482420" }
+evm-gasometer = { git = "https://github.com/AstarNetwork/evm", rev = "d83f8f43699ceaa3f19f7c17d909dd079c482420" }
+ethereum = { git = "https://github.com/AstarNetwork/ethereum", rev = "2b98173bd88c05bfeefad421d260101b9008497b" }
+
+[patch."https://github.com/PlasmNetwork/evm"]
+evm = { git = "https://github.com/AstarNetwork/evm", rev = "d83f8f43699ceaa3f19f7c17d909dd079c482420" }
+evm-runtime = { git = "https://github.com/AstarNetwork/evm", rev = "d83f8f43699ceaa3f19f7c17d909dd079c482420" }
+evm-gasometer = { git = "https://github.com/AstarNetwork/evm", rev = "d83f8f43699ceaa3f19f7c17d909dd079c482420" }
+
+[patch."https://github.com/PlasmNetwork/ethereum"]
+ethereum = { git = "https://github.com/AstarNetwork/ethereum", rev = "2b98173bd88c05bfeefad421d260101b9008497b" }
+
+[patch."https://github.com/PlasmNetwork/frontier"]
+fp-rpc = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }
+fp-evm = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }
+fp-self-contained = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }
+pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }
+pallet-evm = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }
+pallet-evm-precompile-bn128 = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }
+pallet-evm-precompile-dispatch = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }
+pallet-evm-precompile-modexp = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }
+pallet-evm-precompile-simple = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }
+pallet-evm-precompile-sha3fips = { git = "https://github.com/AstarNetwork/frontier", rev = "d08ed161bf32f83c74f5394c92996475701f136e" }

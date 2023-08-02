@@ -996,7 +996,7 @@ impl_runtime_apis! {
     impl moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block> for Runtime {
         fn trace_transaction(
             extrinsics: Vec<<Block as BlockT>::Extrinsic>,
-            traced_transaction: &pallet_ethereum::Transaction,
+            traced_transaction: &ethereum::TransactionV2,
         ) -> Result<
             (),
             sp_runtime::DispatchError,
@@ -1007,8 +1007,8 @@ impl_runtime_apis! {
             // transactions that preceded the requested transaction.
             for ext in extrinsics.into_iter() {
                 let _ = match &ext.0.function {
-                    RuntimeCall::Ethereum(pallet_ethereum::Call::transact { transaction }) => {
-                        if transaction == traced_transaction {
+                    Call::Ethereum(pallet_ethereum::Call::transact { transaction }) => {
+                        if ethereum::TransactionV2::Legacy(transaction.clone()) == traced_transaction.clone() {
                             EvmTracer::new().trace(|| Executive::apply_extrinsic(ext));
                             return Ok(());
                         } else {
@@ -1038,8 +1038,9 @@ impl_runtime_apis! {
             // Apply all extrinsics. Ethereum extrinsics are traced.
             for ext in extrinsics.into_iter() {
                 match &ext.0.function {
-                    RuntimeCall::Ethereum(pallet_ethereum::Call::transact { transaction }) => {
-                        if known_transactions.contains(&transaction.hash()) {
+                    Call::Ethereum(pallet_ethereum::Call::transact { transaction }) => {
+                        let tx_hash = <ethereum::LegacyTransactionMessage>::from(transaction.clone()).hash();
+                        if known_transactions.contains(&tx_hash) {
                             // Each known extrinsic is a new call stack.
                             EvmTracer::emit_new();
                             EvmTracer::new().trace(|| Executive::apply_extrinsic(ext));
@@ -1066,14 +1067,16 @@ impl_runtime_apis! {
                 ready: xts_ready
                     .into_iter()
                     .filter_map(|xt| match xt.0.function {
-                        RuntimeCall::Ethereum(pallet_ethereum::Call::transact { transaction }) => Some(transaction),
+                        Call::Ethereum(pallet_ethereum::Call::transact { transaction }) =>
+                            Some(ethereum::TransactionV2::Legacy(transaction)),
                         _ => None,
                     })
                     .collect(),
                 future: xts_future
                     .into_iter()
                     .filter_map(|xt| match xt.0.function {
-                        RuntimeCall::Ethereum(pallet_ethereum::Call::transact { transaction }) => Some(transaction),
+                        Call::Ethereum(pallet_ethereum::Call::transact { transaction }) =>
+                            Some(ethereum::TransactionV2::Legacy(transaction)),
                         _ => None,
                     })
                     .collect(),
