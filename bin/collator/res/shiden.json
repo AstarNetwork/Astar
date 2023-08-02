@@ -6,8 +6,8 @@
     "/ip4/199.85.208.173/tcp/30333/ws/p2p/12D3KooWFPzN2cH31unDY8Wx7x2XpnsYBJWfFJNL9HGLida1dZY1",
     "/ip4/51.89.41.58/tcp/30333/ws/p2p/12D3KooWJwbUzXmA46QA71UkzgVnvSd9Nx4HhY48HLCwWcHYiC9d",
     "/ip4/131.153.79.58/tcp/30333/ws/p2p/12D3KooWCzR5i4pYhc1SXEEwViasCmn8HkTwo1zK7h8TiUUp2eLX",
-    "/dns/bootnode-01.shiden.astar.network/tcp/443/wss/p2p/12D3KooWDYfspdMj1tQJZuiecmKKaQjGuSX2cy5rExtqcMqmiNrR",
-    "/dns/bootnode-02.shiden.astar.network/tcp/443/wss/p2p/12D3KooWAgdZ27WhBzLRinaE7iTR1pXxKTsSJniXYu1xAEJD7LzS",
+    "/dns/bootnode-01.shiden.astar.network/tcp/443/wss/p2p/12D3KooWFPzN2cH31unDY8Wx7x2XpnsYBJWfFJNL9HGLida1dZY1",
+    "/dns/bootnode-02.shiden.astar.network/tcp/443/wss/p2p/12D3KooWJwbUzXmA46QA71UkzgVnvSd9Nx4HhY48HLCwWcHYiC9d",
     "/dns/bootnode-03.shiden.astar.network/tcp/443/wss/p2p/12D3KooWCzR5i4pYhc1SXEEwViasCmn8HkTwo1zK7h8TiUUp2eLX"
   ],
   "telemetryEndpoints": null,
