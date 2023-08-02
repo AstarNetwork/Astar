@@ -157,8 +157,8 @@ where
     ) -> CallResult {
         log::trace!(
             target: "xvm::evm_call",
-            "Calling EVM: {:?} {:?}, {:?}, {:?}",
-            context, source, target, input,
+            "Calling EVM: {:?} {:?}, {:?}, {:?}, {:?}",
+            context, source, target, input, value,
         );
 
         ensure!(
@@ -243,8 +243,8 @@ where
     ) -> CallResult {
         log::trace!(
             target: "xvm::wasm_call",
-            "Calling WASM: {:?} {:?}, {:?}, {:?}",
-            context, source, target, input,
+            "Calling WASM: {:?} {:?}, {:?}, {:?}, {:?}",
+            context, source, target, input, value,
         );
 
         let dest = {

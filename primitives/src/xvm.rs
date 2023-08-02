@@ -66,8 +66,6 @@ pub enum CallError {
     InvalidTarget,
     /// Input is too large.
     InputTooLarge,
-    /// Bad origin.
-    BadOrigin,
     /// The call failed on EVM or WASM execution.
     ExecutionFailed(Vec<u8>),
 }

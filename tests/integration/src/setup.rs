@@ -63,6 +63,9 @@ pub const ALICE: AccountId32 = AccountId32::new([1_u8; 32]);
 pub const BOB: AccountId32 = AccountId32::new([2_u8; 32]);
 pub const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
 
+// TODO: once Account Unification is finished, remove `alith` and `alicia`,
+// which are mocks of two way account/address mapping.
+
 /// H160 address mapped from `ALICE`.
 pub fn alith() -> H160 {
     h160_from(ALICE)

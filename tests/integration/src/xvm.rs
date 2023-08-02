@@ -19,7 +19,7 @@
 use crate::setup::*;
 
 use astar_primitives::xvm::{Context, VmId, XvmCall};
-use frame_support::weights::Weight;
+use frame_support::{traits::Currency, weights::Weight};
 use pallet_contracts::{CollectEvents, DebugInfo};
 use pallet_contracts_primitives::Code;
 use parity_scale_codec::Encode;
@@ -59,7 +59,7 @@ fn evm_payable_addr_h160() -> H160 {
     H160::from_slice(evm_payable_addr().as_slice())
 }
 
-/*
+/* WASM payable:
 
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 
@@ -80,12 +80,8 @@ mod payable {
 }
 
 */
-fn wasm_payable() -> std::io::Result<Vec<u8>> {
-    let path = "resource/payable.wasm";
-    std::fs::read(path)
-}
 
-/*
+/* Call WASM payable:
 
 // SPDX-License-Identifier: GPL-3.0
 
@@ -117,11 +113,69 @@ fn call_wasm_payable_addr_h160() -> H160 {
     H160::from_slice(call_wasm_payable_addr().as_slice())
 }
 
-fn deploy_evm_payable() {
+/* Call EVM Payable:
+
+#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+use ink::env::{DefaultEnvironment, Environment};
+use ink::prelude::vec::Vec;
+
+#[ink::contract(env = CustomEnvironment)]
+mod call_xvm_payable {
+    use super::*;
+
+    #[ink(storage)]
+    pub struct CallXvmPayable {}
+
+    impl CallXvmPayable {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            Self {}
+        }
+
+        #[ink(message, payable, selector = 42)]
+        pub fn call_xvm_payable(
+            &self,
+            target: Vec<u8>,
+            input: Vec<u8>,
+        ) -> CallResult {
+            let value = Self::env().transferred_value();
+            // Calling EVM
+            Self::env().extension().call(0x0F, target, input, value)
+        }
+    }
+}
+
+pub type CallResult = u32;
+
+#[ink::chain_extension]
+pub trait XvmCall {
+    type ErrorCode = u32;
+
+    #[ink(extension = 0x00010001, handle_status = false)]
+    fn call(vm_id: u8, target: Vec<u8>, input: Vec<u8>, value: u128) -> CallResult;
+}
+
+pub enum CustomEnvironment {}
+impl Environment for CustomEnvironment {
+    const MAX_EVENT_TOPICS: usize = <DefaultEnvironment as Environment>::MAX_EVENT_TOPICS;
+
+    type AccountId = <DefaultEnvironment as Environment>::AccountId;
+    type Balance = <DefaultEnvironment as Environment>::Balance;
+    type Hash = <DefaultEnvironment as Environment>::Hash;
+    type BlockNumber = <DefaultEnvironment as Environment>::BlockNumber;
+    type Timestamp = <DefaultEnvironment as Environment>::Timestamp;
+
+    type ChainExtension = XvmCall;
+}
+
+ */
+
+fn deploy_evm_contract(code: &str, assert_addr: H160) {
     assert_ok!(EVM::create2(
         RuntimeOrigin::root(),
         alith(),
-        hex::decode(EVM_PAYABLE).unwrap(),
+        hex::decode(code).unwrap(),
         H256::zero(),
         U256::zero(),
         1_000_000,
@@ -131,37 +185,36 @@ fn deploy_evm_payable() {
         vec![],
     ));
     System::assert_last_event(RuntimeEvent::EVM(pallet_evm::Event::Created {
-        address: evm_payable_addr_h160(),
+        address: assert_addr,
     }));
 }
 
-fn deploy_wasm_payable() -> AccountId32 {
-    let wasm_payable = wasm_payable().unwrap();
+fn deploy_wasm_contract(name: &str) -> AccountId32 {
+    let path = format!("resource/{}.wasm", name);
+    let code = std::fs::read(path).unwrap();
     let instantiate_result = Contracts::bare_instantiate(
         ALICE,
         0,
         Weight::from_parts(10_000_000_000, 1024 * 1024),
         None,
-        Code::Upload(wasm_payable),
+        Code::Upload(code),
         // `new` constructor
         hex::decode("9bae9d5e").unwrap(),
         vec![],
         DebugInfo::Skip,
         CollectEvents::Skip,
     );
-    let wasm_payable_addr = instantiate_result.result.unwrap().account_id;
-    // On instantiation, the contract got exising deposit.
-    assert_eq!(
-        Balances::free_balance(&wasm_payable_addr),
-        ExistentialDeposit::get(),
-    );
-    wasm_payable_addr
+
+    let address = instantiate_result.result.unwrap().account_id;
+    // On instantiation, the contract got existential deposit.
+    assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
+    address
 }
 
 #[test]
 fn evm_payable_call_via_xvm_works() {
     new_test_ext().execute_with(|| {
-        deploy_evm_payable();
+        deploy_evm_contract(EVM_PAYABLE, evm_payable_addr_h160());
 
         let value = 1_000_000_000;
         assert_ok!(Xvm::call(
@@ -203,7 +256,7 @@ fn evm_payable_call_via_xvm_works() {
 #[test]
 fn wasm_payable_call_via_xvm_works() {
     new_test_ext().execute_with(|| {
-        let contract_addr = deploy_wasm_payable();
+        let contract_addr = deploy_wasm_contract("payable");
 
         let value = 1_000_000_000;
         assert_ok!(Xvm::call(
@@ -225,23 +278,8 @@ fn wasm_payable_call_via_xvm_works() {
 #[test]
 fn calling_wasm_payable_from_evm_works() {
     new_test_ext().execute_with(|| {
-        let wasm_payable_addr = deploy_wasm_payable();
-
-        assert_ok!(EVM::create2(
-            RuntimeOrigin::root(),
-            alith(),
-            hex::decode(CALL_WASM_PAYBLE).unwrap(),
-            H256::zero(),
-            U256::zero(),
-            1_000_000,
-            U256::from(DefaultBaseFeePerGas::get()),
-            None,
-            None,
-            vec![],
-        ));
-        System::assert_last_event(RuntimeEvent::EVM(pallet_evm::Event::Created {
-            address: call_wasm_payable_addr_h160(),
-        }));
+        let wasm_payable_addr = deploy_wasm_contract("payable");
+        deploy_evm_contract(CALL_WASM_PAYBLE, call_wasm_payable_addr_h160());
 
         let value = 1_000_000_000;
         assert_ok!(EVM::call(
@@ -265,5 +303,53 @@ fn calling_wasm_payable_from_evm_works() {
             Balances::free_balance(&wasm_payable_addr),
             value,
         );
+        assert_eq!(
+            Balances::free_balance(&account_id_from(call_wasm_payable_addr_h160())),
+            ExistentialDeposit::get(),
+        );
+    });
+}
+
+#[test]
+fn calling_evm_payable_from_wasm_works() {
+    new_test_ext().execute_with(|| {
+        deploy_evm_contract(EVM_PAYABLE, evm_payable_addr_h160());
+        let wasm_address = deploy_wasm_contract("call_xvm_payable");
+
+        let value = UNIT;
+
+        // TODO: after Account Unification finished, remove this mock account.
+        // It is needed now because currently the `AccountMapping` and `AddressMapping` are
+        // both one way mapping.
+        let mock_unified_wasm_account = account_id_from(h160_from(wasm_address.clone()));
+        let _ = Balances::deposit_creating(&mock_unified_wasm_account, value);
+
+        let evm_payable = evm_payable_addr_h160().as_ref().to_vec();
+        let deposit_func = hex::decode("d0e30db0").unwrap();
+        let input = hex::decode("0000002a")
+            .unwrap()
+            .iter()
+            .chain(evm_payable.encode().iter())
+            .chain(deposit_func.encode().iter())
+            .cloned()
+            .collect::<Vec<_>>();
+        assert_ok!(Contracts::call(
+            RuntimeOrigin::signed(ALICE),
+            MultiAddress::Id(wasm_address.clone()),
+            value,
+            Weight::from_parts(10_000_000_000, 10 * 1024 * 1024),
+            None,
+            input,
+        ));
+
+        assert_eq!(
+            Balances::free_balance(account_id_from(evm_payable_addr_h160())),
+            value
+        );
+
+        // TODO: after Account Unification finished, enable the wasm address balance check
+        // and remove the mock account balance check.
+        // assert_eq!(Balances::free_balance(&wasm_address), ExistentialDeposit::get());
+        assert_eq!(Balances::free_balance(&mock_unified_wasm_account), 0);
     });
 }

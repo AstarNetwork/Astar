@@ -41,8 +41,7 @@ impl From<CallError> for XvmExecutionResult {
             SameVmCallNotAllowed => 2,
             InvalidTarget => 3,
             InputTooLarge => 4,
-            BadOrigin => 5,
-            ExecutionFailed(_) => 6,
+            ExecutionFailed(_) => 5,
         };
         Self::Err(error_code)
     }

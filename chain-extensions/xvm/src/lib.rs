@@ -18,12 +18,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::xvm::{CallError, Context, VmId, XvmCall};
+use astar_primitives::xvm::{Context, VmId, XvmCall};
 use frame_support::dispatch::Encode;
-use pallet_contracts::{
-    chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal},
-    Origin,
-};
+use pallet_contracts::chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal};
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
 use xvm_chain_extension_types::{XvmCallArgs, XvmExecutionResult};
@@ -75,19 +72,6 @@ where
                 // So we will charge a 32KB dummy value as a temporary replacement.
                 let charged_weight = env.charge_weight(weight_limit.set_proof_size(32 * 1024))?;
 
-                let caller = match env.ext().caller().clone() {
-                    Origin::Signed(address) => address,
-                    Origin::Root => {
-                        log::trace!(
-                            target: "xvm-extension::xvm_call",
-                            "root origin not supported"
-                        );
-                        return Ok(RetVal::Converging(
-                            XvmExecutionResult::from(CallError::BadOrigin).into(),
-                        ));
-                    }
-                };
-
                 let XvmCallArgs {
                     vm_id,
                     to,
@@ -95,13 +79,15 @@ where
                     value,
                 } = env.read_as_unbounded(env.in_len())?;
 
-                let _origin_address = env.ext().address().clone();
-                let _value = env.ext().value_transferred();
+                // Similar to EVM behavior, the `source` should be (limited to) the
+                // contract address. Otherwise contracts would be able to do arbitrary
+                // things on be half of the caller via XVM.
+                let source = env.ext().address();
+
                 let xvm_context = Context {
                     source_vm_id: VmId::Wasm,
                     weight_limit,
                 };
-
                 let vm_id = {
                     match TryInto::<VmId>::try_into(vm_id) {
                         Ok(id) => id,
@@ -112,7 +98,7 @@ where
                         }
                     }
                 };
-                let call_result = XC::call(xvm_context, vm_id, caller, to, input, value);
+                let call_result = XC::call(xvm_context, vm_id, source.clone(), to, input, value);
 
                 let actual_weight = match call_result {
                     Ok(ref info) => info.used_weight,
