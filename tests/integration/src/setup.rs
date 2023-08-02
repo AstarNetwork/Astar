@@ -24,7 +24,7 @@ pub use frame_support::{
     weights::Weight,
 };
 pub use pallet_evm::AddressMapping;
-pub use sp_core::H160;
+pub use sp_core::{H160, H256, U256};
 pub use sp_runtime::{AccountId32, MultiAddress};
 
 pub use astar_primitives::ethereum_checked::AccountMapping;
@@ -60,6 +60,49 @@ mod shibuya {
     /// Convert `AccountId32` to `H160`.
     pub fn h160_from(account_id: AccountId32) -> H160 {
         <Runtime as pallet_ethereum_checked::Config>::AccountMapping::into_h160(account_id)
+    }
+
+    /// Deploy an EVM contract with code.
+    pub fn deploy_evm_contract(code: &str) -> H160 {
+        assert_ok!(EVM::create2(
+            RuntimeOrigin::root(),
+            alith(),
+            hex::decode(code).unwrap(),
+            H256::zero(),
+            U256::zero(),
+            1_000_000,
+            U256::from(DefaultBaseFeePerGas::get()),
+            None,
+            None,
+            vec![],
+        ));
+        match System::events().iter().last().unwrap().event {
+            RuntimeEvent::EVM(pallet_evm::Event::Created { address }) => address,
+            _ => panic!("Deploy failed."),
+        }
+    }
+
+    /// Deploy a WASM contract with its name. (The code is in `resource/`.)
+    pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
+        let path = format!("resource/{}.wasm", name);
+        let code = std::fs::read(path).unwrap();
+        let instantiate_result = Contracts::bare_instantiate(
+            ALICE,
+            0,
+            Weight::from_parts(10_000_000_000, 1024 * 1024),
+            None,
+            pallet_contracts_primitives::Code::Upload(code),
+            // `new` constructor
+            hex::decode("9bae9d5e").unwrap(),
+            vec![],
+            pallet_contracts::DebugInfo::Skip,
+            pallet_contracts::CollectEvents::Skip,
+        );
+
+        let address = instantiate_result.result.unwrap().account_id;
+        // On instantiation, the contract got existential deposit.
+        assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
+        address
     }
 }
 
