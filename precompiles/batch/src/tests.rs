@@ -14,38 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::mock::{
-    balance, precompile_address, BatchPrecompileMock, ExtBuilder, PCall, PrecompilesValue, Revert,
-    Runtime, RuntimeCall, RuntimeOrigin,
-};
+use crate::mock::{precompile_address, BatchPrecompileMock, ExtBuilder, PrecompilesValue, Runtime};
 use crate::{log_subcall_failed, log_subcall_succeeded, Mode, *};
 use fp_evm::ExitError;
-use frame_support::{
-    assert_ok,
-    dispatch::{DispatchError, Dispatchable},
-};
-use pallet_evm::Call as EvmCall;
-use precompile_utils::{evm::costs::call_cost, testing::*, *};
-use sha3::digest::typenum::U25;
+use frame_support::dispatch::{DispatchError, Dispatchable};
+use precompile_utils::{evm::costs::call_cost, testing::*};
 use sp_core::{H160, H256, U256};
 use sp_runtime::{DispatchErrorWithPostInfo, ModuleError};
 
 fn precompiles() -> BatchPrecompileMock<Runtime> {
     PrecompilesValue::get()
-}
-
-fn evm_call(from: impl Into<H160>, input: Vec<u8>) -> EvmCall<Runtime> {
-    EvmCall::call {
-        source: from.into(),
-        target: precompile_address().into(),
-        input,
-        value: U256::zero(), // No value sent in EVM
-        gas_limit: u64::max_value(),
-        max_fee_per_gas: 0.into(),
-        max_priority_fee_per_gas: Some(U256::zero()),
-        nonce: None, // Use the next nonce
-        access_list: Vec::new(),
-    }
 }
 
 fn costs() -> (u64, u64) {

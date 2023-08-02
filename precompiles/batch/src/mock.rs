@@ -124,8 +124,6 @@ where
     }
 }
 
-pub type PCall = BatchPrecompile<Runtime>;
-
 mock_account!(Revert, |_| MockAccount::from_u64(2));
 
 parameter_types! {
