@@ -33,10 +33,34 @@ pub use astar_primitives::ethereum_checked::AccountMapping;
 pub use shibuya::*;
 #[cfg(feature = "shibuya")]
 mod shibuya {
+    use super::*;
     pub use shibuya_runtime::*;
 
     /// 1 SBY.
     pub const UNIT: Balance = SBY;
+
+    // TODO: once Account Unification is finished, remove `alith` and `alicia`,
+    // which are mocks of two way account/address mapping.
+
+    /// H160 address mapped from `ALICE`.
+    pub fn alith() -> H160 {
+        h160_from(ALICE)
+    }
+
+    /// `AccountId32` mapped from `alith()`.
+    pub fn alicia() -> AccountId32 {
+        account_id_from(alith())
+    }
+
+    /// Convert `H160` to `AccountId32`.
+    pub fn account_id_from(address: H160) -> AccountId32 {
+        <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(address)
+    }
+
+    /// Convert `AccountId32` to `H160`.
+    pub fn h160_from(account_id: AccountId32) -> H160 {
+        <Runtime as pallet_ethereum_checked::Config>::AccountMapping::into_h160(account_id)
+    }
 }
 
 #[cfg(feature = "shiden")]
@@ -62,29 +86,6 @@ mod astar {
 pub const ALICE: AccountId32 = AccountId32::new([1_u8; 32]);
 pub const BOB: AccountId32 = AccountId32::new([2_u8; 32]);
 pub const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
-
-// TODO: once Account Unification is finished, remove `alith` and `alicia`,
-// which are mocks of two way account/address mapping.
-
-/// H160 address mapped from `ALICE`.
-pub fn alith() -> H160 {
-    h160_from(ALICE)
-}
-
-/// `AccountId32` mapped from `alith()`.
-pub fn alicia() -> AccountId32 {
-    account_id_from(alith())
-}
-
-/// Convert `H160` to `AccountId32`.
-pub fn account_id_from(address: H160) -> AccountId32 {
-    <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(address)
-}
-
-/// Convert `AccountId32` to `H160`.
-pub fn h160_from(account_id: AccountId32) -> H160 {
-    <Runtime as pallet_ethereum_checked::Config>::AccountMapping::into_h160(account_id)
-}
 
 pub const INITIAL_AMOUNT: u128 = 100_000 * UNIT;
 
@@ -133,6 +134,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             (ALICE, INITIAL_AMOUNT),
             (BOB, INITIAL_AMOUNT),
             (CAT, INITIAL_AMOUNT),
+            #[cfg(feature = "shibuya")]
             (alicia(), INITIAL_AMOUNT),
         ])
         .build()
