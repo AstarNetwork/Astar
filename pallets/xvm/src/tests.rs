@@ -148,7 +148,7 @@ fn evm_call_works() {
         MockEthereumTransact::assert_transacted(
             source,
             CheckedEthereumTx {
-                gas_limit: U256::from(182000),
+                gas_limit: U256::from(244000),
                 target: H160::repeat_byte(0xFF),
                 value: U256::from(value),
                 input: EthereumTxInput::try_from(input).unwrap(),
