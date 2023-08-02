@@ -9,17 +9,17 @@ repository.workspace = true
 
 [dependencies]
 # There's a problem with --all-features when this is moved under dev-deps
-evm = { workspace = true, features = [ "with-codec" ] }
+derive_more = { workspace = true, optional = true }
+environmental = { workspace = true }
+evm = { workspace = true, features = ["with-codec"] }
+hex-literal = { workspace = true, optional = true }
 impl-trait-for-tuples = { workspace = true }
 log = { workspace = true }
 num_enum = { workspace = true }
+scale-info = { workspace = true, optional = true, features = ["derive"] }
+serde = { workspace = true, optional = true }
 sha3 = { workspace = true }
 similar-asserts = { workspace = true, optional = true }
-scale-info = { workspace = true, optional = true, features = [ "derive" ] }
-serde = { workspace = true, optional = true }
-derive_more = { workspace = true, optional = true }
-hex-literal = { workspace = true, optional = true }
-environmental = { workspace = true }
 
 precompile-utils-macro = { path = "macro" }
 
@@ -60,4 +60,4 @@ std = [
 	"xcm/std",
 	"environmental/std",
 ]
-testing = ["similar-asserts", "std", "scale-info", "serde", "derive_more", "hex-literal" ]
+testing = ["similar-asserts", "std", "scale-info", "serde", "derive_more", "hex-literal"]

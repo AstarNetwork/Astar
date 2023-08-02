@@ -20,13 +20,16 @@
 
 use ::evm::{ExitError, ExitReason};
 use fp_evm::{Context, Log, PrecompileFailure, PrecompileHandle, Transfer};
-use frame_support::traits::ConstU32;
-use pallet_evm::PrecompileOutput;
+use frame_support::{
+    dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+    traits::ConstU32,
+};
+use pallet_evm::{Precompile, PrecompileOutput};
 use precompile_utils::{
     bytes::BoundedBytes,
     data::BoundedVec,
     evm::{costs::call_cost, logs::log1},
-    *, precompile_set::PrecompileSetFragment,
+    *,
 };
 use sp_core::{H160, U256};
 use sp_std::{iter::repeat, marker::PhantomData, vec, vec::Vec};
@@ -79,10 +82,10 @@ pub enum Action {
 #[derive(Debug, Clone)]
 pub struct BatchPrecompile<Runtime>(PhantomData<Runtime>);
 
-impl<Runtime> BatchPrecompile<Runtime>
+impl<Runtime> Precompile for BatchPrecompile<Runtime>
 where
-    Runtime: pallet_evm::Config + PrecompileSetFragment,
-	
+    Runtime: pallet_evm::Config,
+    Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let selector = handle.read_selector()?;
@@ -101,6 +104,7 @@ where
 impl<Runtime> BatchPrecompile<Runtime>
 where
     Runtime: pallet_evm::Config,
+    Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
 {
     fn batch_some(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;

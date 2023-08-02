@@ -17,10 +17,11 @@
 //! Test utilities
 use super::*;
 
+use fp_evm::IsPrecompileResult;
 use frame_support::traits::Everything;
 use frame_support::{construct_runtime, parameter_types, weights::Weight};
-use pallet_evm::{EnsureAddressNever, EnsureAddressRoot};
-use precompile_utils::{mock_account, precompile_set::*, testing::MockAccount};
+use pallet_evm::{EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet};
+use precompile_utils::{mock_account, testing::MockAccount};
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
@@ -96,30 +97,40 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
 }
 
-pub type Precompiles<R> = PrecompileSetBuilder<
-    R,
-    (
-        PrecompileAt<
-            AddressU64<1>,
-            BatchPrecompile<R>,
-            (
-                SubcallWithMaxNesting<1>,
-                // Batch is the only precompile allowed to call Batch.
-                CallableByPrecompile<OnlyFrom<AddressU64<1>>>,
-            ),
-        >,
-        RevertPrecompile<AddressU64<2>>,
-    ),
->;
+pub fn precompile_address() -> H160 {
+    H160::from_low_u64_be(0x5002)
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct BatchPrecompileMock<R>(PhantomData<R>);
+
+impl<R> PrecompileSet for BatchPrecompileMock<R>
+where
+    R: pallet_evm::Config,
+    BatchPrecompile<R>: Precompile,
+{
+    fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
+        match handle.code_address() {
+            a if a == precompile_address() => Some(BatchPrecompile::<R>::execute(handle)),
+            _ => None,
+        }
+    }
+
+    fn is_precompile(&self, address: sp_core::H160, _gas: u64) -> IsPrecompileResult {
+        IsPrecompileResult::Answer {
+            is_precompile: address == precompile_address(),
+            extra_cost: 0,
+        }
+    }
+}
 
 pub type PCall = BatchPrecompile<Runtime>;
 
-mock_account!(Batch, |_| MockAccount::from_u64(1));
 mock_account!(Revert, |_| MockAccount::from_u64(2));
 
 parameter_types! {
     pub BlockGasLimit: U256 = U256::max_value();
-    pub PrecompilesValue: Precompiles<Runtime> = Precompiles::new();
+    pub PrecompilesValue: BatchPrecompileMock<Runtime> = BatchPrecompileMock(Default::default());
     pub const WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
@@ -133,7 +144,7 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type PrecompilesType = Precompiles<Runtime>;
+    type PrecompilesType = BatchPrecompileMock<Runtime>;
     type PrecompilesValue = PrecompilesValue;
     type Timestamp = Timestamp;
     type ChainId = ();
@@ -143,7 +154,6 @@ impl pallet_evm::Config for Runtime {
     type FindAuthor = ();
     type OnCreate = ();
     type WeightInfo = ();
-
 }
 
 parameter_types! {

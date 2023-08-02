@@ -15,30 +15,29 @@
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::mock::{
-    balance, Batch, ExtBuilder, PCall, Precompiles, PrecompilesValue, Revert, Runtime, RuntimeCall,
-    RuntimeOrigin,
+    balance, precompile_address, BatchPrecompileMock, ExtBuilder, PCall, PrecompilesValue, Revert,
+    Runtime, RuntimeCall, RuntimeOrigin,
 };
-use crate::{
-    log_subcall_failed, log_subcall_succeeded, Mode, LOG_SUBCALL_FAILED, LOG_SUBCALL_SUCCEEDED,
-};
+use crate::{log_subcall_failed, log_subcall_succeeded, Mode, *};
 use fp_evm::ExitError;
 use frame_support::{
     assert_ok,
     dispatch::{DispatchError, Dispatchable},
 };
 use pallet_evm::Call as EvmCall;
-use precompile_utils::{evm::costs::call_cost, *, testing::*};
+use precompile_utils::{evm::costs::call_cost, testing::*, *};
+use sha3::digest::typenum::U25;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{DispatchErrorWithPostInfo, ModuleError};
 
-fn precompiles() -> Precompiles<Runtime> {
+fn precompiles() -> BatchPrecompileMock<Runtime> {
     PrecompilesValue::get()
 }
 
 fn evm_call(from: impl Into<H160>, input: Vec<u8>) -> EvmCall<Runtime> {
     EvmCall::call {
         source: from.into(),
-        target: Batch.into(),
+        target: precompile_address().into(),
         input,
         value: U256::zero(), // No value sent in EVM
         gas_limit: u64::max_value(),
@@ -50,12 +49,13 @@ fn evm_call(from: impl Into<H160>, input: Vec<u8>) -> EvmCall<Runtime> {
 }
 
 fn costs() -> (u64, u64) {
-    let return_log_cost = log_subcall_failed(Batch, 0).compute_cost().unwrap();
+    let return_log_cost = log_subcall_failed(precompile_address(), 0)
+        .compute_cost()
+        .unwrap();
     let call_cost =
         return_log_cost + call_cost(U256::one(), <Runtime as pallet_evm::Config>::config());
     (return_log_cost, call_cost)
 }
-
 
 #[test]
 fn batch_some_empty() {
@@ -63,16 +63,15 @@ fn batch_some_empty() {
         precompiles()
             .prepare_test(
                 Alice,
-                Batch,
-                PCall::batch_some {
-                    to: vec![].into(),
-                    value: vec![].into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into(),
-                },
+                precompile_address(),
+                EvmDataWriter::new_with_selector(Action::BatchSome)
+                    .write::<std::vec::Vec<Address>>(vec![])
+                    .write::<std::vec::Vec<U256>>(vec![])
+                    .write::<std::vec::Vec<Bytes>>(vec![])
+                    .write::<std::vec::Vec<U256>>(vec![])
+                    .build(),
             )
-            .with_subcall_handle(|Subcall { .. }| panic!("there should be no subcall"))
-            .execute_returns(())
+            .execute_returns(EvmDataWriter::new().write(true).build());
     })
 }
 
@@ -82,16 +81,15 @@ fn batch_some_until_failure_empty() {
         precompiles()
             .prepare_test(
                 Alice,
-                Batch,
-                PCall::batch_some_until_failure {
-                    to: vec![].into(),
-                    value: vec![].into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into(),
-                },
+                precompile_address(),
+                EvmDataWriter::new_with_selector(Action::BatchSomeUntilFailure)
+                    .write::<std::vec::Vec<Address>>(vec![])
+                    .write::<std::vec::Vec<U256>>(vec![])
+                    .write::<std::vec::Vec<Bytes>>(vec![])
+                    .write::<std::vec::Vec<U256>>(vec![])
+                    .build(),
             )
-            .with_subcall_handle(|Subcall { .. }| panic!("there should be no subcall"))
-            .execute_returns(())
+            .execute_returns(EvmDataWriter::new().write(true).build());
     })
 }
 
@@ -101,38 +99,45 @@ fn batch_all_empty() {
         precompiles()
             .prepare_test(
                 Alice,
-                Batch,
-                PCall::batch_all {
-                    to: vec![].into(),
-                    value: vec![].into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into(),
-                },
+                precompile_address(),
+                EvmDataWriter::new_with_selector(Action::BatchAll)
+                    .write::<std::vec::Vec<Address>>(vec![])
+                    .write::<std::vec::Vec<U256>>(vec![])
+                    .write::<std::vec::Vec<Bytes>>(vec![])
+                    .write::<std::vec::Vec<U256>>(vec![])
+                    .build(),
             )
-            .with_subcall_handle(|Subcall { .. }| panic!("there should be no subcall"))
-            .execute_returns(())
+            .execute_returns(EvmDataWriter::new().write(true).build());
     })
 }
 
-fn batch_returns(
-    precompiles: &Precompiles<Runtime>,
-    mode: Mode,
-) -> PrecompilesTester<Precompiles<Runtime>> {
-    let mut counter = 0;
+fn check_mode(mode: Mode) -> Action {
+    match mode {
+        Mode::BatchAll => Action::BatchAll,
+        Mode::BatchSome => Action::BatchSome,
+        Mode::BatchSomeUntilFailure => Action::BatchSomeUntilFailure,
+    }
+}
 
+fn batch_returns(
+    precompiles: &BatchPrecompileMock<Runtime>,
+    mode: Mode,
+) -> PrecompilesTester<BatchPrecompileMock<Runtime>> {
+    let mut counter = 0;
+    let one = b"one";
+    let two = b"two";
     let (_, total_call_cost) = costs();
 
     precompiles
         .prepare_test(
             Alice,
-            Batch,
-            PCall::batch_from_mode(
-                mode,
-                vec![Address(Bob.into()), Address(Charlie.into())],
-                vec![U256::from(1u8), U256::from(2u8)],
-                vec![b"one".to_vec(), b"two".to_vec()],
-                vec![],
-            ),
+            precompile_address(),
+            EvmDataWriter::new_with_selector(check_mode(mode))
+                .write(vec![Address(Bob.into()), Address(Charlie.into())])
+                .write(vec![U256::from(1u8), U256::from(2u8)])
+                .write(vec![Bytes::from(&one[..]), Bytes::from(&two[..])])
+                .write::<std::vec::Vec<U256>>(vec![])
+                .build(),
         )
         .with_target_gas(Some(100_000))
         .with_subcall_handle(move |subcall| {
@@ -211,10 +216,10 @@ fn batch_some_returns() {
     ExtBuilder::default().build().execute_with(|| {
         batch_returns(&precompiles(), Mode::BatchSome)
             .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
-            .expect_log(log_subcall_succeeded(Batch, 0))
+            .expect_log(log_subcall_succeeded(precompile_address(), 0))
             .expect_log(log1(Charlie, H256::repeat_byte(0x22), vec![]))
-            .expect_log(log_subcall_succeeded(Batch, 1))
-            .execute_returns(())
+            .expect_log(log_subcall_succeeded(precompile_address(), 1))
+            .execute_returns(EvmDataWriter::new().write(true).build())
     })
 }
 
@@ -223,10 +228,10 @@ fn batch_some_until_failure_returns() {
     ExtBuilder::default().build().execute_with(|| {
         batch_returns(&precompiles(), Mode::BatchSomeUntilFailure)
             .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
-            .expect_log(log_subcall_succeeded(Batch, 0))
+            .expect_log(log_subcall_succeeded(precompile_address(), 0))
             .expect_log(log1(Charlie, H256::repeat_byte(0x22), vec![]))
-            .expect_log(log_subcall_succeeded(Batch, 1))
-            .execute_returns(())
+            .expect_log(log_subcall_succeeded(precompile_address(), 1))
+            .execute_returns(EvmDataWriter::new().write(true).build())
     })
 }
 
@@ -235,30 +240,29 @@ fn batch_all_returns() {
     ExtBuilder::default().build().execute_with(|| {
         batch_returns(&precompiles(), Mode::BatchAll)
             .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
-            .expect_log(log_subcall_succeeded(Batch, 0))
+            .expect_log(log_subcall_succeeded(precompile_address(), 0))
             .expect_log(log1(Charlie, H256::repeat_byte(0x22), vec![]))
-            .expect_log(log_subcall_succeeded(Batch, 1))
-            .execute_returns(())
+            .expect_log(log_subcall_succeeded(precompile_address(), 1))
+            .execute_returns(EvmDataWriter::new().write(true).build())
     })
 }
 
 fn batch_out_of_gas(
-    precompiles: &Precompiles<Runtime>,
+    precompiles: &BatchPrecompileMock<Runtime>,
     mode: Mode,
-) -> PrecompilesTester<Precompiles<Runtime>> {
+) -> PrecompilesTester<BatchPrecompileMock<Runtime>> {
+    let one = b"one";
     let (_, total_call_cost) = costs();
-
     precompiles
         .prepare_test(
             Alice,
-            Batch,
-            PCall::batch_from_mode(
-                mode,
-                vec![Address(Bob.into())],
-                vec![U256::from(1u8)],
-                vec![b"one".to_vec()],
-                vec![],
-            ),
+            precompile_address(),
+            EvmDataWriter::new_with_selector(check_mode(mode))
+                .write(vec![Address(Bob.into())])
+                .write(vec![U256::from(1u8)])
+                .write(vec![Bytes::from(&one[..])])
+                .write::<std::vec::Vec<U256>>(vec![])
+                .build(),
         )
         .with_target_gas(Some(50_000))
         .with_subcall_handle(move |subcall| {
@@ -306,8 +310,8 @@ fn batch_out_of_gas(
 fn batch_some_out_of_gas() {
     ExtBuilder::default().build().execute_with(|| {
         batch_out_of_gas(&precompiles(), Mode::BatchSome)
-            .expect_log(log_subcall_failed(Batch, 0))
-            .execute_returns(())
+            .expect_log(log_subcall_failed(precompile_address(), 0))
+            .execute_returns(EvmDataWriter::new().write(true).build())
     })
 }
 
@@ -315,8 +319,8 @@ fn batch_some_out_of_gas() {
 fn batch_some_until_failure_out_of_gas() {
     ExtBuilder::default().build().execute_with(|| {
         batch_out_of_gas(&precompiles(), Mode::BatchSomeUntilFailure)
-            .expect_log(log_subcall_failed(Batch, 0))
-            .execute_returns(())
+            .expect_log(log_subcall_failed(precompile_address(), 0))
+            .execute_returns(EvmDataWriter::new().write(true).build())
     })
 }
 
@@ -328,28 +332,28 @@ fn batch_all_out_of_gas() {
 }
 
 fn batch_incomplete(
-    precompiles: &Precompiles<Runtime>,
+    precompiles: &BatchPrecompileMock<Runtime>,
     mode: Mode,
-) -> PrecompilesTester<Precompiles<Runtime>> {
+) -> PrecompilesTester<BatchPrecompileMock<Runtime>> {
     let mut counter = 0;
+    let one = b"one";
 
     let (_, total_call_cost) = costs();
 
     precompiles
         .prepare_test(
             Alice,
-            Batch,
-            PCall::batch_from_mode(
-                mode,
-                vec![
+            precompile_address(),
+            EvmDataWriter::new_with_selector(check_mode(mode))
+                .write(vec![
                     Address(Bob.into()),
                     Address(Charlie.into()),
                     Address(Alice.into()),
-                ],
-                vec![U256::from(1u8), U256::from(2u8), U256::from(3u8)],
-                vec![b"one".to_vec()],
-                vec![],
-            ),
+                ])
+                .write(vec![U256::from(1u8), U256::from(2u8), U256::from(3u8)])
+                .write(vec![Bytes::from(&one[..])])
+                .write::<std::vec::Vec<U256>>(vec![])
+                .build(),
         )
         .with_target_gas(Some(300_000))
         .with_subcall_handle(move |subcall| {
@@ -454,12 +458,12 @@ fn batch_some_incomplete() {
 
         batch_incomplete(&precompiles(), Mode::BatchSome)
             .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
-            .expect_log(log_subcall_succeeded(Batch, 0))
-            .expect_log(log_subcall_failed(Batch, 1))
+            .expect_log(log_subcall_succeeded(precompile_address(), 0))
+            .expect_log(log_subcall_failed(precompile_address(), 1))
             .expect_log(log1(Alice, H256::repeat_byte(0x33), vec![]))
-            .expect_log(log_subcall_succeeded(Batch, 2))
+            .expect_log(log_subcall_succeeded(precompile_address(), 2))
             .expect_cost(13 + 17 + 19 + total_call_cost * 3)
-            .execute_returns(())
+            .execute_returns(EvmDataWriter::new().write(true).build())
     })
 }
 
@@ -470,10 +474,10 @@ fn batch_some_until_failure_incomplete() {
 
         batch_incomplete(&precompiles(), Mode::BatchSomeUntilFailure)
             .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
-            .expect_log(log_subcall_succeeded(Batch, 0))
-            .expect_log(log_subcall_failed(Batch, 1))
+            .expect_log(log_subcall_succeeded(precompile_address(), 0))
+            .expect_log(log_subcall_failed(precompile_address(), 1))
             .expect_cost(13 + 17 + total_call_cost * 2)
-            .execute_returns(())
+            .execute_returns(EvmDataWriter::new().write(true).build())
     })
 }
 
@@ -486,22 +490,22 @@ fn batch_all_incomplete() {
 }
 
 fn batch_log_out_of_gas(
-    precompiles: &Precompiles<Runtime>,
+    precompiles: &BatchPrecompileMock<Runtime>,
     mode: Mode,
-) -> PrecompilesTester<Precompiles<Runtime>> {
+) -> PrecompilesTester<BatchPrecompileMock<Runtime>> {
     let (log_cost, _) = costs();
+    let one = b"one";
 
     precompiles
         .prepare_test(
             Alice,
-            Batch,
-            PCall::batch_from_mode(
-                mode,
-                vec![Address(Bob.into())],
-                vec![U256::from(1u8)],
-                vec![b"one".to_vec()],
-                vec![],
-            ),
+            precompile_address(),
+            EvmDataWriter::new_with_selector(check_mode(mode))
+                .write(vec![Address(Bob.into())])
+                .write(vec![U256::from(1u8)])
+                .write(vec![Bytes::from(&one[..])])
+                .write::<std::vec::Vec<U256>>(vec![])
+                .build(),
         )
         .with_target_gas(Some(log_cost - 1))
         .with_subcall_handle(move |_subcall| panic!("there shouldn't be any subcalls"))
@@ -519,7 +523,7 @@ fn batch_some_log_out_of_gas() {
     ExtBuilder::default().build().execute_with(|| {
         batch_log_out_of_gas(&precompiles(), Mode::BatchSome)
             .expect_no_logs()
-            .execute_returns(());
+            .execute_returns(EvmDataWriter::new().write(true).build());
     })
 }
 
@@ -528,27 +532,27 @@ fn batch_some_until_failure_log_out_of_gas() {
     ExtBuilder::default().build().execute_with(|| {
         batch_log_out_of_gas(&precompiles(), Mode::BatchSomeUntilFailure)
             .expect_no_logs()
-            .execute_returns(());
+            .execute_returns(EvmDataWriter::new().write(true).build());
     })
 }
 
 fn batch_call_out_of_gas(
-    precompiles: &Precompiles<Runtime>,
+    precompiles: &BatchPrecompileMock<Runtime>,
     mode: Mode,
-) -> PrecompilesTester<Precompiles<Runtime>> {
+) -> PrecompilesTester<BatchPrecompileMock<Runtime>> {
     let (_, total_call_cost) = costs();
+    let one = b"one";
 
     precompiles
         .prepare_test(
             Alice,
-            Batch,
-            PCall::batch_from_mode(
-                mode,
-                vec![Address(Bob.into())],
-                vec![U256::from(1u8)],
-                vec![b"one".to_vec()],
-                vec![],
-            ),
+            precompile_address(),
+            EvmDataWriter::new_with_selector(check_mode(mode))
+                .write(vec![Address(Bob.into())])
+                .write(vec![U256::from(1u8)])
+                .write(vec![Bytes::from(&one[..])])
+                .write::<std::vec::Vec<U256>>(vec![])
+                .build(),
         )
         .with_target_gas(Some(total_call_cost - 1))
         .with_subcall_handle(move |_subcall| panic!("there shouldn't be any subcalls"))
@@ -565,8 +569,8 @@ fn batch_all_call_out_of_gas() {
 fn batch_some_call_out_of_gas() {
     ExtBuilder::default().build().execute_with(|| {
         batch_call_out_of_gas(&precompiles(), Mode::BatchSome)
-            .expect_log(log_subcall_failed(Batch, 0))
-            .execute_returns(());
+            .expect_log(log_subcall_failed(precompile_address(), 0))
+            .execute_returns(EvmDataWriter::new().write(true).build());
     })
 }
 
@@ -574,28 +578,28 @@ fn batch_some_call_out_of_gas() {
 fn batch_some_until_failure_call_out_of_gas() {
     ExtBuilder::default().build().execute_with(|| {
         batch_call_out_of_gas(&precompiles(), Mode::BatchSomeUntilFailure)
-            .expect_log(log_subcall_failed(Batch, 0))
-            .execute_returns(());
+            .expect_log(log_subcall_failed(precompile_address(), 0))
+            .execute_returns(EvmDataWriter::new().write(true).build());
     })
 }
 
 fn batch_gas_limit(
-    precompiles: &Precompiles<Runtime>,
+    precompiles: &BatchPrecompileMock<Runtime>,
     mode: Mode,
-) -> PrecompilesTester<Precompiles<Runtime>> {
+) -> PrecompilesTester<BatchPrecompileMock<Runtime>> {
     let (_, total_call_cost) = costs();
+    let one = b"one";
 
     precompiles
         .prepare_test(
             Alice,
-            Batch,
-            PCall::batch_from_mode(
-                mode,
-                vec![Address(Bob.into())],
-                vec![U256::from(1u8)],
-                vec![b"one".to_vec()],
-                vec![50_000 - total_call_cost + 1],
-            ),
+            precompile_address(),
+            EvmDataWriter::new_with_selector(check_mode(mode))
+                .write(vec![Address(Bob.into())])
+                .write(vec![U256::from(1u8)])
+                .write(vec![Bytes::from(&one[..])])
+                .write::<std::vec::Vec<U256>>(vec![U256::from(50_000 - total_call_cost + 1)])
+                .build(),
         )
         .with_target_gas(Some(50_000))
         .with_subcall_handle(move |_subcall| panic!("there shouldn't be any subcalls"))
@@ -614,9 +618,9 @@ fn batch_some_gas_limit() {
         let (return_log_cost, _) = costs();
 
         batch_gas_limit(&precompiles(), Mode::BatchSome)
-            .expect_log(log_subcall_failed(Batch, 0))
+            .expect_log(log_subcall_failed(precompile_address(), 0))
             .expect_cost(return_log_cost)
-            .execute_returns(());
+            .execute_returns(EvmDataWriter::new().write(true).build());
     })
 }
 
@@ -624,441 +628,7 @@ fn batch_some_gas_limit() {
 fn batch_some_until_failure_gas_limit() {
     ExtBuilder::default().build().execute_with(|| {
         batch_gas_limit(&precompiles(), Mode::BatchSomeUntilFailure)
-            .expect_log(log_subcall_failed(Batch, 0))
-            .execute_returns(());
+            .expect_log(log_subcall_failed(precompile_address(), 0))
+            .execute_returns(EvmDataWriter::new().write(true).build());
     })
-}
-
-#[test]
-fn evm_batch_some_transfers_enough() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            assert_ok!(RuntimeCall::Evm(evm_call(
-                Alice,
-                PCall::batch_some {
-                    to: vec![Address(Bob.into()), Address(Charlie.into())].into(),
-                    value: vec![U256::from(1_000u16), U256::from(2_000u16)].into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into(),
-                }
-                .into()
-            ))
-            .dispatch(RuntimeOrigin::root()));
-        })
-}
-
-#[test]
-fn evm_batch_some_until_failure_transfers_enough() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            assert_ok!(RuntimeCall::Evm(evm_call(
-                Alice,
-                PCall::batch_some_until_failure {
-                    to: vec![Address(Bob.into()), Address(Charlie.into())].into(),
-                    value: vec![U256::from(1_000u16), U256::from(2_000u16)].into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into(),
-                }
-                .into()
-            ))
-            .dispatch(RuntimeOrigin::root()));
-        })
-}
-
-#[test]
-fn evm_batch_all_transfers_enough() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            assert_ok!(RuntimeCall::Evm(evm_call(
-                Alice,
-                PCall::batch_all {
-                    to: vec![Address(Bob.into()), Address(Charlie.into())].into(),
-                    value: vec![U256::from(1_000u16), U256::from(2_000u16)].into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into(),
-                }
-                .into()
-            ))
-            .dispatch(RuntimeOrigin::root()));
-
-            assert_eq!(balance(Bob), 1_000);
-            assert_eq!(balance(Charlie), 2_000);
-        })
-}
-
-#[test]
-fn evm_batch_some_transfers_too_much() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            assert_ok!(RuntimeCall::Evm(evm_call(
-                Alice,
-                PCall::batch_some {
-                    to: vec![
-                        Address(Bob.into()),
-                        Address(Charlie.into()),
-                        Address(David.into()),
-                    ]
-                    .into(),
-                    value: vec![
-                        U256::from(9_000u16),
-                        U256::from(2_000u16),
-                        U256::from(500u16)
-                    ]
-                    .into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into()
-                }
-                .into()
-            ))
-            .dispatch(RuntimeOrigin::root()));
-
-            assert_eq!(balance(Alice), 500); // gasprice = 0
-            assert_eq!(balance(Bob), 9_000);
-            assert_eq!(balance(Charlie), 0);
-            assert_eq!(balance(David), 500);
-        })
-}
-
-#[test]
-fn evm_batch_some_until_failure_transfers_too_much() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            assert_ok!(RuntimeCall::Evm(evm_call(
-                Alice,
-                PCall::batch_some_until_failure {
-                    to: vec![
-                        Address(Bob.into()),
-                        Address(Charlie.into()),
-                        Address(David.into()),
-                    ]
-                    .into(),
-                    value: vec![
-                        U256::from(9_000u16),
-                        U256::from(2_000u16),
-                        U256::from(500u16)
-                    ]
-                    .into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into()
-                }
-                .into()
-            ))
-            .dispatch(RuntimeOrigin::root()));
-
-            assert_eq!(balance(Alice), 1_000); // gasprice = 0
-            assert_eq!(balance(Bob), 9_000);
-            assert_eq!(balance(Charlie), 0);
-            assert_eq!(balance(David), 0);
-        })
-}
-
-#[test]
-fn evm_batch_all_transfers_too_much() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            assert_ok!(RuntimeCall::Evm(evm_call(
-                Alice,
-                PCall::batch_all {
-                    to: vec![
-                        Address(Bob.into()),
-                        Address(Charlie.into()),
-                        Address(David.into()),
-                    ]
-                    .into(),
-                    value: vec![
-                        U256::from(9_000u16),
-                        U256::from(2_000u16),
-                        U256::from(500u16)
-                    ]
-                    .into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into()
-                }
-                .into()
-            ))
-            .dispatch(RuntimeOrigin::root()));
-
-            assert_eq!(balance(Alice), 10_000); // gasprice = 0
-            assert_eq!(balance(Bob), 0);
-            assert_eq!(balance(Charlie), 0);
-            assert_eq!(balance(David), 0);
-        })
-}
-
-#[test]
-fn evm_batch_some_contract_revert() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            assert_ok!(RuntimeCall::Evm(evm_call(
-                Alice,
-                PCall::batch_some {
-                    to: vec![
-                        Address(Bob.into()),
-                        Address(Revert.into()),
-                        Address(David.into()),
-                    ]
-                    .into(),
-                    value: vec![
-                        U256::from(1_000u16),
-                        U256::from(2_000),
-                        U256::from(3_000u16)
-                    ]
-                    .into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into()
-                }
-                .into()
-            ))
-            .dispatch(RuntimeOrigin::root()));
-
-            assert_eq!(balance(Alice), 6_000); // gasprice = 0
-            assert_eq!(balance(Bob), 1_000);
-            assert_eq!(balance(Revert), 0);
-            assert_eq!(balance(David), 3_000);
-        })
-}
-
-#[test]
-fn evm_batch_some_until_failure_contract_revert() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            assert_ok!(RuntimeCall::Evm(evm_call(
-                Alice,
-                PCall::batch_some_until_failure {
-                    to: vec![
-                        Address(Bob.into()),
-                        Address(Revert.into()),
-                        Address(David.into()),
-                    ]
-                    .into(),
-                    value: vec![
-                        U256::from(1_000u16),
-                        U256::from(2_000),
-                        U256::from(3_000u16)
-                    ]
-                    .into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into()
-                }
-                .into()
-            ))
-            .dispatch(RuntimeOrigin::root()));
-
-            assert_eq!(balance(Alice), 9_000); // gasprice = 0
-            assert_eq!(balance(Bob), 1_000);
-            assert_eq!(balance(Revert), 0);
-            assert_eq!(balance(David), 0);
-        })
-}
-
-#[test]
-fn evm_batch_all_contract_revert() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            assert_ok!(RuntimeCall::Evm(evm_call(
-                Alice,
-                PCall::batch_all {
-                    to: vec![
-                        Address(Bob.into()),
-                        Address(Revert.into()),
-                        Address(David.into()),
-                    ]
-                    .into(),
-                    value: vec![
-                        U256::from(1_000u16),
-                        U256::from(2_000),
-                        U256::from(3_000u16)
-                    ]
-                    .into(),
-                    call_data: vec![].into(),
-                    gas_limit: vec![].into()
-                }
-                .into()
-            ))
-            .dispatch(RuntimeOrigin::root()));
-
-            assert_eq!(balance(Alice), 10_000); // gasprice = 0
-            assert_eq!(balance(Bob), 0);
-            assert_eq!(balance(Revert), 0);
-            assert_eq!(balance(David), 0);
-        })
-}
-
-#[test]
-fn evm_batch_recursion_under_limit() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            // Mock sets the recursion limit to 2, and we 2 nested batch.
-            // Thus it succeeds.
-
-            let input = PCall::batch_all {
-                to: vec![Address(Batch.into())].into(),
-                value: vec![].into(),
-                gas_limit: vec![].into(),
-                call_data: vec![PCall::batch_all {
-                    to: vec![Address(Bob.into())].into(),
-                    value: vec![1000_u32.into()].into(),
-                    gas_limit: vec![].into(),
-                    call_data: vec![].into(),
-                }
-                .encode()
-                .into()]
-                .into(),
-            }
-            .into();
-
-            assert_ok!(RuntimeCall::Evm(evm_call(Alice, input)).dispatch(RuntimeOrigin::root()));
-
-            assert_eq!(balance(Alice), 9_000); // gasprice = 0
-            assert_eq!(balance(Bob), 1_000);
-        })
-}
-
-#[test]
-fn evm_batch_recursion_over_limit() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            // Mock sets the recursion limit to 2, and we 3 nested batch.
-            // Thus it reverts.
-
-            let input = PCall::batch_from_mode(
-                Mode::BatchAll,
-                vec![Address(Batch.into())],
-                vec![],
-                vec![PCall::batch_from_mode(
-                    Mode::BatchAll,
-                    vec![Address(Batch.into())],
-                    vec![],
-                    vec![PCall::batch_from_mode(
-                        Mode::BatchAll,
-                        vec![Address(Bob.into())],
-                        vec![1000_u32.into()],
-                        vec![],
-                        vec![].into(),
-                    )
-                    .into()],
-                    vec![].into(),
-                )
-                .into()],
-                vec![],
-            )
-            .into();
-
-            assert_ok!(RuntimeCall::Evm(evm_call(Alice, input)).dispatch(RuntimeOrigin::root()));
-
-            assert_eq!(balance(Alice), 10_000); // gasprice = 0
-            assert_eq!(balance(Bob), 0);
-        })
-}
-
-#[test]
-fn batch_not_callable_by_smart_contract() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            // "deploy" SC to alice address
-            let alice_h160: H160 = Alice.into();
-            pallet_evm::AccountCodes::<Runtime>::insert(alice_h160, vec![10u8]);
-
-            // succeeds if not called by SC, see `evm_batch_recursion_under_limit`
-            let input = PCall::batch_all {
-                to: vec![Address(Batch.into())].into(),
-                value: vec![].into(),
-                gas_limit: vec![].into(),
-                call_data: vec![PCall::batch_all {
-                    to: vec![Address(Bob.into())].into(),
-                    value: vec![1000_u32.into()].into(),
-                    gas_limit: vec![].into(),
-                    call_data: vec![].into(),
-                }
-                .encode()
-                .into()]
-                .into(),
-            }
-            .into();
-
-            match RuntimeCall::Evm(evm_call(Alice, input)).dispatch(RuntimeOrigin::root()) {
-                Err(DispatchErrorWithPostInfo {
-                    error:
-                        DispatchError::Module(ModuleError {
-                            message: Some(err_msg),
-                            ..
-                        }),
-                    ..
-                }) => assert_eq!("TransactionMustComeFromEOA", err_msg),
-                _ => panic!("expected error 'TransactionMustComeFromEOA'"),
-            }
-        })
-}
-
-#[test]
-fn batch_is_not_callable_by_dummy_code() {
-    ExtBuilder::default()
-        .with_balances(vec![(Alice.into(), 10_000)])
-        .build()
-        .execute_with(|| {
-            // "deploy" dummy code to alice address
-            let alice_h160: H160 = Alice.into();
-            pallet_evm::AccountCodes::<Runtime>::insert(
-                alice_h160,
-                [0x60, 0x00, 0x60, 0x00, 0xfd].to_vec(),
-            );
-
-            // succeeds if called by dummy code, see `evm_batch_recursion_under_limit`
-            let input = PCall::batch_all {
-                to: vec![Address(Batch.into())].into(),
-                value: vec![].into(),
-                gas_limit: vec![].into(),
-                call_data: vec![PCall::batch_all {
-                    to: vec![Address(Bob.into())].into(),
-                    value: vec![1000_u32.into()].into(),
-                    gas_limit: vec![].into(),
-                    call_data: vec![].into(),
-                }
-                .encode()
-                .into()]
-                .into(),
-            }
-            .into();
-
-            match RuntimeCall::Evm(evm_call(Alice, input)).dispatch(RuntimeOrigin::root()) {
-                Err(DispatchErrorWithPostInfo {
-                    error:
-                        DispatchError::Module(ModuleError {
-                            message: Some(err_msg),
-                            ..
-                        }),
-                    ..
-                }) => assert_eq!("TransactionMustComeFromEOA", err_msg),
-                _ => panic!("expected error 'TransactionMustComeFromEOA'"),
-            }
-        })
-}
-
-#[test]
-fn test_solidity_interface_has_all_function_selectors_documented_and_implemented() {
-    check_precompile_implements_solidity_interfaces(&["Batch.sol"], PCall::supports_selector)
 }

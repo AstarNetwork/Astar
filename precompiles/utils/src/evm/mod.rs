@@ -15,5 +15,5 @@
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
 pub mod costs;
-pub mod logs;
 pub mod handle;
+pub mod logs;

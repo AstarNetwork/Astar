@@ -23,6 +23,7 @@ use pallet_evm::{
     PrecompileResult, PrecompileSet,
 };
 use pallet_evm_precompile_assets_erc20::{AddressToAssetId, Erc20AssetsPrecompileSet};
+use pallet_evm_precompile_batch::BatchPrecompile;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dapps_staking::DappsStakingWrapper;
@@ -58,7 +59,8 @@ impl<R, C> ShibuyaNetworkPrecompiles<R, C> {
     /// under the precompile.
     pub fn used_addresses() -> impl Iterator<Item = H160> {
         sp_std::vec![
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484, 20485
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484, 20485,
+            20486
         ]
         .into_iter()
         .map(hash)
@@ -74,6 +76,7 @@ where
     DappsStakingWrapper<R>: Precompile,
     XcmPrecompile<R, C>: Precompile,
     XvmPrecompile<R>: Precompile,
+    BatchPrecompile<R>: Precompile,
     Dispatch<R>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config
@@ -121,6 +124,8 @@ where
             a if a == hash(20484) => Some(XcmPrecompile::<R, C>::execute(handle)),
             // Xvm 0x5005
             a if a == hash(20485) => Some(XvmPrecompile::<R>::execute(handle)),
+            // Batch 0x5006
+            a if a == hash(20486) => Some(BatchPrecompile::<R>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)
