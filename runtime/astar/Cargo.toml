@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "5.11.0"
+version = "5.16.1"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -57,7 +57,6 @@ pallet-identity = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
-pallet-state-trie-migration = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
@@ -94,6 +93,7 @@ pallet-collective = { workspace = true, optional = true }
 frame-try-runtime = { workspace = true, optional = true }
 
 # Astar pallets
+astar-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-custom-signatures = { workspace = true }
@@ -105,7 +105,6 @@ pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
-xcm-primitives = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -139,6 +138,7 @@ std = [
 	"frame-executive/std",
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",
+	"frame-try-runtime/std",
 	"pallet-assets/std",
 	"pallet-authorship/std",
 	"pallet-aura/std",
@@ -165,7 +165,6 @@ std = [
 	"pallet-identity/std",
 	"pallet-multisig/std",
 	"pallet-session/std",
-	"pallet-state-trie-migration/std",
 	"pallet-utility/std",
 	"pallet-timestamp/std",
 	"pallet-vesting/std",
@@ -198,8 +197,8 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
-	"xcm-primitives/std",
 	"substrate-wasm-builder",
+	"astar-primitives/std",
 ]
 runtime-benchmarks = [
 	'frame-benchmarking',
@@ -219,6 +218,7 @@ runtime-benchmarks = [
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -257,7 +257,6 @@ try-runtime = [
 	"pallet-base-fee/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-evm/try-runtime",
-	"pallet-state-trie-migration/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

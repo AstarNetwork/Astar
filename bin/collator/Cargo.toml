@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "5.11.0"
+version = "5.16.1"
 description = "Astar collator implementation in Rust."
 build = "build.rs"
 default-run = "astar-collator"
@@ -55,9 +55,10 @@ sc-client-db = { workspace = true }
 sc-consensus = { workspace = true }
 sc-consensus-aura = { workspace = true }
 sc-consensus-babe = { workspace = true }
+sc-consensus-grandpa = { workspace = true }
 sc-executor = { workspace = true }
-sc-finality-grandpa = { workspace = true }
 sc-network = { workspace = true }
+sc-network-sync = { workspace = true }
 sc-offchain = { workspace = true }
 sc-rpc = { workspace = true }
 sc-service = { workspace = true }
@@ -92,6 +93,7 @@ shibuya-runtime = { workspace = true, features = ["std"] }
 shiden-runtime = { workspace = true, features = ["std"] }
 
 # astar pallets dependencies
+astar-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 
 # frame dependencies
@@ -161,6 +163,7 @@ runtime-benchmarks = [
 	"sp-keyring",
 	"cumulus-test-relay-sproof-builder",
 	"polkadot-runtime-common",
+	"astar-primitives/runtime-benchmarks",
 ]
 cli = ["try-runtime-cli"]
 try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]

@@ -24,8 +24,8 @@ use crate::{
         self, astar, chain_spec, service::AdditionalConfig, shibuya, shiden, start_astar_node,
         start_shibuya_node, start_shiden_node,
     },
-    primitives::Block,
 };
+use astar_primitives::*;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::{error, info};
@@ -416,7 +416,7 @@ pub fn run() -> Result<()> {
                         parachain::build_import_queue,
                     )?;
                     let aux_revert = Box::new(|client, _, blocks| {
-                        sc_finality_grandpa::revert(client, blocks)?;
+                        sc_consensus_grandpa::revert(client, blocks)?;
                         Ok(())
                     });
                     Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
@@ -433,7 +433,7 @@ pub fn run() -> Result<()> {
                         parachain::build_import_queue,
                     )?;
                     let aux_revert = Box::new(|client, _, blocks| {
-                        sc_finality_grandpa::revert(client, blocks)?;
+                        sc_consensus_grandpa::revert(client, blocks)?;
                         Ok(())
                     });
                     Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
@@ -450,7 +450,7 @@ pub fn run() -> Result<()> {
                         parachain::build_import_queue,
                     )?;
                     let aux_revert = Box::new(|client, _, blocks| {
-                        sc_finality_grandpa::revert(client, blocks)?;
+                        sc_consensus_grandpa::revert(client, blocks)?;
                         Ok(())
                     });
                     Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
@@ -962,12 +962,8 @@ impl DefaultConfigurationValues for RelayChainCli {
         30334
     }
 
-    fn rpc_ws_listen_port() -> u16 {
+    fn rpc_listen_port() -> u16 {
         9945
-    }
-
-    fn rpc_http_listen_port() -> u16 {
-        9934
     }
 
     fn prometheus_listen_port() -> u16 {
@@ -999,16 +995,8 @@ impl CliConfiguration<Self> for RelayChainCli {
             .or_else(|| self.base_path.clone().map(Into::into)))
     }
 
-    fn rpc_http(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
-        self.base.base.rpc_http(default_listen_port)
-    }
-
-    fn rpc_ipc(&self) -> Result<Option<String>> {
-        self.base.base.rpc_ipc()
-    }
-
-    fn rpc_ws(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
-        self.base.base.rpc_ws(default_listen_port)
+    fn rpc_addr(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
+        self.base.base.rpc_addr(default_listen_port)
     }
 
     fn prometheus_config(
@@ -1060,8 +1048,8 @@ impl CliConfiguration<Self> for RelayChainCli {
         self.base.base.rpc_methods()
     }
 
-    fn rpc_ws_max_connections(&self) -> Result<Option<usize>> {
-        self.base.base.rpc_ws_max_connections()
+    fn rpc_max_connections(&self) -> Result<u32> {
+        self.base.base.rpc_max_connections()
     }
 
     fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {

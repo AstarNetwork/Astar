@@ -20,18 +20,19 @@
 
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, TxPool, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 use sc_client_api::{AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider};
 use sc_network::NetworkService;
+use sc_network_sync::SyncingService;
 use sc_rpc::dev::DevApiServer;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
@@ -44,10 +45,11 @@ use substrate_frame_rpc_system::{System, SystemApiServer};
 use moonbeam_rpc_debug::{Debug, DebugServer};
 #[cfg(feature = "evm-tracing")]
 use moonbeam_rpc_trace::{Trace, TraceServer};
+// TODO: get rid of this completely now that it's part of frontier?
 #[cfg(feature = "evm-tracing")]
-use moonbeam_rpc_txpool::{TxPool, TxPoolServer};
+use moonbeam_rpc_txpool::{TxPool as MoonbeamTxPool, TxPoolServer};
 
-use crate::primitives::*;
+use astar_primitives::*;
 
 #[cfg(feature = "evm-tracing")]
 pub mod tracing;
@@ -65,22 +67,16 @@ pub struct EvmTracingConfig {
 pub fn open_frontier_backend<C>(
     client: Arc<C>,
     config: &sc_service::Configuration,
-) -> Result<Arc<fc_db::Backend<Block>>, String>
+) -> Result<Arc<fc_db::kv::Backend<Block>>, String>
 where
     C: sp_blockchain::HeaderBackend<Block>,
 {
-    let config_dir = config
-        .base_path
-        .as_ref()
-        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
-        .unwrap_or_else(|| {
-            sc_service::BasePath::from_project("", "", "astar").config_dir(config.chain_spec.id())
-        });
+    let config_dir = config.base_path.config_dir(config.chain_spec.id());
     let path = config_dir.join("frontier").join("db");
 
-    Ok(Arc::new(fc_db::Backend::<Block>::new(
+    Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
         client,
-        &fc_db::DatabaseSettings {
+        &fc_db::kv::DatabaseSettings {
             source: fc_db::DatabaseSource::RocksDb {
                 path,
                 cache_size: 0,
@@ -99,15 +95,17 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub graph: Arc<Pool<A>>,
     /// Network service
     pub network: Arc<NetworkService<Block, Hash>>,
+    /// Chain syncing service
+    pub sync: Arc<SyncingService<Block>>,
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
     /// The Node authority flag
     pub is_authority: bool,
     /// Frontier Backend.
-    pub frontier_backend: Arc<fc_db::Backend<Block>>,
+    pub frontier_backend: Arc<dyn fc_db::BackendReader<Block> + Send + Sync>,
     /// EthFilterApi pool.
     pub filter_pool: FilterPool,
-    /// Maximum fee history cache size.                                                                                    
+    /// Maximum fee history cache size.
     pub fee_history_limit: u64,
     /// Fee history cache.
     pub fee_history_cache: FeeHistoryCache,
@@ -124,11 +122,17 @@ pub struct FullDeps<C, P, A: ChainApi> {
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
     tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
         + HeaderMetadata<Block, Error = BlockChainError>
@@ -153,10 +157,10 @@ where
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
 
-    let mut io = create_full_rpc(deps, subscription_task_executor)?;
+    let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
 
     if tracing_config.enable_txpool {
-        io.merge(TxPool::new(Arc::clone(&client), graph).into_rpc())?;
+        io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
     }
 
     if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
@@ -182,10 +186,16 @@ where
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
         + HeaderMetadata<Block, Error = BlockChainError>
@@ -205,16 +215,22 @@ where
     BE::Blockchain: BlockchainBackend<Block>,
     A: ChainApi<Block = Block> + 'static,
 {
-    create_full_rpc(deps, subscription_task_executor)
+    create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
 }
 
 fn create_full_rpc<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
         + HeaderMetadata<Block, Error = BlockChainError>
@@ -240,6 +256,7 @@ where
         pool,
         graph,
         network,
+        sync,
         deny_unsafe,
         is_authority,
         frontier_backend,
@@ -267,7 +284,7 @@ where
             pool.clone(),
             graph.clone(),
             no_tx_converter,
-            network.clone(),
+            sync.clone(),
             Default::default(),
             overrides.clone(),
             frontier_backend.clone(),
@@ -277,16 +294,19 @@ where
             fee_history_limit,
             // Allow 10x max allowed weight for non-transactional calls
             10,
+            None,
         )
         .into_rpc(),
     )?;
 
     let max_past_logs: u32 = 10_000;
     let max_stored_filters: usize = 500;
+    let tx_pool = TxPool::new(client.clone(), graph);
     io.merge(
         EthFilter::new(
             client.clone(),
             frontier_backend,
+            tx_pool.clone(),
             filter_pool,
             max_stored_filters,
             max_past_logs,
@@ -303,9 +323,10 @@ where
         EthPubSub::new(
             pool,
             client.clone(),
-            network,
+            sync,
             subscription_task_executor,
             overrides,
+            pubsub_notification_sinks,
         )
         .into_rpc(),
     )?;

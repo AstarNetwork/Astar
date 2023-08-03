@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{Config, Pallet, Store};
+use crate::{Config, Pallet, VersionNotifyTargets};
 use frame_support::{
     pallet_prelude::*,
     traits::{OnRuntimeUpgrade, StorageVersion},
@@ -33,7 +33,7 @@ pub mod v1 {
     pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
     impl<T: Config> OnRuntimeUpgrade for MigrateToV1<T> {
         #[cfg(feature = "try-runtime")]
-        fn pre_upgrade() -> Result<sp_std::vec::Vec<u8>, &'static str> {
+        fn pre_upgrade() -> Result<sp_std::vec::Vec<u8>, sp_runtime::TryRuntimeError> {
             ensure!(
                 StorageVersion::get::<Pallet<T>>() == 0,
                 "must upgrade linearly"
@@ -53,7 +53,7 @@ pub mod v1 {
                     Some(translated)
                 };
 
-                <Pallet<T> as Store>::VersionNotifyTargets::translate_values(translate);
+                VersionNotifyTargets::<T>::translate_values(translate);
 
                 log::info!("v1 applied successfully");
                 STORAGE_VERSION.put::<Pallet<T>>();

@@ -137,7 +137,6 @@ pub fn run_to_block(n: u32) {
         BaseFee::on_initialize(block_number);
         #[cfg(any(feature = "shibuya", feature = "shiden", features = "astar"))]
         RandomnessCollectiveFlip::on_initialize(block_number);
-        StateTrieMigration::on_initialize(block_number);
 
         XcmpQueue::on_idle(block_number, Weight::MAX);
         DmpQueue::on_idle(block_number, Weight::MAX);

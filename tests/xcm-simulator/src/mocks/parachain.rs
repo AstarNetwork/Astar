@@ -23,8 +23,8 @@ use frame_support::{
     dispatch::DispatchClass,
     match_types, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, Everything, Imbalance,
-        InstanceFilter, Nothing, OnUnbalanced,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, Currency, Everything,
+        Imbalance, InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -34,7 +34,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureSigned,
+    EnsureRoot, EnsureSigned,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::{ConstBool, H256};
@@ -65,7 +65,7 @@ use xcm_executor::{
     XcmExecutor,
 };
 
-use xcm_primitives::{
+use astar_primitives::xcm::{
     AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 
@@ -124,6 +124,10 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -140,7 +144,7 @@ impl pallet_assets::Config for Runtime {
     type AssetIdParameter = AssetId;
     type Currency = Balances;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = ConstU128<10>;
     type MetadataDepositBase = ConstU128<10>;
     type MetadataDepositPerByte = ConstU128<1>;
@@ -206,15 +210,25 @@ parameter_types! {
 parameter_types! {
     pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
     pub const DepositPerByte: Balance = MILLISDN / 1_000_000;
-    // The lazy deletion runs inside on_initialize.
-    pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
-        RuntimeBlockWeights::get().max_block;
+    pub const DefaultDepositLimit: Balance = 1000 * MILLISDN;
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
 impl Convert<Weight, Balance> for Runtime {
     fn convert(w: Weight) -> Balance {
         w.ref_time().into()
+    }
+}
+
+pub struct CallFilter;
+impl Contains<RuntimeCall> for CallFilter {
+    fn contains(call: &RuntimeCall) -> bool {
+        match call {
+            // allow pallet_xcm::send()
+            RuntimeCall::PolkadotXcm(pallet_xcm::Call::send { .. }) => true,
+            // no other calls allowed
+            _ => false,
+        }
     }
 }
 
@@ -230,21 +244,20 @@ impl pallet_contracts::Config for Runtime {
     /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
-    type CallFilter = Nothing;
+    type CallFilter = CallFilter;
     type DepositPerItem = DepositPerItem;
     type DepositPerByte = DepositPerByte;
+    type DefaultDepositLimit = DefaultDepositLimit;
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     /// We are not using the pallet_transaction_payment for simplicity
     type WeightPrice = Self;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = ();
-    type DeletionQueueDepth = ConstU32<128>;
-    type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
     type MaxStorageKeyLen = ConstU32<128>;
-    type UnsafeUnstableInterface = ConstBool<false>;
+    type UnsafeUnstableInterface = ConstBool<true>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
@@ -379,7 +392,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
     type XcAssetChanged = ();
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Runtime>;
 }
 
@@ -388,8 +401,8 @@ impl cumulus_pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_div(4));
-    pub const ReservedDmpWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_div(4));
+    pub const ReservedXcmpWeight: Weight = Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_div(4), 0);
+    pub const ReservedDmpWeight: Weight = Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_div(4), 0);
 }
 
 parameter_types! {
@@ -473,7 +486,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-    pub const UnitWeightCost: Weight = Weight::from_ref_time(10);
+    pub const UnitWeightCost: Weight = Weight::from_parts(10, 0);
     pub const MaxInstructions: u32 = 100;
     pub NativePerSecond: (XcmAssetId, u128, u128) = (Concrete(ShidenLocation::get()), 1_000_000_000_000, 1024 * 1024);
 }
@@ -576,6 +589,7 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = pallet_xcm::TestWeightInfo;
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
+    type AdminOrigin = EnsureRoot<AccountId>;
 }
 
 /// Convert `AccountId` to `MultiLocation`.
@@ -651,7 +665,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 construct_runtime!(
-    pub enum Runtime where
+    pub struct Runtime where
         Block = Block,
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,

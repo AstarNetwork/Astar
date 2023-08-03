@@ -46,7 +46,7 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
     pub task_manager: &'a TaskManager,
     pub client: Arc<C>,
     pub substrate_backend: Arc<BE>,
-    pub frontier_backend: Arc<fc_db::Backend<B>>,
+    pub frontier_backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
     pub filter_pool: Option<FilterPool>,
     pub overrides: Arc<OverrideHandle<B>>,
 }

@@ -31,6 +31,7 @@ use fp_evm::{
 };
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+    pallet_prelude::Weight,
     traits::Get,
 };
 use pallet_evm::{GasWeightMapping, Log};
@@ -170,6 +171,41 @@ where
     Runtime: pallet_evm::Config,
     Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
 {
+    #[inline(always)]
+    pub fn record_weight_v2_cost(
+        handle: &mut impl PrecompileHandle,
+        weight: Weight,
+    ) -> Result<(), ExitError> {
+        // Make sure there is enough gas.
+        let remaining_gas = handle.remaining_gas();
+        let required_gas = Runtime::GasWeightMapping::weight_to_gas(weight);
+        if required_gas > remaining_gas {
+            return Err(ExitError::OutOfGas);
+        }
+
+        // Make sure there is enough remaining weight
+        handle.record_external_cost(None, Some(weight.proof_size()))
+    }
+
+    #[inline(always)]
+    pub fn refund_weight_v2_cost(
+        handle: &mut impl PrecompileHandle,
+        weight: Weight,
+        maybe_actual_weight: Option<Weight>,
+    ) -> Result<u64, ExitError> {
+        // Refund weights and compute used weight them record used gas
+        let used_weight = if let Some(actual_weight) = maybe_actual_weight {
+            let refund_weight = weight - actual_weight;
+            handle.refund_external_cost(None, Some(refund_weight.proof_size()));
+            actual_weight
+        } else {
+            weight
+        };
+        let used_gas = Runtime::GasWeightMapping::weight_to_gas(used_weight);
+        handle.record_cost(used_gas)?;
+        Ok(used_gas)
+    }
+
     /// Try to dispatch a Substrate call.
     /// Return an error if there are not enough gas, or if the call fails.
     /// If successful returns the used gas using the Runtime GasWeightMapping.
@@ -185,29 +221,22 @@ where
         let dispatch_info = call.get_dispatch_info();
 
         // Make sure there is enough gas.
-        let remaining_gas = handle.remaining_gas();
-        let required_gas = Runtime::GasWeightMapping::weight_to_gas(dispatch_info.weight);
-        if required_gas > remaining_gas {
-            return Err(PrecompileFailure::Error {
-                exit_status: ExitError::OutOfGas,
-            });
-        }
+        Self::record_weight_v2_cost(handle, dispatch_info.weight)?;
 
         // Dispatch call.
         // It may be possible to not record gas cost if the call returns Pays::No.
         // However while Substrate handle checking weight while not making the sender pay for it,
         // the EVM doesn't. It seems this safer to always record the costs to avoid unmetered
         // computations.
-        let result = call
+        let post_dispatch_info = call
             .dispatch(origin)
             .map_err(|e| revert(alloc::format!("Dispatched call failed with error: {:?}", e)))?;
 
-        let used_weight = result.actual_weight;
-
-        let used_gas =
-            Runtime::GasWeightMapping::weight_to_gas(used_weight.unwrap_or(dispatch_info.weight));
-
-        handle.record_cost(used_gas)?;
+        Self::refund_weight_v2_cost(
+            handle,
+            dispatch_info.weight,
+            post_dispatch_info.actual_weight,
+        )?;
 
         Ok(())
     }
@@ -268,6 +297,14 @@ pub trait PrecompileHandleExt: PrecompileHandle {
     #[must_use]
     /// Returns a reader of the input, skipping the selector.
     fn read_input(&self) -> EvmResult<EvmDataReader>;
+
+    /// Record cost of one DB read manually.
+    /// The expected key & value data length should be provided.
+    #[must_use]
+    fn record_db_read<Runtime: pallet_evm::Config>(
+        &mut self,
+        data_length: usize,
+    ) -> Result<(), ExitError>;
 }
 
 pub fn log_costs(topics: usize, data_len: usize) -> EvmResult<u64> {
@@ -341,6 +378,15 @@ impl<T: PrecompileHandle> PrecompileHandleExt for T {
     /// Returns a reader of the input, skipping the selector.
     fn read_input(&self) -> EvmResult<EvmDataReader> {
         EvmDataReader::new_skip_selector(self.input())
+    }
+
+    #[must_use]
+    fn record_db_read<Runtime: pallet_evm::Config>(
+        &mut self,
+        data_length: usize,
+    ) -> Result<(), ExitError> {
+        self.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+        self.record_external_cost(None, Some(data_length as u64))
     }
 }
 

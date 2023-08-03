@@ -17,8 +17,12 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::{pallet::pallet::Error, pallet::pallet::Event, *};
-use frame_support::{assert_noop, assert_ok, traits::OnInitialize, weights::Weight};
-use mock::{Balances, MockSmartContract, *};
+use frame_support::{
+    assert_noop, assert_ok,
+    traits::{Currency, OnInitialize},
+    weights::Weight,
+};
+use mock::{Balance, Balances, MockSmartContract, *};
 use sp_core::H160;
 use sp_runtime::{
     traits::{BadOrigin, Zero},
@@ -1912,6 +1916,19 @@ fn changing_reward_destination_for_empty_ledger_is_not_ok() {
 }
 
 #[test]
+fn default_reward_destination_is_free_balance() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let staker = 1;
+        assert_eq!(
+            DappsStaking::ledger(&staker).reward_destination,
+            RewardDestination::FreeBalance
+        );
+    });
+}
+
+#[test]
 fn claim_dapp_with_zero_stake_periods_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
@@ -2092,12 +2109,12 @@ fn dev_stakers_split_util() {
     let total_staked = staked_on_contract * 3;
 
     // Prepare structs
-    let staking_points = ContractStakeInfo::<Balance> {
+    let staking_points = ContractStakeInfo {
         total: staked_on_contract,
         number_of_stakers: 10,
         contract_reward_claimed: false,
     };
-    let era_info = EraInfo::<Balance> {
+    let era_info = EraInfo {
         rewards: RewardInfo {
             dapps: base_dapps_reward,
             stakers: base_stakers_reward,
@@ -2197,15 +2214,12 @@ pub fn set_contract_stake_info() {
 fn custom_max_encoded_len() {
     let max_unbonding_info_len = 10 * (4 + 16) + 1;
     assert_eq!(
-        UnbondingInfo::<u128>::max_encoded_len(),
+        UnbondingInfo::max_encoded_len(),
         max_unbonding_info_len as usize
     );
 
     let max_staker_info_len = 10 * (4 + 16) + 1;
-    assert_eq!(
-        StakerInfo::<u128>::max_encoded_len(),
-        max_staker_info_len as usize
-    );
+    assert_eq!(StakerInfo::max_encoded_len(), max_staker_info_len as usize);
 }
 
 #[test]

@@ -112,7 +112,7 @@ pub mod pallet {
             let dispatch_info = call.get_dispatch_info();
             (dispatch_info.weight.saturating_add(T::DbWeight::get().reads(1))
                                  .saturating_add(T::DbWeight::get().writes(1))
-                                 .saturating_add(Weight::from_ref_time(10_000)),
+                                 .saturating_add(Weight::from_parts(10_000, 0)),
              dispatch_info.class)
         })]
         pub fn call(

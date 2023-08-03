@@ -18,9 +18,10 @@
 
 use super::*;
 
+use fp_evm::IsPrecompileResult;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Currency, OnFinalize, OnInitialize},
+    traits::{ConstU64, Currency, OnFinalize, OnInitialize},
     weights::{RuntimeDbWeight, Weight},
     PalletId,
 };
@@ -147,7 +148,7 @@ pub const WRITE_WEIGHT: u64 = 7;
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
+        frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
     pub const TestWeights: RuntimeDbWeight = RuntimeDbWeight {
         read: READ_WEIGHT,
         write: WRITE_WEIGHT,
@@ -194,6 +195,10 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ();
+    type MaxFreezes = ();
 }
 
 pub fn precompile_address() -> H160 {
@@ -215,14 +220,17 @@ where
         }
     }
 
-    fn is_precompile(&self, address: sp_core::H160) -> bool {
-        address == precompile_address()
+    fn is_precompile(&self, address: sp_core::H160, _gas: u64) -> IsPrecompileResult {
+        IsPrecompileResult::Answer {
+            is_precompile: address == precompile_address(),
+            extra_cost: 0,
+        }
     }
 }
 
 parameter_types! {
     pub PrecompilesValue: DappPrecompile<TestRuntime> = DappPrecompile(Default::default());
-    pub WeightPerGas: Weight = Weight::from_ref_time(1);
+    pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
 impl pallet_evm::Config for TestRuntime {
@@ -237,6 +245,7 @@ impl pallet_evm::Config for TestRuntime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = DappPrecompile<TestRuntime>;
     type PrecompilesValue = PrecompilesValue;
+    type Timestamp = Timestamp;
     type ChainId = ();
     type OnChargeTransaction = ();
     type BlockGasLimit = ();
@@ -244,6 +253,7 @@ impl pallet_evm::Config for TestRuntime {
     type FindAuthor = ();
     type OnCreate = ();
     type WeightInfo = ();
+    type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
 parameter_types! {

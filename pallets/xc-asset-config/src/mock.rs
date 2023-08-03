@@ -18,7 +18,7 @@
 
 use crate::{self as pallet_xc_asset_config};
 
-use frame_support::{construct_runtime, parameter_types, weights::Weight};
+use frame_support::{construct_runtime, parameter_types, traits::ConstU32, weights::Weight};
 use sp_core::H256;
 
 use sp_io::TestExternalities;
@@ -52,7 +52,7 @@ construct_runtime!(
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
+        frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
 impl frame_system::Config for Test {
@@ -97,6 +97,10 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 type AssetId = u128;

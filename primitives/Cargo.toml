@@ -1,19 +1,27 @@
 [package]
-name = "xcm-primitives"
-version = "0.4.1"
-description = "Common XCM primitives used by runtimes"
+name = "astar-primitives"
+version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-
 # third-party dependencies
+impl-trait-for-tuples = { workspace = true }
 log = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+# Ethereum/Frontier dependencies
+ethereum = { workspace = true, features = ["with-codec"] }
+ethereum-types = { workspace = true }
+fp-evm = { workspace = true }
 
 # Substrate dependencies
 frame-support = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
@@ -29,12 +37,20 @@ pallet-xc-asset-config = { workspace = true }
 default = ["std"]
 std = [
 	"log/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"ethereum-types/std",
+	"ethereum/std",
+	"fp-evm/std",
 	"frame-support/std",
 	"sp-std/std",
 	"sp-runtime/std",
+	"sp-core/std",
+	"sp-io/std",
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
+	"fp-evm/std",
 ]
 runtime-benchmarks = ["xcm-builder/runtime-benchmarks"]

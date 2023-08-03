@@ -46,7 +46,7 @@ pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
-pub(crate) const MINIMUM_REMAINING_AMOUNT: Balance = 1;
+pub(crate) const MINIMUM_REMAINING_AMOUNT: Balance = EXISTENTIAL_DEPOSIT;
 pub(crate) const MAX_UNLOCKING_CHUNKS: u32 = 4;
 pub(crate) const UNBONDING_PERIOD: EraIndex = 3;
 pub(crate) const MAX_ERA_STAKE_VALUES: u32 = 8;
@@ -77,7 +77,7 @@ construct_runtime!(
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
+        frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
 impl frame_system::Config for TestRuntime {
@@ -122,6 +122,10 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {
@@ -193,13 +197,13 @@ impl ExternalityBuilder {
                 (3, 10000),
                 (4, 4900),
                 (5, 3800),
-                (6, 10),
+                (6, 20),
                 (7, 1000),
                 (8, 2000),
                 (9, 10000),
                 (10, 300),
                 (11, 400),
-                (20, 10),
+                (20, 20),
                 (540, EXISTENTIAL_DEPOSIT),
                 (1337, 1_000_000_000_000),
             ],

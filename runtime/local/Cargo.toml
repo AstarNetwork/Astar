@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.11.0"
+version = "5.16.1"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -26,6 +26,7 @@ pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
+pallet-ethereum-checked = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-precompile-blake2 = { workspace = true }
 pallet-evm-precompile-bn128 = { workspace = true }
@@ -50,6 +51,7 @@ sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
 sp-inherents = { workspace = true }
+sp-io = { workspace = true }
 sp-offchain = { workspace = true }
 sp-runtime = { workspace = true }
 sp-session = { workspace = true }
@@ -62,6 +64,7 @@ frame-system-rpc-runtime-api = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 
 # Astar pallets
+astar-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
@@ -72,7 +75,7 @@ pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
-pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
+pallet-xvm = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -148,6 +151,7 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
+	"sp-io/std",
 	"frame-benchmarking/std",
 	"frame-try-runtime/std",
 	"pallet-collective/std",
@@ -155,11 +159,13 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-treasury/std",
 	"pallet-xvm/std",
+	"pallet-ethereum-checked/std",
 	"moonbeam-evm-tracer/std",
 	"moonbeam-rpc-primitives-debug/std",
 	"moonbeam-rpc-primitives-txpool/std",
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
+	"astar-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -174,6 +180,8 @@ runtime-benchmarks = [
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
+	"pallet-ethereum-checked/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -206,6 +214,7 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
+	"pallet-ethereum-checked/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

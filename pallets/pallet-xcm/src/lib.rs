@@ -55,95 +55,83 @@ use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use xcm_executor::{
     traits::{
-        ClaimAssets, DropAssets, MatchesFungible, OnResponse, VersionChangeNotifier, WeightBounds,
+        CheckSuspension, ClaimAssets, DropAssets, MatchesFungible, OnResponse,
+        VersionChangeNotifier, WeightBounds,
     },
     Assets,
 };
 
-pub trait WeightInfo {
-    fn send() -> Weight;
-    fn teleport_assets() -> Weight;
-    fn reserve_transfer_assets() -> Weight;
-    fn execute() -> Weight;
-    fn force_xcm_version() -> Weight;
-    fn force_default_xcm_version() -> Weight;
-    fn force_subscribe_version_notify() -> Weight;
-    fn force_unsubscribe_version_notify() -> Weight;
-    fn migrate_supported_version() -> Weight;
-    fn migrate_version_notifiers() -> Weight;
-    fn already_notified_target() -> Weight;
-    fn notify_current_targets() -> Weight;
-    fn notify_target_migration_fail() -> Weight;
-    fn migrate_version_notify_targets() -> Weight;
-    fn migrate_and_notify_old_targets() -> Weight;
-    fn reserve_withdraw_assets() -> Weight;
-}
+use weights::WeightInfo;
 
 /// fallback implementation
 pub struct TestWeightInfo;
 impl WeightInfo for TestWeightInfo {
     fn send() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn teleport_assets() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn reserve_transfer_assets() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn execute() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn force_xcm_version() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn force_default_xcm_version() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn force_subscribe_version_notify() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn force_unsubscribe_version_notify() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
+    }
+
+    fn force_suspension() -> Weight {
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn migrate_supported_version() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn migrate_version_notifiers() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn already_notified_target() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn notify_current_targets() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn notify_target_migration_fail() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn migrate_version_notify_targets() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn migrate_and_notify_old_targets() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 
     fn reserve_withdraw_assets() -> Weight {
-        Weight::from_ref_time(100_000_000)
+        Weight::from_parts(100_000_000, 0)
     }
 }
 
@@ -165,7 +153,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(migration::STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
@@ -258,6 +245,9 @@ pub mod pallet {
         /// If `None`, the benchmarks that depend on a reachable destination will be skipped.
         #[cfg(feature = "runtime-benchmarks")]
         type ReachableDest: Get<Option<MultiLocation>>;
+
+        /// The origin that is allowed to call privileged operations on the XCM pallet
+        type AdminOrigin: EnsureOrigin<<Self as SysConfig>::RuntimeOrigin>;
     }
 
     #[pallet::event]
@@ -624,6 +614,10 @@ pub mod pallet {
         OptionQuery,
     >;
 
+    /// Global suspension state of the XCM executor.
+    #[pallet::storage]
+    pub(super) type XcmExecutionSuspended<T: Config> = StorageValue<_, bool, ValueQuery>;
+
     #[pallet::genesis_config]
     pub struct GenesisConfig {
         /// The default version to encode outgoing XCM messages with.
@@ -942,7 +936,7 @@ pub mod pallet {
             location: Box<MultiLocation>,
             xcm_version: XcmVersion,
         ) -> DispatchResult {
-            ensure_root(origin)?;
+            T::AdminOrigin::ensure_origin(origin)?;
             let location = *location;
             SupportedVersion::<T>::insert(
                 XCM_VERSION,
@@ -964,7 +958,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             maybe_xcm_version: Option<XcmVersion>,
         ) -> DispatchResult {
-            ensure_root(origin)?;
+            T::AdminOrigin::ensure_origin(origin)?;
             SafeXcmVersion::<T>::set(maybe_xcm_version);
             Ok(())
         }
@@ -979,7 +973,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             location: Box<VersionedMultiLocation>,
         ) -> DispatchResult {
-            ensure_root(origin)?;
+            T::AdminOrigin::ensure_origin(origin)?;
             let location: MultiLocation = (*location)
                 .try_into()
                 .map_err(|()| Error::<T>::BadLocation)?;
@@ -1004,7 +998,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             location: Box<VersionedMultiLocation>,
         ) -> DispatchResult {
-            ensure_root(origin)?;
+            T::AdminOrigin::ensure_origin(origin)?;
             let location: MultiLocation = (*location)
                 .try_into()
                 .map_err(|()| Error::<T>::BadLocation)?;
@@ -1117,6 +1111,18 @@ pub mod pallet {
                 fee_asset_item,
                 Some(weight_limit),
             )
+        }
+
+        /// Set or unset the global suspension state of the XCM executor.
+        ///
+        /// - `origin`: Must be an origin specified by AdminOrigin.
+        /// - `suspended`: `true` to suspend, `false` to resume.
+        #[pallet::call_index(10)]
+        #[pallet::weight(T::WeightInfo::force_suspension())]
+        pub fn force_suspension(origin: OriginFor<T>, suspended: bool) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+            XcmExecutionSuspended::<T>::set(suspended);
+            Ok(())
         }
 
         /// Transfer some assets from sovereign account to reserve holder chain and
@@ -2362,6 +2368,17 @@ impl<T: Config> OnResponse for Pallet<T> {
                 Weight::zero()
             }
         }
+    }
+}
+
+impl<T: Config> CheckSuspension for Pallet<T> {
+    fn is_suspended<Call>(
+        _origin: &MultiLocation,
+        _instructions: &mut [Instruction<Call>],
+        _max_weight: Weight,
+        _weight_credit: &mut Weight,
+    ) -> bool {
+        XcmExecutionSuspended::<T>::get()
     }
 }
 

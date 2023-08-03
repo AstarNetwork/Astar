@@ -19,7 +19,7 @@ use super::*;
 use crate as collator_selection;
 use frame_support::{
     ord_parameter_types, parameter_types,
-    traits::{FindAuthor, GenesisBuild, ValidatorRegistration},
+    traits::{ConstU32, FindAuthor, GenesisBuild, ValidatorRegistration},
     PalletId,
 };
 use frame_system as system;
@@ -99,6 +99,10 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 pub struct Author4;
