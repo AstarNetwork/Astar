@@ -81,7 +81,7 @@ where
 
                 // Similar to EVM behavior, the `source` should be (limited to) the
                 // contract address. Otherwise contracts would be able to do arbitrary
-                // things on be half of the caller via XVM.
+                // things on behalf of the caller via XVM.
                 let source = env.ext().address();
 
                 let xvm_context = Context {

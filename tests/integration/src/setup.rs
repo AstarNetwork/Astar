@@ -89,7 +89,7 @@ mod shibuya {
 
     /// Deploy a WASM contract with its name. (The code is in `resource/`.)
     pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
-        let path = format!("resource/{}.wasm", name);
+        let path = format!("ink-contracts/{}.wasm", name);
         let code = std::fs::read(path).expect("invalid path");
         let instantiate_result = Contracts::bare_instantiate(
             ALICE,

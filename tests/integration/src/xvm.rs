@@ -167,7 +167,7 @@ fn evm_payable_call_via_xvm_works() {
             ALICE,
             evm_payable_addr.as_ref().to_vec(),
             // Calling `deposit`
-            hex::decode("d0e30db0").except("invalid selector hex"),
+            hex::decode("d0e30db0").expect("invalid selector hex"),
             value,
         ));
         assert_eq!(
