@@ -67,7 +67,7 @@ mod shibuya {
         assert_ok!(EVM::create2(
             RuntimeOrigin::root(),
             alith(),
-            hex::decode(code).unwrap(),
+            hex::decode(code).expect("invalid code hex"),
             H256::zero(),
             U256::zero(),
             1_000_000,
@@ -76,7 +76,12 @@ mod shibuya {
             None,
             vec![],
         ));
-        match System::events().iter().last().unwrap().event {
+        match System::events()
+            .iter()
+            .last()
+            .expect("no event found")
+            .event
+        {
             RuntimeEvent::EVM(pallet_evm::Event::Created { address }) => address,
             _ => panic!("Deploy failed."),
         }
@@ -85,7 +90,7 @@ mod shibuya {
     /// Deploy a WASM contract with its name. (The code is in `resource/`.)
     pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
         let path = format!("resource/{}.wasm", name);
-        let code = std::fs::read(path).unwrap();
+        let code = std::fs::read(path).expect("invalid path");
         let instantiate_result = Contracts::bare_instantiate(
             ALICE,
             0,
@@ -93,13 +98,16 @@ mod shibuya {
             None,
             pallet_contracts_primitives::Code::Upload(code),
             // `new` constructor
-            hex::decode("9bae9d5e").unwrap(),
+            hex::decode("9bae9d5e").expect("invalid data hex"),
             vec![],
             pallet_contracts::DebugInfo::Skip,
             pallet_contracts::CollectEvents::Skip,
         );
 
-        let address = instantiate_result.result.unwrap().account_id;
+        let address = instantiate_result
+            .result
+            .expect("instantiation failed")
+            .account_id;
         // On instantiation, the contract got existential deposit.
         assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
         address

@@ -139,7 +139,8 @@ thread_local! {
 pub struct MockEthereumTransact;
 impl MockEthereumTransact {
     pub(crate) fn assert_transacted(source: H160, checked_tx: CheckedEthereumTx) {
-        assert!(TRANSACTED.with(|v| v.eq(&RefCell::new(Some((source, checked_tx))))));
+        let transacted = TRANSACTED.with(|v| v.borrow().clone());
+        assert_eq!(transacted, Some((source, checked_tx)));
     }
 }
 impl CheckedEthereumTransact for MockEthereumTransact {

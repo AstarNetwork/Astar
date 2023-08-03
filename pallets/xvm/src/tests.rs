@@ -74,19 +74,17 @@ fn calling_into_same_vm_is_not_allowed() {
 }
 
 #[test]
-fn evm_call_works() {
+fn evm_call_fails_if_target_not_h160() {
     ExtBuilder::default().build().execute_with(|| {
         let context = Context {
             source_vm_id: VmId::Wasm,
             weight_limit: Weight::from_parts(1_000_000, 1_000_000),
         };
         let vm_id = VmId::Evm;
-        let target = H160::repeat_byte(0xFF);
         let input = vec![1; 65_536];
         let value = 1_000_000u128;
         let used_weight: Weight = weights::SubstrateWeight::<TestRuntime>::evm_call_overheads();
 
-        // Invalid target
         assert_noop!(
             Xvm::call(
                 context.clone(),
@@ -101,24 +99,32 @@ fn evm_call_works() {
                 used_weight
             },
         );
+
         assert_noop!(
-            Xvm::call(
-                context.clone(),
-                vm_id,
-                ALICE,
-                vec![1, 2, 3],
-                input.clone(),
-                value
-            ),
+            Xvm::call(context, vm_id, ALICE, vec![1, 2, 3], input, value),
             CallErrorWithWeight {
                 error: CallError::InvalidTarget,
                 used_weight
             },
         );
-        // Input too large
+    });
+}
+
+#[test]
+fn evm_call_fails_if_input_too_large() {
+    ExtBuilder::default().build().execute_with(|| {
+        let context = Context {
+            source_vm_id: VmId::Wasm,
+            weight_limit: Weight::from_parts(1_000_000, 1_000_000),
+        };
+        let vm_id = VmId::Evm;
+        let target = H160::repeat_byte(0xFF);
+        let value = 1_000_000u128;
+        let used_weight: Weight = weights::SubstrateWeight::<TestRuntime>::evm_call_overheads();
+
         assert_noop!(
             Xvm::call(
-                context.clone(),
+                context,
                 vm_id,
                 ALICE,
                 target.encode(),
@@ -130,6 +136,20 @@ fn evm_call_works() {
                 used_weight
             },
         );
+    });
+}
+
+#[test]
+fn evm_call_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        let context = Context {
+            source_vm_id: VmId::Wasm,
+            weight_limit: Weight::from_parts(1_000_000, 1_000_000),
+        };
+        let vm_id = VmId::Evm;
+        let target = H160::repeat_byte(0xFF);
+        let input = vec![1; 65_536];
+        let value = 1_000_000u128;
 
         assert_ok!(Xvm::call(
             context,
@@ -141,17 +161,17 @@ fn evm_call_works() {
         ));
         let source = Decode::decode(
             &mut hex::decode("f0bd9ffde7f9f4394d8cc1d86bf24d87e5d5a9a9")
-                .unwrap()
+                .expect("invalid source hex")
                 .as_ref(),
         )
-        .unwrap();
+        .expect("invalid source");
         MockEthereumTransact::assert_transacted(
             source,
             CheckedEthereumTx {
                 gas_limit: U256::from(244000),
                 target: H160::repeat_byte(0xFF),
                 value: U256::from(value),
-                input: EthereumTxInput::try_from(input).unwrap(),
+                input: EthereumTxInput::try_from(input).expect("input too large"),
                 maybe_access_list: None,
             },
         );

@@ -27,7 +27,8 @@ use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 
 fn bounded_input(data: &'static str) -> EthereumTxInput {
-    EthereumTxInput::try_from(hex::decode(data).unwrap()).unwrap()
+    EthereumTxInput::try_from(hex::decode(data).expect("invalid input hex"))
+        .expect("input too large")
 }
 
 #[test]
