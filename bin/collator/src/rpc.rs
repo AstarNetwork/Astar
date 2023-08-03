@@ -20,8 +20,7 @@
 
 use fc_rpc::{
     Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, TxPool, TxPoolApiServer, Web3,
-    Web3ApiServer,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, TxPool, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
@@ -331,8 +330,6 @@ where
         )
         .into_rpc(),
     )?;
-
-    io.merge(tx_pool.into_rpc())?;
 
     Ok(io)
 }

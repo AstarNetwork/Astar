@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "5.16.0"
+version = "5.16.1"
 description = "Astar collator implementation in Rust."
 build = "build.rs"
 default-run = "astar-collator"
