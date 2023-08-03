@@ -25,7 +25,7 @@ cumulus_based = true
   [parachains.collator]
   name = "astar"
   command = "./astar-collator"
-  rpc_port = 9944
+  ws_port = 9944
   args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
 
 [[parachains]]
@@ -36,7 +36,7 @@ cumulus_based = true
   [parachains.collator]
   name = "shiden"
   command = "./astar-collator"
-  rpc_port = 9945
+  ws_port = 9945
   args = [ "-l=xcm=trace", "--enable-evm-rpc" ]
 
 [[hrmp_channels]]
