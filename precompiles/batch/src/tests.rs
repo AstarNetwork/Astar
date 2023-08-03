@@ -17,10 +17,8 @@
 use crate::mock::{precompile_address, BatchPrecompileMock, ExtBuilder, PrecompilesValue, Runtime};
 use crate::{log_subcall_failed, log_subcall_succeeded, Mode, *};
 use fp_evm::ExitError;
-use frame_support::dispatch::{DispatchError, Dispatchable};
 use precompile_utils::{evm::costs::call_cost, testing::*};
-use sp_core::{H160, H256, U256};
-use sp_runtime::{DispatchErrorWithPostInfo, ModuleError};
+use sp_core::{H256, U256};
 
 fn precompiles() -> BatchPrecompileMock<Runtime> {
     PrecompilesValue::get()

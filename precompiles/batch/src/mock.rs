@@ -176,11 +176,6 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
-    pub(crate) fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
-        self.balances = balances;
-        self
-    }
-
     pub(crate) fn build(self) -> sp_io::TestExternalities {
         let mut t = frame_system::GenesisConfig::default()
             .build_storage::<Runtime>()
@@ -202,8 +197,4 @@ impl ExtBuilder {
         });
         ext
     }
-}
-
-pub fn balance(account: impl Into<AccountId>) -> Balance {
-    pallet_balances::Pallet::<Runtime>::usable_balance(account.into())
 }

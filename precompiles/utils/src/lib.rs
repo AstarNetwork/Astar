@@ -41,8 +41,6 @@ use sp_std::{marker::PhantomData, vec, vec::Vec};
 pub mod bytes;
 pub mod data;
 pub mod evm;
-// pub mod precompile_set;
-pub mod substrate;
 
 pub use data::{Address, Bytes, EvmData, EvmDataReader, EvmDataWriter};
 pub use precompile_utils_macro::{generate_function_selector, keccak256};

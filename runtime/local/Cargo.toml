@@ -29,6 +29,7 @@ pallet-ethereum = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-precompile-blake2 = { workspace = true }
+pallet-evm-precompile-batch = { workspace = true }
 pallet-evm-precompile-bn128 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
 pallet-evm-precompile-ed25519 = { workspace = true }

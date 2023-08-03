@@ -23,6 +23,7 @@ use pallet_evm::{
     PrecompileResult, PrecompileSet,
 };
 use pallet_evm_precompile_assets_erc20::{AddressToAssetId, Erc20AssetsPrecompileSet};
+use pallet_evm_precompile_batch::BatchPrecompile;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dapps_staking::DappsStakingWrapper;
@@ -67,6 +68,7 @@ impl<R> PrecompileSet for LocalNetworkPrecompiles<R>
 where
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
     DappsStakingWrapper<R>: Precompile,
+    BatchPrecompile<R>: Precompile,
     XvmPrecompile<R>: Precompile,
     Dispatch<R>: Precompile,
     R: pallet_evm::Config
@@ -111,6 +113,8 @@ where
             a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
             // Xvm 0x5005
             a if a == hash(20485) => Some(XvmPrecompile::<R>::execute(handle)),
+                        // Batch 0x5006
+             a if a == hash(20486) => Some(BatchPrecompile::<R>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)
