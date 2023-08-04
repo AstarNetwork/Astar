@@ -114,6 +114,7 @@ where
         let call_data =
             input.read::<BoundedVec<BoundedBytes<GetCallDataLimit>, GetArrayLimit>>()?;
         let gas_limit = input.read::<BoundedVec<u64, GetArrayLimit>>()?;
+        log::trace!(target: "batch-precompile", "batch_some\n to address(s) {:?}, value(s) {:?} call_data(s) {:?}, gas_limit(s) {:?}", to, value,call_data, gas_limit);
         Self::inner_batch(Mode::BatchSome, handle, to, value, call_data, gas_limit)
     }
 
@@ -125,6 +126,7 @@ where
         let call_data =
             input.read::<BoundedVec<BoundedBytes<GetCallDataLimit>, GetArrayLimit>>()?;
         let gas_limit = input.read::<BoundedVec<u64, GetArrayLimit>>()?;
+        log::trace!(target: "batch-precompile", "batch_some_until_failure\n to address(s) {:?}, value(s) {:?} call_data(s) {:?}, gas_limit(s) {:?}", to, value,call_data, gas_limit);
         Self::inner_batch(
             Mode::BatchSomeUntilFailure,
             handle,
@@ -143,6 +145,7 @@ where
         let call_data =
             input.read::<BoundedVec<BoundedBytes<GetCallDataLimit>, GetArrayLimit>>()?;
         let gas_limit = input.read::<BoundedVec<u64, GetArrayLimit>>()?;
+        log::trace!(target: "batch-precompile", "batch_all\n to address(s) {:?}, value(s) {:?} call_data(s) {:?}, gas_limit(s) {:?}", to, value,call_data, gas_limit);
         Self::inner_batch(Mode::BatchAll, handle, to, value, call_data, gas_limit)
     }
 
