@@ -108,7 +108,7 @@ where
 {
     fn batch_some(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(6)?;
+        input.expect_arguments(4)?;
         let to = input.read::<BoundedVec<Address, GetArrayLimit>>()?;
         let value = input.read::<BoundedVec<U256, GetArrayLimit>>()?;
         let call_data =
@@ -119,7 +119,7 @@ where
 
     fn batch_some_until_failure(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(6)?;
+        input.expect_arguments(4)?;
         let to = input.read::<BoundedVec<Address, GetArrayLimit>>()?;
         let value = input.read::<BoundedVec<U256, GetArrayLimit>>()?;
         let call_data =
@@ -137,7 +137,7 @@ where
 
     fn batch_all(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(6)?;
+        input.expect_arguments(4)?;
         let to = input.read::<BoundedVec<Address, GetArrayLimit>>()?;
         let value = input.read::<BoundedVec<U256, GetArrayLimit>>()?;
         let call_data =
