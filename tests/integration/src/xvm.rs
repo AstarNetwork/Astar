@@ -221,7 +221,7 @@ fn wasm_payable_call_via_xvm_works() {
 }
 
 #[test]
-fn calling_wasm_payable_from_evm_works() {
+fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
     new_test_ext().execute_with(|| {
         let wasm_payable_addr = deploy_wasm_contract("payable");
         let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
@@ -242,17 +242,32 @@ fn calling_wasm_payable_from_evm_works() {
             None,
             vec![],
         ));
-        // `pallet-contracts` respects the existential deposit of caller. The actual amount
-        // it got is `value - ExistentialDeposit`. Adding to its existing balance results `value`.
-        assert_eq!(
-            Balances::free_balance(&wasm_payable_addr),
-            value,
-        );
+
+        // TODO: after XVM error propagation finished, assert `pallet-evm` execution error
+        // and update balance assertions.
+
+        // Transfer to EVM contract ok.
         assert_eq!(
             Balances::free_balance(&account_id_from(call_wasm_payable_addr)),
+            value,
+        );
+        // Transfer from EVM contract to wasm Contract err.
+        assert_eq!(
+            Balances::free_balance(&wasm_payable_addr),
             ExistentialDeposit::get(),
         );
+    });
+}
 
+#[test]
+fn calling_wasm_payable_from_evm_works() {
+    new_test_ext().execute_with(|| {
+        let wasm_payable_addr = deploy_wasm_contract("payable");
+        let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
+
+        let _ = Balances::deposit_creating(&account_id_from(call_wasm_payable_addr.clone()), ExistentialDeposit::get());
+
+        let prev_wasm_payable_balance = Balances::free_balance(&wasm_payable_addr);
         let value = 1_000_000_000;
         assert_ok!(EVM::call(
             RuntimeOrigin::root(),
@@ -269,17 +284,8 @@ fn calling_wasm_payable_from_evm_works() {
             None,
             vec![],
         ));
-        // For the second call with the same value, the wasm payable contract will receive
-        // the full amount, as the EVM contract already has enough balance for existential
-        // deposit.
-        assert_eq!(
-            Balances::free_balance(&wasm_payable_addr),
-            2 * value,
-        );
-        assert_eq!(
-            Balances::free_balance(&account_id_from(call_wasm_payable_addr)),
-            ExistentialDeposit::get(),
-        );
+        let recieved = Balances::free_balance(&wasm_payable_addr) - prev_wasm_payable_balance;
+        assert_eq!(recieved, value);
     });
 }
 

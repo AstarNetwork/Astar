@@ -250,22 +250,6 @@ where
             T::Lookup::lookup(decoded).map_err(|_| error)
         }?;
 
-        // Adjust `value` if needed, to make sure `source` balance won't be below ED after calling
-        // a payable contract. This is needed as `pallet-contracts` always respects `source` ED.
-        // Without the adjustment, the first call from any `source` to a payable contract will
-        // always fail.
-        //
-        // Only the first call to a payable contract results less `value` by ED amount, the following
-        // ones will not be affected.
-        let source_balance = T::Currency::free_balance(&source);
-        let existential_deposit = T::Currency::minimum_balance();
-        let killing_source = source_balance.saturating_sub(value) < existential_deposit;
-        let adjusted_value = if killing_source {
-            value.saturating_sub(existential_deposit)
-        } else {
-            value
-        };
-
         // With overheads, less weight is available.
         let weight_limit = context
             .weight_limit
@@ -283,7 +267,7 @@ where
         let call_result = pallet_contracts::Pallet::<T>::bare_call(
             source,
             dest,
-            adjusted_value,
+            value,
             weight_limit,
             None,
             input,
