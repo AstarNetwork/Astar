@@ -5,7 +5,6 @@ pragma solidity >=0.8.3;
 /// Predeployed at the address 0x0000000000000000000000000000000000005006
 /// For better understanding check the source code:
 /// repo: https://github.com/AstarNetwork/astar
-/// code: frame/dapps-staking/src/pallet
 
 /// @title Batch precompile
 /// @dev Allows to perform multiple calls throught one call to the precompile.

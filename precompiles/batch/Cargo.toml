@@ -2,7 +2,7 @@
 name = "pallet-evm-precompile-batch"
 description = "A Precompile to batch multiple calls."
 version = "0.1.0"
-authors.workspace = true
+authors = ["StakeTechnologies", "PureStake"]
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
