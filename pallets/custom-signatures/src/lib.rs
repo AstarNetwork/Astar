@@ -22,25 +22,28 @@ pub use pallet::*;
 #[cfg(test)]
 mod tests;
 
+use frame_support::{
+    dispatch::{Dispatchable, GetDispatchInfo},
+    pallet_prelude::*,
+    traits::{Currency, ExistenceRequirement, Get, OnUnbalanced, WithdrawReasons},
+};
+use frame_system::{ensure_none, pallet_prelude::*};
+use pallet_evm::AddressMapping;
+use sp_core::H160;
+use sp_runtime::traits::{IdentifyAccount, MaybeDisplay, Verify};
+use sp_std::{fmt::Debug, prelude::*};
+
+/// The balance type of this pallet.
+pub type BalanceOf<T> =
+    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::{
-        dispatch::{Dispatchable, GetDispatchInfo},
-        pallet_prelude::*,
-        traits::{Currency, ExistenceRequirement, Get, OnUnbalanced, WithdrawReasons},
-    };
-    use frame_system::{ensure_none, pallet_prelude::*};
-    use pallet_evm::AddressMapping;
-    use sp_core::H160;
-    use sp_runtime::traits::{IdentifyAccount, MaybeDisplay, Verify};
-    use sp_std::{convert::TryFrom, fmt::Debug, prelude::*};
+    use super::*;
 
     #[pallet::pallet]
     pub struct Pallet<T>(_);
-
-    /// The balance type of this pallet.
-    pub type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -53,11 +56,12 @@ pub mod pallet {
             + GetDispatchInfo;
 
         /// User defined signature type.
-        type Signature: Parameter + Verify<Signer = Self::Signer> + TryFrom<Vec<u8>>;
+        type Signature: Parameter + Verify<Signer = Self::Signer> + Decode;
 
-        // User defined signer
+        /// User defined signer
         type Signer: IdentifyAccount<AccountId = Self::SignerAccountId>;
 
+        /// User defined mappings
         type AddressMapping: AddressMapping<Self::AccountId>;
 
         // user defined accountid
@@ -143,7 +147,7 @@ pub mod pallet {
                 Error::<T>::BadNonce,
             );
 
-            let signature = <T as Config>::Signature::try_from(signature)
+            let signature = <T as Config>::Signature::decode(&mut signature.as_slice())
                 .map_err(|_| Error::<T>::DecodeFailure)?;
 
             // Ensure that transaction signature is valid
@@ -188,7 +192,18 @@ pub mod pallet {
             nonce: &T::Index,
         ) -> bool {
             let payload = (T::CallMagicNumber::get(), *nonce, call.clone());
-            signature.verify(&payload.encode()[..], signer)
+            signature.verify(&Self::signable_message(payload.encode())[..], signer)
+        }
+
+        /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
+        ///
+        /// Note: sign message hash to escape of message length estimation.
+        pub fn signable_message<I: AsRef<[u8]>>(what: I) -> Vec<u8> {
+            let what = what.as_ref();
+            let hash = sp_io::hashing::keccak_256(what);
+            let mut v = b"\x19Ethereum Signed Message:\n32".to_vec();
+            v.extend_from_slice(&hash[..]);
+            v
         }
     }
 
@@ -218,7 +233,7 @@ pub mod pallet {
             }
 
             // Check signature encoding
-            if let Ok(signature) = <T as Config>::Signature::try_from(signature.clone()) {
+            if let Ok(signature) = <T as Config>::Signature::decode(&mut signature.as_slice()) {
                 // Verify signature
                 if Self::valid_signature(call, signer, &signature, nonce) {
                     ValidTransaction::with_tag_prefix("CustomSignatures")

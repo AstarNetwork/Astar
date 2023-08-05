@@ -603,7 +603,7 @@ impl pallet_custom_signatures::Config for Runtime {
     type CallMagicNumber = CallMagicNumber;
     type Currency = Balances;
     type CallFee = CallFee;
-    type OnChargeTransaction = ToStakingPot;
+    type OnChargeTransaction = ();
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
