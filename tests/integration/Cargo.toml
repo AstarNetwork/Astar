@@ -8,10 +8,18 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+hex = { workspace = true }
+parity-scale-codec = { workspace = true }
+
+# frontier
+pallet-evm = { workspace = true }
+
 # frame dependencies
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-balances = { workspace = true }
+pallet-contracts = { workspace = true }
+pallet-contracts-primitives = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-utility = { workspace = true }
@@ -19,7 +27,10 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 
-# runtime
+# astar dependencies
+pallet-ethereum-checked = { workspace = true }
+
+astar-primitives = { workspace = true }
 astar-runtime = { workspace = true, features = ["std"], optional = true }
 shibuya-runtime = { workspace = true, features = ["std"], optional = true }
 shiden-runtime = { workspace = true, features = ["std"], optional = true }

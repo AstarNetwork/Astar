@@ -25,3 +25,6 @@ mod setup;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod proxy;
+
+#[cfg(feature = "shibuya")]
+mod xvm;

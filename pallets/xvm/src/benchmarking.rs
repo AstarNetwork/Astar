@@ -24,7 +24,11 @@ use parity_scale_codec::Encode;
 use sp_core::H160;
 use sp_runtime::MultiAddress;
 
-#[benchmarks]
+use astar_primitives::Balance;
+
+#[benchmarks(
+    where <T as pallet_contracts::Config>::Currency: Currency<T::AccountId, Balance = Balance>,
+)]
 mod benchmarks {
     use super::*;
 
@@ -38,10 +42,12 @@ mod benchmarks {
         let source = whitelisted_caller();
         let target = H160::repeat_byte(1).encode();
         let input = vec![1, 2, 3];
+        let value = 1_000_000u128;
 
         #[block]
         {
-            Pallet::<T>::call_without_execution(context, vm_id, source, target, input).unwrap();
+            Pallet::<T>::call_without_execution(context, vm_id, source, target, input, value)
+                .unwrap();
         }
     }
 
@@ -55,10 +61,12 @@ mod benchmarks {
         let source = whitelisted_caller();
         let target = MultiAddress::<T::AccountId, ()>::Id(whitelisted_caller()).encode();
         let input = vec![1, 2, 3];
+        let value = 1_000_000u128;
 
         #[block]
         {
-            Pallet::<T>::call_without_execution(context, vm_id, source, target, input).unwrap();
+            Pallet::<T>::call_without_execution(context, vm_id, source, target, input, value)
+                .unwrap();
         }
     }
 

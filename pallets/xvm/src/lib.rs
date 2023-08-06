@@ -37,19 +37,20 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{ensure, traits::ConstU32, BoundedVec};
+use frame_support::{ensure, traits::Currency};
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
-use sp_core::U256;
+use sp_core::{H160, U256};
 use sp_runtime::traits::StaticLookup;
 use sp_std::{marker::PhantomData, prelude::*};
 
 use astar_primitives::{
     ethereum_checked::{
-        AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, MAX_ETHEREUM_TX_INPUT_SIZE,
+        AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, EthereumTxInput,
     },
     xvm::{CallError, CallErrorWithWeight, CallInfo, CallResult, Context, VmId, XvmCall},
+    Balance,
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -58,8 +59,8 @@ mod benchmarking;
 pub mod weights;
 pub use weights::WeightInfo;
 
-#[cfg(test)]
 mod mock;
+mod tests;
 
 pub use pallet::*;
 
@@ -88,25 +89,35 @@ pub mod pallet {
     }
 }
 
-impl<T: Config> XvmCall<T::AccountId> for Pallet<T> {
+impl<T> XvmCall<T::AccountId> for Pallet<T>
+where
+    T: Config,
+    T::Currency: Currency<T::AccountId, Balance = Balance>,
+{
     fn call(
         context: Context,
         vm_id: VmId,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
+        value: Balance,
     ) -> CallResult {
-        Pallet::<T>::do_call(context, vm_id, source, target, input, false)
+        Pallet::<T>::do_call(context, vm_id, source, target, input, value, false)
     }
 }
 
-impl<T: Config> Pallet<T> {
+impl<T> Pallet<T>
+where
+    T: Config,
+    T::Currency: Currency<T::AccountId, Balance = Balance>,
+{
     fn do_call(
         context: Context,
         vm_id: VmId,
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
+        value: Balance,
         skip_execution: bool,
     ) -> CallResult {
         ensure!(
@@ -121,8 +132,12 @@ impl<T: Config> Pallet<T> {
         );
 
         match vm_id {
-            VmId::Evm => Pallet::<T>::evm_call(context, source, target, input, skip_execution),
-            VmId::Wasm => Pallet::<T>::wasm_call(context, source, target, input, skip_execution),
+            VmId::Evm => {
+                Pallet::<T>::evm_call(context, source, target, input, value, skip_execution)
+            }
+            VmId::Wasm => {
+                Pallet::<T>::wasm_call(context, source, target, input, value, skip_execution)
+            }
         }
     }
 
@@ -131,26 +146,33 @@ impl<T: Config> Pallet<T> {
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
+        value: Balance,
         skip_execution: bool,
     ) -> CallResult {
         log::trace!(
             target: "xvm::evm_call",
-            "Calling EVM: {:?} {:?}, {:?}, {:?}",
-            context, source, target, input,
+            "Calling EVM: {:?} {:?}, {:?}, {:?}, {:?}",
+            context, source, target, input, value,
         );
 
+        ensure!(
+            target.len() == H160::len_bytes(),
+            CallErrorWithWeight {
+                error: CallError::InvalidTarget,
+                used_weight: WeightInfoOf::<T>::evm_call_overheads(),
+            }
+        );
         let target_decoded =
             Decode::decode(&mut target.as_ref()).map_err(|_| CallErrorWithWeight {
                 error: CallError::InvalidTarget,
                 used_weight: WeightInfoOf::<T>::evm_call_overheads(),
             })?;
-        let bounded_input = BoundedVec::<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>::try_from(input)
-            .map_err(|_| CallErrorWithWeight {
-                error: CallError::InputTooLarge,
-                used_weight: WeightInfoOf::<T>::evm_call_overheads(),
-            })?;
+        let bounded_input = EthereumTxInput::try_from(input).map_err(|_| CallErrorWithWeight {
+            error: CallError::InputTooLarge,
+            used_weight: WeightInfoOf::<T>::evm_call_overheads(),
+        })?;
 
-        let value = U256::zero();
+        let value_u256 = U256::from(value);
         // With overheads, less weight is available.
         let weight_limit = context
             .weight_limit
@@ -161,7 +183,7 @@ impl<T: Config> Pallet<T> {
         let tx = CheckedEthereumTx {
             gas_limit,
             target: target_decoded,
-            value,
+            value: value_u256,
             input: bounded_input,
             maybe_access_list: None,
         };
@@ -210,12 +232,13 @@ impl<T: Config> Pallet<T> {
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
+        value: Balance,
         skip_execution: bool,
     ) -> CallResult {
         log::trace!(
             target: "xvm::wasm_call",
-            "Calling WASM: {:?} {:?}, {:?}, {:?}",
-            context, source, target, input,
+            "Calling WASM: {:?} {:?}, {:?}, {:?}, {:?}",
+            context, source, target, input, value,
         );
 
         let dest = {
@@ -231,7 +254,6 @@ impl<T: Config> Pallet<T> {
         let weight_limit = context
             .weight_limit
             .saturating_sub(WeightInfoOf::<T>::wasm_call_overheads());
-        let value = Default::default();
 
         // Note the skip execution check should be exactly before `pallet_contracts::bare_call`
         // to benchmark the correct overheads.
@@ -277,7 +299,8 @@ impl<T: Config> Pallet<T> {
         source: T::AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
+        value: Balance,
     ) -> CallResult {
-        Self::do_call(context, vm_id, source, target, input, true)
+        Self::do_call(context, vm_id, source, target, input, value, true)
     }
 }

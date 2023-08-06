@@ -33,6 +33,7 @@ astar-primitives = { workspace = true }
 
 [dev-dependencies]
 fp-evm = { workspace = true }
+hex = { workspace = true }
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-insecure-randomness-collective-flip = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true, features = ["std"] }
