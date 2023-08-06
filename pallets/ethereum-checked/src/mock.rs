@@ -294,7 +294,7 @@ impl ExtBuilder {
             assert_ok!(Evm::create2(
                 RuntimeOrigin::root(),
                 ALICE_H160,
-                hex::decode(STORAGE_CONTRACT).unwrap(),
+                hex::decode(STORAGE_CONTRACT).expect("invalid code hex"),
                 H256::zero(),
                 U256::zero(),
                 1_000_000,

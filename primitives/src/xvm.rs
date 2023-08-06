@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+use crate::Balance;
+
 use frame_support::weights::Weight;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -64,8 +66,6 @@ pub enum CallError {
     InvalidTarget,
     /// Input is too large.
     InputTooLarge,
-    /// Bad origin.
-    BadOrigin,
     /// The call failed on EVM or WASM execution.
     ExecutionFailed(Vec<u8>),
 }
@@ -102,11 +102,13 @@ pub trait XvmCall<AccountId> {
     /// - `source`: Caller Id.
     /// - `target`: Target contract address.
     /// - `input`: call input data.
+    /// - `value`: value to transfer.
     fn call(
         context: Context,
         vm_id: VmId,
         source: AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
+        value: Balance,
     ) -> CallResult;
 }

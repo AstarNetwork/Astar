@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::xvm::CallError;
+use astar_primitives::{xvm::CallError, Balance};
 use parity_scale_codec::{Decode, Encode};
 use sp_std::vec::Vec;
 
@@ -41,8 +41,7 @@ impl From<CallError> for XvmExecutionResult {
             SameVmCallNotAllowed => 2,
             InvalidTarget => 3,
             InputTooLarge => 4,
-            BadOrigin => 5,
-            ExecutionFailed(_) => 6,
+            ExecutionFailed(_) => 5,
         };
         Self::Err(error_code)
     }
@@ -65,4 +64,6 @@ pub struct XvmCallArgs {
     pub to: Vec<u8>,
     /// Encoded call params
     pub input: Vec<u8>,
+    /// Value to transfer
+    pub value: Balance,
 }

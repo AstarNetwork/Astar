@@ -6,15 +6,17 @@ pragma solidity ^0.8.0;
 interface XVM {
     /**
      * @dev Execute external VM call
-     * @param context - execution context
-     * @param to - call recepient
+     * @param vm_id - target VM id
+     * @param to - call recipient
      * @param input - SCALE-encoded call arguments
+     * @param value - value to transfer
      * @return success - operation outcome
      * @return data - output data if successful, error data on error
      */
     function xvm_call(
-        bytes calldata context,
+        uint8 vm_id,
         bytes calldata to,
-        bytes calldata input
-    ) external returns (bool success, bytes memory data);
+        bytes calldata input,
+        uint256 value
+    ) external payable returns (bool success, bytes memory data);
 }
