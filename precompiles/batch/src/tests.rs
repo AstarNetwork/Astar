@@ -20,7 +20,7 @@
 use crate::mock::{precompile_address, BatchPrecompileMock, ExtBuilder, PrecompilesValue, Runtime};
 use crate::{log_subcall_failed, log_subcall_succeeded, Mode, *};
 use fp_evm::ExitError;
-use precompile_utils::{evm::costs::call_cost, testing::*};
+use precompile_utils::{call_cost, testing::*, LogsBuilder};
 use sp_core::{H256, U256};
 
 fn precompiles() -> BatchPrecompileMock<Runtime> {
@@ -155,7 +155,9 @@ fn batch_returns(
 
                     SubcallOutput {
                         cost: 13,
-                        logs: vec![log1(Bob, H256::repeat_byte(0x11), vec![])],
+                        logs: vec![
+                            LogsBuilder::new(Bob.into()).log1(H256::repeat_byte(0x11), vec![])
+                        ],
                         ..SubcallOutput::succeed()
                     }
                 }
@@ -180,7 +182,9 @@ fn batch_returns(
 
                     SubcallOutput {
                         cost: 17,
-                        logs: vec![log1(Charlie, H256::repeat_byte(0x22), vec![])],
+                        logs: vec![
+                            LogsBuilder::new(Charlie.into()).log1(H256::repeat_byte(0x22), vec![])
+                        ],
                         ..SubcallOutput::succeed()
                     }
                 }
@@ -194,9 +198,9 @@ fn batch_returns(
 fn batch_some_returns() {
     ExtBuilder::default().build().execute_with(|| {
         batch_returns(&precompiles(), Mode::BatchSome)
-            .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
+            .expect_log(LogsBuilder::new(Bob.into()).log1(H256::repeat_byte(0x11), vec![]))
             .expect_log(log_subcall_succeeded(precompile_address(), 0))
-            .expect_log(log1(Charlie, H256::repeat_byte(0x22), vec![]))
+            .expect_log(LogsBuilder::new(Charlie.into()).log1(H256::repeat_byte(0x22), vec![]))
             .expect_log(log_subcall_succeeded(precompile_address(), 1))
             .execute_returns(EvmDataWriter::new().write(true).build())
     })
@@ -206,9 +210,9 @@ fn batch_some_returns() {
 fn batch_some_until_failure_returns() {
     ExtBuilder::default().build().execute_with(|| {
         batch_returns(&precompiles(), Mode::BatchSomeUntilFailure)
-            .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
+            .expect_log(LogsBuilder::new(Bob.into()).log1(H256::repeat_byte(0x11), vec![]))
             .expect_log(log_subcall_succeeded(precompile_address(), 0))
-            .expect_log(log1(Charlie, H256::repeat_byte(0x22), vec![]))
+            .expect_log(LogsBuilder::new(Charlie.into()).log1(H256::repeat_byte(0x22), vec![]))
             .expect_log(log_subcall_succeeded(precompile_address(), 1))
             .execute_returns(EvmDataWriter::new().write(true).build())
     })
@@ -218,9 +222,9 @@ fn batch_some_until_failure_returns() {
 fn batch_all_returns() {
     ExtBuilder::default().build().execute_with(|| {
         batch_returns(&precompiles(), Mode::BatchAll)
-            .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
+            .expect_log(LogsBuilder::new(Bob.into()).log1(H256::repeat_byte(0x11), vec![]))
             .expect_log(log_subcall_succeeded(precompile_address(), 0))
-            .expect_log(log1(Charlie, H256::repeat_byte(0x22), vec![]))
+            .expect_log(LogsBuilder::new(Charlie.into()).log1(H256::repeat_byte(0x22), vec![]))
             .expect_log(log_subcall_succeeded(precompile_address(), 1))
             .execute_returns(EvmDataWriter::new().write(true).build())
     })
@@ -371,7 +375,9 @@ fn batch_incomplete(
 
                     SubcallOutput {
                         cost: 13,
-                        logs: vec![log1(Bob, H256::repeat_byte(0x11), vec![])],
+                        logs: vec![
+                            LogsBuilder::new(Bob.into()).log1(H256::repeat_byte(0x11), vec![])
+                        ],
                         ..SubcallOutput::succeed()
                     }
                 }
@@ -421,7 +427,9 @@ fn batch_incomplete(
 
                     SubcallOutput {
                         cost: 19,
-                        logs: vec![log1(Alice, H256::repeat_byte(0x33), vec![])],
+                        logs: vec![
+                            LogsBuilder::new(Alice.into()).log1(H256::repeat_byte(0x33), vec![])
+                        ],
                         ..SubcallOutput::succeed()
                     }
                 }
@@ -436,10 +444,10 @@ fn batch_some_incomplete() {
         let (_, total_call_cost) = costs();
 
         batch_incomplete(&precompiles(), Mode::BatchSome)
-            .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
+            .expect_log(LogsBuilder::new(Bob.into()).log1(H256::repeat_byte(0x11), vec![]))
             .expect_log(log_subcall_succeeded(precompile_address(), 0))
             .expect_log(log_subcall_failed(precompile_address(), 1))
-            .expect_log(log1(Alice, H256::repeat_byte(0x33), vec![]))
+            .expect_log(LogsBuilder::new(Alice.into()).log1(H256::repeat_byte(0x33), vec![]))
             .expect_log(log_subcall_succeeded(precompile_address(), 2))
             .expect_cost(13 + 17 + 19 + total_call_cost * 3)
             .execute_returns(EvmDataWriter::new().write(true).build())
@@ -452,7 +460,7 @@ fn batch_some_until_failure_incomplete() {
         let (_, total_call_cost) = costs();
 
         batch_incomplete(&precompiles(), Mode::BatchSomeUntilFailure)
-            .expect_log(log1(Bob, H256::repeat_byte(0x11), vec![]))
+            .expect_log(LogsBuilder::new(Bob.into()).log1(H256::repeat_byte(0x11), vec![]))
             .expect_log(log_subcall_succeeded(precompile_address(), 0))
             .expect_log(log_subcall_failed(precompile_address(), 1))
             .expect_cost(13 + 17 + total_call_cost * 2)

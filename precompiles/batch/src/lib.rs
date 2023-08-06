@@ -26,12 +26,7 @@ use frame_support::{
     traits::ConstU32,
 };
 use pallet_evm::{Precompile, PrecompileOutput};
-use precompile_utils::{
-    bytes::BoundedBytes,
-    data::BoundedVec,
-    evm::{costs::call_cost, logs::log1},
-    *,
-};
+use precompile_utils::{bytes::BoundedBytes, data::BoundedVec, *};
 use sp_core::{H160, U256};
 use sp_std::{iter::repeat, marker::PhantomData, vec, vec::Vec};
 
@@ -56,16 +51,14 @@ type GetCallDataLimit = ConstU32<CALL_DATA_LIMIT>;
 type GetArrayLimit = ConstU32<ARRAY_LIMIT>;
 
 pub fn log_subcall_succeeded(address: impl Into<H160>, index: usize) -> Log {
-    log1(
-        address,
+    LogsBuilder::new(address.into()).log1(
         LOG_SUBCALL_SUCCEEDED,
         data::encode_event_data(U256::from(index)),
     )
 }
 
 pub fn log_subcall_failed(address: impl Into<H160>, index: usize) -> Log {
-    log1(
-        address,
+    LogsBuilder::new(address.into()).log1(
         LOG_SUBCALL_FAILED,
         data::encode_event_data(U256::from(index)),
     )

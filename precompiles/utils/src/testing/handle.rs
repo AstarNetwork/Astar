@@ -121,7 +121,7 @@ impl PrecompileHandle for MockHandle {
         context: &Context,
     ) -> (ExitReason, Vec<u8>) {
         if self
-            .record_cost(crate::evm::costs::call_cost(
+            .record_cost(crate::call_cost(
                 context.apparent_value,
                 &evm::Config::london(),
             ))
