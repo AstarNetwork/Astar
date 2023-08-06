@@ -2,7 +2,7 @@
 name = "precompile-utils"
 authors = ["StakeTechnologies", "PureStake"]
 description = "Utils to write EVM precompiles."
-version = "0.4.3"
+version = "0.4.4"
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true

@@ -31,7 +31,7 @@ pallet-evm = { workspace = true }
 
 [dev-dependencies]
 derive_more = { workspace = true }
-pallet-balances = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true }
 precompile-utils = { workspace = true, features = ["testing"] }
 serde = { workspace = true }
