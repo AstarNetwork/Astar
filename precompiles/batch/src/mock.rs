@@ -21,7 +21,7 @@
 use super::*;
 
 use fp_evm::IsPrecompileResult;
-use frame_support::traits::Everything;
+use frame_support::traits::{ConstU64, Everything};
 use frame_support::{construct_runtime, parameter_types, weights::Weight};
 use pallet_evm::{EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet};
 use precompile_utils::{mock_account, testing::MockAccount};
@@ -159,6 +159,7 @@ impl pallet_evm::Config for Runtime {
     type FindAuthor = ();
     type OnCreate = ();
     type WeightInfo = ();
+    type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
 parameter_types! {
