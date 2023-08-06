@@ -26,6 +26,9 @@ pub mod xcm;
 /// Checked Ethereum transaction primitives.
 pub mod ethereum_checked;
 
+/// XVM primitives.
+pub mod xvm;
+
 use sp_runtime::traits::BlakeTwo256;
 use sp_runtime::{
     generic,

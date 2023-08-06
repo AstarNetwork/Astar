@@ -79,17 +79,11 @@ pub fn new_partial(
             >,
             sc_consensus_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
             Option<Telemetry>,
-            Arc<fc_db::Backend<Block>>,
+            Arc<fc_db::kv::Backend<Block>>,
         ),
     >,
     ServiceError,
 > {
-    if config.keystore_remote.is_some() {
-        return Err(ServiceError::Other(
-            "Remote Keystores are not supported.".to_string(),
-        ));
-    }
-
     let telemetry = config
         .telemetry_endpoints
         .clone()
@@ -100,12 +94,8 @@ pub fn new_partial(
             Ok((worker, telemetry))
         })
         .transpose()?;
-    let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
-        config.wasm_method,
-        config.default_heap_pages,
-        config.max_runtime_instances,
-        config.runtime_cache_size,
-    );
+
+    let executor = sc_service::new_native_or_wasm_executor(&config);
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
@@ -135,11 +125,8 @@ pub fn new_partial(
         telemetry.as_ref().map(|x| x.handle()),
     )?;
     let frontier_backend = crate::rpc::open_frontier_backend(client.clone(), config)?;
-    let frontier_block_import = FrontierBlockImport::new(
-        grandpa_block_import.clone(),
-        client.clone(),
-        frontier_backend.clone(),
-    );
+    let frontier_block_import =
+        FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
     let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
         ImportQueueParams {
@@ -208,10 +195,12 @@ pub fn start_node(
             .expect("Genesis block exists; qed"),
         &config.chain_spec,
     );
+    let net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
 
     let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
+            net_config,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
@@ -268,7 +257,7 @@ pub fn start_node(
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
         Some("frontier"),
-        fc_mapping_sync::MappingSyncWorker::new(
+        fc_mapping_sync::kv::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
             client.clone(),
@@ -368,7 +357,7 @@ pub fn start_node(
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         network: network.clone(),
         client: client.clone(),
-        keystore: keystore_container.sync_keystore(),
+        keystore: keystore_container.keystore(),
         task_manager: &mut task_manager,
         transaction_pool: transaction_pool.clone(),
         rpc_builder: rpc_extensions_builder,
@@ -411,7 +400,7 @@ pub fn start_node(
                 },
                 force_authoring,
                 backoff_authoring_blocks,
-                keystore: keystore_container.sync_keystore(),
+                keystore: keystore_container.keystore(),
                 sync_oracle: sync_service.clone(),
                 justification_sync_link: sync_service.clone(),
                 block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
@@ -431,7 +420,7 @@ pub fn start_node(
     // if the node isn't actively participating in consensus then it doesn't
     // need a keystore, regardless of which protocol we use below.
     let keystore = if role.is_authority() {
-        Some(keystore_container.sync_keystore())
+        Some(keystore_container.keystore())
     } else {
         None
     };
@@ -501,10 +490,12 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             .expect("Genesis block exists; qed"),
         &config.chain_spec,
     );
+    let net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
 
     let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
+            net_config,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
@@ -540,7 +531,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
         Some("frontier"),
-        fc_mapping_sync::MappingSyncWorker::new(
+        fc_mapping_sync::kv::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
             client.clone(),
@@ -630,7 +621,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         network: network.clone(),
         client: client.clone(),
-        keystore: keystore_container.sync_keystore(),
+        keystore: keystore_container.keystore(),
         task_manager: &mut task_manager,
         transaction_pool: transaction_pool.clone(),
         rpc_builder: rpc_extensions_builder,
@@ -673,7 +664,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 },
                 force_authoring,
                 backoff_authoring_blocks,
-                keystore: keystore_container.sync_keystore(),
+                keystore: keystore_container.keystore(),
                 sync_oracle: sync_service.clone(),
                 justification_sync_link: sync_service.clone(),
                 block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
@@ -693,7 +684,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     // if the node isn't actively participating in consensus then it doesn't
     // need a keystore, regardless of which protocol we use below.
     let keystore = if role.is_authority() {
-        Some(keystore_container.sync_keystore())
+        Some(keystore_container.keystore())
     } else {
         None
     };

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use core::assert_matches::assert_matches;
+use assert_matches::assert_matches;
 
 use crate::mock::*;
 use crate::*;

@@ -80,6 +80,10 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ConstU128<2>;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 impl pallet_timestamp::Config for TestRuntime {
@@ -166,6 +170,7 @@ impl pallet_evm::Config for TestRuntime {
     type FindAuthor = MockFindAuthor;
     type Timestamp = Timestamp;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<TestRuntime>;
+    type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
 parameter_types! {

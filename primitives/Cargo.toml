@@ -8,6 +8,7 @@ repository.workspace = true
 
 [dependencies]
 # third-party dependencies
+impl-trait-for-tuples = { workspace = true }
 log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
@@ -20,6 +21,7 @@ fp-evm = { workspace = true }
 # Substrate dependencies
 frame-support = { workspace = true }
 sp-core = { workspace = true }
+sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
@@ -44,6 +46,7 @@ std = [
 	"sp-std/std",
 	"sp-runtime/std",
 	"sp-core/std",
+	"sp-io/std",
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",

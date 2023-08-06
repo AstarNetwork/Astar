@@ -13,6 +13,7 @@ name = "xcm-tools"
 path = "src/main.rs"
 
 [dependencies]
+astar-primitives = { workspace = true, features = ["std"] }
 clap = { workspace = true }
 cumulus-primitives-core = { workspace = true, features = ["std"] }
 polkadot-parachain = { workspace = true, features = ["std"] }
@@ -24,7 +25,6 @@ xcm-builder = { workspace = true, features = ["std"] }
 xcm-executor = { workspace = true, features = ["std"] }
 
 hex = { workspace = true }
-regex = { workspace = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

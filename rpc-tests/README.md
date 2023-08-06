@@ -30,7 +30,7 @@ cp target/release/astar-collator rpc-tests/bin/astar-collator
 
 Download and copy latest polkadot binary from https://github.com/paritytech/polkadot/releases to rpc-tests/bin folder
 
-Download and copy latest zombinet binary from https://github.com/paritytech/zombinet/releases to rpc-tests/bin folder
+Download and copy latest zombienet binary from https://github.com/paritytech/zombienet/releases to rpc-tests/bin folder
 
 To start the test suite.
 

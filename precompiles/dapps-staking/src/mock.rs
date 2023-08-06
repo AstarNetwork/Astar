@@ -21,7 +21,7 @@ use super::*;
 use fp_evm::IsPrecompileResult;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Currency, OnFinalize, OnInitialize},
+    traits::{ConstU64, Currency, OnFinalize, OnInitialize},
     weights::{RuntimeDbWeight, Weight},
     PalletId,
 };
@@ -195,6 +195,10 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ();
+    type MaxFreezes = ();
 }
 
 pub fn precompile_address() -> H160 {
@@ -249,6 +253,7 @@ impl pallet_evm::Config for TestRuntime {
     type FindAuthor = ();
     type OnCreate = ();
     type WeightInfo = ();
+    type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
 parameter_types! {

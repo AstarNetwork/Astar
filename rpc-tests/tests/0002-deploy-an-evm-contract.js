@@ -1,6 +1,6 @@
 async function run(nodeName, networkInfo, args) {
-    networkInfo.nodesByName["astar"].rpcPort = 8545
-    networkInfo.nodesByName["shiden"].rpcPort = 8546
+    networkInfo.nodesByName["astar"].rpcPort = 9944
+    networkInfo.nodesByName["shiden"].rpcPort = 9945
 
     const { rpcPort } = networkInfo.nodesByName[nodeName];
     const { compiled } = await import("./compile.mjs");

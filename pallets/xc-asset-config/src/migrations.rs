@@ -86,7 +86,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrationXcmV3<T> {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
         assert!(Pallet::<T>::on_chain_storage_version() < 2);
         let id_to_location_entries: Vec<_> = AssetIdToLocation::<T>::iter().collect();
 
@@ -94,7 +94,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrationXcmV3<T> {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+    fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
         assert_eq!(Pallet::<T>::on_chain_storage_version(), 2);
 
         use xcm::VersionedMultiLocation;

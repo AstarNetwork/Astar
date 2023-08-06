@@ -19,8 +19,12 @@
 use crate::{self as pallet_block_reward, NegativeImbalanceOf};
 
 use frame_support::{
-    construct_runtime, parameter_types, sp_io::TestExternalities, traits::Currency, traits::Get,
-    weights::Weight, PalletId,
+    construct_runtime, parameter_types,
+    sp_io::TestExternalities,
+    traits::Currency,
+    traits::{ConstU32, Get},
+    weights::Weight,
+    PalletId,
 };
 
 use sp_core::H256;
@@ -101,6 +105,10 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
 }
 
 parameter_types! {

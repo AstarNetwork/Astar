@@ -1,13 +1,12 @@
 [package]
 name = "pallet-xvm"
-version = "0.2.1"
+version = "0.2.2"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-impl-trait-for-tuples = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true, optional = true }
 
@@ -24,43 +23,44 @@ sp-std = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 
 # EVM
-pallet-evm = { workspace = true, optional = true }
+pallet-evm = { workspace = true }
 
 # Substrate WASM VM support
-pallet-contracts = { workspace = true, optional = true }
+pallet-contracts = { workspace = true }
 
 # Astar
 astar-primitives = { workspace = true }
-pallet-ethereum-checked = { workspace = true, optional = true }
 
 [dev-dependencies]
+fp-evm = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-insecure-randomness-collective-flip = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true, features = ["std"] }
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]
-evm = [
-	"pallet-evm",
-	"pallet-ethereum-checked",
-]
-wasm = [
-	"pallet-contracts",
-]
 std = [
+	"log/std",
 	"parity-scale-codec/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-contracts/std",
 	"pallet-evm/std",
+	"pallet-insecure-randomness-collective-flip/std",
 	"scale-info/std",
 	"serde",
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"astar-primitives/std",
-	"pallet-ethereum-checked/std",
 ]
 
 runtime-benchmarks = [
 	"frame-benchmarking",
-	"pallet-ethereum-checked/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"pallet-contracts/try-runtime",
+	"pallet-evm/try-runtime",
+]

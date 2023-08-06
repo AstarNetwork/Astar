@@ -174,7 +174,7 @@ pub mod pallet {
                                 initial: old.initial,
                                 maximum: old.maximum,
                                 code: old.code,
-                                determinism: Determinism::Deterministic,
+                                determinism: Determinism::Enforced,
                             })
                         });
 
@@ -294,10 +294,10 @@ pub mod pallet {
         }
 
         #[cfg(feature = "try-runtime")]
-        fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
+        fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
             for value in CodeStorage::<T>::iter_values() {
                 ensure!(
-                    value.determinism == Determinism::Deterministic,
+                    value.determinism == Determinism::Enforced,
                     "All pre-existing codes need to be deterministic."
                 );
             }

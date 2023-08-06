@@ -1,7 +1,7 @@
 [package]
 name = "pallet-evm-precompile-xvm"
 description = "Cross-VM call support for EVM."
-version = "0.1.0"
+version = "0.1.1"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -10,7 +10,6 @@ repository.workspace = true
 [dependencies]
 log = { workspace = true }
 num_enum = { workspace = true }
-pallet-xvm = { workspace = true }
 precompile-utils = { workspace = true }
 
 # Substrate
@@ -26,6 +25,9 @@ sp-std = { workspace = true }
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
+# Astar
+astar-primitives = { workspace = true }
+
 [dev-dependencies]
 derive_more = { workspace = true }
 hex-literal = { workspace = true }
@@ -34,7 +36,7 @@ serde = { workspace = true }
 
 precompile-utils = { workspace = true, features = ["testing"] }
 
-pallet-balances = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true }
 sp-runtime = { workspace = true }
 
@@ -46,10 +48,10 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-evm/std",
-	"pallet-xvm/std",
 	"precompile-utils/std",
 	"sp-core/std",
 	"sp-std/std",
 	"sp-io/std",
 	"sp-runtime/std",
+	"astar-primitives/std",
 ]

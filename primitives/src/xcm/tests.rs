@@ -510,7 +510,7 @@ fn allow_paid_exec_with_descend_origin_with_unsupported_origin_fails() {
         Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
-    assert_eq!(res, Err(()));
+    assert_eq!(res, Err(ProcessMessageError::Unsupported));
 }
 
 #[test]
@@ -523,7 +523,7 @@ fn allow_paid_exec_with_descend_origin_with_invalid_message_fails() {
         Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
-    assert_eq!(res, Err(()));
+    assert_eq!(res, Err(ProcessMessageError::Unsupported));
 
     // Should still fail, even if correct sequence follows next
     invalid_message.append(&mut desc_origin_barrier_valid_sequence());
@@ -533,7 +533,7 @@ fn allow_paid_exec_with_descend_origin_with_invalid_message_fails() {
         Weight::from_parts(100, 0),
         &mut Weight::zero(),
     );
-    assert_eq!(res, Err(()));
+    assert_eq!(res, Err(ProcessMessageError::Unsupported));
 }
 
 #[test]
@@ -558,5 +558,51 @@ fn allow_paid_exec_with_descend_origin_too_small_weight_fails() {
         enforced_weight_limit,
         &mut Weight::zero(),
     );
-    assert_eq!(res, Err(()));
+    assert_eq!(res, Err(ProcessMessageError::Unsupported));
+}
+
+// TODO: can be deleted after uplift to `polkadot-v0.9.44` or beyond.
+#[test]
+fn hashed_description_sanity_check() {
+    let acc_key_20_mul = MultiLocation {
+        parents: 1,
+        interior: X2(
+            Parachain(1),
+            AccountKey20 {
+                network: None,
+                key: [7u8; 20],
+            },
+        ),
+    };
+    // Ensure derived value is same as it would be using `polkadot-v0.9.44` code.
+    let derived_account =
+        HashedDescription::<[u8; 32], DescribeFamily<DescribeAllTerminal>>::convert(acc_key_20_mul);
+    assert_eq!(
+        derived_account,
+        Ok([
+            61_u8, 117, 247, 231, 100, 219, 128, 176, 180, 200, 187, 102, 93, 107, 187, 145, 25,
+            146, 50, 248, 244, 153, 83, 95, 207, 165, 90, 10, 220, 39, 23, 49
+        ])
+    );
+
+    let acc_id_32_mul = MultiLocation {
+        parents: 1,
+        interior: X2(
+            Parachain(50),
+            AccountId32 {
+                network: None,
+                id: [3; 32].into(),
+            },
+        ),
+    };
+    // Ensure derived value is same as it would be using `polkadot-v0.9.44` code.
+    let derived_account =
+        HashedDescription::<[u8; 32], DescribeFamily<DescribeAllTerminal>>::convert(acc_id_32_mul);
+    assert_eq!(
+        derived_account,
+        Ok([
+            123, 171, 79, 159, 78, 47, 62, 233, 108, 149, 131, 249, 23, 192, 178, 52, 235, 133,
+            147, 145, 152, 89, 129, 92, 63, 79, 211, 235, 213, 152, 201, 205
+        ])
+    );
 }

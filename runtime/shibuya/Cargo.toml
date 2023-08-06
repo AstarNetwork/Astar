@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.14.0"
+version = "5.16.1"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -63,7 +63,6 @@ pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
-pallet-state-trie-migration = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
@@ -114,7 +113,7 @@ pallet-evm-precompile-xcm = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
-pallet-xvm = { workspace = true, features = ["evm", "wasm"] }
+pallet-xvm = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
@@ -209,7 +208,6 @@ std = [
 	"pallet-xvm/std",
 	"pallet-ethereum-checked/std",
 	"pallet-scheduler/std",
-	"pallet-state-trie-migration/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",
@@ -256,6 +254,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-ethereum-checked/runtime-benchmarks",
+	"pallet-xvm/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
@@ -304,7 +303,6 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
-	"pallet-state-trie-migration/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
 	"orml-xtokens/try-runtime",
 ]

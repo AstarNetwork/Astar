@@ -22,14 +22,13 @@ pub(crate) mod relay_chain;
 
 use frame_support::traits::{Currency, IsType, OnFinalize, OnInitialize};
 use frame_support::weights::Weight;
-use pallet_contracts::Determinism;
 use pallet_contracts_primitives::{Code, ReturnFlags};
 use parity_scale_codec::Decode;
 use sp_runtime::traits::{Bounded, Hash, StaticLookup};
 use sp_runtime::DispatchResult;
 use xcm::latest::prelude::*;
 use xcm_executor::traits::Convert;
-use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
+use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain, TestExt};
 
 type ContractBalanceOf<T> = <<T as pallet_contracts::Config>::Currency as Currency<
     <T as frame_system::Config>::AccountId,
@@ -62,7 +61,11 @@ decl_test_parachain! {
 decl_test_relay_chain! {
     pub struct Relay {
         Runtime = relay_chain::Runtime,
+        RuntimeCall = relay_chain::RuntimeCall,
+        RuntimeEvent = relay_chain::RuntimeEvent,
         XcmConfig = relay_chain::XcmConfig,
+        MessageQueue = relay_chain::MessageQueue,
+        System = relay_chain::System,
         new_ext = relay_ext(),
     }
 }
@@ -292,9 +295,9 @@ pub fn deploy_contract<T: pallet_contracts::Config>(
         storage_deposit_limit,
         Code::Upload(code),
         data,
-        // vec![],
         vec![],
-        true,
+        pallet_contracts::DebugInfo::Skip,
+        pallet_contracts::CollectEvents::Skip,
     );
 
     // make sure it does not revert
@@ -325,8 +328,9 @@ pub fn call_contract_method<T: pallet_contracts::Config, V: Decode>(
         gas_limit,
         storage_deposit_limit,
         data,
-        debug,
-        Determinism::Deterministic,
+        pallet_contracts::DebugInfo::Skip,
+        pallet_contracts::CollectEvents::Skip,
+        pallet_contracts::Determinism::Enforced,
     );
 
     if debug {

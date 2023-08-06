@@ -69,7 +69,7 @@ where
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
     DappsStakingWrapper<R>: Precompile,
     BatchPrecompile<R>: Precompile,
-    XvmPrecompile<R>: Precompile,
+    XvmPrecompile<R, pallet_xvm::Pallet<R>>: Precompile,
     Dispatch<R>: Precompile,
     R: pallet_evm::Config
         + pallet_xvm::Config
@@ -112,9 +112,12 @@ where
             // SubstrateEcdsa 0x5003
             a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
             // Xvm 0x5005
-            a if a == hash(20485) => Some(XvmPrecompile::<R>::execute(handle)),
+            a if a == hash(20485) => {
+                Some(XvmPrecompile::<R, pallet_xvm::Pallet<R>>::execute(handle))
+            }
             // Batch 0x5006
             a if a == hash(20486) => Some(BatchPrecompile::<R>::execute(handle)),
+
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)
