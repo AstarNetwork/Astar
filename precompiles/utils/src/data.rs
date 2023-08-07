@@ -23,9 +23,9 @@
 use crate::{revert, EvmResult};
 
 use alloc::borrow::ToOwned;
-use core::{any::type_name, ops::Range};
+use core::{any::type_name, marker::PhantomData, ops::Range};
 use impl_trait_for_tuples::impl_for_tuples;
-use sp_core::{H160, H256, U256};
+use sp_core::{Get, H160, H256, U256};
 use sp_std::{convert::TryInto, vec, vec::Vec};
 
 /// The `address` type of Solidity.
@@ -175,6 +175,11 @@ impl<'a> EvmDataReader<'a> {
         })
     }
 
+    /// Return Option<&[u8]> from a given range for EvmDataReader
+    pub fn get_input_from_range(&self, range: Range<usize>) -> Option<&[u8]> {
+        self.input.get(range)
+    }
+
     /// Read remaining bytes
     pub fn read_till_end(&mut self) -> EvmResult<&[u8]> {
         let range = self.move_cursor(self.input.len() - self.cursor)?;
@@ -190,7 +195,7 @@ impl<'a> EvmDataReader<'a> {
     /// Move the reading cursor with provided length, and return a range from the previous cursor
     /// location to the new one.
     /// Checks cursor overflows.
-    fn move_cursor(&mut self, len: usize) -> EvmResult<Range<usize>> {
+    pub fn move_cursor(&mut self, len: usize) -> EvmResult<Range<usize>> {
         let start = self.cursor;
         let end = self
             .cursor
@@ -285,7 +290,7 @@ impl EvmDataWriter {
 
     /// Write arbitrary bytes.
     /// Doesn't handle any alignement checks, prefer using `write` instead if possible.
-    fn write_raw_bytes(mut self, value: &[u8]) -> Self {
+    pub fn write_raw_bytes(mut self, value: &[u8]) -> Self {
         self.data.extend_from_slice(value);
         self
     }
@@ -602,5 +607,107 @@ impl EvmData for Bytes {
 
     fn has_static_size() -> bool {
         false
+    }
+}
+
+/// Wrapper around a Vec that provides a max length bound on read.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BoundedVec<T, S> {
+    inner: Vec<T>,
+    _phantom: PhantomData<S>,
+}
+
+impl<T: EvmData, S: Get<u32>> EvmData for BoundedVec<T, S> {
+    fn read(reader: &mut EvmDataReader) -> EvmResult<Self> {
+        let mut inner_reader = reader.read_pointer()?;
+
+        let array_size: usize = inner_reader
+            .read::<U256>()
+            .map_err(|_| revert("out of bounds: length of array"))?
+            .try_into()
+            .map_err(|_| revert("value too large : Array has more than max items allowed"))?;
+
+        if array_size > S::get() as usize {
+            return Err(revert("value too large : Array has more than max items allowed").into());
+        }
+
+        let mut array = vec![];
+
+        let mut item_reader = EvmDataReader {
+            input: inner_reader
+                .input
+                .get(32..)
+                .ok_or_else(|| revert("read out of bounds: array content"))?,
+            cursor: 0,
+        };
+
+        for _ in 0..array_size {
+            array.push(item_reader.read()?);
+        }
+
+        Ok(BoundedVec {
+            inner: array,
+            _phantom: PhantomData,
+        })
+    }
+
+    fn write(writer: &mut EvmDataWriter, value: Self) {
+        let value: Vec<_> = value.into();
+        let mut inner_writer = EvmDataWriter::new().write(U256::from(value.len()));
+
+        for inner in value {
+            // Any offset in items are relative to the start of the item instead of the
+            // start of the array. However if there is offseted data it must but appended after
+            // all items (offsets) are written. We thus need to rely on `compute_offsets` to do
+            // that, and must store a "shift" to correct the offsets.
+            let shift = inner_writer.data.len();
+            let item_writer = EvmDataWriter::new().write(inner);
+
+            inner_writer = inner_writer.write_raw_bytes(&item_writer.data);
+            for mut offset_datum in item_writer.offset_data {
+                offset_datum.offset_shift += 32;
+                offset_datum.offset_position += shift;
+                inner_writer.offset_data.push(offset_datum);
+            }
+        }
+
+        writer.write_pointer(inner_writer.build());
+    }
+
+    fn has_static_size() -> bool {
+        false
+    }
+}
+
+impl<T, S> From<Vec<T>> for BoundedVec<T, S> {
+    fn from(value: Vec<T>) -> Self {
+        BoundedVec {
+            inner: value,
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<T: Clone, S> From<&[T]> for BoundedVec<T, S> {
+    fn from(value: &[T]) -> Self {
+        BoundedVec {
+            inner: value.to_vec(),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<T: Clone, S, const N: usize> From<[T; N]> for BoundedVec<T, S> {
+    fn from(value: [T; N]) -> Self {
+        BoundedVec {
+            inner: value.to_vec(),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<T, S> From<BoundedVec<T, S>> for Vec<T> {
+    fn from(value: BoundedVec<T, S>) -> Self {
+        value.inner
     }
 }

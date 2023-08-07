@@ -22,22 +22,29 @@ use fp_evm::{PrecompileHandle, PrecompileOutput};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
     pallet_prelude::Weight,
-    traits::Get,
+    traits::{ConstU32, Get},
 };
+pub const XCM_SIZE_LIMIT: u32 = 2u32.pow(16);
+type GetXcmSizeLimit = ConstU32<XCM_SIZE_LIMIT>;
+
 use pallet_evm::{AddressMapping, Precompile};
+use parity_scale_codec::DecodeLimit;
 use sp_core::{H160, H256, U256};
+
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 
-use xcm::latest::prelude::*;
+use xcm::{latest::prelude::*, VersionedMultiAsset, VersionedMultiAssets, VersionedMultiLocation};
 use xcm_executor::traits::Convert;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use precompile_utils::{
-    revert, succeed, Address, Bytes, EvmDataWriter, EvmResult, FunctionModifier,
-    PrecompileHandleExt, RuntimeHelper,
+    bytes::BoundedBytes,
+    data::BoundedVec,
+    revert, succeed,
+    xcm::{Currency, EvmMultiAsset},
+    Address, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt, RuntimeHelper,
 };
-
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -48,30 +55,66 @@ mod tests;
 pub enum Action {
     AssetsWithdrawNative = "assets_withdraw(address[],uint256[],bytes32,bool,uint256,uint256)",
     AssetsWithdrawEvm = "assets_withdraw(address[],uint256[],address,bool,uint256,uint256)",
-    RemoteTransact = "remote_transact(uint256,bool,address,uint256,bytes,uint64)",
+    RemoteTransactOld = "remote_transact(uint256,bool,address,uint256,bytes,uint64)",
     AssetsReserveTransferNative =
         "assets_reserve_transfer(address[],uint256[],bytes32,bool,uint256,uint256)",
     AssetsReserveTransferEvm =
         "assets_reserve_transfer(address[],uint256[],address,bool,uint256,uint256)",
+    AssetsWithdraw = "assets_withdraw(address[],uint256[],(uint8,bytes[]),(uint8,bytes[]),uint256)",
+    RemoteTransactNew = "remote_transact((uint8,bytes[]),address,uint256,bytes,uint64)",
+    AssetsReserveTransfer =
+        "assets_reserve_transfer(address[],uint256[],(uint8,bytes[]),(uint8,bytes[]),uint256)",
+    SendXCM = "send_xcm((uint8,bytes[]),bytes)",
+    XtokensTransfer = "transfer(address,uint256,(uint8,bytes[]),uint64)",
+    XtokensTransferWithFee = "transfer_with_fee(address,uint256,uint256,(uint8,bytes[]),uint64)",
+    XtokensTransferMultiasset =
+        "transfer_multiasset((uint8,bytes[]),uint256,(uint8,bytes[]),uint64)",
+    XtokensTransferMultiassetWithFee =
+        "transfer_multiasset_with_fee((uint8,bytes[]),uint256,uint256,(uint8,bytes[]),uint64)",
+    XtokensTransferMulticurrencies =
+        "transfer_multi_currencies((address,uint256)[],uint32,(uint8,bytes[]),uint64)",
+    XtokensTransferMultiassets =
+        "transfet_multi_assets(((uint8,bytes[]),uint256)[],uint32,(uint8,bytes[]),uint64)",
 }
 
 /// Dummy H160 address representing native currency (e.g. ASTR or SDN)
 const NATIVE_ADDRESS: H160 = H160::zero();
+/// Dummy default 64KB
+const DEFAULT_PROOF_SIZE: u64 = 1024 * 64;
 
+pub type XBalanceOf<Runtime> = <Runtime as orml_xtokens::Config>::Balance;
+
+pub struct GetMaxAssets<R>(PhantomData<R>);
+
+impl<R> Get<u32> for GetMaxAssets<R>
+where
+    R: orml_xtokens::Config,
+{
+    fn get() -> u32 {
+        <R as orml_xtokens::Config>::MaxAssetsForTransfer::get() as u32
+    }
+}
 /// A precompile that expose XCM related functions.
 pub struct XcmPrecompile<T, C>(PhantomData<(T, C)>);
 
-impl<R, C> Precompile for XcmPrecompile<R, C>
+impl<Runtime, C> Precompile for XcmPrecompile<Runtime, C>
 where
-    R: pallet_evm::Config
+    Runtime: pallet_evm::Config
         + pallet_xcm::Config
         + pallet_assets::Config
-        + AddressToAssetId<<R as pallet_assets::Config>::AssetId>,
-    <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
-        From<Option<R::AccountId>>,
-    <R as frame_system::Config>::RuntimeCall:
-        From<pallet_xcm::Call<R>> + Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
-    C: Convert<MultiLocation, <R as pallet_assets::Config>::AssetId>,
+        + orml_xtokens::Config
+        + AddressToAssetId<<Runtime as pallet_assets::Config>::AssetId>,
+    <<Runtime as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
+        From<Option<Runtime::AccountId>>,
+    <Runtime as frame_system::Config>::AccountId: Into<[u8; 32]>,
+    <Runtime as frame_system::Config>::RuntimeCall: From<pallet_xcm::Call<Runtime>>
+        + From<orml_xtokens::Call<Runtime>>
+        + Dispatchable<PostInfo = PostDispatchInfo>
+        + GetDispatchInfo,
+    XBalanceOf<Runtime>: TryFrom<U256> + Into<U256>,
+    <Runtime as orml_xtokens::Config>::CurrencyId:
+        From<<Runtime as pallet_assets::Config>::AssetId>,
+    C: Convert<MultiLocation, <Runtime as pallet_assets::Config>::AssetId>,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         log::trace!(target: "xcm-precompile", "In XCM precompile");
@@ -83,16 +126,28 @@ where
         // Dispatch the call
         match selector {
             Action::AssetsWithdrawNative => {
-                Self::assets_withdraw(handle, BeneficiaryType::Account32)
+                Self::assets_withdraw_v1(handle, BeneficiaryType::Account32)
             }
-            Action::AssetsWithdrawEvm => Self::assets_withdraw(handle, BeneficiaryType::Account20),
-            Action::RemoteTransact => Self::remote_transact(handle),
+            Action::AssetsWithdrawEvm => {
+                Self::assets_withdraw_v1(handle, BeneficiaryType::Account20)
+            }
+            Action::RemoteTransactOld => Self::remote_transact_v1(handle),
             Action::AssetsReserveTransferNative => {
-                Self::assets_reserve_transfer(handle, BeneficiaryType::Account32)
+                Self::assets_reserve_transfer_v1(handle, BeneficiaryType::Account32)
             }
             Action::AssetsReserveTransferEvm => {
-                Self::assets_reserve_transfer(handle, BeneficiaryType::Account20)
+                Self::assets_reserve_transfer_v1(handle, BeneficiaryType::Account20)
             }
+            Action::AssetsWithdraw => Self::assets_withdraw(handle),
+            Action::RemoteTransactNew => Self::remote_transact(handle),
+            Action::AssetsReserveTransfer => Self::assets_reserve_transfer(handle),
+            Action::SendXCM => Self::send_xcm(handle),
+            Action::XtokensTransfer => Self::transfer(handle),
+            Action::XtokensTransferWithFee => Self::transfer_with_fee(handle),
+            Action::XtokensTransferMultiasset => Self::transfer_multiasset(handle),
+            Action::XtokensTransferMultiassetWithFee => Self::transfer_multiasset_with_fee(handle),
+            Action::XtokensTransferMulticurrencies => Self::transfer_multi_currencies(handle),
+            Action::XtokensTransferMultiassets => Self::transfer_multi_assets(handle),
         }
     }
 }
@@ -105,19 +160,26 @@ enum BeneficiaryType {
     Account20,
 }
 
-impl<R, C> XcmPrecompile<R, C>
+impl<Runtime, C> XcmPrecompile<Runtime, C>
 where
-    R: pallet_evm::Config
+    Runtime: pallet_evm::Config
         + pallet_xcm::Config
+        + orml_xtokens::Config
         + pallet_assets::Config
-        + AddressToAssetId<<R as pallet_assets::Config>::AssetId>,
-    <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
-        From<Option<R::AccountId>>,
-    <R as frame_system::Config>::RuntimeCall:
-        From<pallet_xcm::Call<R>> + Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
-    C: Convert<MultiLocation, <R as pallet_assets::Config>::AssetId>,
+        + AddressToAssetId<<Runtime as pallet_assets::Config>::AssetId>,
+    <<Runtime as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
+        From<Option<Runtime::AccountId>>,
+    <Runtime as frame_system::Config>::AccountId: Into<[u8; 32]>,
+    <Runtime as frame_system::Config>::RuntimeCall: From<pallet_xcm::Call<Runtime>>
+        + From<orml_xtokens::Call<Runtime>>
+        + Dispatchable<PostInfo = PostDispatchInfo>
+        + GetDispatchInfo,
+    XBalanceOf<Runtime>: TryFrom<U256> + Into<U256>,
+    <Runtime as orml_xtokens::Config>::CurrencyId:
+        From<<Runtime as pallet_assets::Config>::AssetId>,
+    C: Convert<MultiLocation, <Runtime as pallet_assets::Config>::AssetId>,
 {
-    fn assets_withdraw(
+    fn assets_withdraw_v1(
         handle: &mut impl PrecompileHandle,
         beneficiary_type: BeneficiaryType,
     ) -> EvmResult<PrecompileOutput> {
@@ -130,7 +192,7 @@ where
             .iter()
             .cloned()
             .filter_map(|address| {
-                R::address_to_asset_id(address.into()).and_then(|x| C::reverse_ref(x).ok())
+                Runtime::address_to_asset_id(address.into()).and_then(|x| C::reverse_ref(x).ok())
             })
             .collect();
         let amounts_raw = input.read::<Vec<U256>>()?;
@@ -188,8 +250,11 @@ where
             .into();
 
         // Build call with origin.
-        let origin = Some(R::AddressMapping::into_account_id(handle.context().caller)).into();
-        let call = pallet_xcm::Call::<R>::reserve_withdraw_assets {
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+        let call = pallet_xcm::Call::<Runtime>::reserve_withdraw_assets {
             dest: Box::new(dest.into()),
             beneficiary: Box::new(beneficiary.into()),
             assets: Box::new(assets.into()),
@@ -197,12 +262,12 @@ where
         };
 
         // Dispatch a call.
-        RuntimeHelper::<R>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
 
         Ok(succeed(EvmDataWriter::new().write(true).build()))
     }
 
-    fn remote_transact(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+    fn remote_transact_v1(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
         input.expect_arguments(6)?;
 
@@ -234,7 +299,7 @@ where
             if address == NATIVE_ADDRESS {
                 Here.into()
             } else {
-                let fee_asset_id = R::address_to_asset_id(address)
+                let fee_asset_id = Runtime::address_to_asset_id(address)
                     .ok_or(revert("Failed to resolve fee asset id from address"))?;
                 C::reverse_ref(fee_asset_id).map_err(|_| {
                     revert("Failed to resolve fee asset multilocation from local id")
@@ -247,7 +312,7 @@ where
         }
         let fee_amount = fee_amount.low_u128();
 
-        let context = R::UniversalLocation::get();
+        let context = <Runtime as pallet_xcm::Config>::UniversalLocation::get();
         let fee_multilocation = MultiAsset {
             id: Concrete(fee_asset),
             fun: Fungible(fee_amount),
@@ -265,7 +330,7 @@ where
             },
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_parts(transact_weight, 0),
+                require_weight_at_most: Weight::from_ref_time(transact_weight),
                 call: remote_call.into(),
             },
         ]);
@@ -273,19 +338,22 @@ where
         log::trace!(target: "xcm-precompile:remote_transact", "Processed arguments: dest: {:?}, fee asset: {:?}, XCM: {:?}", dest, fee_multilocation, xcm);
 
         // Build call with origin.
-        let origin = Some(R::AddressMapping::into_account_id(handle.context().caller)).into();
-        let call = pallet_xcm::Call::<R>::send {
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+        let call = pallet_xcm::Call::<Runtime>::send {
             dest: Box::new(dest.into()),
             message: Box::new(xcm::VersionedXcm::V3(xcm)),
         };
 
         // Dispatch a call.
-        RuntimeHelper::<R>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
 
         Ok(succeed(EvmDataWriter::new().write(true).build()))
     }
 
-    fn assets_reserve_transfer(
+    fn assets_reserve_transfer_v1(
         handle: &mut impl PrecompileHandle,
         beneficiary_type: BeneficiaryType,
     ) -> EvmResult<PrecompileOutput> {
@@ -304,7 +372,7 @@ where
                 if address == NATIVE_ADDRESS {
                     Some(Here.into())
                 } else {
-                    R::address_to_asset_id(address).and_then(|x| C::reverse_ref(x).ok())
+                    Runtime::address_to_asset_id(address).and_then(|x| C::reverse_ref(x).ok())
                 }
             })
             .collect();
@@ -365,8 +433,11 @@ where
             .into();
 
         // Build call with origin.
-        let origin = Some(R::AddressMapping::into_account_id(handle.context().caller)).into();
-        let call = pallet_xcm::Call::<R>::reserve_transfer_assets {
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+        let call = pallet_xcm::Call::<Runtime>::reserve_transfer_assets {
             dest: Box::new(dest.into()),
             beneficiary: Box::new(beneficiary.into()),
             assets: Box::new(assets.into()),
@@ -374,7 +445,529 @@ where
         };
 
         // Dispatch a call.
-        RuntimeHelper::<R>::try_dispatch(handle, origin, call)?;
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn assets_withdraw(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(6)?;
+
+        // Read arguments and check it
+        let assets: Vec<MultiLocation> = input
+            .read::<Vec<Address>>()?
+            .iter()
+            .cloned()
+            .filter_map(|address| {
+                Runtime::address_to_asset_id(address.into()).and_then(|x| C::reverse_ref(x).ok())
+            })
+            .collect();
+        let amounts_raw = input.read::<Vec<U256>>()?;
+        if amounts_raw.iter().any(|x| *x > u128::MAX.into()) {
+            return Err(revert("Asset amount is too big"));
+        }
+        let amounts: Vec<u128> = amounts_raw.iter().map(|x| x.low_u128()).collect();
+
+        // Check that assets list is valid:
+        // * all assets resolved to multi-location
+        // * all assets has corresponded amount
+        if assets.len() != amounts.len() || assets.is_empty() {
+            return Err(revert("Assets resolution failure."));
+        }
+
+        let beneficiary: MultiLocation = input.read::<MultiLocation>()?;
+        let dest: MultiLocation = input.read::<MultiLocation>()?;
+
+        let fee_asset_item: u32 = input.read::<U256>()?.low_u32();
+
+        log::trace!(target: "xcm-precompile::asset_withdraw", "Raw arguments: assets: {:?}, asset_amount: {:?} \
+         beneficiart: {:?}, destination: {:?}, fee_index: {}",
+        assets, amounts_raw, beneficiary, dest, fee_asset_item);
+
+        if fee_asset_item as usize > assets.len() {
+            return Err(revert("Bad fee index."));
+        }
+
+        let assets: MultiAssets = assets
+            .iter()
+            .cloned()
+            .zip(amounts.iter().cloned())
+            .map(Into::into)
+            .collect::<Vec<MultiAsset>>()
+            .into();
+
+        // Build call with origin.
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+        let call = pallet_xcm::Call::<Runtime>::reserve_withdraw_assets {
+            dest: Box::new(dest.into()),
+            beneficiary: Box::new(beneficiary.into()),
+            assets: Box::new(assets.into()),
+            fee_asset_item,
+        };
+
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn remote_transact(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(6)?;
+
+        let dest: MultiLocation = input.read::<MultiLocation>()?;
+        let fee_asset_addr = input.read::<Address>()?;
+        let fee_amount = input.read::<U256>()?;
+
+        let remote_call: Vec<u8> = input.read::<Bytes>()?.into();
+        let transact_weight = input.read::<u64>()?;
+
+        log::trace!(target: "xcm-precompile::remote_transact", "Raw arguments: dest: {:?}, fee_asset_addr: {:?} \
+         fee_amount: {:?}, remote_call: {:?}, transact_weight: {}",
+        dest, fee_asset_addr, fee_amount, remote_call, transact_weight);
+
+        let fee_asset = {
+            let address: H160 = fee_asset_addr.into();
+
+            // Special case where zero address maps to native token by convention.
+            if address == NATIVE_ADDRESS {
+                Here.into()
+            } else {
+                let fee_asset_id = Runtime::address_to_asset_id(address)
+                    .ok_or(revert("Failed to resolve fee asset id from address"))?;
+                C::reverse_ref(fee_asset_id).map_err(|_| {
+                    revert("Failed to resolve fee asset multilocation from local id")
+                })?
+            }
+        };
+
+        if fee_amount > u128::MAX.into() {
+            return Err(revert("Fee amount is too big"));
+        }
+        let fee_amount = fee_amount.low_u128();
+
+        let context = <Runtime as pallet_xcm::Config>::UniversalLocation::get();
+        let fee_multilocation = MultiAsset {
+            id: Concrete(fee_asset),
+            fun: Fungible(fee_amount),
+        };
+        let fee_multilocation = fee_multilocation
+            .reanchored(&dest, context)
+            .map_err(|_| revert("Failed to reanchor fee asset"))?;
+
+        // Prepare XCM
+        let xcm = Xcm(vec![
+            WithdrawAsset(fee_multilocation.clone().into()),
+            BuyExecution {
+                fees: fee_multilocation.clone().into(),
+                weight_limit: WeightLimit::Unlimited,
+            },
+            Transact {
+                origin_kind: OriginKind::SovereignAccount,
+                require_weight_at_most: Weight::from_ref_time(transact_weight),
+                call: remote_call.into(),
+            },
+        ]);
+
+        log::trace!(target: "xcm-precompile:remote_transact", "Processed arguments: dest: {:?}, fee asset: {:?}, XCM: {:?}", dest, fee_multilocation, xcm);
+
+        // Build call with origin.
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+        let call = pallet_xcm::Call::<Runtime>::send {
+            dest: Box::new(dest.into()),
+            message: Box::new(xcm::VersionedXcm::V3(xcm)),
+        };
+
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn assets_reserve_transfer(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(6)?;
+
+        // Read arguments and check it
+        let assets: Vec<MultiLocation> = input
+            .read::<Vec<Address>>()?
+            .iter()
+            .cloned()
+            .filter_map(|address| {
+                let address: H160 = address.into();
+
+                // Special case where zero address maps to native token by convention.
+                if address == NATIVE_ADDRESS {
+                    Some(Here.into())
+                } else {
+                    Runtime::address_to_asset_id(address).and_then(|x| C::reverse_ref(x).ok())
+                }
+            })
+            .collect();
+        let amounts_raw = input.read::<Vec<U256>>()?;
+        if amounts_raw.iter().any(|x| *x > u128::MAX.into()) {
+            return Err(revert("Asset amount is too big"));
+        }
+        let amounts: Vec<u128> = amounts_raw.iter().map(|x| x.low_u128()).collect();
+
+        log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, amounts: {:?}", assets, amounts);
+
+        // Check that assets list is valid:
+        // * all assets resolved to multi-location
+        // * all assets has corresponded amount
+        if assets.len() != amounts.len() || assets.is_empty() {
+            return Err(revert("Assets resolution failure."));
+        }
+
+        let beneficiary: MultiLocation = input.read::<MultiLocation>()?;
+        let dest: MultiLocation = input.read::<MultiLocation>()?;
+
+        let fee_asset_item: u32 = input.read::<U256>()?.low_u32();
+
+        if fee_asset_item as usize > assets.len() {
+            return Err(revert("Bad fee index."));
+        }
+
+        let assets: MultiAssets = assets
+            .iter()
+            .cloned()
+            .zip(amounts.iter().cloned())
+            .map(Into::into)
+            .collect::<Vec<MultiAsset>>()
+            .into();
+
+        // Build call with origin.
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+        let call = pallet_xcm::Call::<Runtime>::reserve_transfer_assets {
+            dest: Box::new(dest.into()),
+            beneficiary: Box::new(beneficiary.into()),
+            assets: Box::new(assets.into()),
+            fee_asset_item,
+        };
+
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn send_xcm(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(3)?;
+
+        // Raw call arguments
+        let dest: MultiLocation = input.read::<MultiLocation>()?;
+        let xcm_call: Vec<u8> = input.read::<BoundedBytes<GetXcmSizeLimit>>()?.into();
+
+        log::trace!(target:"xcm-precompile::send_xcm", "Raw arguments: dest: {:?}, xcm_call: {:?}", dest, xcm_call);
+
+        let xcm = xcm::VersionedXcm::<()>::decode_all_with_depth_limit(
+            xcm::MAX_XCM_DECODE_DEPTH,
+            &mut xcm_call.as_slice(),
+        )
+        .map_err(|_| revert("Failed to decode xcm instructions"))?;
+
+        // Build call with origin.
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+        let call = pallet_xcm::Call::<Runtime>::send {
+            dest: Box::new(dest.into()),
+            message: Box::new(xcm),
+        };
+        log::trace!(target: "xcm-send_xcm", "Processed arguments:  XCM call: {:?}", call);
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn transfer(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(5)?;
+
+        // Read call arguments
+        let currency_address = input.read::<Address>()?;
+        let amount_of_tokens = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting amount_of_tokens, maybe value too large"))?;
+        let destination = input.read::<MultiLocation>()?;
+        let weight = input.read::<u64>()?;
+
+        let asset_id = Runtime::address_to_asset_id(currency_address.into())
+            .ok_or(revert("Failed to resolve fee asset id from address"))?;
+        let dest_weight_limit = if weight == u64::MAX {
+            WeightLimit::Unlimited
+        } else {
+            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+        };
+
+        let call = orml_xtokens::Call::<Runtime>::transfer {
+            currency_id: asset_id.into(),
+            amount: amount_of_tokens,
+            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest_weight_limit,
+        };
+
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn transfer_with_fee(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(6)?;
+
+        // Read call arguments
+        let currency_address = input.read::<Address>()?;
+        let amount_of_tokens = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting amount_of_tokens, maybe value too large"))?;
+        let fee = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("can't convert fee"))?;
+
+        let destination = input.read::<MultiLocation>()?;
+        let weight = input.read::<u64>()?;
+
+        let asset_id = Runtime::address_to_asset_id(currency_address.into())
+            .ok_or(revert("Failed to resolve fee asset id from address"))?;
+        let dest_weight_limit = if weight == u64::MAX {
+            WeightLimit::Unlimited
+        } else {
+            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+        };
+
+        let call = orml_xtokens::Call::<Runtime>::transfer_with_fee {
+            currency_id: asset_id.into(),
+            amount: amount_of_tokens,
+            fee,
+            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest_weight_limit,
+        };
+
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn transfer_multiasset(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(5)?;
+
+        // Read call arguments
+        let asset_location = input.read::<MultiLocation>()?;
+        let amount_of_tokens = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting amount_of_tokens, maybe value too large"))?;
+        let destination = input.read::<MultiLocation>()?;
+        let weight = input.read::<u64>()?;
+
+        let dest_weight_limit = if weight == u64::MAX {
+            WeightLimit::Unlimited
+        } else {
+            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+        };
+
+        let call = orml_xtokens::Call::<Runtime>::transfer_multiasset {
+            asset: Box::new(VersionedMultiAsset::V3(MultiAsset {
+                id: AssetId::Concrete(asset_location),
+                fun: Fungibility::Fungible(amount_of_tokens),
+            })),
+            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest_weight_limit,
+        };
+
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn transfer_multiasset_with_fee(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(6)?;
+
+        // Read call arguments
+        let asset_location = input.read::<MultiLocation>()?;
+        let amount_of_tokens = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting amount_of_tokens, maybe value too large"))?;
+        let fee = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("can't convert fee"))?;
+        let destination = input.read::<MultiLocation>()?;
+        let weight = input.read::<u64>()?;
+
+        let dest_weight_limit = if weight == u64::MAX {
+            WeightLimit::Unlimited
+        } else {
+            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+        };
+
+        let call = orml_xtokens::Call::<Runtime>::transfer_multiasset_with_fee {
+            asset: Box::new(VersionedMultiAsset::V3(MultiAsset {
+                id: AssetId::Concrete(asset_location),
+                fun: Fungibility::Fungible(amount_of_tokens),
+            })),
+            fee: Box::new(VersionedMultiAsset::V3(MultiAsset {
+                id: AssetId::Concrete(asset_location),
+                fun: Fungibility::Fungible(fee),
+            })),
+            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest_weight_limit,
+        };
+
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn transfer_multi_currencies(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(5)?;
+
+        let currencies: Vec<_> = input
+            .read::<BoundedVec<Currency, GetMaxAssets<Runtime>>>()?
+            .into();
+        let fee_item = input.read::<u32>()?;
+        let destination = input.read::<MultiLocation>()?;
+        let weight = input.read::<u64>()?;
+
+        let currencies = currencies
+            .into_iter()
+            .map(|currency| {
+                let currency_address: H160 = currency.get_address().into();
+                let amount = currency
+                    .get_amount()
+                    .try_into()
+                    .map_err(|_| revert("value too large: in currency"))?;
+
+                Ok((
+                    Runtime::address_to_asset_id(currency_address.into())
+                        .ok_or(revert("can't convert into currency id"))?
+                        .into(),
+                    amount,
+                ))
+            })
+            .collect::<EvmResult<_>>()?;
+        let dest_weight_limit = if weight == u64::MAX {
+            WeightLimit::Unlimited
+        } else {
+            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+        };
+
+        let call = orml_xtokens::Call::<Runtime>::transfer_multicurrencies {
+            currencies,
+            fee_item,
+            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest_weight_limit,
+        };
+
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    fn transfer_multi_assets(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        let mut input = handle.read_input()?;
+        input.expect_arguments(5)?;
+
+        let assets: Vec<_> = input
+            .read::<BoundedVec<EvmMultiAsset, GetMaxAssets<Runtime>>>()?
+            .into();
+        let fee_item = input.read::<u32>()?;
+        let destination = input.read::<MultiLocation>()?;
+        let weight = input.read::<u64>()?;
+
+        let dest_weight_limit = if weight == u64::MAX {
+            WeightLimit::Unlimited
+        } else {
+            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+        };
+
+        let multiasset_vec: EvmResult<Vec<MultiAsset>> = assets
+            .into_iter()
+            .map(|evm_multiasset| {
+                let to_balance: u128 = evm_multiasset
+                    .get_amount()
+                    .try_into()
+                    .map_err(|_| revert("value too large in assets"))?;
+                Ok((evm_multiasset.get_location(), to_balance).into())
+            })
+            .collect();
+
+        // Since multiassets sorts them, we need to check whether the index is still correct,
+        // and error otherwise as there is not much we can do other than that
+        let multiassets =
+            MultiAssets::from_sorted_and_deduplicated(multiasset_vec?).map_err(|_| {
+                revert("In field Assets, Provided assets either not sorted nor deduplicated")
+            })?;
+
+        let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
+            assets: Box::new(VersionedMultiAssets::V3(multiassets)),
+            fee_item,
+            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest_weight_limit,
+        };
+
+        let origin = Some(Runtime::AddressMapping::into_account_id(
+            handle.context().caller,
+        ))
+        .into();
+
+        // Dispatch a call.
+        RuntimeHelper::<Runtime>::try_dispatch(handle, origin, call)?;
 
         Ok(succeed(EvmDataWriter::new().write(true).build()))
     }
