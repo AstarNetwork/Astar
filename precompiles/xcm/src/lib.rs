@@ -95,7 +95,7 @@ where
     }
 }
 /// A precompile that expose XCM related functions.
-pub struct XcmPrecompile<T, C>(PhantomData<(T, C)>);
+pub struct XcmPrecompile<Runtime, C>(PhantomData<(Runtime, C)>);
 
 impl<Runtime, C> Precompile for XcmPrecompile<Runtime, C>
 where

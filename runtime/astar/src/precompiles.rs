@@ -33,7 +33,7 @@ use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
 use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
-use pallet_evm_precompile_xcm::XcmPrecompile;
+// use pallet_evm_precompile_xcm::XcmPrecompile;
 use sp_core::H160;
 use sp_std::fmt::Debug;
 use sp_std::marker::PhantomData;
@@ -69,7 +69,7 @@ impl<R, C> PrecompileSet for AstarNetworkPrecompiles<R, C>
 where
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
     DappsStakingWrapper<R>: Precompile,
-    XcmPrecompile<R, C>: Precompile,
+    // XcmPrecompile<R, C>: Precompile,
     Dispatch<R>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config
@@ -112,8 +112,8 @@ where
             a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(handle)),
             // SubstrateEcdsa 0x5003
             a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
-            // Xcm 0x5004
-            a if a == hash(20484) => Some(XcmPrecompile::<R, C>::execute(handle)),
+            // // Xcm 0x5004
+            // a if a == hash(20484) => Some(XcmPrecompile::<R, C>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)
