@@ -529,7 +529,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.16.1"
+version = "5.17.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -565,7 +565,6 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
@@ -5482,7 +5481,7 @@ checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 
 [[package]]
 name = "local-runtime"
-version = "5.16.1"
+version = "5.17.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -5510,7 +5509,6 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-ethereum",
@@ -12307,7 +12305,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.16.1"
+version = "5.17.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -12349,7 +12347,6 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-ethereum",
@@ -12415,7 +12412,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.16.1"
+version = "5.17.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -12454,7 +12451,6 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
