@@ -353,7 +353,7 @@ impl EvmData for MultiLocation {
         <(u8, Junctions)>::has_static_size()
     }
 }
-
+#[derive(Debug)]
 pub struct EvmMultiAsset {
     location: MultiLocation,
     amount: U256,

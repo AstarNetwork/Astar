@@ -330,7 +330,7 @@ where
             },
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_parts(transact_weight,DEFAULT_PROOF_SIZE),
+                require_weight_at_most: Weight::from_parts(transact_weight, DEFAULT_PROOF_SIZE),
                 call: remote_call.into(),
             },
         ]);
@@ -568,7 +568,7 @@ where
             },
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_parts(transact_weight,DEFAULT_PROOF_SIZE),
+                require_weight_at_most: Weight::from_parts(transact_weight, DEFAULT_PROOF_SIZE),
                 call: remote_call.into(),
             },
         ]);
@@ -714,6 +714,10 @@ where
             WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
         };
 
+        log::trace!(target: "xcm-precompile::transfer", "Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
+        weight: {:?}, calculated asset_id: {:?}",
+        currency_address, amount_of_tokens, destination, weight, asset_id);
+
         let call = orml_xtokens::Call::<Runtime>::transfer {
             currency_id: asset_id.into(),
             amount: amount_of_tokens,
@@ -758,6 +762,10 @@ where
             WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
         };
 
+        log::trace!(target: "xcm-precompile::transfer_with_fee", "Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
+        weight: {:?}, calculated asset_id: {:?}",
+        currency_address, amount_of_tokens, destination, weight, asset_id);
+
         let call = orml_xtokens::Call::<Runtime>::transfer_with_fee {
             currency_id: asset_id.into(),
             amount: amount_of_tokens,
@@ -795,6 +803,10 @@ where
         } else {
             WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
         };
+
+        log::trace!(target: "xcm-precompile::transfer_multiasset", "Raw arguments: asset_location: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
+        weight: {:?}",
+        asset_location, amount_of_tokens, destination, weight);
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiasset {
             asset: Box::new(VersionedMultiAsset::V3(MultiAsset {
@@ -840,6 +852,10 @@ where
         } else {
             WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
         };
+
+        log::trace!(target: "xcm-precompile::transfer_multiasset_with_fee", "Raw arguments: asset_location: {:?}, amount_of_tokens: {:?}, fee{:?}, destination: {:?}, \
+        weight: {:?}",
+        asset_location, amount_of_tokens, fee, destination, weight);
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiasset_with_fee {
             asset: Box::new(VersionedMultiAsset::V3(MultiAsset {
@@ -901,6 +917,10 @@ where
             WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
         };
 
+        log::trace!(target: "xcm-precompile::transfer_multi_currencies", "Raw arguments: currencies: {:?}, fee_item{:?}, destination: {:?}, \
+        weight: {:?}",
+        currencies, fee_item, destination, weight);
+
         let call = orml_xtokens::Call::<Runtime>::transfer_multicurrencies {
             currencies,
             fee_item,
@@ -935,6 +955,10 @@ where
         } else {
             WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
         };
+
+        log::trace!(target: "xcm-precompile::transfer_multi_assets", "Raw arguments: assets: {:?}, fee_item{:?}, destination: {:?}, \
+        weight: {:?}",
+        assets, fee_item, destination, weight);
 
         let multiasset_vec: EvmResult<Vec<MultiAsset>> = assets
             .into_iter()
