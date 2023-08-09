@@ -200,3 +200,49 @@ fn wasm_call_fails_if_invalid_target() {
         );
     });
 }
+
+#[test]
+fn call_fails_if_max_weight_limit_ref_time_exceeded() {
+    ExtBuilder::default().build().execute_with(|| {
+        let context = Context {
+            source_vm_id: VmId::Evm,
+            weight_limit: Weight::from_parts(&MaxWeightLimit::get().ref_time() + 1, 1024),
+        };
+        let vm_id = VmId::Wasm;
+        let target = vec![1, 2, 3];
+        let input = vec![1, 2, 3];
+        let value = 1_000_000u128;
+        let used_weight: Weight = weights::SubstrateWeight::<TestRuntime>::wasm_call_overheads();
+
+        assert_noop!(
+            Xvm::call(context, vm_id, ALICE, target.encode(), input, value),
+            CallErrorWithWeight {
+                error: CallError::ExceedMaxWeightLimit,
+                used_weight
+            },
+        );
+    });
+}
+
+#[test]
+fn call_fails_if_max_weight_limit_proof_size_exceeded() {
+    ExtBuilder::default().build().execute_with(|| {
+        let context = Context {
+            source_vm_id: VmId::Evm,
+            weight_limit: Weight::from_parts(1_000_000, MaxWeightLimit::get().proof_size() + 1),
+        };
+        let vm_id = VmId::Wasm;
+        let target = vec![1, 2, 3];
+        let input = vec![1, 2, 3];
+        let value = 1_000_000u128;
+        let used_weight: Weight = weights::SubstrateWeight::<TestRuntime>::wasm_call_overheads();
+
+        assert_noop!(
+            Xvm::call(context, vm_id, ALICE, target.encode(), input, value),
+            CallErrorWithWeight {
+                error: CallError::ExceedMaxWeightLimit,
+                used_weight
+            },
+        );
+    });
+}
