@@ -42,7 +42,7 @@ impl From<CallError> for XvmExecutionResult {
             InvalidTarget => 3,
             InputTooLarge => 4,
             ExceedMaxWeightLimit => 5,
-            Reentrancy => 6,
+            ReentranceDenied => 6,
             ExecutionFailed(_) => 7,
         };
         Self::Err(error_code)

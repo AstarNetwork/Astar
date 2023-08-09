@@ -154,12 +154,12 @@ where
             }
         );
 
-        // Set `IN_XVM` to true & check reentrancy.
-        if IN_XVM.with(|in_evm| in_evm.replace(true)) {
-            CallErrorWithWeight {
-                error: CallError::Reentrancy,
+        // Set `IN_XVM` to true & check reentrance.
+        if IN_XVM.with(|in_xvm| in_xvm.replace(true)) {
+            return Err(CallErrorWithWeight {
+                error: CallError::ReentranceDenied,
                 used_weight: overheads,
-            };
+            });
         }
 
         let res = match vm_id {
@@ -185,7 +185,7 @@ where
 
         // Set `IN_XVM` to false.
         // We should make sure that this line is executed whatever the execution path.
-        let _ = IN_XVM.with(|in_evm| in_evm.take());
+        let _ = IN_XVM.with(|in_xvm| in_xvm.take());
 
         res
     }
