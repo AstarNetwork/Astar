@@ -70,6 +70,8 @@ pub use pallet::*;
 
 pub type WeightInfoOf<T> = <T as Config>::WeightInfo;
 
+environmental::thread_local_impl!(static IN_XVM: environmental::RefCell<bool> = environmental::RefCell::new(false));
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -152,7 +154,15 @@ where
             }
         );
 
-        match vm_id {
+        // Set `IN_XVM` to true & check reentrancy.
+        if IN_XVM.with(|in_evm| in_evm.replace(true)) {
+            CallErrorWithWeight {
+                error: CallError::Reentrancy,
+                used_weight: overheads,
+            };
+        }
+
+        let res = match vm_id {
             VmId::Evm => Pallet::<T>::evm_call(
                 context,
                 source,
@@ -171,7 +181,13 @@ where
                 overheads,
                 skip_execution,
             ),
-        }
+        };
+
+        // Set `IN_XVM` to false.
+        // We should make sure that this line is executed whatever the execution path.
+        let _ = IN_XVM.with(|in_evm| in_evm.take());
+
+        res
     }
 
     fn evm_call(

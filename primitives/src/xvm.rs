@@ -68,6 +68,8 @@ pub enum CallError {
     InputTooLarge,
     /// Exceed max weight limit.
     ExceedMaxWeightLimit,
+    /// Reentrancy is not allowed.
+    Reentrancy,
     /// The call failed on EVM or WASM execution.
     ExecutionFailed(Vec<u8>),
 }
