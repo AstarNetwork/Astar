@@ -316,7 +316,7 @@ fn calling_evm_payable_from_wasm_works() {
             RuntimeOrigin::signed(ALICE),
             MultiAddress::Id(wasm_address.clone()),
             value,
-            Weight::from_parts(10_000_000_000, 10 * 1024 * 1024),
+            Weight::from_parts(10_000_000_000, 1024 * 1024),
             None,
             input,
         ));
