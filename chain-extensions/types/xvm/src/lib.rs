@@ -38,7 +38,7 @@ impl From<CallError> for XvmExecutionResult {
         // `0` is reserved for `Ok`
         let error_code = match input {
             InvalidVmId => 1,
-            SameVmCallNotAllowed => 2,
+            SameVmCallDenied => 2,
             InvalidTarget => 3,
             InputTooLarge => 4,
             ExceedMaxWeightLimit => 5,

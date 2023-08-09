@@ -249,7 +249,7 @@ impl XvmCall<AccountId> for MockXvmWithArgsCheck {
         ensure!(
             vm_id != VmId::Evm,
             CallErrorWithWeight {
-                error: SameVmCallNotAllowed,
+                error: SameVmCallDenied,
                 used_weight: Weight::zero()
             }
         );

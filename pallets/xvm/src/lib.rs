@@ -139,7 +139,7 @@ where
         ensure!(
             context.source_vm_id != vm_id,
             CallErrorWithWeight {
-                error: CallError::SameVmCallNotAllowed,
+                error: CallError::SameVmCallDenied,
                 used_weight: overheads,
             }
         );
