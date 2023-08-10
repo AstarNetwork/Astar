@@ -27,7 +27,7 @@ sp-std = { workspace = true }
 # Frontier
 evm = { workspace = true, features = ["with-codec"] }
 fp-evm = { workspace = true }
-pallet-evm = { workspace = true, features = ["forbid-evm-reentrancy"] }
+pallet-evm = { workspace = true }
 
 [dev-dependencies]
 derive_more = { workspace = true }
