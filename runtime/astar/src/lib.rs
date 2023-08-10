@@ -23,7 +23,8 @@
 #![recursion_limit = "256"]
 
 pub use astar_primitives::{
-    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+    xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance, BlockNumber,
+    EvmRevertCodeHandler, Hash, Header, Index, Signature,
 };
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
@@ -71,7 +72,6 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-use astar_primitives::xcm::AssetLocationIdConverter;
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 #[cfg(any(feature = "std", test))]
@@ -583,7 +583,7 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
-    type CallbackHandle = ();
+    type CallbackHandle = EvmRevertCodeHandler<Self, Self>;
 }
 
 parameter_types! {
@@ -834,23 +834,10 @@ impl pallet_sudo::Config for Runtime {
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
-pub struct EvmRevertCodeHandler;
-impl pallet_xc_asset_config::XcAssetChanged<Runtime> for EvmRevertCodeHandler {
-    fn xc_asset_registered(asset_id: AssetId) {
-        let address = Runtime::asset_id_to_address(asset_id);
-        pallet_evm::AccountCodes::<Runtime>::insert(address, vec![0x60, 0x00, 0x60, 0x00, 0xfd]);
-    }
-
-    fn xc_asset_unregistered(asset_id: AssetId) {
-        let address = Runtime::asset_id_to_address(asset_id);
-        pallet_evm::AccountCodes::<Runtime>::remove(address);
-    }
-}
-
 impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
-    type XcAssetChanged = EvmRevertCodeHandler;
+    type XcAssetChanged = ();
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }

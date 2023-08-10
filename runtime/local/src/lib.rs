@@ -61,7 +61,8 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+    AccountId, Address, AssetId, Balance, BlockNumber, EvmRevertCodeHandler, Hash, Header, Index,
+    Signature,
 };
 
 #[cfg(feature = "std")]
@@ -324,7 +325,7 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
-    type CallbackHandle = ();
+    type CallbackHandle = EvmRevertCodeHandler<Self, Self>;
 }
 
 parameter_types! {

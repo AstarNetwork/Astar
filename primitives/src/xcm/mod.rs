@@ -33,8 +33,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    ensure,
-    traits::{tokens::fungibles, Contains, ContainsPair, Get, ProcessMessageError},
+    traits::{tokens::fungibles, ContainsPair, Get},
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 use sp_runtime::traits::{Bounded, Zero};
@@ -43,7 +42,7 @@ use sp_std::{borrow::Borrow, marker::PhantomData, vec::Vec};
 // Polkadot imports
 use xcm::latest::{prelude::*, Weight};
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{MatchesFungibles, ShouldExecute, WeightTrader};
+use xcm_executor::traits::{MatchesFungibles, WeightTrader};
 
 use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
@@ -267,52 +266,6 @@ impl<
                     "XcmFeeHandler:take_revenue failed to match fungible asset, it has been burned."
                 );
             }
-        }
-    }
-}
-
-/// Allows execution from `origin` if it is contained in `T` (i.e. `T::Contains(origin)`) taking
-/// payments into account.
-///
-/// Only allows for sequence `DescendOrigin` -> `WithdrawAsset` -> `BuyExecution`
-pub struct AllowPaidExecWithDescendOriginFrom<T>(PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for AllowPaidExecWithDescendOriginFrom<T> {
-    fn should_execute<RuntimeCall>(
-        origin: &MultiLocation,
-        message: &mut [Instruction<RuntimeCall>],
-        max_weight: Weight,
-        _weight_credit: &mut Weight,
-    ) -> Result<(), ProcessMessageError> {
-        log::trace!(
-            target: "xcm::barriers",
-            "AllowPaidExecWithDescendOriginFrom origin: {:?}, message: {:?}, max_weight: {:?}, weight_credit: {:?}",
-            origin, message, max_weight, _weight_credit,
-        );
-        ensure!(T::contains(origin), ProcessMessageError::Unsupported);
-
-        match message
-            .iter_mut()
-            .take(3)
-            .collect::<Vec<_>>()
-            .as_mut_slice()
-        {
-            [DescendOrigin(..), WithdrawAsset(..), BuyExecution {
-                weight_limit: Limited(ref mut limit),
-                ..
-            }] if limit.all_gte(max_weight) => {
-                *limit = max_weight;
-                Ok(())
-            }
-
-            [DescendOrigin(..), WithdrawAsset(..), BuyExecution {
-                weight_limit: ref mut limit @ Unlimited,
-                ..
-            }] => {
-                *limit = Limited(max_weight);
-                Ok(())
-            }
-
-            _ => return Err(ProcessMessageError::Unsupported),
         }
     }
 }

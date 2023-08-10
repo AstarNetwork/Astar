@@ -139,6 +139,7 @@ pub mod pallet {
         /// a AssetLocation
         type AssetId: Member + Parameter + Default + Copy + HasCompact + MaxEncodedLen;
 
+        /// TODO: this has essentially been deprecated and can be removed.
         /// Callback handling for cross-chain asset registration or unregistration.
         type XcAssetChanged: XcAssetChanged<Self>;
 
