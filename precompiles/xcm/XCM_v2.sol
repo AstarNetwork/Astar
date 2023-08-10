@@ -9,6 +9,11 @@ interface XCM {
         uint8 parents;
         bytes[] interior;
     }
+
+    struct WeightV2{
+        uint64 ref_time;
+        uint64 proof_size;
+    }
     
     /**
      * @dev Withdraw assets using PalletXCM call.
@@ -45,7 +50,7 @@ interface XCM {
         address payment_asset_id,
         uint256 payment_amount,
         bytes calldata call,
-        uint64 transact_weight
+        WeightV2 transact_weight
     ) external returns (bool);
 
     /**

@@ -42,7 +42,7 @@ use precompile_utils::{
     bytes::BoundedBytes,
     data::BoundedVec,
     revert, succeed,
-    xcm::{Currency, EvmMultiAsset},
+    xcm::{Currency, EvmMultiAsset, WeightV2},
     Address, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt, RuntimeHelper,
 };
 #[cfg(test)]
@@ -80,7 +80,7 @@ pub enum Action {
 /// Dummy H160 address representing native currency (e.g. ASTR or SDN)
 const NATIVE_ADDRESS: H160 = H160::zero();
 /// Dummy default 64KB
-const DEFAULT_PROOF_SIZE: u64 = 1024 * 64;
+const DEFAULT_PROOF_SIZE: u64 = 1024 * 256;
 
 pub type XBalanceOf<Runtime> = <Runtime as orml_xtokens::Config>::Balance;
 
@@ -524,10 +524,10 @@ where
         let fee_amount = input.read::<U256>()?;
 
         let remote_call: Vec<u8> = input.read::<Bytes>()?.into();
-        let transact_weight = input.read::<u64>()?;
+        let transact_weight = input.read::<WeightV2>()?;
 
         log::trace!(target: "xcm-precompile::remote_transact", "Raw arguments: dest: {:?}, fee_asset_addr: {:?} \
-         fee_amount: {:?}, remote_call: {:?}, transact_weight: {}",
+         fee_amount: {:?}, remote_call: {:?}, transact_weight: {:?}",
         dest, fee_asset_addr, fee_amount, remote_call, transact_weight);
 
         let fee_asset = {
@@ -568,7 +568,7 @@ where
             },
             Transact {
                 origin_kind: OriginKind::SovereignAccount,
-                require_weight_at_most: Weight::from_parts(transact_weight, DEFAULT_PROOF_SIZE),
+                require_weight_at_most: transact_weight.get_weight(),
                 call: remote_call.into(),
             },
         ]);
@@ -704,14 +704,14 @@ where
             .try_into()
             .map_err(|_| revert("error converting amount_of_tokens, maybe value too large"))?;
         let destination = input.read::<MultiLocation>()?;
-        let weight = input.read::<u64>()?;
+        let weight = input.read::<WeightV2>()?;
 
         let asset_id = Runtime::address_to_asset_id(currency_address.into())
             .ok_or(revert("Failed to resolve fee asset id from address"))?;
-        let dest_weight_limit = if weight == u64::MAX {
+        let dest_weight_limit = if weight.is_max() {
             WeightLimit::Unlimited
         } else {
-            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+            WeightLimit::Limited(weight.get_weight())
         };
 
         log::trace!(target: "xcm-precompile::transfer", "Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
@@ -752,14 +752,14 @@ where
             .map_err(|_| revert("can't convert fee"))?;
 
         let destination = input.read::<MultiLocation>()?;
-        let weight = input.read::<u64>()?;
+        let weight = input.read::<WeightV2>()?;
 
         let asset_id = Runtime::address_to_asset_id(currency_address.into())
             .ok_or(revert("Failed to resolve fee asset id from address"))?;
-        let dest_weight_limit = if weight == u64::MAX {
+        let dest_weight_limit = if weight.is_max() {
             WeightLimit::Unlimited
         } else {
-            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+            WeightLimit::Limited(weight.get_weight())
         };
 
         log::trace!(target: "xcm-precompile::transfer_with_fee", "Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
@@ -796,12 +796,12 @@ where
             .try_into()
             .map_err(|_| revert("error converting amount_of_tokens, maybe value too large"))?;
         let destination = input.read::<MultiLocation>()?;
-        let weight = input.read::<u64>()?;
+        let weight = input.read::<WeightV2>()?;
 
-        let dest_weight_limit = if weight == u64::MAX {
+        let dest_weight_limit = if weight.is_max() {
             WeightLimit::Unlimited
         } else {
-            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+            WeightLimit::Limited(weight.get_weight())
         };
 
         log::trace!(target: "xcm-precompile::transfer_multiasset", "Raw arguments: asset_location: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
@@ -845,12 +845,12 @@ where
             .try_into()
             .map_err(|_| revert("can't convert fee"))?;
         let destination = input.read::<MultiLocation>()?;
-        let weight = input.read::<u64>()?;
+        let weight = input.read::<WeightV2>()?;
 
-        let dest_weight_limit = if weight == u64::MAX {
+        let dest_weight_limit = if weight.is_max() {
             WeightLimit::Unlimited
         } else {
-            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+            WeightLimit::Limited(weight.get_weight())
         };
 
         log::trace!(target: "xcm-precompile::transfer_multiasset_with_fee", "Raw arguments: asset_location: {:?}, amount_of_tokens: {:?}, fee{:?}, destination: {:?}, \
@@ -892,7 +892,7 @@ where
             .into();
         let fee_item = input.read::<u32>()?;
         let destination = input.read::<MultiLocation>()?;
-        let weight = input.read::<u64>()?;
+        let weight = input.read::<WeightV2>()?;
 
         let currencies = currencies
             .into_iter()
@@ -911,10 +911,10 @@ where
                 ))
             })
             .collect::<EvmResult<_>>()?;
-        let dest_weight_limit = if weight == u64::MAX {
+        let dest_weight_limit = if weight.is_max() {
             WeightLimit::Unlimited
         } else {
-            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+            WeightLimit::Limited(weight.get_weight())
         };
 
         log::trace!(target: "xcm-precompile::transfer_multi_currencies", "Raw arguments: currencies: {:?}, fee_item{:?}, destination: {:?}, \
@@ -948,12 +948,12 @@ where
             .into();
         let fee_item = input.read::<u32>()?;
         let destination = input.read::<MultiLocation>()?;
-        let weight = input.read::<u64>()?;
+        let weight = input.read::<WeightV2>()?;
 
-        let dest_weight_limit = if weight == u64::MAX {
+        let dest_weight_limit = if weight.is_max() {
             WeightLimit::Unlimited
         } else {
-            WeightLimit::Limited(Weight::from_parts(weight, DEFAULT_PROOF_SIZE))
+            WeightLimit::Limited(weight.get_weight())
         };
 
         log::trace!(target: "xcm-precompile::transfer_multi_assets", "Raw arguments: assets: {:?}, fee_item{:?}, destination: {:?}, \

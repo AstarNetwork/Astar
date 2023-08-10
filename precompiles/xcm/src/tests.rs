@@ -400,6 +400,8 @@ mod xcm_new_interface_test {
                 parents: 1,
                 interior: Junctions::X1(Junction::Parachain(2000u32)),
             };
+
+            let weight = WeightV2::from(3_000_000_000u64, 1024);
             // SS58
             precompiles()
                 .prepare_test(
@@ -410,7 +412,7 @@ mod xcm_new_interface_test {
                         .write(Address::from(Runtime::asset_id_to_address(1_u128)))
                         .write(U256::from(367))
                         .write(vec![0xff_u8, 0xaa, 0x77, 0x00])
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight)
                         .build(),
                 )
                 .expect_no_logs()
@@ -643,6 +645,8 @@ mod xtokens_interface_test {
     use super::*;
     #[test]
     fn xtokens_transfer_works() {
+        let weight = WeightV2::from(3_000_000_000u64, 1024);
+
         ExtBuilder::default().build().execute_with(|| {
             let parent_destination = MultiLocation {
                 parents: 1,
@@ -672,7 +676,7 @@ mod xtokens_interface_test {
                         .write(Address::from(Runtime::asset_id_to_address(1u128))) // zero address by convention
                         .write(U256::from(42000u64))
                         .write(parent_destination)
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight.clone())
                         .build(),
                 )
                 .expect_no_logs()
@@ -702,7 +706,7 @@ mod xtokens_interface_test {
                         .write(Address::from(Runtime::asset_id_to_address(2u128))) // zero address by convention
                         .write(U256::from(42000u64))
                         .write(sibling_parachain_location)
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight)
                         .build(),
                 )
                 .expect_no_logs()
@@ -727,6 +731,7 @@ mod xtokens_interface_test {
 
     #[test]
     fn xtokens_transfer_with_fee_works() {
+        let weight = WeightV2::from(3_000_000_000u64, 1024);
         ExtBuilder::default().build().execute_with(|| {
             let parent_destination = MultiLocation {
                 parents: 1,
@@ -746,7 +751,7 @@ mod xtokens_interface_test {
                         .write(U256::from(42000u64))
                         .write(U256::from(50))
                         .write(parent_destination)
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight)
                         .build(),
                 )
                 .expect_no_logs()
@@ -775,6 +780,7 @@ mod xtokens_interface_test {
 
     #[test]
     fn transfer_multiasset_works() {
+        let weight = WeightV2::from(3_000_000_000u64, 1024);
         ExtBuilder::default().build().execute_with(|| {
             let relay_token_location = MultiLocation {
                 parents: 1,
@@ -808,7 +814,7 @@ mod xtokens_interface_test {
                         .write(relay_token_location) // zero address by convention
                         .write(U256::from(amount))
                         .write(relay_destination)
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight.clone())
                         .build(),
                 )
                 .expect_no_logs()
@@ -839,7 +845,7 @@ mod xtokens_interface_test {
                         .write(relay_token_location) // zero address by convention
                         .write(U256::from(amount))
                         .write(para_destination)
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight)
                         .build(),
                 )
                 .expect_no_logs()
@@ -872,6 +878,9 @@ mod xtokens_interface_test {
                 id: [1u8; 32],
             }),
         );
+
+        let weight = WeightV2::from(3_000_000_000u64, 1024);
+
         //  NOTE: Currently only support `ToReserve` with relay-chain asset as fee. other case
         // like `NonReserve` or `SelfReserve` with relay-chain fee is not support.
         let currencies: Vec<Currency> = vec![
@@ -896,7 +905,7 @@ mod xtokens_interface_test {
                         .write(currencies) // zero address by convention
                         .write(U256::from(0))
                         .write(destination)
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight)
                         .build(),
                 )
                 .expect_no_logs()
@@ -932,6 +941,7 @@ mod xtokens_interface_test {
                 id: [1u8; 32],
             }),
         );
+        let weight = WeightV2::from(3_000_000_000u64, 1024);
         // we only allow upto 2 currencies to be transfered
         let currencies: Vec<Currency> = vec![
             (
@@ -960,7 +970,7 @@ mod xtokens_interface_test {
                         .write(currencies) // zero address by convention
                         .write(U256::from(0))
                         .write(destination)
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight)
                         .build(),
                 )
                 .expect_no_logs()
@@ -982,6 +992,7 @@ mod xtokens_interface_test {
                 },
             ),
         );
+        let weight = WeightV2::from(3_000_000_000u64, 1024);
 
         let asset_1_location = MultiLocation::new(
             1,
@@ -1012,7 +1023,7 @@ mod xtokens_interface_test {
                         .write(assets) // zero address by convention
                         .write(U256::from(0))
                         .write(destination)
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight)
                         .build(),
                 )
                 .expect_no_logs()
@@ -1044,6 +1055,7 @@ mod xtokens_interface_test {
                 },
             ),
         );
+        let weight = WeightV2::from(3_000_000_000u64, 1024);
 
         let asset_1_location = MultiLocation::new(
             1,
@@ -1073,7 +1085,7 @@ mod xtokens_interface_test {
                         .write(assets) // zero address by convention
                         .write(U256::from(0))
                         .write(destination)
-                        .write(U256::from(3_000_000_000u64))
+                        .write(weight)
                         .build(),
                 )
                 .expect_no_logs()

@@ -12,6 +12,11 @@ interface Xtokens {
         bytes[] interior;
     }
 
+       struct WeightV2{
+        uint64 ref_time;
+        uint64 proof_size;
+    }
+
     // A MultiAsset is defined by a multilocation and an amount
     struct MultiAsset {
         Multilocation location;
@@ -35,7 +40,7 @@ interface Xtokens {
         address currencyAddress,
         uint256 amount,
         Multilocation memory destination,
-        uint64 weight
+        WeightV2 memory weight
     ) external returns (bool);
 
     /// Transfer a token through XCM based on its currencyId specifying fee
@@ -50,7 +55,7 @@ interface Xtokens {
         uint256 amount,
         uint256 fee,
         Multilocation memory destination,
-        uint64 weight
+        WeightV2 memory weight
     ) external returns (bool);
 
     /// Transfer a token through XCM based on its MultiLocation
@@ -65,7 +70,7 @@ interface Xtokens {
         Multilocation memory asset,
         uint256 amount,
         Multilocation memory destination,
-        uint64 weight
+        WeightV2 memory weight
     ) external returns (bool);
 
     /// Transfer a token through XCM based on its MultiLocation specifying fee
@@ -81,7 +86,7 @@ interface Xtokens {
         uint256 amount,
         uint256 fee,
         Multilocation memory destination,
-        uint64 weight
+        WeightV2 memory weight
     ) external returns (bool);
 
     /// Transfer several tokens at once through XCM based on its address specifying fee
@@ -95,7 +100,7 @@ interface Xtokens {
         Currency[] memory currencies,
         uint32 feeItem,
         Multilocation memory destination,
-        uint64 weight
+        WeightV2 memory weight
     ) external returns (bool);
 
     /// Transfer several tokens at once through XCM based on its location specifying fee
@@ -109,6 +114,6 @@ interface Xtokens {
         MultiAsset[] memory assets,
         uint32 feeItem,
         Multilocation memory destination,
-        uint64 weight
+        WeightV2 memory weight
     ) external returns (bool);
 }

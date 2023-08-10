@@ -26,7 +26,7 @@ use crate::Address;
 use sp_core::U256;
 use {
     crate::{bytes::*, revert, EvmData, EvmDataReader, EvmDataWriter, EvmResult},
-    frame_support::{ensure, traits::ConstU32},
+    frame_support::{ensure, pallet_prelude::Weight, traits::ConstU32},
     sp_core::H256,
     sp_std::vec::Vec,
     xcm::latest::{Junction, Junctions, MultiLocation, NetworkId},
@@ -351,6 +351,43 @@ impl EvmData for MultiLocation {
 
     fn has_static_size() -> bool {
         <(u8, Junctions)>::has_static_size()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct WeightV2 {
+    ref_time: u64,
+    proof_size: u64,
+}
+impl WeightV2 {
+    pub fn from(ref_time: u64, proof_size: u64) -> Self {
+        WeightV2 {
+            ref_time,
+            proof_size,
+        }
+    }
+    pub fn get_weight(&self) -> Weight {
+        Weight::from_parts(self.ref_time, self.proof_size)
+    }
+    pub fn is_max(&self) -> bool {
+        self.ref_time == u64::MAX
+    }
+}
+impl EvmData for WeightV2 {
+    fn read(reader: &mut EvmDataReader) -> EvmResult<Self> {
+        let (ref_time, proof_size) = reader.read()?;
+        Ok(WeightV2 {
+            ref_time,
+            proof_size,
+        })
+    }
+
+    fn write(writer: &mut EvmDataWriter, value: Self) {
+        EvmData::write(writer, (value.ref_time, value.proof_size));
+    }
+
+    fn has_static_size() -> bool {
+        <(U256, U256)>::has_static_size()
     }
 }
 #[derive(Debug)]
