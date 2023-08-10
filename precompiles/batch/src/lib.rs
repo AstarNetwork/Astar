@@ -66,14 +66,14 @@ pub const ARRAY_LIMIT: u32 = 2u32.pow(9);
 type GetCallDataLimit = ConstU32<CALL_DATA_LIMIT>;
 type GetArrayLimit = ConstU32<ARRAY_LIMIT>;
 
-pub fn log_subcall_succeeded(address: impl Into<H160>, index: usize) -> Log {
+fn log_subcall_succeeded(address: impl Into<H160>, index: usize) -> Log {
     LogsBuilder::new(address.into()).log1(
         LOG_SUBCALL_SUCCEEDED,
         data::encode_event_data(U256::from(index)),
     )
 }
 
-pub fn log_subcall_failed(address: impl Into<H160>, index: usize) -> Log {
+fn log_subcall_failed(address: impl Into<H160>, index: usize) -> Log {
     LogsBuilder::new(address.into()).log1(
         LOG_SUBCALL_FAILED,
         data::encode_event_data(U256::from(index)),
