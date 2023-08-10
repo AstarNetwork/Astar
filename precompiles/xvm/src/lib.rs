@@ -83,8 +83,12 @@ where
             id.try_into().map_err(|_| revert("invalid vm id"))
         }?;
 
-        let remaining_gas = handle.remaining_gas();
-        let weight_limit = R::GasWeightMapping::gas_to_weight(remaining_gas, true);
+        let mut gas_limit = handle.remaining_gas();
+        // If user specified a gas limit, make sure it's not exceeded.
+        if let Some(user_limit) = handle.gas_limit() {
+            gas_limit = gas_limit.min(user_limit);
+        }
+        let weight_limit = R::GasWeightMapping::gas_to_weight(gas_limit, true);
         let xvm_context = Context {
             source_vm_id: VmId::Evm,
             weight_limit,
