@@ -303,6 +303,11 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
         self
     }
 
+    pub fn with_gas_limit(mut self, gas_limit: u64) -> Self {
+        self.handle.gas_limit = gas_limit;
+        self
+    }
+
     pub fn expect_cost(mut self, cost: u64) -> Self {
         self.expected_cost = Some(cost);
         self
