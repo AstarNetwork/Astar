@@ -66,8 +66,6 @@ pub enum CallError {
     InvalidTarget,
     /// Input is too large.
     InputTooLarge,
-    /// Exceed max weight limit.
-    ExceedMaxWeightLimit,
     /// Reentrance is not allowed.
     ReentranceDenied,
     /// The call failed on EVM or WASM execution.

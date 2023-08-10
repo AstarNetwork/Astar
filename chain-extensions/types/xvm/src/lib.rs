@@ -41,9 +41,8 @@ impl From<CallError> for XvmExecutionResult {
             SameVmCallDenied => 2,
             InvalidTarget => 3,
             InputTooLarge => 4,
-            ExceedMaxWeightLimit => 5,
-            ReentranceDenied => 6,
-            ExecutionFailed(_) => 7,
+            ReentranceDenied => 5,
+            ExecutionFailed(_) => 6,
         };
         Self::Err(error_code)
     }
