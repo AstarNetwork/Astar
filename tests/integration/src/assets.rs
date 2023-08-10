@@ -58,3 +58,26 @@ fn asset_create_and_destroy_work_for_evm_revert_code() {
         );
     });
 }
+
+#[test]
+fn asset_create_fails_if_account_code_is_non_empty() {
+    new_test_ext().execute_with(|| {
+        let asset_id = 19;
+        let precompile_address = Runtime::asset_id_to_address(asset_id);
+
+        // Asset registration must fail if the precompile address is not empty
+        pallet_evm::AccountCodes::<Runtime>::insert(
+            &precompile_address,
+            astar_primitives::EVM_REVERT_CODE.to_vec(),
+        );
+        assert_noop!(
+            Assets::create(
+                RuntimeOrigin::signed(ALICE),
+                asset_id.into(),
+                ALICE.into(),
+                1,
+            ),
+            pallet_assets::Error::<Runtime>::CallbackFailed
+        );
+    });
+}

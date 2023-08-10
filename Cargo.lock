@@ -4464,6 +4464,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
+ "pallet-assets",
  "pallet-balances",
  "pallet-contracts",
  "pallet-contracts-primitives",
