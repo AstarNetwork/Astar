@@ -178,15 +178,10 @@ impl GasWeightMapping for MockGasWeightMapping {
     }
 }
 
-parameter_types! {
-    pub const MaxWeightLimit: Weight = Weight::from_parts(1_000_000_000, 100 * 1024 * 1024);
-}
-
 impl pallet_xvm::Config for TestRuntime {
     type GasWeightMapping = MockGasWeightMapping;
     type AccountMapping = HashedAccountMapping;
     type EthereumTransact = MockEthereumTransact;
-    type MaxWeightLimit = MaxWeightLimit;
     type WeightInfo = weights::SubstrateWeight<TestRuntime>;
 }
 

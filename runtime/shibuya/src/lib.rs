@@ -786,15 +786,10 @@ impl pallet_ethereum_checked::Config for Runtime {
     type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    pub const MaxWeightLimit: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(5);
-}
-
 impl pallet_xvm::Config for Runtime {
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type AccountMapping = HashedAccountMapping;
     type EthereumTransact = EthereumChecked;
-    type MaxWeightLimit = MaxWeightLimit;
     type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
 }
 

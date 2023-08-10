@@ -37,11 +37,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    ensure,
-    traits::{Currency, Get},
-    weights::Weight,
-};
+use frame_support::{ensure, traits::Currency, weights::Weight};
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
@@ -90,11 +86,6 @@ pub mod pallet {
         /// `CheckedEthereumTransact` implementation.
         type EthereumTransact: CheckedEthereumTransact;
 
-        /// Max weight limit allowed for cross-VM calls. Calls will fail
-        /// if their `ref_time` or `proof_size` exceeds this limit.
-        #[pallet::constant]
-        type MaxWeightLimit: Get<Weight>;
-
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
     }
@@ -140,16 +131,6 @@ where
             context.source_vm_id != vm_id,
             CallErrorWithWeight {
                 error: CallError::SameVmCallDenied,
-                used_weight: overheads,
-            }
-        );
-
-        let max_weight_limit = T::MaxWeightLimit::get();
-        ensure!(
-            context.weight_limit.ref_time() <= max_weight_limit.ref_time()
-                && context.weight_limit.proof_size() <= max_weight_limit.proof_size(),
-            CallErrorWithWeight {
-                error: CallError::ExceedMaxWeightLimit,
                 used_weight: overheads,
             }
         );
