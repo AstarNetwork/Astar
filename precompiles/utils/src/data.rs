@@ -187,7 +187,6 @@ impl<'a> EvmDataReader<'a> {
         Ok(data)
     }
 
-
     /// Move the reading cursor with provided length, and return a range from the previous cursor
     /// location to the new one.
     /// Checks cursor overflows.
