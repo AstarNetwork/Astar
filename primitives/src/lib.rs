@@ -32,6 +32,10 @@ pub mod xvm;
 /// EVM primitives.
 pub mod evm;
 
+/// Benchmark primitives
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarks;
+
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, IdentifyAccount, Verify},

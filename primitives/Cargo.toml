@@ -61,4 +61,4 @@ std = [
 	"pallet-evm/std",
 	"pallet-evm-precompile-assets-erc20/std",
 ]
-runtime-benchmarks = ["xcm-builder/runtime-benchmarks"]
+runtime-benchmarks = ["xcm-builder/runtime-benchmarks", "pallet-assets/runtime-benchmarks"]

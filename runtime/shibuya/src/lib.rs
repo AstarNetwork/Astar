@@ -633,6 +633,8 @@ impl pallet_assets::Config for Runtime {
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
     type CallbackHandle = EvmRevertCodeHandler<Self, Self>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = astar_primitives::benchmarks::AssetsBenchmarkHelper;
 }
 
 parameter_types! {
@@ -1408,6 +1410,7 @@ mod benches {
     define_benchmarks!(
         [frame_benchmarking, BaselineBench::<Runtime>]
         [frame_system, SystemBench::<Runtime>]
+        [pallet_assets, Assets]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]

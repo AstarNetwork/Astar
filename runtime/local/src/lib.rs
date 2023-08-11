@@ -326,6 +326,16 @@ impl pallet_assets::Config for Runtime {
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
     type CallbackHandle = EvmRevertCodeHandler<Self, Self>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = astar_primitives::benchmarks::AssetsBenchmarkHelper;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct Temp;
+impl<AssetIdParameter: From<u128>> pallet_assets::BenchmarkHelper<AssetIdParameter> for Temp {
+    fn create_asset_id_parameter(id: u32) -> AssetIdParameter {
+        AssetId::from(id).into()
+    }
 }
 
 parameter_types! {
@@ -1131,6 +1141,7 @@ extern crate frame_benchmarking;
 mod benches {
     define_benchmarks!(
         [frame_benchmarking, BaselineBench::<Runtime>]
+        [pallet_assets, Assets]
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
