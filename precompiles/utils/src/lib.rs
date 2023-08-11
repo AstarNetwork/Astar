@@ -25,6 +25,7 @@
 extern crate alloc;
 
 use crate::alloc::borrow::ToOwned;
+pub use alloc::string::String;
 use fp_evm::{
     Context, ExitError, ExitRevert, ExitSucceed, PrecompileFailure, PrecompileHandle,
     PrecompileOutput,
@@ -38,7 +39,8 @@ use pallet_evm::{GasWeightMapping, Log};
 use sp_core::{H160, H256, U256};
 use sp_std::{marker::PhantomData, vec, vec::Vec};
 
-mod data;
+pub mod bytes;
+pub mod data;
 
 pub use data::{Address, Bytes, EvmData, EvmDataReader, EvmDataWriter};
 pub use precompile_utils_macro::{generate_function_selector, keccak256};
@@ -338,6 +340,68 @@ pub fn log_costs(topics: usize, data_len: usize) -> EvmResult<u64> {
         })
 }
 
+// Compute the cost of doing a subcall.
+// Some parameters cannot be known in advance, so we estimate the worst possible cost.
+pub fn call_cost(value: U256, config: &evm::Config) -> u64 {
+    // Copied from EVM code since not public.
+    pub const G_CALLVALUE: u64 = 9000;
+    pub const G_NEWACCOUNT: u64 = 25000;
+
+    fn address_access_cost(is_cold: bool, regular_value: u64, config: &evm::Config) -> u64 {
+        if config.increase_state_access_gas {
+            if is_cold {
+                config.gas_account_access_cold
+            } else {
+                config.gas_storage_read_warm
+            }
+        } else {
+            regular_value
+        }
+    }
+
+    fn xfer_cost(is_call_or_callcode: bool, transfers_value: bool) -> u64 {
+        if is_call_or_callcode && transfers_value {
+            G_CALLVALUE
+        } else {
+            0
+        }
+    }
+
+    fn new_cost(
+        is_call_or_staticcall: bool,
+        new_account: bool,
+        transfers_value: bool,
+        config: &evm::Config,
+    ) -> u64 {
+        let eip161 = !config.empty_considered_exists;
+        if is_call_or_staticcall {
+            if eip161 {
+                if transfers_value && new_account {
+                    G_NEWACCOUNT
+                } else {
+                    0
+                }
+            } else if new_account {
+                G_NEWACCOUNT
+            } else {
+                0
+            }
+        } else {
+            0
+        }
+    }
+
+    let transfers_value = value != U256::default();
+    let is_cold = true;
+    let is_call_or_callcode = true;
+    let is_call_or_staticcall = true;
+    let new_account = true;
+
+    address_access_cost(is_cold, config.gas_call, config)
+        + xfer_cost(is_call_or_callcode, transfers_value)
+        + new_cost(is_call_or_staticcall, new_account, transfers_value, config)
+}
+
 impl<T: PrecompileHandle> PrecompileHandleExt for T {
     #[must_use]
     /// Record cost of a log manualy.
@@ -409,7 +473,7 @@ pub fn succeed(output: impl AsRef<[u8]>) -> PrecompileOutput {
 #[must_use]
 /// Check that a function call is compatible with the context it is
 /// called into.
-fn check_function_modifier(
+pub fn check_function_modifier(
     context: &Context,
     is_static: bool,
     modifier: FunctionModifier,

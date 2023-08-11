@@ -105,6 +105,7 @@ pallet-custom-signatures = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
+pallet-evm-precompile-batch = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
@@ -180,6 +181,7 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-dapps-staking/std",
+	"pallet-evm-precompile-batch/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-assets-erc20/std",
