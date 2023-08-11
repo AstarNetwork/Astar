@@ -85,21 +85,6 @@ pub mod pallet {
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
 
-    /// Callback definition trait for cross-chain asset registration/deregistration notifications.
-    pub trait XcAssetChanged<T: Config> {
-        /// Will be called by pallet when new asset Id has been registered
-        fn xc_asset_registered(asset_id: T::AssetId);
-
-        /// Will be called by pallet when asset Id has been unregistered
-        fn xc_asset_unregistered(asset_id: T::AssetId);
-    }
-
-    /// Implementation that does nothing
-    impl<T: Config> XcAssetChanged<T> for () {
-        fn xc_asset_registered(_: T::AssetId) {}
-        fn xc_asset_unregistered(_: T::AssetId) {}
-    }
-
     /// Defines conversion between asset Id and cross-chain asset location
     pub trait XcAssetLocation<AssetId> {
         /// Get asset type from assetId
@@ -138,9 +123,6 @@ pub mod pallet {
         /// The Asset Id. This will be used to create the asset and to associate it with
         /// a AssetLocation
         type AssetId: Member + Parameter + Default + Copy + HasCompact + MaxEncodedLen;
-
-        /// Callback handling for cross-chain asset registration or unregistration.
-        type XcAssetChanged: XcAssetChanged<Self>;
 
         /// The required origin for managing cross-chain asset configuration
         ///
@@ -241,8 +223,6 @@ pub mod pallet {
 
             AssetIdToLocation::<T>::insert(&asset_id, asset_location.clone());
             AssetLocationToId::<T>::insert(&asset_location, asset_id);
-
-            T::XcAssetChanged::xc_asset_registered(asset_id);
 
             Self::deposit_event(Event::AssetRegistered {
                 asset_location,
@@ -354,7 +334,6 @@ pub mod pallet {
             AssetIdToLocation::<T>::remove(&asset_id);
             AssetLocationToId::<T>::remove(&asset_location);
             AssetLocationUnitsPerSecond::<T>::remove(&asset_location);
-            T::XcAssetChanged::xc_asset_unregistered(asset_id);
 
             Self::deposit_event(Event::AssetRemoved {
                 asset_id,
