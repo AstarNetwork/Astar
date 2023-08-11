@@ -23,6 +23,7 @@ use astar_primitives::xvm::CallError;
 use parity_scale_codec::Encode;
 use precompile_utils::testing::*;
 use precompile_utils::EvmDataWriter;
+use sp_core::U256;
 
 fn precompiles() -> TestPrecompileSet<Runtime> {
     PrecompilesValue::get()
@@ -50,6 +51,7 @@ fn wrong_argument_reverts() {
                     .write(0u8)
                     .write(Bytes(b"".to_vec()))
                     .write(Bytes(b"".to_vec()))
+                    .write(U256::one())
                     .build(),
             )
             .expect_no_logs()
@@ -68,6 +70,7 @@ fn correct_arguments_works() {
                     .write(0x1Fu8)
                     .write(Bytes(b"".to_vec()))
                     .write(Bytes(b"".to_vec()))
+                    .write(U256::one())
                     .build(),
             )
             .expect_no_logs()
@@ -78,4 +81,55 @@ fn correct_arguments_works() {
                     .build(),
             );
     })
+}
+
+#[test]
+fn weight_limit_is_min_of_remaining_and_user_limit() {
+    ExtBuilder::default().build().execute_with(|| {
+        // The caller didn't set a limit.
+        precompiles()
+            .prepare_test(
+                TestAccount::Alice,
+                PRECOMPILE_ADDRESS,
+                EvmDataWriter::new_with_selector(Action::XvmCall)
+                    .write(0x1Fu8)
+                    .write(Bytes(
+                        hex::decode("0000000000000000000000000000000000000000")
+                            .expect("invalid hex"),
+                    ))
+                    .write(Bytes(b"".to_vec()))
+                    .write(U256::one())
+                    .build(),
+            )
+            .expect_no_logs()
+            .execute_some();
+        assert_eq!(
+            WeightLimitCalledWith::get(),
+            <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(u64::MAX, true)
+        );
+
+        // The caller set a limit.
+        let gas_limit = 1_000;
+        precompiles()
+            .prepare_test(
+                TestAccount::Alice,
+                PRECOMPILE_ADDRESS,
+                EvmDataWriter::new_with_selector(Action::XvmCall)
+                    .write(0x1Fu8)
+                    .write(Bytes(
+                        hex::decode("0000000000000000000000000000000000000000")
+                            .expect("invalid hex"),
+                    ))
+                    .write(Bytes(b"".to_vec()))
+                    .write(U256::one())
+                    .build(),
+            )
+            .with_gas_limit(gas_limit)
+            .expect_no_logs()
+            .execute_some();
+        assert_eq!(
+            WeightLimitCalledWith::get(),
+            <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true)
+        );
+    });
 }

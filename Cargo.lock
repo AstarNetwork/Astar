@@ -4456,13 +4456,20 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
+ "astar-primitives",
  "astar-runtime",
  "frame-support",
  "frame-system",
+ "hex",
  "pallet-balances",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
  "pallet-dapps-staking",
+ "pallet-ethereum-checked",
+ "pallet-evm",
  "pallet-proxy",
  "pallet-utility",
+ "parity-scale-codec",
  "shibuya-runtime",
  "shiden-runtime",
  "sp-core",
@@ -7496,6 +7503,7 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
+ "hex",
  "hex-literal",
  "log",
  "num_enum 0.5.11",
@@ -8263,10 +8271,12 @@ name = "pallet-xvm"
 version = "0.2.2"
 dependencies = [
  "astar-primitives",
+ "environmental",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
  "log",
  "pallet-balances",
  "pallet-contracts",

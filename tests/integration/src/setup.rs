@@ -23,17 +23,95 @@ pub use frame_support::{
     traits::{OnFinalize, OnIdle, OnInitialize},
     weights::Weight,
 };
-pub use sp_core::H160;
+pub use pallet_evm::AddressMapping;
+pub use sp_core::{H160, H256, U256};
 pub use sp_runtime::{AccountId32, MultiAddress};
+
+pub use astar_primitives::ethereum_checked::AccountMapping;
 
 #[cfg(feature = "shibuya")]
 pub use shibuya::*;
 #[cfg(feature = "shibuya")]
 mod shibuya {
+    use super::*;
     pub use shibuya_runtime::*;
 
     /// 1 SBY.
     pub const UNIT: Balance = SBY;
+
+    // TODO: once Account Unification is finished, remove `alith` and `alicia`,
+    // which are mocks of two way account/address mapping.
+
+    /// H160 address mapped from `ALICE`.
+    pub fn alith() -> H160 {
+        h160_from(ALICE)
+    }
+
+    /// `AccountId32` mapped from `alith()`.
+    pub fn alicia() -> AccountId32 {
+        account_id_from(alith())
+    }
+
+    /// Convert `H160` to `AccountId32`.
+    pub fn account_id_from(address: H160) -> AccountId32 {
+        <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(address)
+    }
+
+    /// Convert `AccountId32` to `H160`.
+    pub fn h160_from(account_id: AccountId32) -> H160 {
+        <Runtime as pallet_ethereum_checked::Config>::AccountMapping::into_h160(account_id)
+    }
+
+    /// Deploy an EVM contract with code.
+    pub fn deploy_evm_contract(code: &str) -> H160 {
+        assert_ok!(EVM::create2(
+            RuntimeOrigin::root(),
+            alith(),
+            hex::decode(code).expect("invalid code hex"),
+            H256::zero(),
+            U256::zero(),
+            1_000_000,
+            U256::from(DefaultBaseFeePerGas::get()),
+            None,
+            None,
+            vec![],
+        ));
+        match System::events()
+            .iter()
+            .last()
+            .expect("no event found")
+            .event
+        {
+            RuntimeEvent::EVM(pallet_evm::Event::Created { address }) => address,
+            _ => panic!("Deploy failed."),
+        }
+    }
+
+    /// Deploy a WASM contract with its name. (The code is in `resource/`.)
+    pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
+        let path = format!("ink-contracts/{}.wasm", name);
+        let code = std::fs::read(path).expect("invalid path");
+        let instantiate_result = Contracts::bare_instantiate(
+            ALICE,
+            0,
+            Weight::from_parts(10_000_000_000, 1024 * 1024),
+            None,
+            pallet_contracts_primitives::Code::Upload(code),
+            // `new` constructor
+            hex::decode("9bae9d5e").expect("invalid data hex"),
+            vec![],
+            pallet_contracts::DebugInfo::Skip,
+            pallet_contracts::CollectEvents::Skip,
+        );
+
+        let address = instantiate_result
+            .result
+            .expect("instantiation failed")
+            .account_id;
+        // On instantiation, the contract got existential deposit.
+        assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
+        address
+    }
 }
 
 #[cfg(feature = "shiden")]
@@ -107,6 +185,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             (ALICE, INITIAL_AMOUNT),
             (BOB, INITIAL_AMOUNT),
             (CAT, INITIAL_AMOUNT),
+            #[cfg(feature = "shibuya")]
+            (alicia(), INITIAL_AMOUNT),
         ])
         .build()
 }

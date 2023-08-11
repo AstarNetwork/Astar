@@ -36,6 +36,7 @@ use sp_runtime::{
     traits::{AccountIdLookup, BlakeTwo256},
     AccountId32,
 };
+use sp_std::cell::RefCell;
 
 parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
@@ -131,12 +132,23 @@ impl astar_primitives::ethereum_checked::AccountMapping<AccountId> for HashedAcc
     }
 }
 
+thread_local! {
+    static TRANSACTED: RefCell<Option<(H160, CheckedEthereumTx)>> = RefCell::new(None);
+}
+
 pub struct MockEthereumTransact;
+impl MockEthereumTransact {
+    pub(crate) fn assert_transacted(source: H160, checked_tx: CheckedEthereumTx) {
+        let transacted = TRANSACTED.with(|v| v.borrow().clone());
+        assert_eq!(transacted, Some((source, checked_tx)));
+    }
+}
 impl CheckedEthereumTransact for MockEthereumTransact {
     fn xvm_transact(
-        _source: H160,
-        _checked_tx: CheckedEthereumTx,
+        source: H160,
+        checked_tx: CheckedEthereumTx,
     ) -> Result<(PostDispatchInfo, EvmCallInfo), DispatchErrorWithPostInfo> {
+        TRANSACTED.with(|v| *v.borrow_mut() = Some((source, checked_tx)));
         Ok((
             PostDispatchInfo {
                 actual_weight: Default::default(),
@@ -170,12 +182,11 @@ impl pallet_xvm::Config for TestRuntime {
     type GasWeightMapping = MockGasWeightMapping;
     type AccountMapping = HashedAccountMapping;
     type EthereumTransact = MockEthereumTransact;
-    type WeightInfo = ();
+    type WeightInfo = weights::SubstrateWeight<TestRuntime>;
 }
 
 pub(crate) type AccountId = AccountId32;
 pub(crate) type BlockNumber = u64;
-pub(crate) type Balance = u128;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
@@ -196,12 +207,16 @@ construct_runtime!(
     }
 );
 
+pub(crate) const ALICE: AccountId = AccountId32::new([0u8; 32]);
+
 #[derive(Default)]
 pub struct ExtBuilder;
 
 impl ExtBuilder {
     #[allow(dead_code)]
     pub fn build(self) -> TestExternalities {
+        TRANSACTED.with(|v| *v.borrow_mut() = None);
+
         let t = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();

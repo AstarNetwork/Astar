@@ -466,11 +466,6 @@ impl pallet_ethereum_checked::Config for Runtime {
     type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    pub EvmId: u8 = 0x0F;
-    pub WasmId: u8 = 0x1F;
-}
-
 impl pallet_xvm::Config for Runtime {
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type AccountMapping = HashedAccountMapping;
