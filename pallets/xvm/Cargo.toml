@@ -7,6 +7,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+environmental = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true, optional = true }
 
@@ -42,6 +43,7 @@ sp-io = { workspace = true }
 [features]
 default = ["std"]
 std = [
+	"environmental/std",
 	"log/std",
 	"parity-scale-codec/std",
 	"frame-support/std",

@@ -49,7 +49,7 @@ fn calling_into_same_vm_is_not_allowed() {
                 value
             ),
             CallErrorWithWeight {
-                error: CallError::SameVmCallNotAllowed,
+                error: CallError::SameVmCallDenied,
                 used_weight: evm_used_weight
             },
         );
@@ -66,7 +66,7 @@ fn calling_into_same_vm_is_not_allowed() {
         assert_noop!(
             Xvm::call(wasm_context, wasm_vm_id, ALICE, wasm_target, input, value),
             CallErrorWithWeight {
-                error: CallError::SameVmCallNotAllowed,
+                error: CallError::SameVmCallDenied,
                 used_weight: wasm_used_weight
             },
         );

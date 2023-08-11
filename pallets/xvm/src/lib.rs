@@ -37,7 +37,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{ensure, traits::Currency};
+use frame_support::{ensure, traits::Currency, weights::Weight};
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
@@ -65,6 +65,8 @@ mod tests;
 pub use pallet::*;
 
 pub type WeightInfoOf<T> = <T as Config>::WeightInfo;
+
+environmental::thread_local_impl!(static IN_XVM: environmental::RefCell<bool> = environmental::RefCell::new(false));
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -120,25 +122,53 @@ where
         value: Balance,
         skip_execution: bool,
     ) -> CallResult {
+        let overheads = match vm_id {
+            VmId::Evm => WeightInfoOf::<T>::evm_call_overheads(),
+            VmId::Wasm => WeightInfoOf::<T>::wasm_call_overheads(),
+        };
+
         ensure!(
             context.source_vm_id != vm_id,
             CallErrorWithWeight {
-                error: CallError::SameVmCallNotAllowed,
-                used_weight: match vm_id {
-                    VmId::Evm => WeightInfoOf::<T>::evm_call_overheads(),
-                    VmId::Wasm => WeightInfoOf::<T>::wasm_call_overheads(),
-                },
+                error: CallError::SameVmCallDenied,
+                used_weight: overheads,
             }
         );
 
-        match vm_id {
-            VmId::Evm => {
-                Pallet::<T>::evm_call(context, source, target, input, value, skip_execution)
-            }
-            VmId::Wasm => {
-                Pallet::<T>::wasm_call(context, source, target, input, value, skip_execution)
-            }
+        // Set `IN_XVM` to true & check reentrance.
+        if IN_XVM.with(|in_xvm| in_xvm.replace(true)) {
+            return Err(CallErrorWithWeight {
+                error: CallError::ReentranceDenied,
+                used_weight: overheads,
+            });
         }
+
+        let res = match vm_id {
+            VmId::Evm => Pallet::<T>::evm_call(
+                context,
+                source,
+                target,
+                input,
+                value,
+                overheads,
+                skip_execution,
+            ),
+            VmId::Wasm => Pallet::<T>::wasm_call(
+                context,
+                source,
+                target,
+                input,
+                value,
+                overheads,
+                skip_execution,
+            ),
+        };
+
+        // Set `IN_XVM` to false.
+        // We should make sure that this line is executed whatever the execution path.
+        let _ = IN_XVM.with(|in_xvm| in_xvm.take());
+
+        res
     }
 
     fn evm_call(
@@ -147,6 +177,7 @@ where
         target: Vec<u8>,
         input: Vec<u8>,
         value: Balance,
+        overheads: Weight,
         skip_execution: bool,
     ) -> CallResult {
         log::trace!(
@@ -159,24 +190,22 @@ where
             target.len() == H160::len_bytes(),
             CallErrorWithWeight {
                 error: CallError::InvalidTarget,
-                used_weight: WeightInfoOf::<T>::evm_call_overheads(),
+                used_weight: overheads,
             }
         );
         let target_decoded =
             Decode::decode(&mut target.as_ref()).map_err(|_| CallErrorWithWeight {
                 error: CallError::InvalidTarget,
-                used_weight: WeightInfoOf::<T>::evm_call_overheads(),
+                used_weight: overheads,
             })?;
         let bounded_input = EthereumTxInput::try_from(input).map_err(|_| CallErrorWithWeight {
             error: CallError::InputTooLarge,
-            used_weight: WeightInfoOf::<T>::evm_call_overheads(),
+            used_weight: overheads,
         })?;
 
         let value_u256 = U256::from(value);
         // With overheads, less weight is available.
-        let weight_limit = context
-            .weight_limit
-            .saturating_sub(WeightInfoOf::<T>::evm_call_overheads());
+        let weight_limit = context.weight_limit.saturating_sub(overheads);
         let gas_limit = U256::from(T::GasWeightMapping::weight_to_gas(weight_limit));
 
         let source = T::AccountMapping::into_h160(source);
@@ -193,7 +222,7 @@ where
         if skip_execution {
             return Ok(CallInfo {
                 output: vec![],
-                used_weight: WeightInfoOf::<T>::evm_call_overheads(),
+                used_weight: overheads,
             });
         }
 
@@ -208,7 +237,7 @@ where
                 let used_weight = post_dispatch_info
                     .actual_weight
                     .unwrap_or_default()
-                    .saturating_add(WeightInfoOf::<T>::evm_call_overheads());
+                    .saturating_add(overheads);
                 CallInfo {
                     output: call_info.value,
                     used_weight,
@@ -219,7 +248,7 @@ where
                     .post_info
                     .actual_weight
                     .unwrap_or_default()
-                    .saturating_add(WeightInfoOf::<T>::evm_call_overheads());
+                    .saturating_add(overheads);
                 CallErrorWithWeight {
                     error: CallError::ExecutionFailed(Into::<&str>::into(e.error).into()),
                     used_weight,
@@ -233,6 +262,7 @@ where
         target: Vec<u8>,
         input: Vec<u8>,
         value: Balance,
+        overheads: Weight,
         skip_execution: bool,
     ) -> CallResult {
         log::trace!(
@@ -244,23 +274,21 @@ where
         let dest = {
             let error = CallErrorWithWeight {
                 error: CallError::InvalidTarget,
-                used_weight: WeightInfoOf::<T>::wasm_call_overheads(),
+                used_weight: overheads,
             };
             let decoded = Decode::decode(&mut target.as_ref()).map_err(|_| error.clone())?;
             T::Lookup::lookup(decoded).map_err(|_| error)
         }?;
 
         // With overheads, less weight is available.
-        let weight_limit = context
-            .weight_limit
-            .saturating_sub(WeightInfoOf::<T>::wasm_call_overheads());
+        let weight_limit = context.weight_limit.saturating_sub(overheads);
 
         // Note the skip execution check should be exactly before `pallet_contracts::bare_call`
         // to benchmark the correct overheads.
         if skip_execution {
             return Ok(CallInfo {
                 output: vec![],
-                used_weight: WeightInfoOf::<T>::wasm_call_overheads(),
+                used_weight: overheads,
             });
         }
 
@@ -277,9 +305,7 @@ where
         );
         log::trace!(target: "xvm::wasm_call", "WASM call result: {:?}", call_result);
 
-        let used_weight = call_result
-            .gas_consumed
-            .saturating_add(WeightInfoOf::<T>::wasm_call_overheads());
+        let used_weight = call_result.gas_consumed.saturating_add(overheads);
         match call_result.result {
             Ok(success) => Ok(CallInfo {
                 output: success.data,

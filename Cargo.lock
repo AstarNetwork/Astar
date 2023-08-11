@@ -7474,6 +7474,7 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
+ "hex",
  "hex-literal",
  "log",
  "num_enum 0.5.11",
@@ -8241,6 +8242,7 @@ name = "pallet-xvm"
 version = "0.2.2"
 dependencies = [
  "astar-primitives",
+ "environmental",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
