@@ -38,10 +38,11 @@ impl From<CallError> for XvmExecutionResult {
         // `0` is reserved for `Ok`
         let error_code = match input {
             InvalidVmId => 1,
-            SameVmCallNotAllowed => 2,
+            SameVmCallDenied => 2,
             InvalidTarget => 3,
             InputTooLarge => 4,
-            ExecutionFailed(_) => 5,
+            ReentranceDenied => 5,
+            ExecutionFailed(_) => 6,
         };
         Self::Err(error_code)
     }

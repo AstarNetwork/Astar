@@ -38,6 +38,7 @@ use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_std::cell::RefCell;
 
 use astar_primitives::xvm::{CallError::*, CallErrorWithWeight, CallInfo, CallResult};
 
@@ -236,10 +237,29 @@ impl pallet_evm::Config for Runtime {
     type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
+thread_local! {
+    static WEIGHT_LIMIT: RefCell<Weight> = RefCell::new(Weight::zero());
+}
+
+pub(crate) struct WeightLimitCalledWith;
+impl WeightLimitCalledWith {
+    pub(crate) fn get() -> Weight {
+        WEIGHT_LIMIT.with(|gas_limit| *gas_limit.borrow())
+    }
+
+    pub(crate) fn set(value: Weight) {
+        WEIGHT_LIMIT.with(|gas_limit| *gas_limit.borrow_mut() = value)
+    }
+
+    pub(crate) fn reset() {
+        Self::set(Weight::zero());
+    }
+}
+
 struct MockXvmWithArgsCheck;
 impl XvmCall<AccountId> for MockXvmWithArgsCheck {
     fn call(
-        _context: Context,
+        context: Context,
         vm_id: VmId,
         _source: AccountId,
         target: Vec<u8>,
@@ -249,7 +269,7 @@ impl XvmCall<AccountId> for MockXvmWithArgsCheck {
         ensure!(
             vm_id != VmId::Evm,
             CallErrorWithWeight {
-                error: SameVmCallNotAllowed,
+                error: SameVmCallDenied,
                 used_weight: Weight::zero()
             }
         );
@@ -267,6 +287,9 @@ impl XvmCall<AccountId> for MockXvmWithArgsCheck {
                 used_weight: Weight::zero()
             }
         );
+
+        WeightLimitCalledWith::set(context.weight_limit);
+
         Ok(CallInfo {
             output: vec![],
             used_weight: Weight::zero(),
@@ -296,6 +319,8 @@ impl ExtBuilder {
         let t = frame_system::GenesisConfig::default()
             .build_storage::<Runtime>()
             .expect("Frame system builds valid default genesis config");
+
+        WeightLimitCalledWith::reset();
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
