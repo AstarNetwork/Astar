@@ -156,6 +156,8 @@ impl pallet_assets::Config for Runtime {
     type RemoveItemsLimit = ConstU32<100>;
     type CallbackHandle = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 impl pallet_timestamp::Config for Runtime {
