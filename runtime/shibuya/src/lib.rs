@@ -1226,7 +1226,6 @@ impl pallet_proxy::Config for Runtime {
 impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
-    type XcAssetChanged = ();
     // Good enough for testnet since we lack pallet-assets hooks for now
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;

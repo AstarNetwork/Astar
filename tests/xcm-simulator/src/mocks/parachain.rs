@@ -391,7 +391,6 @@ parameter_types! {
 impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
-    type XcAssetChanged = ();
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Runtime>;
 }
