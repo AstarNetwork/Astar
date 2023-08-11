@@ -106,12 +106,7 @@ impl<K: Kind, S: Get<u32>> EvmData for BoundedBytesString<K, S> {
             return Err(revert("length, value too large").into());
         }
 
-        // Get valid range over the bytes data.
-        let range = inner_reader.move_cursor(array_size)?;
-
-        let data = inner_reader
-            .get_input_from_range(range)
-            .ok_or_else(|| revert(K::signature()))?;
+        let data = inner_reader.read_raw_bytes(array_size)?;
 
         let bytes = Self {
             data: data.to_owned(),
@@ -140,7 +135,7 @@ impl<K: Kind, S: Get<u32>> EvmData for BoundedBytesString<K, S> {
         writer.write_pointer(
             EvmDataWriter::new()
                 .write(U256::from(length))
-                .write_raw_bytes(&value)
+                .write(value)
                 .build(),
         );
     }
