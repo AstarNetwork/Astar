@@ -17,6 +17,7 @@ pallet-evm = { workspace = true }
 # frame dependencies
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
@@ -29,6 +30,7 @@ sp-runtime = { workspace = true }
 
 # astar dependencies
 pallet-ethereum-checked = { workspace = true }
+pallet-evm-precompile-assets-erc20 = { workspace = true }
 
 astar-primitives = { workspace = true }
 astar-runtime = { workspace = true, features = ["std"], optional = true }

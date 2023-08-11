@@ -61,7 +61,8 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+    evm::EvmRevertCodeHandler, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
+    Index, Signature,
 };
 
 #[cfg(feature = "std")]
@@ -113,6 +114,8 @@ pub type Precompiles = LocalNetworkPrecompiles<Runtime>;
 
 mod chain_extensions;
 pub use chain_extensions::*;
+
+mod weights;
 
 /// Constant values used within the runtime.
 pub const MICROAST: Balance = 1_000_000_000_000;
@@ -321,10 +324,12 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
-    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
-    type CallbackHandle = ();
+    type CallbackHandle = EvmRevertCodeHandler<Self, Self>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = astar_primitives::benchmarks::AssetsBenchmarkHelper;
 }
 
 parameter_types! {
@@ -1125,6 +1130,7 @@ extern crate frame_benchmarking;
 mod benches {
     define_benchmarks!(
         [frame_benchmarking, BaselineBench::<Runtime>]
+        [pallet_assets, Assets]
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]

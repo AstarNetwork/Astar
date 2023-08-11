@@ -16,18 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! Runtime integration tests.
+use crate::AssetId;
 
-#![cfg(test)]
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod setup;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod proxy;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod assets;
-
-#[cfg(feature = "shibuya")]
-mod xvm;
+#[cfg(feature = "runtime-benchmarks")]
+/// Benchmark helper for `pallet-assets`.
+pub struct AssetsBenchmarkHelper;
+impl<AssetIdParameter: From<u128>> pallet_assets::BenchmarkHelper<AssetIdParameter>
+    for AssetsBenchmarkHelper
+{
+    fn create_asset_id_parameter(id: u32) -> AssetIdParameter {
+        AssetId::from(id).into()
+    }
+}

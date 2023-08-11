@@ -68,10 +68,10 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+    evm::EvmRevertCodeHandler, xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance,
+    BlockNumber, Hash, Header, Index, Signature,
 };
 
-use astar_primitives::xcm::AssetLocationIdConverter;
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 #[cfg(any(feature = "std", test))]
@@ -85,6 +85,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod precompiles;
+mod weights;
 mod xcm_config;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
@@ -583,10 +584,12 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
-    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = Compact<AssetId>;
-    type CallbackHandle = ();
+    type CallbackHandle = EvmRevertCodeHandler<Self, Self>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = astar_primitives::benchmarks::AssetsBenchmarkHelper;
 }
 
 parameter_types! {
@@ -822,23 +825,9 @@ impl pallet_sudo::Config for Runtime {
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
-pub struct EvmRevertCodeHandler;
-impl pallet_xc_asset_config::XcAssetChanged<Runtime> for EvmRevertCodeHandler {
-    fn xc_asset_registered(asset_id: AssetId) {
-        let address = Runtime::asset_id_to_address(asset_id);
-        pallet_evm::AccountCodes::<Runtime>::insert(address, vec![0x60, 0x00, 0x60, 0x00, 0xfd]);
-    }
-
-    fn xc_asset_unregistered(asset_id: AssetId) {
-        let address = Runtime::asset_id_to_address(asset_id);
-        pallet_evm::AccountCodes::<Runtime>::remove(address);
-    }
-}
-
 impl pallet_xc_asset_config::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
-    type XcAssetChanged = EvmRevertCodeHandler;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
@@ -1153,6 +1142,7 @@ mod benches {
     define_benchmarks!(
         [frame_benchmarking, BaselineBench::<Runtime>]
         [frame_system, SystemBench::<Runtime>]
+        [pallet_assets, Assets]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]

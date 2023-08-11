@@ -219,6 +219,7 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
+	"pallet-assets/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",

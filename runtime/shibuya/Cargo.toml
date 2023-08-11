@@ -259,6 +259,7 @@ runtime-benchmarks = [
 	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
+	"pallet-assets/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
