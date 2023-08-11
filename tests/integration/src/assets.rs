@@ -18,6 +18,7 @@
 
 use crate::setup::*;
 
+use astar_primitives::evm::EVM_REVERT_CODE;
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 #[test]
@@ -39,7 +40,7 @@ fn asset_create_and_destroy_work_for_evm_revert_code() {
         ));
         assert_eq!(
             pallet_evm::AccountCodes::<Runtime>::get(&precompile_address),
-            astar_primitives::EVM_REVERT_CODE.to_vec(),
+            EVM_REVERT_CODE.to_vec(),
             "Precompile address should contain the revert code."
         );
 
@@ -66,10 +67,7 @@ fn asset_create_fails_if_account_code_is_non_empty() {
         let precompile_address = Runtime::asset_id_to_address(asset_id);
 
         // Asset registration must fail if the precompile address is not empty
-        pallet_evm::AccountCodes::<Runtime>::insert(
-            &precompile_address,
-            astar_primitives::EVM_REVERT_CODE.to_vec(),
-        );
+        pallet_evm::AccountCodes::<Runtime>::insert(&precompile_address, EVM_REVERT_CODE.to_vec());
         assert_noop!(
             Assets::create(
                 RuntimeOrigin::signed(ALICE),

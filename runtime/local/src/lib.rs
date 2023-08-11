@@ -61,8 +61,8 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    AccountId, Address, AssetId, Balance, BlockNumber, EvmRevertCodeHandler, Hash, Header, Index,
-    Signature,
+    evm::EvmRevertCodeHandler, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
+    Index, Signature,
 };
 
 #[cfg(feature = "std")]

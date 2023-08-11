@@ -68,8 +68,8 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance, BlockNumber,
-    EvmRevertCodeHandler, Hash, Header, Index, Signature,
+    evm::EvmRevertCodeHandler, xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance,
+    BlockNumber, Hash, Header, Index, Signature,
 };
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;

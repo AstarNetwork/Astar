@@ -23,8 +23,8 @@
 #![recursion_limit = "256"]
 
 pub use astar_primitives::{
-    xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance, BlockNumber,
-    EvmRevertCodeHandler, Hash, Header, Index, Signature,
+    evm::EvmRevertCodeHandler, xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance,
+    BlockNumber, Hash, Header, Index, Signature,
 };
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
