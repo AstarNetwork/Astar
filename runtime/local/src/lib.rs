@@ -27,8 +27,8 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, Currency, EitherOfDiverse,
+        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, OnFinalize, WithdrawReasons,
     },
     weights::{
         constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -799,6 +799,17 @@ impl pallet_vesting::Config for Runtime {
     const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
+pub struct CallRuntimeFilter;
+impl Contains<RuntimeCall> for CallRuntimeFilter {
+    fn contains(c: &RuntimeCall) -> bool {
+        match *c {
+            RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
+            RuntimeCall::Assets(pallet_assets::Call::transfer_approved { .. }) => true,
+            _ => false,
+        }
+    }
+}
+
 parameter_types! {
     pub const DepositPerItem: Balance = deposit(1, 0);
     pub const DepositPerByte: Balance = deposit(0, 1);
@@ -819,7 +830,7 @@ impl pallet_contracts::Config for Runtime {
     /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
-    type CallFilter = Nothing;
+    type CallFilter = CallRuntimeFilter;
     type DepositPerItem = DepositPerItem;
     type DepositPerByte = DepositPerByte;
     type DefaultDepositLimit = DefaultDepositLimit;
