@@ -18,13 +18,15 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::xvm::{Context, VmId, XvmCall};
+use astar_primitives::{
+    xvm::{Context, VmId, XvmCall},
+    Balance,
+};
 use fp_evm::{PrecompileHandle, PrecompileOutput};
 use frame_support::dispatch::Dispatchable;
 use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
 use sp_runtime::codec::Encode;
-use sp_std::marker::PhantomData;
-use sp_std::prelude::*;
+use sp_std::{marker::PhantomData, prelude::*};
 
 use precompile_utils::{
     revert, succeed, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
@@ -38,7 +40,7 @@ mod tests;
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
 pub enum Action {
-    XvmCall = "xvm_call(uint8,bytes,bytes)",
+    XvmCall = "xvm_call(uint8,bytes,bytes,uint256)",
 }
 
 /// A precompile that expose XVM related functions.
@@ -74,15 +76,19 @@ where
 {
     fn xvm_call(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(3)?;
+        input.expect_arguments(4)?;
 
         let vm_id = {
             let id = input.read::<u8>()?;
             id.try_into().map_err(|_| revert("invalid vm id"))
         }?;
 
-        let remaining_gas = handle.remaining_gas();
-        let weight_limit = R::GasWeightMapping::gas_to_weight(remaining_gas, true);
+        let mut gas_limit = handle.remaining_gas();
+        // If user specified a gas limit, make sure it's not exceeded.
+        if let Some(user_limit) = handle.gas_limit() {
+            gas_limit = gas_limit.min(user_limit);
+        }
+        let weight_limit = R::GasWeightMapping::gas_to_weight(gas_limit, true);
         let xvm_context = Context {
             source_vm_id: VmId::Evm,
             weight_limit,
@@ -90,9 +96,10 @@ where
 
         let call_to = input.read::<Bytes>()?.0;
         let call_input = input.read::<Bytes>()?.0;
+        let value = input.read::<Balance>()?;
         let from = R::AddressMapping::into_account_id(handle.context().caller);
 
-        let call_result = XC::call(xvm_context, vm_id, from, call_to, call_input);
+        let call_result = XC::call(xvm_context, vm_id, from, call_to, call_input, value);
 
         let used_weight = match &call_result {
             Ok(s) => s.used_weight,

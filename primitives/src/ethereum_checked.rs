@@ -35,6 +35,8 @@ use sp_std::{prelude::*, result::Result};
 /// Max Ethereum tx input size: 65_536 bytes
 pub const MAX_ETHEREUM_TX_INPUT_SIZE: u32 = 2u32.pow(16);
 
+pub type EthereumTxInput = BoundedVec<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>;
+
 /// The checked Ethereum transaction. Only contracts `call` is support(no `create`).
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct CheckedEthereumTx {
@@ -45,7 +47,7 @@ pub struct CheckedEthereumTx {
     /// Amount to transfer.
     pub value: U256,
     /// Input of a contract call.
-    pub input: BoundedVec<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>,
+    pub input: EthereumTxInput,
     /// Optional access list, specified in EIP-2930.
     pub maybe_access_list: Option<Vec<(H160, Vec<H256>)>>,
 }

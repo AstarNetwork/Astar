@@ -20,6 +20,7 @@ fp-evm = { workspace = true }
 
 # Substrate dependencies
 frame-support = { workspace = true }
+pallet-assets = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
@@ -30,7 +31,11 @@ xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
-# Astar pallets
+# Frontier dependencies
+pallet-evm = { workspace = true }
+
+# Astar pallets & dependencies
+pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 
 [features]
@@ -52,5 +57,8 @@ std = [
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
 	"fp-evm/std",
+	"pallet-assets/std",
+	"pallet-evm/std",
+	"pallet-evm-precompile-assets-erc20/std",
 ]
-runtime-benchmarks = ["xcm-builder/runtime-benchmarks"]
+runtime-benchmarks = ["xcm-builder/runtime-benchmarks", "pallet-assets/runtime-benchmarks"]
