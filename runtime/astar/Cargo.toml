@@ -83,6 +83,10 @@ xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
+# orml dependencies
+orml-xcm-support = { workspace = true }
+orml-xtokens = { workspace = true }
+
 # benchmarking
 array-bytes = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
@@ -198,6 +202,8 @@ std = [
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
 	"substrate-wasm-builder",
+	"orml-xtokens/std",
+	"orml-xcm-support/std",
 	"astar-primitives/std",
 ]
 runtime-benchmarks = [
@@ -218,6 +224,7 @@ runtime-benchmarks = [
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
+	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 ]
@@ -258,6 +265,7 @@ try-runtime = [
 	"pallet-base-fee/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-evm/try-runtime",
+	"orml-xtokens/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

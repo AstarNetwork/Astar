@@ -91,7 +91,6 @@ xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
 # orml dependencies
-orml-traits = { workspace = true }
 orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 
@@ -233,7 +232,6 @@ std = [
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
 	"orml-xtokens/std",
-	"orml-traits/std",
 	"orml-xcm-support/std",
 	"astar-primitives/std",
 ]
