@@ -19,7 +19,7 @@
 //! Runtime integration tests setup & imports.
 
 pub use frame_support::{
-    assert_ok,
+    assert_noop, assert_ok,
     traits::{OnFinalize, OnIdle, OnInitialize},
     weights::Weight,
 };

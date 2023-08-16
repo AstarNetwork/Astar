@@ -29,10 +29,16 @@ pub mod ethereum_checked;
 /// XVM primitives.
 pub mod xvm;
 
-use sp_runtime::traits::BlakeTwo256;
+/// EVM primitives.
+pub mod evm;
+
+/// Benchmark primitives
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarks;
+
 use sp_runtime::{
     generic,
-    traits::{IdentifyAccount, Verify},
+    traits::{BlakeTwo256, IdentifyAccount, Verify},
 };
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.

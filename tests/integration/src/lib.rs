@@ -26,5 +26,8 @@ mod setup;
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod proxy;
 
+#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
+mod assets;
+
 #[cfg(feature = "shibuya")]
 mod xvm;

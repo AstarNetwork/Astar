@@ -61,11 +61,13 @@ pub enum CallError {
     /// Invalid VM id.
     InvalidVmId,
     /// Calling the contracts in the same VM is not allowed.
-    SameVmCallNotAllowed,
+    SameVmCallDenied,
     /// Target contract address is invalid.
     InvalidTarget,
     /// Input is too large.
     InputTooLarge,
+    /// Reentrance is not allowed.
+    ReentranceDenied,
     /// The call failed on EVM or WASM execution.
     ExecutionFailed(Vec<u8>),
 }
