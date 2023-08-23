@@ -18,18 +18,20 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+use alloc::format;
+
 use astar_primitives::{
-    xvm::{Context, VmId, XvmCall},
+    xvm::{Context, FailureReason, VmId, XvmCall},
     Balance,
 };
 use fp_evm::{PrecompileHandle, PrecompileOutput};
 use frame_support::dispatch::Dispatchable;
 use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
-use sp_runtime::codec::Encode;
 use sp_std::{marker::PhantomData, prelude::*};
 
 use precompile_utils::{
-    revert, succeed, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
+    error, revert, succeed, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
 };
 
 #[cfg(test)]
@@ -130,12 +132,14 @@ where
                     "failure: {:?}", failure
                 );
 
-                Ok(succeed(
-                    EvmDataWriter::new()
-                        .write(false)
-                        .write(Bytes(failure.error.encode()))
-                        .build(),
-                ))
+                match failure.reason {
+                    FailureReason::Revert(failure_revert) => {
+                        Err(revert(format!("{:?}", failure_revert).as_bytes()))
+                    }
+                    FailureReason::Error(failure_error) => {
+                        Err(error(format!("{:?}", failure_error)))
+                    }
+                }
             }
         }
     }

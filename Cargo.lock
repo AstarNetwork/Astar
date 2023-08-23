@@ -8288,6 +8288,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-contracts",
+ "pallet-contracts-primitives",
  "pallet-evm",
  "pallet-insecure-randomness-collective-flip",
  "pallet-timestamp",
