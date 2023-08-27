@@ -31,7 +31,7 @@ use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
 use sp_std::{marker::PhantomData, prelude::*};
 
 use precompile_utils::{
-    error, revert, succeed, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
+    revert, succeed, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
 };
 
 #[cfg(test)]
@@ -137,7 +137,9 @@ where
                         Err(revert(format!("{:?}", failure_revert).as_bytes()))
                     }
                     FailureReason::Error(failure_error) => {
-                        Err(error(format!("{:?}", failure_error)))
+                        // Use `revert` instead of `error` to allow propagate to caller. EVM implementation
+                        // only reverts, no matter which one is used.
+                        Err(revert(format!("{:?}", failure_error).as_bytes()))
                     }
                 }
             }

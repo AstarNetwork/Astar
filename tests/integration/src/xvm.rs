@@ -22,7 +22,7 @@ use sha3::{Digest, Keccak256};
 
 use astar_primitives::{
     ethereum_checked::{CheckedEthereumTransact, CheckedEthereumTx, EthereumTxInput},
-    xvm::{CallFailure, Context, FailureReason, FailureRevert, VmId, XvmCall},
+    xvm::{CallFailure, Context, FailureError, FailureReason, FailureRevert, VmId, XvmCall},
 };
 use fp_evm::{ExecutionInfoV2, ExitReason, ExitRevert};
 use frame_support::{dispatch::PostDispatchInfo, traits::Currency, weights::Weight};
@@ -377,26 +377,39 @@ fn reentrance_not_allowed() {
             .chain(call_wasm_payable_input.encode().iter())
             .cloned()
             .collect::<Vec<_>>();
-        assert_ok!(
-            Contracts::call(
-                RuntimeOrigin::signed(ALICE),
-                MultiAddress::Id(call_evm_payable_address.clone()),
-                0,
-                Weight::from_parts(10_000_000_000, 1024 * 1024),
-                None,
-                input,
-            )
-        );
 
-        // TODO: after XVM error propagation finished, replace with assert `ReentranceDenied`
-        // error.
-        let wasm_entrance_count = System::events().iter().filter(|record| {
-            match record.event {
-                RuntimeEvent::Contracts(pallet_contracts::Event::Called { .. }) => true,
-                _ => false,
+        // ensure no storage change
+        assert_storage_noop!(Contracts::call(
+            RuntimeOrigin::signed(ALICE),
+            MultiAddress::Id(call_evm_payable_address.clone()),
+            0,
+            Weight::from_parts(10_000_000_000, 1024 * 1024),
+            None,
+            input.clone(),
+        ));
+        // assert `ReentranceDenied` error
+        let result = Contracts::bare_call(
+            ALICE,
+            call_evm_payable_address,
+            0,
+            Weight::from_parts(10_000_000_000, 1024 * 1024),
+            None,
+            input,
+            DebugInfo::Skip,
+            CollectEvents::Skip,
+            Determinism::Enforced,
+        );
+        match result.result {
+            Ok(ExecReturnValue { flags, data }) => {
+                assert!(flags.contains(ReturnFlags::REVERT));
+
+                let reentrance_error = format!("{:?}", FailureError::ReentranceDenied);
+                let vm_revert_on_reentrance = FailureReason::Revert(FailureRevert::VmRevert(reentrance_error.into_bytes()));
+                let error_string = String::from_utf8(data).expect("invalid utf8");
+                assert!(error_string.contains(&format!("{:?}", vm_revert_on_reentrance)));
             }
-        }).count();
-        assert_eq!(wasm_entrance_count, 1);
+            _ => panic!("unexpected wasm call result"),
+        }
     });
 }
 
@@ -539,8 +552,6 @@ fn evm_caller_reverts_if_wasm_callee_reverted() {
 
 #[test]
 fn wasm_caller_reverts_if_evm_callee_reverted() {
-    init_env_logger();
-
     new_test_ext().execute_with(|| {
         let evm_dummy_error_addr = deploy_evm_contract(EVM_DUMMY_ERROR);
         let call_evm_payable_address = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
@@ -554,6 +565,17 @@ fn wasm_caller_reverts_if_evm_callee_reverted() {
             .chain(revert_func.encode().iter())
             .cloned()
             .collect::<Vec<_>>();
+
+        // ensure no storage change
+        assert_storage_noop!(Contracts::call(
+            RuntimeOrigin::signed(ALICE),
+            MultiAddress::Id(call_evm_payable_address.clone()),
+            0,
+            Weight::from_parts(10_000_000_000, 1024 * 1024),
+            None,
+            input.clone(),
+        ));
+        // assert `too shiny` error
         let result = Contracts::bare_call(
             ALICE,
             call_evm_payable_address,
