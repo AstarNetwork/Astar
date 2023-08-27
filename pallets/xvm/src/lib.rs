@@ -232,6 +232,8 @@ where
                 match call_info.exit_reason {
                     ExitReason::Succeed(_) => Ok(CallOutput::new(call_info.value, used_weight)),
                     ExitReason::Revert(_) => {
+                        // On revert, the `call_info.value` is the encoded error data. Refer to Contract
+                        // ABI specification for details. https://docs.soliditylang.org/en/latest/abi-spec.html#errors
                         Err(CallFailure::revert(VmRevert(call_info.value), used_weight))
                     }
                     ExitReason::Error(err) => Err(CallFailure::error(

@@ -4464,6 +4464,8 @@ version = "0.1.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
+ "env_logger 0.10.0",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "hex",
@@ -4478,6 +4480,8 @@ dependencies = [
  "pallet-proxy",
  "pallet-utility",
  "parity-scale-codec",
+ "precompile-utils",
+ "sha3",
  "shibuya-runtime",
  "shiden-runtime",
  "sp-core",

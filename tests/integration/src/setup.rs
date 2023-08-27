@@ -237,3 +237,8 @@ fn last_events(n: usize) -> Vec<RuntimeEvent> {
 pub fn expect_events(e: Vec<RuntimeEvent>) {
     assert_eq!(last_events(e.len()), e);
 }
+
+#[allow(dead_code)]
+pub fn init_env_logger() {
+    let _ = env_logger::builder().is_test(true).try_init();
+}
