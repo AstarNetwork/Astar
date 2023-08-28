@@ -67,8 +67,10 @@ fn correct_arguments_works() {
                 EvmDataWriter::new_with_selector(Action::XvmCall)
                     .write(0x1Fu8)
                     .write(Bytes(b"".to_vec()))
-                    .write( hex::decode("0000000000000000000000000000000000000000")
-                    .expect("invalid hex"))
+                    .write(
+                        hex::decode("0000000000000000000000000000000000000000")
+                            .expect("invalid hex"),
+                    )
                     .write(U256::one())
                     .build(),
             )
