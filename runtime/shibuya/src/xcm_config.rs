@@ -152,7 +152,6 @@ match_types! {
 
 pub type XcmBarrier = (
     TakeWeightCredit,
-    AllowTopLevelPaidExecutionFrom<Everything>,
     // This will first calculate the derived origin, before checking it against the barrier implementation
     WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, UniversalLocation, ConstU32<8>>,
     // Parent and its plurality get free execution
