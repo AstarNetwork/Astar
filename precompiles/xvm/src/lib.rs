@@ -39,6 +39,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+// The selector on EVM revert, calculated by: `Keccak256::digest(b"Error(string)")[..4]`
+const EVM_ERROR_MSG_SELECTOR: [u8; 4] = [8, 195, 121, 160];
+
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
 pub enum Action {
@@ -132,16 +135,22 @@ where
                     "failure: {:?}", failure
                 );
 
-                match failure.reason {
+                // On `FailureReason::Error` cases, use `revert` instead of `error` to
+                // allow error details propagate to caller. EVM implementation always reverts,
+                // no matter which one is used.
+                let message = match failure.reason {
                     FailureReason::Revert(failure_revert) => {
-                        Err(revert(format!("{:?}", failure_revert).as_bytes()))
+                        format!("{:?}", failure_revert)
                     }
                     FailureReason::Error(failure_error) => {
-                        // Use `revert` instead of `error` to allow propagate to caller. EVM implementation
-                        // only reverts, no matter which one is used.
-                        Err(revert(format!("{:?}", failure_error).as_bytes()))
+                        format!("{:?}", failure_error)
                     }
-                }
+                };
+                let data =
+                    EvmDataWriter::new_with_selector(u32::from_be_bytes(EVM_ERROR_MSG_SELECTOR))
+                        .write(Bytes(message.into_bytes()))
+                        .build();
+                Err(revert(data))
             }
         }
     }

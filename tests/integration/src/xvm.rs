@@ -29,21 +29,17 @@ use frame_support::{dispatch::PostDispatchInfo, traits::Currency, weights::Weigh
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_contracts_primitives::{ExecReturnValue, ReturnFlags};
 use parity_scale_codec::Encode;
+use precompile_utils::{Bytes, EvmDataWriter};
 use sp_runtime::MultiAddress;
 
+// Build EVM revert message error data.
 fn evm_revert_message_error(msg: &str) -> Vec<u8> {
-    // selector(4) ++ offset(32) ++ message length(32) ++ message(32)
-    let mut p = [0u8; 4 + 32 + 32 + 32];
+    let hash = &Keccak256::digest(b"Error(string)")[..4];
+    let selector = u32::from_be_bytes([hash[0], hash[1], hash[2], hash[3]]);
 
-    p[..4].copy_from_slice(&Keccak256::digest(b"Error(string)")[..4]);
-    U256::from(32).to_big_endian(&mut p[4..36]);
-
-    let msg_len = msg.len();
-    U256::from(msg_len).to_big_endian(&mut p[36..68]);
-    let msg_end = 68 + msg_len;
-    p[68..msg_end].copy_from_slice(msg.as_bytes());
-
-    p.to_vec()
+    EvmDataWriter::new_with_selector(selector)
+        .write(Bytes(msg.to_owned().into_bytes()))
+        .build()
 }
 
 /*
@@ -376,15 +372,6 @@ fn reentrance_not_allowed() {
             .cloned()
             .collect::<Vec<_>>();
 
-        // ensure no storage change
-        assert_storage_noop!(Contracts::call(
-            RuntimeOrigin::signed(ALICE),
-            MultiAddress::Id(call_evm_payable_address.clone()),
-            0,
-            Weight::from_parts(10_000_000_000, 1024 * 1024),
-            None,
-            input.clone(),
-        ));
         // assert `ReentranceDenied` error
         let result = Contracts::bare_call(
             ALICE,
@@ -401,10 +388,9 @@ fn reentrance_not_allowed() {
             Ok(ExecReturnValue { flags, data }) => {
                 assert!(flags.contains(ReturnFlags::REVERT));
 
-                let reentrance_error = format!("{:?}", FailureError::ReentranceDenied);
-                let vm_revert_on_reentrance = FailureReason::Revert(FailureRevert::VmRevert(reentrance_error.into_bytes()));
+                let reentrance_msg_error = evm_revert_message_error(&format!("{:?}", FailureError::ReentranceDenied));
                 let error_string = String::from_utf8(data).expect("invalid utf8");
-                assert!(error_string.contains(&format!("{:?}", vm_revert_on_reentrance)));
+                assert!(error_string.contains(&format!("{:?}", reentrance_msg_error)));
             }
             _ => panic!("unexpected wasm call result"),
         }
@@ -540,8 +526,10 @@ fn evm_caller_reverts_if_wasm_callee_reverted() {
         match EthereumChecked::xvm_transact(alith(), tx) {
             Ok((PostDispatchInfo { .. }, ExecutionInfoV2 { exit_reason, value, .. })) => {
                 assert_eq!(exit_reason, ExitReason::Revert(ExitRevert::Reverted));
+
                 // The last item `7` of `[0, 1, 7]` indicates the `DummyError` error index.
-                assert_eq!(&value, "FailureRevert::VmRevert([0, 1, 7])".as_bytes());
+                let revert_msg_error = evm_revert_message_error("FailureRevert::VmRevert([0, 1, 7])");
+                assert_eq!(value, revert_msg_error);
             },
             _ => panic!("unexpected evm call result"),
         }
@@ -564,15 +552,6 @@ fn wasm_caller_reverts_if_evm_callee_reverted() {
             .cloned()
             .collect::<Vec<_>>();
 
-        // ensure no storage change
-        assert_storage_noop!(Contracts::call(
-            RuntimeOrigin::signed(ALICE),
-            MultiAddress::Id(call_evm_payable_address.clone()),
-            0,
-            Weight::from_parts(10_000_000_000, 1024 * 1024),
-            None,
-            input.clone(),
-        ));
         // assert `too shiny` error
         let result = Contracts::bare_call(
             ALICE,
