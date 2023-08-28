@@ -259,7 +259,7 @@ runtime-benchmarks = [
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
-	"pallet-xcm-benchmarks/runtime-benchmarks"
+	"pallet-xcm-benchmarks/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
