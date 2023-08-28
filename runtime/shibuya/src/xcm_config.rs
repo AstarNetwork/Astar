@@ -35,10 +35,10 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
-    EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
+    EnsureXcmOrigin, FungiblesAdapter, IsConcrete, NoChecking,
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin, WeightInfoBounds
 };
 use xcm_executor::{
     traits::{Convert as XcmConvert, JustTry},
@@ -171,7 +171,12 @@ pub type ShibuyaXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     TreasuryAccountId,
 >;
 
-pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+// pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+pub type Weigher = WeightInfoBounds<
+crate::weights::xcm::ShibuyaXcmWeight<RuntimeCall>,
+RuntimeCall,
+MaxInstructions,
+>;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

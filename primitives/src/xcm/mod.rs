@@ -51,6 +51,7 @@ use orml_traits::location::{RelativeReserveProvider, Reserve};
 
 use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
+pub mod constants;
 #[cfg(test)]
 mod tests;
 

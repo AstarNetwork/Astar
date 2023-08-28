@@ -1420,6 +1420,7 @@ mod benches {
         [pallet_xcm, PolkadotXcm]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_xvm, Xvm]
+		[pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
     );
 }
 
@@ -1899,14 +1900,85 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
             use frame_system_benchmarking::Pallet as SystemBench;
             use baseline::Pallet as BaselineBench;
+            use xcm_config::{XcmConfig, LocationToAccountId, ShibuyaLocation};
+            use xcm::latest::prelude::*;
 
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
             use frame_support::traits::WhitelistedStorageKeys;
+            impl pallet_xcm_benchmarks::Config for Runtime {
+				type XcmConfig = XcmConfig;
+				type AccountIdConverter = LocationToAccountId;
+				fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
+					let valid_destination: MultiLocation = Junction::AccountId32 {
+                        network: None,
+                        id: [0u8; 32],
+                    }
+                    .into();
+            
+                    Ok(valid_destination)
+				}
+				fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
+					let assets: Vec<MultiAsset> = vec![MultiAsset {
+                        id: Concrete(MultiLocation::parent()),
+                        fun: Fungible(u128::MAX),
+                    }];
+                    assets.into()
+				}
+            }
+			impl pallet_xcm_benchmarks::generic::Config for Runtime {
+				type RuntimeCall = RuntimeCall;
+
+				fn worst_case_response() -> (u64, Response) {
+                    // not sure what will be the worst case for Response
+                    // either `Assets(MultiAssets)` or `PalletsInfo(BoundedVec<PalletInfo, MaxPalletsInfo>)`
+                    // in either case, what will be the worst case?
+					(0u64, Response::Version(Default::default()))
+				}
+
+				fn worst_case_asset_exchange() -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+					// Shibuya doesn't support asset exchanges
+					Err(BenchmarkError::Skip)
+				}
+
+				fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
+					// The XCM executor of Shibuya doesn't have a configured `UniversalAliases`
+					Err(BenchmarkError::Skip)
+				}
+
+				fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
+                    // We don't care about the call itself, since that is accounted for in the weight parameter
+	                // and included in the final weight calculation. So this is just the overhead of submitting
+	                // a noop call.
+					Ok((ShibuyaLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
+				}
+
+				fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
+					Ok(ShibuyaLocation::get())
+				}
+
+				fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
+					let assets: MultiAssets = (Concrete(Here.into()), 100).into();
+		            let ticket = MultiLocation { parents: 0, interior: X1(GeneralIndex(0)) };
+		            Ok((Default::default(), ticket, assets))
+				}
+
+				fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+					// Shibuya doesn't support asset locking
+					Err(BenchmarkError::Skip)
+				}
+
+				fn export_message_origin_and_destination(
+				) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+					// Shibuya doesn't support exporting messages
+					Err(BenchmarkError::Skip)
+				}
+			}
+
             let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();

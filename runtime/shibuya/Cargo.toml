@@ -70,6 +70,7 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
+pallet-xcm-benchmarks = { workspace = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
@@ -258,6 +259,7 @@ runtime-benchmarks = [
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
+	"pallet-xcm-benchmarks/runtime-benchmarks"
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
