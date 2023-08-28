@@ -35,10 +35,10 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
-    EnsureXcmOrigin, FungiblesAdapter, IsConcrete, NoChecking,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin, WeightInfoBounds
+    EnsureXcmOrigin, FungiblesAdapter, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{Convert as XcmConvert, JustTry},
@@ -173,9 +173,9 @@ pub type ShibuyaXcmFungibleFeeHandler = XcmFungibleFeeHandler<
 
 // pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 pub type Weigher = WeightInfoBounds<
-crate::weights::xcm::ShibuyaXcmWeight<RuntimeCall>,
-RuntimeCall,
-MaxInstructions,
+    crate::weights::xcm::ShibuyaXcmWeight<RuntimeCall>,
+    RuntimeCall,
+    MaxInstructions,
 >;
 
 pub struct XcmConfig;
