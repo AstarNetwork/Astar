@@ -63,7 +63,7 @@ impl WeighMultiAssets for MultiAssets {
 pub struct ShibuyaXcmWeight<RuntimeCall>(core::marker::PhantomData<RuntimeCall>);
 impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
     fn withdraw_asset(assets: &MultiAssets) -> XCMWeight {
-        assets.inner().iter().fold(Weight::zero(), |acc, asset| {
+        assets.inner().iter().fold(Weight::zero(), |acc, _asset| {
             acc.saturating_add(XcmFungibleWeight::<Runtime>::withdraw_asset())
         })
     }
@@ -153,7 +153,7 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
         // This is not correct. initiate reserve withdraw does not to that many db reads
         // the only thing it does based on number of assets is a take from a local variable
         //assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw())
-        XcmGeneric::<Runtime>::initiate_reserve_withdraw()
+        XcmFungibleWeight::<Runtime>::initiate_reserve_withdraw()
     }
     fn initiate_teleport(
         _assets: &MultiAssetFilter,

@@ -75,15 +75,6 @@ impl<T: frame_system::Config> WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(7))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
-	pub(crate) fn initiate_reserve_withdraw() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `145`
-		//  Estimated: `10130`
-		// Minimum execution time: 713_056_000 picoseconds.
-		Weight::from_parts(715_975_000, 10130)
-			.saturating_add(T::DbWeight::get().reads(5_u64))
-			.saturating_add(T::DbWeight::get().writes(2_u64))
-	}
 
 	pub(crate) fn buy_execution() -> Weight {
 		// Proof Size summary in bytes:
