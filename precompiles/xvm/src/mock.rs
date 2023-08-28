@@ -40,7 +40,9 @@ use sp_runtime::{
 };
 use sp_std::cell::RefCell;
 
-use astar_primitives::xvm::{CallError::*, CallErrorWithWeight, CallInfo, CallResult};
+use astar_primitives::xvm::{
+    CallFailure, CallOutput, CallResult, FailureError::*, FailureRevert::*,
+};
 
 pub type AccountId = TestAccount;
 pub type Balance = u128;
@@ -268,32 +270,20 @@ impl XvmCall<AccountId> for MockXvmWithArgsCheck {
     ) -> CallResult {
         ensure!(
             vm_id != VmId::Evm,
-            CallErrorWithWeight {
-                error: SameVmCallDenied,
-                used_weight: Weight::zero()
-            }
+            CallFailure::error(SameVmCallDenied, Weight::zero())
         );
         ensure!(
             target.len() == 20,
-            CallErrorWithWeight {
-                error: InvalidTarget,
-                used_weight: Weight::zero()
-            }
+            CallFailure::revert(InvalidTarget, Weight::zero()),
         );
         ensure!(
             input.len() <= 1024,
-            CallErrorWithWeight {
-                error: InputTooLarge,
-                used_weight: Weight::zero()
-            }
+            CallFailure::revert(InputTooLarge, Weight::zero()),
         );
 
         WeightLimitCalledWith::set(context.weight_limit);
 
-        Ok(CallInfo {
-            output: vec![],
-            used_weight: Weight::zero(),
-        })
+        Ok(CallOutput::new(vec![], Weight::zero()))
     }
 }
 
