@@ -248,7 +248,7 @@ fn wasm_payable_call_via_xvm_works() {
 #[test]
 fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
     new_test_ext().execute_with(|| {
-        let wasm_payable_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
+        let _ = deploy_wasm_contract(WASM_PAYABLE_NAME);
         let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
         let value = 1_000_000_000;
@@ -268,18 +268,16 @@ fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
             vec![],
         ));
 
-        // TODO: after XVM error propagation finished, assert `pallet-evm` execution error
-        // and update balance assertions.
-
-        // Transfer to EVM contract ok.
+        assert_eq!(
+            System::events().iter().last().expect("no event found").event,
+            RuntimeEvent::EVM(
+                pallet_evm::Event::ExecutedFailed { address: call_wasm_payable_addr },
+            ),
+        );
+        // EVM caller contract balance should be unchanged.
         assert_eq!(
             Balances::free_balance(&account_id_from(call_wasm_payable_addr)),
-            value,
-        );
-        // Transfer from EVM contract to wasm Contract err.
-        assert_eq!(
-            Balances::free_balance(&wasm_payable_addr),
-            ExistentialDeposit::get(),
+            0,
         );
     });
 }
