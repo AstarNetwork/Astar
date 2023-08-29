@@ -218,9 +218,9 @@ fn evm_payable_call_via_xvm_works() {
 #[test]
 fn wasm_payable_call_via_xvm_works() {
     new_test_ext().execute_with(|| {
-        let contract_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
+        let wasm_payable_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
 
-        let prev_balance = Balances::free_balance(&contract_addr);
+        let prev_balance = Balances::free_balance(&wasm_payable_addr);
         let value = UNIT;
         assert_ok!(Xvm::call(
             Context {
@@ -229,13 +229,13 @@ fn wasm_payable_call_via_xvm_works() {
             },
             VmId::Wasm,
             ALICE,
-            MultiAddress::<AccountId32, ()>::Id(contract_addr.clone()).encode(),
+            MultiAddress::<AccountId32, ()>::Id(wasm_payable_addr.clone()).encode(),
             // Calling `deposit`
             hex::decode("0000002a").expect("invalid selector hex"),
             value
         ));
         assert_eq!(
-            Balances::free_balance(contract_addr.clone()),
+            Balances::free_balance(wasm_payable_addr.clone()),
             value + prev_balance
         );
     });
@@ -245,13 +245,13 @@ fn wasm_payable_call_via_xvm_works() {
 fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
     new_test_ext().execute_with(|| {
         let _ = deploy_wasm_contract(WASM_PAYABLE_NAME);
-        let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
+        let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
         let value = 1_000_000_000;
         assert_ok!(EVM::call(
             RuntimeOrigin::root(),
             alith(),
-            call_wasm_payable_addr.clone(),
+            evm_caller_addr.clone(),
             // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
             // input: 0x0000002a (deposit)
             // value: 1000000000
@@ -267,12 +267,12 @@ fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
         assert_eq!(
             System::events().iter().last().expect("no event found").event,
             RuntimeEvent::EVM(
-                pallet_evm::Event::ExecutedFailed { address: call_wasm_payable_addr },
+                pallet_evm::Event::ExecutedFailed { address: evm_caller_addr },
             ),
         );
         // EVM caller contract balance should be unchanged.
         assert_eq!(
-            Balances::free_balance(&account_id_from(call_wasm_payable_addr)),
+            Balances::free_balance(&account_id_from(evm_caller_addr)),
             0,
         );
     });
@@ -281,17 +281,17 @@ fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
 #[test]
 fn calling_wasm_payable_from_evm_works() {
     new_test_ext().execute_with(|| {
-        let wasm_payable_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
-        let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
+        let wasm_payable_callee_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
+        let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
-        let _ = Balances::deposit_creating(&account_id_from(call_wasm_payable_addr.clone()), ExistentialDeposit::get());
+        let _ = Balances::deposit_creating(&account_id_from(evm_caller_addr.clone()), ExistentialDeposit::get());
 
-        let prev_wasm_payable_balance = Balances::free_balance(&wasm_payable_addr);
+        let prev_wasm_payable_balance = Balances::free_balance(&wasm_payable_callee_addr);
         let value = 1_000_000_000;
         assert_ok!(EVM::call(
             RuntimeOrigin::root(),
             alith(),
-            call_wasm_payable_addr.clone(),
+            evm_caller_addr.clone(),
             // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
             // input: 0x0000002a (deposit)
             // value: 1000000000
@@ -303,7 +303,7 @@ fn calling_wasm_payable_from_evm_works() {
             None,
             vec![],
         ));
-        let recieved = Balances::free_balance(&wasm_payable_addr) - prev_wasm_payable_balance;
+        let recieved = Balances::free_balance(&wasm_payable_callee_addr) - prev_wasm_payable_balance;
         assert_eq!(recieved, value);
     });
 }
@@ -311,18 +311,18 @@ fn calling_wasm_payable_from_evm_works() {
 #[test]
 fn calling_evm_payable_from_wasm_works() {
     new_test_ext().execute_with(|| {
-        let evm_payable_addr = deploy_evm_contract(EVM_PAYABLE);
-        let wasm_address = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
+        let evm_payable_callee_addr = deploy_evm_contract(EVM_PAYABLE);
+        let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
 
         let value = UNIT;
 
         // TODO: after Account Unification finished, remove this mock account.
         // It is needed now because currently the `AccountMapping` and `AddressMapping` are
         // both one way mapping.
-        let mock_unified_wasm_account = account_id_from(h160_from(wasm_address.clone()));
+        let mock_unified_wasm_account = account_id_from(h160_from(wasm_caller_addr.clone()));
         let _ = Balances::deposit_creating(&mock_unified_wasm_account, value);
 
-        let evm_payable = evm_payable_addr.as_ref().to_vec();
+        let evm_payable = evm_payable_callee_addr.as_ref().to_vec();
         let deposit_func = hex::decode("d0e30db0").expect("invalid deposit function hex");
         let input = hex::decode("0000002a")
             .expect("invalid selector hex")
@@ -333,7 +333,7 @@ fn calling_evm_payable_from_wasm_works() {
             .collect::<Vec<_>>();
         assert_ok!(Contracts::call(
             RuntimeOrigin::signed(ALICE),
-            MultiAddress::Id(wasm_address.clone()),
+            MultiAddress::Id(wasm_caller_addr.clone()),
             value,
             Weight::from_parts(10_000_000_000, 1024 * 1024),
             None,
@@ -341,7 +341,7 @@ fn calling_evm_payable_from_wasm_works() {
         ));
 
         assert_eq!(
-            Balances::free_balance(account_id_from(evm_payable_addr)),
+            Balances::free_balance(account_id_from(evm_payable_callee_addr)),
             value
         );
 
@@ -356,8 +356,8 @@ fn calling_evm_payable_from_wasm_works() {
 fn reentrance_not_allowed() {
     new_test_ext().execute_with(|| {
         // Call path: WASM -> EVM -> WASM
-        let call_evm_payable_address = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
-        let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
+        let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
+        let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
         let _ = deploy_wasm_contract(WASM_PAYABLE_NAME);
 
         // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
@@ -367,7 +367,7 @@ fn reentrance_not_allowed() {
         let input = hex::decode("0000002a")
             .expect("invalid selector hex")
             .iter()
-            .chain(call_wasm_payable_addr.as_ref().to_vec().encode().iter())
+            .chain(evm_caller_addr.as_ref().to_vec().encode().iter())
             .chain(call_wasm_payable_input.encode().iter())
             .cloned()
             .collect::<Vec<_>>();
@@ -375,7 +375,7 @@ fn reentrance_not_allowed() {
         // assert `ReentranceDenied` error
         let result = Contracts::bare_call(
             ALICE,
-            call_evm_payable_address,
+            wasm_caller_addr,
             0,
             Weight::from_parts(10_000_000_000, 1024 * 1024),
             None,
@@ -419,7 +419,7 @@ const EVM_DUMMY_ERROR: &'static str = "608060405234801561001057600080fd5b5061023
 #[test]
 fn evm_call_via_xvm_fails_if_revert() {
     new_test_ext().execute_with(|| {
-        let evm_dummy_error_addr = deploy_evm_contract(EVM_DUMMY_ERROR);
+        let evm_callee_addr = deploy_evm_contract(EVM_DUMMY_ERROR);
 
         let result = Xvm::call(
             Context {
@@ -428,7 +428,7 @@ fn evm_call_via_xvm_fails_if_revert() {
             },
             VmId::Evm,
             ALICE,
-            evm_dummy_error_addr.as_ref().to_vec(),
+            evm_callee_addr.as_ref().to_vec(),
             // Calling `revert_with_err_msg`
             hex::decode("28fd58ae").expect("invalid selector hex"),
             0,
@@ -450,7 +450,7 @@ fn evm_call_via_xvm_fails_if_revert() {
             },
             VmId::Evm,
             ALICE,
-            evm_dummy_error_addr.as_ref().to_vec(),
+            evm_callee_addr.as_ref().to_vec(),
             // Calling `revert_with_err_type`
             hex::decode("cb1c03b2").expect("invalid selector hex"),
             0,
@@ -477,7 +477,7 @@ const WASM_DUMMY_ERROR_NAME: &'static str = "dummy_error";
 #[test]
 fn wasm_call_via_xvm_fails_if_revert() {
     new_test_ext().execute_with(|| {
-        let wasm_dummy_error_addr = deploy_wasm_contract(WASM_DUMMY_ERROR_NAME);
+        let wasm_callee_addr = deploy_wasm_contract(WASM_DUMMY_ERROR_NAME);
         let input = hex::decode("0000002a").expect("invalid selector hex");
         let result = Xvm::call(
             Context {
@@ -486,7 +486,7 @@ fn wasm_call_via_xvm_fails_if_revert() {
             },
             VmId::Wasm,
             ALICE,
-            MultiAddress::<AccountId32, ()>::Id(wasm_dummy_error_addr.clone()).encode(),
+            MultiAddress::<AccountId32, ()>::Id(wasm_callee_addr.clone()).encode(),
             input,
             0,
         );
@@ -507,14 +507,14 @@ fn wasm_call_via_xvm_fails_if_revert() {
 fn evm_caller_reverts_if_wasm_callee_reverted() {
     new_test_ext().execute_with(|| {
         let _ = deploy_wasm_contract(WASM_DUMMY_ERROR_NAME);
-        let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
+        let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
         // to: 0x00a0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a23
         // input: 0x0000002a (do_revert)
         // value: 0
         let input = hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002100a0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a230000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex");
         let tx = CheckedEthereumTx {
-            target: call_wasm_payable_addr.clone(),
+            target: evm_caller_addr.clone(),
             input: EthereumTxInput::try_from(input).expect("input too large"),
             value: U256::zero(),
             gas_limit: U256::from(1_000_000),
@@ -539,15 +539,15 @@ fn evm_caller_reverts_if_wasm_callee_reverted() {
 #[test]
 fn wasm_caller_reverts_if_evm_callee_reverted() {
     new_test_ext().execute_with(|| {
-        let evm_dummy_error_addr = deploy_evm_contract(EVM_DUMMY_ERROR);
-        let call_evm_payable_address = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
+        let evm_callee_addr = deploy_evm_contract(EVM_DUMMY_ERROR);
+        let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
 
         // Calling `revert_with_err_msg`
         let revert_func = hex::decode("28fd58ae").expect("invalid selector hex");
         let input = hex::decode("0000002a")
             .expect("invalid selector hex")
             .iter()
-            .chain(evm_dummy_error_addr.as_ref().to_vec().encode().iter())
+            .chain(evm_callee_addr.as_ref().to_vec().encode().iter())
             .chain(revert_func.encode().iter())
             .cloned()
             .collect::<Vec<_>>();
@@ -555,7 +555,7 @@ fn wasm_caller_reverts_if_evm_callee_reverted() {
         // assert `too shiny` error
         let result = Contracts::bare_call(
             ALICE,
-            call_evm_payable_address,
+            wasm_caller_addr,
             0,
             Weight::from_parts(10_000_000_000, 1024 * 1024),
             None,
