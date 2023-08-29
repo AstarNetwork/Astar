@@ -93,6 +93,14 @@ impl CallFailure {
 }
 
 /// Failure reason of XVM calls.
+///
+/// `Error` vs `Revert`:
+/// - `Error` is for execution failed and the VM must stop. It maps to EVM
+///  `ExitError/ExistFatal` and WASM `DispatchError`.
+/// - `Revert` is for execution succeeded but the callee explicitly asked to
+///  revert. It maps to EVM `ExitRevert` and WASM `REVERT` flag. It also includes
+///  the case that wrong input was passed to XVM call, for instance invalid target,
+///  as from VM/WASM perspective, it's an input guard condition failure.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum FailureReason {
     /// XVM call failed with explicit revert.

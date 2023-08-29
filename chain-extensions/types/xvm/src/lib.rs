@@ -38,12 +38,12 @@ impl From<FailureReason> for XvmExecutionResult {
     fn from(input: FailureReason) -> Self {
         // `0` is reserved for `Ok`
         let error_code = match input {
-            // Failure: 1 - 127
+            // Revert failure: 1 - 127
             FailureReason::Revert(FailureRevert::InvalidTarget) => 1,
             FailureReason::Revert(FailureRevert::InputTooLarge) => 2,
             FailureReason::Revert(FailureRevert::VmRevert(_)) => 3,
 
-            // Error: 128 - 255
+            // Error failure: 128 - 255
             FailureReason::Error(FailureError::InvalidVmId) => 128,
             FailureReason::Error(FailureError::SameVmCallDenied) => 129,
             FailureReason::Error(FailureError::ReentranceDenied) => 130,

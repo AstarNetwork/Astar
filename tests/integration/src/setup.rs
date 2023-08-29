@@ -238,6 +238,8 @@ pub fn expect_events(e: Vec<RuntimeEvent>) {
     assert_eq!(last_events(e.len()), e);
 }
 
+/// Initialize `env_logger` for tests. It will enable logging like `DEBUG`
+/// and `TRACE` in runtime.
 #[allow(dead_code)]
 pub fn init_env_logger() {
     let _ = env_logger::builder().is_test(true).try_init();
