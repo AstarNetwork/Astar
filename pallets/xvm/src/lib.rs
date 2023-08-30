@@ -286,8 +286,8 @@ where
     ) -> CallResult {
         log::trace!(
             target: "xvm::wasm_call",
-            "Calling WASM: {:?} {:?}, {:?}, {:?}, {:?}",
-            context, source, target, input, value,
+            "Calling WASM: {:?} {:?}, {:?}, {:?}, {:?}, {:?}",
+            context, source, target, input, value, storage_deposit_limit,
         );
 
         let dest = {
