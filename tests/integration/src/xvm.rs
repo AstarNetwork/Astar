@@ -731,8 +731,6 @@ const CALL_XVM_PAYABLE_WITH_SDL: &'static str = "608060405234801561001057600080f
 
 #[test]
 fn calling_wasm_from_evm_works_if_sufficient_storage_deposit_limit() {
-    init_env_logger();
-
     new_test_ext().execute_with(|| {
         let wasm_callee_addr = deploy_wasm_contract(WASM_SIMPLE_STORAGE_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_XVM_PAYABLE_WITH_SDL);

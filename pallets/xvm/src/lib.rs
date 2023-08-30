@@ -164,7 +164,6 @@ where
                 input,
                 value,
                 overheads,
-                storage_deposit_limit,
                 skip_execution,
             ),
             VmId::Wasm => Pallet::<T>::wasm_call(
@@ -193,7 +192,6 @@ where
         input: Vec<u8>,
         value: Balance,
         overheads: Weight,
-        _storage_deposit_limit: Option<Balance>,
         skip_execution: bool,
     ) -> CallResult {
         log::trace!(
