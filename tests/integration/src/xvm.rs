@@ -106,6 +106,7 @@ interface XVM {
 
 contract CallXVMPayble {
     function call_xvm_payable(bytes calldata to, bytes calldata input, uint256 value) external payable returns (bool success, bytes memory data)  {
+        // Call with unlimited storage deposit limit.
         return XVM(0x0000000000000000000000000000000000005005).xvm_call(0x1F, to, input, value, 0);
     }
 }
@@ -579,6 +580,175 @@ fn wasm_caller_reverts_if_evm_callee_reverted() {
                 let error_string = String::from_utf8(data).expect("invalid utf8");
                 assert!(error_string.contains(&format!("{:?}", revert_failure)));
             }
+            _ => panic!("unexpected wasm call result"),
+        }
+    });
+}
+
+/*
+
+#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod simple_storage {
+    use ink::storage::Mapping;
+
+    #[ink(storage)]
+    pub struct SimpleStorage {
+        storages: Mapping<AccountId, u32>,
+    }
+
+    impl SimpleStorage {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            let storages = Mapping::default();
+            Self { storages }
+        }
+
+        #[ink(message, selector = 42)]
+        pub fn store(&mut self) {
+            let caller = self.env().caller();
+            self.storages.insert(caller, &42);
+        }
+
+        #[ink(message, selector = 43)]
+        pub fn get(&self) -> u32 {
+            let caller = self.env().caller();
+            self.storages.get(caller).unwrap_or(0)
+        }
+    }
+}
+
+ */
+const WASM_SIMPLE_STORAGE_NAME: &'static str = "simple_storage";
+
+#[test]
+fn wasm_call_via_xvm_fails_if_storage_deposit_limit_exhausted() {
+    new_test_ext().execute_with(|| {
+        let wasm_callee_addr = deploy_wasm_contract(WASM_SIMPLE_STORAGE_NAME);
+        let input = hex::decode("0000002a")
+            .expect("invalid selector hex");
+        let result = Xvm::call(
+            Context {
+                source_vm_id: VmId::Evm,
+                weight_limit: Weight::from_parts(10_000_000_000, 1024 * 1024),
+            },
+            VmId::Wasm,
+            ALICE,
+            MultiAddress::<AccountId32, ()>::Id(wasm_callee_addr.clone()).encode(),
+            input,
+            0,
+            Some(0)
+        );
+        match result {
+            Err(CallFailure {
+                reason: FailureReason::Error(FailureError::VmError(data)),
+                ..
+            }) => {
+                let error_string = "WASM call error: Module(ModuleError { index: 70, error: [22, 0, 0, 0], message: Some(\"StorageDepositLimitExhausted\") })";
+                assert_eq!(data, error_string.as_bytes());
+            },
+            _ => panic!("unexpected wasm call result"),
+        }
+    });
+}
+
+#[test]
+fn wasm_call_via_xvm_call_works_if_sufficient_storage_deposit_limit() {
+    new_test_ext().execute_with(|| {
+        let wasm_callee_addr = deploy_wasm_contract(WASM_SIMPLE_STORAGE_NAME);
+        let input = hex::decode("0000002a").expect("invalid selector hex");
+        assert_ok!(Xvm::call(
+            Context {
+                source_vm_id: VmId::Evm,
+                weight_limit: Weight::from_parts(10_000_000_000, 1024 * 1024),
+            },
+            VmId::Wasm,
+            ALICE,
+            MultiAddress::<AccountId32, ()>::Id(wasm_callee_addr.clone()).encode(),
+            input,
+            0,
+            Some(UNIT)
+        ));
+    });
+}
+
+/*
+
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.8.2 <0.9.0;
+
+interface XVM {
+    function xvm_call(
+        uint8 vm_id,
+        bytes calldata to,
+        bytes calldata input,
+        uint256 value,
+        uint256 storage_deposit_limit
+    ) external payable returns (bool success, bytes memory data);
+}
+
+contract CallXVMPayble {
+    function call_xvm_payable(bytes calldata to, bytes calldata input, uint256 value, uint256 storage_deposit_limit) external payable returns (bool success, bytes memory data)  {
+        return XVM(0x0000000000000000000000000000000000005005).xvm_call(0x1F, to, input, value, storage_deposit_limit);
+    }
+}
+
+ */
+const CALL_XVM_PAYABLE_WITH_SDL: &'static str = "608060405234801561001057600080fd5b50610609806100206000396000f3fe60806040526004361061001e5760003560e01c80632d9338da14610023575b600080fd5b61003d600480360381019061003891906101a6565b610054565b60405161004b9291906102f8565b60405180910390f35b6000606061500573ffffffffffffffffffffffffffffffffffffffff1663acc57c7e601f8a8a8a8a8a8a6040518863ffffffff1660e01b81526004016100a097969594939291906103c5565b6000604051808303816000875af11580156100bf573d6000803e3d6000fd5b505050506040513d6000823e3d601f19601f820116820180604052508101906100e89190610577565b91509150965096945050505050565b6000604051905090565b600080fd5b600080fd5b600080fd5b600080fd5b600080fd5b60008083601f8401126101305761012f61010b565b5b8235905067ffffffffffffffff81111561014d5761014c610110565b5b60208301915083600182028301111561016957610168610115565b5b9250929050565b6000819050919050565b61018381610170565b811461018e57600080fd5b50565b6000813590506101a08161017a565b92915050565b600080600080600080608087890312156101c3576101c2610101565b5b600087013567ffffffffffffffff8111156101e1576101e0610106565b5b6101ed89828a0161011a565b9650965050602087013567ffffffffffffffff8111156102105761020f610106565b5b61021c89828a0161011a565b9450945050604061022f89828a01610191565b925050606061024089828a01610191565b9150509295509295509295565b60008115159050919050565b6102628161024d565b82525050565b600081519050919050565b600082825260208201905092915050565b60005b838110156102a2578082015181840152602081019050610287565b60008484015250505050565b6000601f19601f8301169050919050565b60006102ca82610268565b6102d48185610273565b93506102e4818560208601610284565b6102ed816102ae565b840191505092915050565b600060408201905061030d6000830185610259565b818103602083015261031f81846102bf565b90509392505050565b6000819050919050565b600060ff82169050919050565b6000819050919050565b600061036461035f61035a84610328565b61033f565b610332565b9050919050565b61037481610349565b82525050565b82818337600083830152505050565b60006103958385610273565b93506103a283858461037a565b6103ab836102ae565b840190509392505050565b6103bf81610170565b82525050565b600060a0820190506103da600083018a61036b565b81810360208301526103ed81888a610389565b90508181036040830152610402818688610389565b905061041160608301856103b6565b61041e60808301846103b6565b98975050505050505050565b6104338161024d565b811461043e57600080fd5b50565b6000815190506104508161042a565b92915050565b600080fd5b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b610493826102ae565b810181811067ffffffffffffffff821117156104b2576104b161045b565b5b80604052505050565b60006104c56100f7565b90506104d1828261048a565b919050565b600067ffffffffffffffff8211156104f1576104f061045b565b5b6104fa826102ae565b9050602081019050919050565b600061051a610515846104d6565b6104bb565b90508281526020810184848401111561053657610535610456565b5b610541848285610284565b509392505050565b600082601f83011261055e5761055d61010b565b5b815161056e848260208601610507565b91505092915050565b6000806040838503121561058e5761058d610101565b5b600061059c85828601610441565b925050602083015167ffffffffffffffff8111156105bd576105bc610106565b5b6105c985828601610549565b915050925092905056fea2646970667358221220e44af7386feb3ae682c95df11f7b3de851b515869a073d6fabe05758e94e351f64736f6c63430008120033";
+
+#[test]
+fn calling_wasm_from_evm_works_if_sufficient_storage_deposit_limit() {
+    init_env_logger();
+
+    new_test_ext().execute_with(|| {
+        let wasm_callee_addr = deploy_wasm_contract(WASM_SIMPLE_STORAGE_NAME);
+        let evm_caller_addr = deploy_evm_contract(CALL_XVM_PAYABLE_WITH_SDL);
+
+        // Fund the EVM caller to pay for storage deposit.
+        let _ = Balances::deposit_creating(&account_id_from(evm_caller_addr.clone()), UNIT);
+
+        assert_ok!(EVM::call(
+            RuntimeOrigin::root(),
+            alith(),
+            evm_caller_addr.clone(),
+            // to: 0x000e0ddb5a5f0b99d7be468a3051a94073ec6b1900178316401a52b93415026999
+            // input: 0x0000002a (store)
+            // value: 0
+            // storage_deposit_limit: 1_000_000_000_000
+            hex::decode("2d9338da000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e8d4a510000000000000000000000000000000000000000000000000000000000000000021000e0ddb5a5f0b99d7be468a3051a94073ec6b1900178316401a52b934150269990000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
+            U256::zero(),
+            1_000_000,
+            U256::from(DefaultBaseFeePerGas::get()),
+            None,
+            None,
+            vec![],
+        ));
+        assert_eq!(
+            System::events().iter().last().expect("no event found").event,
+            RuntimeEvent::EVM(
+                pallet_evm::Event::Executed { address: evm_caller_addr },
+            ),
+        );
+
+        let result = Contracts::bare_call(
+            account_id_from(evm_caller_addr),
+            wasm_callee_addr,
+            0,
+            Weight::from_parts(10_000_000_000, 1024 * 1024),
+            None,
+            hex::decode("0000002b").expect("invalid selector hex"),
+            DebugInfo::Skip,
+            CollectEvents::Skip,
+            Determinism::Enforced,
+        );
+        match result.result {
+            Ok(ExecReturnValue { flags, data }) => {
+                assert!(!flags.contains(ReturnFlags::REVERT));
+                // Retrive stored value `42`.
+                assert_eq!(data[1], 42);
+            },
             _ => panic!("unexpected wasm call result"),
         }
     });
