@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "5.16.0"
+version = "5.18.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -46,6 +46,7 @@ pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
+pallet-evm-precompile-batch = { workspace = true }
 pallet-evm-precompile-blake2 = { workspace = true }
 pallet-evm-precompile-bn128 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
@@ -82,6 +83,10 @@ polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
+
+# orml dependencies
+orml-xcm-support = { workspace = true }
+orml-xtokens = { workspace = true }
 
 # benchmarking
 array-bytes = { workspace = true }
@@ -148,6 +153,7 @@ std = [
 	"pallet-custom-signatures/std",
 	"pallet-dapps-staking/std",
 	"pallet-evm-precompile-dapps-staking/std",
+	"pallet-evm-precompile-batch/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
@@ -198,6 +204,8 @@ std = [
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
 	"substrate-wasm-builder",
+	"orml-xtokens/std",
+	"orml-xcm-support/std",
 	"astar-primitives/std",
 ]
 runtime-benchmarks = [
@@ -218,7 +226,9 @@ runtime-benchmarks = [
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
+	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
+	"pallet-assets/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -257,6 +267,7 @@ try-runtime = [
 	"pallet-base-fee/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-evm/try-runtime",
+	"orml-xtokens/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

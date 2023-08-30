@@ -3,8 +3,10 @@
   "id": "shibuya",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/54.83.176.50/tcp/30333/p2p/12D3KooWKpHCwCPpRDRjHwuf2VFjXfw8jTn59x4sEGDKXdzAsMyX",
-    "/ip4/35.239.0.65/tcp/30333/p2p/12D3KooWL6HbHMNyztAe2RVvL5fmcPr9qCGK9bkSUkucL8F82V1G"
+    "/ip4/51.91.105.142/tcp/38333/p2p/12D3KooWK5A7XWnaUcajUgFMbpcUCbkveb7Lt7EUhhiESn8bHAfU",
+    "/ip4/54.38.192.54/tcp/38333/p2p/12D3KooWRFnCe3DzjfdArooWtekjoki7rG9C56Cky5RUYhQH1jgj",
+    "/dns/rocstar-bootnode-01.astar.network/tcp/443/wss/p2p/12D3KooWK5A7XWnaUcajUgFMbpcUCbkveb7Lt7EUhhiESn8bHAfU",
+    "/dns/rocstar-bootnode-02.astar.network/tcp/443/wss/p2p/12D3KooWRFnCe3DzjfdArooWtekjoki7rG9C56Cky5RUYhQH1jgj"
   ],
   "telemetryEndpoints": null,
   "protocolId": "rocstar",

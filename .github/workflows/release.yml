@@ -467,7 +467,8 @@ jobs:
         chain=${{ matrix.chain }}
         runtime_version=$(cat $chain-compressed-info.json | jq '.core_version' | tr -d '"' | cut -d ' ' -f 1)
         echo $runtime_version
-        echo "::set-output name=runtime_version::$runtime_version"
+        echo "runtime=$(echo $runtime_version)" >> $GITHUB_ENV
+        echo "${{ matrix.chain }}=$(echo $runtime_version)" >> $GITHUB_OUTPUT
 
     - name: Upload ${{ matrix.chain }} Wasm
       uses: actions/upload-release-asset@v1
@@ -476,7 +477,7 @@ jobs:
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
         asset_path: ${{ matrix.chain }}_runtime.compact.compressed.wasm
-        asset_name: ${{ steps.get-runtime-version.outputs.runtime_version }}.wasm
+        asset_name: ${{ env.runtime }}.wasm
         asset_content_type: application/wasm
 
     - name: Upload ${{ matrix.chain }} Metadata
@@ -509,8 +510,13 @@ jobs:
         asset_name: ${{ matrix.chain }}-srtool-digest.json
         asset_content_type: application/json
 
+    outputs:
+      astar_runtime_version: ${{ steps.get-runtime-version.outputs.astar }}
+      shiden_runtime_version: ${{ steps.get-runtime-version.outputs.shiden }}
+      shibuya_runtime_version: ${{ steps.get-runtime-version.outputs.shibuya }}
+
   upload-evm-tracing-artifacts:
-    needs: publish-release-draft
+    needs: [publish-release-draft,upload-runtimes]
     runs-on: ubuntu-latest
     steps:
     - name: Download pre-built collator binary for evm tracing
@@ -518,11 +524,6 @@ jobs:
       with:
         name: astar-evm-tracing-ubuntu-latest-x86_64-unknown-linux-gnu
         path: evm-tracing-artifacts
-    
-    - name: Make evm tracing binary executable and tar gzip
-      run: |
-        cd evm-tracing-artifacts
-        chmod +x astar-collator
 
     - name: Download evm tracing runtime
       uses: actions/download-artifact@v3
@@ -541,6 +542,14 @@ jobs:
       with:
         name: shibuya-evm-tracing-runtime
         path: evm-tracing-artifacts
+
+    - name: Make evm tracing binary executable and rename
+      run: |
+        cd evm-tracing-artifacts
+        chmod +x astar-collator
+        mv astar_evm_tracing_runtime.compact.compressed.wasm ${{needs.upload-runtimes.outputs.astar_runtime_version}}_evm_tracing_runtime.compact.compressed.wasm
+        mv shiden_evm_tracing_runtime.compact.compressed.wasm ${{needs.upload-runtimes.outputs.shiden_runtime_version}}_evm_tracing_runtime.compact.compressed.wasm
+        mv shibuya_evm_tracing_runtime.compact.compressed.wasm ${{needs.upload-runtimes.outputs.shibuya_runtime_version}}_evm_tracing_runtime.compact.compressed.wasm
 
     - name: Compress folder
       run: |

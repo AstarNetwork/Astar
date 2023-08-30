@@ -21,14 +21,14 @@
 use super::*;
 use mock::*;
 
-use astar_primitives::ethereum_checked::MAX_ETHEREUM_TX_INPUT_SIZE;
+use astar_primitives::ethereum_checked::EthereumTxInput;
 use ethereum::{ReceiptV3, TransactionV2 as Transaction};
-use frame_support::{assert_noop, assert_ok, traits::ConstU32};
+use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 
-fn bounded_input(data: &'static str) -> BoundedVec<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>> {
-    BoundedVec::<u8, ConstU32<MAX_ETHEREUM_TX_INPUT_SIZE>>::try_from(hex::decode(data).unwrap())
-        .unwrap()
+fn bounded_input(data: &'static str) -> EthereumTxInput {
+    EthereumTxInput::try_from(hex::decode(data).expect("invalid input hex"))
+        .expect("input too large")
 }
 
 #[test]

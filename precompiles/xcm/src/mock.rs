@@ -270,6 +270,8 @@ impl pallet_assets::Config for Runtime {
     type RemoveItemsLimit = ConstU32<0>;
     type AssetIdParameter = AssetId;
     type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 pub struct AssetIdConverter<AssetId>(PhantomData<AssetId>);

@@ -1,0 +1,438 @@
+{
+  "source": {
+    "hash": "0x2f161d6093ea4272bde71b8e3c8e81efbd7b15bc3b482ebd8bac2f3f43950af9",
+    "language": "ink! 4.2.1",
+    "compiler": "rustc 1.68.0-nightly",
+    "build_info": {
+      "build_mode": "Debug",
+      "cargo_contract_version": "3.0.1",
+      "rust_toolchain": "nightly-aarch64-apple-darwin",
+      "wasm_opt_settings": {
+        "keep_debug_symbols": false,
+        "optimization_passes": "Z"
+      }
+    }
+  },
+  "contract": {
+    "name": "call_xvm_payable",
+    "version": "0.1.0",
+    "authors": [
+      "[your_name] <[your_email]>"
+    ]
+  },
+  "spec": {
+    "constructors": [
+      {
+        "args": [],
+        "default": false,
+        "docs": [],
+        "label": "new",
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink_primitives",
+            "ConstructorResult"
+          ],
+          "type": 0
+        },
+        "selector": "0x9bae9d5e"
+      }
+    ],
+    "docs": [],
+    "environment": {
+      "accountId": {
+        "displayName": [
+          "AccountId"
+        ],
+        "type": 8
+      },
+      "balance": {
+        "displayName": [
+          "Balance"
+        ],
+        "type": 10
+      },
+      "blockNumber": {
+        "displayName": [
+          "BlockNumber"
+        ],
+        "type": 13
+      },
+      "chainExtension": {
+        "displayName": [
+          "ChainExtension"
+        ],
+        "type": 14
+      },
+      "hash": {
+        "displayName": [
+          "Hash"
+        ],
+        "type": 11
+      },
+      "maxEventTopics": 4,
+      "timestamp": {
+        "displayName": [
+          "Timestamp"
+        ],
+        "type": 12
+      }
+    },
+    "events": [],
+    "lang_error": {
+      "displayName": [
+        "ink",
+        "LangError"
+      ],
+      "type": 2
+    },
+    "messages": [
+      {
+        "args": [
+          {
+            "label": "target",
+            "type": {
+              "displayName": [
+                "Vec"
+              ],
+              "type": 3
+            }
+          },
+          {
+            "label": "input",
+            "type": {
+              "displayName": [
+                "Vec"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "call_xvm_payable",
+        "mutates": false,
+        "payable": true,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 5
+        },
+        "selector": "0x0000002a"
+      }
+    ]
+  },
+  "storage": {
+    "root": {
+      "layout": {
+        "struct": {
+          "fields": [],
+          "name": "CallXvmPayable"
+        }
+      },
+      "root_key": "0x00000000"
+    }
+  },
+  "types": [
+    {
+      "id": 0,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 1
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 1
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "type": {
+        "def": {
+          "tuple": []
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 1,
+                "name": "CouldNotReadInput"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "LangError"
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 4
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": {
+        "def": {
+          "primitive": "u8"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 6
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 6
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 3
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 7
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 3
+          },
+          {
+            "name": "E",
+            "type": 7
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "InvalidVmId"
+              },
+              {
+                "index": 1,
+                "name": "SameVmCallNotAllowed"
+              },
+              {
+                "index": 2,
+                "name": "InvalidTarget"
+              },
+              {
+                "index": 3,
+                "name": "InputTooLarge"
+              },
+              {
+                "index": 4,
+                "name": "BadOrigin"
+              },
+              {
+                "index": 5,
+                "name": "ExecutionFailed"
+              }
+            ]
+          }
+        },
+        "path": [
+          "call_xvm_payable",
+          "XvmCallError"
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 9,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "AccountId"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "type": {
+        "def": {
+          "array": {
+            "len": 32,
+            "type": 4
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": {
+        "def": {
+          "primitive": "u128"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 9,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "Hash"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "type": {
+        "def": {
+          "primitive": "u64"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": {
+        "def": {
+          "primitive": "u32"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": {
+        "def": {
+          "variant": {}
+        },
+        "path": [
+          "call_xvm_payable",
+          "XvmCall"
+        ]
+      }
+    }
+  ],
+  "version": "4"
+}

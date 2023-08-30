@@ -32,18 +32,22 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::AccountId;
+
 use frame_support::{
-    ensure,
-    traits::{tokens::fungibles, Contains, ContainsPair, Get, ProcessMessageError},
+    traits::{tokens::fungibles, ContainsPair, Get},
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
-use sp_runtime::traits::{Bounded, Zero};
+use sp_runtime::traits::{Bounded, Convert, Zero};
 use sp_std::{borrow::Borrow, marker::PhantomData, vec::Vec};
 
 // Polkadot imports
 use xcm::latest::{prelude::*, Weight};
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{MatchesFungibles, ShouldExecute, WeightTrader};
+use xcm_executor::traits::{MatchesFungibles, WeightTrader};
+
+// ORML imports
+use orml_traits::location::{RelativeReserveProvider, Reserve};
 
 use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
@@ -54,9 +58,7 @@ mod tests;
 ///
 /// This implementation relies on `XcAssetConfig` pallet to handle mapping.
 /// In case asset location hasn't been mapped, it means the asset isn't supported (yet).
-pub struct AssetLocationIdConverter<AssetId, AssetMapper>(
-    sp_std::marker::PhantomData<(AssetId, AssetMapper)>,
-);
+pub struct AssetLocationIdConverter<AssetId, AssetMapper>(PhantomData<(AssetId, AssetMapper)>);
 impl<AssetId, AssetMapper> xcm_executor::traits::Convert<MultiLocation, AssetId>
     for AssetLocationIdConverter<AssetId, AssetMapper>
 where
@@ -271,52 +273,6 @@ impl<
     }
 }
 
-/// Allows execution from `origin` if it is contained in `T` (i.e. `T::Contains(origin)`) taking
-/// payments into account.
-///
-/// Only allows for sequence `DescendOrigin` -> `WithdrawAsset` -> `BuyExecution`
-pub struct AllowPaidExecWithDescendOriginFrom<T>(PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for AllowPaidExecWithDescendOriginFrom<T> {
-    fn should_execute<RuntimeCall>(
-        origin: &MultiLocation,
-        message: &mut [Instruction<RuntimeCall>],
-        max_weight: Weight,
-        _weight_credit: &mut Weight,
-    ) -> Result<(), ProcessMessageError> {
-        log::trace!(
-            target: "xcm::barriers",
-            "AllowPaidExecWithDescendOriginFrom origin: {:?}, message: {:?}, max_weight: {:?}, weight_credit: {:?}",
-            origin, message, max_weight, _weight_credit,
-        );
-        ensure!(T::contains(origin), ProcessMessageError::Unsupported);
-
-        match message
-            .iter_mut()
-            .take(3)
-            .collect::<Vec<_>>()
-            .as_mut_slice()
-        {
-            [DescendOrigin(..), WithdrawAsset(..), BuyExecution {
-                weight_limit: Limited(ref mut limit),
-                ..
-            }] if limit.all_gte(max_weight) => {
-                *limit = max_weight;
-                Ok(())
-            }
-
-            [DescendOrigin(..), WithdrawAsset(..), BuyExecution {
-                weight_limit: ref mut limit @ Unlimited,
-                ..
-            }] => {
-                *limit = Limited(max_weight);
-                Ok(())
-            }
-
-            _ => return Err(ProcessMessageError::Unsupported),
-        }
-    }
-}
-
 // TODO: remove this after uplift to `polkadot-v0.9.44` or beyond, and replace it with code in XCM builder.
 
 use parity_scale_codec::{Compact, Encode};
@@ -429,5 +385,34 @@ impl<AccountId: From<[u8; 32]> + Clone, Describe: DescribeLocation>
         } else {
             Err(value)
         }
+    }
+}
+
+/// Convert `AccountId` to `MultiLocation`.
+pub struct AccountIdToMultiLocation;
+impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
+    fn convert(account: AccountId) -> MultiLocation {
+        X1(AccountId32 {
+            network: None,
+            id: account.into(),
+        })
+        .into()
+    }
+}
+
+/// `MultiAsset` reserve location provider. It's based on `RelativeReserveProvider` and in
+/// addition will convert self absolute location to relative location.
+pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
+impl<AbsoluteLocation: Get<MultiLocation>> Reserve
+    for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
+{
+    fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
+        RelativeReserveProvider::reserve(asset).map(|reserve_location| {
+            if reserve_location == AbsoluteLocation::get() {
+                MultiLocation::here()
+            } else {
+                reserve_location
+            }
+        })
     }
 }
