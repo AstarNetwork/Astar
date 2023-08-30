@@ -47,6 +47,8 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::{BadOrigin, Saturating, Zero};
 
+use astar_primitives::Balance;
+
 use crate::types::*;
 pub use pallet::*;
 
@@ -74,7 +76,11 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Currency used for staking.
-        type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+        type Currency: LockableCurrency<
+            Self::AccountId,
+            Moment = Self::BlockNumber,
+            Balance = Balance,
+        >;
 
         /// Describes smart contract in the context required by dApp staking.
         type SmartContract: Parameter + Member + MaxEncodedLen;
@@ -97,7 +103,7 @@ pub mod pallet {
 
         /// Minimum amount an account has to lock in dApp staking in order to participate.
         #[pallet::constant]
-        type MinimumLockedAmount: Get<BalanceOf<Self>>;
+        type MinimumLockedAmount: Get<Balance>;
 
         /// Amount of blocks that need to pass before unlocking chunks can be claimed by the owner.
         #[pallet::constant]
@@ -196,7 +202,7 @@ pub mod pallet {
 
     /// General information about the current era.
     #[pallet::storage]
-    pub type CurrentEraInfo<T: Config> = StorageValue<_, EraInfo<BalanceOf<T>>, ValueQuery>;
+    pub type CurrentEraInfo<T: Config> = StorageValue<_, EraInfo, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {

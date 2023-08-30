@@ -19,7 +19,12 @@
 use frame_support::{pallet_prelude::*, traits::Currency, BoundedVec};
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
-use sp_runtime::traits::{AtLeast32BitUnsigned, Zero};
+use sp_runtime::{
+    traits::{AtLeast32BitUnsigned, Zero},
+    Saturating,
+};
+
+use astar_primitives::Balance;
 
 use crate::pallet::Config;
 
@@ -31,7 +36,6 @@ pub type BalanceOf<T> =
 
 /// Convenience type for `AccountLedger` usage.
 pub type AccountLedgerFor<T> = AccountLedger<
-    BalanceOf<T>,
     BlockNumberFor<T>,
     <T as Config>::MaxLockedChunks,
     <T as Config>::MaxUnlockingChunks,
@@ -125,17 +129,14 @@ pub struct DAppInfo<AccountId> {
 
 /// How much was locked in a specific era
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct LockedChunk<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+pub struct LockedChunk {
     #[codec(compact)]
     pub amount: Balance,
     #[codec(compact)]
     pub era: EraNumber,
 }
 
-impl<Balance> Default for LockedChunk<Balance>
-where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-{
+impl Default for LockedChunk {
     fn default() -> Self {
         Self {
             amount: Balance::zero(),
@@ -144,21 +145,39 @@ where
     }
 }
 
+impl AmountEraPair for LockedChunk {
+    fn get_amount(&self) -> Balance {
+        self.amount
+    }
+
+    fn get_era(&self) -> EraNumber {
+        self.era
+    }
+
+    fn set_era(&mut self, era: EraNumber) {
+        self.era = era;
+    }
+
+    fn saturating_accrue(&mut self, increase: Balance) {
+        self.amount.saturating_accrue(increase);
+    }
+
+    fn saturating_reduce(&mut self, reduction: Balance) {
+        self.amount.saturating_reduce(reduction);
+    }
+}
+
 /// How much was unlocked in some block.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct UnlockingChunk<
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-> {
+pub struct UnlockingChunk<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
     #[codec(compact)]
     pub amount: Balance,
     #[codec(compact)]
     pub unlock_block: BlockNumber,
 }
 
-impl<Balance, BlockNumber> Default for UnlockingChunk<Balance, BlockNumber>
+impl<BlockNumber> Default for UnlockingChunk<BlockNumber>
 where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
 {
     fn default() -> Self {
@@ -171,17 +190,14 @@ where
 
 /// Information about how much was staked in a specific period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct StakeInfo<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+pub struct StakeInfo {
     #[codec(compact)]
     pub amount: Balance,
     #[codec(compact)]
     pub period: PeriodNumber,
 }
 
-impl<Balance> Default for StakeInfo<Balance>
-where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-{
+impl Default for StakeInfo {
     fn default() -> Self {
         Self {
             amount: Balance::zero(),
@@ -190,56 +206,188 @@ where
     }
 }
 
+/// Trait for types that can be used as a pair of amount & era.
+pub trait AmountEraPair: MaxEncodedLen + Default + Copy {
+    /// Balance amount used somehow during the accompanied era.
+    fn get_amount(&self) -> Balance;
+    /// Era acting as timestamp for the accompanied amount.
+    fn get_era(&self) -> EraNumber;
+    // Sets the era to the specified value.
+    fn set_era(&mut self, era: EraNumber);
+    /// Increase the total amount by the specified increase, saturating at the maximum value.
+    fn saturating_accrue(&mut self, increase: Balance);
+    /// Reduce the total amount by the specified reduction, saturating at the minumum value.
+    fn saturating_reduce(&mut self, reduction: Balance);
+}
+
+/// Helper struct for easier manipulation of sparse <amount, era> pairs.
+///
+/// The struct guarantes the following:
+/// -----------------------------------
+/// 1. The vector is always sorted by era, in ascending order.
+/// 2. There are no two consecutive zero chunks.
+/// 3. There are no two chunks with the same era.
+/// 4. The vector is always bounded by the specified maximum length.
+///
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[scale_info(skip_type_params(ML))]
+// TODO: should I use `EncodeLike`?
+pub struct SparseBoundedAmountEraVec<P: AmountEraPair, ML: Get<u32>>(pub BoundedVec<P, ML>);
+
+impl<P, ML> SparseBoundedAmountEraVec<P, ML>
+where
+    P: AmountEraPair,
+    ML: Get<u32>,
+{
+    // TODO: maybe add a custom error type?
+    // Could be useful to know what exactly went wrong.
+
+    // TODO2: write (or reuse) custom tests for this implementation.
+
+    /// Places the specified <amount, era> pair into the vector, in an appropriate place.
+    ///
+    /// If entry for the specified era already exists, it's updated.
+    ///
+    /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
+    ///
+    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
+    pub fn add_amount(&mut self, amount: Balance, era: EraNumber) -> Result<(), ()> {
+        if amount.is_zero() {
+            return Ok(());
+        }
+
+        let mut chunk = if let Some(&chunk) = self.0.last() {
+            chunk
+        } else {
+            P::default()
+        };
+
+        chunk.saturating_accrue(amount);
+
+        if chunk.get_era() == era && !self.0.is_empty() {
+            if let Some(last) = self.0.last_mut() {
+                *last = chunk;
+            }
+        } else {
+            chunk.set_era(era);
+            self.0.try_push(chunk).map_err(|_| ())?;
+        }
+
+        Ok(())
+    }
+
+    /// Subtracts the specified amount of the total locked amount, if possible.
+    ///
+    /// If entry for the specified era already exists, it's updated.
+    ///
+    /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
+    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
+    pub fn subtract_amount(&mut self, amount: Balance, era: EraNumber) -> Result<(), ()> {
+        if amount.is_zero() || self.0.is_empty() {
+            return Ok(());
+        }
+        // TODO: this method can surely be optimized (avoid too many iters) but focus on that later,
+        // when it's all working fine, and we have good test coverage.
+
+        // Find the most relevant locked chunk for the specified era
+        let index = if let Some(index) = self.0.iter().rposition(|&chunk| chunk.get_era() <= era) {
+            index
+        } else {
+            // Covers scenario when there's only 1 chunk for the next era, and remove it if it's zero.
+            self.0
+                .iter_mut()
+                .for_each(|chunk| chunk.saturating_reduce(amount));
+            self.0.retain(|chunk| !chunk.get_amount().is_zero());
+            return Ok(());
+        };
+
+        // Update existing or insert a new chunk
+        let mut inner = self.0.clone().into_inner();
+        let relevant_chunk_index = if inner[index].get_era() == era {
+            inner[index].saturating_reduce(amount);
+            index
+        } else {
+            let mut chunk = inner[index];
+            chunk.saturating_reduce(amount);
+            chunk.set_era(era);
+
+            inner.insert(index + 1, chunk);
+            index + 1
+        };
+
+        // Update all chunks after the relevant one, and remove eligible zero chunks
+        inner[relevant_chunk_index + 1..]
+            .iter_mut()
+            .for_each(|chunk| chunk.saturating_reduce(amount));
+
+        // Merge all consecutive zero chunks
+        let mut i = relevant_chunk_index;
+        while i < inner.len() - 1 {
+            if inner[i].get_amount().is_zero() && inner[i + 1].get_amount().is_zero() {
+                inner.remove(i + 1);
+            } else {
+                i += 1;
+            }
+        }
+
+        // Cleanup if only one zero chunk exists
+        if inner.len() == 1 && inner[0].get_amount().is_zero() {
+            inner.pop();
+        }
+
+        // Update `locked` to the new vector
+        self.0 = BoundedVec::try_from(inner).map_err(|_| ())?;
+
+        Ok(())
+    }
+}
+
 /// General info about user's stakes
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[scale_info(skip_type_params(LockedLen, UnlockingLen))]
 pub struct AccountLedger<
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
     LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
 > {
     /// How much was staked in each era
-    pub locked: BoundedVec<LockedChunk<Balance>, LockedLen>,
+    pub locked: SparseBoundedAmountEraVec<LockedChunk, LockedLen>,
     /// How much started unlocking on a certain block
-    pub unlocking: BoundedVec<UnlockingChunk<Balance, BlockNumber>, UnlockingLen>,
+    pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
     /// How much user had staked in some period
-    pub staked: StakeInfo<Balance>,
+    pub staked: StakeInfo,
 }
 
-impl<Balance, BlockNumber, LockedLen, UnlockingLen> Default
-    for AccountLedger<Balance, BlockNumber, LockedLen, UnlockingLen>
+impl<BlockNumber, LockedLen, UnlockingLen> Default
+    for AccountLedger<BlockNumber, LockedLen, UnlockingLen>
 where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
     LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
 {
     fn default() -> Self {
         Self {
-            locked: BoundedVec::<LockedChunk<Balance>, LockedLen>::default(),
-            unlocking: BoundedVec::<UnlockingChunk<Balance, BlockNumber>, UnlockingLen>::default(),
-            staked: StakeInfo::<Balance>::default(),
+            locked: SparseBoundedAmountEraVec(BoundedVec::<LockedChunk, LockedLen>::default()),
+            unlocking: BoundedVec::<UnlockingChunk<BlockNumber>, UnlockingLen>::default(),
+            staked: StakeInfo::default(),
         }
     }
 }
 
-impl<Balance, BlockNumber, LockedLen, UnlockingLen>
-    AccountLedger<Balance, BlockNumber, LockedLen, UnlockingLen>
+impl<BlockNumber, LockedLen, UnlockingLen> AccountLedger<BlockNumber, LockedLen, UnlockingLen>
 where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
     LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
 {
     /// Empty if no locked/unlocking/staked info exists.
     pub fn is_empty(&self) -> bool {
-        self.locked.is_empty() && self.unlocking.is_empty() && self.staked.amount.is_zero()
+        self.locked.0.is_empty() && self.unlocking.is_empty() && self.staked.amount.is_zero()
     }
 
     /// Returns latest locked chunk if it exists, `None` otherwise
-    pub fn latest_locked_chunk(&self) -> Option<&LockedChunk<Balance>> {
-        self.locked.last()
+    pub fn latest_locked_chunk(&self) -> Option<&LockedChunk> {
+        self.locked.0.last()
     }
 
     /// Returns active locked amount.
@@ -290,28 +438,7 @@ where
     /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
     pub fn add_lock_amount(&mut self, amount: Balance, era: EraNumber) -> Result<(), ()> {
-        if amount.is_zero() {
-            return Ok(());
-        }
-
-        let mut locked_chunk = if let Some(&locked_chunk) = self.locked.last() {
-            locked_chunk
-        } else {
-            LockedChunk::default()
-        };
-
-        locked_chunk.amount.saturating_accrue(amount);
-
-        if locked_chunk.era == era && !self.locked.is_empty() {
-            if let Some(last) = self.locked.last_mut() {
-                *last = locked_chunk;
-            }
-        } else {
-            locked_chunk.era = era;
-            self.locked.try_push(locked_chunk).map_err(|_| ())?;
-        }
-
-        Ok(())
+        self.locked.add_amount(amount, era)
     }
 
     /// Subtracts the specified amount of the total locked amount, if possible.
@@ -321,62 +448,7 @@ where
     /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
     pub fn subtract_lock_amount(&mut self, amount: Balance, era: EraNumber) -> Result<(), ()> {
-        if amount.is_zero() || self.locked.is_empty() {
-            return Ok(());
-        }
-        // TODO: this method can surely be optimized (avoid too many iters) but focus on that later,
-        // when it's all working fine, and we have good test coverage.
-
-        // Find the most relevant locked chunk for the specified era
-        let index = if let Some(index) = self.locked.iter().rposition(|&chunk| chunk.era <= era) {
-            index
-        } else {
-            // Covers scenario when there's only 1 chunk for the next era, and remove it if it's zero.
-            self.locked
-                .iter_mut()
-                .for_each(|chunk| chunk.amount.saturating_reduce(amount));
-            self.locked.retain(|chunk| !chunk.amount.is_zero());
-            return Ok(());
-        };
-
-        // Update existing or insert a new chunk
-        let mut inner = self.locked.clone().into_inner();
-        let relevant_chunk_index = if inner[index].era == era {
-            inner[index].amount.saturating_reduce(amount);
-            index
-        } else {
-            let mut chunk = inner[index];
-            chunk.amount.saturating_reduce(amount);
-            chunk.era = era;
-
-            inner.insert(index + 1, chunk);
-            index + 1
-        };
-
-        // Update all chunks after the relevant one, and remove eligible zero chunks
-        inner[relevant_chunk_index + 1..]
-            .iter_mut()
-            .for_each(|chunk| chunk.amount.saturating_reduce(amount));
-
-        // Merge all consecutive zero chunks
-        let mut i = relevant_chunk_index;
-        while i < inner.len() - 1 {
-            if inner[i].amount.is_zero() && inner[i + 1].amount.is_zero() {
-                inner.remove(i + 1);
-            } else {
-                i += 1;
-            }
-        }
-
-        // Cleanup if only one zero chunk exists
-        if inner.len() == 1 && inner[0].amount.is_zero() {
-            inner.pop();
-        }
-
-        // Update `locked` to the new vector
-        self.locked = BoundedVec::try_from(inner).map_err(|_| ())?;
-
-        Ok(())
+        self.locked.subtract_amount(amount, era)
     }
 
     /// Adds the specified amount to the unlocking chunks.
@@ -423,9 +495,9 @@ where
     }
 }
 
-/// Rewards pool for lock participants & dApps
+/// Rewards pool for stakers & dApps
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-pub struct RewardInfo<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+pub struct RewardInfo {
     /// Rewards pool for accounts which have locked funds in dApp staking
     #[codec(compact)]
     pub participants: Balance,
@@ -436,9 +508,9 @@ pub struct RewardInfo<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
 
 /// Info about current era, including the rewards, how much is locked, unlocking, etc.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-pub struct EraInfo<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+pub struct EraInfo {
     /// Info about era rewards
-    pub rewards: RewardInfo<Balance>,
+    pub rewards: RewardInfo,
     /// How much balance is considered to be locked in the current era.
     /// This value influences the reward distribution.
     #[codec(compact)]
@@ -452,10 +524,7 @@ pub struct EraInfo<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
     pub unlocking: Balance,
 }
 
-impl<Balance> EraInfo<Balance>
-where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-{
+impl EraInfo {
     /// Update with the new amount that has just been locked.
     pub fn add_locked(&mut self, amount: Balance) {
         self.total_locked.saturating_accrue(amount);

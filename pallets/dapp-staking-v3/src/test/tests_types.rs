@@ -47,7 +47,7 @@ fn protocol_state_default() {
 fn account_ledger_default() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let acc_ledger = AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     assert!(acc_ledger.is_empty());
     assert!(acc_ledger.active_locked_amount().is_zero());
@@ -59,8 +59,7 @@ fn account_ledger_default() {
 fn account_ledger_add_lock_amount_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     // First step, sanity checks
     let first_era = 1;
@@ -76,10 +75,10 @@ fn account_ledger_add_lock_amount_works() {
     assert_eq!(acc_ledger.total_locked_amount(), init_amount);
     assert_eq!(acc_ledger.lock_era(), first_era);
     assert!(!acc_ledger.is_empty());
-    assert_eq!(acc_ledger.locked.len(), 1);
+    assert_eq!(acc_ledger.locked.0.len(), 1);
     assert_eq!(
         acc_ledger.latest_locked_chunk(),
-        Some(&LockedChunk::<Balance> {
+        Some(&LockedChunk {
             amount: init_amount,
             era: first_era,
         })
@@ -91,7 +90,7 @@ fn account_ledger_add_lock_amount_works() {
     assert_eq!(acc_ledger.active_locked_amount(), init_amount + addition);
     assert_eq!(acc_ledger.total_locked_amount(), init_amount + addition);
     assert_eq!(acc_ledger.lock_era(), first_era);
-    assert_eq!(acc_ledger.locked.len(), 1);
+    assert_eq!(acc_ledger.locked.0.len(), 1);
 
     // Add up to storage limit
     for i in 2..=LockedDummy::get() {
@@ -101,7 +100,7 @@ fn account_ledger_add_lock_amount_works() {
             init_amount + addition * i as u128
         );
         assert_eq!(acc_ledger.lock_era(), first_era + i);
-        assert_eq!(acc_ledger.locked.len(), i as usize);
+        assert_eq!(acc_ledger.locked.0.len(), i as usize);
     }
 
     // Any further additions should fail due to exhausting bounded storage capacity
@@ -116,14 +115,13 @@ fn account_ledger_add_lock_amount_works() {
 fn account_ledger_subtract_lock_amount_basic_usage_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     // Sanity check scenario
     // Cannot reduce if there is nothing locked, should be a noop
     assert!(acc_ledger.subtract_lock_amount(0, 1).is_ok());
     assert!(acc_ledger.subtract_lock_amount(10, 1).is_ok());
-    assert!(acc_ledger.locked.len().is_zero());
+    assert!(acc_ledger.locked.0.len().is_zero());
     assert!(acc_ledger.is_empty());
 
     // First basic scenario
@@ -137,7 +135,7 @@ fn account_ledger_subtract_lock_amount_basic_usage_works() {
     assert!(acc_ledger
         .subtract_lock_amount(unlock_amount, first_era)
         .is_ok());
-    assert_eq!(acc_ledger.locked.len(), 1);
+    assert_eq!(acc_ledger.locked.0.len(), 1);
     assert_eq!(
         acc_ledger.total_locked_amount(),
         first_lock_amount - unlock_amount
@@ -157,23 +155,23 @@ fn account_ledger_subtract_lock_amount_basic_usage_works() {
         .add_lock_amount(second_lock_amount - first_lock_amount, second_era)
         .is_ok());
     assert_eq!(acc_ledger.active_locked_amount(), second_lock_amount);
-    assert_eq!(acc_ledger.locked.len(), 2);
+    assert_eq!(acc_ledger.locked.0.len(), 2);
 
     // Subtract from the first era and verify state is as expected
     assert!(acc_ledger
         .subtract_lock_amount(unlock_amount, first_era)
         .is_ok());
-    assert_eq!(acc_ledger.locked.len(), 2);
+    assert_eq!(acc_ledger.locked.0.len(), 2);
     assert_eq!(
         acc_ledger.active_locked_amount(),
         second_lock_amount - unlock_amount
     );
     assert_eq!(
-        acc_ledger.locked[0].amount,
+        acc_ledger.locked.0[0].amount,
         first_lock_amount - unlock_amount
     );
     assert_eq!(
-        acc_ledger.locked[1].amount,
+        acc_ledger.locked.0[1].amount,
         second_lock_amount - unlock_amount
     );
 
@@ -182,17 +180,17 @@ fn account_ledger_subtract_lock_amount_basic_usage_works() {
     assert!(acc_ledger
         .subtract_lock_amount(unlock_amount, second_era)
         .is_ok());
-    assert_eq!(acc_ledger.locked.len(), 2);
+    assert_eq!(acc_ledger.locked.0.len(), 2);
     assert_eq!(
         acc_ledger.active_locked_amount(),
         second_lock_amount - unlock_amount * 2
     );
     assert_eq!(
-        acc_ledger.locked[0].amount,
+        acc_ledger.locked.0[0].amount,
         first_lock_amount - unlock_amount
     );
     assert_eq!(
-        acc_ledger.locked[1].amount,
+        acc_ledger.locked.0[1].amount,
         second_lock_amount - unlock_amount * 2
     );
 }
@@ -201,8 +199,7 @@ fn account_ledger_subtract_lock_amount_basic_usage_works() {
 fn account_ledger_subtract_lock_amount_overflow_fails() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     let first_lock_amount = 17 * 19;
     let era = 1;
@@ -210,7 +207,7 @@ fn account_ledger_subtract_lock_amount_overflow_fails() {
     assert!(acc_ledger.add_lock_amount(first_lock_amount, era).is_ok());
     for idx in 1..=LockedDummy::get() {
         assert!(acc_ledger.subtract_lock_amount(unlock_amount, idx).is_ok());
-        assert_eq!(acc_ledger.locked.len(), idx as usize);
+        assert_eq!(acc_ledger.locked.0.len(), idx as usize);
         assert_eq!(
             acc_ledger.active_locked_amount(),
             first_lock_amount - unlock_amount * idx as u128
@@ -218,20 +215,20 @@ fn account_ledger_subtract_lock_amount_overflow_fails() {
     }
 
     // Updating existing lock should still work
-    let locked_snapshot = acc_ledger.locked.clone();
+    let locked_snapshot = acc_ledger.locked.0.clone();
     for i in 1..10 {
         assert!(acc_ledger
             .subtract_lock_amount(unlock_amount, LockedDummy::get())
             .is_ok());
-        assert_eq!(acc_ledger.locked.len(), LockedDummy::get() as usize);
+        assert_eq!(acc_ledger.locked.0.len(), LockedDummy::get() as usize);
 
         let last_idx = LockedDummy::get() as usize - 1;
         assert_eq!(
-            &acc_ledger.locked[0..last_idx],
+            &acc_ledger.locked.0[0..last_idx],
             &locked_snapshot[0..last_idx]
         );
         assert_eq!(
-            acc_ledger.locked[last_idx].amount as u128 + unlock_amount * i,
+            acc_ledger.locked.0[last_idx].amount as u128 + unlock_amount * i,
             locked_snapshot[last_idx].amount
         );
     }
@@ -248,8 +245,7 @@ fn account_ledger_subtract_lock_amount_overflow_fails() {
 fn account_ledger_subtract_lock_amount_advanced_example_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     // Prepare an example where we have two non-consecutive entries, and we unlock in the era right before the second entry.
     // This covers a scenario where user has called `lock` in the current era,
@@ -266,7 +262,7 @@ fn account_ledger_subtract_lock_amount_advanced_example_works() {
     assert!(acc_ledger
         .add_lock_amount(second_lock_amount, second_era)
         .is_ok());
-    assert_eq!(acc_ledger.locked.len(), 2);
+    assert_eq!(acc_ledger.locked.0.len(), 2);
 
     assert!(acc_ledger
         .subtract_lock_amount(unlock_amount, unlock_era)
@@ -277,26 +273,25 @@ fn account_ledger_subtract_lock_amount_advanced_example_works() {
     );
 
     // Check entries in more detail
-    assert_eq!(acc_ledger.locked.len(), 3);
-    assert_eq!(acc_ledger.locked[0].amount, first_lock_amount,);
+    assert_eq!(acc_ledger.locked.0.len(), 3);
+    assert_eq!(acc_ledger.locked.0[0].amount, first_lock_amount,);
     assert_eq!(
-        acc_ledger.locked[2].amount,
+        acc_ledger.locked.0[2].amount,
         first_lock_amount + second_lock_amount - unlock_amount
     );
     // Verify the new entry is as expected
     assert_eq!(
-        acc_ledger.locked[1].amount,
+        acc_ledger.locked.0[1].amount,
         first_lock_amount - unlock_amount
     );
-    assert_eq!(acc_ledger.locked[1].era, unlock_era);
+    assert_eq!(acc_ledger.locked.0[1].era, unlock_era);
 }
 
 #[test]
 fn account_ledger_subtract_lock_amount_with_only_one_locked_chunk() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     // Scenario: user locks for era 2 while era 1 is active, immediately followed by unlock call.
     // Locked amount should be updated for the next era, but active locked amount should be unchanged (zero).
@@ -309,9 +304,9 @@ fn account_ledger_subtract_lock_amount_with_only_one_locked_chunk() {
         .subtract_lock_amount(unlock_amount, unlock_era)
         .is_ok());
 
-    assert_eq!(acc_ledger.locked.len(), 1);
+    assert_eq!(acc_ledger.locked.0.len(), 1);
     assert_eq!(
-        acc_ledger.locked[0],
+        acc_ledger.locked.0[0],
         LockedChunk {
             amount: lock_amount - unlock_amount,
             era: lock_era,
@@ -323,8 +318,7 @@ fn account_ledger_subtract_lock_amount_with_only_one_locked_chunk() {
 fn account_ledger_subtract_lock_amount_correct_zero_cleanup() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     // Ensure that zero entries are cleaned up correctly when required.
     // There are a couple of distinct scenarios:
@@ -339,14 +333,14 @@ fn account_ledger_subtract_lock_amount_correct_zero_cleanup() {
     assert!(acc_ledger
         .subtract_lock_amount(lock_amount, lock_era)
         .is_ok());
-    assert!(acc_ledger.locked.is_empty());
+    assert!(acc_ledger.locked.0.is_empty());
 
     // 1st scenario (B) - only one zero entry, unlock is in the previous era
     assert!(acc_ledger.add_lock_amount(lock_amount, lock_era).is_ok());
     assert!(acc_ledger
         .subtract_lock_amount(lock_amount, lock_era - 1)
         .is_ok());
-    assert!(acc_ledger.locked.is_empty());
+    assert!(acc_ledger.locked.0.is_empty());
 
     // 2nd scenario - last entry is zero
     let first_lock_era = 3;
@@ -362,7 +356,7 @@ fn account_ledger_subtract_lock_amount_correct_zero_cleanup() {
     assert!(acc_ledger
         .subtract_lock_amount(acc_ledger.active_locked_amount(), unlock_era)
         .is_ok());
-    assert_eq!(acc_ledger.locked.len(), 3);
+    assert_eq!(acc_ledger.locked.0.len(), 3);
     assert!(acc_ledger.active_locked_amount().is_zero());
 }
 
@@ -370,8 +364,7 @@ fn account_ledger_subtract_lock_amount_correct_zero_cleanup() {
 fn account_ledger_subtract_lock_amount_zero_entry_between_two_non_zero() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     let (first_lock_amount, second_lock_amount, third_lock_amount) = (17, 23, 29);
     let (first_lock_era, second_lock_era, third_lock_era) = (1, 3, 7);
@@ -386,7 +379,7 @@ fn account_ledger_subtract_lock_amount_zero_entry_between_two_non_zero() {
     assert!(acc_ledger
         .add_lock_amount(third_lock_amount, third_lock_era)
         .is_ok());
-    assert_eq!(acc_ledger.locked.len(), 3);
+    assert_eq!(acc_ledger.locked.0.len(), 3);
 
     // Unlock everything for the era right before the latest chunk era
     // This should result in scenario like:
@@ -394,31 +387,31 @@ fn account_ledger_subtract_lock_amount_zero_entry_between_two_non_zero() {
     assert!(acc_ledger
         .subtract_lock_amount(first_lock_amount + second_lock_amount, third_lock_era - 1)
         .is_ok());
-    assert_eq!(acc_ledger.locked.len(), 4);
+    assert_eq!(acc_ledger.locked.0.len(), 4);
     assert_eq!(acc_ledger.active_locked_amount(), third_lock_amount);
     assert_eq!(
-        acc_ledger.locked[0],
+        acc_ledger.locked.0[0],
         LockedChunk {
             amount: first_lock_amount,
             era: first_lock_era
         }
     );
     assert_eq!(
-        acc_ledger.locked[1],
+        acc_ledger.locked.0[1],
         LockedChunk {
             amount: first_lock_amount + second_lock_amount,
             era: second_lock_era
         }
     );
     assert_eq!(
-        acc_ledger.locked[2],
+        acc_ledger.locked.0[2],
         LockedChunk {
             amount: 0,
             era: third_lock_era - 1
         }
     );
     assert_eq!(
-        acc_ledger.locked[3],
+        acc_ledger.locked.0[3],
         LockedChunk {
             amount: third_lock_amount,
             era: third_lock_era
@@ -430,8 +423,7 @@ fn account_ledger_subtract_lock_amount_zero_entry_between_two_non_zero() {
 fn account_ledger_subtract_lock_amount_consecutive_zeroes_merged() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     // Prepare scenario with 3 locked chunks, where the middle one is zero
     let lock_amount = 61;
@@ -439,23 +431,22 @@ fn account_ledger_subtract_lock_amount_consecutive_zeroes_merged() {
     assert!(acc_ledger.add_lock_amount(lock_amount, 2).is_ok());
     assert!(acc_ledger.subtract_lock_amount(lock_amount, 5).is_ok());
     assert!(acc_ledger.add_lock_amount(lock_amount, last_era).is_ok());
-    let second_chunk = acc_ledger.locked[1];
+    let second_chunk = acc_ledger.locked.0[1];
 
     // Unlock everything in the era right before the latest chunk era, but that chunk should not persist
     // [61, 0, 61] --> [61, 0, 0, 61] shouldn't happen since the 2nd zero is redundant.
     assert!(acc_ledger
         .subtract_lock_amount(lock_amount, last_era - 1)
         .is_ok());
-    assert_eq!(acc_ledger.locked.len(), 3);
-    assert_eq!(acc_ledger.locked[1], second_chunk);
+    assert_eq!(acc_ledger.locked.0.len(), 3);
+    assert_eq!(acc_ledger.locked.0[1], second_chunk);
 }
 
 #[test]
 fn account_ledger_add_unlocking_chunk_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     // Sanity check scenario
     // Cannot reduce if there is nothing locked, should be a noop
@@ -518,8 +509,7 @@ fn account_ledger_add_unlocking_chunk_works() {
 fn active_stake_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     // Sanity check
     assert!(acc_ledger.active_stake(0).is_zero());
@@ -540,8 +530,7 @@ fn active_stake_works() {
 fn unlockable_amount_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger =
-        AccountLedger::<Balance, BlockNumber, LockedDummy, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
 
     // Sanity check scenario
     assert!(acc_ledger.unlockable_amount(0).is_zero());
@@ -569,7 +558,7 @@ fn unlockable_amount_works() {
     assert_eq!(acc_ledger.unlockable_amount(stake_period + 2), lock_amount);
 
     // Absurd example, for the sake of completeness - staked without any lock
-    acc_ledger.locked = Default::default();
+    acc_ledger.locked.0 = Default::default();
     assert!(acc_ledger.unlockable_amount(stake_period).is_zero());
     assert!(acc_ledger.unlockable_amount(stake_period - 2).is_zero());
     assert!(acc_ledger.unlockable_amount(stake_period + 1).is_zero());
@@ -577,7 +566,7 @@ fn unlockable_amount_works() {
 
 #[test]
 fn era_info_manipulation_works() {
-    let mut era_info = EraInfo::<Balance>::default();
+    let mut era_info = EraInfo::default();
 
     // Sanity check
     assert!(era_info.total_locked.is_zero());

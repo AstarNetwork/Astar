@@ -32,7 +32,7 @@ use std::collections::HashMap;
 pub(crate) struct MemorySnapshot {
     active_protocol_state: ProtocolState<BlockNumberFor<Test>>,
     next_dapp_id: DAppId,
-    current_era_info: EraInfo<BalanceOf<Test>>,
+    current_era_info: EraInfo,
     integrated_dapps: HashMap<
         <Test as pallet_dapp_staking::Config>::SmartContract,
         DAppInfo<<Test as frame_system::Config>::AccountId>,

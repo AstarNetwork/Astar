@@ -7109,6 +7109,7 @@ dependencies = [
 name = "pallet-dapp-staking-v3"
 version = "0.0.1-alpha"
 dependencies = [
+ "astar-primitives",
  "frame-support",
  "frame-system",
  "num-traits",
