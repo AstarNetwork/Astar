@@ -19,10 +19,13 @@
 use crate::{AccountId, AssetId};
 
 use frame_support::ensure;
+use sp_core::H160;
 use sp_std::marker::PhantomData;
 
 use pallet_assets::AssetsCallback;
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
+
+pub type EvmAddress = H160;
 
 /// Revert opt code. It's inserted at the precompile addresses, to make them functional in EVM.
 pub const EVM_REVERT_CODE: &[u8] = &[0x60, 0x00, 0x60, 0x00, 0xfd];
