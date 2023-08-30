@@ -104,7 +104,8 @@ where
                         }
                     }
                 };
-                let call_result = XC::call(xvm_context, vm_id, source.clone(), to, input, value);
+                let call_result =
+                    XC::call(xvm_context, vm_id, source.clone(), to, input, value, None);
 
                 let actual_weight = match call_result {
                     Ok(ref info) => info.used_weight,

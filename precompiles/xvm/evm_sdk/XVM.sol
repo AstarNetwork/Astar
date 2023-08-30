@@ -17,6 +17,7 @@ interface XVM {
         uint8 vm_id,
         bytes calldata to,
         bytes calldata input,
-        uint256 value
+        uint256 value,
+        uint256 storage_deposit_limit
     ) external payable returns (bool success, bytes memory data);
 }

@@ -111,8 +111,18 @@ where
         target: Vec<u8>,
         input: Vec<u8>,
         value: Balance,
+        storage_deposit_limit: Option<Balance>,
     ) -> CallResult {
-        Pallet::<T>::do_call(context, vm_id, source, target, input, value, false)
+        Pallet::<T>::do_call(
+            context,
+            vm_id,
+            source,
+            target,
+            input,
+            value,
+            storage_deposit_limit,
+            false,
+        )
     }
 }
 
@@ -128,6 +138,7 @@ where
         target: Vec<u8>,
         input: Vec<u8>,
         value: Balance,
+        storage_deposit_limit: Option<Balance>,
         skip_execution: bool,
     ) -> CallResult {
         let overheads = match vm_id {
@@ -153,6 +164,7 @@ where
                 input,
                 value,
                 overheads,
+                storage_deposit_limit,
                 skip_execution,
             ),
             VmId::Wasm => Pallet::<T>::wasm_call(
@@ -162,6 +174,7 @@ where
                 input,
                 value,
                 overheads,
+                storage_deposit_limit,
                 skip_execution,
             ),
         };
@@ -180,6 +193,7 @@ where
         input: Vec<u8>,
         value: Balance,
         overheads: Weight,
+        _storage_deposit_limit: Option<Balance>,
         skip_execution: bool,
     ) -> CallResult {
         log::trace!(
@@ -267,6 +281,7 @@ where
         input: Vec<u8>,
         value: Balance,
         overheads: Weight,
+        storage_deposit_limit: Option<Balance>,
         skip_execution: bool,
     ) -> CallResult {
         log::trace!(
@@ -295,7 +310,7 @@ where
             dest,
             value,
             weight_limit,
-            None,
+            storage_deposit_limit,
             input,
             DebugInfo::Skip,
             CollectEvents::Skip,
@@ -327,7 +342,17 @@ where
         target: Vec<u8>,
         input: Vec<u8>,
         value: Balance,
+        storage_deposit_limit: Option<Balance>,
     ) -> CallResult {
-        Self::do_call(context, vm_id, source, target, input, value, true)
+        Self::do_call(
+            context,
+            vm_id,
+            source,
+            target,
+            input,
+            value,
+            storage_deposit_limit,
+            true,
+        )
     }
 }
