@@ -769,6 +769,7 @@ fn calling_wasm_from_evm_works_if_sufficient_storage_deposit_limit() {
             0,
             Weight::from_parts(10_000_000_000, 1024 * 1024),
             None,
+            // `get` selector
             hex::decode("0000002b").expect("invalid selector hex"),
             DebugInfo::Skip,
             CollectEvents::Skip,
