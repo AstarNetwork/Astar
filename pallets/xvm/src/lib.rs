@@ -37,8 +37,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+use alloc::format;
+
+use fp_evm::ExitReason;
 use frame_support::{ensure, traits::Currency, weights::Weight};
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
+use pallet_contracts_primitives::ReturnFlags;
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
 use sp_core::{H160, U256};
@@ -49,7 +54,10 @@ use astar_primitives::{
     ethereum_checked::{
         AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, EthereumTxInput,
     },
-    xvm::{CallError, CallErrorWithWeight, CallInfo, CallResult, Context, VmId, XvmCall},
+    xvm::{
+        CallFailure, CallOutput, CallResult, Context, FailureError::*, FailureRevert::*, VmId,
+        XvmCall,
+    },
     Balance,
 };
 
@@ -129,18 +137,12 @@ where
 
         ensure!(
             context.source_vm_id != vm_id,
-            CallErrorWithWeight {
-                error: CallError::SameVmCallDenied,
-                used_weight: overheads,
-            }
+            CallFailure::error(SameVmCallDenied, overheads)
         );
 
         // Set `IN_XVM` to true & check reentrance.
         if IN_XVM.with(|in_xvm| in_xvm.replace(true)) {
-            return Err(CallErrorWithWeight {
-                error: CallError::ReentranceDenied,
-                used_weight: overheads,
-            });
+            return Err(CallFailure::error(ReentranceDenied, overheads));
         }
 
         let res = match vm_id {
@@ -188,20 +190,12 @@ where
 
         ensure!(
             target.len() == H160::len_bytes(),
-            CallErrorWithWeight {
-                error: CallError::InvalidTarget,
-                used_weight: overheads,
-            }
+            CallFailure::revert(InvalidTarget, overheads)
         );
-        let target_decoded =
-            Decode::decode(&mut target.as_ref()).map_err(|_| CallErrorWithWeight {
-                error: CallError::InvalidTarget,
-                used_weight: overheads,
-            })?;
-        let bounded_input = EthereumTxInput::try_from(input).map_err(|_| CallErrorWithWeight {
-            error: CallError::InputTooLarge,
-            used_weight: overheads,
-        })?;
+        let target_decoded = Decode::decode(&mut target.as_ref())
+            .map_err(|_| CallFailure::revert(InvalidTarget, overheads))?;
+        let bounded_input = EthereumTxInput::try_from(input)
+            .map_err(|_| CallFailure::revert(InputTooLarge, overheads))?;
 
         let value_u256 = U256::from(value);
         // With overheads, less weight is available.
@@ -220,10 +214,7 @@ where
         // Note the skip execution check should be exactly before `T::EthereumTransact::xvm_transact`
         // to benchmark the correct overheads.
         if skip_execution {
-            return Ok(CallInfo {
-                output: vec![],
-                used_weight: overheads,
-            });
+            return Ok(CallOutput::new(vec![], overheads));
         }
 
         let transact_result = T::EthereumTransact::xvm_transact(source, tx);
@@ -232,28 +223,41 @@ where
             "EVM call result: {:?}", transact_result,
         );
 
-        transact_result
-            .map(|(post_dispatch_info, call_info)| {
+        match transact_result {
+            Ok((post_dispatch_info, call_info)) => {
                 let used_weight = post_dispatch_info
                     .actual_weight
                     .unwrap_or_default()
                     .saturating_add(overheads);
-                CallInfo {
-                    output: call_info.value,
-                    used_weight,
+                match call_info.exit_reason {
+                    ExitReason::Succeed(_) => Ok(CallOutput::new(call_info.value, used_weight)),
+                    ExitReason::Revert(_) => {
+                        // On revert, the `call_info.value` is the encoded error data. Refer to Contract
+                        // ABI specification for details. https://docs.soliditylang.org/en/latest/abi-spec.html#errors
+                        Err(CallFailure::revert(VmRevert(call_info.value), used_weight))
+                    }
+                    ExitReason::Error(err) => Err(CallFailure::error(
+                        VmError(format!("EVM call error: {:?}", err).into()),
+                        used_weight,
+                    )),
+                    ExitReason::Fatal(err) => Err(CallFailure::error(
+                        VmError(format!("EVM call error: {:?}", err).into()),
+                        used_weight,
+                    )),
                 }
-            })
-            .map_err(|e| {
+            }
+            Err(e) => {
                 let used_weight = e
                     .post_info
                     .actual_weight
                     .unwrap_or_default()
                     .saturating_add(overheads);
-                CallErrorWithWeight {
-                    error: CallError::ExecutionFailed(Into::<&str>::into(e.error).into()),
+                Err(CallFailure::error(
+                    VmError(format!("EVM call error: {:?}", e.error).into()),
                     used_weight,
-                }
-            })
+                ))
+            }
+        }
     }
 
     fn wasm_call(
@@ -272,10 +276,7 @@ where
         );
 
         let dest = {
-            let error = CallErrorWithWeight {
-                error: CallError::InvalidTarget,
-                used_weight: overheads,
-            };
+            let error = CallFailure::revert(InvalidTarget, overheads);
             let decoded = Decode::decode(&mut target.as_ref()).map_err(|_| error.clone())?;
             T::Lookup::lookup(decoded).map_err(|_| error)
         }?;
@@ -286,10 +287,7 @@ where
         // Note the skip execution check should be exactly before `pallet_contracts::bare_call`
         // to benchmark the correct overheads.
         if skip_execution {
-            return Ok(CallInfo {
-                output: vec![],
-                used_weight: overheads,
-            });
+            return Ok(CallOutput::new(vec![], overheads));
         }
 
         let call_result = pallet_contracts::Pallet::<T>::bare_call(
@@ -307,14 +305,17 @@ where
 
         let used_weight = call_result.gas_consumed.saturating_add(overheads);
         match call_result.result {
-            Ok(success) => Ok(CallInfo {
-                output: success.data,
+            Ok(val) => {
+                if val.flags.contains(ReturnFlags::REVERT) {
+                    Err(CallFailure::revert(VmRevert(val.data), used_weight))
+                } else {
+                    Ok(CallOutput::new(val.data, used_weight))
+                }
+            }
+            Err(error) => Err(CallFailure::error(
+                VmError(format!("WASM call error: {:?}", error).into()),
                 used_weight,
-            }),
-            Err(error) => Err(CallErrorWithWeight {
-                error: CallError::ExecutionFailed(Into::<&str>::into(error).into()),
-                used_weight,
-            }),
+            )),
         }
     }
 

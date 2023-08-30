@@ -18,9 +18,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+use alloc::format;
+
 use astar_primitives::xvm::{Context, VmId, XvmCall};
 use frame_support::dispatch::Encode;
-use pallet_contracts::chain_extension::{ChainExtension, Environment, Ext, InitState, RetVal};
+use pallet_contracts::chain_extension::{
+    ChainExtension, Environment, Ext, InitState, RetVal, ReturnFlags,
+};
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
 use xvm_chain_extension_types::{XvmCallArgs, XvmExecutionResult};
@@ -92,9 +97,10 @@ where
                     match TryInto::<VmId>::try_into(vm_id) {
                         Ok(id) => id,
                         Err(err) => {
-                            // TODO: Propagate error
-                            let result = Into::<XvmExecutionResult>::into(err);
-                            return Ok(RetVal::Converging(result.into()));
+                            return Ok(RetVal::Diverging {
+                                flags: ReturnFlags::REVERT,
+                                data: format!("{:?}", err).into(),
+                            });
                         }
                     }
                 };
@@ -124,9 +130,12 @@ where
                             "err: {:?}", err
                         );
 
-                        // TODO Propagate error
-                        let result = Into::<XvmExecutionResult>::into(err.error);
-                        Ok(RetVal::Converging(result.into()))
+                        // `Diverging` is used instead of `Err` to make sure the control
+                        // doesn't return to the caller.
+                        Ok(RetVal::Diverging {
+                            flags: ReturnFlags::REVERT,
+                            data: format!("{:?}", err).into(),
+                        })
                     }
                 }
             }

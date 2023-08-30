@@ -19,8 +19,6 @@
 use crate::mock::*;
 use crate::*;
 
-use astar_primitives::xvm::CallError;
-use parity_scale_codec::Encode;
 use precompile_utils::testing::*;
 use precompile_utils::EvmDataWriter;
 use sp_core::U256;
@@ -69,17 +67,15 @@ fn correct_arguments_works() {
                 EvmDataWriter::new_with_selector(Action::XvmCall)
                     .write(0x1Fu8)
                     .write(Bytes(b"".to_vec()))
-                    .write(Bytes(b"".to_vec()))
+                    .write(
+                        hex::decode("0000000000000000000000000000000000000000")
+                            .expect("invalid hex"),
+                    )
                     .write(U256::one())
                     .build(),
             )
             .expect_no_logs()
-            .execute_returns(
-                EvmDataWriter::new()
-                    .write(false) // the XVM call should succeed but the internal should fail
-                    .write(Bytes(CallError::InvalidTarget.encode()))
-                    .build(),
-            );
+            .execute_some();
     })
 }
 

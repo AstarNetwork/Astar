@@ -48,10 +48,7 @@ fn calling_into_same_vm_is_not_allowed() {
                 input.clone(),
                 value
             ),
-            CallErrorWithWeight {
-                error: CallError::SameVmCallDenied,
-                used_weight: evm_used_weight
-            },
+            CallFailure::error(SameVmCallDenied, evm_used_weight,),
         );
 
         // Calling WASM from WASM
@@ -65,10 +62,7 @@ fn calling_into_same_vm_is_not_allowed() {
             weights::SubstrateWeight::<TestRuntime>::wasm_call_overheads();
         assert_noop!(
             Xvm::call(wasm_context, wasm_vm_id, ALICE, wasm_target, input, value),
-            CallErrorWithWeight {
-                error: CallError::SameVmCallDenied,
-                used_weight: wasm_used_weight
-            },
+            CallFailure::error(SameVmCallDenied, wasm_used_weight,),
         );
     });
 }
@@ -94,18 +88,12 @@ fn evm_call_fails_if_target_not_h160() {
                 input.clone(),
                 value
             ),
-            CallErrorWithWeight {
-                error: CallError::InvalidTarget,
-                used_weight
-            },
+            CallFailure::revert(InvalidTarget, used_weight,),
         );
 
         assert_noop!(
             Xvm::call(context, vm_id, ALICE, vec![1, 2, 3], input, value),
-            CallErrorWithWeight {
-                error: CallError::InvalidTarget,
-                used_weight
-            },
+            CallFailure::revert(InvalidTarget, used_weight,),
         );
     });
 }
@@ -131,10 +119,7 @@ fn evm_call_fails_if_input_too_large() {
                 vec![1; 65_537],
                 value
             ),
-            CallErrorWithWeight {
-                error: CallError::InputTooLarge,
-                used_weight
-            },
+            CallFailure::revert(InputTooLarge, used_weight,),
         );
     });
 }
@@ -193,10 +178,7 @@ fn wasm_call_fails_if_invalid_target() {
 
         assert_noop!(
             Xvm::call(context, vm_id, ALICE, target.encode(), input, value),
-            CallErrorWithWeight {
-                error: CallError::InvalidTarget,
-                used_weight
-            },
+            CallFailure::revert(InvalidTarget, used_weight,),
         );
     });
 }
