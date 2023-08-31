@@ -30,7 +30,7 @@ use frame_system::{ensure_signed, pallet_prelude::*};
 use pallet_evm::AddressMapping;
 use sp_std::marker::PhantomData;
 
-use pallet::*;
+pub use pallet::*;
 
 mod mock;
 mod tests;
