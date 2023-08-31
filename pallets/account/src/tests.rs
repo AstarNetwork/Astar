@@ -21,16 +21,46 @@
 use super::*;
 use mock::*;
 
+use ethers::{
+    contract::{Eip712, EthAbiType},
+    core::types::{transaction::eip712::Eip712, Bytes},
+};
+use parity_scale_codec::Encode;
+
 #[test]
-fn test() {
+fn eip712_signature_verify_works() {
+    /// EIP712 Payload struct
+    #[derive(Eip712, EthAbiType, Clone)]
+    #[eip712(
+        name = "Astar EVM Claim",
+        version = "1",
+        chain_id = 1024,
+        // mock genisis hash
+        raw_salt = "0x4545454545454545454545454545454545454545454545454545454545454545"
+    )]
+    struct Claim {
+        substrate_address: Bytes,
+    }
+
     ExtBuilder::default().build().execute_with(|| {
-        println!(
-            "0x{}",
-            hex::encode(
-                <mock::TestRuntime as pallet::Config>::ClaimSignature::build_signing_payload(
-                    &ALICE
-                )
-            )
+        let claim = Claim {
+            substrate_address: ALICE.encode().into(),
+        };
+
+        let claim_hash = EIP712Signature::<TestRuntime>::build_signing_payload(&ALICE);
+        // assert signing payload is correct
+        assert_eq!(
+            claim.encode_eip712().unwrap(),
+            claim_hash,
+            "signing payload should match"
+        );
+
+        // sign the payload
+        let sig = Accounts::eth_sign_prehash(&claim_hash, &alice_secret());
+        assert_eq!(
+            Some(Accounts::eth_address(&alice_secret())),
+            EIP712Signature::<TestRuntime>::verify_signature(&ALICE, &sig),
+            "signature verification should work"
         );
     });
 }

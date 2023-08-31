@@ -20,7 +20,6 @@
 
 use super::*;
 use crate as pallet_account;
-use astar_primitives::ethereum_checked::AccountMapping;
 use frame_support::{
     construct_runtime, parameter_types,
     sp_io::TestExternalities,
@@ -28,11 +27,11 @@ use frame_support::{
     weights::Weight,
 };
 use pallet_ethereum::PostLogContent;
-use pallet_evm::FeeCalculator;
-use sp_io::hashing::blake2_256;
+use pallet_evm::{FeeCalculator, HashedAddressMapping};
+use sp_core::{keccak_256, H160, H256, U256};
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{AccountIdLookup, BlakeTwo256},
     AccountId32, ConsensusEngineId,
 };
 
@@ -52,7 +51,7 @@ impl frame_system::Config for TestRuntime {
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
+    type Lookup = (AccountIdLookup<Self::AccountId, ()>, Accounts);
     type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU64<250>;
@@ -61,7 +60,7 @@ impl frame_system::Config for TestRuntime {
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
-    type OnKilledAccount = ();
+    type OnKilledAccount = KillAccountMapping<Self>;
     type SystemWeightInfo = ();
     type SS58Prefix = ();
     type OnSetCode = ();
@@ -108,41 +107,6 @@ impl FindAuthor<H160> for MockFindAuthor {
     }
 }
 
-pub struct MockAddressMapping;
-impl AddressMapping<AccountId32> for MockAddressMapping {
-    fn into_account_id(address: H160) -> AccountId32 {
-        if address == ALICE_H160 {
-            return ALICE;
-        }
-        if address == BOB_H160 {
-            return BOB;
-        }
-        if address == CHARLIE_H160 {
-            return CHARLIE;
-        }
-
-        return pallet_evm::HashedAddressMapping::<BlakeTwo256>::into_account_id(address);
-    }
-}
-
-pub struct MockAccountMapping;
-impl AccountMapping<AccountId32> for MockAccountMapping {
-    fn into_h160(account_id: AccountId) -> H160 {
-        if account_id == ALICE {
-            return ALICE_H160;
-        }
-        if account_id == BOB {
-            return BOB_H160;
-        }
-        if account_id == CHARLIE {
-            return CHARLIE_H160;
-        }
-
-        let data = (b"evm:", account_id);
-        return H160::from_slice(&data.using_encoded(blake2_256)[0..20]);
-    }
-}
-
 parameter_types! {
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
     pub const BlockGasLimit: U256 = U256::MAX;
@@ -155,7 +119,7 @@ impl pallet_evm::Config for TestRuntime {
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<TestRuntime>;
     type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
-    type AddressMapping = MockAddressMapping;
+    type AddressMapping = Accounts;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
@@ -189,7 +153,7 @@ parameter_types! {
 impl pallet_account::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type DefaultAddressMapping = MockAddressMapping;
+    type DefaultAddressMapping = HashedAddressMapping<BlakeTwo256>;
     type DefaultAccountMapping = HashedAccountMapping<BlakeTwo256>;
     type ChainId = ConstU64<1024>;
     type ClaimSignature = EIP712Signature<Self>;
@@ -202,6 +166,18 @@ pub(crate) type Balance = u128;
 pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
 pub const BOB: AccountId32 = AccountId32::new([1u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([2u8; 32]);
+
+pub fn alice_secret() -> libsecp256k1::SecretKey {
+    libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
+}
+
+// pub fn bob_secret() -> libsecp256k1::SecretKey {
+// 	libsecp256k1::SecretKey::parse(&keccak_256(b"Bob")).unwrap()
+// }
+
+// pub fn charlie_secret() -> libsecp256k1::SecretKey {
+// 	libsecp256k1::SecretKey::parse(&keccak_256(b"Charlie")).unwrap()
+// }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
@@ -221,10 +197,6 @@ construct_runtime!(
         Accounts: pallet_account,
     }
 );
-
-pub const ALICE_H160: H160 = H160::repeat_byte(1);
-pub const BOB_H160: H160 = H160::repeat_byte(2);
-pub const CHARLIE_H160: H160 = H160::repeat_byte(3);
 
 pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
