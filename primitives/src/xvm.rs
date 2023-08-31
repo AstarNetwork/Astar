@@ -157,6 +157,7 @@ pub trait XvmCall<AccountId> {
     /// - `target`: Target contract address.
     /// - `input`: call input data.
     /// - `value`: value to transfer.
+    /// - `storage_deposit_limit`: storage deposit limit for wasm calls.
     fn call(
         context: Context,
         vm_id: VmId,
@@ -164,5 +165,6 @@ pub trait XvmCall<AccountId> {
         target: Vec<u8>,
         input: Vec<u8>,
         value: Balance,
+        storage_deposit_limit: Option<Balance>,
     ) -> CallResult;
 }
