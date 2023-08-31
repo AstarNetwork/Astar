@@ -20,10 +20,10 @@ use crate::test::mock::*;
 use crate::test::testing_utils::*;
 use crate::{
     pallet as pallet_dapp_staking, ActiveProtocolState, DAppId, Error, IntegratedDApps, Ledger,
-    NextDAppId, StakeInfo,
+    NextDAppId, SparseBoundedAmountEraVec, StakeChunk,
 };
 
-use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
+use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get, BoundedVec};
 use sp_runtime::traits::Zero;
 
 #[test]
@@ -422,13 +422,17 @@ fn unlock_with_amount_higher_than_avaiable_is_ok() {
         advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
         assert_lock(account, lock_amount);
 
-        // Hacky, maybe improve later when staking is implemented?
+        // TODO: Hacky, maybe improve later when staking is implemented?
         let stake_amount = 91;
         Ledger::<Test>::mutate(&account, |ledger| {
-            ledger.staked = StakeInfo {
-                amount: stake_amount,
-                period: ActiveProtocolState::<Test>::get().period,
-            }
+            ledger.staked = SparseBoundedAmountEraVec(
+                BoundedVec::try_from(vec![StakeChunk {
+                    amount: stake_amount,
+                    era: ActiveProtocolState::<Test>::get().era,
+                }])
+                .expect("Only one chunk so creation should succeed."),
+            );
+            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period);
         });
 
         // Try to unlock more than is available, due to active staked amount
@@ -483,12 +487,16 @@ fn unlock_everything_with_active_stake_fails() {
         let minimum_locked_amount: Balance =
             <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
         let stake_amount = minimum_locked_amount - 1;
-        // Hacky, maybe improve later when staking is implemented?
+        // TODO: Hacky, maybe improve later when staking is implemented?
         Ledger::<Test>::mutate(&account, |ledger| {
-            ledger.staked = StakeInfo {
-                amount: stake_amount,
-                period: ActiveProtocolState::<Test>::get().period,
-            }
+            ledger.staked = SparseBoundedAmountEraVec(
+                BoundedVec::try_from(vec![StakeChunk {
+                    amount: stake_amount,
+                    era: ActiveProtocolState::<Test>::get().era,
+                }])
+                .expect("Only one chunk so creation should succeed."),
+            );
+            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period);
         });
 
         // Try to unlock more than is available, due to active staked amount
@@ -514,12 +522,16 @@ fn unlock_with_zero_amount_fails() {
         );
 
         // Stake everything, so available unlock amount is always zero
-        // Hacky, maybe improve later when staking is implemented?
+        // TODO: Hacky, maybe improve later when staking is implemented?
         Ledger::<Test>::mutate(&account, |ledger| {
-            ledger.staked = StakeInfo {
-                amount: lock_amount,
-                period: ActiveProtocolState::<Test>::get().period,
-            }
+            ledger.staked = SparseBoundedAmountEraVec(
+                BoundedVec::try_from(vec![StakeChunk {
+                    amount: lock_amount,
+                    era: ActiveProtocolState::<Test>::get().era,
+                }])
+                .expect("Only one chunk so creation should succeed."),
+            );
+            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period);
         });
 
         // Try to unlock anything, expect zero amount error

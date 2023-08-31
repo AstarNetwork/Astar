@@ -76,6 +76,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Currency used for staking.
+        /// TODO: remove usage of deprecated LockableCurrency trait and use the new freeze approach
         type Currency: LockableCurrency<
             Self::AccountId,
             Moment = Self::BlockNumber,
@@ -94,6 +95,7 @@ pub mod pallet {
         type MaxNumberOfContracts: Get<DAppId>;
 
         /// Maximum number of locked chunks that can exist per account at a time.
+        // TODO: should this just be hardcoded to 2? Nothing else makes sense really - current era and next era are required.
         #[pallet::constant]
         type MaxLockedChunks: Get<u32>;
 
@@ -108,6 +110,10 @@ pub mod pallet {
         /// Amount of blocks that need to pass before unlocking chunks can be claimed by the owner.
         #[pallet::constant]
         type UnlockingPeriod: Get<BlockNumberFor<Self>>;
+
+        /// Maximum number of staking chunks that can exist per account at a time.
+        #[pallet::constant]
+        type MaxStakingChunks: Get<u32>;
     }
 
     #[pallet::event]
@@ -137,13 +143,13 @@ pub mod pallet {
         /// Account has locked some amount into dApp staking.
         Locked {
             account: T::AccountId,
-            amount: BalanceOf<T>,
+            amount: Balance,
         },
         // TODO: do we also add unlocking block info to the event?
         /// Account has started the unlocking process for some amount.
         Unlocking {
             account: T::AccountId,
-            amount: BalanceOf<T>,
+            amount: Balance,
         },
     }
 
@@ -395,10 +401,7 @@ pub mod pallet {
         /// caller should claim pending rewards, before retrying to lock additional funds.
         #[pallet::call_index(5)]
         #[pallet::weight(Weight::zero())]
-        pub fn lock(
-            origin: OriginFor<T>,
-            #[pallet::compact] amount: BalanceOf<T>,
-        ) -> DispatchResult {
+        pub fn lock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -441,10 +444,7 @@ pub mod pallet {
         /// If the remaining locked amount would take the account below the minimum locked amount, everything is unlocked.
         #[pallet::call_index(6)]
         #[pallet::weight(Weight::zero())]
-        pub fn unlock(
-            origin: OriginFor<T>,
-            #[pallet::compact] amount: BalanceOf<T>,
-        ) -> DispatchResult {
+        pub fn unlock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 

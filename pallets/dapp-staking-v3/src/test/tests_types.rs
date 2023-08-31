@@ -47,7 +47,9 @@ fn protocol_state_default() {
 fn account_ledger_default() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     assert!(acc_ledger.is_empty());
     assert!(acc_ledger.active_locked_amount().is_zero());
@@ -59,7 +61,9 @@ fn account_ledger_default() {
 fn account_ledger_add_lock_amount_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     // First step, sanity checks
     let first_era = 1;
@@ -115,7 +119,9 @@ fn account_ledger_add_lock_amount_works() {
 fn account_ledger_subtract_lock_amount_basic_usage_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     // Sanity check scenario
     // Cannot reduce if there is nothing locked, should be a noop
@@ -199,7 +205,9 @@ fn account_ledger_subtract_lock_amount_basic_usage_works() {
 fn account_ledger_subtract_lock_amount_overflow_fails() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     let first_lock_amount = 17 * 19;
     let era = 1;
@@ -245,7 +253,9 @@ fn account_ledger_subtract_lock_amount_overflow_fails() {
 fn account_ledger_subtract_lock_amount_advanced_example_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     // Prepare an example where we have two non-consecutive entries, and we unlock in the era right before the second entry.
     // This covers a scenario where user has called `lock` in the current era,
@@ -291,7 +301,9 @@ fn account_ledger_subtract_lock_amount_advanced_example_works() {
 fn account_ledger_subtract_lock_amount_with_only_one_locked_chunk() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     // Scenario: user locks for era 2 while era 1 is active, immediately followed by unlock call.
     // Locked amount should be updated for the next era, but active locked amount should be unchanged (zero).
@@ -318,7 +330,9 @@ fn account_ledger_subtract_lock_amount_with_only_one_locked_chunk() {
 fn account_ledger_subtract_lock_amount_correct_zero_cleanup() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     // Ensure that zero entries are cleaned up correctly when required.
     // There are a couple of distinct scenarios:
@@ -364,7 +378,9 @@ fn account_ledger_subtract_lock_amount_correct_zero_cleanup() {
 fn account_ledger_subtract_lock_amount_zero_entry_between_two_non_zero() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     let (first_lock_amount, second_lock_amount, third_lock_amount) = (17, 23, 29);
     let (first_lock_era, second_lock_era, third_lock_era) = (1, 3, 7);
@@ -423,7 +439,9 @@ fn account_ledger_subtract_lock_amount_zero_entry_between_two_non_zero() {
 fn account_ledger_subtract_lock_amount_consecutive_zeroes_merged() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     // Prepare scenario with 3 locked chunks, where the middle one is zero
     let lock_amount = 61;
@@ -446,7 +464,9 @@ fn account_ledger_subtract_lock_amount_consecutive_zeroes_merged() {
 fn account_ledger_add_unlocking_chunk_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     // Sanity check scenario
     // Cannot reduce if there is nothing locked, should be a noop
@@ -509,7 +529,9 @@ fn account_ledger_add_unlocking_chunk_works() {
 fn active_stake_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     // Sanity check
     assert!(acc_ledger.active_stake(0).is_zero());
@@ -518,7 +540,11 @@ fn active_stake_works() {
     // Period matches
     let amount = 29;
     let period = 5;
-    acc_ledger.staked = StakeInfo { amount, period };
+    acc_ledger.staked = SparseBoundedAmountEraVec(
+        BoundedVec::try_from(vec![StakeChunk { amount, era: 1 }])
+            .expect("Only one chunk so creation should succeed."),
+    );
+    acc_ledger.staked_period = Some(period);
     assert_eq!(acc_ledger.active_stake(period), amount);
 
     // Period doesn't match
@@ -530,7 +556,9 @@ fn active_stake_works() {
 fn unlockable_amount_works() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy>::default();
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
 
     // Sanity check scenario
     assert!(acc_ledger.unlockable_amount(0).is_zero());
@@ -544,10 +572,14 @@ fn unlockable_amount_works() {
     // Some amount is staked, period matches
     let stake_period = 5;
     let stake_amount = 17;
-    acc_ledger.staked = StakeInfo {
-        amount: stake_amount,
-        period: stake_period,
-    };
+    acc_ledger.staked = SparseBoundedAmountEraVec(
+        BoundedVec::try_from(vec![StakeChunk {
+            amount: stake_amount,
+            era: lock_era,
+        }])
+        .expect("Only one chunk so creation should succeed."),
+    );
+    acc_ledger.staked_period = Some(stake_period);
     assert_eq!(
         acc_ledger.unlockable_amount(stake_period),
         lock_amount - stake_amount
