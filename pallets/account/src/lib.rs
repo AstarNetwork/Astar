@@ -22,24 +22,21 @@
 
 use astar_primitives::ethereum_checked::AccountMapping;
 use astar_primitives::evm::EvmAddress;
-use astar_primitives::AccountId;
-use frame_support::traits::OnKilledAccount;
 use frame_support::{
     pallet_prelude::*,
     traits::{Currency, ExistenceRequirement::*, Get, IsType},
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
 use pallet_evm::AddressMapping;
-use precompile_utils::keccak256;
-use sp_core::{keccak_256, Hasher, H160, H256, U256};
-use sp_runtime::traits::{LookupError, StaticLookup, Zero};
-use sp_runtime::MultiAddress;
 use sp_std::marker::PhantomData;
 
 use pallet::*;
 
 mod mock;
 mod tests;
+
+mod impls;
+pub use impls::*;
 
 type SignatureOf<T> = <<T as Config>::ClaimSignature as ClaimSignature>::Signature;
 
@@ -69,8 +66,8 @@ pub trait ClaimSignature {
     /// Signature type, ideally a 512-bit value for ECDSA signatures
     type Signature: Parameter;
 
-    /// Build raw payload (pre-hash) that user will sign.
-    fn build_signing_payload(who: &Self::AccountId) -> Vec<u8>;
+    /// Build raw payload that user will sign (keccack hashed).
+    fn build_signing_payload(who: &Self::AccountId) -> [u8; 32];
     /// Verify the provided signature against the given account.
     fn verify_signature(who: &Self::AccountId, sig: &Self::Signature) -> Option<Self::Address>;
 }
@@ -245,141 +242,26 @@ impl<T: Config> Pallet<T> {
     }
 }
 
-impl<T: Config> AddressManager<T::AccountId, EvmAddress> for Pallet<T> {
-    fn to_account_id(address: &EvmAddress) -> Option<T::AccountId> {
-        NativeAccounts::<T>::get(address)
+impl<T: Config> Pallet<T> {
+    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+    pub fn eth_sign_prehash(prehash: &[u8; 32], secret: &libsecp256k1::SecretKey) -> [u8; 65] {
+        let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(prehash), secret);
+        let mut r = [0u8; 65];
+        r[0..64].copy_from_slice(&sig.serialize()[..]);
+        r[64] = recovery_id.serialize();
+        r
     }
 
-    fn to_account_id_or_default(address: &EvmAddress) -> T::AccountId {
-        NativeAccounts::<T>::get(address).unwrap_or_else(|| {
-            // fallback to default account_id
-            T::DefaultAddressMapping::into_account_id(address.clone())
-        })
+    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+    pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
+        EvmAddress::from_slice(
+            &sp_core::keccak_256(&Self::eth_public(secret).serialize()[1..65])[12..],
+        )
     }
 
-    fn to_default_account_id(address: &EvmAddress) -> T::AccountId {
-        T::DefaultAddressMapping::into_account_id(address.clone())
-    }
-
-    fn to_address(account_id: &T::AccountId) -> Option<EvmAddress> {
-        EvmAccounts::<T>::get(account_id)
-    }
-
-    fn to_address_or_default(account_id: &T::AccountId) -> EvmAddress {
-        EvmAccounts::<T>::get(account_id).unwrap_or_else(|| {
-            // fallback to default account_id
-            T::DefaultAccountMapping::into_h160(account_id.clone())
-        })
-    }
-
-    fn to_default_address(account_id: &T::AccountId) -> EvmAddress {
-        T::DefaultAccountMapping::into_h160(account_id.clone())
-    }
-}
-
-impl<T: Config> AccountMapping<T::AccountId> for Pallet<T> {
-    fn into_h160(account: T::AccountId) -> H160 {
-        <Self as AddressManager<T::AccountId, EvmAddress>>::to_address_or_default(&account)
-    }
-}
-impl<T: Config> AddressMapping<T::AccountId> for Pallet<T> {
-    fn into_account_id(address: H160) -> T::AccountId {
-        <Self as AddressManager<T::AccountId, EvmAddress>>::to_account_id_or_default(&address)
-    }
-}
-
-/// OnKilledAccout hooks implementation for removing storage mapping
-/// for killed accounts
-pub struct KillAccountMapping<T>(PhantomData<T>);
-impl<T: Config> OnKilledAccount<T::AccountId> for KillAccountMapping<T> {
-    fn on_killed_account(who: &T::AccountId) {
-        // remove mapping created by `claim_account` or `get_or_create_evm_address`
-        if let Some(evm_addr) = EvmAccounts::<T>::get(who) {
-            NativeAccounts::<T>::remove(evm_addr);
-            EvmAccounts::<T>::remove(who);
-        }
-    }
-}
-
-/// A lookup implementation returning the `AccountId` from `MultiAddress::Address20` (EVM Address).
-impl<T: Config> StaticLookup for Pallet<T> {
-    type Source = MultiAddress<T::AccountId, ()>;
-    type Target = T::AccountId;
-
-    fn lookup(a: Self::Source) -> Result<Self::Target, LookupError> {
-        match a {
-            MultiAddress::Address20(i) => Ok(
-                <Self as AddressManager<T::AccountId, EvmAddress>>::to_account_id_or_default(
-                    &EvmAddress::from_slice(&i),
-                ),
-            ),
-            _ => Err(LookupError),
-        }
-    }
-
-    fn unlookup(a: Self::Target) -> Self::Source {
-        MultiAddress::Id(a)
-    }
-}
-
-/// EIP-712 compatible signature scheme for verifying ownership of EVM Address
-///
-/// Raw Data = Domain Separator + Type Hash + keccak256(AccountId)
-pub struct EIP712Signature<T: Config>(PhantomData<T>);
-impl<T: Config> ClaimSignature for EIP712Signature<T> {
-    type AccountId = T::AccountId;
-    /// EVM address type
-    type Address = EvmAddress;
-    /// A signature (a 512-bit value, plus 8 bits for recovery ID).
-    type Signature = [u8; 65];
-
-    fn build_signing_payload(who: &Self::AccountId) -> Vec<u8> {
-        let domain_separator = Self::build_domain_separator();
-        let args_hash = Self::build_args_hash(who);
-
-        let mut payload = b"\x19\x01".to_vec();
-        payload.extend_from_slice(&domain_separator);
-        payload.extend_from_slice(&args_hash);
-        payload
-    }
-
-    fn verify_signature(who: &Self::AccountId, sig: &Self::Signature) -> Option<EvmAddress> {
-        let payload = Self::build_signing_payload(who);
-        let payload_hash = keccak_256(&payload);
-
-        sp_io::crypto::secp256k1_ecdsa_recover(sig, &payload_hash)
-            .map(|pubkey| H160::from(H256::from_slice(&keccak_256(&pubkey))))
-            .ok()
-    }
-}
-
-impl<T: Config> EIP712Signature<T> {
-    /// TODO: use hardcoded bytes, configurable via generics
-    fn build_domain_separator() -> [u8; 32] {
-        let mut hash =
-            keccak256!("EIP712Domain(string name,string version,uint256 chainId,bytes32 salt)")
-                .to_vec();
-        hash.extend_from_slice(&keccak256!("Astar EVM Claim")); // name
-        hash.extend_from_slice(&keccak256!("1")); // version
-        hash.extend_from_slice(&(<[u8; 32]>::from(U256::from(T::ChainId::get())))); // chain id
-        hash.extend_from_slice(
-            frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()).as_ref(),
-        ); // genesis block hash
-        keccak_256(hash.as_slice())
-    }
-
-    fn build_args_hash(account: &T::AccountId) -> [u8; 32] {
-        let mut args_hash = keccak256!("Claim(bytes substrateAddress)").to_vec();
-        args_hash.extend_from_slice(&keccak_256(&account.encode()));
-        keccak_256(args_hash.as_slice())
-    }
-}
-
-/// Hashed derive mapping for converting account id to evm address
-pub struct HashedAccountMapping<H>(sp_std::marker::PhantomData<H>);
-impl<H: Hasher<Out = H256>> AccountMapping<AccountId> for HashedAccountMapping<H> {
-    fn into_h160(account: AccountId) -> H160 {
-        let payload = (b"evm:", account);
-        H160::from_slice(&payload.using_encoded(H::hash)[0..20])
+    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+    // Returns an Ethereum public key derived from an Ethereum secret key.
+    pub fn eth_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
+        libsecp256k1::PublicKey::from_secret_key(secret)
     }
 }

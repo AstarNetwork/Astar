@@ -88,6 +88,7 @@ derive_more = { version = "0.99" }
 proc-macro2 = "1.0"
 quote = "1.0"
 syn = { version = "1.0" }
+ethers = { version = "2.0.9", default_features = false }
 
 # Substrate
 # (wasm)
@@ -277,7 +278,7 @@ pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features 
 pallet-xvm = { path = "./pallets/xvm", default-features = false }
 pallet-xcm = { path = "./pallets/pallet-xcm", default-features = false }
 pallet-ethereum-checked = { path = "./pallets/ethereum-checked", default-features = false }
-pallet-account= { path = "./pallets/account", default-features = false }
+pallet-account = { path = "./pallets/account", default-features = false }
 
 astar-primitives = { path = "./primitives", default-features = false }
 
