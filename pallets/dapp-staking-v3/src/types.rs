@@ -516,6 +516,25 @@ where
         self.active_locked_amount()
             .saturating_sub(self.active_stake(current_period))
     }
+
+    /// Claims all of the fully unlocked chunks, and returns the total claimable amount.
+    pub fn claim_unlocked(&mut self, current_block_number: BlockNumber) -> Balance {
+        let mut total_unlocked = Balance::zero();
+
+        // Probably faster approach than partitioning, summing & collecting.
+        let mut i = 0;
+        while i < self.unlocking.len() {
+            let chunk = self.unlocking[i];
+            if chunk.unlock_block <= current_block_number {
+                total_unlocked.saturating_accrue(chunk.amount);
+                self.unlocking.remove(i);
+            } else {
+                i += 1;
+            }
+        }
+
+        total_unlocked
+    }
 }
 
 /// Rewards pool for stakers & dApps
@@ -542,7 +561,8 @@ pub struct EraInfo {
     /// For rewards, this amount isn't relevant for the current era, but only from the next one.
     #[codec(compact)]
     pub total_locked: Balance,
-    /// How much balance is undergoing unlocking process (still counts into locked amount)
+    /// How much balance is undergoing unlocking process.
+    /// This amount still counts into locked amount.
     #[codec(compact)]
     pub unlocking: Balance,
 }
@@ -558,5 +578,10 @@ impl EraInfo {
         self.active_era_locked.saturating_reduce(amount);
         self.total_locked.saturating_reduce(amount);
         self.unlocking.saturating_accrue(amount);
+    }
+
+    /// Update with the new amount that has just been fully unlocked & claimed.
+    pub fn unlocked_claimed(&mut self, amount: Balance) {
+        self.unlocking.saturating_reduce(amount);
     }
 }

@@ -234,7 +234,7 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
             .unlockable_amount(pre_snapshot.active_protocol_state.period)
             .min(amount);
 
-        // When unlocking would take accounn below the minimum lock threshold, unlock everything
+        // When unlocking would take account below the minimum lock threshold, unlock everything
         let locked_amount = pre_ledger.active_locked_amount();
         let min_locked_amount = <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
         if locked_amount.saturating_sub(possible_unlock_amount) < min_locked_amount {
@@ -302,4 +302,37 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
             .saturating_sub(expected_unlock_amount),
         post_era_info.active_era_locked
     );
+}
+
+/// Lock funds into dApp staking and assert success.
+pub(crate) fn assert_claim_unlocked(account: AccountId) {
+    let pre_snapshot = MemorySnapshot::new();
+
+    assert!(
+        pre_snapshot.ledger.contains_key(&account),
+        "Cannot claim unlocked for non-existing ledger."
+    );
+
+    let current_block = System::block_number();
+    // Why would I make it so complex if it can be solved via simple for-loop? xD TODO: simplify this
+    let amount = pre_snapshot.ledger[&account]
+        .clone()
+        .unlocking
+        .into_inner()
+        .iter()
+        .partition::<Vec<UnlockingChunk<BlockNumberFor<Test>>>, _>(|chunk| {
+            chunk.unlock_block <= current_block
+        })
+        .0
+        .iter()
+        .fold(0, |sum, chunk| sum + chunk.amount);
+
+    // Unlock funds
+    assert_ok!(DappStaking::claim_unlocked(RuntimeOrigin::signed(account)));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::ClaimedUnlocked {
+        account,
+        amount: 0,
+    }));
+
+    // continue here
 }

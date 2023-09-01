@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+use frame_support::assert_ok;
+
 use crate::test::mock::*;
 use crate::*;
 
@@ -597,6 +599,43 @@ fn unlockable_amount_works() {
 }
 
 #[test]
+fn claim_unlocked_works() {
+    get_u32_type!(LockedDummy, 5);
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
+
+    // Sanity check scenario
+    assert!(acc_ledger.claim_unlocked(0).is_zero());
+
+    // Add a chunk, assert it can be claimed correctly
+    let amount = 19;
+    let block_number = 1;
+    assert_ok!(acc_ledger.add_unlocking_chunk(amount, block_number));
+    assert!(acc_ledger.claim_unlocked(0).is_zero());
+    assert_eq!(acc_ledger.claim_unlocked(block_number), amount);
+    assert!(acc_ledger.unlocking.is_empty());
+
+    // Add multiple chunks, assert claim works correctly
+    let (amount1, amount2, amount3) = (7, 13, 19);
+    let (block1, block2, block3) = (1, 3, 5);
+
+    // Prepare unlocking chunks
+    assert_ok!(acc_ledger.add_unlocking_chunk(amount1, block1));
+    assert_ok!(acc_ledger.add_unlocking_chunk(amount2, block2));
+    assert_ok!(acc_ledger.add_unlocking_chunk(amount3, block3));
+
+    // Only claim 1 chunk
+    assert_eq!(acc_ledger.claim_unlocked(block1 + 1), amount1);
+    assert_eq!(acc_ledger.unlocking.len(), 2);
+
+    // Claim remaining two chunks
+    assert_eq!(acc_ledger.claim_unlocked(block3 + 1), amount2 + amount3);
+    assert!(acc_ledger.unlocking.is_empty());
+}
+
+#[test]
 fn era_info_manipulation_works() {
     let mut era_info = EraInfo::default();
 
@@ -641,4 +680,10 @@ fn era_info_manipulation_works() {
         era_info_snapshot.active_era_locked - unlock_amount * 2
     );
     assert_eq!(era_info.unlocking, unlock_amount * 2);
+
+    // Claim unlocked chunks
+    let old_era_info = era_info.clone();
+    era_info.unlocked_claimed(1);
+    assert_eq!(era_info.unlocking, old_era_info.unlocking - 1);
+    assert_eq!(era_info.active_era_locked, old_era_info.active_era_locked);
 }

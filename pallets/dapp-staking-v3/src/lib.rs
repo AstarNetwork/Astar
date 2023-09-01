@@ -76,7 +76,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Currency used for staking.
-        /// TODO: remove usage of deprecated LockableCurrency trait and use the new freeze approach
+        /// TODO: remove usage of deprecated LockableCurrency trait and use the new freeze approach. Might require some renaming of Lock to Freeze :)
         type Currency: LockableCurrency<
             Self::AccountId,
             Moment = Self::BlockNumber,
@@ -145,9 +145,13 @@ pub mod pallet {
             account: T::AccountId,
             amount: Balance,
         },
-        // TODO: do we also add unlocking block info to the event?
         /// Account has started the unlocking process for some amount.
         Unlocking {
+            account: T::AccountId,
+            amount: Balance,
+        },
+        /// Account has claimed unlocked amount, removing the lock from it.
+        ClaimedUnlocked {
             account: T::AccountId,
             amount: Balance,
         },
@@ -180,6 +184,8 @@ pub mod pallet {
         TooManyUnlockingChunks,
         /// Remaining stake prevents entire balance of starting the unlocking process.
         RemainingStakePreventsFullUnlock,
+        /// There are no eligible unlocked chunks to claim. This can happen either if no eligible chunks exist, or if user has no chunks at all.
+        NoUnlockedChunksToClaim,
     }
 
     /// General information about dApp staking protocol state.
@@ -496,12 +502,27 @@ pub mod pallet {
             Ok(())
         }
 
-        /// TODO: add documentation
+        /// Claims all of fully unlocked chunks, removing the lock from them.
         #[pallet::call_index(7)]
         #[pallet::weight(Weight::zero())]
-        pub fn withdraw_unlocked(origin: OriginFor<T>) -> DispatchResult {
+        pub fn claim_unlocked(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            let _account = ensure_signed(origin)?;
+            let account = ensure_signed(origin)?;
+
+            let mut ledger = Ledger::<T>::get(&account);
+
+            let current_block = frame_system::Pallet::<T>::block_number();
+            let amount = ledger.claim_unlocked(current_block);
+            ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
+
+            Self::update_ledger(&account, ledger);
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.unlocked_claimed(amount);
+            });
+
+            // TODO: We should ensure user doesn't unlock everything if they still have storage leftovers (e.g. unclaimed rewards?)
+
+            Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
 
             Ok(())
         }
