@@ -24,7 +24,11 @@ use astar_primitives::ethereum_checked::AccountMapping;
 use astar_primitives::evm::EvmAddress;
 use frame_support::{
     pallet_prelude::*,
-    traits::{Currency, ExistenceRequirement::*, Get, IsType},
+    traits::{
+        fungible::{Inspect, Mutate},
+        tokens::{Fortitude::*, Preservation::*},
+        Get, IsType,
+    },
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
 use pallet_evm::AddressMapping;
@@ -74,6 +78,7 @@ pub trait ClaimSignature {
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
+
     use super::*;
 
     #[pallet::pallet]
@@ -84,7 +89,7 @@ pub mod pallet {
         /// The overarching event type
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// The Currency for managing Evm account assets
-        type Currency: Currency<Self::AccountId>;
+        type Currency: Mutate<Self::AccountId>;
         /// Default evm address to account id conversion
         type DefaultAddressMapping: AddressMapping<Self::AccountId>;
         /// Default account id to evm address conversion
@@ -222,8 +227,8 @@ impl<T: Config> Pallet<T> {
             T::Currency::transfer(
                 &default_account_id,
                 &account_id,
-                T::Currency::free_balance(&default_account_id),
-                AllowDeath,
+                T::Currency::reducible_balance(&default_account_id, Expendable, Polite),
+                Expendable,
             )?;
         }
 

@@ -73,6 +73,15 @@ impl<T: Config> AccountMapping<T::AccountId> for Pallet<T> {
     }
 }
 
+/// Hashed derive mapping for converting account id to evm address
+pub struct HashedAccountMapping<H>(sp_std::marker::PhantomData<H>);
+impl<H: Hasher<Out = H256>> AccountMapping<AccountId> for HashedAccountMapping<H> {
+    fn into_h160(account: AccountId) -> H160 {
+        let payload = (b"evm:", account);
+        H160::from_slice(&payload.using_encoded(H::hash)[0..20])
+    }
+}
+
 /// AddresstMapping wrapper implementation over AddressManager
 impl<T: Config> AddressMapping<T::AccountId> for Pallet<T> {
     fn into_account_id(address: H160) -> T::AccountId {
@@ -163,14 +172,5 @@ impl<T: Config> EIP712Signature<T> {
         let mut args_hash = keccak256!("Claim(bytes substrateAddress)").to_vec();
         args_hash.extend_from_slice(&keccak_256(&account.encode()));
         keccak_256(args_hash.as_slice())
-    }
-}
-
-/// Hashed derive mapping for converting account id to evm address
-pub struct HashedAccountMapping<H>(sp_std::marker::PhantomData<H>);
-impl<H: Hasher<Out = H256>> AccountMapping<AccountId> for HashedAccountMapping<H> {
-    fn into_h160(account: AccountId) -> H160 {
-        let payload = (b"evm:", account);
-        H160::from_slice(&payload.using_encoded(H::hash)[0..20])
     }
 }

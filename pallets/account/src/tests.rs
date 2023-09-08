@@ -26,6 +26,7 @@ use ethers::{
     core::types::{transaction::eip712::Eip712, Bytes},
 };
 use parity_scale_codec::Encode;
+use sp_runtime::{traits::StaticLookup, MultiAddress};
 
 #[test]
 fn eip712_signature_verify_works() {
@@ -64,3 +65,54 @@ fn eip712_signature_verify_works() {
         );
     });
 }
+
+#[test]
+fn static_lookup_works() {
+    ExtBuilder::with_alice_mapping().execute_with(|| {
+        let alice_eth = Accounts::eth_address(&alice_secret());
+        let bob_eth = Accounts::eth_address(&bob_secret());
+        let bob_default_account_id =
+            <Accounts as AddressManager<_, _>>::to_default_account_id(&bob_eth);
+
+        // mapping should work if available
+        assert_eq!(
+            <Accounts as StaticLookup>::lookup(MultiAddress::Address20(alice_eth.into())).unwrap(),
+            ALICE
+        );
+
+        // should use default if not mapping
+        assert_eq!(
+            <Accounts as StaticLookup>::lookup(MultiAddress::Address20(bob_eth.into())).unwrap(),
+            bob_default_account_id
+        );
+    });
+}
+
+#[test]
+fn on_killed_account_hook() {
+    ExtBuilder::with_alice_mapping().execute_with(|| {
+        let alice_eth = Accounts::eth_address(&alice_secret());
+
+        // kill alice by transfering everything to bob
+        Balances::set_balance(&ALICE, 0);
+
+        // check killed account events
+        assert!(System::events().iter().any(|r| matches!(
+            &r.event,
+            RuntimeEvent::System(frame_system::Event::KilledAccount { account }) if account == &ALICE
+        )));
+
+        // make sure mapping is removed
+        assert_eq!(EvmAccounts::<TestRuntime>::get(ALICE), None);
+        assert_eq!(NativeAccounts::<TestRuntime>::get(alice_eth), None);
+    });
+}
+
+#[test]
+fn account_claim_correct_signature_should_work() {}
+
+#[test]
+fn account_claim_wrong_signature_should_not_work() {}
+
+#[test]
+fn account_default_claim_works() {}

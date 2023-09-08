@@ -171,9 +171,9 @@ pub fn alice_secret() -> libsecp256k1::SecretKey {
     libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
 }
 
-// pub fn bob_secret() -> libsecp256k1::SecretKey {
-// 	libsecp256k1::SecretKey::parse(&keccak_256(b"Bob")).unwrap()
-// }
+pub fn bob_secret() -> libsecp256k1::SecretKey {
+	libsecp256k1::SecretKey::parse(&keccak_256(b"Bob")).unwrap()
+}
 
 // pub fn charlie_secret() -> libsecp256k1::SecretKey {
 // 	libsecp256k1::SecretKey::parse(&keccak_256(b"Charlie")).unwrap()
@@ -226,7 +226,18 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
-        let ext = TestExternalities::from(t);
+        let mut ext = TestExternalities::from(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
+
+    pub fn with_alice_mapping() -> TestExternalities {
+        let mut ext = Self::default().build();
+        ext.execute_with(|| {
+            let alice_eth = Accounts::eth_address(&alice_secret());
+            EvmAccounts::<TestRuntime>::set(ALICE, Some(alice_eth.clone()));
+            NativeAccounts::<TestRuntime>::set(alice_eth, Some(ALICE));
+        });
         ext
     }
 }
