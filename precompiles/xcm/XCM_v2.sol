@@ -50,7 +50,7 @@ interface XCM {
         address payment_asset_id,
         uint256 payment_amount,
         bytes calldata call,
-        WeightV2 transact_weight
+        WeightV2 memory transact_weight
     ) external returns (bool);
 
     /**

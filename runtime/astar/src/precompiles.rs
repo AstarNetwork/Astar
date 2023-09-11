@@ -34,7 +34,7 @@ use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
 use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
-// use pallet_evm_precompile_xcm::XcmPrecompile;
+use pallet_evm_precompile_xcm::XcmPrecompile;
 use sp_core::H160;
 use sp_std::fmt::Debug;
 use sp_std::marker::PhantomData;
@@ -73,7 +73,7 @@ where
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
     DappsStakingWrapper<R>: Precompile,
     BatchPrecompile<R>: Precompile,
-    // XcmPrecompile<R, C>: Precompile,
+    XcmPrecompile<R, C>: Precompile,
     Dispatch<R>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config

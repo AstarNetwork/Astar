@@ -481,10 +481,6 @@ where
 
         let fee_asset_item: u32 = input.read::<U256>()?.low_u32();
 
-        log::trace!(target: "xcm-precompile::asset_withdraw", "Raw arguments: assets: {:?}, asset_amount: {:?} \
-         beneficiart: {:?}, destination: {:?}, fee_index: {}",
-        assets, amounts_raw, beneficiary, dest, fee_asset_item);
-
         if fee_asset_item as usize > assets.len() {
             return Err(revert("Bad fee index."));
         }
@@ -502,6 +498,11 @@ where
             handle.context().caller,
         ))
         .into();
+
+        log::trace!(target: "xcm-precompile::asset_withdraw", "Raw arguments: assets: {:?}, asset_amount: {:?} \
+        beneficiary: {:?}, destination: {:?}, fee_index: {}",
+       assets, amounts_raw, beneficiary, dest, fee_asset_item);
+
         let call = pallet_xcm::Call::<Runtime>::reserve_withdraw_assets {
             dest: Box::new(dest.into()),
             beneficiary: Box::new(beneficiary.into()),
@@ -617,8 +618,6 @@ where
         }
         let amounts: Vec<u128> = amounts_raw.iter().map(|x| x.low_u128()).collect();
 
-        log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, amounts: {:?}", assets, amounts);
-
         // Check that assets list is valid:
         // * all assets resolved to multi-location
         // * all assets has corresponded amount
@@ -648,6 +647,9 @@ where
             handle.context().caller,
         ))
         .into();
+
+        log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, amounts: {:?}, beneficiary: {:?}, destination: {:?}, fee_index: {}", assets, amounts, beneficiary, dest, fee_asset_item);
+
         let call = pallet_xcm::Call::<Runtime>::reserve_transfer_assets {
             dest: Box::new(dest.into()),
             beneficiary: Box::new(beneficiary.into()),
