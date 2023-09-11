@@ -451,8 +451,7 @@ impl pallet_account::Config for Runtime {
     type Currency = Balances;
     type DefaultAddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type DefaultAccountMapping = pallet_account::HashedAccountMapping<BlakeTwo256>;
-    type ChainId = ChainId;
-    type ClaimSignature = pallet_account::EIP712Signature<Self>;
+    type ClaimSignature = pallet_account::EIP712Signature<Self, ChainId>;
 }
 
 parameter_types! {

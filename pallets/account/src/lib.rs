@@ -257,7 +257,7 @@ impl<T: Config> Pallet<T> {
     #[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
     pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
         EvmAddress::from_slice(
-            &sp_core::keccak_256(&Self::eth_public(secret).serialize()[1..65])[12..],
+            &sp_io::hashing::keccak_256(&Self::eth_public(secret).serialize()[1..65])[12..],
         )
     }
 

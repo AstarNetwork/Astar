@@ -16,8 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use astar_primitives::ethereum_checked::AccountMapping;
 use astar_primitives::evm::EvmAddress;
 use astar_primitives::AccountId;
