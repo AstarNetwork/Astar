@@ -18,7 +18,7 @@
 
 use frame_support::assert_ok;
 
-use crate::test::mock::*;
+use crate::test::mock::{Balance, *};
 use crate::*;
 
 // Helper to generate custom `Get` types for testing the `AccountLedger` struct.
@@ -32,6 +32,121 @@ macro_rules! get_u32_type {
             }
         }
     };
+}
+
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, Default)]
+struct DummyEraAmount {
+    amount: Balance,
+    era: u32,
+}
+impl AmountEraPair for DummyEraAmount {
+    fn get_amount(&self) -> Balance {
+        self.amount
+    }
+    fn get_era(&self) -> u32 {
+        self.era
+    }
+    fn set_era(&mut self, era: u32) {
+        self.era = era;
+    }
+    fn saturating_accrue(&mut self, increase: Balance) {
+        self.amount.saturating_accrue(increase);
+    }
+    fn saturating_reduce(&mut self, reduction: Balance) {
+        self.amount.saturating_reduce(reduction);
+    }
+}
+impl DummyEraAmount {
+    pub fn new(amount: Balance, era: u32) -> Self {
+        Self { amount, era }
+    }
+}
+
+#[test]
+fn sparse_bounded_amount_era_vec_add_amount_works() {
+    get_u32_type!(MaxLen, 5);
+
+    // Sanity check
+    let mut vec = SparseBoundedAmountEraVec::<DummyEraAmount, MaxLen>::new();
+    assert!(vec.0.is_empty());
+    assert_ok!(vec.add_amount(0, 0));
+    assert!(vec.0.is_empty());
+
+    // 1st scenario - add to empty vector, should create one entry
+    let init_amount = 19;
+    let first_era = 3;
+    assert_ok!(vec.add_amount(init_amount, first_era));
+    assert_eq!(vec.0.len(), 1);
+    assert_eq!(vec.0[0], DummyEraAmount::new(init_amount, first_era));
+
+    // 2nd scenario - add to the same era, should update the entry
+    assert_ok!(vec.add_amount(init_amount, first_era));
+    assert_eq!(vec.0.len(), 1);
+    assert_eq!(vec.0[0], DummyEraAmount::new(init_amount * 2, first_era));
+
+    // 3rd scenario - add to the next era, should create a new entry
+    let second_era = first_era + 1;
+    assert_ok!(vec.add_amount(init_amount, second_era));
+    assert_eq!(vec.0.len(), 2);
+    assert_eq!(vec.0[0], DummyEraAmount::new(init_amount * 2, first_era));
+    assert_eq!(vec.0[1], DummyEraAmount::new(init_amount * 3, second_era));
+
+    // 4th scenario - add to the previous era, should fail and be a noop
+    assert_eq!(
+        vec.add_amount(init_amount, first_era),
+        Err(SparseBoundedError::OldEra)
+    );
+    assert_eq!(vec.0.len(), 2);
+    assert_eq!(vec.0[0], DummyEraAmount::new(init_amount * 2, first_era));
+    assert_eq!(vec.0[1], DummyEraAmount::new(init_amount * 3, second_era));
+
+    // 5th scenario - exceed capacity, should fail
+    for i in vec.0.len()..MaxLen::get() as usize {
+        assert_ok!(vec.add_amount(init_amount, second_era + i as u32));
+    }
+    assert_eq!(
+        vec.add_amount(init_amount, 100),
+        Err(SparseBoundedError::NoCapacity)
+    );
+}
+
+// Test two scenarios:
+//
+// 1. [amount, era] -> subtract(x, era) -> [amount - x, era]
+// 2. [amount, era] -> subtract (amount * 2, era) -> []
+#[test]
+fn sparse_bounded_amount_era_vec_subtract_amount_basic_scenario_works() {
+    get_u32_type!(MaxLen, 5);
+
+    // Sanity check
+    let mut vec = SparseBoundedAmountEraVec::<DummyEraAmount, MaxLen>::new();
+    assert_ok!(vec.subtract_amount(0, 0));
+    assert!(vec.0.is_empty());
+
+    // 1st scenario - only one entry exists, and it's the same era as the unlock
+    let init_amount = 19;
+    let first_era = 1;
+    let sub_amount = 3;
+    assert_ok!(vec.add_amount(init_amount, first_era));
+    assert_ok!(vec.subtract_amount(sub_amount, first_era));
+    assert_eq!(vec.0.len(), 1);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(init_amount - sub_amount, first_era)
+    );
+
+    // 2nd scenario - subtract everything (and more - underflow!) from the current era, causing full removal. Should cleanup the vector.
+    assert_ok!(vec.subtract_amount(init_amount * 2, first_era));
+    assert!(vec.0.is_empty());
+}
+
+#[test]
+fn sparse_bounded_amount_era_vec_subtract_amount_advanced_consecutive_works() {
+    get_u32_type!(MaxLen, 5);
+
+    // Sanity check
+    let mut vec = SparseBoundedAmountEraVec::<DummyEraAmount, MaxLen>::new();
+    // TODO: continue here
 }
 
 #[test]

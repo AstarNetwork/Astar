@@ -87,7 +87,10 @@ where
     P: AmountEraPair,
     ML: Get<u32>,
 {
-    // TODO2: write (or reuse) custom tests for this implementation.
+    /// Create new instance
+    pub fn new() -> Self {
+        Self(BoundedVec::<P, ML>::default())
+    }
 
     /// Places the specified <amount, era> pair into the vector, in an appropriate place.
     ///
