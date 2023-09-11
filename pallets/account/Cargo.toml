@@ -22,6 +22,9 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
+# Benchmarks
+frame-benchmarking = { workspace = true, optional = true }
+
 precompile-utils = { workspace = true }
 
 # frontier
@@ -41,6 +44,7 @@ pallet-timestamp = { workspace = true }
 [features]
 default = ["std"]
 std = [
+	"runtime-benchmarks",
 	"hex/std",
 	"log/std",
 	"libsecp256k1",
@@ -61,6 +65,7 @@ std = [
 	"pallet-ethereum/std",
 ]
 runtime-benchmarks = [
+	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",

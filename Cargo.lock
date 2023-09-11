@@ -7207,6 +7207,7 @@ version = "0.1.0"
 dependencies = [
  "astar-primitives",
  "ethers",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",

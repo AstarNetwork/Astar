@@ -27,7 +27,7 @@ use frame_support::{
     traits::{
         fungible::{Inspect, Mutate},
         tokens::{Fortitude::*, Preservation::*},
-        Get, IsType,
+        IsType,
     },
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
@@ -36,6 +36,8 @@ use sp_std::marker::PhantomData;
 
 pub use pallet::*;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 mod mock;
 mod tests;
 
@@ -97,12 +99,7 @@ pub mod pallet {
         /// The Signature verification implementation to use for checking claims
         /// Note: the signature type defined by this will be used as parameter in pallet's extrinsic
         type ClaimSignature: ClaimSignature<AccountId = Self::AccountId, Address = EvmAddress>;
-        /// Chain ID of EVM
-        /// TODO: remove this and make it generic parameter of EIP712Signature struct
-        #[pallet::constant]
-        type ChainId: Get<u64>;
 
-        // TODO: benchmarks
         // /// Weight information for the extrinsics in this module
         // type WeightInfo: WeightInfo;
     }
@@ -248,7 +245,7 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
     pub fn eth_sign_prehash(prehash: &[u8; 32], secret: &libsecp256k1::SecretKey) -> [u8; 65] {
         let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(prehash), secret);
         let mut r = [0u8; 65];
@@ -257,14 +254,14 @@ impl<T: Config> Pallet<T> {
         r
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
     pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
         EvmAddress::from_slice(
             &sp_core::keccak_256(&Self::eth_public(secret).serialize()[1..65])[12..],
         )
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
     // Returns an Ethereum public key derived from an Ethereum secret key.
     pub fn eth_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
         libsecp256k1::PublicKey::from_secret_key(secret)
