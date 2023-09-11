@@ -596,3 +596,62 @@ fn unlock_with_exceeding_unlocking_chunks_storage_limits_fails() {
         );
     })
 }
+
+#[test]
+fn claim_unlocked_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        let unlocking_blocks: BlockNumber =
+            <Test as pallet_dapp_staking::Config>::UnlockingPeriod::get();
+
+        // Lock some amount in a few eras
+        let account = 2;
+        let lock_amount = 103;
+        assert_lock(account, lock_amount);
+
+        // Basic example
+        let unlock_amount = 3;
+        assert_unlock(account, unlock_amount);
+        run_for_blocks(unlocking_blocks);
+        assert_claim_unlocked(account);
+
+        // Advanced example
+        let max_unlocking_chunks: u32 =
+            <Test as pallet_dapp_staking::Config>::MaxUnlockingChunks::get();
+        for _ in 0..max_unlocking_chunks {
+            run_for_blocks(1);
+            assert_unlock(account, unlock_amount);
+        }
+
+        // Leave two blocks remaining after the claim
+        run_for_blocks(unlocking_blocks - 2);
+        assert_claim_unlocked(account);
+
+        // Claim last two blocks together
+        run_for_blocks(2);
+        assert_claim_unlocked(account);
+        assert!(Ledger::<Test>::get(&account).unlocking.is_empty());
+    })
+}
+
+#[test]
+fn claim_unlocked_no_eligible_chunks_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Sanity check
+        let account = 2;
+        assert_noop!(
+            DappStaking::claim_unlocked(RuntimeOrigin::signed(account)),
+            Error::<Test>::NoUnlockedChunksToClaim,
+        );
+
+        // Cannot claim if unlock period hasn't passed yet
+        let lock_amount = 103;
+        assert_lock(account, lock_amount);
+        let unlocking_blocks: BlockNumber =
+            <Test as pallet_dapp_staking::Config>::UnlockingPeriod::get();
+        run_for_blocks(unlocking_blocks - 1);
+        assert_noop!(
+            DappStaking::claim_unlocked(RuntimeOrigin::signed(account)),
+            Error::<Test>::NoUnlockedChunksToClaim,
+        );
+    })
+}

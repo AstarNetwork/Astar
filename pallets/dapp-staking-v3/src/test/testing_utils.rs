@@ -29,6 +29,7 @@ use std::collections::HashMap;
 
 /// Helper struct used to store the entire pallet state snapshot.
 /// Used when comparison of before/after states is required.
+#[derive(Debug)]
 pub(crate) struct MemorySnapshot {
     active_protocol_state: ProtocolState<BlockNumberFor<Test>>,
     next_dapp_id: DAppId,
@@ -314,25 +315,41 @@ pub(crate) fn assert_claim_unlocked(account: AccountId) {
     );
 
     let current_block = System::block_number();
-    // Why would I make it so complex if it can be solved via simple for-loop? xD TODO: simplify this
-    let amount = pre_snapshot.ledger[&account]
-        .clone()
-        .unlocking
-        .into_inner()
-        .iter()
-        .partition::<Vec<UnlockingChunk<BlockNumberFor<Test>>>, _>(|chunk| {
-            chunk.unlock_block <= current_block
-        })
-        .0
-        .iter()
-        .fold(0, |sum, chunk| sum + chunk.amount);
+    let mut consumed_chunks = 0;
+    let mut amount = 0;
+    for unlock_chunk in pre_snapshot.ledger[&account].clone().unlocking.into_inner() {
+        if unlock_chunk.unlock_block <= current_block {
+            amount += unlock_chunk.amount;
+            consumed_chunks += 1;
+        }
+    }
 
-    // Unlock funds
+    // Claim unlocked chunks
     assert_ok!(DappStaking::claim_unlocked(RuntimeOrigin::signed(account)));
     System::assert_last_event(RuntimeEvent::DappStaking(Event::ClaimedUnlocked {
         account,
-        amount: 0,
+        amount,
     }));
 
-    // continue here
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+
+    let post_ledger = if let Some(ledger) = post_snapshot.ledger.get(&account) {
+        ledger.clone()
+    } else {
+        Default::default()
+    };
+
+    assert_eq!(
+        post_ledger.unlocking.len(),
+        pre_snapshot.ledger[&account].unlocking.len() - consumed_chunks
+    );
+    assert_eq!(
+        post_ledger.unlocking_amount(),
+        pre_snapshot.ledger[&account].unlocking_amount() - amount
+    );
+    assert_eq!(
+        post_snapshot.current_era_info.unlocking,
+        pre_snapshot.current_era_info.unlocking - amount
+    );
 }
