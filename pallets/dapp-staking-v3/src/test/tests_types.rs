@@ -98,6 +98,9 @@ fn account_ledger_add_lock_amount_works() {
     assert_eq!(acc_ledger.lock_era(), first_era);
     assert_eq!(acc_ledger.locked.0.len(), 1);
 
+    // Adding to previous era should fail
+    assert!(acc_ledger.add_lock_amount(addition, first_era - 1).is_err());
+
     // Add up to storage limit
     for i in 2..=LockedDummy::get() {
         assert!(acc_ledger.add_lock_amount(addition, first_era + i).is_ok());

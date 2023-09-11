@@ -95,9 +95,8 @@ where
             return Ok(());
         }
 
-        // TODO: there should be a check to ensure that the era is greater or equal than the last one in vector.
-
         let mut chunk = if let Some(&chunk) = self.0.last() {
+            ensure!(chunk.get_era() <= era, ());
             chunk
         } else {
             P::default()
