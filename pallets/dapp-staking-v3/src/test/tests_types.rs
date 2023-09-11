@@ -636,6 +636,26 @@ fn claim_unlocked_works() {
 }
 
 #[test]
+fn consume_unlocking_chunks_works() {
+    get_u32_type!(LockedDummy, 5);
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
+
+    // Sanity check scenario
+    assert!(acc_ledger.consume_unlocking_chunks().is_zero());
+
+    // Add multiple chunks, cal should return correct amount
+    let (amount1, amount2) = (7, 13);
+    assert_ok!(acc_ledger.add_unlocking_chunk(amount1, 1));
+    assert_ok!(acc_ledger.add_unlocking_chunk(amount2, 2));
+
+    assert_eq!(acc_ledger.consume_unlocking_chunks(), amount1 + amount2);
+    assert!(acc_ledger.unlocking.is_empty());
+}
+
+#[test]
 fn era_info_manipulation_works() {
     let mut era_info = EraInfo::default();
 
@@ -683,7 +703,7 @@ fn era_info_manipulation_works() {
 
     // Claim unlocked chunks
     let old_era_info = era_info.clone();
-    era_info.unlocked_claimed(1);
+    era_info.unlocking_removed(1);
     assert_eq!(era_info.unlocking, old_era_info.unlocking - 1);
     assert_eq!(era_info.active_era_locked, old_era_info.active_era_locked);
 }

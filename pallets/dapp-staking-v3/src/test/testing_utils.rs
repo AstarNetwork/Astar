@@ -218,7 +218,7 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
     );
 }
 
-/// Lock funds into dApp staking and assert success.
+/// Start the unlocking process for locked funds and assert success.
 pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
     let pre_snapshot = MemorySnapshot::new();
 
@@ -305,7 +305,7 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
     );
 }
 
-/// Lock funds into dApp staking and assert success.
+/// Claims the unlocked funds back into free balance of the user and assert success.
 pub(crate) fn assert_claim_unlocked(account: AccountId) {
     let pre_snapshot = MemorySnapshot::new();
 
@@ -351,5 +351,49 @@ pub(crate) fn assert_claim_unlocked(account: AccountId) {
     assert_eq!(
         post_snapshot.current_era_info.unlocking,
         pre_snapshot.current_era_info.unlocking - amount
+    );
+}
+
+/// Claims the unlocked funds back into free balance of the user and assert success.
+pub(crate) fn assert_relock_unlocking(account: AccountId) {
+    let pre_snapshot = MemorySnapshot::new();
+
+    assert!(
+        pre_snapshot.ledger.contains_key(&account),
+        "Cannot relock unlocking non-existing ledger."
+    );
+
+    let amount = pre_snapshot.ledger[&account].unlocking_amount();
+
+    // Relock unlocking chunks
+    assert_ok!(DappStaking::relock_unlocking(RuntimeOrigin::signed(
+        account
+    )));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::Relock { account, amount }));
+
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+
+    // Account ledger
+    let post_ledger = &post_snapshot.ledger[&account];
+    assert!(post_ledger.unlocking.is_empty());
+    assert!(post_ledger.unlocking_amount().is_zero());
+    assert_eq!(
+        post_ledger.active_locked_amount(),
+        pre_snapshot.ledger[&account].active_locked_amount() + amount
+    );
+    assert_eq!(
+        post_ledger.lock_era(),
+        post_snapshot.active_protocol_state.era + 1
+    );
+
+    // Current era info
+    assert_eq!(
+        post_snapshot.current_era_info.unlocking,
+        pre_snapshot.current_era_info.unlocking - amount
+    );
+    assert_eq!(
+        post_snapshot.current_era_info.total_locked,
+        pre_snapshot.current_era_info.total_locked + amount
     );
 }

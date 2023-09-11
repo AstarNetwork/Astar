@@ -535,6 +535,16 @@ where
 
         total_unlocked
     }
+
+    /// Consumes all of the unlocking chunks, and returns the total amount being unlocked.
+    pub fn consume_unlocking_chunks(&mut self) -> Balance {
+        let amount = self.unlocking.iter().fold(Balance::zero(), |sum, chunk| {
+            sum.saturating_add(chunk.amount)
+        });
+        self.unlocking = Default::default();
+
+        amount
+    }
 }
 
 /// Rewards pool for stakers & dApps
@@ -580,8 +590,8 @@ impl EraInfo {
         self.unlocking.saturating_accrue(amount);
     }
 
-    /// Update with the new amount that has just been fully unlocked & claimed.
-    pub fn unlocked_claimed(&mut self, amount: Balance) {
+    /// Update with the new amount that has been removed from unlocking.
+    pub fn unlocking_removed(&mut self, amount: Balance) {
         self.unlocking.saturating_reduce(amount);
     }
 }

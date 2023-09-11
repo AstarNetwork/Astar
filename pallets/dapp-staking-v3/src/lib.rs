@@ -155,6 +155,11 @@ pub mod pallet {
             account: T::AccountId,
             amount: Balance,
         },
+        /// Account has relocked all of the unlocking chunks.
+        Relock {
+            account: T::AccountId,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -186,6 +191,8 @@ pub mod pallet {
         RemainingStakePreventsFullUnlock,
         /// There are no eligible unlocked chunks to claim. This can happen either if no eligible chunks exist, or if user has no chunks at all.
         NoUnlockedChunksToClaim,
+        /// There are no unlocking chunks available to relock.
+        NoUnlockingChunks,
     }
 
     /// General information about dApp staking protocol state.
@@ -517,12 +524,46 @@ pub mod pallet {
 
             Self::update_ledger(&account, ledger);
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unlocked_claimed(amount);
+                era_info.unlocking_removed(amount);
             });
 
             // TODO: We should ensure user doesn't unlock everything if they still have storage leftovers (e.g. unclaimed rewards?)
 
             Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
+
+            Ok(())
+        }
+
+        #[pallet::call_index(8)]
+        #[pallet::weight(Weight::zero())]
+        pub fn relock_unlocking(origin: OriginFor<T>) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            let state = ActiveProtocolState::<T>::get();
+            let mut ledger = Ledger::<T>::get(&account);
+
+            ensure!(!ledger.unlocking.is_empty(), Error::<T>::NoUnlockingChunks);
+
+            // Only lock for the next era onwards.
+            let lock_era = state.era.saturating_add(1);
+            let amount = ledger.consume_unlocking_chunks();
+
+            ledger
+                .add_lock_amount(amount, lock_era)
+                .map_err(|_| Error::<T>::TooManyLockedBalanceChunks)?;
+            ensure!(
+                ledger.active_locked_amount() >= T::MinimumLockedAmount::get(),
+                Error::<T>::LockedAmountBelowThreshold
+            );
+
+            Self::update_ledger(&account, ledger);
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.add_locked(amount);
+                era_info.unlocking_removed(amount);
+            });
+
+            Self::deposit_event(Event::<T>::Relock { account, amount });
 
             Ok(())
         }

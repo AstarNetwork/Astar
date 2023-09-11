@@ -655,3 +655,106 @@ fn claim_unlocked_no_eligible_chunks_fails() {
         );
     })
 }
+
+#[test]
+fn relock_unlocking_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock some amount
+        let account = 2;
+        let lock_amount = 91;
+        assert_lock(account, lock_amount);
+
+        // Prepare some unlock chunks
+        let unlock_amount = 5;
+        assert_unlock(account, unlock_amount);
+        run_for_blocks(2);
+        assert_unlock(account, unlock_amount);
+
+        assert_relock_unlocking(account);
+
+        let max_unlocking_chunks: u32 =
+            <Test as pallet_dapp_staking::Config>::MaxUnlockingChunks::get();
+        for _ in 0..max_unlocking_chunks {
+            run_for_blocks(1);
+            assert_unlock(account, unlock_amount);
+        }
+
+        assert_relock_unlocking(account);
+    })
+}
+
+#[test]
+fn relock_unlocking_no_chunks_fails() {
+    ExtBuilder::build().execute_with(|| {
+        assert_noop!(
+            DappStaking::relock_unlocking(RuntimeOrigin::signed(1)),
+            Error::<Test>::NoUnlockingChunks,
+        );
+    })
+}
+
+#[test]
+fn relock_unlocking_too_many_chunks_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let max_locked_chunks = <Test as pallet_dapp_staking::Config>::MaxLockedChunks::get();
+
+        // Fill up the locked chunks to the limit
+        let account = 3;
+        for current_era in 1..=max_locked_chunks {
+            assert_lock(account, 11);
+            advance_to_era(current_era + 1);
+        }
+        assert_unlock(account, 7);
+
+        assert_noop!(
+            DappStaking::relock_unlocking(RuntimeOrigin::signed(account)),
+            Error::<Test>::TooManyLockedBalanceChunks,
+        );
+    })
+}
+
+#[test]
+fn relock_unlocking_insufficient_lock_amount_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let minimum_locked_amount: Balance =
+            <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
+
+        // lock amount should be above the threshold
+        let account = 2;
+        assert_lock(account, minimum_locked_amount + 1);
+
+        // Create two unlocking chunks
+        assert_unlock(account, 1);
+        run_for_blocks(1);
+        assert_unlock(account, minimum_locked_amount);
+
+        // This scenario can only be achieved if minimum staking amount increases on live network.
+        // Otherwise we always have a guarantee that the latest unlocking chunk at least covers the
+        // minimum staking amount.
+        // To test this, we will do a "dirty trick", and swap the two unlocking chunks that were just created.
+        // This shoudl ensure that the latest unlocking chunk is below the minimum staking amount.
+        Ledger::<Test>::mutate(&account, |ledger| {
+            ledger.unlocking = ledger
+                .unlocking
+                .clone()
+                .try_mutate(|inner| {
+                    let temp_block = inner[0].unlock_block;
+                    inner[0].unlock_block = inner[1].unlock_block;
+                    inner[1].unlock_block = temp_block;
+                    inner.swap(0, 1);
+                })
+                .expect("No size manipulation, only element swap.");
+        });
+
+        // Make sure only one chunk is left
+        let unlocking_blocks: BlockNumber =
+            <Test as pallet_dapp_staking::Config>::UnlockingPeriod::get();
+        run_for_blocks(unlocking_blocks - 1);
+        assert_claim_unlocked(account);
+
+        assert_noop!(
+            DappStaking::relock_unlocking(RuntimeOrigin::signed(account)),
+            Error::<Test>::LockedAmountBelowThreshold,
+        );
+    })
+}
