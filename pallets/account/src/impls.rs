@@ -126,8 +126,8 @@ impl<T: Config> StaticLookup for Pallet<T> {
 /// EIP-712 compatible signature scheme for verifying ownership of EVM Address
 ///
 /// Raw Data = Domain Separator + Type Hash + keccak256(AccountId)
-pub struct EIP712Signature<T: Config>(PhantomData<T>);
-impl<T: Config> ClaimSignature for EIP712Signature<T> {
+pub struct EIP712Signature<T: Config, ChainId: Get<u64>>(PhantomData<(T, ChainId)>);
+impl<T: Config, ChainId: Get<u64>> ClaimSignature for EIP712Signature<T, ChainId> {
     type AccountId = T::AccountId;
     /// EVM address type
     type Address = EvmAddress;
@@ -153,15 +153,15 @@ impl<T: Config> ClaimSignature for EIP712Signature<T> {
     }
 }
 
-impl<T: Config> EIP712Signature<T> {
-    /// TODO: use hardcoded bytes, configurable via generics
+impl<T: Config, ChainId: Get<u64>> EIP712Signature<T, ChainId> {
+    /// TODO: minor, use hardcoded bytes, configurable via generics
     fn build_domain_separator() -> [u8; 32] {
         let mut hash =
             keccak256!("EIP712Domain(string name,string version,uint256 chainId,bytes32 salt)")
                 .to_vec();
         hash.extend_from_slice(&keccak256!("Astar EVM Claim")); // name
         hash.extend_from_slice(&keccak256!("1")); // version
-        hash.extend_from_slice(&(<[u8; 32]>::from(U256::from(T::ChainId::get())))); // chain id
+        hash.extend_from_slice(&(<[u8; 32]>::from(U256::from(ChainId::get())))); // chain id
         hash.extend_from_slice(
             frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()).as_ref(),
         ); // genesis block hash

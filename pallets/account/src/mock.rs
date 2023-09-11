@@ -110,6 +110,7 @@ impl FindAuthor<H160> for MockFindAuthor {
 parameter_types! {
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
     pub const BlockGasLimit: U256 = U256::MAX;
+    pub ChainId: u64 = 1024;
 }
 
 impl pallet_evm::Config for TestRuntime {
@@ -125,7 +126,7 @@ impl pallet_evm::Config for TestRuntime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = ();
     type PrecompilesValue = ();
-    type ChainId = ConstU64<1024>;
+    type ChainId = ChainId;
     type OnChargeTransaction = ();
     type BlockGasLimit = BlockGasLimit;
     type OnCreate = ();
@@ -155,8 +156,7 @@ impl pallet_account::Config for TestRuntime {
     type Currency = Balances;
     type DefaultAddressMapping = HashedAddressMapping<BlakeTwo256>;
     type DefaultAccountMapping = HashedAccountMapping<BlakeTwo256>;
-    type ChainId = ConstU64<1024>;
-    type ClaimSignature = EIP712Signature<Self>;
+    type ClaimSignature = EIP712Signature<Self, ChainId>;
 }
 
 pub(crate) type AccountId = AccountId32;
@@ -172,12 +172,8 @@ pub fn alice_secret() -> libsecp256k1::SecretKey {
 }
 
 pub fn bob_secret() -> libsecp256k1::SecretKey {
-	libsecp256k1::SecretKey::parse(&keccak_256(b"Bob")).unwrap()
+    libsecp256k1::SecretKey::parse(&keccak_256(b"Bob")).unwrap()
 }
-
-// pub fn charlie_secret() -> libsecp256k1::SecretKey {
-// 	libsecp256k1::SecretKey::parse(&keccak_256(b"Charlie")).unwrap()
-// }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;

@@ -19,6 +19,7 @@
 #![cfg(test)]
 
 use super::*;
+use frame_support::{assert_noop, assert_ok};
 use mock::*;
 
 use ethers::{
@@ -26,29 +27,41 @@ use ethers::{
     core::types::{transaction::eip712::Eip712, Bytes},
 };
 use parity_scale_codec::Encode;
-use sp_runtime::{traits::StaticLookup, MultiAddress};
+use sp_runtime::{traits::StaticLookup, AccountId32, MultiAddress};
 
-#[test]
-fn eip712_signature_verify_works() {
-    /// EIP712 Payload struct
-    #[derive(Eip712, EthAbiType, Clone)]
-    #[eip712(
+/// EIP712 Payload struct
+#[derive(Eip712, EthAbiType, Clone)]
+#[eip712(
         name = "Astar EVM Claim",
         version = "1",
         chain_id = 1024,
         // mock genisis hash
         raw_salt = "0x4545454545454545454545454545454545454545454545454545454545454545"
     )]
-    struct Claim {
-        substrate_address: Bytes,
-    }
+struct Claim {
+    substrate_address: Bytes,
+}
 
+fn claim_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
+    // sign the payload
+    Accounts::eth_sign_prehash(
+        &Claim {
+            substrate_address: who.encode().into(),
+        }
+        .encode_eip712()
+        .unwrap(),
+        secret,
+    )
+}
+
+#[test]
+fn eip712_signature_verify_works() {
     ExtBuilder::default().build().execute_with(|| {
         let claim = Claim {
             substrate_address: ALICE.encode().into(),
         };
 
-        let claim_hash = EIP712Signature::<TestRuntime>::build_signing_payload(&ALICE);
+        let claim_hash = EIP712Signature::<TestRuntime, ChainId>::build_signing_payload(&ALICE);
         // assert signing payload is correct
         assert_eq!(
             claim.encode_eip712().unwrap(),
@@ -60,7 +73,7 @@ fn eip712_signature_verify_works() {
         let sig = Accounts::eth_sign_prehash(&claim_hash, &alice_secret());
         assert_eq!(
             Some(Accounts::eth_address(&alice_secret())),
-            EIP712Signature::<TestRuntime>::verify_signature(&ALICE, &sig),
+            EIP712Signature::<TestRuntime, ChainId>::verify_signature(&ALICE, &sig),
             "signature verification should work"
         );
     });
@@ -109,10 +122,127 @@ fn on_killed_account_hook() {
 }
 
 #[test]
-fn account_claim_correct_signature_should_work() {}
+fn account_claim_should_work() {
+    ExtBuilder::default().build().execute_with(|| {
+        let alice_eth = Accounts::eth_address(&alice_secret());
+        // default ss58 account associated with eth address
+        let alice_eth_old_account =  <TestRuntime as Config>::DefaultAddressMapping::into_account_id(alice_eth.clone());
+        let signature = claim_signature(&ALICE, &alice_secret());
+
+        // transfer some funds to alice_eth (H160)
+        assert_ok!(Balances::transfer_allow_death(
+            RuntimeOrigin::signed(BOB),
+            alice_eth_old_account.clone().into(),
+            1001
+        ));
+
+        // claim the account
+        assert_ok!(Accounts::claim_evm_account(
+            RuntimeOrigin::signed(ALICE),
+            alice_eth,
+            signature
+        ));
+
+        // check if all of balances is transfered to new account (ALICE) from
+        // old account (alice_eth_old_account)
+        assert!(System::events().iter().any(|r| matches!(
+            &r.event,
+            RuntimeEvent::System(frame_system::Event::KilledAccount { account }) if account == &alice_eth_old_account
+        )));
+
+        // check for claim account event
+        System::assert_last_event(
+            RuntimeEvent::Accounts(crate::Event::AccountClaimed { account_id: ALICE.clone(), evm_address: alice_eth.clone()})
+        );
+
+        // make sure mappings are in place
+        assert!(
+			NativeAccounts::<TestRuntime>::contains_key(alice_eth)
+				&& EvmAccounts::<TestRuntime>::contains_key(ALICE)
+		);
+    });
+}
 
 #[test]
-fn account_claim_wrong_signature_should_not_work() {}
+fn account_claim_should_not_work() {
+    ExtBuilder::default().build().execute_with(|| {
+        // invald signature
+        assert_noop!(
+            Accounts::claim_evm_account(
+                RuntimeOrigin::signed(ALICE),
+                Accounts::eth_address(&bob_secret()),
+                claim_signature(&BOB, &bob_secret())
+            ),
+            Error::<TestRuntime>::InvalidSignature
+        );
+        assert_noop!(
+            Accounts::claim_evm_account(
+                RuntimeOrigin::signed(ALICE),
+                Accounts::eth_address(&bob_secret()),
+                claim_signature(&ALICE, &alice_secret())
+            ),
+            Error::<TestRuntime>::InvalidSignature
+        );
+
+        assert_ok!(Accounts::claim_evm_account(
+            RuntimeOrigin::signed(ALICE),
+            Accounts::eth_address(&alice_secret()),
+            claim_signature(&ALICE, &alice_secret())
+        ));
+        // AccountId already mapped
+        assert_noop!(
+            Accounts::claim_evm_account(
+                RuntimeOrigin::signed(ALICE),
+                Accounts::eth_address(&alice_secret()),
+                claim_signature(&ALICE, &alice_secret())
+            ),
+            Error::<TestRuntime>::AccountIdHasMapped
+        );
+        // eth address already mapped
+        assert_noop!(
+            Accounts::claim_evm_account(
+                RuntimeOrigin::signed(BOB),
+                Accounts::eth_address(&alice_secret()),
+                claim_signature(&ALICE, &alice_secret())
+            ),
+            Error::<TestRuntime>::EthAddressHasMapped
+        );
+    });
+}
 
 #[test]
-fn account_default_claim_works() {}
+fn account_default_claim_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        let alice_default_evm =
+            <TestRuntime as Config>::DefaultAccountMapping::into_h160(ALICE.into());
+
+        // claim default account
+        assert_ok!(Accounts::claim_default_evm_account(RuntimeOrigin::signed(
+            ALICE
+        )));
+        System::assert_last_event(RuntimeEvent::Accounts(crate::Event::AccountClaimed {
+            account_id: ALICE.clone(),
+            evm_address: alice_default_evm.clone(),
+        }));
+
+        // check AddressManager mapping works
+        assert_eq!(
+            <Accounts as AddressManager<_, _>>::to_address(&ALICE),
+            Some(alice_default_evm)
+        );
+        assert_eq!(
+            <Accounts as AddressManager<_, _>>::to_account_id(&alice_default_evm),
+            Some(ALICE)
+        );
+
+        // should not allow to claim afterwards
+        assert_noop!(
+            Accounts::claim_evm_account(
+                RuntimeOrigin::signed(ALICE),
+                Accounts::eth_address(&alice_secret()),
+                claim_signature(&ALICE, &alice_secret())
+            ),
+            Error::<TestRuntime>::AccountIdHasMapped
+        );
+    });
+}
