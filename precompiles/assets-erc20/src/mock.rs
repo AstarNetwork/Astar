@@ -283,6 +283,8 @@ impl pallet_assets::Config for Runtime {
     type RemoveItemsLimit = ConstU32<0>;
     type AssetIdParameter = AssetId;
     type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 // Configure a mock runtime to test the pallet.

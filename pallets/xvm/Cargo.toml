@@ -7,6 +7,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+environmental = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true, optional = true }
 
@@ -23,16 +24,18 @@ sp-std = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 
 # EVM
+fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
 # Substrate WASM VM support
 pallet-contracts = { workspace = true }
+pallet-contracts-primitives = { workspace = true }
 
 # Astar
 astar-primitives = { workspace = true }
 
 [dev-dependencies]
-fp-evm = { workspace = true }
+hex = { workspace = true }
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-insecure-randomness-collective-flip = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true, features = ["std"] }
@@ -41,11 +44,14 @@ sp-io = { workspace = true }
 [features]
 default = ["std"]
 std = [
+	"environmental/std",
 	"log/std",
 	"parity-scale-codec/std",
+	"fp-evm/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
 	"pallet-evm/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"scale-info/std",

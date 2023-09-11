@@ -330,7 +330,30 @@ pub trait EvmData: Sized {
     fn read(reader: &mut EvmDataReader) -> EvmResult<Self>;
     fn write(writer: &mut EvmDataWriter, value: Self);
     fn has_static_size() -> bool;
+    fn is_explicit_tuple() -> bool {
+        false
+    }
 }
+/// Encode the value into its Solidity ABI format.
+/// If `T` is a tuple it is encoded as a Solidity tuple with dynamic-size offset.
+fn encode<T: EvmData>(value: T) -> Vec<u8> {
+    EvmDataWriter::new().write(value).build()
+}
+
+/// Encode the value into its Solidity ABI format.
+/// If `T` is a tuple every element is encoded without a prefixed offset.
+/// It matches the encoding of Solidity function arguments and return value, or event data.
+pub fn encode_arguments<T: EvmData>(value: T) -> Vec<u8> {
+    let output = encode(value);
+    if T::is_explicit_tuple() && !T::has_static_size() {
+        output[32..].to_vec()
+    } else {
+        output
+    }
+}
+
+pub use self::encode_arguments as encode_return_value;
+pub use self::encode_arguments as encode_event_data;
 
 #[impl_for_tuples(1, 18)]
 impl EvmData for Tuple {

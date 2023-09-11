@@ -108,7 +108,6 @@ type AssetId = u128;
 impl pallet_xc_asset_config::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = AssetId;
-    type XcAssetChanged = ();
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type WeightInfo = ();
 }

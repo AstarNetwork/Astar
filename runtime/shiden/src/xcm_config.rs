@@ -28,8 +28,7 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::EnsureRoot;
-use sp_runtime::traits::{Convert, Get};
-use sp_std::marker::PhantomData;
+use sp_runtime::traits::Convert;
 
 // Polkadot imports
 use xcm::latest::prelude::*;
@@ -47,13 +46,13 @@ use xcm_executor::{
 };
 
 // ORML imports
-use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
 use astar_primitives::xcm::{
-    DescribeAllTerminal, DescribeFamily, FixedRateOfForeignAsset, HashedDescription,
-    ReserveAssetFilter, XcmFungibleFeeHandler,
+    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, DescribeAllTerminal,
+    DescribeFamily, FixedRateOfForeignAsset, HashedDescription, ReserveAssetFilter,
+    XcmFungibleFeeHandler,
 };
 
 parameter_types! {
@@ -349,18 +348,6 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
-/// Convert `AccountId` to `MultiLocation`.
-pub struct AccountIdToMultiLocation;
-impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
-    fn convert(account: AccountId) -> MultiLocation {
-        X1(AccountId32 {
-            network: None,
-            id: account.into(),
-        })
-        .into()
-    }
-}
-
 parameter_types! {
     /// The absolute location in perspective of the whole network.
     pub ShidenLocationAbsolute: MultiLocation = MultiLocation {
@@ -380,23 +367,6 @@ pub struct AssetIdConvert;
 impl Convert<AssetId, Option<MultiLocation>> for AssetIdConvert {
     fn convert(asset_id: AssetId) -> Option<MultiLocation> {
         ShidenAssetLocationIdConverter::reverse_ref(&asset_id).ok()
-    }
-}
-
-/// `MultiAsset` reserve location provider. It's based on `RelativeReserveProvider` and in
-/// addition will convert self absolute location to relative location.
-pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
-impl<AbsoluteLocation: Get<MultiLocation>> Reserve
-    for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
-{
-    fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
-        RelativeReserveProvider::reserve(asset).map(|reserve_location| {
-            if reserve_location == AbsoluteLocation::get() {
-                MultiLocation::here()
-            } else {
-                reserve_location
-            }
-        })
     }
 }
 
