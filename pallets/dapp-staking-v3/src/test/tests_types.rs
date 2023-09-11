@@ -99,7 +99,10 @@ fn account_ledger_add_lock_amount_works() {
     assert_eq!(acc_ledger.locked.0.len(), 1);
 
     // Adding to previous era should fail
-    assert!(acc_ledger.add_lock_amount(addition, first_era - 1).is_err());
+    assert_eq!(
+        acc_ledger.add_lock_amount(addition, first_era - 1),
+        Err(SparseBoundedError::OldEra)
+    );
 
     // Add up to storage limit
     for i in 2..=LockedDummy::get() {
@@ -114,9 +117,10 @@ fn account_ledger_add_lock_amount_works() {
 
     // Any further additions should fail due to exhausting bounded storage capacity
     let acc_ledger_clone = acc_ledger.clone();
-    assert!(acc_ledger
-        .add_lock_amount(addition, acc_ledger.lock_era() + 1)
-        .is_err());
+    assert_eq!(
+        acc_ledger.add_lock_amount(addition, acc_ledger.lock_era() + 1),
+        Err(SparseBoundedError::NoCapacity)
+    );
     assert_eq!(acc_ledger, acc_ledger_clone);
 }
 
@@ -248,9 +252,10 @@ fn account_ledger_subtract_lock_amount_overflow_fails() {
 
     // Attempt to add additional chunks should fail, and is a noop.
     let acc_ledger_clone = acc_ledger.clone();
-    assert!(acc_ledger
-        .subtract_lock_amount(unlock_amount, LockedDummy::get() + 1)
-        .is_err());
+    assert_eq!(
+        acc_ledger.subtract_lock_amount(unlock_amount, LockedDummy::get() + 1),
+        Err(SparseBoundedError::NoCapacity)
+    );
     assert_eq!(acc_ledger, acc_ledger_clone);
 }
 
@@ -524,9 +529,10 @@ fn account_ledger_add_unlocking_chunk_works() {
 
     // Any further addition should fail, resulting in a noop
     let acc_ledger_snapshot = acc_ledger.clone();
-    assert!(acc_ledger
-        .add_unlocking_chunk(1, block_number + UnlockingDummy::get() as u64 + 1)
-        .is_err());
+    assert_eq!(
+        acc_ledger.add_unlocking_chunk(1, block_number + UnlockingDummy::get() as u64 + 1),
+        Err(SparseBoundedError::NoCapacity)
+    );
     assert_eq!(acc_ledger, acc_ledger_snapshot);
 }
 

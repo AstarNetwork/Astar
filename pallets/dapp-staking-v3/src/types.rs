@@ -59,6 +59,15 @@ pub trait AmountEraPair: MaxEncodedLen + Default + Copy {
     fn saturating_reduce(&mut self, reduction: Balance);
 }
 
+/// Simple enum representing errors possible when using sparse bounded vector.
+#[derive(Debug, PartialEq, Eq)]
+pub enum SparseBoundedError {
+    /// Old era values cannot be added.
+    OldEra,
+    /// Bounded storage capacity exceeded.
+    NoCapacity,
+}
+
 /// Helper struct for easier manipulation of sparse <amount, era> pairs.
 ///
 /// The struct guarantes the following:
@@ -78,9 +87,6 @@ where
     P: AmountEraPair,
     ML: Get<u32>,
 {
-    // TODO: maybe add a custom error type?
-    // Could be useful to know what exactly went wrong.
-
     // TODO2: write (or reuse) custom tests for this implementation.
 
     /// Places the specified <amount, era> pair into the vector, in an appropriate place.
@@ -90,13 +96,17 @@ where
     /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
     ///
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
-    pub fn add_amount(&mut self, amount: Balance, era: EraNumber) -> Result<(), ()> {
+    pub fn add_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+    ) -> Result<(), SparseBoundedError> {
         if amount.is_zero() {
             return Ok(());
         }
 
         let mut chunk = if let Some(&chunk) = self.0.last() {
-            ensure!(chunk.get_era() <= era, ());
+            ensure!(chunk.get_era() <= era, SparseBoundedError::OldEra);
             chunk
         } else {
             P::default()
@@ -110,7 +120,9 @@ where
             }
         } else {
             chunk.set_era(era);
-            self.0.try_push(chunk).map_err(|_| ())?;
+            self.0
+                .try_push(chunk)
+                .map_err(|_| SparseBoundedError::NoCapacity)?;
         }
 
         Ok(())
@@ -122,7 +134,11 @@ where
     ///
     /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
-    pub fn subtract_amount(&mut self, amount: Balance, era: EraNumber) -> Result<(), ()> {
+    pub fn subtract_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+    ) -> Result<(), SparseBoundedError> {
         if amount.is_zero() || self.0.is_empty() {
             return Ok(());
         }
@@ -176,7 +192,7 @@ where
         }
 
         // Update `locked` to the new vector
-        self.0 = BoundedVec::try_from(inner).map_err(|_| ())?;
+        self.0 = BoundedVec::try_from(inner).map_err(|_| SparseBoundedError::NoCapacity)?;
 
         Ok(())
     }
@@ -459,7 +475,11 @@ where
     ///
     /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
-    pub fn add_lock_amount(&mut self, amount: Balance, era: EraNumber) -> Result<(), ()> {
+    pub fn add_lock_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+    ) -> Result<(), SparseBoundedError> {
         self.locked.add_amount(amount, era)
     }
 
@@ -469,7 +489,11 @@ where
     ///
     /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
-    pub fn subtract_lock_amount(&mut self, amount: Balance, era: EraNumber) -> Result<(), ()> {
+    pub fn subtract_lock_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+    ) -> Result<(), SparseBoundedError> {
         self.locked.subtract_amount(amount, era)
     }
 
@@ -483,7 +507,7 @@ where
         &mut self,
         amount: Balance,
         unlock_block: BlockNumber,
-    ) -> Result<(), ()> {
+    ) -> Result<(), SparseBoundedError> {
         if amount.is_zero() {
             return Ok(());
         }
@@ -503,7 +527,7 @@ where
                 };
                 self.unlocking
                     .try_insert(idx, new_unlocking_chunk)
-                    .map_err(|_| ())?;
+                    .map_err(|_| SparseBoundedError::NoCapacity)?;
             }
         }
 
