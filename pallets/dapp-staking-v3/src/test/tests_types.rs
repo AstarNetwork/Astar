@@ -132,21 +132,174 @@ fn sparse_bounded_amount_era_vec_subtract_amount_basic_scenario_works() {
     assert_eq!(vec.0.len(), 1);
     assert_eq!(
         vec.0[0],
-        DummyEraAmount::new(init_amount - sub_amount, first_era)
+        DummyEraAmount::new(init_amount - sub_amount, first_era),
+        "Only single entry and it should be updated."
     );
 
     // 2nd scenario - subtract everything (and more - underflow!) from the current era, causing full removal. Should cleanup the vector.
     assert_ok!(vec.subtract_amount(init_amount * 2, first_era));
-    assert!(vec.0.is_empty());
+    assert!(vec.0.is_empty(), "Full removal should cleanup the vector.");
 }
 
 #[test]
 fn sparse_bounded_amount_era_vec_subtract_amount_advanced_consecutive_works() {
     get_u32_type!(MaxLen, 5);
-
-    // Sanity check
     let mut vec = SparseBoundedAmountEraVec::<DummyEraAmount, MaxLen>::new();
-    // TODO: continue here
+
+    // 1st scenario - two entries, consecutive eras, subtract from the second era.
+    // Only the second entry should be updated.
+    let (first_era, second_era) = (1, 2);
+    let (first_amount, second_amount) = (19, 23);
+    assert_ok!(vec.add_amount(first_amount, first_era));
+    assert_ok!(vec.add_amount(second_amount, second_era));
+
+    let sub_amount = 3;
+    assert_ok!(vec.subtract_amount(sub_amount, second_era));
+    assert_eq!(vec.0.len(), 2);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(first_amount, first_era),
+        "First entry should remain unchanged."
+    );
+    assert_eq!(
+        vec.0[1],
+        DummyEraAmount::new(first_amount + second_amount - sub_amount, second_era),
+        "Second entry should have it's amount reduced by the subtracted amount."
+    );
+
+    // 2nd scenario - two entries, consecutive eras, subtract from the first era.
+    // Both the first and second entry should be updated.
+    assert_ok!(vec.subtract_amount(sub_amount, first_era));
+    assert_eq!(vec.0.len(), 2);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(first_amount - sub_amount, first_era),
+        "First entry is updated since it was specified."
+    );
+    assert_eq!(
+        vec.0[1],
+        DummyEraAmount::new(first_amount + second_amount - sub_amount * 2, second_era),
+        "Second entry is updated because it comes AFTER the first one - same applies to all future entries."
+    );
+
+    // 3rd scenario - three entries, consecutive eras, subtract from the second era.
+    // Only second and third entry should be updated. First one should remain unchanged.
+    let third_era = 3;
+    let third_amount = 29;
+    assert_ok!(vec.add_amount(third_amount, third_era));
+    assert_ok!(vec.subtract_amount(sub_amount, second_era));
+    assert_eq!(vec.0.len(), 3);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(first_amount - sub_amount, first_era),
+        "First entry should remain unchanged, compared to previous scenario."
+    );
+    assert_eq!(
+        vec.0[1],
+        DummyEraAmount::new(first_amount + second_amount - sub_amount * 3, second_era),
+        "Second entry should be reduced by the subtracted amount, compared to previous scenario."
+    );
+    assert_eq!(
+        vec.0[2],
+        DummyEraAmount::new(
+            first_amount + second_amount + third_amount - sub_amount * 3,
+            third_era
+        ),
+        "Same as for the second entry."
+    );
+}
+
+#[test]
+fn sparse_bounded_amount_era_vec_subtract_amount_advanced_non_consecutive_works() {
+    get_u32_type!(MaxLen, 5);
+    let mut vec = SparseBoundedAmountEraVec::<DummyEraAmount, MaxLen>::new();
+
+    // 1st scenario - two entries, non-consecutive eras, subtract from the mid era.
+    // Only the second entry should be updated but a new entry should be created.
+    let (first_era, second_era) = (1, 5);
+    let (first_amount, second_amount) = (19, 23);
+    assert_ok!(vec.add_amount(first_amount, first_era));
+    assert_ok!(vec.add_amount(second_amount, second_era));
+
+    let sub_amount = 3;
+    let mid_era = second_era - 1;
+    assert_ok!(vec.subtract_amount(sub_amount, mid_era));
+    assert_eq!(vec.0.len(), 3);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(first_amount, first_era),
+        "No impact on the first entry expected."
+    );
+    assert_eq!(
+        vec.0[1],
+        DummyEraAmount::new(first_amount - sub_amount, mid_era),
+        "Newly created entry should be equal to the first amount, minus what was subtracted."
+    );
+    assert_eq!(
+        vec.0[2],
+        DummyEraAmount::new(vec.0[1].amount + second_amount, second_era),
+        "Previous 'second' entry should be total added minus the subtracted amount."
+    );
+
+    // 2nd scenario - fully unlock the mid-entry to create a zero entry.
+    assert_ok!(vec.subtract_amount(vec.0[1].amount, mid_era));
+    assert_eq!(vec.0.len(), 3);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(first_amount, first_era),
+        "No impact on the first entry expected."
+    );
+    assert_eq!(
+        vec.0[1],
+        DummyEraAmount::new(0, mid_era),
+        "Zero entry should be kept since it's in between two non-zero entries."
+    );
+    assert_eq!(
+        vec.0[2],
+        DummyEraAmount::new(second_amount, second_era),
+        "Only the second staked amount should remain since everything else was unstaked."
+    );
+
+    // 3rd scenario - create an additional non-zero chunk as prep for the next scenario.
+    let pre_mid_era = mid_era - 1;
+    assert!(pre_mid_era > first_era, "Sanity check.");
+    assert_ok!(vec.subtract_amount(sub_amount, pre_mid_era));
+    assert_eq!(vec.0.len(), 4);
+    assert_eq!(
+        vec.0[1],
+        DummyEraAmount::new(first_amount - sub_amount, pre_mid_era),
+        "Newly created entry, derives it's initial value from the first entry."
+    );
+    assert_eq!(
+        vec.0[2],
+        DummyEraAmount::new(0, mid_era),
+        "Zero entry should be kept at this point since it's still between two non-zero entries."
+    );
+    assert_eq!(
+        vec.0[3],
+        DummyEraAmount::new(second_amount - sub_amount, second_era),
+        "Last entry should be further reduced by the newly subtracted amount."
+    );
+
+    // 4th scenario - create an additional zero entry, but ensure it's cleaned up correctly.
+    let final_sub_amount = vec.0[1].amount;
+    assert_ok!(vec.subtract_amount(final_sub_amount, pre_mid_era));
+    assert_eq!(vec.0.len(), 3);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(first_amount, first_era),
+        "First entry should still remain unchanged."
+    );
+    assert_eq!(
+        vec.0[1],
+        DummyEraAmount::new(0, pre_mid_era),
+        "The older zero entry should consume the newer ones, hence the pre_mid_era usage"
+    );
+    assert_eq!(
+        vec.0[2],
+        DummyEraAmount::new(second_amount - sub_amount - final_sub_amount, second_era),
+        "Last entry should be further reduced by the newly subtracted amount."
+    );
 }
 
 #[test]
