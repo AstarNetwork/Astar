@@ -103,7 +103,7 @@ pub const MICROSBY: Balance = 1_000_000_000_000;
 pub const MILLISBY: Balance = 1_000 * MICROSBY;
 pub const SBY: Balance = 1_000 * MILLISBY;
 
-pub const STORAGE_BYTE_FEE: Balance = 100 * MICROSBY;
+pub const STORAGE_BYTE_FEE: Balance = MICROSBY;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -117,7 +117,7 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 ///
 /// TODO: using this requires storage migration (good to test on Shibuya first!)
 pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
-    items as Balance * 4 * MILLISBY + (bytes as Balance) * STORAGE_BYTE_FEE
+    items as Balance * 40 * MICROSBY + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.
@@ -735,11 +735,12 @@ impl WeightToFeePolynomial for WeightToFee {
 pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
-        if let Some(mut fees) = fees_then_tips.next() {
+        if let Some(fees) = fees_then_tips.next() {
+            // Burn 80% of fees, rest goes to collators, including 100% of the tips.
+            let (to_burn, mut collators) = fees.ration(80, 20);
             if let Some(tips) = fees_then_tips.next() {
-                tips.merge_into(&mut fees);
+                tips.merge_into(&mut collators);
             }
-            let (to_burn, collators) = fees.ration(20, 80);
 
             // burn part of fees
             drop(to_burn);
