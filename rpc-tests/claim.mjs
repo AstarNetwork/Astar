@@ -1,4 +1,4 @@
-/// TODO: make this into a rpc test
+/// TODO: make this into a rpc test when integrated in Shiden & Astar
 
 import { JsonRpcProvider, Wallet } from "ethers"
 import { WsProvider, ApiPromise, Keyring } from '@polkadot/api';
@@ -10,6 +10,9 @@ async function waitForTx(tx, signer, api) {
                 console.log(`\t Transaction included at blockHash ${result.status.asInBlock}`);
             } else if (result.status.isFinalized) {
                 console.log(`\t Transaction finalized at blockHash ${result.status.asFinalized}`);
+                result.events.forEach(({ phase, event: { data, method, section } }) => {
+                    console.log(`\t' ${phase}: ${section}.${method}:: ${data}`);
+                });
                 resolve(result.txHash)
             } else if (result.isError) {
                 reject();
@@ -18,9 +21,9 @@ async function waitForTx(tx, signer, api) {
     })
 }
 
-async function buildSignature(signer, substrateAddress, api) {
+async function buildSignature(signer, substrateAddress, api, chainId) {
     return await signer.signTypedData({
-        chainId: api.consts.accounts.chainId.toNumber(),
+        chainId,
         name: "Astar EVM Claim",
         version: "1",
         salt: await api.query.system.blockHash(0) // genisis hash
@@ -34,23 +37,26 @@ async function buildSignature(signer, substrateAddress, api) {
 }
 
 async function claimEvmAccount(account, evmAddress, signature, api) {
-    await waitForTx(api.tx.accounts.claimEvmAccount(evmAddress, signature), account)
+    return await waitForTx(api.tx.accounts.claimEvmAccount(evmAddress, signature), account)
 }
 
 async function main() {
-    const api = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:9944') });
+    const api = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:9945') });
     await api.isReady;
 
     const keyring = new Keyring({ type: 'sr25519' });
     const alice = keyring.addFromUri('//Alice', { name: 'Alice default' })
 
-    const provider = new JsonRpcProvider("http://127.0.0.1:9944");
+    const provider = new JsonRpcProvider("http://127.0.0.1:9945");
+    const { chainId } = await provider.getNetwork();
     const ethSigner = new Wallet("0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391", provider);
 
-    const sig = await buildSignature(ethSigner, alice.publicKey, api);
+    const sig = await buildSignature(ethSigner, alice.publicKey, api, chainId);
     console.log(`Signature - ${sig}`)
     const hash = await claimEvmAccount(alice, ethSigner.address, sig, api);
     console.log(`Claim Extrisic - ${hash}`);
+
+    console.log(`Claimed Account ${await api.query.accounts.evmAccounts(alice.address)}, EVM Account: ${ethSigner.address}`);
 
     api.disconnect();
 }

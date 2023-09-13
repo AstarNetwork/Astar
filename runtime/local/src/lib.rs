@@ -449,7 +449,7 @@ impl pallet_utility::Config for Runtime {
 impl pallet_account::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type DefaultAddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
+    type DefaultAddressMapping = <Self as pallet_evm::Config>::AddressMapping;
     type DefaultAccountMapping = pallet_account::HashedAccountMapping<BlakeTwo256>;
     type ClaimSignature = pallet_account::EIP712Signature<Self, ChainId>;
 }

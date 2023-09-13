@@ -256,7 +256,7 @@ impl frame_system::Config for Runtime {
     /// The aggregated dispatch type that is available for extrinsics.
     type RuntimeCall = RuntimeCall;
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-    type Lookup = AccountIdLookup<AccountId, ()>;
+    type Lookup = (AccountIdLookup<AccountId, ()>, Accounts);
     /// The index type for storing how many extrinsics an account has signed.
     type Index = Index;
     /// The index type for blocks.
@@ -279,7 +279,7 @@ impl frame_system::Config for Runtime {
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
-    type OnKilledAccount = ();
+    type OnKilledAccount = pallet_account::KillAccountMapping<Self>;
     type DbWeight = RocksDbWeight;
     type BaseCallFilter = BaseFilter;
     type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
@@ -765,15 +765,6 @@ impl pallet_transaction_payment::Config for Runtime {
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 }
 
-///TODO: Placeholder account mapping. This would be replaced once account abstraction is finished.
-pub struct HashedAccountMapping;
-impl astar_primitives::ethereum_checked::AccountMapping<AccountId> for HashedAccountMapping {
-    fn into_h160(account_id: AccountId) -> H160 {
-        let data = (b"evm:", account_id);
-        return H160::from_slice(&data.using_encoded(sp_io::hashing::blake2_256)[0..20]);
-    }
-}
-
 parameter_types! {
     /// Equal to normal class dispatch weight limit.
     pub XvmTxWeightLimit: Weight = NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT;
@@ -784,14 +775,14 @@ impl pallet_ethereum_checked::Config for Runtime {
     type XvmTxWeightLimit = XvmTxWeightLimit;
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
-    type AccountMapping = HashedAccountMapping;
+    type AccountMapping = Accounts;
     type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
     type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_xvm::Config for Runtime {
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
-    type AccountMapping = HashedAccountMapping;
+    type AccountMapping = Accounts;
     type EthereumTransact = EthereumChecked;
     type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
 }
@@ -1232,6 +1223,14 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
+impl pallet_account::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type DefaultAddressMapping = <Self as pallet_evm::Config>::AddressMapping;
+    type DefaultAccountMapping = pallet_account::HashedAccountMapping<BlakeTwo256>;
+    type ClaimSignature = pallet_account::EIP712Signature<Self, EVMChainId>;
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -1276,6 +1275,7 @@ construct_runtime!(
         BaseFee: pallet_base_fee = 62,
         EVMChainId: pallet_evm_chain_id = 63,
         EthereumChecked: pallet_ethereum_checked = 64,
+        Accounts: pallet_account = 65,
 
         Contracts: pallet_contracts = 70,
 
@@ -1420,6 +1420,7 @@ mod benches {
         [pallet_xcm, PolkadotXcm]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_xvm, Xvm]
+        [pallet_account, Accounts]
     );
 }
 

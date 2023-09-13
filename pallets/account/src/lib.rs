@@ -80,7 +80,6 @@ pub trait ClaimSignature {
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
-
     use super::*;
 
     #[pallet::pallet]
@@ -213,6 +212,10 @@ impl<T: Config> Pallet<T> {
         // recover evm address from signature
         let address = T::ClaimSignature::verify_signature(&account_id, &signature)
             .ok_or(Error::<T>::BadSignature)?;
+        log::trace!(
+            target: "account::do_claim_address",
+            "evm_address: {:#?}, recovered: {:#?}", evm_address, address
+        );
         ensure!(evm_address == address, Error::<T>::InvalidSignature);
 
         // Check if the default account id already exists for this eth address
