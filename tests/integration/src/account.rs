@@ -16,21 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! Runtime integration tests.
+// use crate::setup::*;
 
-#![cfg(test)]
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod setup;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod proxy;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod assets;
-
-#[cfg(feature = "shibuya")]
-mod xvm;
-
-#[cfg(feature = "shibuya")]
-mod account;
+#[test]
+fn account_transfer_to_h160_via_lookup() {}

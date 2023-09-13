@@ -449,7 +449,7 @@ impl pallet_utility::Config for Runtime {
 impl pallet_account::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type DefaultAddressMapping = <Self as pallet_evm::Config>::AddressMapping;
+    type DefaultAddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type DefaultAccountMapping = pallet_account::HashedAccountMapping<BlakeTwo256>;
     type ClaimSignature = pallet_account::EIP712Signature<Self, ChainId>;
 }
@@ -558,7 +558,7 @@ impl pallet_evm::Config for Runtime {
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
     type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
-    type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
+    type AddressMapping = Accounts;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;

@@ -23,6 +23,7 @@ pub use frame_support::{
     traits::{OnFinalize, OnIdle, OnInitialize},
     weights::Weight,
 };
+pub use pallet_account::AddressManager;
 pub use pallet_evm::AddressMapping;
 pub use sp_core::{H160, H256, U256};
 pub use sp_runtime::{AccountId32, MultiAddress};
@@ -39,17 +40,9 @@ mod shibuya {
     /// 1 SBY.
     pub const UNIT: Balance = SBY;
 
-    // TODO: once Account Unification is finished, remove `alith` and `alicia`,
-    // which are mocks of two way account/address mapping.
-
-    /// H160 address mapped from `ALICE`.
+    /// H160 address mapped to `ALICE`.
     pub fn alith() -> H160 {
         h160_from(ALICE)
-    }
-
-    /// `AccountId32` mapped from `alith()`.
-    pub fn alicia() -> AccountId32 {
-        account_id_from(alith())
     }
 
     /// Convert `H160` to `AccountId32`.
@@ -111,6 +104,16 @@ mod shibuya {
         // On instantiation, the contract got existential deposit.
         assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
         address
+    }
+
+    pub fn claim_default_accounts(account: AccountId) {
+        let default_h160 = Accounts::to_default_address(&account);
+        assert_ok!(Accounts::claim_default_evm_account(RuntimeOrigin::signed(
+            account.clone()
+        )));
+        assert_eq!(Accounts::to_address(&account).unwrap(), default_h160);
+        // println!("{:?}", EVM::account_basic(&default_h160).0);
+        // println!("{} - {}", account_id_from(default_h160), ALICE);
     }
 }
 
@@ -175,6 +178,7 @@ impl ExtBuilder {
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(|| claim_default_accounts(ALICE));
         ext
     }
 }
@@ -185,8 +189,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             (ALICE, INITIAL_AMOUNT),
             (BOB, INITIAL_AMOUNT),
             (CAT, INITIAL_AMOUNT),
-            #[cfg(feature = "shibuya")]
-            (alicia(), INITIAL_AMOUNT),
         ])
         .build()
 }

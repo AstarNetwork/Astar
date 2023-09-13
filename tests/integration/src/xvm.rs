@@ -299,11 +299,8 @@ fn calling_evm_payable_from_wasm_works() {
 
         let value = UNIT;
 
-        // TODO: after Account Unification finished, remove this mock account.
-        // It is needed now because currently the `AccountMapping` and `AddressMapping` are
-        // both one way mapping.
-        let mock_unified_wasm_account = account_id_from(h160_from(wasm_address.clone()));
-        let _ = Balances::deposit_creating(&mock_unified_wasm_account, value);
+        // claim the default mappings for wasm contract
+        claim_default_accounts(wasm_address.clone());
 
         let evm_payable = evm_payable_addr.as_ref().to_vec();
         let deposit_func = hex::decode("d0e30db0").expect("invalid deposit function hex");
@@ -328,10 +325,10 @@ fn calling_evm_payable_from_wasm_works() {
             value
         );
 
-        // TODO: after Account Unification finished, enable the wasm address balance check
-        // and remove the mock account balance check.
-        // assert_eq!(Balances::free_balance(&wasm_address), ExistentialDeposit::get());
-        assert_eq!(Balances::free_balance(&mock_unified_wasm_account), 0);
+        assert_eq!(
+            Balances::free_balance(&wasm_address),
+            ExistentialDeposit::get()
+        );
     });
 }
 
