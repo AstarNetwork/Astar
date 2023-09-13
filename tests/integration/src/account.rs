@@ -16,7 +16,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-// use crate::setup::*;
+use crate::setup::*;
+use std::str::FromStr;
 
 #[test]
-fn account_transfer_to_h160_via_lookup() {}
+fn transfer_to_h160_via_lookup() {
+    new_test_ext().execute_with(|| {
+        let eth_address = H160::from_str("0xaaafB3972B05630fCceE866eC69CdADd9baC2771").unwrap();
+
+        // make sure account is empty
+        assert!(EVM::is_account_empty(&eth_address));
+
+        // tranfer to evm account
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(ALICE),
+            MultiAddress::Address20(eth_address.clone().into()),
+            UNIT,
+        ));
+
+        // evm account should have recieved the funds
+        let (account, _) = EVM::account_basic(&eth_address);
+        assert_eq!(account.balance, (UNIT - ExistentialDeposit::get()).into());
+    });
+}
