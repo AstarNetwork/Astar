@@ -112,8 +112,6 @@ mod shibuya {
             account.clone()
         )));
         assert_eq!(Accounts::to_address(&account).unwrap(), default_h160);
-        // println!("{:?}", EVM::account_basic(&default_h160).0);
-        // println!("{} - {}", account_id_from(default_h160), ALICE);
     }
 }
 
