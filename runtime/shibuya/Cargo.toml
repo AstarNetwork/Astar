@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.17.0"
+version = "5.18.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -91,7 +91,6 @@ xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
 # orml dependencies
-orml-traits = { workspace = true }
 orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 
@@ -104,6 +103,7 @@ pallet-collator-selection = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
+pallet-evm-precompile-batch = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
@@ -178,6 +178,7 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-dapps-staking/std",
+	"pallet-evm-precompile-batch/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-assets-erc20/std",
@@ -229,7 +230,6 @@ std = [
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
 	"orml-xtokens/std",
-	"orml-traits/std",
 	"orml-xcm-support/std",
 	"astar-primitives/std",
 ]
@@ -255,6 +255,7 @@ runtime-benchmarks = [
 	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
+	"pallet-assets/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",

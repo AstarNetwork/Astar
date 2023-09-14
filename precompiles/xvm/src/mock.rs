@@ -38,8 +38,11 @@ use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_std::cell::RefCell;
 
-use astar_primitives::xvm::{CallError::*, CallErrorWithWeight, CallInfo, CallResult};
+use astar_primitives::xvm::{
+    CallFailure, CallOutput, CallResult, FailureError::*, FailureRevert::*,
+};
 
 pub type AccountId = TestAccount;
 pub type Balance = u128;
@@ -236,41 +239,52 @@ impl pallet_evm::Config for Runtime {
     type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
+thread_local! {
+    static WEIGHT_LIMIT: RefCell<Weight> = RefCell::new(Weight::zero());
+}
+
+pub(crate) struct WeightLimitCalledWith;
+impl WeightLimitCalledWith {
+    pub(crate) fn get() -> Weight {
+        WEIGHT_LIMIT.with(|gas_limit| *gas_limit.borrow())
+    }
+
+    pub(crate) fn set(value: Weight) {
+        WEIGHT_LIMIT.with(|gas_limit| *gas_limit.borrow_mut() = value)
+    }
+
+    pub(crate) fn reset() {
+        Self::set(Weight::zero());
+    }
+}
+
 struct MockXvmWithArgsCheck;
 impl XvmCall<AccountId> for MockXvmWithArgsCheck {
     fn call(
-        _context: Context,
+        context: Context,
         vm_id: VmId,
         _source: AccountId,
         target: Vec<u8>,
         input: Vec<u8>,
         _value: Balance,
+        _storage_deposit_limit: Option<Balance>,
     ) -> CallResult {
         ensure!(
             vm_id != VmId::Evm,
-            CallErrorWithWeight {
-                error: SameVmCallNotAllowed,
-                used_weight: Weight::zero()
-            }
+            CallFailure::error(SameVmCallDenied, Weight::zero())
         );
         ensure!(
             target.len() == 20,
-            CallErrorWithWeight {
-                error: InvalidTarget,
-                used_weight: Weight::zero()
-            }
+            CallFailure::revert(InvalidTarget, Weight::zero()),
         );
         ensure!(
             input.len() <= 1024,
-            CallErrorWithWeight {
-                error: InputTooLarge,
-                used_weight: Weight::zero()
-            }
+            CallFailure::revert(InputTooLarge, Weight::zero()),
         );
-        Ok(CallInfo {
-            output: vec![],
-            used_weight: Weight::zero(),
-        })
+
+        WeightLimitCalledWith::set(context.weight_limit);
+
+        Ok(CallOutput::new(vec![], Weight::zero()))
     }
 }
 
@@ -296,6 +310,8 @@ impl ExtBuilder {
         let t = frame_system::GenesisConfig::default()
             .build_storage::<Runtime>()
             .expect("Frame system builds valid default genesis config");
+
+        WeightLimitCalledWith::reset();
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
