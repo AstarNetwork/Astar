@@ -20,7 +20,9 @@
 
 use frame_support::{traits::Get, weights::Weight};
 use sp_core::U256;
-use sp_runtime::{traits::Convert, traits::UniqueSaturatedInto};
+use sp_runtime::{traits::Convert, traits::UniqueSaturatedInto, Perquintill};
+
+// TODO: not sure if Perbill will be precise enough here. Need to write tests to check.
 
 pub use self::pallet::*;
 
@@ -40,7 +42,11 @@ pub mod pallet {
         type DefaultBaseFeePerGas: Get<U256>;
         type MinBaseFeePerGas: Get<U256>;
         type MaxBaseFeePerGas: Get<U256>;
-        type AdjustmentLogic: Convert<u128, u128>;
+
+        type AdjustmentFactor: Get<u128>;
+        type WeightFactor: Get<u128>;
+
+        type MaxRatio: Perquintill;
     }
 
     #[pallet::genesis_config]
@@ -89,10 +95,17 @@ pub mod pallet {
 
         fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
             BaseFeePerGas::<T>::mutate(|base_fee_per_gas| {
-                let new_base_fee_per_gas =
-                    T::AdjustmentLogic::convert(base_fee_per_gas.clone().unique_saturated_into());
+                let old_bfpg = *base_fee_per_gas;
+                let new_bfpg = T::AdjustmentFactor::get()
+                    .saturating_mul(T::WeightFactor::get())
+                    .saturating_mul(25)
+                    .saturating_div(98974);
 
-                *base_fee_per_gas = U256::from(new_base_fee_per_gas)
+                // TODO: continue here - I can either use Perquintill or Rational but have to see which one is better for my purpose.
+                // The problem with Perquintill is that it saturates at 1, so I would have to express the "opposite" ratio - smaller_value/larger_value for it to work. Which is fine...
+                // if new_bfpg > old_bfpg &&
+
+                *base_fee_per_gas = U256::from(new_bfpg)
                     .clamp(T::MinBaseFeePerGas::get(), T::MaxBaseFeePerGas::get());
             })
         }
