@@ -15,22 +15,21 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
-
-//! Runtime integration tests.
-
 #![cfg(test)]
 
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod setup;
+use crate::setup::*;
+use frame_support::traits::InstanceFilter;
 
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod proxy;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod assets;
-
-#[cfg(feature = "shibuya")]
-mod xvm;
-
-#[cfg(feature = "shibuya")]
-mod dispatch_filter;
+#[test]
+fn filter_accepts_batch_call_with_dappsstaking() {
+    ExtBuilder::default().build().execute_with(|| {
+        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let inner_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker{
+            contract_id : contract.clone(),
+        });
+        let call = RuntimeCall::Utility(UtilityCall::batch {
+            calls : vec![inner_call]
+        });
+        assert!(DispatchPrecompileFilter.filter(&call));
+    });
+}
