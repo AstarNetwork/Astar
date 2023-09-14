@@ -17,6 +17,42 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! # Pallet Account
+//!
+//! A simple module for managing mappings (both ways) between different
+//! address schemes
+//!
+//! - [`Config`]
+//! - [`Call`]
+//!
+//! ## Overview
+//!
+//! The Accounts module provide functionality for native account holders to
+//! connect their EVM accounts to have a unified experence across the different VMs.
+//! - Connect EVM address you control
+//! - Connect default evm address
+//!
+//! ## Interface
+//!
+//! * `claim_evm_account`: Creates the double mappings for the provided evm address with caller
+//!    account id given that no prior mapping exists for both and signature provided is valid.
+//! * `claim_default_evm_account`: Creates the double mapping with default evm address given that
+//!    no prior mapping exists.
+//!
+//! ## Traits
+//!
+//! * `AddressManager`: Interface to access pallet's mappings with defaults
+//! * `ClaimSignature`: Signature verification scheme for proving address ownership
+//!
+//! ## Implementations
+//!
+//! * [`StaticLookup`](sp_runtime::traits::StaticLookup): Lookup implementations for accepting H160
+//! * [`AddressMapping`](pallet_evm::AddressMapping): Wrapper over `AddressManager` for evm address mapping
+//!   to account id.
+//! * [`AccountMapping`](astar_primitives::ethereum_checked::AccountMapping): Wrapper over `AddressManager`
+//!   for account id mappings to h160.
+//! * `KillAccountMapping`: [`OnKilledAccount`](frame_support::traits::OnKilledAccount) implementation to remove
+//!   the mappings from storage after account is reaped.
+//! * `EIP712Signature`: EIP712 signature implementation for [`ClaimSignature`](crate::ClaimSignature)
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
