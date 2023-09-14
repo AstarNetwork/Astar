@@ -1052,6 +1052,21 @@ impl pallet_sudo::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
+#[derive(Default)]
+pub struct DispatchPrecompileFilter;
+
+impl InstanceFilter<RuntimeCall> for DispatchPrecompileFilter {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        match c {
+            RuntimeCall::Utility(pallet_utility::Call::batch { .. }) => true,
+            RuntimeCall::DappsStaking(_) => true,
+            _ => false,
+        }
+    }
+    fn is_superset(&self, _o: &Self) -> bool {
+        false
+    }
+}
 
 parameter_types! {
     // One storage item; key size 32, value size 8.

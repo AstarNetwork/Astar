@@ -18,7 +18,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use core::marker::PhantomData;
+
 use fp_evm::{ExitError, PrecompileFailure};
+use frame_support::{
+    dispatch::{DispatchClass, GetDispatchInfo, Pays},
+    traits::InstanceFilter,
+};
 use pallet_evm_precompile_dispatch::DispatchValidateT;
 
 pub struct BlockAllDispatchValidate;
@@ -34,5 +40,44 @@ impl<AccountId, RuntimeCall> DispatchValidateT<AccountId, RuntimeCall>
         Some(PrecompileFailure::Error {
             exit_status: ExitError::Other("invalid call".into()),
         })
+    }
+}
+
+pub struct DispatchFilterValidate<RuntimeCall, Filter: InstanceFilter<RuntimeCall> + Default>(
+    PhantomData<(RuntimeCall, Filter)>,
+);
+
+impl<AccountId, RuntimeCall: GetDispatchInfo, Filter: InstanceFilter<RuntimeCall> + Default>
+    DispatchValidateT<AccountId, RuntimeCall> for DispatchFilterValidate<RuntimeCall, Filter>
+{
+    fn validate_before_dispatch(
+        _origin: &AccountId,
+        call: &RuntimeCall,
+    ) -> Option<PrecompileFailure> {
+        let info = call.get_dispatch_info();
+        if !(info.pays_fee == Pays::Yes && info.class == DispatchClass::Normal) {
+            return Some(PrecompileFailure::Error {
+                exit_status: ExitError::Other("invalid call".into()),
+            });
+        } else if Filter::default().filter(call) {
+            return None;
+        } else {
+            return Some(PrecompileFailure::Error {
+                exit_status: ExitError::Other("invalid call".into()),
+            });
+        }
+    }
+}
+
+mod test {
+    use super::*;
+    #[test]
+    fn all_non_whitelisted_call_should_fail() {
+        assert_eq!(
+            BlockAllDispatchValidate::validate_before_dispatch(&(), &()).unwrap(),
+            PrecompileFailure::Error {
+                exit_status: ExitError::Other("invalid call".into()),
+            }
+        )
     }
 }
