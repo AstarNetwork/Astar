@@ -20,9 +20,7 @@
 
 use frame_support::{traits::Get, weights::Weight};
 use sp_core::U256;
-use sp_runtime::{traits::Convert, traits::UniqueSaturatedInto, Perquintill};
-
-// TODO: not sure if Perbill will be precise enough here. Need to write tests to check.
+use sp_runtime::{traits::UniqueSaturatedInto, Perquintill};
 
 pub use self::pallet::*;
 
@@ -38,15 +36,22 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
+        /// Overarching event type
         type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        /// Default base fee per gas value. Used in genesis if no other value specified explicitly.
         type DefaultBaseFeePerGas: Get<U256>;
+        /// Minimum value 'base fee per gas' can be adjusted to. This is a defensive measure to prevent the fee from being too low.
         type MinBaseFeePerGas: Get<U256>;
+        /// Maximum value 'base fee per gas' can be adjusted to. This is a defensive measure to prevent the fee from being too high.
         type MaxBaseFeePerGas: Get<U256>;
-
+        /// Getter for the fee adjustment factor used in 'base fee per gas' formula. This is expected to change in-between the blocks (doesn't have to though).
         type AdjustmentFactor: Get<u128>;
+        /// The so-called `weight_factor` in the 'base fee per gas' formula.
         type WeightFactor: Get<u128>;
-
-        type MaxRatio: Perquintill;
+        /// Ratio limit on how much the 'base fee per gas' can change in-between two blocks.
+        /// It's expressed as percentage, and used to calculate the delta between the old and new value.
+        /// E.g. if the current 'base fee per gas' is 100, and the limit is 10%, then the new base fee per gas can be between 90 and 110.
+        type StepLimitRatio: Get<Perquintill>;
     }
 
     #[pallet::genesis_config]
@@ -82,6 +87,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event {
+        /// New `base fee per gas` value has been forced-set.
         NewBaseFeePerGas { fee: U256 },
     }
 
@@ -93,20 +99,35 @@ pub mod pallet {
             db_weight.reads_writes(2, 1)
         }
 
+        // TODO: it's super important to do double-check possible loss of precision here.
+        // Do some tests, compare to benchmark values.
         fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
             BaseFeePerGas::<T>::mutate(|base_fee_per_gas| {
                 let old_bfpg = *base_fee_per_gas;
-                let new_bfpg = T::AdjustmentFactor::get()
+
+                // Maximum step we're allowed to move the base fee per gas by.
+                // TODO: this is lossy - can it be avoided? `U256` does not implement `num_traits::sign::Unsigned` trait
+                let max_step = {
+                    let old_bfpg_u128: u128 = old_bfpg.unique_saturated_into();
+                    let step = T::StepLimitRatio::get() * old_bfpg_u128;
+                    U256::from(step)
+                };
+
+                // TODO: maybe add a DB entry to check until when should we apply max step adjustment?
+                // Once 'equilibrium' is reached, it's safe to just follow the formula without limit updates.
+
+                // Lower & upper limit between which the new base fee per gas should be clamped.
+                let lower_limit = T::MinBaseFeePerGas::get().max(old_bfpg.saturating_sub(max_step));
+                let upper_limit = T::MaxBaseFeePerGas::get().min(old_bfpg.saturating_add(max_step));
+
+                // Calculate ideal new 'base_fee_per_gas' according to the formula
+                let ideal_new_bfpg = T::AdjustmentFactor::get()
                     .saturating_mul(T::WeightFactor::get())
                     .saturating_mul(25)
                     .saturating_div(98974);
 
-                // TODO: continue here - I can either use Perquintill or Rational but have to see which one is better for my purpose.
-                // The problem with Perquintill is that it saturates at 1, so I would have to express the "opposite" ratio - smaller_value/larger_value for it to work. Which is fine...
-                // if new_bfpg > old_bfpg &&
-
-                *base_fee_per_gas = U256::from(new_bfpg)
-                    .clamp(T::MinBaseFeePerGas::get(), T::MaxBaseFeePerGas::get());
+                // Clamp the ideal value in between the allowed limits
+                *base_fee_per_gas = U256::from(ideal_new_bfpg).clamp(lower_limit, upper_limit);
             })
         }
     }
