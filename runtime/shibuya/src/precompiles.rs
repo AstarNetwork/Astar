@@ -112,7 +112,10 @@ where
             a if a == hash(9) => Some(Blake2F::execute(handle)),
             // nor Ethereum precompiles :
             a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
-            a if a == hash(1025) => Some(Dispatch::<R, DispatchFilterValidate<RuntimeCall,DispatchPrecompileFilter>>::execute(handle)),
+            a if a == hash(1025) => Some(Dispatch::<
+                R,
+                DispatchFilterValidate<RuntimeCall, DispatchPrecompileFilter>,
+            >::execute(handle)),
             a if a == hash(1026) => Some(ECRecoverPublicKey::execute(handle)),
             a if a == hash(1027) => Some(Ed25519Verify::execute(handle)),
             // Astar precompiles (starts from 0x5000):

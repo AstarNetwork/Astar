@@ -21,15 +21,70 @@ use crate::setup::*;
 use frame_support::traits::InstanceFilter;
 
 #[test]
-fn filter_accepts_batch_call_with_dappsstaking() {
+fn filter_accepts_batch_call_with_dappsstaking_calls() {
     ExtBuilder::default().build().execute_with(|| {
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-        let inner_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker{
-            contract_id : contract.clone(),
+        let inner_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+            contract_id: contract.clone(),
         });
         let call = RuntimeCall::Utility(UtilityCall::batch {
-            calls : vec![inner_call]
+            calls: vec![inner_call],
         });
         assert!(DispatchPrecompileFilter.filter(&call));
     });
+}
+
+#[test]
+fn filter_rejects_non_whitelisted_batch_calls() {
+    ExtBuilder::default().build().execute_with(|| {
+        // CASE1 - only non whitelisted calls
+        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+            dest: MultiAddress::Id(CAT),
+            value: 100_000_000_000,
+        });
+        let transfer = Box::new(transfer_call);
+        let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+            calls: vec![*transfer.clone()],
+        }));
+
+        // Utility call containing Balances Call
+        assert!(!DispatchPrecompileFilter.filter(&call));
+
+        // CASE 2 - now whitelisted mixed with whitelisted calls
+
+        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let staking_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+            contract_id: contract.clone(),
+        });
+        let staking = Box::new(staking_call);
+
+        let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
+            calls: vec![*transfer, *staking.clone()],
+        }));
+
+        // Utility call containing Balances Call and Dappsstaking Call Fails filter
+        assert!(!DispatchPrecompileFilter.filter(&call));
+    });
+}
+
+#[test]
+fn filter_accepts_dappsstaking_calls() {
+    ExtBuilder::default().build().execute_with(|| {
+        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let stake_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+            contract_id: contract.clone(),
+        });
+        assert!(DispatchPrecompileFilter.filter(&stake_call));
+    });
+}
+
+#[test]
+fn filter_rejects_non_whitelisted_calls() {
+    ExtBuilder::default().build().execute_with(|| {
+        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+            dest: MultiAddress::Id(CAT),
+            value: 100_000_000_000,
+        });
+        assert!(!DispatchPrecompileFilter.filter(&transfer_call));
+    })
 }
