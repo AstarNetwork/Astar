@@ -734,7 +734,7 @@ fn account_ledger_subtract_lock_amount_consecutive_zeroes_merged() {
     assert!(acc_ledger
         .subtract_lock_amount(lock_amount, last_era - 1)
         .is_ok());
-    assert_eq!(acc_ledger.locked.0.len(), 3);
+    assert_eq!(acc_ledger.locked.0.len(), 2);
     assert_eq!(acc_ledger.locked.0[1], second_chunk);
 }
 

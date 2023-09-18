@@ -45,6 +45,7 @@ pub type PeriodNumber = u32;
 /// Dapp Id type
 pub type DAppId = u16;
 
+// TODO: perhaps this trait is not needed and instead of having 2 separate '___Chunk' types, we can have just one?
 /// Trait for types that can be used as a pair of amount & era.
 pub trait AmountEraPair: MaxEncodedLen + Default + Copy {
     /// Balance amount used somehow during the accompanied era.
@@ -70,7 +71,7 @@ pub enum SparseBoundedError {
 
 /// Helper struct for easier manipulation of sparse <amount, era> pairs.
 ///
-/// The struct guarantes the following:
+/// The struct guarantees the following:
 /// -----------------------------------
 /// 1. The vector is always sorted by era, in ascending order.
 /// 2. There are no two consecutive zero chunks.
@@ -79,7 +80,6 @@ pub enum SparseBoundedError {
 ///
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[scale_info(skip_type_params(ML))]
-// TODO: should I use `EncodeLike`?
 pub struct SparseBoundedAmountEraVec<P: AmountEraPair, ML: Get<u32>>(pub BoundedVec<P, ML>);
 
 impl<P, ML> SparseBoundedAmountEraVec<P, ML>
@@ -166,10 +166,14 @@ where
             inner[index].saturating_reduce(amount);
             index
         } else {
+            // Take the most relevant chunk for the desired era,
+            // and use it as 'base' for the new chunk.
             let mut chunk = inner[index];
             chunk.saturating_reduce(amount);
             chunk.set_era(era);
 
+            // Insert the new chunk AFTER the previous 'most relevant chunk'.
+            // The chunk we find is always either for the requested era, or some era before it.
             inner.insert(index + 1, chunk);
             index + 1
         };
@@ -179,15 +183,18 @@ where
             .iter_mut()
             .for_each(|chunk| chunk.saturating_reduce(amount));
 
-        // Merge all consecutive zero chunks
-        let mut i = relevant_chunk_index;
-        while i < inner.len() - 1 {
-            if inner[i].get_amount().is_zero() && inner[i + 1].get_amount().is_zero() {
-                inner.remove(i + 1);
+        // Prune all consecutive zero chunks
+        let mut new_inner = Vec::<P>::new();
+        new_inner.push(inner[0]);
+        for i in 1..inner.len() {
+            if inner[i].get_amount().is_zero() && inner[i - 1].get_amount().is_zero() {
+                continue;
             } else {
-                i += 1;
+                new_inner.push(inner[i]);
             }
         }
+
+        let mut inner = new_inner;
 
         // Cleanup if only one zero chunk exists
         if inner.len() == 1 && inner[0].get_amount().is_zero() {
@@ -446,7 +453,8 @@ where
     /// Total locked amount by the user.
     /// Includes both active locked amount & unlocking amount.
     pub fn total_locked_amount(&self) -> Balance {
-        self.active_locked_amount() + self.unlocking_amount()
+        self.active_locked_amount()
+            .saturating_add(self.unlocking_amount())
     }
 
     /// Returns latest era in which locked amount was updated or zero in case no lock amount exists
@@ -454,8 +462,6 @@ where
         self.latest_locked_chunk()
             .map_or(EraNumber::zero(), |locked| locked.era)
     }
-
-    // TODO: can active_period be provided somehow different instead of using a parameter? It should be 'free' to read the data from storage since it will be whitelisted.
 
     /// Active staked balance.
     ///
