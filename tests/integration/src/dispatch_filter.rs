@@ -20,8 +20,9 @@
 use crate::setup::*;
 use frame_support::traits::InstanceFilter;
 
+/// Whitelisted Calls are defined in the runtime
 #[test]
-fn filter_accepts_batch_call_with_dappsstaking_calls() {
+fn filter_accepts_batch_call_with_whitelisted_calls() {
     ExtBuilder::default().build().execute_with(|| {
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
         let inner_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
@@ -68,7 +69,7 @@ fn filter_rejects_non_whitelisted_batch_calls() {
 }
 
 #[test]
-fn filter_accepts_dappsstaking_calls() {
+fn filter_accepts_whitelisted_calls() {
     ExtBuilder::default().build().execute_with(|| {
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
         let stake_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
