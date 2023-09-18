@@ -404,7 +404,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.18.0"
+version = "5.18.1"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -533,7 +533,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.18.0"
+version = "5.18.1"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -5495,7 +5495,7 @@ checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 
 [[package]]
 name = "local-runtime"
-version = "5.18.0"
+version = "5.18.1"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -10171,9 +10171,9 @@ dependencies = [
 
 [[package]]
 name = "quinn-proto"
-version = "0.9.3"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67c10f662eee9c94ddd7135043e544f3c82fa839a1e7b865911331961b53186c"
+checksum = "c956be1b23f4261676aed05a0046e204e8a6836e50203902683a718af0797989"
 dependencies = [
  "bytes",
  "rand 0.8.5",
@@ -12356,7 +12356,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.18.0"
+version = "5.18.1"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -12464,7 +12464,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.18.0"
+version = "5.18.1"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -14462,7 +14462,7 @@ checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if",
  "digest 0.10.7",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
