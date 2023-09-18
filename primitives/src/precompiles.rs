@@ -69,6 +69,7 @@ impl<AccountId, RuntimeCall: GetDispatchInfo, Filter: InstanceFilter<RuntimeCall
     }
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
     #[test]
