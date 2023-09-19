@@ -18,7 +18,8 @@
 
 //! The Shiden Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-use astar_primitives::precompiles::BlockAllDispatchValidate;
+use crate::{DispatchPrecompileFilter, RuntimeCall};
+use astar_primitives::precompiles::DispatchFilterValidate;
 use pallet_evm::{
     ExitRevert, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle,
     PrecompileResult, PrecompileSet,
@@ -75,7 +76,7 @@ where
     DappsStakingWrapper<R>: Precompile,
     BatchPrecompile<R>: Precompile,
     XcmPrecompile<R, C>: Precompile,
-    Dispatch<R, BlockAllDispatchValidate>: Precompile,
+    Dispatch<R, DispatchFilterValidate<RuntimeCall, DispatchPrecompileFilter>>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config
         + pallet_xcm::Config
@@ -107,7 +108,10 @@ where
             a if a == hash(9) => Some(Blake2F::execute(handle)),
             // nor Ethereum precompiles :
             a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
-            a if a == hash(1025) => Some(Dispatch::<R, BlockAllDispatchValidate>::execute(handle)),
+            a if a == hash(1025) => Some(Dispatch::<
+                R,
+                DispatchFilterValidate<RuntimeCall, DispatchPrecompileFilter>,
+            >::execute(handle)),
             a if a == hash(1026) => Some(ECRecoverPublicKey::execute(handle)),
             a if a == hash(1027) => Some(Ed25519Verify::execute(handle)),
             // Astar precompiles (starts from 0x5000):

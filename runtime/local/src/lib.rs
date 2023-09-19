@@ -845,6 +845,29 @@ impl pallet_sudo::Config for Runtime {
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
+#[derive(Default)]
+pub struct DispatchPrecompileFilter;
+
+impl InstanceFilter<RuntimeCall> for DispatchPrecompileFilter {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        match c {
+            RuntimeCall::Utility(pallet_utility::Call::batch { calls }) => {
+                for call in calls {
+                    if !DispatchPrecompileFilter::default().filter(call) {
+                        return false;
+                    }
+                }
+                true
+            }
+            RuntimeCall::DappsStaking(_) => true,
+            _ => false,
+        }
+    }
+    fn is_superset(&self, _o: &Self) -> bool {
+        false
+    }
+}
+
 /// The type used to represent the kinds of proxying allowed.
 #[derive(
     Copy,
