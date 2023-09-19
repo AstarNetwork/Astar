@@ -94,9 +94,12 @@ where
 
     /// Places the specified <amount, era> pair into the vector, in an appropriate place.
     ///
-    /// If entry for the specified era already exists, it's updated.
+    /// There are two possible successful scenarios:
+    /// 1. If entry for the specified era already exists, it's updated.
+    ///    [(100, 1)] -- add_amount(50, 1) --> [(150, 1)]
     ///
-    /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
+    /// 2. If entry for the specified era doesn't exist, it's created and insertion is attempted.
+    ///    [(100, 1)] -- add_amount(50, 2) --> [(100, 1), (150, 2)]
     ///
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
     pub fn add_amount(
@@ -133,9 +136,20 @@ where
 
     /// Subtracts the specified amount of the total locked amount, if possible.
     ///
-    /// If entry for the specified era already exists, it's updated.
+    /// There are multiple success scenarios/rules:
+    /// 1. If entry for the specified era already exists, it's updated.
+    ///    a. [(100, 1)] -- subtract_amount(50, 1) --> [(50, 1)]
+    ///    b. [(100, 1)] -- subtract_amount(100, 1) --> []
     ///
-    /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
+    /// 2. All entries following the specified era will have their amount reduced as well.
+    ///    [(100, 1), (150, 2)] -- subtract_amount(50, 1) --> [(50, 1), (100, 2)]
+    ///
+    /// 3. If entry for the specified era doesn't exist, it's created and insertion is attempted.
+    ///    [(100, 1), (200, 3)] -- subtract_amount(100, 2) --> [(100, 1), (0, 2), (100, 3)]
+    ///
+    /// 4. No two consecutive zero chunks are allowed.
+    ///   [(100, 1), (0, 2), (100, 3), (200, 4)] -- subtract_amount(100, 3) --> [(100, 1), (0, 2), (100, 4)]
+    ///
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
     pub fn subtract_amount(
         &mut self,
@@ -147,6 +161,7 @@ where
         }
         // TODO: this method can surely be optimized (avoid too many iters) but focus on that later,
         // when it's all working fine, and we have good test coverage.
+        // TODO2: realistically, the only eligible eras are the last two ones (current & previous). Code could be optimized for that.
 
         // Find the most relevant locked chunk for the specified era
         let index = if let Some(index) = self.0.iter().rposition(|&chunk| chunk.get_era() <= era) {
@@ -194,7 +209,7 @@ where
             }
         }
 
-        let mut inner = new_inner;
+        inner = new_inner;
 
         // Cleanup if only one zero chunk exists
         if inner.len() == 1 && inner[0].get_amount().is_zero() {
@@ -551,21 +566,18 @@ where
 
     /// Claims all of the fully unlocked chunks, and returns the total claimable amount.
     pub fn claim_unlocked(&mut self, current_block_number: BlockNumber) -> Balance {
-        let mut total_unlocked = Balance::zero();
+        let mut total = Balance::zero();
 
-        // Probably faster approach than partitioning, summing & collecting.
-        let mut i = 0;
-        while i < self.unlocking.len() {
-            let chunk = self.unlocking[i];
+        self.unlocking.retain(|chunk| {
             if chunk.unlock_block <= current_block_number {
-                total_unlocked.saturating_accrue(chunk.amount);
-                self.unlocking.remove(i);
+                total.saturating_accrue(chunk.amount);
+                false
             } else {
-                i += 1;
+                true
             }
-        }
+        });
 
-        total_unlocked
+        total
     }
 
     /// Consumes all of the unlocking chunks, and returns the total amount being unlocked.
