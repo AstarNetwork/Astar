@@ -27,6 +27,7 @@ use frame_support::{
 };
 use pallet_evm_precompile_dispatch::DispatchValidateT;
 
+/// Struct that blocks all runtime calls to Dispatch Precompile
 pub struct BlockAllDispatchValidate;
 
 /// The default implementation of `DispatchValidateT`.
@@ -43,6 +44,8 @@ impl<AccountId, RuntimeCall> DispatchValidateT<AccountId, RuntimeCall>
     }
 }
 
+/// Struct that allows only whitelisted runtime calls to pass through dispatch precompile,
+/// Whitelisted calls are defined in runtime
 pub struct DispatchFilterValidate<RuntimeCall, Filter: InstanceFilter<RuntimeCall> + Default>(
     PhantomData<(RuntimeCall, Filter)>,
 );

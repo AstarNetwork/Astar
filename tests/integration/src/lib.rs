@@ -32,5 +32,5 @@ mod assets;
 #[cfg(feature = "shibuya")]
 mod xvm;
 
-#[cfg(feature = "shibuya")]
+#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod dispatch_filter;

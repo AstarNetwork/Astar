@@ -845,6 +845,7 @@ impl pallet_sudo::Config for Runtime {
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
+/// Filter that only allows whitelisted runtime call to pass through dispatch precompile
 #[derive(Default)]
 pub struct DispatchPrecompileFilter;
 

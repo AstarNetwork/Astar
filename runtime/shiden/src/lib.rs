@@ -832,6 +832,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
+/// Filter that only allows whitelisted runtime call to pass through dispatch precompile
 #[derive(Default)]
 pub struct DispatchPrecompileFilter;
 
