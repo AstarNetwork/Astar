@@ -1060,7 +1060,8 @@ pub struct DispatchPrecompileFilter;
 impl InstanceFilter<RuntimeCall> for DispatchPrecompileFilter {
     fn filter(&self, c: &RuntimeCall) -> bool {
         match c {
-            RuntimeCall::Utility(pallet_utility::Call::batch { calls }) => {
+            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
                 for call in calls {
                     if !DispatchPrecompileFilter::default().filter(call) {
                         return false;

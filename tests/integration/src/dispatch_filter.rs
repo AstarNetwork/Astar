@@ -89,3 +89,20 @@ fn filter_rejects_non_whitelisted_calls() {
         assert!(!DispatchPrecompileFilter.filter(&transfer_call));
     })
 }
+
+#[test]
+fn filter_accepts_whitelisted_batch_all_calls() {
+    ExtBuilder::default().build().execute_with(|| {
+        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let inner_call1 = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+            contract_id: contract.clone(),
+        });
+        let inner_call2 = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+            contract_id: contract.clone(),
+        });
+        let call = RuntimeCall::Utility(UtilityCall::batch_all {
+            calls: vec![inner_call1, inner_call2],
+        });
+        assert!(DispatchPrecompileFilter.filter(&call));
+    });
+}
