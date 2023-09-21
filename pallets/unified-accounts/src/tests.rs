@@ -184,53 +184,6 @@ fn account_claim_should_work() {
 }
 
 #[test]
-fn account_claim_should_not_work() {
-    ExtBuilder::default().build().execute_with(|| {
-        // invald signature
-        assert_noop!(
-            UnifiedAccounts::claim_evm_address(
-                RuntimeOrigin::signed(ALICE),
-                UnifiedAccounts::eth_address(&bob_secret()),
-                get_evm_signature(&BOB, &bob_secret())
-            ),
-            Error::<TestRuntime>::InvalidSignature
-        );
-        assert_noop!(
-            UnifiedAccounts::claim_evm_address(
-                RuntimeOrigin::signed(ALICE),
-                UnifiedAccounts::eth_address(&bob_secret()),
-                get_evm_signature(&ALICE, &alice_secret())
-            ),
-            Error::<TestRuntime>::InvalidSignature
-        );
-
-        assert_ok!(UnifiedAccounts::claim_evm_address(
-            RuntimeOrigin::signed(ALICE),
-            UnifiedAccounts::eth_address(&alice_secret()),
-            get_evm_signature(&ALICE, &alice_secret())
-        ));
-        // AccountId already mapped
-        assert_noop!(
-            UnifiedAccounts::claim_evm_address(
-                RuntimeOrigin::signed(ALICE),
-                UnifiedAccounts::eth_address(&alice_secret()),
-                get_evm_signature(&ALICE, &alice_secret())
-            ),
-            Error::<TestRuntime>::AlreadyMapped
-        );
-        // eth address already mapped
-        assert_noop!(
-            UnifiedAccounts::claim_evm_address(
-                RuntimeOrigin::signed(BOB),
-                UnifiedAccounts::eth_address(&alice_secret()),
-                get_evm_signature(&ALICE, &alice_secret())
-            ),
-            Error::<TestRuntime>::AlreadyMapped
-        );
-    });
-}
-
-#[test]
 fn account_default_claim_works() {
     ExtBuilder::default().build().execute_with(|| {
         let alice_default_evm =
@@ -261,6 +214,90 @@ fn account_default_claim_works() {
         assert_noop!(
             UnifiedAccounts::claim_evm_address(
                 RuntimeOrigin::signed(ALICE),
+                UnifiedAccounts::eth_address(&alice_secret()),
+                get_evm_signature(&ALICE, &alice_secret())
+            ),
+            Error::<TestRuntime>::AlreadyMapped
+        );
+    });
+}
+
+#[test]
+fn replay_attack_should_not_be_possible() {
+    ExtBuilder::default().build().execute_with(|| {
+        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+        let alice_signature = get_evm_signature(&ALICE, &alice_secret());
+
+        // alice claim her eth address first
+        assert_ok!(UnifiedAccounts::claim_evm_address(
+            RuntimeOrigin::signed(ALICE),
+            alice_eth,
+            alice_signature
+        ));
+
+        // bob intercepted alice signature and tries to perform
+        // replay attack to claim alice eth address as his own,
+        // this should fail.
+        assert_noop!(
+            UnifiedAccounts::claim_evm_address(
+                RuntimeOrigin::signed(BOB),
+                alice_eth,
+                alice_signature
+            ),
+            Error::<TestRuntime>::AlreadyMapped
+        );
+    });
+}
+
+#[test]
+fn frontrun_attack_should_not_be_possible() {
+    ExtBuilder::default().build().execute_with(|| {
+        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+        let alice_signature = get_evm_signature(&ALICE, &alice_secret());
+
+        // bob intercepted alice signature and tries to perform
+        // frontrun attack to claim alice eth address as his own
+        // this should fail with InvalidSignature.
+        assert_noop!(
+            UnifiedAccounts::claim_evm_address(
+                RuntimeOrigin::signed(BOB),
+                alice_eth,
+                alice_signature
+            ),
+            Error::<TestRuntime>::InvalidSignature
+        );
+
+        // alice can claim her eth address
+        assert_ok!(UnifiedAccounts::claim_evm_address(
+            RuntimeOrigin::signed(ALICE),
+            alice_eth,
+            alice_signature
+        ));
+    });
+}
+
+#[test]
+fn connecting_mapped_accounts_should_not_work() {
+    ExtBuilder::default().build().execute_with(|| {
+        // connect ALICE accounts
+        connect_accounts(&ALICE, &alice_secret());
+
+        // AccountId already mapped
+        // ALICE attempts to connect another evm address
+        assert_noop!(
+            UnifiedAccounts::claim_evm_address(
+                RuntimeOrigin::signed(ALICE),
+                UnifiedAccounts::eth_address(&bob_secret()),
+                get_evm_signature(&BOB, &bob_secret())
+            ),
+            Error::<TestRuntime>::AlreadyMapped
+        );
+
+        // eth address already mapped
+        // BOB attempts to connect alice_eth that is already mapped
+        assert_noop!(
+            UnifiedAccounts::claim_evm_address(
+                RuntimeOrigin::signed(BOB),
                 UnifiedAccounts::eth_address(&alice_secret()),
                 get_evm_signature(&ALICE, &alice_secret())
             ),
