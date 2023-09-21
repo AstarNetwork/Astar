@@ -61,28 +61,6 @@ pub mod pallet {
         type StepLimitRatio: Get<Perquintill>;
     }
 
-    #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config> {
-        pub base_fee_per_gas: U256,
-        _marker: PhantomData<T>,
-    }
-
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                base_fee_per_gas: T::DefaultBaseFeePerGas::get(),
-                _marker: PhantomData,
-            }
-        }
-    }
-
-    #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-        fn build(&self) {
-            BaseFeePerGas::<T>::put(self.base_fee_per_gas);
-        }
-    }
-
     #[pallet::type_value]
     pub fn DefaultBaseFeePerGas<T: Config>() -> U256 {
         T::DefaultBaseFeePerGas::get()
@@ -119,8 +97,6 @@ pub mod pallet {
                 let old_bfpg = *base_fee_per_gas;
 
                 // Maximum step we're allowed to move the base fee per gas by.
-                // TODO: this is lossy - can it be avoided? `U256` does not implement `num_traits::sign::Unsigned` trait
-                // TODO2: maybe ensure that BFPG can never exceed u128::MAX? Could be part of integration tests.
                 let max_step = {
                     let old_bfpg_u128: u128 = old_bfpg.unique_saturated_into();
                     let step = T::StepLimitRatio::get() * old_bfpg_u128;
@@ -145,6 +121,19 @@ pub mod pallet {
                 // Clamp the ideal value in between the allowed limits
                 *base_fee_per_gas = U256::from(ideal_new_bfpg).clamp(lower_limit, upper_limit);
             })
+        }
+
+        fn integrity_test() {
+            assert!(T::MinBaseFeePerGas::get() <= T::MaxBaseFeePerGas::get(),
+                "Minimum base fee per gas has to be equal or lower than maximum allowed base fee per gas.");
+
+            assert!(T::DefaultBaseFeePerGas::get() >= T::MinBaseFeePerGas::get(),
+                "Default base fee per gas has to be equal or higher than minimum allowed base fee per gas.");
+            assert!(T::DefaultBaseFeePerGas::get() <= T::MaxBaseFeePerGas::get(),
+                "Default base fee per gas has to be equal or lower than maximum allowed base fee per gas.");
+
+            assert!(T::MaxBaseFeePerGas::get() <= U256::from(u128::MAX),
+                "Maximum base fee per gas has to be equal or lower than u128::MAX, otherwise precision loss will occur.");
         }
     }
 
