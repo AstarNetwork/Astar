@@ -23,8 +23,8 @@ pub use frame_support::{
     traits::{OnFinalize, OnIdle, OnInitialize},
     weights::Weight,
 };
-pub use pallet_unified_accounts::UnifiedAddressMapper;
 pub use pallet_evm::AddressMapping;
+pub use pallet_unified_accounts::UnifiedAddressMapper;
 pub use sp_core::{H160, H256, U256};
 pub use sp_runtime::{AccountId32, MultiAddress};
 
@@ -108,9 +108,9 @@ mod shibuya {
 
     pub fn claim_default_accounts(account: AccountId) {
         let default_h160 = UnifiedAccounts::to_default_h160(&account);
-        assert_ok!(UnifiedAccounts::claim_default_evm_address(RuntimeOrigin::signed(
-            account.clone()
-        )));
+        assert_ok!(UnifiedAccounts::claim_default_evm_address(
+            RuntimeOrigin::signed(account.clone())
+        ));
         assert_eq!(UnifiedAccounts::to_h160(&account).unwrap(), default_h160);
     }
 }

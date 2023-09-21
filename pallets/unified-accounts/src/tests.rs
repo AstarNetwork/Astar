@@ -102,13 +102,15 @@ fn static_lookup_works() {
 
         // mapping should work if available
         assert_eq!(
-            <UnifiedAccounts as StaticLookup>::lookup(MultiAddress::Address20(alice_eth.into())).unwrap(),
+            <UnifiedAccounts as StaticLookup>::lookup(MultiAddress::Address20(alice_eth.into()))
+                .unwrap(),
             ALICE
         );
 
         // should use default if not mapping
         assert_eq!(
-            <UnifiedAccounts as StaticLookup>::lookup(MultiAddress::Address20(bob_eth.into())).unwrap(),
+            <UnifiedAccounts as StaticLookup>::lookup(MultiAddress::Address20(bob_eth.into()))
+                .unwrap(),
             bob_default_account_id
         );
     });
@@ -235,13 +237,15 @@ fn account_default_claim_works() {
             <TestRuntime as Config>::DefaultAccountMapping::into_h160(ALICE.into());
 
         // claim default account
-        assert_ok!(UnifiedAccounts::claim_default_evm_address(RuntimeOrigin::signed(
-            ALICE
-        )));
-        System::assert_last_event(RuntimeEvent::UnifiedAccounts(crate::Event::AccountClaimed {
-            account_id: ALICE.clone(),
-            evm_address: alice_default_evm.clone(),
-        }));
+        assert_ok!(UnifiedAccounts::claim_default_evm_address(
+            RuntimeOrigin::signed(ALICE)
+        ));
+        System::assert_last_event(RuntimeEvent::UnifiedAccounts(
+            crate::Event::AccountClaimed {
+                account_id: ALICE.clone(),
+                evm_address: alice_default_evm.clone(),
+            },
+        ));
 
         // check UnifiedAddressMapper's mapping works
         assert_eq!(
