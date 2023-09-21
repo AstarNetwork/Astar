@@ -24,6 +24,8 @@ use mock::*;
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::traits::BadOrigin;
 
+use fp_evm::FeeCalculator;
+
 #[test]
 fn set_base_fee_per_gas_works() {
     ExtBuilder::build().execute_with(|| {
@@ -86,6 +88,26 @@ fn set_base_fee_per_gas_non_root_fails() {
                 <TestRuntime as pallet::Config>::MinBaseFeePerGas::get()
             ),
             BadOrigin
+        );
+    });
+}
+
+#[test]
+fn min_gas_price_works() {
+    ExtBuilder::build().execute_with(|| {
+        let new_base_fee_per_gas =
+            <TestRuntime as pallet::Config>::MinBaseFeePerGas::get() + 19 * 17;
+        assert_ok!(DynamicEvmBaseFee::set_base_fee_per_gas(
+            RuntimeOrigin::root(),
+            new_base_fee_per_gas
+        ));
+
+        assert_eq!(
+            DynamicEvmBaseFee::min_gas_price(),
+            (
+                new_base_fee_per_gas,
+                <TestRuntime as frame_system::Config>::DbWeight::get().reads(1)
+            )
         );
     });
 }

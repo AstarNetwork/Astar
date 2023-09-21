@@ -26,7 +26,7 @@ use frame_support::{
     sp_io::TestExternalities,
     storage,
     traits::{ConstU128, ConstU32, ConstU64},
-    weights::Weight,
+    weights::constants::RocksDbWeight,
 };
 use parity_scale_codec::Encode;
 use sp_core::H256;
@@ -60,7 +60,7 @@ impl frame_system::Config for TestRuntime {
     type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU64<250>;
-    type DbWeight = ();
+    type DbWeight = RocksDbWeight;
     type Version = ();
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;

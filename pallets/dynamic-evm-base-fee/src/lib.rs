@@ -120,6 +120,7 @@ pub mod pallet {
 
                 // Maximum step we're allowed to move the base fee per gas by.
                 // TODO: this is lossy - can it be avoided? `U256` does not implement `num_traits::sign::Unsigned` trait
+                // TODO2: maybe ensure that BFPG can never exceed u128::MAX? Could be part of integration tests.
                 let max_step = {
                     let old_bfpg_u128: u128 = old_bfpg.unique_saturated_into();
                     let step = T::StepLimitRatio::get() * old_bfpg_u128;
