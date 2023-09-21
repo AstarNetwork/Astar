@@ -7153,6 +7153,8 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
+ "pallet-balances",
+ "pallet-timestamp",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",

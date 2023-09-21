@@ -16,13 +16,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+//! TODO: Rustdoc!!!
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{traits::Get, weights::Weight};
 use sp_core::U256;
-use sp_runtime::{traits::UniqueSaturatedInto, Perquintill};
+use sp_runtime::{traits::UniqueSaturatedInto, FixedPointNumber, FixedU128, Perquintill};
 
 pub use self::pallet::*;
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -45,7 +52,7 @@ pub mod pallet {
         /// Maximum value 'base fee per gas' can be adjusted to. This is a defensive measure to prevent the fee from being too high.
         type MaxBaseFeePerGas: Get<U256>;
         /// Getter for the fee adjustment factor used in 'base fee per gas' formula. This is expected to change in-between the blocks (doesn't have to though).
-        type AdjustmentFactor: Get<u128>;
+        type AdjustmentFactor: Get<FixedU128>;
         /// The so-called `weight_factor` in the 'base fee per gas' formula.
         type WeightFactor: Get<u128>;
         /// Ratio limit on how much the 'base fee per gas' can change in-between two blocks.
@@ -87,8 +94,14 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event {
-        /// New `base fee per gas` value has been forced-set.
+        /// New `base fee per gas` value has been force-set.
         NewBaseFeePerGas { fee: U256 },
+    }
+
+    #[pallet::error]
+    pub enum Error<T> {
+        /// Specified value is outside of the allowed range.
+        ValueOutOfBounds,
     }
 
     #[pallet::hooks]
@@ -115,6 +128,7 @@ pub mod pallet {
 
                 // TODO: maybe add a DB entry to check until when should we apply max step adjustment?
                 // Once 'equilibrium' is reached, it's safe to just follow the formula without limit updates.
+                // Or we could abuse the sudo for this.
 
                 // Lower & upper limit between which the new base fee per gas should be clamped.
                 let lower_limit = T::MinBaseFeePerGas::get().max(old_bfpg.saturating_sub(max_step));
@@ -122,7 +136,8 @@ pub mod pallet {
 
                 // Calculate ideal new 'base_fee_per_gas' according to the formula
                 let ideal_new_bfpg = T::AdjustmentFactor::get()
-                    .saturating_mul(T::WeightFactor::get())
+                    // Weight factor should be multiplied first since it's a larger number, to avoid precision loss.
+                    .saturating_mul_int(T::WeightFactor::get())
                     .saturating_mul(25)
                     .saturating_div(98974);
 
@@ -138,6 +153,11 @@ pub mod pallet {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
         pub fn set_base_fee_per_gas(origin: OriginFor<T>, fee: U256) -> DispatchResult {
             ensure_root(origin)?;
+            ensure!(
+                fee >= T::MinBaseFeePerGas::get() && fee <= T::MaxBaseFeePerGas::get(),
+                Error::<T>::ValueOutOfBounds
+            );
+
             BaseFeePerGas::<T>::put(fee);
             Self::deposit_event(Event::NewBaseFeePerGas { fee });
             Ok(())
