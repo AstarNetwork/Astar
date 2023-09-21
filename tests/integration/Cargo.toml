@@ -29,7 +29,7 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 
 # astar dependencies
-pallet-account = { workspace = true }
+pallet-unified-accounts = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 

@@ -19,7 +19,7 @@
 #![cfg(test)]
 
 use super::*;
-use crate as pallet_account;
+use crate as pallet_unified_accounts;
 use frame_support::{
     construct_runtime, parameter_types,
     sp_io::TestExternalities,
@@ -51,7 +51,7 @@ impl frame_system::Config for TestRuntime {
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
-    type Lookup = (AccountIdLookup<Self::AccountId, ()>, Accounts);
+    type Lookup = (AccountIdLookup<Self::AccountId, ()>, UnifiedAccounts);
     type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU64<250>;
@@ -120,7 +120,7 @@ impl pallet_evm::Config for TestRuntime {
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<TestRuntime>;
     type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
-    type AddressMapping = Accounts;
+    type AddressMapping = UnifiedAccounts;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
@@ -151,12 +151,12 @@ parameter_types! {
     pub TxWeightLimit: Weight = Weight::from_parts(u64::max_value(), 0);
 }
 
-impl pallet_account::Config for TestRuntime {
+impl pallet_unified_accounts::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultAddressMapping = HashedAddressMapping<BlakeTwo256>;
     type DefaultAccountMapping = HashedAccountMapping<BlakeTwo256>;
-    type ClaimSignature = EIP712Signature<Self, ChainId>;
+    type SignatureHelper = EIP712Signature<Self, ChainId>;
 }
 
 pub(crate) type AccountId = AccountId32;
@@ -190,7 +190,7 @@ construct_runtime!(
         Balances: pallet_balances,
         Evm: pallet_evm,
         Ethereum: pallet_ethereum,
-        Accounts: pallet_account,
+        UnifiedAccounts: pallet_unified_accounts,
     }
 );
 
@@ -224,16 +224,6 @@ impl ExtBuilder {
 
         let mut ext = TestExternalities::from(t);
         ext.execute_with(|| System::set_block_number(1));
-        ext
-    }
-
-    pub fn with_alice_mapping() -> TestExternalities {
-        let mut ext = Self::default().build();
-        ext.execute_with(|| {
-            let alice_eth = Accounts::eth_address(&alice_secret());
-            EvmAccounts::<TestRuntime>::set(ALICE, Some(alice_eth.clone()));
-            NativeAccounts::<TestRuntime>::set(alice_eth, Some(ALICE));
-        });
         ext
     }
 }

@@ -4925,7 +4925,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
- "pallet-account",
  "pallet-assets",
  "pallet-balances",
  "pallet-contracts",
@@ -4935,6 +4934,7 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-proxy",
+ "pallet-unified-accounts",
  "pallet-utility",
  "parity-scale-codec",
  "shibuya-runtime",
@@ -5981,7 +5981,6 @@ dependencies = [
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
- "pallet-account",
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
@@ -6022,6 +6021,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
+ "pallet-unified-accounts",
  "pallet-utility",
  "pallet-vesting",
  "pallet-xvm",
@@ -7200,31 +7200,6 @@ checksum = "a1914cd452d8fccd6f9db48147b29fd4ae05bea9dc5d9ad578509f72415de282"
 dependencies = [
  "cfg-if",
  "libm 0.1.4",
-]
-
-[[package]]
-name = "pallet-account"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "ethers",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "libsecp256k1",
- "log",
- "pallet-balances",
- "pallet-ethereum",
- "pallet-evm",
- "pallet-timestamp",
- "parity-scale-codec",
- "precompile-utils",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -8704,6 +8679,31 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-unified-accounts"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "ethers",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "libsecp256k1",
+ "log",
+ "pallet-balances",
+ "pallet-ethereum",
+ "pallet-evm",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -13052,7 +13052,6 @@ dependencies = [
  "moonbeam-rpc-primitives-txpool",
  "orml-xcm-support",
  "orml-xtokens",
- "pallet-account",
  "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
@@ -13099,6 +13098,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
+ "pallet-unified-accounts",
  "pallet-utility",
  "pallet-vesting",
  "pallet-xc-asset-config",

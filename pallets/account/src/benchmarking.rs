@@ -28,18 +28,18 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 }
 
 #[benchmarks(
-    where <<T as Config>::ClaimSignature as ClaimSignature>::Signature: IsType<[u8;65]>
+    where <<T as Config>::SignatureHelper as SignatureHelper>::Signature: IsType<[u8;65]>
 )]
 mod benchmarks {
     use super::*;
 
     #[benchmark]
-    fn claim_evm_account() {
+    fn claim_evm_address() {
         let caller: T::AccountId = whitelisted_caller();
         let eth_secret_key = libsecp256k1::SecretKey::parse(&[0xff; 32]).unwrap();
         let evm_address = Pallet::<T>::eth_address(&eth_secret_key);
         let signature = Pallet::<T>::eth_sign_prehash(
-            &T::ClaimSignature::build_signing_payload(&caller),
+            &T::SignatureHelper::build_signing_payload(&caller),
             &eth_secret_key,
         )
         .into();
@@ -59,7 +59,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn claim_default_evm_account() {
+    fn claim_default_evm_address() {
         let caller: T::AccountId = whitelisted_caller();
         let caller_clone = caller.clone();
         let evm_address = T::DefaultAccountMapping::into_h160(caller.clone());

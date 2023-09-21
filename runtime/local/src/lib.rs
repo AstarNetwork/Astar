@@ -201,7 +201,7 @@ impl frame_system::Config for Runtime {
     /// The aggregated dispatch type that is available for extrinsics.
     type RuntimeCall = RuntimeCall;
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-    type Lookup = (AccountIdLookup<AccountId, ()>, Accounts);
+    type Lookup = (AccountIdLookup<AccountId, ()>, UnifiedAccounts);
     /// The index type for storing how many extrinsics an account has signed.
     type Index = Index;
     /// The index type for blocks.
@@ -229,7 +229,7 @@ impl frame_system::Config for Runtime {
     /// What to do if a new account is created.
     type OnNewAccount = ();
     /// What to do if an account is fully reaped from the system.
-    type OnKilledAccount = pallet_account::KillAccountMapping<Self>;
+    type OnKilledAccount = pallet_unified_accounts::KillAccountMapping<Self>;
     /// The data to be stored in an account.
     type AccountData = pallet_balances::AccountData<Balance>;
     /// Weight information for the extrinsics of this pallet.
@@ -446,12 +446,12 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_account::Config for Runtime {
+impl pallet_unified_accounts::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultAddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
-    type DefaultAccountMapping = pallet_account::HashedAccountMapping<BlakeTwo256>;
-    type ClaimSignature = pallet_account::EIP712Signature<Self, ChainId>;
+    type DefaultAccountMapping = pallet_unified_accounts::HashedAccountMapping<BlakeTwo256>;
+    type SignatureHelper = pallet_unified_accounts::EIP712Signature<Self, ChainId>;
 }
 
 parameter_types! {
@@ -465,14 +465,14 @@ impl pallet_ethereum_checked::Config for Runtime {
     type XvmTxWeightLimit = XvmTxWeightLimit;
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
-    type AccountMapping = Accounts;
+    type AccountMapping = UnifiedAccounts;
     type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
     type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_xvm::Config for Runtime {
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
-    type AccountMapping = Accounts;
+    type AccountMapping = UnifiedAccounts;
     type EthereumTransact = EthereumChecked;
     type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
 }
@@ -558,7 +558,7 @@ impl pallet_evm::Config for Runtime {
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
     type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
-    type AddressMapping = Accounts;
+    type AddressMapping = UnifiedAccounts;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
@@ -1022,7 +1022,7 @@ construct_runtime!(
         Proxy: pallet_proxy,
         Preimage: pallet_preimage,
         EthereumChecked: pallet_ethereum_checked,
-        Accounts: pallet_account,
+        UnifiedAccounts: pallet_unified_accounts,
     }
 );
 

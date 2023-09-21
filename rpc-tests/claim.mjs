@@ -56,7 +56,7 @@ async function main() {
     const hash = await claimEvmAccount(alice, ethSigner.address, sig, api);
     console.log(`Claim Extrisic - ${hash}`);
 
-    console.log(`Claimed Account ${await api.query.accounts.evmAccounts(alice.address)}, EVM Account: ${ethSigner.address}`);
+    console.log(`Claimed Account ${await api.query.accounts.EvmToNative(alice.address)}, EVM Account: ${ethSigner.address}`);
 
     api.disconnect();
 }

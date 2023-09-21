@@ -23,7 +23,7 @@ pub use frame_support::{
     traits::{OnFinalize, OnIdle, OnInitialize},
     weights::Weight,
 };
-pub use pallet_account::AddressManager;
+pub use pallet_unified_accounts::UnifiedAddressMapper;
 pub use pallet_evm::AddressMapping;
 pub use sp_core::{H160, H256, U256};
 pub use sp_runtime::{AccountId32, MultiAddress};
@@ -107,11 +107,11 @@ mod shibuya {
     }
 
     pub fn claim_default_accounts(account: AccountId) {
-        let default_h160 = Accounts::to_default_address(&account);
-        assert_ok!(Accounts::claim_default_evm_account(RuntimeOrigin::signed(
+        let default_h160 = UnifiedAccounts::to_default_h160(&account);
+        assert_ok!(UnifiedAccounts::claim_default_evm_address(RuntimeOrigin::signed(
             account.clone()
         )));
-        assert_eq!(Accounts::to_address(&account).unwrap(), default_h160);
+        assert_eq!(UnifiedAccounts::to_h160(&account).unwrap(), default_h160);
     }
 }
 
@@ -176,8 +176,6 @@ impl ExtBuilder {
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
-        #[cfg(feature = "shibuya")]
-        ext.execute_with(|| claim_default_accounts(ALICE));
         ext
     }
 }

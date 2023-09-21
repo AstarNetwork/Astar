@@ -1,5 +1,5 @@
 [package]
-name = "pallet-account"
+name = "pallet-unified-accounts"
 version = "0.1.0"
 description = "Pallet for mapping VM accounts with native accounts"
 authors.workspace = true

@@ -96,7 +96,7 @@ orml-xtokens = { workspace = true }
 
 # Astar pallets
 astar-primitives = { workspace = true }
-pallet-account = { workspace = true }
+pallet-unified-accounts = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
@@ -207,7 +207,7 @@ std = [
 	"pallet-xcm/std",
 	"pallet-xc-asset-config/std",
 	"pallet-xvm/std",
-	"pallet-account/std",
+	"pallet-unified-accounts/std",
 	"pallet-ethereum-checked/std",
 	"pallet-scheduler/std",
 	"parachain-info/std",
@@ -255,7 +255,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-ethereum-checked/runtime-benchmarks",
-	"pallet-account/runtime-benchmarks",
+	"pallet-unified-accounts/runtime-benchmarks",
 	"pallet-xvm/runtime-benchmarks",
 	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
@@ -306,7 +306,7 @@ try-runtime = [
 	"pallet-preimage/try-runtime",
 	"pallet-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
-	"pallet-account/try-runtime",
+	"pallet-unified-accounts/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
 	"orml-xtokens/try-runtime",
 ]

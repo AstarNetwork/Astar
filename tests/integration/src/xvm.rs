@@ -157,6 +157,9 @@ const CALL_EVM_PAYBLE_NAME: &'static str = "call_xvm_payable";
 #[test]
 fn evm_payable_call_via_xvm_works() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        claim_default_accounts(ALICE);
+
         let evm_payable_addr = deploy_evm_contract(EVM_PAYABLE);
 
         let value = UNIT;
@@ -225,6 +228,9 @@ fn wasm_payable_call_via_xvm_works() {
 #[test]
 fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        claim_default_accounts(ALICE);
+
         let wasm_payable_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
         let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
@@ -264,6 +270,9 @@ fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
 #[test]
 fn calling_wasm_payable_from_evm_works() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        claim_default_accounts(ALICE);
+
         let wasm_payable_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
         let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
@@ -294,6 +303,9 @@ fn calling_wasm_payable_from_evm_works() {
 #[test]
 fn calling_evm_payable_from_wasm_works() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        claim_default_accounts(ALICE);
+
         let evm_payable_addr = deploy_evm_contract(EVM_PAYABLE);
         let wasm_address = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
 
@@ -335,6 +347,9 @@ fn calling_evm_payable_from_wasm_works() {
 #[test]
 fn reentrance_not_allowed() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        claim_default_accounts(ALICE);
+
         // Call path: WASM -> EVM -> WASM
         let call_evm_payable_address = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
         let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);

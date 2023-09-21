@@ -17,12 +17,12 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::setup::*;
-use std::str::FromStr;
+pub use sp_io::hashing::keccak_256;
 
 #[test]
 fn transfer_to_h160_via_lookup() {
     new_test_ext().execute_with(|| {
-        let eth_address = H160::from_str("0xaaafB3972B05630fCceE866eC69CdADd9baC2771").unwrap();
+        let eth_address = H160::from_slice(&keccak_256(b"Alice")[0..20]);
 
         // make sure account is empty
         assert!(EVM::is_account_empty(&eth_address));

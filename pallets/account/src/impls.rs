@@ -31,43 +31,43 @@ use sp_std::marker::PhantomData;
 
 use crate::*;
 
-/// AddressManager implementation
-impl<T: Config> AddressManager<T::AccountId, EvmAddress> for Pallet<T> {
-    fn to_account_id(address: &EvmAddress) -> Option<T::AccountId> {
-        NativeAccounts::<T>::get(address)
+/// UnifiedAddressMapper implementation
+impl<T: Config> UnifiedAddressMapper<T::AccountId> for Pallet<T> {
+    fn to_account_id(evm_address: &EvmAddress) -> Option<T::AccountId> {
+        NativeToEvm::<T>::get(evm_address)
     }
 
-    fn to_account_id_or_default(address: &EvmAddress) -> T::AccountId {
-        NativeAccounts::<T>::get(address).unwrap_or_else(|| {
+    fn to_account_id_or_default(evm_address: &EvmAddress) -> T::AccountId {
+        NativeToEvm::<T>::get(evm_address).unwrap_or_else(|| {
             // fallback to default account_id
-            T::DefaultAddressMapping::into_account_id(address.clone())
+            T::DefaultAddressMapping::into_account_id(evm_address.clone())
         })
     }
 
-    fn to_default_account_id(address: &EvmAddress) -> T::AccountId {
-        T::DefaultAddressMapping::into_account_id(address.clone())
+    fn to_default_account_id(evm_address: &EvmAddress) -> T::AccountId {
+        T::DefaultAddressMapping::into_account_id(evm_address.clone())
     }
 
-    fn to_address(account_id: &T::AccountId) -> Option<EvmAddress> {
-        EvmAccounts::<T>::get(account_id)
+    fn to_h160(account_id: &T::AccountId) -> Option<EvmAddress> {
+        EvmToNative::<T>::get(account_id)
     }
 
-    fn to_address_or_default(account_id: &T::AccountId) -> EvmAddress {
-        EvmAccounts::<T>::get(account_id).unwrap_or_else(|| {
+    fn to_h160_or_default(account_id: &T::AccountId) -> EvmAddress {
+        EvmToNative::<T>::get(account_id).unwrap_or_else(|| {
             // fallback to default account_id
             T::DefaultAccountMapping::into_h160(account_id.clone())
         })
     }
 
-    fn to_default_address(account_id: &T::AccountId) -> EvmAddress {
+    fn to_default_h160(account_id: &T::AccountId) -> EvmAddress {
         T::DefaultAccountMapping::into_h160(account_id.clone())
     }
 }
 
-/// AccountMapping wrapper implementation over AddressManager
+/// AccountMapping wrapper implementation
 impl<T: Config> AccountMapping<T::AccountId> for Pallet<T> {
     fn into_h160(account: T::AccountId) -> H160 {
-        <Self as AddressManager<T::AccountId, EvmAddress>>::to_address_or_default(&account)
+        <Self as UnifiedAddressMapper<T::AccountId>>::to_h160_or_default(&account)
     }
 }
 
@@ -80,10 +80,10 @@ impl<H: Hasher<Out = H256>> AccountMapping<AccountId> for HashedAccountMapping<H
     }
 }
 
-/// AddresstMapping wrapper implementation over AddressManager
+/// AddressMapping wrapper implementation
 impl<T: Config> AddressMapping<T::AccountId> for Pallet<T> {
-    fn into_account_id(address: H160) -> T::AccountId {
-        <Self as AddressManager<T::AccountId, EvmAddress>>::to_account_id_or_default(&address)
+    fn into_account_id(evm_address: H160) -> T::AccountId {
+        <Self as UnifiedAddressMapper<T::AccountId>>::to_account_id_or_default(&evm_address)
     }
 }
 
@@ -93,9 +93,9 @@ pub struct KillAccountMapping<T>(PhantomData<T>);
 impl<T: Config> OnKilledAccount<T::AccountId> for KillAccountMapping<T> {
     fn on_killed_account(who: &T::AccountId) {
         // remove mapping created by `claim_account` or `get_or_create_evm_address`
-        if let Some(evm_addr) = EvmAccounts::<T>::get(who) {
-            NativeAccounts::<T>::remove(evm_addr);
-            EvmAccounts::<T>::remove(who);
+        if let Some(evm_addr) = EvmToNative::<T>::take(who) {
+            NativeToEvm::<T>::remove(evm_addr);
+            EvmToNative::<T>::remove(who);
         }
     }
 }
@@ -108,7 +108,7 @@ impl<T: Config> StaticLookup for Pallet<T> {
     fn lookup(a: Self::Source) -> Result<Self::Target, LookupError> {
         match a {
             MultiAddress::Address20(i) => Ok(
-                <Self as AddressManager<T::AccountId, EvmAddress>>::to_account_id_or_default(
+                <Self as UnifiedAddressMapper<T::AccountId>>::to_account_id_or_default(
                     &EvmAddress::from_slice(&i),
                 ),
             ),
@@ -122,12 +122,13 @@ impl<T: Config> StaticLookup for Pallet<T> {
 }
 
 /// EIP-712 compatible signature scheme for verifying ownership of EVM Address
+/// https://eips.ethereum.org/EIPS/eip-712
 ///
 /// Raw Data = Domain Separator + Type Hash + keccak256(AccountId)
 pub struct EIP712Signature<T: Config, ChainId: Get<u64>>(PhantomData<(T, ChainId)>);
-impl<T: Config, ChainId: Get<u64>> ClaimSignature for EIP712Signature<T, ChainId> {
+impl<T: Config, ChainId: Get<u64>> SignatureHelper for EIP712Signature<T, ChainId> {
     type AccountId = T::AccountId;
-    /// EVM address type
+    /// evm address type
     type Address = EvmAddress;
     /// A signature (a 512-bit value, plus 8 bits for recovery ID).
     type Signature = [u8; 65];

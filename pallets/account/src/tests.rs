@@ -42,9 +42,10 @@ struct Claim {
     substrate_address: Bytes,
 }
 
-fn claim_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
+/// Build the signature payload for given native account and eth private key
+fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
     // sign the payload
-    Accounts::eth_sign_prehash(
+    UnifiedAccounts::eth_sign_prehash(
         &Claim {
             substrate_address: who.encode().into(),
         }
@@ -52,6 +53,15 @@ fn claim_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 
         .unwrap(),
         secret,
     )
+}
+
+/// Create the mappings for the accounts
+fn connect_accounts(who: &AccountId32, secret: &libsecp256k1::SecretKey) {
+    assert_ok!(UnifiedAccounts::claim_evm_address(
+        RuntimeOrigin::signed(who.clone()),
+        UnifiedAccounts::eth_address(&alice_secret()),
+        get_evm_signature(who, secret)
+    ));
 }
 
 #[test]
@@ -70,9 +80,9 @@ fn eip712_signature_verify_works() {
         );
 
         // sign the payload
-        let sig = Accounts::eth_sign_prehash(&claim_hash, &alice_secret());
+        let sig = UnifiedAccounts::eth_sign_prehash(&claim_hash, &alice_secret());
         assert_eq!(
-            Some(Accounts::eth_address(&alice_secret())),
+            Some(UnifiedAccounts::eth_address(&alice_secret())),
             EIP712Signature::<TestRuntime, ChainId>::verify_signature(&ALICE, &sig),
             "signature verification should work"
         );
@@ -81,21 +91,24 @@ fn eip712_signature_verify_works() {
 
 #[test]
 fn static_lookup_works() {
-    ExtBuilder::with_alice_mapping().execute_with(|| {
-        let alice_eth = Accounts::eth_address(&alice_secret());
-        let bob_eth = Accounts::eth_address(&bob_secret());
+    ExtBuilder::default().build().execute_with(|| {
+        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+        let bob_eth = UnifiedAccounts::eth_address(&bob_secret());
         let bob_default_account_id =
-            <Accounts as AddressManager<_, _>>::to_default_account_id(&bob_eth);
+            <UnifiedAccounts as UnifiedAddressMapper<_>>::to_default_account_id(&bob_eth);
+
+        // create mappings for alice
+        connect_accounts(&ALICE, &alice_secret());
 
         // mapping should work if available
         assert_eq!(
-            <Accounts as StaticLookup>::lookup(MultiAddress::Address20(alice_eth.into())).unwrap(),
+            <UnifiedAccounts as StaticLookup>::lookup(MultiAddress::Address20(alice_eth.into())).unwrap(),
             ALICE
         );
 
         // should use default if not mapping
         assert_eq!(
-            <Accounts as StaticLookup>::lookup(MultiAddress::Address20(bob_eth.into())).unwrap(),
+            <UnifiedAccounts as StaticLookup>::lookup(MultiAddress::Address20(bob_eth.into())).unwrap(),
             bob_default_account_id
         );
     });
@@ -103,8 +116,11 @@ fn static_lookup_works() {
 
 #[test]
 fn on_killed_account_hook() {
-    ExtBuilder::with_alice_mapping().execute_with(|| {
-        let alice_eth = Accounts::eth_address(&alice_secret());
+    ExtBuilder::default().build().execute_with(|| {
+        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+
+        // create the mappings
+        connect_accounts(&ALICE, &alice_secret());
 
         // kill alice by transfering everything to bob
         Balances::set_balance(&ALICE, 0);
@@ -116,18 +132,18 @@ fn on_killed_account_hook() {
         )));
 
         // make sure mapping is removed
-        assert_eq!(EvmAccounts::<TestRuntime>::get(ALICE), None);
-        assert_eq!(NativeAccounts::<TestRuntime>::get(alice_eth), None);
+        assert_eq!(EvmToNative::<TestRuntime>::get(ALICE), None);
+        assert_eq!(NativeToEvm::<TestRuntime>::get(alice_eth), None);
     });
 }
 
 #[test]
 fn account_claim_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        let alice_eth = Accounts::eth_address(&alice_secret());
+        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
         // default ss58 account associated with eth address
         let alice_eth_old_account =  <TestRuntime as Config>::DefaultAddressMapping::into_account_id(alice_eth.clone());
-        let signature = claim_signature(&ALICE, &alice_secret());
+        let signature = get_evm_signature(&ALICE, &alice_secret());
 
         // transfer some funds to alice_eth (H160)
         assert_ok!(Balances::transfer_allow_death(
@@ -137,7 +153,7 @@ fn account_claim_should_work() {
         ));
 
         // claim the account
-        assert_ok!(Accounts::claim_evm_account(
+        assert_ok!(UnifiedAccounts::claim_evm_address(
             RuntimeOrigin::signed(ALICE),
             alice_eth,
             signature
@@ -152,14 +168,16 @@ fn account_claim_should_work() {
 
         // check for claim account event
         System::assert_last_event(
-            RuntimeEvent::Accounts(crate::Event::AccountClaimed { account_id: ALICE.clone(), evm_address: alice_eth.clone()})
+            RuntimeEvent::UnifiedAccounts(crate::Event::AccountClaimed { account_id: ALICE.clone(), evm_address: alice_eth.clone()})
         );
 
         // make sure mappings are in place
-        assert!(
-			NativeAccounts::<TestRuntime>::contains_key(alice_eth)
-				&& EvmAccounts::<TestRuntime>::contains_key(ALICE)
+        assert_eq!(
+			NativeToEvm::<TestRuntime>::get(alice_eth).unwrap(), ALICE
 		);
+        assert_eq!(
+            EvmToNative::<TestRuntime>::get(ALICE).unwrap(), alice_eth
+        )
     });
 }
 
@@ -168,44 +186,44 @@ fn account_claim_should_not_work() {
     ExtBuilder::default().build().execute_with(|| {
         // invald signature
         assert_noop!(
-            Accounts::claim_evm_account(
+            UnifiedAccounts::claim_evm_address(
                 RuntimeOrigin::signed(ALICE),
-                Accounts::eth_address(&bob_secret()),
-                claim_signature(&BOB, &bob_secret())
+                UnifiedAccounts::eth_address(&bob_secret()),
+                get_evm_signature(&BOB, &bob_secret())
             ),
             Error::<TestRuntime>::InvalidSignature
         );
         assert_noop!(
-            Accounts::claim_evm_account(
+            UnifiedAccounts::claim_evm_address(
                 RuntimeOrigin::signed(ALICE),
-                Accounts::eth_address(&bob_secret()),
-                claim_signature(&ALICE, &alice_secret())
+                UnifiedAccounts::eth_address(&bob_secret()),
+                get_evm_signature(&ALICE, &alice_secret())
             ),
             Error::<TestRuntime>::InvalidSignature
         );
 
-        assert_ok!(Accounts::claim_evm_account(
+        assert_ok!(UnifiedAccounts::claim_evm_address(
             RuntimeOrigin::signed(ALICE),
-            Accounts::eth_address(&alice_secret()),
-            claim_signature(&ALICE, &alice_secret())
+            UnifiedAccounts::eth_address(&alice_secret()),
+            get_evm_signature(&ALICE, &alice_secret())
         ));
         // AccountId already mapped
         assert_noop!(
-            Accounts::claim_evm_account(
+            UnifiedAccounts::claim_evm_address(
                 RuntimeOrigin::signed(ALICE),
-                Accounts::eth_address(&alice_secret()),
-                claim_signature(&ALICE, &alice_secret())
+                UnifiedAccounts::eth_address(&alice_secret()),
+                get_evm_signature(&ALICE, &alice_secret())
             ),
-            Error::<TestRuntime>::AccountIdHasMapped
+            Error::<TestRuntime>::AlreadyMapped
         );
         // eth address already mapped
         assert_noop!(
-            Accounts::claim_evm_account(
+            UnifiedAccounts::claim_evm_address(
                 RuntimeOrigin::signed(BOB),
-                Accounts::eth_address(&alice_secret()),
-                claim_signature(&ALICE, &alice_secret())
+                UnifiedAccounts::eth_address(&alice_secret()),
+                get_evm_signature(&ALICE, &alice_secret())
             ),
-            Error::<TestRuntime>::EthAddressHasMapped
+            Error::<TestRuntime>::AlreadyMapped
         );
     });
 }
@@ -217,32 +235,32 @@ fn account_default_claim_works() {
             <TestRuntime as Config>::DefaultAccountMapping::into_h160(ALICE.into());
 
         // claim default account
-        assert_ok!(Accounts::claim_default_evm_account(RuntimeOrigin::signed(
+        assert_ok!(UnifiedAccounts::claim_default_evm_address(RuntimeOrigin::signed(
             ALICE
         )));
-        System::assert_last_event(RuntimeEvent::Accounts(crate::Event::AccountClaimed {
+        System::assert_last_event(RuntimeEvent::UnifiedAccounts(crate::Event::AccountClaimed {
             account_id: ALICE.clone(),
             evm_address: alice_default_evm.clone(),
         }));
 
-        // check AddressManager mapping works
+        // check UnifiedAddressMapper's mapping works
         assert_eq!(
-            <Accounts as AddressManager<_, _>>::to_address(&ALICE),
+            <UnifiedAccounts as UnifiedAddressMapper<_>>::to_h160(&ALICE),
             Some(alice_default_evm)
         );
         assert_eq!(
-            <Accounts as AddressManager<_, _>>::to_account_id(&alice_default_evm),
+            <UnifiedAccounts as UnifiedAddressMapper<_>>::to_account_id(&alice_default_evm),
             Some(ALICE)
         );
 
         // should not allow to claim afterwards
         assert_noop!(
-            Accounts::claim_evm_account(
+            UnifiedAccounts::claim_evm_address(
                 RuntimeOrigin::signed(ALICE),
-                Accounts::eth_address(&alice_secret()),
-                claim_signature(&ALICE, &alice_secret())
+                UnifiedAccounts::eth_address(&alice_secret()),
+                get_evm_signature(&ALICE, &alice_secret())
             ),
-            Error::<TestRuntime>::AccountIdHasMapped
+            Error::<TestRuntime>::AlreadyMapped
         );
     });
 }

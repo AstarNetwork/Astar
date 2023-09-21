@@ -26,33 +26,33 @@
 //!
 //! ## Overview
 //!
-//! The Accounts module provide functionality for native account holders to
-//! connect their EVM accounts to have a unified experence across the different VMs.
-//! - Connect EVM address you control
+//! The Unified Accounts module provide functionality for native account holders to
+//! connect their evm address to have a unified experence across the different VMs.
+//! - Connect evm address you control
 //! - Connect default evm address
 //!
 //! ## Interface
 //!
-//! * `claim_evm_account`: Creates the double mappings for the provided evm address with caller
+//! * `claim_evm_address`: Creates the double mappings for the provided evm address with caller
 //!    account id given that no prior mapping exists for both and signature provided is valid.
-//! * `claim_default_evm_account`: Creates the double mapping with default evm address given that
+//! * `claim_default_evm_address`: Creates the double mapping with default evm address given that
 //!    no prior mapping exists.
 //!
 //! ## Traits
 //!
-//! * `AddressManager`: Interface to access pallet's mappings with defaults
-//! * `ClaimSignature`: Signature verification scheme for proving address ownership
+//! * `UnifiedAddressMapper`: Interface to access pallet's mappings with defaults
+//! * `SignatureHelper`: Signature verification scheme for proving address ownership
 //!
 //! ## Implementations
 //!
 //! * [`StaticLookup`](sp_runtime::traits::StaticLookup): Lookup implementations for accepting H160
-//! * [`AddressMapping`](pallet_evm::AddressMapping): Wrapper over `AddressManager` for evm address mapping
+//! * [`AddressMapping`](pallet_evm::AddressMapping): Wrapper over `UnifiedAddressMapper` for evm address mapping
 //!   to account id.
-//! * [`AccountMapping`](astar_primitives::ethereum_checked::AccountMapping): Wrapper over `AddressManager`
+//! * [`AccountMapping`](astar_primitives::ethereum_checked::AccountMapping): Wrapper over `UnifiedAddressMapper`
 //!   for account id mappings to h160.
 //! * `KillAccountMapping`: [`OnKilledAccount`](frame_support::traits::OnKilledAccount) implementation to remove
 //!   the mappings from storage after account is reaped.
-//! * `EIP712Signature`: EIP712 signature implementation for [`ClaimSignature`](crate::ClaimSignature)
+//! * `EIP712Signature`: EIP712 signature implementation for [`SignatureHelper`](crate::SignatureHelper)
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -80,29 +80,29 @@ mod tests;
 mod impls;
 pub use impls::*;
 
-type SignatureOf<T> = <<T as Config>::ClaimSignature as ClaimSignature>::Signature;
+type SignatureOf<T> = <<T as Config>::SignatureHelper as SignatureHelper>::Signature;
 
-/// Mapping between Native(AccountId) and EVM Address(H160)
-pub trait AddressManager<AccountId, Address> {
-    /// Gets the account id associated with given address, if mapped else None.
-    fn to_account_id(address: &Address) -> Option<AccountId>;
-    /// Gets the account id associated with given address.
-    /// If no mapping exists, then return the default address.
-    fn to_account_id_or_default(address: &Address) -> AccountId;
-    /// Gets the default account which is associated with given address.
-    fn to_default_account_id(address: &Address) -> AccountId;
+/// Mapping between Native and EVM Addresses
+pub trait UnifiedAddressMapper<AccountId> {
+    /// Gets the account id associated with given evm address, if mapped else None.
+    fn to_account_id(evm_address: &EvmAddress) -> Option<AccountId>;
+    /// Gets the account id associated with given evm address.
+    /// If no mapping exists, then return the default evm address.
+    fn to_account_id_or_default(evm_address: &EvmAddress) -> AccountId;
+    /// Gets the default account id which is associated with given evm address.
+    fn to_default_account_id(evm_address: &EvmAddress) -> AccountId;
 
-    /// Gets the address associated with given account id, if mapped else None.
-    fn to_address(account_id: &AccountId) -> Option<Address>;
-    /// Gets the address associated with given account id.
+    /// Gets the evm address associated with given account id, if mapped else None.
+    fn to_h160(account_id: &AccountId) -> Option<EvmAddress>;
+    /// Gets the evm address associated with given account id.
     /// If no mapping exists, then return the default account id.
-    fn to_address_or_default(account_id: &AccountId) -> Address;
-    /// Gets the default address which is associated with given account id.
-    fn to_default_address(account_id: &AccountId) -> Address;
+    fn to_h160_or_default(account_id: &AccountId) -> EvmAddress;
+    /// Gets the default evm address which is associated with given account id.
+    fn to_default_h160(account_id: &AccountId) -> EvmAddress;
 }
 
 /// Signature verification scheme for proving address ownership
-pub trait ClaimSignature {
+pub trait SignatureHelper {
     type AccountId;
     type Address;
     /// Signature type, ideally a 512-bit value for ECDSA signatures
@@ -125,7 +125,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         /// The overarching event type
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        /// The Currency for managing Evm account assets
+        /// The Currency for managing evm address assets
         type Currency: Mutate<Self::AccountId>;
         /// Default evm address to account id conversion
         type DefaultAddressMapping: AddressMapping<Self::AccountId>;
@@ -133,7 +133,7 @@ pub mod pallet {
         type DefaultAccountMapping: AccountMapping<Self::AccountId>;
         /// The Signature verification implementation to use for checking claims
         /// Note: the signature type defined by this will be used as parameter in pallet's extrinsic
-        type ClaimSignature: ClaimSignature<AccountId = Self::AccountId, Address = EvmAddress>;
+        type SignatureHelper: SignatureHelper<AccountId = Self::AccountId, Address = EvmAddress>;
 
         // /// Weight information for the extrinsics in this module
         // type WeightInfo: WeightInfo;
@@ -141,20 +141,18 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// AccountId has mapped
-        AccountIdHasMapped,
-        /// Eth address has mapped
-        EthAddressHasMapped,
-        /// Bad signature
+        /// AccountId or EvmAddress already mapped
+        AlreadyMapped,
+        /// The signature is malformed
         BadSignature,
-        /// Invalid signature
+        /// The signature verification failed due to mismatch evm address
         InvalidSignature,
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// EVM Account claimed.
+        /// Evm Address claimed.
         /// Double Mapping b/w native and evm address created
         AccountClaimed {
             account_id: T::AccountId,
@@ -162,28 +160,28 @@ pub mod pallet {
         },
     }
 
-    /// Native accounts for EVM address
-    /// NativeAccounts: EvmAddress => Option<AccountId>
+    /// Native accounts for evm address
+    /// NativeToEvm: EvmAddress => Option<AccountId>
     #[pallet::storage]
-    pub type NativeAccounts<T: Config> =
-        StorageMap<_, Twox64Concat, EvmAddress, T::AccountId, OptionQuery>;
+    pub type NativeToEvm<T: Config> =
+        StorageMap<_, Blake2_128Concat, EvmAddress, T::AccountId, OptionQuery>;
 
-    /// EVM Addresses for native accounts
-    /// EvmAccounts: AccountId => Option<EvmAddress>
+    /// evm addresses for native accounts
+    /// EvmToNative: AccountId => Option<EvmAddress>
     #[pallet::storage]
-    pub type EvmAccounts<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, EvmAddress, OptionQuery>;
+    pub type EvmToNative<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, EvmAddress, OptionQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Claim account mapping between Substrate accounts and EVM accounts.
+        /// Claim account mapping between Substrate account and Evm address.
         /// Ensure no prior mapping exists for evm address.
         ///
-        /// - `evm_address`: The address to bind to the caller's account
+        /// - `evm_address`: The evm address to bind to the caller's account
         /// - `signature`: A signature generated by the address to prove ownership
         #[pallet::call_index(0)]
         #[pallet::weight(0)]
-        pub fn claim_evm_account(
+        pub fn claim_evm_address(
             origin: OriginFor<T>,
             evm_address: EvmAddress,
             signature: SignatureOf<T>,
@@ -191,62 +189,65 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             // make sure no prior mapping exists
             Self::enure_no_mapping(&who, &Some(evm_address))?;
-            // claim the address
-            Self::do_claim_address(who, evm_address, signature)
+            // claim the evm address
+            Self::do_claim_evm_address(who, evm_address, signature)
         }
 
         /// Claim default evm address for given account id
         /// Ensure no prior mapping exists for the account
         #[pallet::call_index(1)]
-        pub fn claim_default_evm_account(origin: OriginFor<T>) -> DispatchResult {
+        pub fn claim_default_evm_address(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             // make sure no prior mapping exists
             Self::enure_no_mapping(&who, &None)?;
-            // claim default address
-            let _ = Self::do_claim_default_address(who)?;
+            // claim default evm address
+            let _ = Self::do_claim_default_evm_address(who)?;
             Ok(())
         }
     }
 }
 
 impl<T: Config> Pallet<T> {
-    /// Ensure no mappings exists for given pair of account/address
-    fn enure_no_mapping(account_id: &T::AccountId, address: &Option<EvmAddress>) -> DispatchResult {
-        // ensure account_id and address has not been mapped
+    /// Ensure no mappings exists for given pair of account/evm_address
+    fn enure_no_mapping(
+        account_id: &T::AccountId,
+        evm_address: &Option<EvmAddress>,
+    ) -> DispatchResult {
+        // ensure account_id and evm address has not been mapped
         ensure!(
-            !EvmAccounts::<T>::contains_key(&account_id),
-            Error::<T>::AccountIdHasMapped
+            !EvmToNative::<T>::contains_key(&account_id),
+            Error::<T>::AlreadyMapped
         );
         // This is not required since checking one mapping is sufficent
         // but this is just for sanity check
-        if let Some(addr) = address {
+        if let Some(addr) = evm_address {
             ensure!(
-                !NativeAccounts::<T>::contains_key(addr),
-                Error::<T>::EthAddressHasMapped
+                !NativeToEvm::<T>::contains_key(addr),
+                Error::<T>::AlreadyMapped
             );
         }
         Ok(())
     }
 
     /// Add the given pair to create double mappings
-    fn add_mappings(account_id: T::AccountId, address: EvmAddress) {
-        NativeAccounts::<T>::insert(&address, &account_id);
-        EvmAccounts::<T>::insert(&account_id, &address);
+    fn add_mappings(account_id: T::AccountId, evm_address: EvmAddress) {
+        NativeToEvm::<T>::insert(&evm_address, &account_id);
+        EvmToNative::<T>::insert(&account_id, &evm_address);
 
         Self::deposit_event(Event::AccountClaimed {
             account_id,
-            evm_address: address,
+            evm_address,
         });
     }
 
     /// Claim the given evm address by providing claim signature
-    fn do_claim_address(
+    fn do_claim_evm_address(
         account_id: T::AccountId,
         evm_address: EvmAddress,
         signature: SignatureOf<T>,
     ) -> DispatchResult {
         // recover evm address from signature
-        let address = T::ClaimSignature::verify_signature(&account_id, &signature)
+        let address = T::SignatureHelper::verify_signature(&account_id, &signature)
             .ok_or(Error::<T>::BadSignature)?;
         log::trace!(
             target: "account::do_claim_address",
@@ -254,7 +255,7 @@ impl<T: Config> Pallet<T> {
         );
         ensure!(evm_address == address, Error::<T>::InvalidSignature);
 
-        // Check if the default account id already exists for this eth address
+        // Check if the default account id already exists for this evm address
         let default_account_id = T::DefaultAddressMapping::into_account_id(evm_address.clone());
         if frame_system::Pallet::<T>::account_exists(&default_account_id) {
             // Transfer all the free balance from old account id to the newly
@@ -274,17 +275,17 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Claim the default evm address
-    fn do_claim_default_address(account_id: T::AccountId) -> Result<EvmAddress, DispatchError> {
+    fn do_claim_default_evm_address(account_id: T::AccountId) -> Result<EvmAddress, DispatchError> {
         // get the default evm address
-        let address = T::DefaultAccountMapping::into_h160(account_id.clone());
+        let evm_address = T::DefaultAccountMapping::into_h160(account_id.clone());
         // create double mappings for the pair with default evm address
-        Self::add_mappings(account_id, address.clone());
-        Ok(address)
+        Self::add_mappings(account_id, evm_address.clone());
+        Ok(evm_address)
     }
 }
 
+#[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
 impl<T: Config> Pallet<T> {
-    #[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
     pub fn eth_sign_prehash(prehash: &[u8; 32], secret: &libsecp256k1::SecretKey) -> [u8; 65] {
         let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(prehash), secret);
         let mut r = [0u8; 65];
@@ -293,14 +294,12 @@ impl<T: Config> Pallet<T> {
         r
     }
 
-    #[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
     pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
         EvmAddress::from_slice(
             &sp_io::hashing::keccak_256(&Self::eth_public(secret).serialize()[1..65])[12..],
         )
     }
 
-    #[cfg(any(feature = "std", feature = "runtime-benchmarks"))]
     // Returns an Ethereum public key derived from an Ethereum secret key.
     pub fn eth_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
         libsecp256k1::PublicKey::from_secret_key(secret)
