@@ -16,25 +16,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::{pallet_prelude::*, traits::Currency, BoundedVec};
+use frame_support::{pallet_prelude::*, BoundedVec};
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
-use sp_runtime::traits::{AtLeast32BitUnsigned, Zero};
+use sp_runtime::{
+    traits::{AtLeast32BitUnsigned, Zero},
+    Saturating,
+};
+
+use astar_primitives::Balance;
 
 use crate::pallet::Config;
 
 // TODO: instead of using `pub` visiblity for fields, either use `pub(crate)` or add dedicated methods for accessing them.
 
-/// The balance type used by the currency system.
-pub type BalanceOf<T> =
-    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-
 /// Convenience type for `AccountLedger` usage.
 pub type AccountLedgerFor<T> = AccountLedger<
-    BalanceOf<T>,
     BlockNumberFor<T>,
     <T as Config>::MaxLockedChunks,
     <T as Config>::MaxUnlockingChunks,
+    <T as Config>::MaxStakingChunks,
 >;
 
 /// Era number type
@@ -43,6 +44,184 @@ pub type EraNumber = u32;
 pub type PeriodNumber = u32;
 /// Dapp Id type
 pub type DAppId = u16;
+
+// TODO: perhaps this trait is not needed and instead of having 2 separate '___Chunk' types, we can have just one?
+/// Trait for types that can be used as a pair of amount & era.
+pub trait AmountEraPair: MaxEncodedLen + Default + Copy {
+    /// Balance amount used somehow during the accompanied era.
+    fn get_amount(&self) -> Balance;
+    /// Era acting as timestamp for the accompanied amount.
+    fn get_era(&self) -> EraNumber;
+    // Sets the era to the specified value.
+    fn set_era(&mut self, era: EraNumber);
+    /// Increase the total amount by the specified increase, saturating at the maximum value.
+    fn saturating_accrue(&mut self, increase: Balance);
+    /// Reduce the total amount by the specified reduction, saturating at the minumum value.
+    fn saturating_reduce(&mut self, reduction: Balance);
+}
+
+/// Simple enum representing errors possible when using sparse bounded vector.
+#[derive(Debug, PartialEq, Eq)]
+pub enum SparseBoundedError {
+    /// Old era values cannot be added.
+    OldEra,
+    /// Bounded storage capacity exceeded.
+    NoCapacity,
+}
+
+/// Helper struct for easier manipulation of sparse <amount, era> pairs.
+///
+/// The struct guarantees the following:
+/// -----------------------------------
+/// 1. The vector is always sorted by era, in ascending order.
+/// 2. There are no two consecutive zero chunks.
+/// 3. There are no two chunks with the same era.
+/// 4. The vector is always bounded by the specified maximum length.
+///
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[scale_info(skip_type_params(ML))]
+pub struct SparseBoundedAmountEraVec<P: AmountEraPair, ML: Get<u32>>(pub BoundedVec<P, ML>);
+
+impl<P, ML> SparseBoundedAmountEraVec<P, ML>
+where
+    P: AmountEraPair,
+    ML: Get<u32>,
+{
+    /// Create new instance
+    pub fn new() -> Self {
+        Self(BoundedVec::<P, ML>::default())
+    }
+
+    /// Places the specified <amount, era> pair into the vector, in an appropriate place.
+    ///
+    /// There are two possible successful scenarios:
+    /// 1. If entry for the specified era already exists, it's updated.
+    ///    [(100, 1)] -- add_amount(50, 1) --> [(150, 1)]
+    ///
+    /// 2. If entry for the specified era doesn't exist, it's created and insertion is attempted.
+    ///    [(100, 1)] -- add_amount(50, 2) --> [(100, 1), (150, 2)]
+    ///
+    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
+    pub fn add_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+    ) -> Result<(), SparseBoundedError> {
+        if amount.is_zero() {
+            return Ok(());
+        }
+
+        let mut chunk = if let Some(&chunk) = self.0.last() {
+            ensure!(chunk.get_era() <= era, SparseBoundedError::OldEra);
+            chunk
+        } else {
+            P::default()
+        };
+
+        chunk.saturating_accrue(amount);
+
+        if chunk.get_era() == era && !self.0.is_empty() {
+            if let Some(last) = self.0.last_mut() {
+                *last = chunk;
+            }
+        } else {
+            chunk.set_era(era);
+            self.0
+                .try_push(chunk)
+                .map_err(|_| SparseBoundedError::NoCapacity)?;
+        }
+
+        Ok(())
+    }
+
+    /// Subtracts the specified amount of the total locked amount, if possible.
+    ///
+    /// There are multiple success scenarios/rules:
+    /// 1. If entry for the specified era already exists, it's updated.
+    ///    a. [(100, 1)] -- subtract_amount(50, 1) --> [(50, 1)]
+    ///    b. [(100, 1)] -- subtract_amount(100, 1) --> []
+    ///
+    /// 2. All entries following the specified era will have their amount reduced as well.
+    ///    [(100, 1), (150, 2)] -- subtract_amount(50, 1) --> [(50, 1), (100, 2)]
+    ///
+    /// 3. If entry for the specified era doesn't exist, it's created and insertion is attempted.
+    ///    [(100, 1), (200, 3)] -- subtract_amount(100, 2) --> [(100, 1), (0, 2), (100, 3)]
+    ///
+    /// 4. No two consecutive zero chunks are allowed.
+    ///   [(100, 1), (0, 2), (100, 3), (200, 4)] -- subtract_amount(100, 3) --> [(100, 1), (0, 2), (100, 4)]
+    ///
+    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
+    pub fn subtract_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+    ) -> Result<(), SparseBoundedError> {
+        if amount.is_zero() || self.0.is_empty() {
+            return Ok(());
+        }
+        // TODO: this method can surely be optimized (avoid too many iters) but focus on that later,
+        // when it's all working fine, and we have good test coverage.
+        // TODO2: realistically, the only eligible eras are the last two ones (current & previous). Code could be optimized for that.
+
+        // Find the most relevant locked chunk for the specified era
+        let index = if let Some(index) = self.0.iter().rposition(|&chunk| chunk.get_era() <= era) {
+            index
+        } else {
+            // Covers scenario when there's only 1 chunk for the next era, and remove it if it's zero.
+            self.0
+                .iter_mut()
+                .for_each(|chunk| chunk.saturating_reduce(amount));
+            self.0.retain(|chunk| !chunk.get_amount().is_zero());
+            return Ok(());
+        };
+
+        // Update existing or insert a new chunk
+        let mut inner = self.0.clone().into_inner();
+        let relevant_chunk_index = if inner[index].get_era() == era {
+            inner[index].saturating_reduce(amount);
+            index
+        } else {
+            // Take the most relevant chunk for the desired era,
+            // and use it as 'base' for the new chunk.
+            let mut chunk = inner[index];
+            chunk.saturating_reduce(amount);
+            chunk.set_era(era);
+
+            // Insert the new chunk AFTER the previous 'most relevant chunk'.
+            // The chunk we find is always either for the requested era, or some era before it.
+            inner.insert(index + 1, chunk);
+            index + 1
+        };
+
+        // Update all chunks after the relevant one, and remove eligible zero chunks
+        inner[relevant_chunk_index + 1..]
+            .iter_mut()
+            .for_each(|chunk| chunk.saturating_reduce(amount));
+
+        // Prune all consecutive zero chunks
+        let mut new_inner = Vec::<P>::new();
+        new_inner.push(inner[0]);
+        for i in 1..inner.len() {
+            if inner[i].get_amount().is_zero() && inner[i - 1].get_amount().is_zero() {
+                continue;
+            } else {
+                new_inner.push(inner[i]);
+            }
+        }
+
+        inner = new_inner;
+
+        // Cleanup if only one zero chunk exists
+        if inner.len() == 1 && inner[0].get_amount().is_zero() {
+            inner.pop();
+        }
+
+        // Update `locked` to the new vector
+        self.0 = BoundedVec::try_from(inner).map_err(|_| SparseBoundedError::NoCapacity)?;
+
+        Ok(())
+    }
+}
 
 /// Distinct period types in dApp staking protocol.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
@@ -125,17 +304,14 @@ pub struct DAppInfo<AccountId> {
 
 /// How much was locked in a specific era
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct LockedChunk<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+pub struct LockedChunk {
     #[codec(compact)]
     pub amount: Balance,
     #[codec(compact)]
     pub era: EraNumber,
 }
 
-impl<Balance> Default for LockedChunk<Balance>
-where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-{
+impl Default for LockedChunk {
     fn default() -> Self {
         Self {
             amount: Balance::zero(),
@@ -144,23 +320,36 @@ where
     }
 }
 
-// TODO: would users get better UX if we kept using eras? Using blocks is more precise though.
+impl AmountEraPair for LockedChunk {
+    fn get_amount(&self) -> Balance {
+        self.amount
+    }
+    fn get_era(&self) -> EraNumber {
+        self.era
+    }
+    fn set_era(&mut self, era: EraNumber) {
+        self.era = era;
+    }
+    fn saturating_accrue(&mut self, increase: Balance) {
+        self.amount.saturating_accrue(increase);
+    }
+    fn saturating_reduce(&mut self, reduction: Balance) {
+        self.amount.saturating_reduce(reduction);
+    }
+}
+
 /// How much was unlocked in some block.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct UnlockingChunk<
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
-> {
+pub struct UnlockingChunk<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
     #[codec(compact)]
     pub amount: Balance,
     #[codec(compact)]
     pub unlock_block: BlockNumber,
 }
 
-impl<Balance, BlockNumber> Default for UnlockingChunk<Balance, BlockNumber>
+impl<BlockNumber> Default for UnlockingChunk<BlockNumber>
 where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
+    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
 {
     fn default() -> Self {
         Self {
@@ -170,108 +359,241 @@ where
     }
 }
 
-/// General info about user's stakes
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[scale_info(skip_type_params(LockedLen, UnlockingLen))]
-pub struct AccountLedger<
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
-    LockedLen: Get<u32>,
-    UnlockingLen: Get<u32>,
-> {
-    /// How much was staked in each era
-    pub locked: BoundedVec<LockedChunk<Balance>, LockedLen>,
-    /// How much started unlocking on a certain block
-    pub unlocking: BoundedVec<UnlockingChunk<Balance, BlockNumber>, UnlockingLen>,
-    //TODO, make this a compact struct!!!
-    /// How much user had staked in some period
-    // #[codec(compact)]
-    pub staked: (Balance, PeriodNumber),
+/// Information about how much was staked in a specific era.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+pub struct StakeChunk {
+    #[codec(compact)]
+    pub amount: Balance,
+    #[codec(compact)]
+    pub era: EraNumber,
 }
 
-impl<Balance, BlockNumber, LockedLen, UnlockingLen> Default
-    for AccountLedger<Balance, BlockNumber, LockedLen, UnlockingLen>
-where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
-    LockedLen: Get<u32>,
-    UnlockingLen: Get<u32>,
-{
+impl Default for StakeChunk {
     fn default() -> Self {
         Self {
-            locked: BoundedVec::<LockedChunk<Balance>, LockedLen>::default(),
-            unlocking: BoundedVec::<UnlockingChunk<Balance, BlockNumber>, UnlockingLen>::default(),
-            staked: (Balance::zero(), 0),
+            amount: Balance::zero(),
+            era: EraNumber::zero(),
         }
     }
 }
 
-impl<Balance, BlockNumber, LockedLen, UnlockingLen>
-    AccountLedger<Balance, BlockNumber, LockedLen, UnlockingLen>
-where
-    Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
+impl AmountEraPair for StakeChunk {
+    fn get_amount(&self) -> Balance {
+        self.amount
+    }
+    fn get_era(&self) -> EraNumber {
+        self.era
+    }
+    fn set_era(&mut self, era: EraNumber) {
+        self.era = era;
+    }
+    fn saturating_accrue(&mut self, increase: Balance) {
+        self.amount.saturating_accrue(increase);
+    }
+    fn saturating_reduce(&mut self, reduction: Balance) {
+        self.amount.saturating_reduce(reduction);
+    }
+}
+
+/// General info about user's stakes
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[scale_info(skip_type_params(LockedLen, UnlockingLen, StakedLen))]
+pub struct AccountLedger<
+    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
     LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
+    StakedLen: Get<u32>,
+> {
+    /// How much was staked in each era
+    pub locked: SparseBoundedAmountEraVec<LockedChunk, LockedLen>,
+    /// How much started unlocking on a certain block
+    pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
+    /// How much user had staked in some period
+    pub staked: SparseBoundedAmountEraVec<StakeChunk, StakedLen>,
+    /// Last period in which account had staked.
+    pub staked_period: Option<PeriodNumber>,
+}
+
+impl<BlockNumber, LockedLen, UnlockingLen, StakedLen> Default
+    for AccountLedger<BlockNumber, LockedLen, UnlockingLen, StakedLen>
+where
+    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
+    LockedLen: Get<u32>,
+    UnlockingLen: Get<u32>,
+    StakedLen: Get<u32>,
+{
+    fn default() -> Self {
+        Self {
+            locked: SparseBoundedAmountEraVec(BoundedVec::<LockedChunk, LockedLen>::default()),
+            unlocking: BoundedVec::<UnlockingChunk<BlockNumber>, UnlockingLen>::default(),
+            staked: SparseBoundedAmountEraVec(BoundedVec::<StakeChunk, StakedLen>::default()),
+            staked_period: None,
+        }
+    }
+}
+
+impl<BlockNumber, LockedLen, UnlockingLen, StakedLen>
+    AccountLedger<BlockNumber, LockedLen, UnlockingLen, StakedLen>
+where
+    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
+    LockedLen: Get<u32>,
+    UnlockingLen: Get<u32>,
+    StakedLen: Get<u32>,
 {
     /// Empty if no locked/unlocking/staked info exists.
     pub fn is_empty(&self) -> bool {
-        self.locked.is_empty() && self.unlocking.is_empty() && self.staked.0.is_zero()
+        self.locked.0.is_empty() && self.unlocking.is_empty() && self.staked.0.is_empty()
     }
 
     /// Returns latest locked chunk if it exists, `None` otherwise
-    pub fn latest_locked_chunk(&self) -> Option<&LockedChunk<Balance>> {
-        self.locked.last()
+    pub fn latest_locked_chunk(&self) -> Option<&LockedChunk> {
+        self.locked.0.last()
     }
 
-    /// Returns locked amount.
-    /// If `zero`, means that associated account hasn't locked any funds.
-    pub fn locked_amount(&self) -> Balance {
+    /// Returns active locked amount.
+    /// If `zero`, means that associated account hasn't got any active locked funds.
+    pub fn active_locked_amount(&self) -> Balance {
         self.latest_locked_chunk()
             .map_or(Balance::zero(), |locked| locked.amount)
     }
 
+    /// Returns unlocking amount.
+    /// If `zero`, means that associated account hasn't got any unlocking chunks.
+    pub fn unlocking_amount(&self) -> Balance {
+        self.unlocking.iter().fold(Balance::zero(), |sum, chunk| {
+            sum.saturating_add(chunk.amount)
+        })
+    }
+
+    /// Total locked amount by the user.
+    /// Includes both active locked amount & unlocking amount.
+    pub fn total_locked_amount(&self) -> Balance {
+        self.active_locked_amount()
+            .saturating_add(self.unlocking_amount())
+    }
+
     /// Returns latest era in which locked amount was updated or zero in case no lock amount exists
-    pub fn era(&self) -> EraNumber {
+    pub fn lock_era(&self) -> EraNumber {
         self.latest_locked_chunk()
             .map_or(EraNumber::zero(), |locked| locked.era)
     }
 
+    /// Active staked balance.
+    ///
+    /// In case latest stored information is from the past period, active stake is considered to be zero.
+    pub fn active_stake(&self, active_period: PeriodNumber) -> Balance {
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period == active_period => self
+                .staked
+                .0
+                .last()
+                .map_or(Balance::zero(), |chunk| chunk.amount),
+            _ => Balance::zero(),
+        }
+    }
+
     /// Adds the specified amount to the total locked amount, if possible.
+    /// Caller must ensure that the era matches the next one, not the current one.
     ///
     /// If entry for the specified era already exists, it's updated.
     ///
     /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
-    pub fn add_lock_amount(&mut self, amount: Balance, era: EraNumber) -> Result<(), ()> {
+    pub fn add_lock_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+    ) -> Result<(), SparseBoundedError> {
+        self.locked.add_amount(amount, era)
+    }
+
+    /// Subtracts the specified amount of the total locked amount, if possible.
+    ///
+    /// If entry for the specified era already exists, it's updated.
+    ///
+    /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
+    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
+    pub fn subtract_lock_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+    ) -> Result<(), SparseBoundedError> {
+        self.locked.subtract_amount(amount, era)
+    }
+
+    /// Adds the specified amount to the unlocking chunks.
+    ///
+    /// If entry for the specified block already exists, it's updated.
+    ///
+    /// If entry for the specified block doesn't exist, it's created and insertion is attempted.
+    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
+    pub fn add_unlocking_chunk(
+        &mut self,
+        amount: Balance,
+        unlock_block: BlockNumber,
+    ) -> Result<(), SparseBoundedError> {
         if amount.is_zero() {
             return Ok(());
         }
 
-        let mut locked_chunk = if let Some(&locked_chunk) = self.locked.last() {
-            locked_chunk
-        } else {
-            LockedChunk::default()
-        };
+        let idx = self
+            .unlocking
+            .binary_search_by(|chunk| chunk.unlock_block.cmp(&unlock_block));
 
-        locked_chunk.amount.saturating_accrue(amount);
-
-        if locked_chunk.era == era && !self.locked.is_empty() {
-            if let Some(last) = self.locked.last_mut() {
-                *last = locked_chunk;
+        match idx {
+            Ok(idx) => {
+                self.unlocking[idx].amount.saturating_accrue(amount);
             }
-        } else {
-            locked_chunk.era = era;
-            self.locked.try_push(locked_chunk).map_err(|_| ())?;
+            Err(idx) => {
+                let new_unlocking_chunk = UnlockingChunk {
+                    amount,
+                    unlock_block,
+                };
+                self.unlocking
+                    .try_insert(idx, new_unlocking_chunk)
+                    .map_err(|_| SparseBoundedError::NoCapacity)?;
+            }
         }
 
         Ok(())
     }
+
+    /// Amount available for unlocking.
+    pub fn unlockable_amount(&self, current_period: PeriodNumber) -> Balance {
+        self.active_locked_amount()
+            .saturating_sub(self.active_stake(current_period))
+    }
+
+    /// Claims all of the fully unlocked chunks, and returns the total claimable amount.
+    pub fn claim_unlocked(&mut self, current_block_number: BlockNumber) -> Balance {
+        let mut total = Balance::zero();
+
+        self.unlocking.retain(|chunk| {
+            if chunk.unlock_block <= current_block_number {
+                total.saturating_accrue(chunk.amount);
+                false
+            } else {
+                true
+            }
+        });
+
+        total
+    }
+
+    /// Consumes all of the unlocking chunks, and returns the total amount being unlocked.
+    pub fn consume_unlocking_chunks(&mut self) -> Balance {
+        let amount = self.unlocking.iter().fold(Balance::zero(), |sum, chunk| {
+            sum.saturating_add(chunk.amount)
+        });
+        self.unlocking = Default::default();
+
+        amount
+    }
 }
 
-/// Rewards pool for lock participants & dApps
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-pub struct RewardInfo<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+/// Rewards pool for stakers & dApps
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct RewardInfo {
     /// Rewards pool for accounts which have locked funds in dApp staking
     #[codec(compact)]
     pub participants: Balance,
@@ -281,10 +603,10 @@ pub struct RewardInfo<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
 }
 
 /// Info about current era, including the rewards, how much is locked, unlocking, etc.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-pub struct EraInfo<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct EraInfo {
     /// Info about era rewards
-    pub rewards: RewardInfo<Balance>,
+    pub rewards: RewardInfo,
     /// How much balance is considered to be locked in the current era.
     /// This value influences the reward distribution.
     #[codec(compact)]
@@ -293,7 +615,27 @@ pub struct EraInfo<Balance: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
     /// For rewards, this amount isn't relevant for the current era, but only from the next one.
     #[codec(compact)]
     pub total_locked: Balance,
-    /// How much balance is undergoing unlocking process (still counts into locked amount)
+    /// How much balance is undergoing unlocking process.
+    /// This amount still counts into locked amount.
     #[codec(compact)]
     pub unlocking: Balance,
+}
+
+impl EraInfo {
+    /// Update with the new amount that has just been locked.
+    pub fn add_locked(&mut self, amount: Balance) {
+        self.total_locked.saturating_accrue(amount);
+    }
+
+    /// Update with the new amount that has just started undergoing the unlocking period.
+    pub fn unlocking_started(&mut self, amount: Balance) {
+        self.active_era_locked.saturating_reduce(amount);
+        self.total_locked.saturating_reduce(amount);
+        self.unlocking.saturating_accrue(amount);
+    }
+
+    /// Update with the new amount that has been removed from unlocking.
+    pub fn unlocking_removed(&mut self, amount: Balance) {
+        self.unlocking.saturating_reduce(amount);
+    }
 }

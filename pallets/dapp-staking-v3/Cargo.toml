@@ -21,6 +21,8 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
+astar-primitives = { workspace = true }
+
 [dev-dependencies]
 pallet-balances = { workspace = true }
 
@@ -39,4 +41,5 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
+	"astar-primitives/std",
 ]
