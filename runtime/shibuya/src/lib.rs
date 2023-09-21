@@ -74,6 +74,8 @@ pub use astar_primitives::{
     Index, Signature,
 };
 
+pub use crate::precompiles::DispatchPrecompileFilter;
+
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 #[cfg(any(feature = "std", test))]
@@ -1051,31 +1053,6 @@ impl pallet_sudo::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
-}
-
-/// Filter that only allows whitelisted runtime call to pass through dispatch precompile
-#[derive(Default)]
-pub struct DispatchPrecompileFilter;
-
-impl InstanceFilter<RuntimeCall> for DispatchPrecompileFilter {
-    fn filter(&self, c: &RuntimeCall) -> bool {
-        match c {
-            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
-            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
-                for call in calls {
-                    if !DispatchPrecompileFilter::default().filter(call) {
-                        return false;
-                    }
-                }
-                true
-            }
-            RuntimeCall::DappsStaking(_) => true,
-            _ => false,
-        }
-    }
-    fn is_superset(&self, _o: &Self) -> bool {
-        false
-    }
 }
 
 parameter_types! {

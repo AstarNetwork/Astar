@@ -27,23 +27,6 @@ use frame_support::{
 };
 use pallet_evm_precompile_dispatch::DispatchValidateT;
 
-/// Struct that blocks all runtime calls to Dispatch Precompile
-pub struct BlockAllDispatchValidate;
-
-/// The default implementation of `DispatchValidateT`.
-impl<AccountId, RuntimeCall> DispatchValidateT<AccountId, RuntimeCall>
-    for BlockAllDispatchValidate
-{
-    fn validate_before_dispatch(
-        _origin: &AccountId,
-        _call: &RuntimeCall,
-    ) -> Option<PrecompileFailure> {
-        Some(PrecompileFailure::Error {
-            exit_status: ExitError::Other("invalid call".into()),
-        })
-    }
-}
-
 /// Struct that allows only whitelisted runtime calls to pass through dispatch precompile,
 /// Whitelisted calls are defined in runtime
 pub struct DispatchFilterValidate<RuntimeCall, Filter: InstanceFilter<RuntimeCall> + Default>(
@@ -69,19 +52,5 @@ impl<AccountId, RuntimeCall: GetDispatchInfo, Filter: InstanceFilter<RuntimeCall
                 exit_status: ExitError::Other("invalid call".into()),
             });
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn all_non_whitelisted_call_should_fail() {
-        assert_eq!(
-            BlockAllDispatchValidate::validate_before_dispatch(&(), &()).unwrap(),
-            PrecompileFailure::Error {
-                exit_status: ExitError::Other("invalid call".into()),
-            }
-        )
     }
 }

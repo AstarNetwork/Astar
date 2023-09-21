@@ -18,8 +18,9 @@
 
 //! The Shibuya Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-use crate::{DispatchPrecompileFilter, RuntimeCall};
+use crate::RuntimeCall;
 use astar_primitives::precompiles::DispatchFilterValidate;
+use frame_support::traits::InstanceFilter;
 use pallet_evm::{
     ExitRevert, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle,
     PrecompileResult, PrecompileSet,
@@ -47,6 +48,31 @@ use xcm::latest::prelude::MultiLocation;
 /// The asset precompile address prefix. Addresses that match against this prefix will be routed
 /// to Erc20AssetsPrecompileSet
 pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
+
+/// Filter that only allows whitelisted runtime call to pass through dispatch precompile
+#[derive(Default)]
+pub struct DispatchPrecompileFilter;
+
+impl InstanceFilter<RuntimeCall> for DispatchPrecompileFilter {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        match c {
+            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
+                for call in calls {
+                    if !DispatchPrecompileFilter::default().filter(call) {
+                        return false;
+                    }
+                }
+                true
+            }
+            RuntimeCall::DappsStaking(_) => true,
+            _ => false,
+        }
+    }
+    fn is_superset(&self, _o: &Self) -> bool {
+        false
+    }
+}
 
 /// The PrecompileSet installed in the Shiden runtime.
 #[derive(Debug, Default, Clone, Copy)]

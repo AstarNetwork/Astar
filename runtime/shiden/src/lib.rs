@@ -67,6 +67,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+pub use crate::precompiles::DispatchPrecompileFilter;
 pub use astar_primitives::{
     evm::EvmRevertCodeHandler, xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance,
     BlockNumber, Hash, Header, Index, Signature,
@@ -830,31 +831,6 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
-}
-
-/// Filter that only allows whitelisted runtime call to pass through dispatch precompile
-#[derive(Default)]
-pub struct DispatchPrecompileFilter;
-
-impl InstanceFilter<RuntimeCall> for DispatchPrecompileFilter {
-    fn filter(&self, c: &RuntimeCall) -> bool {
-        match c {
-            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
-            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
-                for call in calls {
-                    if !DispatchPrecompileFilter::default().filter(call) {
-                        return false;
-                    }
-                }
-                true
-            }
-            RuntimeCall::DappsStaking(_) => true,
-            _ => false,
-        }
-    }
-    fn is_superset(&self, _o: &Self) -> bool {
-        false
-    }
 }
 
 /// The type used to represent the kinds of proxying allowed.
