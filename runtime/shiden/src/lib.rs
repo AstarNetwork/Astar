@@ -992,7 +992,6 @@ construct_runtime!(
 
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
-        // EthCall: pallet_custom_signatures = 62, - removed
         BaseFee: pallet_base_fee = 63,
 
         Contracts: pallet_contracts = 70,

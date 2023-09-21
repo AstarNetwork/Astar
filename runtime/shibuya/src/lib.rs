@@ -1222,7 +1222,6 @@ construct_runtime!(
         Identity: pallet_identity = 12,
         Timestamp: pallet_timestamp = 13,
         Multisig: pallet_multisig = 14,
-        // EthCall: pallet_custom_signatures = 15, - removed
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 16,
         Scheduler: pallet_scheduler = 17,
         Proxy: pallet_proxy = 18,
