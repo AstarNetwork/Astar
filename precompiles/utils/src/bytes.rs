@@ -135,7 +135,7 @@ impl<K: Kind, S: Get<u32>> EvmData for BoundedBytesString<K, S> {
         writer.write_pointer(
             EvmDataWriter::new()
                 .write(U256::from(length))
-                .write(value)
+                .write_raw_bytes(&value)
                 .build(),
         );
     }
