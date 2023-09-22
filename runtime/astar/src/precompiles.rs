@@ -20,7 +20,7 @@
 
 use crate::RuntimeCall;
 use astar_primitives::precompiles::DispatchFilterValidate;
-use frame_support::traits::InstanceFilter;
+use frame_support::traits::Contains;
 use pallet_evm::{
     ExitRevert, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle,
     PrecompileResult, PrecompileSet,
@@ -49,27 +49,19 @@ use xcm::latest::prelude::MultiLocation;
 pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
 
 /// Filter that only allows whitelisted runtime call to pass through dispatch precompile
-#[derive(Default)]
-pub struct DispatchPrecompileFilter;
 
-impl InstanceFilter<RuntimeCall> for DispatchPrecompileFilter {
-    fn filter(&self, c: &RuntimeCall) -> bool {
-        match c {
+pub struct WhitelistedCalls;
+
+impl Contains<RuntimeCall> for WhitelistedCalls {
+    fn contains(t: &RuntimeCall) -> bool {
+        match t {
             RuntimeCall::Utility(pallet_utility::Call::batch { calls })
             | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
-                for call in calls {
-                    if !DispatchPrecompileFilter::default().filter(call) {
-                        return false;
-                    }
-                }
-                true
+                calls.iter().all(|call| WhitelistedCalls::contains(call))
             }
             RuntimeCall::DappsStaking(_) => true,
             _ => false,
         }
-    }
-    fn is_superset(&self, _o: &Self) -> bool {
-        false
     }
 }
 /// The PrecompileSet installed in the Astar runtime.
@@ -101,7 +93,7 @@ where
     DappsStakingWrapper<R>: Precompile,
     BatchPrecompile<R>: Precompile,
     XcmPrecompile<R, C>: Precompile,
-    Dispatch<R, DispatchFilterValidate<RuntimeCall, DispatchPrecompileFilter>>: Precompile,
+    Dispatch<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config
         + pallet_xcm::Config
@@ -135,7 +127,7 @@ where
             a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
             a if a == hash(1025) => Some(Dispatch::<
                 R,
-                DispatchFilterValidate<RuntimeCall, DispatchPrecompileFilter>,
+                DispatchFilterValidate<RuntimeCall, WhitelistedCalls>,
             >::execute(handle)),
             a if a == hash(1026) => Some(ECRecoverPublicKey::execute(handle)),
             a if a == hash(1027) => Some(Ed25519Verify::execute(handle)),

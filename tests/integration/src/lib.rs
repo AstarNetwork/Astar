@@ -33,4 +33,4 @@ mod assets;
 mod xvm;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod dispatch_filter;
+mod dispatch_precompile_filter;

@@ -74,7 +74,7 @@ pub use astar_primitives::{
     Index, Signature,
 };
 
-pub use crate::precompiles::DispatchPrecompileFilter;
+pub use crate::precompiles::WhitelistedCalls;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 

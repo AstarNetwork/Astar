@@ -65,7 +65,7 @@ pub use astar_primitives::{
     Index, Signature,
 };
 
-pub use crate::precompiles::DispatchPrecompileFilter;
+pub use crate::precompiles::WhitelistedCalls;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;

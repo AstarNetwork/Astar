@@ -23,17 +23,17 @@ use core::marker::PhantomData;
 use fp_evm::{ExitError, PrecompileFailure};
 use frame_support::{
     dispatch::{DispatchClass, GetDispatchInfo, Pays},
-    traits::InstanceFilter,
+    traits::Contains,
 };
 use pallet_evm_precompile_dispatch::DispatchValidateT;
 
 /// Struct that allows only whitelisted runtime calls to pass through dispatch precompile,
 /// Whitelisted calls are defined in runtime
-pub struct DispatchFilterValidate<RuntimeCall, Filter: InstanceFilter<RuntimeCall> + Default>(
+pub struct DispatchFilterValidate<RuntimeCall, Filter: Contains<RuntimeCall>>(
     PhantomData<(RuntimeCall, Filter)>,
 );
 
-impl<AccountId, RuntimeCall: GetDispatchInfo, Filter: InstanceFilter<RuntimeCall> + Default>
+impl<AccountId, RuntimeCall: GetDispatchInfo, Filter: Contains<RuntimeCall>>
     DispatchValidateT<AccountId, RuntimeCall> for DispatchFilterValidate<RuntimeCall, Filter>
 {
     fn validate_before_dispatch(
@@ -41,16 +41,18 @@ impl<AccountId, RuntimeCall: GetDispatchInfo, Filter: InstanceFilter<RuntimeCall
         call: &RuntimeCall,
     ) -> Option<PrecompileFailure> {
         let info = call.get_dispatch_info();
-        if !(info.pays_fee == Pays::Yes && info.class == DispatchClass::Normal) {
+        let paid_normal_call = info.pays_fee == Pays::Yes && info.class == DispatchClass::Normal;
+        if !paid_normal_call {
             return Some(PrecompileFailure::Error {
                 exit_status: ExitError::Other("invalid call".into()),
             });
-        } else if Filter::default().filter(call) {
-            return None;
+        }
+        if Filter::contains(call) {
+            None
         } else {
-            return Some(PrecompileFailure::Error {
-                exit_status: ExitError::Other("invalid call".into()),
-            });
+            Some(PrecompileFailure::Error {
+                exit_status: ExitError::Other("call filtered out".into()),
+            })
         }
     }
 }

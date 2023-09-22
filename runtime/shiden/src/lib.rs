@@ -67,7 +67,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-pub use crate::precompiles::DispatchPrecompileFilter;
+pub use crate::precompiles::WhitelistedCalls;
 pub use astar_primitives::{
     evm::EvmRevertCodeHandler, xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance,
     BlockNumber, Hash, Header, Index, Signature,

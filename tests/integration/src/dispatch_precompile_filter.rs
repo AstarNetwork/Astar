@@ -18,7 +18,7 @@
 #![cfg(test)]
 
 use crate::setup::*;
-use frame_support::traits::InstanceFilter;
+use frame_support::traits::Contains;
 
 /// Whitelisted Calls are defined in the runtime
 #[test]
@@ -31,7 +31,7 @@ fn filter_accepts_batch_call_with_whitelisted_calls() {
         let call = RuntimeCall::Utility(UtilityCall::batch {
             calls: vec![inner_call],
         });
-        assert!(DispatchPrecompileFilter.filter(&call));
+        assert!(WhitelistedCalls::contains(&call));
     });
 }
 
@@ -49,7 +49,7 @@ fn filter_rejects_non_whitelisted_batch_calls() {
         }));
 
         // Utility call containing Balances Call
-        assert!(!DispatchPrecompileFilter.filter(&call));
+        assert!(!WhitelistedCalls::contains(&call));
 
         // CASE 2 - now whitelisted mixed with whitelisted calls
 
@@ -64,7 +64,7 @@ fn filter_rejects_non_whitelisted_batch_calls() {
         }));
 
         // Utility call containing Balances Call and Dappsstaking Call Fails filter
-        assert!(!DispatchPrecompileFilter.filter(&call));
+        assert!(!WhitelistedCalls::contains(&call));
     });
 }
 
@@ -75,7 +75,7 @@ fn filter_accepts_whitelisted_calls() {
         let stake_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
             contract_id: contract.clone(),
         });
-        assert!(DispatchPrecompileFilter.filter(&stake_call));
+        assert!(WhitelistedCalls::contains(&stake_call));
     });
 }
 
@@ -86,7 +86,7 @@ fn filter_rejects_non_whitelisted_calls() {
             dest: MultiAddress::Id(CAT),
             value: 100_000_000_000,
         });
-        assert!(!DispatchPrecompileFilter.filter(&transfer_call));
+        assert!(!WhitelistedCalls::contains(&transfer_call));
     })
 }
 
@@ -103,6 +103,6 @@ fn filter_accepts_whitelisted_batch_all_calls() {
         let call = RuntimeCall::Utility(UtilityCall::batch_all {
             calls: vec![inner_call1, inner_call2],
         });
-        assert!(DispatchPrecompileFilter.filter(&call));
+        assert!(WhitelistedCalls::contains(&call));
     });
 }
