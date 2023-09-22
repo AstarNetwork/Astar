@@ -173,7 +173,7 @@ pub fn get_ideal_bfpg() -> U256 {
     )
 }
 
-/// Max step limit described how much `base fee per gas` can move in any direction during one block.
+/// Max step limit describes how much `base fee per gas` can move in any direction during one block.
 pub fn get_max_step_limit() -> U256 {
     let bfpg: u128 = BaseFeePerGas::<TestRuntime>::get().unique_saturated_into();
     let max_allowed_step: u128 = <TestRuntime as pallet::Config>::StepLimitRatio::get() * bfpg;

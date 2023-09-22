@@ -146,8 +146,8 @@ fn unit_adjustment_factor_no_change() {
 fn bfpg_bounds_are_respected() {
     ExtBuilder::build().execute_with(|| {
         // Lower bound
-        let lower_bfpg = <TestRuntime as pallet::Config>::MinBaseFeePerGas::get();
-        BaseFeePerGas::<TestRuntime>::set(lower_bfpg);
+        let min_bfpg = <TestRuntime as pallet::Config>::MinBaseFeePerGas::get();
+        BaseFeePerGas::<TestRuntime>::set(min_bfpg);
 
         // This should bring the ideal bfpg value to zero
         set_adjustment_factor(FixedU128::zero());
@@ -156,7 +156,7 @@ fn bfpg_bounds_are_respected() {
         DynamicEvmBaseFee::on_finalize(1);
         assert_eq!(
             BaseFeePerGas::<TestRuntime>::get(),
-            lower_bfpg,
+            min_bfpg,
             "bfpg must not go below lower threshold."
         );
 
@@ -181,29 +181,49 @@ fn bfpg_bounds_are_respected() {
 fn step_limit_ratio_is_respected() {
     ExtBuilder::build().execute_with(|| {
         // Lower bound, high adjustment factor
-        let lower_bfpg = <TestRuntime as pallet::Config>::MinBaseFeePerGas::get();
-        BaseFeePerGas::<TestRuntime>::set(lower_bfpg);
+        let min_bfpg = <TestRuntime as pallet::Config>::MinBaseFeePerGas::get();
+        BaseFeePerGas::<TestRuntime>::set(min_bfpg);
         set_adjustment_factor(FixedU128::max_value());
         let step_limit = get_max_step_limit();
 
         DynamicEvmBaseFee::on_finalize(1);
         assert_eq!(
             BaseFeePerGas::<TestRuntime>::get(),
-            lower_bfpg + step_limit,
+            min_bfpg + step_limit,
             "Step limit ratio in ascending direction was not respected."
         );
 
         // Upper bound, low adjustment factor
-        let higher_bfpg = <TestRuntime as pallet::Config>::MaxBaseFeePerGas::get();
-        BaseFeePerGas::<TestRuntime>::set(higher_bfpg);
+        let max_bfpg = <TestRuntime as pallet::Config>::MaxBaseFeePerGas::get();
+        BaseFeePerGas::<TestRuntime>::set(max_bfpg);
         set_adjustment_factor(FixedU128::zero());
         let step_limit = get_max_step_limit();
 
         DynamicEvmBaseFee::on_finalize(2);
         assert_eq!(
             BaseFeePerGas::<TestRuntime>::get(),
-            higher_bfpg - step_limit,
+            max_bfpg - step_limit,
             "Step limit ratio in descending direction was not respected."
         );
+    });
+}
+
+#[test]
+fn bfpg_full_spectrum_change_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Set bfpg to lowest possible, and adjustment factor to highest possible
+        let min_bfpg = <TestRuntime as pallet::Config>::MinBaseFeePerGas::get();
+        BaseFeePerGas::<TestRuntime>::set(min_bfpg);
+        set_adjustment_factor(FixedU128::max_value());
+
+        // Run for limited amount of iterations until upper bound is reached
+        let target_bfpg = <TestRuntime as pallet::Config>::MaxBaseFeePerGas::get();
+        let mut counter = 1;
+        let iter_limit = 500_000; // safety limit to avoid endless loop
+        while counter <= iter_limit && BaseFeePerGas::<TestRuntime>::get() < target_bfpg {
+            DynamicEvmBaseFee::on_finalize(counter);
+            counter += 1;
+        }
+        assert_eq!(BaseFeePerGas::<TestRuntime>::get(), target_bfpg);
     });
 }
