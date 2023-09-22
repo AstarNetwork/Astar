@@ -137,16 +137,10 @@ pub fn set_adjustment_factor(factor: FixedU128) {
     storage::unhashed::put_raw(&ADJUSTMENT_FACTOR, &factor.encode());
 }
 
-/// Helper function to get the adjustment factor used by the pallet.
-/// In case it's unset, it returns 0.
-pub fn get_adjustment_factor() -> FixedU128 {
-    storage::unhashed::get::<FixedU128>(&ADJUSTMENT_FACTOR).unwrap_or_default()
-}
-
 pub struct GetAdjustmentFactor;
 impl Get<FixedU128> for GetAdjustmentFactor {
     fn get() -> FixedU128 {
-        get_adjustment_factor()
+        storage::unhashed::get::<FixedU128>(&ADJUSTMENT_FACTOR).unwrap_or_default()
     }
 }
 
@@ -164,4 +158,17 @@ impl ExtBuilder {
         });
         ext
     }
+}
+
+/// Ideal `base fee per gas` value according to the fee alignment formula.
+/// It changes dynamically based on `adjustment factor` and `weight factor` parameters.
+pub fn get_ideal_bfpg() -> U256 {
+    U256::from(
+        <TestRuntime as pallet_dynamic_evm_base_fee::Config>::AdjustmentFactor::get()
+            .saturating_mul_int::<u128>(
+                <TestRuntime as pallet_dynamic_evm_base_fee::Config>::WeightFactor::get(),
+            )
+            .saturating_mul(25)
+            .saturating_div(98974),
+    )
 }

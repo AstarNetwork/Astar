@@ -21,8 +21,8 @@
 use super::*;
 use mock::*;
 
-use frame_support::{assert_noop, assert_ok};
-use sp_runtime::traits::BadOrigin;
+use frame_support::{assert_noop, assert_ok, traits::OnFinalize};
+use sp_runtime::traits::{BadOrigin, One};
 
 use fp_evm::FeeCalculator;
 
@@ -111,3 +111,23 @@ fn min_gas_price_works() {
         );
     });
 }
+
+#[test]
+fn unit_adjustment_factor_no_change() {
+    ExtBuilder::build().execute_with(|| {
+        // Prep init values
+        let init_bfpg = get_ideal_bfpg();
+        BaseFeePerGas::<TestRuntime>::set(init_bfpg);
+        set_adjustment_factor(FixedU128::one());
+
+        DynamicEvmBaseFee::on_finalize(1);
+        assert_eq!(
+            BaseFeePerGas::<TestRuntime>::get(),
+            init_bfpg,
+            "bfpg should remain the same"
+        );
+    });
+}
+
+#[test]
+fn bfpg_limits_are_respected() {}
