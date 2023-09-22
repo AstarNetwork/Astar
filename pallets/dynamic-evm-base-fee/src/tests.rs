@@ -22,9 +22,22 @@ use super::*;
 use mock::*;
 
 use frame_support::{assert_noop, assert_ok, traits::OnFinalize};
-use sp_runtime::traits::{BadOrigin, One};
+use num_traits::Bounded;
+use sp_runtime::traits::{BadOrigin, One, Zero};
 
 use fp_evm::FeeCalculator;
+
+#[test]
+fn default_base_fee_per_gas_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Genesis state check
+        assert_eq!(
+            BaseFeePerGas::<TestRuntime>::get(),
+            <TestRuntime as pallet::Config>::DefaultBaseFeePerGas::get(),
+            "Init bfpg should be equal to the specified default one."
+        )
+    });
+}
 
 #[test]
 fn set_base_fee_per_gas_works() {
@@ -115,7 +128,7 @@ fn min_gas_price_works() {
 #[test]
 fn unit_adjustment_factor_no_change() {
     ExtBuilder::build().execute_with(|| {
-        // Prep init values
+        // Prep init values - ideal bfpg, and unit adjustment factor
         let init_bfpg = get_ideal_bfpg();
         BaseFeePerGas::<TestRuntime>::set(init_bfpg);
         set_adjustment_factor(FixedU128::one());
@@ -130,4 +143,67 @@ fn unit_adjustment_factor_no_change() {
 }
 
 #[test]
-fn bfpg_limits_are_respected() {}
+fn bfpg_bounds_are_respected() {
+    ExtBuilder::build().execute_with(|| {
+        // Lower bound
+        let lower_bfpg = <TestRuntime as pallet::Config>::MinBaseFeePerGas::get();
+        BaseFeePerGas::<TestRuntime>::set(lower_bfpg);
+
+        // This should bring the ideal bfpg value to zero
+        set_adjustment_factor(FixedU128::zero());
+        assert!(get_ideal_bfpg().is_zero(), "Sanity check");
+
+        DynamicEvmBaseFee::on_finalize(1);
+        assert_eq!(
+            BaseFeePerGas::<TestRuntime>::get(),
+            lower_bfpg,
+            "bfpg must not go below lower threshold."
+        );
+
+        // Upper limit
+        let upper_bfpg = <TestRuntime as pallet::Config>::MaxBaseFeePerGas::get();
+        BaseFeePerGas::<TestRuntime>::set(upper_bfpg);
+
+        // This should bring the ideal bfpg very high, well above max value
+        set_adjustment_factor(FixedU128::max_value());
+        assert!(get_ideal_bfpg() > upper_bfpg, "Sanity check");
+
+        DynamicEvmBaseFee::on_finalize(2);
+        assert_eq!(
+            BaseFeePerGas::<TestRuntime>::get(),
+            upper_bfpg,
+            "bfpg must not go above threshold"
+        );
+    });
+}
+
+#[test]
+fn step_limit_ratio_is_respected() {
+    ExtBuilder::build().execute_with(|| {
+        // Lower bound, high adjustment factor
+        let lower_bfpg = <TestRuntime as pallet::Config>::MinBaseFeePerGas::get();
+        BaseFeePerGas::<TestRuntime>::set(lower_bfpg);
+        set_adjustment_factor(FixedU128::max_value());
+        let step_limit = get_max_step_limit();
+
+        DynamicEvmBaseFee::on_finalize(1);
+        assert_eq!(
+            BaseFeePerGas::<TestRuntime>::get(),
+            lower_bfpg + step_limit,
+            "Step limit ratio in ascending direction was not respected."
+        );
+
+        // Upper bound, low adjustment factor
+        let higher_bfpg = <TestRuntime as pallet::Config>::MaxBaseFeePerGas::get();
+        BaseFeePerGas::<TestRuntime>::set(higher_bfpg);
+        set_adjustment_factor(FixedU128::zero());
+        let step_limit = get_max_step_limit();
+
+        DynamicEvmBaseFee::on_finalize(2);
+        assert_eq!(
+            BaseFeePerGas::<TestRuntime>::get(),
+            higher_bfpg - step_limit,
+            "Step limit ratio in descending direction was not respected."
+        );
+    });
+}

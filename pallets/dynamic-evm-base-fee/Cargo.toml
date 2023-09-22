@@ -23,6 +23,7 @@ sp-runtime = { workspace = true }
 fp-evm = { workspace = true }
 
 [dev-dependencies]
+num-traits = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-timestamp = { workspace = true }
 
@@ -31,6 +32,7 @@ default = ["std"]
 std = [
 	"parity-scale-codec/std",
 	"scale-info/std",
+	"num-traits/std",
 	# Substrate
 	"frame-support/std",
 	"frame-system/std",
