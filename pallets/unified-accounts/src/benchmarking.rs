@@ -36,7 +36,7 @@ mod benchmarks {
     #[benchmark]
     fn claim_evm_address() {
         let caller: T::AccountId = whitelisted_caller();
-        let eth_secret_key = libsecp256k1::SecretKey::parse(&[0xff; 32]).unwrap();
+        let eth_secret_key = libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap();
         let evm_address = Pallet::<T>::eth_address(&eth_secret_key);
         let signature = Pallet::<T>::eth_sign_prehash(
             &T::SignatureHelper::build_signing_payload(&caller),
