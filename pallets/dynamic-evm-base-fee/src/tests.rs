@@ -23,7 +23,10 @@ use mock::*;
 
 use frame_support::{assert_noop, assert_ok, traits::OnFinalize};
 use num_traits::Bounded;
-use sp_runtime::traits::{BadOrigin, One, Zero};
+use sp_runtime::{
+    traits::{BadOrigin, One, Zero},
+    FixedU128,
+};
 
 use fp_evm::FeeCalculator;
 
@@ -224,6 +227,97 @@ fn bfpg_full_spectrum_change_works() {
             DynamicEvmBaseFee::on_finalize(counter);
             counter += 1;
         }
-        assert_eq!(BaseFeePerGas::<TestRuntime>::get(), target_bfpg);
+
+        assert_eq!(BaseFeePerGas::<TestRuntime>::get(), target_bfpg,
+            "bfpg upper bound not reached - either it's not enough iterations or some precision loss occurs.");
+    });
+}
+
+#[test]
+fn bfpg_matches_expected_value_for_so_called_average_transaction() {
+    ExtBuilder::build().execute_with(|| {
+        // The new proposed models suggests to use the following formula to calculate the base fee per gas:
+        //
+        // bfpg = (adj_factor *  weight_factor * 25_000) / 9_897_4000
+        let init_bfpg = get_ideal_bfpg();
+        BaseFeePerGas::<TestRuntime>::set(init_bfpg);
+        let init_adj_factor = <TestRuntime as pallet::Config>::AdjustmentFactor::get();
+
+        // Slighly increase the adjustment factor, and calculate the new base fee per gas
+        //
+        // To keep it closer to reality, let's assume we're using the proposed variability factor of 0.000_015.
+        // Let's also assume that block fullness difference is 0.01 (1%).
+        // This should result in the adjustment factor of 0.000_001_5.
+        //
+        // NOTE: it's important to keep the increase small so that the step doesn't saturate
+        let change = FixedU128::from_rational(1500, 1_000_000_000);
+        let new_adj_factor = init_adj_factor + change;
+        assert!(new_adj_factor > init_adj_factor, "Sanity check");
+        set_adjustment_factor(new_adj_factor);
+
+        // Calculate the new expected base fee per gas
+        let weight_factor: u128 = <TestRuntime as pallet::Config>::WeightFactor::get();
+        let expected_bfpg =
+            U256::from(new_adj_factor.saturating_mul_int(weight_factor) * 25_000 / 9_897_4000);
+
+        // Calculate the new base fee per gas in the pallet
+        DynamicEvmBaseFee::on_finalize(1);
+
+        // Assert calculated value is as expected
+        let new_bfpg = BaseFeePerGas::<TestRuntime>::get();
+        assert!(new_bfpg > init_bfpg, "Sanity check");
+        assert_eq!(new_bfpg, expected_bfpg);
+
+        // Also check the opposite direction
+        let new_adj_factor = init_adj_factor - change;
+        set_adjustment_factor(new_adj_factor);
+        let expected_bfpg =
+            U256::from(new_adj_factor.saturating_mul_int(weight_factor) * 25_000 / 9_897_4000);
+
+        // Calculate the new base fee per gas in the pallet
+        DynamicEvmBaseFee::on_finalize(2);
+        // Assert calculated value is as expected
+        let new_bfpg = BaseFeePerGas::<TestRuntime>::get();
+        assert!(new_bfpg < init_bfpg, "Sanity check");
+        assert_eq!(new_bfpg, expected_bfpg);
+    });
+}
+
+#[test]
+fn lower_upper_bounds_ignored_if_bfpg_is_outside() {
+    ExtBuilder::build().execute_with(|| {
+        // Set the initial bfpg to be outside of the allowed range.
+        // It's important reduction is sufficient so we're still below the minimum limit after the adjustment.
+        let delta = 100_000_000;
+
+        // First test when bfpg is too little
+        let too_small_bfpg = <TestRuntime as pallet::Config>::MinBaseFeePerGas::get() - delta;
+        BaseFeePerGas::<TestRuntime>::set(too_small_bfpg);
+        DynamicEvmBaseFee::on_finalize(1);
+
+        assert!(
+            BaseFeePerGas::<TestRuntime>::get() > too_small_bfpg,
+            "Bfpg should have increased slightly."
+        );
+        assert!(
+            BaseFeePerGas::<TestRuntime>::get()
+                < <TestRuntime as pallet::Config>::MinBaseFeePerGas::get(),
+            "For this test, bfpg should still be below the minimum limit."
+        );
+
+        // Repeat the same test but this time bfpg is too big
+        let too_big_bfpg = <TestRuntime as pallet::Config>::MaxBaseFeePerGas::get() + delta;
+        BaseFeePerGas::<TestRuntime>::set(too_big_bfpg);
+        DynamicEvmBaseFee::on_finalize(2);
+
+        assert!(
+            BaseFeePerGas::<TestRuntime>::get() < too_big_bfpg,
+            "Bfpg should have decreased slightly."
+        );
+        assert!(
+            BaseFeePerGas::<TestRuntime>::get()
+                < <TestRuntime as pallet::Config>::MaxBaseFeePerGas::get(),
+            "For this test, bfpg should still be above the maximum limit."
+        );
     });
 }

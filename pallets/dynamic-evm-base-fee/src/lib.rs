@@ -18,6 +18,18 @@
 
 //! TODO: Rustdoc!!!
 
+// TODO: remove this comment later
+// Max amount that adjustment factor will be able to change on live networks using the new tokenomics will be:
+//
+// c_n = c_n-1 * (1 + adjustment + adjustment^2/2)
+//
+// adjustment = v * (s - s*)
+//
+// Biggest possible adjustment between 2 blocks is: 0.000015 * (1 - 0.25) = 0.000_011_25
+// Expressed as ratio: 11_250 / 1_000_000_000.
+// This is a much smaller change compared to the max step limit ratio we'll use to limit bfpg adaptation.
+// This means that once equilibrium is reached, the `StepLimitRatio` will be larger than the max possible adjustment, essentially eliminating it's effect.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{traits::Get, weights::Weight};
@@ -90,8 +102,6 @@ pub mod pallet {
             db_weight.reads_writes(2, 1)
         }
 
-        // TODO: it's super important to do double-check possible loss of precision here.
-        // Do some tests, compare to benchmark values.
         fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
             BaseFeePerGas::<T>::mutate(|base_fee_per_gas| {
                 let old_bfpg = *base_fee_per_gas;
@@ -103,13 +113,24 @@ pub mod pallet {
                     U256::from(step)
                 };
 
-                // TODO: maybe add a DB entry to check until when should we apply max step adjustment?
-                // Once 'equilibrium' is reached, it's safe to just follow the formula without limit updates.
-                // Or we could abuse the sudo for this.
-
-                // Lower & upper limit between which the new base fee per gas should be clamped.
-                let lower_limit = T::MinBaseFeePerGas::get().max(old_bfpg.saturating_sub(max_step));
-                let upper_limit = T::MaxBaseFeePerGas::get().min(old_bfpg.saturating_add(max_step));
+                // It's possible current base fee per gas is outside of the allowed range.
+                // This can & will happen when this solution is deployed on live networks.
+                //
+                // In such scenario, we will discard the lower & upper bounds configured in the runtime.
+                // Once these bounds are reached ONCE, the runtime logic will prevent them from going out of bounds again.
+                let apply_configured_bounds = old_bfpg >= T::MinBaseFeePerGas::get()
+                    && old_bfpg <= T::MaxBaseFeePerGas::get();
+                let (lower_limit, upper_limit) = if apply_configured_bounds {
+                    (
+                        T::MinBaseFeePerGas::get().max(old_bfpg.saturating_sub(max_step)),
+                        T::MaxBaseFeePerGas::get().min(old_bfpg.saturating_add(max_step)),
+                    )
+                } else {
+                    (
+                        old_bfpg.saturating_sub(max_step),
+                        old_bfpg.saturating_add(max_step),
+                    )
+                };
 
                 // Calculate ideal new 'base_fee_per_gas' according to the formula
                 let ideal_new_bfpg = T::AdjustmentFactor::get()

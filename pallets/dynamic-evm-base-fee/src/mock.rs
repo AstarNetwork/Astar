@@ -95,7 +95,6 @@ impl pallet_timestamp::Config for TestRuntime {
     type WeightInfo = ();
 }
 
-// TODO: maybe expand this so all params are configurable? Should make for more dynamic testing.
 parameter_types! {
     pub DefaultBaseFeePerGas: U256 = U256::from(1_500_000_000_000_u128);
     pub MinBaseFeePerGas: U256 = U256::from(800_000_000_000_u128);
