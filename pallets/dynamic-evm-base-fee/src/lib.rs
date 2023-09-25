@@ -31,7 +31,7 @@
 //!
 //! The core formula this pallet tries to satisfy is:
 //!
-//!     base_fee_per_gas = adjustment_factor * weight_factor * 25 / 98974
+//! base_fee_per_gas = adjustment_factor * weight_factor * 25 / 98974
 //!
 //! Where:
 //! * **adjustment_factor** - is a value that changes in-between the blocks, related to the block fill ratio.
@@ -90,6 +90,15 @@ mod benchmarking;
 pub trait WeightInfo {
     fn base_fee_per_gas_adjustment() -> Weight;
     fn set_base_fee_per_gas() -> Weight;
+}
+
+impl WeightInfo for () {
+    fn base_fee_per_gas_adjustment() -> Weight {
+        Weight::zero()
+    }
+    fn set_base_fee_per_gas() -> Weight {
+        Weight::zero()
+    }
 }
 
 #[frame_support::pallet]

@@ -110,6 +110,7 @@ impl pallet_dynamic_evm_base_fee::Config for TestRuntime {
     type AdjustmentFactor = GetAdjustmentFactor;
     type WeightFactor = ConstU128<30_000_000_000_000_000>;
     type StepLimitRatio = StepLimitRation;
+    type WeightInfo = ();
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
