@@ -4925,6 +4925,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
+ "libsecp256k1",
  "pallet-assets",
  "pallet-balances",
  "pallet-contracts",

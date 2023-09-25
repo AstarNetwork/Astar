@@ -69,9 +69,10 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    ethereum_checked::CheckedEthereumTransact, evm::EvmRevertCodeHandler,
-    xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
-    Index, Signature,
+    ethereum_checked::{CheckedEthereumTransact, HashedAccountMapping},
+    evm::EvmRevertCodeHandler,
+    xcm::AssetLocationIdConverter,
+    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
@@ -1227,8 +1228,9 @@ impl pallet_unified_accounts::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultAddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
-    type DefaultAccountMapping = pallet_unified_accounts::HashedAccountMapping<BlakeTwo256>;
+    type DefaultAccountMapping = HashedAccountMapping<BlakeTwo256>;
     type SignatureHelper = pallet_unified_accounts::EIP712Signature<Self, EVMChainId>;
+    type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
 construct_runtime!(

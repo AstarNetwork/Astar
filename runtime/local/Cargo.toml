@@ -66,7 +66,6 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 
 # Astar pallets
 astar-primitives = { workspace = true }
-pallet-unified-accounts = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
@@ -77,6 +76,7 @@ pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
+pallet-unified-accounts = { workspace = true }
 pallet-xvm = { workspace = true }
 
 # Moonbeam tracing

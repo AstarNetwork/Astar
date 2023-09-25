@@ -20,6 +20,7 @@
 
 use super::*;
 use crate as pallet_unified_accounts;
+use astar_primitives::ethereum_checked::HashedAccountMapping;
 use frame_support::{
     construct_runtime, parameter_types,
     sp_io::TestExternalities,
@@ -157,6 +158,7 @@ impl pallet_unified_accounts::Config for TestRuntime {
     type DefaultAddressMapping = HashedAddressMapping<BlakeTwo256>;
     type DefaultAccountMapping = HashedAccountMapping<BlakeTwo256>;
     type SignatureHelper = EIP712Signature<Self, ChainId>;
+    type WeightInfo = ();
 }
 
 pub(crate) type AccountId = AccountId32;

@@ -61,8 +61,8 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    evm::EvmRevertCodeHandler, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
-    Index, Signature,
+    ethereum_checked::HashedAccountMapping, evm::EvmRevertCodeHandler, AccountId, Address, AssetId,
+    Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 
 #[cfg(feature = "std")]
@@ -450,8 +450,9 @@ impl pallet_unified_accounts::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultAddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
-    type DefaultAccountMapping = pallet_unified_accounts::HashedAccountMapping<BlakeTwo256>;
+    type DefaultAccountMapping = HashedAccountMapping<BlakeTwo256>;
     type SignatureHelper = pallet_unified_accounts::EIP712Signature<Self, ChainId>;
+    type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
 parameter_types! {

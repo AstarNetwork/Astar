@@ -30,7 +30,10 @@ use frame_support::{
     traits::ConstU32,
     BoundedVec,
 };
+use sp_core::Hasher;
 use sp_std::{prelude::*, result::Result};
+
+use crate::AccountId;
 
 /// Max Ethereum tx input size: 65_536 bytes
 pub const MAX_ETHEREUM_TX_INPUT_SIZE: u32 = 2u32.pow(16);
@@ -100,4 +103,13 @@ pub trait CheckedEthereumTransact {
 /// Mapping from `Account` to `H160`.
 pub trait AccountMapping<AccountId> {
     fn into_h160(account: AccountId) -> H160;
+}
+
+/// Hashed derive mapping for converting account id to evm address
+pub struct HashedAccountMapping<H>(sp_std::marker::PhantomData<H>);
+impl<H: Hasher<Out = H256>> AccountMapping<AccountId> for HashedAccountMapping<H> {
+    fn into_h160(account: AccountId) -> H160 {
+        let payload = (b"evm:", account);
+        H160::from_slice(&payload.using_encoded(H::hash)[0..20])
+    }
 }

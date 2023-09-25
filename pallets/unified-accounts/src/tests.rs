@@ -59,7 +59,7 @@ fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8
 fn connect_accounts(who: &AccountId32, secret: &libsecp256k1::SecretKey) {
     assert_ok!(UnifiedAccounts::claim_evm_address(
         RuntimeOrigin::signed(who.clone()),
-        UnifiedAccounts::eth_address(&alice_secret()),
+        UnifiedAccounts::eth_address(secret),
         get_evm_signature(who, secret)
     ));
 }
