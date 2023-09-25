@@ -46,7 +46,7 @@ mod benchmarks {
 
         #[block]
         {
-            Pallet::<T>::call_without_execution(context, vm_id, source, target, input, value)
+            Pallet::<T>::call_without_execution(context, vm_id, source, target, input, value, None)
                 .unwrap();
         }
     }
@@ -65,7 +65,7 @@ mod benchmarks {
 
         #[block]
         {
-            Pallet::<T>::call_without_execution(context, vm_id, source, target, input, value)
+            Pallet::<T>::call_without_execution(context, vm_id, source, target, input, value, None)
                 .unwrap();
         }
     }

@@ -23,6 +23,7 @@ use pallet_evm::{
     PrecompileResult, PrecompileSet,
 };
 use pallet_evm_precompile_assets_erc20::{AddressToAssetId, Erc20AssetsPrecompileSet};
+use pallet_evm_precompile_batch::BatchPrecompile;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dapps_staking::DappsStakingWrapper;
@@ -56,9 +57,11 @@ impl<R, C> ShidenNetworkPrecompiles<R, C> {
     /// Return all addresses that contain precompiles. This can be used to populate dummy code
     /// under the precompile.
     pub fn used_addresses() -> impl Iterator<Item = H160> {
-        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484]
-            .into_iter()
-            .map(hash)
+        sp_std::vec![
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484, 20486
+        ]
+        .into_iter()
+        .map(hash)
     }
 }
 
@@ -69,6 +72,7 @@ impl<R, C> PrecompileSet for ShidenNetworkPrecompiles<R, C>
 where
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
     DappsStakingWrapper<R>: Precompile,
+    BatchPrecompile<R>: Precompile,
     XcmPrecompile<R, C>: Precompile,
     Dispatch<R>: Precompile,
     R: pallet_evm::Config
@@ -114,6 +118,8 @@ where
             a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
             // Xcm 0x5004
             a if a == hash(20484) => Some(XcmPrecompile::<R, C>::execute(handle)),
+            // Batch 0x5006
+            a if a == hash(20486) => Some(BatchPrecompile::<R>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)

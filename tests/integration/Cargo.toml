@@ -8,11 +8,14 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+env_logger = { workspace = true }
 hex = { workspace = true }
 libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
 parity-scale-codec = { workspace = true }
+sha3 = { workspace = true }
 
 # frontier
+fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
 # frame dependencies
@@ -33,6 +36,7 @@ sp-runtime = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-unified-accounts = { workspace = true }
+precompile-utils = { workspace = true }
 
 astar-primitives = { workspace = true }
 astar-runtime = { workspace = true, features = ["std"], optional = true }

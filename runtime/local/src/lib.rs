@@ -51,11 +51,9 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        DispatchInfoOf, Dispatchable, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
+        DispatchInfoOf, Dispatchable, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto,
     },
-    transaction_validity::{
-        TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
-    },
+    transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -588,24 +586,6 @@ impl pallet_ethereum::Config for Runtime {
 }
 
 parameter_types! {
-    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
-    pub const CallFee: Balance = AST / 10;
-    pub const CallMagicNumber: u16 = 0xff51;
-}
-
-impl pallet_custom_signatures::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
-    type Signer = <Signature as Verify>::Signer;
-    type CallMagicNumber = CallMagicNumber;
-    type Currency = Balances;
-    type CallFee = CallFee;
-    type OnChargeTransaction = ();
-    type UnsignedPriority = EcdsaUnsignedPriority;
-}
-
-parameter_types! {
     pub MaximumSchedulerWeight: Weight = NORMAL_DISPATCH_RATIO * RuntimeBlockWeights::get().max_block;
 }
 
@@ -910,7 +890,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::DappsStaking(..)
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
-                        // Skip entire EthCall pallet
                         | RuntimeCall::BaseFee(..)
                         // Skip entire Contracts pallet
                         | RuntimeCall::Democracy(..)
@@ -1009,7 +988,6 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment,
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,
-        EthCall: pallet_custom_signatures,
         BaseFee: pallet_base_fee,
         Contracts: pallet_contracts,
         Sudo: pallet_sudo,

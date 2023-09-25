@@ -18,7 +18,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::{xvm::CallError, Balance};
+use astar_primitives::{
+    xvm::{FailureError, FailureReason, FailureRevert},
+    Balance,
+};
 use parity_scale_codec::{Decode, Encode};
 use sp_std::vec::Vec;
 
@@ -31,18 +34,20 @@ pub enum XvmExecutionResult {
     Err(u32),
 }
 
-impl From<CallError> for XvmExecutionResult {
-    fn from(input: CallError) -> Self {
-        use CallError::*;
-
+impl From<FailureReason> for XvmExecutionResult {
+    fn from(input: FailureReason) -> Self {
         // `0` is reserved for `Ok`
         let error_code = match input {
-            InvalidVmId => 1,
-            SameVmCallDenied => 2,
-            InvalidTarget => 3,
-            InputTooLarge => 4,
-            ReentranceDenied => 5,
-            ExecutionFailed(_) => 6,
+            // Revert failure: 1 - 127
+            FailureReason::Revert(FailureRevert::InvalidTarget) => 1,
+            FailureReason::Revert(FailureRevert::InputTooLarge) => 2,
+            FailureReason::Revert(FailureRevert::VmRevert(_)) => 3,
+
+            // Error failure: 128 - 255
+            FailureReason::Error(FailureError::InvalidVmId) => 128,
+            FailureReason::Error(FailureError::SameVmCallDenied) => 129,
+            FailureReason::Error(FailureError::ReentranceDenied) => 130,
+            FailureReason::Error(FailureError::VmError(_)) => 131,
         };
         Self::Err(error_code)
     }
