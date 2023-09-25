@@ -62,12 +62,9 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Bounded, ConvertInto,
-        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
-        Zero,
+        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Zero,
     },
-    transaction_validity::{
-        TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
-    },
+    transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -311,24 +308,6 @@ impl pallet_multisig::Config for Runtime {
     type DepositFactor = DepositFactor;
     type MaxSignatories = ConstU32<100>;
     type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
-    pub const CallFee: Balance = ASTR / 10;
-    pub const CallMagicNumber: u16 = 0x0250;
-}
-
-impl pallet_custom_signatures::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
-    type Signer = <Signature as Verify>::Signer;
-    type CallMagicNumber = CallMagicNumber;
-    type Currency = Balances;
-    type CallFee = CallFee;
-    type OnChargeTransaction = ToStakingPot;
-    type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
 parameter_types! {
@@ -916,7 +895,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::XcAssetConfig(..)
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
-                        // Skip entire EthCall pallet
                         | RuntimeCall::BaseFee(..) // Skip entire Contracts pallet
                 )
             }
@@ -1025,7 +1003,6 @@ construct_runtime!(
 
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
-        EthCall: pallet_custom_signatures = 62,
         BaseFee: pallet_base_fee = 63,
 
         Contracts: pallet_contracts = 70,

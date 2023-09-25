@@ -571,7 +571,6 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
@@ -5523,7 +5522,6 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-ethereum",
@@ -7081,26 +7079,6 @@ dependencies = [
  "scale-info",
  "serde",
  "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-custom-signatures"
-version = "4.6.0"
-dependencies = [
- "assert_matches",
- "frame-support",
- "frame-system",
- "hex-literal",
- "libsecp256k1",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-keyring",
  "sp-runtime",
  "sp-std",
 ]
@@ -12397,7 +12375,6 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-ethereum",
@@ -12502,7 +12479,6 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",

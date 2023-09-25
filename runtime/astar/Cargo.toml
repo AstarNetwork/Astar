@@ -101,7 +101,6 @@ frame-try-runtime = { workspace = true, optional = true }
 astar-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-collator-selection = { workspace = true }
-pallet-custom-signatures = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
@@ -150,7 +149,6 @@ std = [
 	"pallet-balances/std",
 	"pallet-proxy/std",
 	"pallet-block-reward/std",
-	"pallet-custom-signatures/std",
 	"pallet-dapps-staking/std",
 	"pallet-evm-precompile-dapps-staking/std",
 	"pallet-evm-precompile-batch/std",
@@ -241,7 +239,6 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-block-reward/try-runtime",
-	"pallet-custom-signatures/try-runtime",
 	"pallet-dapps-staking/try-runtime",
 	"pallet-block-reward/try-runtime",
 	"pallet-sudo/try-runtime",

@@ -59,11 +59,9 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Bounded, ConvertInto,
-        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
+        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
-    transaction_validity::{
-        TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
-    },
+    transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -343,24 +341,6 @@ impl pallet_multisig::Config for Runtime {
     type DepositFactor = DepositFactor;
     type MaxSignatories = ConstU32<100>;
     type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
-    pub const CallFee: Balance = SBY / 10;
-    pub const CallMagicNumber: u16 = 0xff51;
-}
-
-impl pallet_custom_signatures::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
-    type Signer = <Signature as Verify>::Signer;
-    type CallMagicNumber = CallMagicNumber;
-    type Currency = Balances;
-    type CallFee = CallFee;
-    type OnChargeTransaction = ToStakingPot;
-    type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
 parameter_types! {
@@ -1140,7 +1120,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::XcAssetConfig(..)
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
-                        // Skip entire EthCall pallet
                         | RuntimeCall::BaseFee(..)
                         // Skip entire Contracts pallet
                         | RuntimeCall::Democracy(..)
@@ -1243,7 +1222,6 @@ construct_runtime!(
         Identity: pallet_identity = 12,
         Timestamp: pallet_timestamp = 13,
         Multisig: pallet_multisig = 14,
-        EthCall: pallet_custom_signatures = 15,
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 16,
         Scheduler: pallet_scheduler = 17,
         Proxy: pallet_proxy = 18,
