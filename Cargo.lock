@@ -7084,26 +7084,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-custom-signatures"
-version = "4.6.0"
-dependencies = [
- "assert_matches",
- "frame-support",
- "frame-system",
- "hex-literal",
- "libsecp256k1",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-keyring",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-dapps-staking"
 version = "3.10.0"
 dependencies = [
