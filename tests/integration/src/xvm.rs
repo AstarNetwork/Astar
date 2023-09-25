@@ -158,7 +158,7 @@ const CALL_EVM_PAYBLE_NAME: &'static str = "call_xvm_payable";
 fn evm_payable_call_via_xvm_works() {
     new_test_ext().execute_with(|| {
         // create account mappings
-        claim_default_accounts(ALICE);
+        connect_accounts(&ALICE, &alith_secret_key());
 
         let evm_payable_addr = deploy_evm_contract(EVM_PAYABLE);
 
@@ -229,7 +229,7 @@ fn wasm_payable_call_via_xvm_works() {
 fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
     new_test_ext().execute_with(|| {
         // create account mappings
-        claim_default_accounts(ALICE);
+        connect_accounts(&ALICE, &alith_secret_key());
 
         let wasm_payable_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
         let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
@@ -271,7 +271,7 @@ fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
 fn calling_wasm_payable_from_evm_works() {
     new_test_ext().execute_with(|| {
         // create account mappings
-        claim_default_accounts(ALICE);
+        connect_accounts(&ALICE, &alith_secret_key());
 
         let wasm_payable_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
         let call_wasm_payable_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
@@ -304,7 +304,7 @@ fn calling_wasm_payable_from_evm_works() {
 fn calling_evm_payable_from_wasm_works() {
     new_test_ext().execute_with(|| {
         // create account mappings
-        claim_default_accounts(ALICE);
+        connect_accounts(&ALICE, &alith_secret_key());
 
         let evm_payable_addr = deploy_evm_contract(EVM_PAYABLE);
         let wasm_address = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
@@ -348,7 +348,7 @@ fn calling_evm_payable_from_wasm_works() {
 fn reentrance_not_allowed() {
     new_test_ext().execute_with(|| {
         // create account mappings
-        claim_default_accounts(ALICE);
+        connect_accounts(&ALICE, &alith_secret_key());
 
         // Call path: WASM -> EVM -> WASM
         let call_evm_payable_address = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);

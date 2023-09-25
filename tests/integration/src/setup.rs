@@ -24,35 +24,35 @@ pub use frame_support::{
     weights::Weight,
 };
 pub use pallet_evm::AddressMapping;
-pub use pallet_unified_accounts::UnifiedAddressMapper;
 pub use sp_core::{H160, H256, U256};
+pub use sp_io::hashing::keccak_256;
 pub use sp_runtime::{AccountId32, MultiAddress};
 
-pub use astar_primitives::ethereum_checked::AccountMapping;
+pub use astar_primitives::{ethereum_checked::AccountMapping, evm::UnifiedAddressMapper};
 
 #[cfg(feature = "shibuya")]
 pub use shibuya::*;
 #[cfg(feature = "shibuya")]
 mod shibuya {
     use super::*;
+    pub use pallet_unified_accounts::SignatureHelper;
     pub use shibuya_runtime::*;
 
     /// 1 SBY.
     pub const UNIT: Balance = SBY;
 
+    pub fn alith_secret_key() -> libsecp256k1::SecretKey {
+        libsecp256k1::SecretKey::parse(&keccak_256(b"Alith")).unwrap()
+    }
+
     /// H160 address mapped to `ALICE`.
     pub fn alith() -> H160 {
-        h160_from(ALICE)
+        UnifiedAccounts::eth_address(&alith_secret_key())
     }
 
     /// Convert `H160` to `AccountId32`.
     pub fn account_id_from(address: H160) -> AccountId32 {
         <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(address)
-    }
-
-    /// Convert `AccountId32` to `H160`.
-    pub fn h160_from(account_id: AccountId32) -> H160 {
-        <Runtime as pallet_ethereum_checked::Config>::AccountMapping::into_h160(account_id)
     }
 
     /// Deploy an EVM contract with code.
@@ -104,6 +104,26 @@ mod shibuya {
         // On instantiation, the contract got existential deposit.
         assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
         address
+    }
+
+    /// Build the signature payload for given native account and eth private key
+    fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
+        // sign the payload
+        UnifiedAccounts::eth_sign_prehash(
+            &<Runtime as pallet_unified_accounts::Config>::SignatureHelper::build_signing_payload(
+                who,
+            ),
+            secret,
+        )
+    }
+
+    /// Create the mappings for the accounts
+    pub fn connect_accounts(who: &AccountId32, secret: &libsecp256k1::SecretKey) {
+        assert_ok!(UnifiedAccounts::claim_evm_address(
+            RuntimeOrigin::signed(who.clone()),
+            UnifiedAccounts::eth_address(secret),
+            get_evm_signature(who, secret)
+        ));
     }
 
     pub fn claim_default_accounts(account: AccountId) {

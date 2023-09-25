@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 hex = { workspace = true }
+libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
 parity-scale-codec = { workspace = true }
 
 # frontier
@@ -29,9 +30,9 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 
 # astar dependencies
-pallet-unified-accounts = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
+pallet-unified-accounts = { workspace = true }
 
 astar-primitives = { workspace = true }
 astar-runtime = { workspace = true, features = ["std"], optional = true }
