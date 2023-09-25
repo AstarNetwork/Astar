@@ -27,8 +27,7 @@ use frame_support::{
 };
 use pallet_evm_precompile_dispatch::DispatchValidateT;
 
-/// Struct that allows only whitelisted runtime calls to pass through dispatch precompile,
-/// Whitelisted calls are defined in runtime
+/// Struct that allows only calls based on `Filter` to pass through.
 pub struct DispatchFilterValidate<RuntimeCall, Filter: Contains<RuntimeCall>>(
     PhantomData<(RuntimeCall, Filter)>,
 );

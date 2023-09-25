@@ -18,7 +18,13 @@
 #![cfg(test)]
 
 use crate::setup::*;
-use frame_support::traits::Contains;
+use astar_primitives::precompiles::DispatchFilterValidate;
+use fp_evm::{ExitError, PrecompileFailure};
+use frame_support::{
+    dispatch::{DispatchClass, DispatchInfo, GetDispatchInfo, Pays},
+    traits::Contains,
+};
+use pallet_evm_precompile_dispatch::DispatchValidateT;
 
 /// Whitelisted Calls are defined in the runtime
 #[test]
@@ -105,4 +111,91 @@ fn filter_accepts_whitelisted_batch_all_calls() {
         });
         assert!(WhitelistedCalls::contains(&call));
     });
+}
+
+#[test]
+fn test_correct_dispatch_info_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        // Mock implementation
+        struct Filter;
+        struct AccountId;
+        enum RuntimeCall {
+            System,
+            DappsStaking,
+        }
+        impl GetDispatchInfo for RuntimeCall {
+            fn get_dispatch_info(&self) -> DispatchInfo {
+                // Default is Pays::Yes and DispatchCall::Normal
+                DispatchInfo::default()
+            }
+        }
+        impl Contains<RuntimeCall> for Filter {
+            fn contains(t: &RuntimeCall) -> bool {
+                match t {
+                    RuntimeCall::DappsStaking => true,
+                    _ => false,
+                }
+            }
+        }
+        // Case 1: Whitelisted Call with correct Dispatch info
+        assert_eq!(
+            DispatchFilterValidate::<RuntimeCall, Filter>::validate_before_dispatch(
+                &AccountId,
+                &RuntimeCall::DappsStaking
+            ),
+            Option::None
+        );
+        // Case 2: Non-Whitelisted Call with correct Dispatch Info
+        assert_eq!(
+            DispatchFilterValidate::<RuntimeCall, Filter>::validate_before_dispatch(
+                &AccountId,
+                &RuntimeCall::System
+            ),
+            Option::Some(PrecompileFailure::Error {
+                exit_status: ExitError::Other("call filtered out".into()),
+            })
+        );
+    });
+}
+
+#[test]
+fn test_incorrect_dispatch_info_fails() {
+    ExtBuilder::default().build().execute_with(|| {
+        // Mock implementation
+        struct Filter;
+        struct AccountId;
+        enum RuntimeCall {
+            System,
+            DappsStaking,
+        }
+        impl GetDispatchInfo for RuntimeCall {
+            fn get_dispatch_info(&self) -> DispatchInfo {
+                DispatchInfo {
+                    weight: Weight::default(),
+                    class: DispatchClass::Normal,
+                    // Should have been Pays::Yes for call to pass
+                    pays_fee: Pays::No,
+                }
+            }
+        }
+        impl Contains<RuntimeCall> for Filter {
+            fn contains(t: &RuntimeCall) -> bool {
+                match t {
+                    RuntimeCall::DappsStaking => true,
+                    _ => false,
+                }
+            }
+        }
+
+        // WhiteListed Call fails because of incorrect DispatchInfo
+        assert_eq!(
+            DispatchFilterValidate::<RuntimeCall, Filter>::validate_before_dispatch(
+                &AccountId,
+                &RuntimeCall::DappsStaking
+            ),
+            Option::Some(PrecompileFailure::Error {
+                exit_status: ExitError::Other("invalid call".into()),
+            })
+        );
+    })
 }

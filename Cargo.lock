@@ -4479,6 +4479,7 @@ dependencies = [
  "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
+ "pallet-evm-precompile-dispatch",
  "pallet-proxy",
  "pallet-utility",
  "parity-scale-codec",
