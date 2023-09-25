@@ -13,6 +13,7 @@ parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # Substrate
+frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
@@ -41,8 +42,15 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-balances/std",
 	"pallet-timestamp/std",
+	"frame-benchmarking/std",
 	# Frontier
 	"fp-evm/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",

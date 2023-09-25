@@ -16,19 +16,59 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! TODO: Rustdoc!!!
-
-// TODO: remove this comment later
-// Max amount that adjustment factor will be able to change on live networks using the new tokenomics will be:
-//
-// c_n = c_n-1 * (1 + adjustment + adjustment^2/2)
-//
-// adjustment = v * (s - s*)
-//
-// Biggest possible adjustment between 2 blocks is: 0.000015 * (1 - 0.25) = 0.000_011_25
-// Expressed as ratio: 11_250 / 1_000_000_000.
-// This is a much smaller change compared to the max step limit ratio we'll use to limit bfpg adaptation.
-// This means that once equilibrium is reached, the `StepLimitRatio` will be larger than the max possible adjustment, essentially eliminating it's effect.
+//! Dynamic Evm Base Fee Pallet
+//!
+//! ## Overview
+//!
+//! The pallet is responsible for calculating `Base Fee Per Gas` value, according to the current system parameters.
+//! This is not like `EIP-1559`, instead it's intended for `Astar` and `Astar-like` networks, which allow both
+//! **Substrate native transactions** (which in `Astar` case reuse Polkadot transaction fee approach)
+//! and **EVM transactions** (which use `Base Fee Per Gas`).
+//!
+//! For a more detailed description, reader is advised to refer to Astar Network forum post about [Tokenomics 2.0](https://forum.astar.network/t/astar-tokenomics-2-0-a-dynamically-adjusted-inflation/4924).
+//!
+//! ## Approach
+//!
+//! The core formula this pallet tries to satisfy is:
+//!
+//!     base_fee_per_gas = adjustment_factor * weight_factor * 25 / 98974
+//!
+//! Where:
+//! * **adjustment_factor** - is a value that changes in-between the blocks, related to the block fill ratio.
+//! * **weight_factor** - fixed constant, used to convert consumed _weight_ to _fee_.
+//!
+//! The implementation doesn't make any hard requirements on these values, and only requires that a type implementing `Get<_>` provides them.
+//!
+//! ## Implementation
+//!
+//! The core logic is implemented in `on_finalize` hook, which is called at the end of each block.
+//! This pallet's hook should be called AFTER whicever pallet's hook is responsible for updating **adjustment factor**.
+//!
+//! The hook will calculate the ideal new `base_fee_per_gas` value, and then clamp it in between the allowed limits.
+//!
+//! ## Interface
+//!
+//! Pallet provides an implementation of `FeeCalculator` trait. This makes it usable directly in `pallet-evm`.
+//!
+//! A _root-only_ extrinsic is provided to allow setting the `base_fee_per_gas` value manually.
+//!
+//! ## Practical Remarks
+//!
+//! According to the proposed **Tokenomics 2.0**, max amount that adjustment factor will be able to change on live networks in-between blocks is:
+//!
+//! adjustment_new = adjustment_old * (1 + adj + adj^2/2)
+//!
+//! adj = v * (s - s*)
+//! --> recommended _v_ value: 0.000_015
+//! --> larges 's' delta: (1 - 0.25) = **0.75**
+//!
+//! adj = 0.000015 * (1 - 0.25) = **0.000_011_25**
+//! (1 + 0.000_011_25 + 0.000_011_25^2/2) = (1 + 0.000_011_25 + 0.000_000_000_063_281) = **1,000_011_250_063_281**
+//!
+//! Discarding the **1**, and only considering the decimals, this can be expressed as ratio:
+//! Expressed as ratio: 11_250_063_281 / 1_000_000_000_000_000.
+//! This is a much smaller change compared to the max step limit ratio we'll use to limit bfpg alignment.
+//! This means that once equilibrium is reached (fees are aligned), the `StepLimitRatio` will be larger than the max possible adjustment, essentially eliminating it's effect.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -42,6 +82,15 @@ pub use self::pallet::*;
 mod mock;
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+// TODO: remove this after proper benchmarking!
+pub trait WeightInfo {
+    fn base_fee_per_gas_adjustment() -> Weight;
+    fn set_base_fee_per_gas() -> Weight;
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -71,6 +120,8 @@ pub mod pallet {
         /// It's expressed as percentage, and used to calculate the delta between the old and new value.
         /// E.g. if the current 'base fee per gas' is 100, and the limit is 10%, then the new base fee per gas can be between 90 and 110.
         type StepLimitRatio: Get<Perquintill>;
+        /// Weight information for extrinsics & functions of this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::type_value]
@@ -97,9 +148,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_: T::BlockNumber) -> Weight {
-            // TODO: benchmark this!
-            let db_weight = <T as frame_system::Config>::DbWeight::get();
-            db_weight.reads_writes(2, 1)
+            T::WeightInfo::base_fee_per_gas_adjustment()
         }
 
         fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
@@ -160,8 +209,10 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// `root-only` extrinsic to set the `base_fee_per_gas` value manually.
+        /// The specified value has to respect min & max limits configured in the runtime.
         #[pallet::call_index(0)]
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())] // TODO: weight!
+        #[pallet::weight(T::WeightInfo::set_base_fee_per_gas())]
         pub fn set_base_fee_per_gas(origin: OriginFor<T>, fee: U256) -> DispatchResult {
             ensure_root(origin)?;
             ensure!(

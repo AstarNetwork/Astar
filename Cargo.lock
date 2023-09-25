@@ -7151,6 +7151,7 @@ name = "pallet-dynamic-evm-base-fee"
 version = "0.1.0"
 dependencies = [
  "fp-evm",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "num-traits",
