@@ -68,7 +68,7 @@ impl<R, C> AstarNetworkPrecompiles<R, C> {
     /// This is in order to keep the local testnets consistent with the live network.
     pub fn is_blacklisted(address: &H160) -> bool {
         // `dispatch` precompile is not allowed to be called by smart contracts, hence the ommision of this address.
-        hash(1024) == *address
+        hash(1025) == *address
     }
 }
 
