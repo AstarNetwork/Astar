@@ -25,6 +25,7 @@ use frame_support::{
     traits::Contains,
 };
 use pallet_evm_precompile_dispatch::DispatchValidateT;
+use parity_scale_codec::Compact;
 
 /// Whitelisted Calls are defined in the runtime
 #[test]
@@ -77,22 +78,38 @@ fn filter_rejects_non_whitelisted_batch_calls() {
 #[test]
 fn filter_accepts_whitelisted_calls() {
     ExtBuilder::default().build().execute_with(|| {
+        // Dappstaking call works
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
         let stake_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
             contract_id: contract.clone(),
         });
         assert!(WhitelistedCalls::contains(&stake_call));
+
+        // Pallet::Assets transfer call works
+        let transfer_call = RuntimeCall::Assets(pallet_assets::Call::transfer {
+            id: Compact(0),
+            target: MultiAddress::Address20(H160::repeat_byte(0x01).into()),
+            amount: 100,
+        });
+        assert!(WhitelistedCalls::contains(&transfer_call));
     });
 }
 
 #[test]
 fn filter_rejects_non_whitelisted_calls() {
     ExtBuilder::default().build().execute_with(|| {
+        // Random call from non whitelisted pallet doesn't work
         let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
             dest: MultiAddress::Id(CAT),
             value: 100_000_000_000,
         });
         assert!(!WhitelistedCalls::contains(&transfer_call));
+
+        // Only `transfer` call from pallet assets work
+        // Other random call from Pallet Assets doesn't work
+        let thaw_asset_call =
+            RuntimeCall::Assets(pallet_assets::Call::thaw_asset { id: Compact(0) });
+        assert!(!WhitelistedCalls::contains(&thaw_asset_call));
     })
 }
 
@@ -106,8 +123,13 @@ fn filter_accepts_whitelisted_batch_all_calls() {
         let inner_call2 = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
             contract_id: contract.clone(),
         });
+        let transfer_call = RuntimeCall::Assets(pallet_assets::Call::transfer {
+            id: Compact(0),
+            target: MultiAddress::Address20(H160::repeat_byte(0x01).into()),
+            amount: 100,
+        });
         let call = RuntimeCall::Utility(UtilityCall::batch_all {
-            calls: vec![inner_call1, inner_call2],
+            calls: vec![inner_call1, inner_call2, transfer_call],
         });
         assert!(WhitelistedCalls::contains(&call));
     });
