@@ -71,7 +71,7 @@ fn eip712_signature_verify_works() {
             substrate_address: ALICE.encode().into(),
         };
 
-        let claim_hash = EIP712Signature::<TestRuntime, ChainId>::build_signing_payload(&ALICE);
+        let claim_hash = UnifiedAccounts::build_signing_payload(&ALICE);
         // assert signing payload is correct
         assert_eq!(
             claim.encode_eip712().unwrap(),
@@ -83,7 +83,7 @@ fn eip712_signature_verify_works() {
         let sig = UnifiedAccounts::eth_sign_prehash(&claim_hash, &alice_secret());
         assert_eq!(
             Some(UnifiedAccounts::eth_address(&alice_secret())),
-            EIP712Signature::<TestRuntime, ChainId>::verify_signature(&ALICE, &sig),
+            UnifiedAccounts::verify_signature(&ALICE, &sig),
             "signature verification should work"
         );
     });

@@ -35,7 +35,6 @@ pub use shibuya::*;
 #[cfg(feature = "shibuya")]
 mod shibuya {
     use super::*;
-    pub use pallet_unified_accounts::SignatureHelper;
     pub use shibuya_runtime::*;
 
     /// 1 SBY.
@@ -109,12 +108,7 @@ mod shibuya {
     /// Build the signature payload for given native account and eth private key
     fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
         // sign the payload
-        UnifiedAccounts::eth_sign_prehash(
-            &<Runtime as pallet_unified_accounts::Config>::SignatureHelper::build_signing_payload(
-                who,
-            ),
-            secret,
-        )
+        UnifiedAccounts::eth_sign_prehash(&UnifiedAccounts::build_signing_payload(who), secret)
     }
 
     /// Create the mappings for the accounts

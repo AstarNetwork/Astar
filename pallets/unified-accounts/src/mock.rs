@@ -157,7 +157,7 @@ impl pallet_unified_accounts::Config for TestRuntime {
     type Currency = Balances;
     type DefaultAddressMapping = HashedAddressMapping<BlakeTwo256>;
     type DefaultAccountMapping = HashedAccountMapping<BlakeTwo256>;
-    type SignatureHelper = EIP712Signature<Self, ChainId>;
+    type ChainId = ChainId;
     type WeightInfo = ();
 }
 

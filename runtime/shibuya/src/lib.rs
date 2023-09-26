@@ -1208,7 +1208,7 @@ impl pallet_unified_accounts::Config for Runtime {
     type Currency = Balances;
     type DefaultAddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type DefaultAccountMapping = HashedAccountMapping<BlakeTwo256>;
-    type SignatureHelper = pallet_unified_accounts::EIP712Signature<Self, EVMChainId>;
+    type ChainId = EVMChainId;
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
