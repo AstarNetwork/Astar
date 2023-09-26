@@ -241,6 +241,12 @@ impl<T: Config> Pallet<T> {
         );
         // get the default evm address
         let evm_address = T::DefaultAccountMapping::into_h160(account_id.clone());
+        // make sure default address is not already mapped, this should not
+        // happen but for sanity check.
+        ensure!(
+            !NativeToEvm::<T>::contains_key(&evm_address),
+            Error::<T>::AlreadyMapped
+        );
         // create double mappings for the pair with default evm address
         Self::add_mappings(account_id, evm_address.clone());
         Ok(evm_address)

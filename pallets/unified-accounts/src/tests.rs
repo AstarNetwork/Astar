@@ -223,6 +223,24 @@ fn account_default_claim_works() {
 }
 
 #[test]
+fn account_default_claim_should_not_work_if_collision() {
+    ExtBuilder::default().build().execute_with(|| {
+        let bob_default_h160 = <UnifiedAccounts as UnifiedAddressMapper<_>>::to_default_h160(&BOB);
+
+        // connect alice native with bob's default address
+        // in real world possibilty of this happening is minuscule
+        UnifiedAccounts::add_mappings(ALICE, bob_default_h160);
+
+        // bob try claiming default h160 address, it should fail since alice already
+        // has mapping in place with it.
+        assert_noop!(
+            UnifiedAccounts::claim_default_evm_address(RuntimeOrigin::signed(BOB)),
+            Error::<TestRuntime>::AlreadyMapped
+        );
+    });
+}
+
+#[test]
 fn replay_attack_should_not_be_possible() {
     ExtBuilder::default().build().execute_with(|| {
         let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
