@@ -62,6 +62,9 @@
 //! --> recommended _v_ value: 0.000_015
 //! --> largest 's' delta: (1 - 0.25) = **0.75**
 //!
+//! (for variable explanation please check the linked forum post above)
+//! (in short: `v` - variability factor, `s` - current block fill ratio, `s*` - ideal block fill ratio)
+//!
 //! adj = 0.000015 * (1 - 0.25) = **0.000_011_25**
 //! (1 + 0.000_011_25 + 0.000_011_25^2/2) = (1 + 0.000_011_25 + 0.000_000_000_063_281) = **1,000_011_250_063_281**
 //!
