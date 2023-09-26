@@ -144,7 +144,7 @@ fn account_claim_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
         // default ss58 account associated with eth address
-        let alice_eth_old_account =  <TestRuntime as Config>::DefaultAddressMapping::into_account_id(alice_eth.clone());
+        let alice_eth_old_account =  <TestRuntime as Config>::DefaultEvmToNative::into_account_id(alice_eth.clone());
         let signature = get_evm_signature(&ALICE, &alice_secret());
 
         // transfer some funds to alice_eth (H160)
@@ -187,7 +187,7 @@ fn account_claim_should_work() {
 fn account_default_claim_works() {
     ExtBuilder::default().build().execute_with(|| {
         let alice_default_evm =
-            <TestRuntime as Config>::DefaultAccountMapping::into_h160(ALICE.into());
+            <TestRuntime as Config>::DefaultNativeToEvm::into_h160(ALICE.into());
 
         // claim default account
         assert_ok!(UnifiedAccounts::claim_default_evm_address(

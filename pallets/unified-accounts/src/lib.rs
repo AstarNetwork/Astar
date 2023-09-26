@@ -111,9 +111,9 @@ pub mod pallet {
         /// The Currency for managing evm address assets
         type Currency: Mutate<Self::AccountId>;
         /// Default evm address to account id conversion
-        type DefaultAddressMapping: AddressMapping<Self::AccountId>;
+        type DefaultEvmToNative: AddressMapping<Self::AccountId>;
         /// Default account id to evm address conversion
-        type DefaultAccountMapping: AccountMapping<Self::AccountId>;
+        type DefaultNativeToEvm: AccountMapping<Self::AccountId>;
         /// EVM chain id
         type ChainId: Get<u64>;
         /// Weight information for the extrinsics in this module
@@ -191,7 +191,7 @@ pub mod pallet {
             ensure!(evm_address == address, Error::<T>::InvalidSignature);
 
             // Check if the default account id already exists for this evm address
-            let default_account_id = T::DefaultAddressMapping::into_account_id(evm_address.clone());
+            let default_account_id = T::DefaultEvmToNative::into_account_id(evm_address.clone());
             if frame_system::Pallet::<T>::account_exists(&default_account_id) {
                 // Transfer all the free native balance from old account id to the newly
                 // since this `default_account_id` will no longer be connected to evm address
@@ -239,7 +239,7 @@ impl<T: Config> Pallet<T> {
             Error::<T>::AlreadyMapped
         );
         // get the default evm address
-        let evm_address = T::DefaultAccountMapping::into_h160(account_id.clone());
+        let evm_address = T::DefaultNativeToEvm::into_h160(account_id.clone());
         // make sure default address is not already mapped, this should not
         // happen but for sanity check.
         ensure!(
@@ -332,12 +332,12 @@ impl<T: Config> UnifiedAddressMapper<T::AccountId> for Pallet<T> {
     fn to_account_id_or_default(evm_address: &EvmAddress) -> T::AccountId {
         NativeToEvm::<T>::get(evm_address).unwrap_or_else(|| {
             // fallback to default account_id
-            T::DefaultAddressMapping::into_account_id(evm_address.clone())
+            T::DefaultEvmToNative::into_account_id(evm_address.clone())
         })
     }
 
     fn to_default_account_id(evm_address: &EvmAddress) -> T::AccountId {
-        T::DefaultAddressMapping::into_account_id(evm_address.clone())
+        T::DefaultEvmToNative::into_account_id(evm_address.clone())
     }
 
     fn to_h160(account_id: &T::AccountId) -> Option<EvmAddress> {
@@ -347,12 +347,12 @@ impl<T: Config> UnifiedAddressMapper<T::AccountId> for Pallet<T> {
     fn to_h160_or_default(account_id: &T::AccountId) -> EvmAddress {
         EvmToNative::<T>::get(account_id).unwrap_or_else(|| {
             // fallback to default account_id
-            T::DefaultAccountMapping::into_h160(account_id.clone())
+            T::DefaultNativeToEvm::into_h160(account_id.clone())
         })
     }
 
     fn to_default_h160(account_id: &T::AccountId) -> EvmAddress {
-        T::DefaultAccountMapping::into_h160(account_id.clone())
+        T::DefaultNativeToEvm::into_h160(account_id.clone())
     }
 }
 

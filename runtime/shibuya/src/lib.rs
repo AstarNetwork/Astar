@@ -1206,8 +1206,8 @@ impl pallet_xc_asset_config::Config for Runtime {
 impl pallet_unified_accounts::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type DefaultAddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
-    type DefaultAccountMapping = HashedAccountMapping<BlakeTwo256>;
+    type DefaultEvmToNative = pallet_evm::HashedAddressMapping<BlakeTwo256>;
+    type DefaultNativeToEvm = HashedAccountMapping<BlakeTwo256>;
     type ChainId = EVMChainId;
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }

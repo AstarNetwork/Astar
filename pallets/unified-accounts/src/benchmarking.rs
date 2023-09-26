@@ -60,7 +60,7 @@ mod benchmarks {
     fn claim_default_evm_address() {
         let caller: T::AccountId = whitelisted_caller();
         let caller_clone = caller.clone();
-        let evm_address = T::DefaultAccountMapping::into_h160(caller.clone());
+        let evm_address = T::DefaultNativeToEvm::into_h160(caller.clone());
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller));
