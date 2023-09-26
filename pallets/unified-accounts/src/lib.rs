@@ -39,10 +39,15 @@
 //! * `claim_default_evm_address`: Creates the double mapping with default evm address given that
 //!    no prior mapping exists.
 //!
+//! WARNINGS:
+//! * This pallet only handles transfer of native balance only, for the rest of native assets
+//!   hold by evm address like XC20, DAppStaking unclaimed rewards, etc should be transferred
+//!   manually beforehand by user himself otherwise FUNDS WILL BE LOST FOREVER.
+//! * Once mapping is created it cannot be changed.
+//!
 //! ## Traits
 //!
 //! * `UnifiedAddressMapper`: Interface to access pallet's mappings with defaults
-//! * `SignatureHelper`: Signature verification scheme for proving address ownership
 //!
 //! ## Implementations
 //!
@@ -53,7 +58,6 @@
 //!   for account id mappings to h160.
 //! * `KillAccountMapping`: [`OnKilledAccount`](frame_support::traits::OnKilledAccount) implementation to remove
 //!   the mappings from storage after account is reaped.
-//! * `EIP712Signature`: EIP712 signature implementation for [`SignatureHelper`](crate::SignatureHelper)
 
 #![cfg_attr(not(feature = "std"), no_std)]
 

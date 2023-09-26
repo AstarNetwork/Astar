@@ -27,9 +27,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
-#[benchmarks(
-    where <<T as Config>::SignatureHelper as SignatureHelper>::Signature: IsType<[u8;65]>
-)]
+#[benchmarks]
 mod benchmarks {
     use super::*;
 
@@ -39,7 +37,7 @@ mod benchmarks {
         let eth_secret_key = libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap();
         let evm_address = Pallet::<T>::eth_address(&eth_secret_key);
         let signature = Pallet::<T>::eth_sign_prehash(
-            &T::SignatureHelper::build_signing_payload(&caller),
+            &Pallet::<T>::build_signing_payload(&caller),
             &eth_secret_key,
         )
         .into();

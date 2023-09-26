@@ -237,6 +237,16 @@ fn account_default_claim_should_not_work_if_collision() {
             UnifiedAccounts::claim_default_evm_address(RuntimeOrigin::signed(BOB)),
             Error::<TestRuntime>::AlreadyMapped
         );
+
+        // check mappings are consistent
+        assert_eq!(
+            <UnifiedAccounts as UnifiedAddressMapper<_>>::to_h160(&ALICE),
+            Some(bob_default_h160)
+        );
+        assert_eq!(
+            <UnifiedAccounts as UnifiedAddressMapper<_>>::to_account_id(&bob_default_h160),
+            Some(ALICE)
+        );
     });
 }
 
