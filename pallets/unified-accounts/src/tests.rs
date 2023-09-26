@@ -227,9 +227,10 @@ fn account_default_claim_should_not_work_if_collision() {
     ExtBuilder::default().build().execute_with(|| {
         let bob_default_h160 = <UnifiedAccounts as UnifiedAddressMapper<_>>::to_default_h160(&BOB);
 
-        // connect alice native with bob's default address
+        // create mapping of alice native with bob's default address
         // in real world possibilty of this happening is minuscule
-        UnifiedAccounts::add_mappings(ALICE, bob_default_h160);
+        NativeToEvm::<TestRuntime>::insert(&bob_default_h160, &ALICE);
+        EvmToNative::<TestRuntime>::insert(&ALICE, &bob_default_h160);
 
         // bob try claiming default h160 address, it should fail since alice already
         // has mapping in place with it.

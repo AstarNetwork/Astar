@@ -206,7 +206,13 @@ pub mod pallet {
             }
 
             // create double mappings for the pair
-            Self::add_mappings(who, evm_address);
+            NativeToEvm::<T>::insert(&evm_address, &who);
+            EvmToNative::<T>::insert(&who, &evm_address);
+
+            Self::deposit_event(Event::AccountClaimed {
+                account_id: who,
+                evm_address,
+            });
             Ok(())
         }
 
@@ -226,17 +232,6 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-    /// Add the given pair to create double mappings
-    fn add_mappings(account_id: T::AccountId, evm_address: EvmAddress) {
-        NativeToEvm::<T>::insert(&evm_address, &account_id);
-        EvmToNative::<T>::insert(&account_id, &evm_address);
-
-        Self::deposit_event(Event::AccountClaimed {
-            account_id,
-            evm_address,
-        });
-    }
-
     /// Claim the default evm address
     fn do_claim_default_evm_address(account_id: T::AccountId) -> Result<EvmAddress, DispatchError> {
         ensure!(
@@ -252,7 +247,13 @@ impl<T: Config> Pallet<T> {
             Error::<T>::AlreadyMapped
         );
         // create double mappings for the pair with default evm address
-        Self::add_mappings(account_id, evm_address.clone());
+        NativeToEvm::<T>::insert(&evm_address, &account_id);
+        EvmToNative::<T>::insert(&account_id, &evm_address);
+
+        Self::deposit_event(Event::AccountClaimed {
+            account_id,
+            evm_address,
+        });
         Ok(evm_address)
     }
 }
