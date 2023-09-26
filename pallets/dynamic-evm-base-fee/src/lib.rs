@@ -42,7 +42,7 @@
 //! ## Implementation
 //!
 //! The core logic is implemented in `on_finalize` hook, which is called at the end of each block.
-//! This pallet's hook should be called AFTER whicever pallet's hook is responsible for updating **adjustment factor**.
+//! This pallet's hook should be called AFTER whichever pallet's hook is responsible for updating **adjustment factor**.
 //!
 //! The hook will calculate the ideal new `base_fee_per_gas` value, and then clamp it in between the allowed limits.
 //!
@@ -60,7 +60,7 @@
 //!
 //! adj = v * (s - s*)
 //! --> recommended _v_ value: 0.000_015
-//! --> larges 's' delta: (1 - 0.25) = **0.75**
+//! --> largest 's' delta: (1 - 0.25) = **0.75**
 //!
 //! adj = 0.000015 * (1 - 0.25) = **0.000_011_25**
 //! (1 + 0.000_011_25 + 0.000_011_25^2/2) = (1 + 0.000_011_25 + 0.000_000_000_063_281) = **1,000_011_250_063_281**
