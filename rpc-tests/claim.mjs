@@ -37,17 +37,17 @@ async function buildSignature(signer, substrateAddress, api, chainId) {
 }
 
 async function claimEvmAccount(account, evmAddress, signature, api) {
-    return await waitForTx(api.tx.accounts.claimEvmAccount(evmAddress, signature), account)
+    return await waitForTx(api.tx.unifiedAccounts.claimEvmAddress(evmAddress, signature), account)
 }
 
 async function main() {
-    const api = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:9945') });
+    const api = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:9944') });
     await api.isReady;
 
     const keyring = new Keyring({ type: 'sr25519' });
     const alice = keyring.addFromUri('//Alice', { name: 'Alice default' })
 
-    const provider = new JsonRpcProvider("http://127.0.0.1:9945");
+    const provider = new JsonRpcProvider("http://127.0.0.1:9944");
     const { chainId } = await provider.getNetwork();
     const ethSigner = new Wallet("0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391", provider);
 
@@ -56,7 +56,8 @@ async function main() {
     const hash = await claimEvmAccount(alice, ethSigner.address, sig, api);
     console.log(`Claim Extrisic - ${hash}`);
 
-    console.log(`Claimed Account ${await api.query.accounts.EvmToNative(alice.address)}, EVM Account: ${ethSigner.address}`);
+    console.log(`Claimed Account ${await api.query.unifiedAccounts.evmToNative(alice.address)}, EVM Account: ${ethSigner.address}`);
+    console.log(`EVM Balance=${await provider.getBalance(ethSigner.address)}`)
 
     api.disconnect();
 }
