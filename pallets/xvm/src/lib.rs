@@ -47,7 +47,6 @@ use pallet_contracts_primitives::ReturnFlags;
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
 use sp_core::{H160, U256};
-use sp_runtime::traits::StaticLookup;
 use sp_std::{marker::PhantomData, prelude::*};
 
 use astar_primitives::{
@@ -290,8 +289,7 @@ where
 
         let dest = {
             let error = CallFailure::revert(InvalidTarget, overheads);
-            let decoded = Decode::decode(&mut target.as_ref()).map_err(|_| error.clone())?;
-            T::Lookup::lookup(decoded).map_err(|_| error)
+            Decode::decode(&mut target.as_ref()).map_err(|_| error.clone())
         }?;
 
         // With overheads, less weight is available.
