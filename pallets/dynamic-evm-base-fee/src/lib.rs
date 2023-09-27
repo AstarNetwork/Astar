@@ -71,7 +71,7 @@
 //! Discarding the **1**, and only considering the decimals, this can be expressed as ratio:
 //! Expressed as ratio: 11_250_063_281 / 1_000_000_000_000_000.
 //! This is a much smaller change compared to the max step limit ratio we'll use to limit bfpg alignment.
-//! This means that once equilibrium is reached (fees are aligned), the `StepLimitRatio` will be larger than the max possible adjustment, essentially eliminating it's effect.
+//! This means that once equilibrium is reached (fees are aligned), the `StepLimitRatio` will be larger than the max possible adjustment, essentially eliminating its effect.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -241,6 +241,7 @@ pub mod pallet {
 
 impl<T: Config> fp_evm::FeeCalculator for Pallet<T> {
     fn min_gas_price() -> (U256, Weight) {
+        // TODO: account for PoV?
         (BaseFeePerGas::<T>::get(), T::DbWeight::get().reads(1))
     }
 }

@@ -21,11 +21,10 @@
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shibuya_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BaseFeeConfig,
-    BlockRewardConfig, CollatorSelectionConfig, CouncilConfig, DemocracyConfig, EVMChainIdConfig,
-    EVMConfig, GenesisConfig, ParachainInfoConfig, Precompiles, SessionConfig, SessionKeys,
-    Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig,
-    SBY,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BlockRewardConfig,
+    CollatorSelectionConfig, CouncilConfig, DemocracyConfig, EVMChainIdConfig, EVMConfig,
+    GenesisConfig, ParachainInfoConfig, Precompiles, SessionConfig, SessionKeys, Signature,
+    SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, SBY,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -158,10 +157,6 @@ fn make_genesis(
                 })
                 .collect(),
         },
-        base_fee: BaseFeeConfig::new(
-            sp_core::U256::from(1_000_000_000),
-            sp_runtime::Permill::zero(),
-        ),
         evm_chain_id: EVMChainIdConfig { chain_id: 0x51 },
         ethereum: Default::default(),
         polkadot_xcm: Default::default(),

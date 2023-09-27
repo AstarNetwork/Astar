@@ -58,7 +58,7 @@ use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
-        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Bounded, ConvertInto,
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
     },
     transaction_validity::{
@@ -114,8 +114,6 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 ///
 /// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
 /// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
-///
-/// TODO: using this requires storage migration (good to test on Shibuya first!)
 pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * 40 * MICROSBY + (bytes as Balance) * STORAGE_BYTE_FEE
 }
@@ -656,10 +654,9 @@ impl pallet_vesting::Config for Runtime {
     const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
-// TODO: changing depost per item and per byte to `deposit` function will require storage migration it seems
 parameter_types! {
-    pub const DepositPerItem: Balance = MILLISBY / 1_000_000;
-    pub const DepositPerByte: Balance = MILLISBY / 1_000_000;
+    pub const DepositPerItem: Balance = contracts_deposit(1, 0);
+    pub const DepositPerByte: Balance = contracts_deposit(0, 1);
     // Fallback value if storage deposit limit not set by the user
     pub const DefaultDepositLimit: Balance = contracts_deposit(16, 16 * 1024);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
@@ -697,13 +694,15 @@ impl pallet_contracts::Config for Runtime {
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
+// These values are based on the Astar 2.0 Tokenomics Modeling report.
 parameter_types! {
-    pub const TransactionByteFee: Balance = MILLISBY / 100;
+    pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 SBY per byte
+    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 SBY per unit of ref time.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
-    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
-    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
-    pub MaximumMultiplier: Multiplier = Bounded::max_value();
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 666_667); // 0.000_015
+    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 10); // 0.1
+    pub MaximumMultiplier: Multiplier = Multiplier::saturating_from_integer(10); // 10
 }
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -720,9 +719,8 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        // in Shibuya, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mSBY:
-        let p = MILLISBY;
-        let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
+        let p = WeightFeeFactor::get();
+        let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
@@ -763,7 +761,33 @@ impl pallet_transaction_payment::Config for Runtime {
         MinimumMultiplier,
         MaximumMultiplier,
     >;
-    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionLengthFeeFactor>;
+}
+
+parameter_types! {
+    pub DefaultBaseFeePerGas: U256 = U256::from(1_470_000_000_000_u128);
+    pub MinBaseFeePerGas: U256 = U256::from(800_000_000_000_u128);
+    pub MaxBaseFeePerGas: U256 = U256::from(80_000_000_000_000_u128);
+    pub StepLimitRatio: Perquintill = Perquintill::from_rational(5_u128, 100_000);
+}
+
+/// Simple wrapper for fetching current native transaction fee weight fee multiplier.
+pub struct AdjustmentFactorGetter;
+impl Get<Multiplier> for AdjustmentFactorGetter {
+    fn get() -> Multiplier {
+        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::get()
+    }
+}
+
+impl pallet_dynamic_evm_base_fee::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+    type MinBaseFeePerGas = MinBaseFeePerGas;
+    type MaxBaseFeePerGas = MaxBaseFeePerGas;
+    type AdjustmentFactor = AdjustmentFactorGetter;
+    type WeightFactor = WeightFeeFactor;
+    type StepLimitRatio = StepLimitRatio;
+    type WeightInfo = ();
 }
 
 ///TODO: Placeholder account mapping. This would be replaced once account abstraction is finished.
@@ -795,33 +819,6 @@ impl pallet_xvm::Config for Runtime {
     type AccountMapping = HashedAccountMapping;
     type EthereumTransact = EthereumChecked;
     type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-    // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
-    pub DefaultBaseFeePerGas: U256 = (MILLISBY / 1_000_000).into();
-    // At the moment, we don't use dynamic fee calculation for Shibuya by default
-    pub DefaultElasticity: Permill = Permill::zero();
-}
-
-pub struct BaseFeeThreshold;
-impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
-    fn lower() -> Permill {
-        Permill::zero()
-    }
-    fn ideal() -> Permill {
-        Permill::from_parts(500_000)
-    }
-    fn upper() -> Permill {
-        Permill::from_parts(1_000_000)
-    }
-}
-
-impl pallet_base_fee::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Threshold = BaseFeeThreshold;
-    type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
-    type DefaultElasticity = DefaultElasticity;
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -866,7 +863,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-    type FeeCalculator = BaseFee;
+    type FeeCalculator = DynamicEvmBaseFee;
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
@@ -1142,7 +1139,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
                         // Skip entire EthCall pallet
-                        | RuntimeCall::BaseFee(..)
+                        | RuntimeCall::DynamicEvmBaseFee(..)
                         // Skip entire Contracts pallet
                         | RuntimeCall::Democracy(..)
                         | RuntimeCall::Council(..)
@@ -1274,7 +1271,7 @@ construct_runtime!(
 
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
-        BaseFee: pallet_base_fee = 62,
+        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = 62,
         EVMChainId: pallet_evm_chain_id = 63,
         EthereumChecked: pallet_ethereum_checked = 64,
 
@@ -1326,17 +1323,37 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-// Used to cleanup StateTrieMigration storage - remove once cleanup is done.
+// Used to cleanup BaseFee storage - remove once cleanup is done.
 parameter_types! {
-    pub const StateTrieMigrationStr: &'static str = "StateTrieMigration";
+    pub const BaseFeeStr: &'static str = "BaseFee";
+}
+
+/// Simple `OnRuntimeUpgrade` logic to prepare Shibuya runtime for `DynamicEvmBaseFee` pallet.
+pub use frame_support::traits::OnRuntimeUpgrade;
+pub struct DynamicEvmBaseFeeMigration;
+impl OnRuntimeUpgrade for DynamicEvmBaseFeeMigration {
+    fn on_runtime_upgrade() -> Weight {
+        // Safety check to ensure we don't execute this migration twice
+        if pallet_dynamic_evm_base_fee::BaseFeePerGas::<Runtime>::exists() {
+            return <Runtime as frame_system::Config>::DbWeight::get().reads(1);
+        }
+
+        // Set the init value to what was set before on the old `BaseFee` pallet.
+        pallet_dynamic_evm_base_fee::BaseFeePerGas::<Runtime>::put(U256::from(1_000_000_000_u128));
+
+        // Shibuya's multiplier is so low that we have to set it to minimum value directly.
+        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::put(MinimumMultiplier::get());
+
+        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 2)
+    }
 }
 
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    frame_support::migrations::RemovePallet<StateTrieMigrationStr, RocksDbWeight>,
-    pallet_contracts::Migration<Runtime>,
+    frame_support::migrations::RemovePallet<BaseFeeStr, RocksDbWeight>,
+    DynamicEvmBaseFeeMigration,
 );
 
 type EventRecord = frame_system::EventRecord<
@@ -1421,6 +1438,7 @@ mod benches {
         [pallet_xcm, PolkadotXcm]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_xvm, Xvm]
+        [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
     );
 }
 
@@ -1783,7 +1801,7 @@ impl_runtime_apis! {
         }
 
         fn elasticity() -> Option<Permill> {
-            Some(pallet_base_fee::Elasticity::<Runtime>::get())
+            Some(Permill::zero())
         }
 
         fn gas_limit_multiplier_support() {}

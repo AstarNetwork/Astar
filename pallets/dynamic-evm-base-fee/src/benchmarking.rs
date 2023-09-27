@@ -29,12 +29,17 @@ mod benchmarks {
     #[benchmark]
     fn base_fee_per_gas_adjustment() {
         let (first_block, second_block) = (T::BlockNumber::from(1u32), T::BlockNumber::from(2u32));
-        let init_bfpg = BaseFeePerGas::<T>::get();
 
-        // Setup actions, should ensure default value is written to storage.
+        // Setup actions, should ensure some value is written to storage.
         Pallet::<T>::on_initialize(first_block);
         Pallet::<T>::on_finalize(first_block);
+        assert!(
+            BaseFeePerGas::<T>::exists(),
+            "Value should exist in storage after first on_finalize call"
+        );
+
         Pallet::<T>::on_initialize(second_block);
+        let init_bfpg = BaseFeePerGas::<T>::get();
 
         #[block]
         {
