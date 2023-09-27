@@ -62,6 +62,24 @@ mod benchmarks {
         assert_eq!(BaseFeePerGas::<T>::get(), new_bfpg);
     }
 
+    #[benchmark]
+    fn min_gas_price() {
+        let first_block = T::BlockNumber::from(1u32);
+
+        // Setup actions, should ensure some value is written to storage.
+        Pallet::<T>::on_initialize(first_block);
+        Pallet::<T>::on_finalize(first_block);
+        assert!(
+            BaseFeePerGas::<T>::exists(),
+            "Value should exist in storage after first on_finalize call"
+        );
+
+        #[block]
+        {
+            let _ = Pallet::<T>::min_gas_price();
+        }
+    }
+
     impl_benchmark_test_suite!(
         Pallet,
         crate::benchmarking::tests::new_test_ext(),

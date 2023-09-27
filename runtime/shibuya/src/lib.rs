@@ -1329,7 +1329,7 @@ parameter_types! {
 }
 
 /// Simple `OnRuntimeUpgrade` logic to prepare Shibuya runtime for `DynamicEvmBaseFee` pallet.
-pub use frame_support::traits::OnRuntimeUpgrade;
+pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
 pub struct DynamicEvmBaseFeeMigration;
 impl OnRuntimeUpgrade for DynamicEvmBaseFeeMigration {
     fn on_runtime_upgrade() -> Weight {
@@ -1343,6 +1343,9 @@ impl OnRuntimeUpgrade for DynamicEvmBaseFeeMigration {
 
         // Shibuya's multiplier is so low that we have to set it to minimum value directly.
         pallet_transaction_payment::NextFeeMultiplier::<Runtime>::put(MinimumMultiplier::get());
+
+        // Set init storage version for the pallet
+        StorageVersion::new(1).put::<pallet_dynamic_evm_base_fee::Pallet<Runtime>>();
 
         <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 2)
     }

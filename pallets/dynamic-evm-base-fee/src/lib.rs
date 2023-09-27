@@ -75,7 +75,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{traits::Get, weights::Weight};
+use frame_support::weights::Weight;
 use sp_core::U256;
 use sp_runtime::{traits::UniqueSaturatedInto, FixedPointNumber, FixedU128, Perquintill};
 
@@ -99,7 +99,11 @@ pub mod pallet {
 
     use super::*;
 
+    /// The current storage version.
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::config]
@@ -229,7 +233,6 @@ pub mod pallet {
 
 impl<T: Config> fp_evm::FeeCalculator for Pallet<T> {
     fn min_gas_price() -> (U256, Weight) {
-        // TODO: account for PoV?
-        (BaseFeePerGas::<T>::get(), T::DbWeight::get().reads(1))
+        (BaseFeePerGas::<T>::get(), T::WeightInfo::min_gas_price())
     }
 }

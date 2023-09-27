@@ -51,6 +51,7 @@ use core::marker::PhantomData;
 pub trait WeightInfo {
 	fn base_fee_per_gas_adjustment() -> Weight;
 	fn set_base_fee_per_gas() -> Weight;
+	fn min_gas_price() -> Weight;
 }
 
 /// Weights for pallet_dynamic_evm_base_fee using the Substrate node and recommended hardware.
@@ -79,6 +80,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(9_000_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	fn min_gas_price() -> Weight {
+		Weight::from_parts(0, 0)
+	}
 }
 
 // For backwards compatibility and tests
@@ -105,5 +109,8 @@ impl WeightInfo for () {
 		// Minimum execution time: 8_000_000 picoseconds.
 		Weight::from_parts(9_000_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	fn min_gas_price() -> Weight {
+		Weight::from_parts(0, 0)
 	}
 }
