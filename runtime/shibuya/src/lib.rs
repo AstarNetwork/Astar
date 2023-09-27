@@ -1347,7 +1347,7 @@ impl OnRuntimeUpgrade for DynamicEvmBaseFeeMigration {
         // Set init storage version for the pallet
         StorageVersion::new(1).put::<pallet_dynamic_evm_base_fee::Pallet<Runtime>>();
 
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 2)
+        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 3)
     }
 }
 
