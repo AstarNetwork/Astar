@@ -89,20 +89,8 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-// TODO: remove this after proper benchmarking!
-pub trait WeightInfo {
-    fn base_fee_per_gas_adjustment() -> Weight;
-    fn set_base_fee_per_gas() -> Weight;
-}
-
-impl WeightInfo for () {
-    fn base_fee_per_gas_adjustment() -> Weight {
-        Weight::zero()
-    }
-    fn set_base_fee_per_gas() -> Weight {
-        Weight::zero()
-    }
-}
+pub mod weights;
+pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {

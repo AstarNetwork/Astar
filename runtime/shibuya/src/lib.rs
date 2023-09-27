@@ -787,7 +787,7 @@ impl pallet_dynamic_evm_base_fee::Config for Runtime {
     type AdjustmentFactor = AdjustmentFactorGetter;
     type WeightFactor = WeightFeeFactor;
     type StepLimitRatio = StepLimitRatio;
-    type WeightInfo = ();
+    type WeightInfo = pallet_dynamic_evm_base_fee::weights::SubstrateWeight<Runtime>;
 }
 
 ///TODO: Placeholder account mapping. This would be replaced once account abstraction is finished.
