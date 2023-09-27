@@ -63,6 +63,13 @@ impl<R, C> ShidenNetworkPrecompiles<R, C> {
         .into_iter()
         .map(hash)
     }
+
+    /// Returns all addresses which are blacklisted for dummy code deployment.
+    /// This is in order to keep the local testnets consistent with the live network.
+    pub fn is_blacklisted(address: &H160) -> bool {
+        // `dispatch` precompile is not allowed to be called by smart contracts, hence the ommision of this address.
+        hash(1025) == *address
+    }
 }
 
 /// The following distribution has been decided for the precompiles
