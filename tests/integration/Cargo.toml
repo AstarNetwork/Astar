@@ -35,6 +35,7 @@ sp-runtime = { workspace = true }
 # astar dependencies
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
+pallet-evm-precompile-dispatch = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 precompile-utils = { workspace = true }
 

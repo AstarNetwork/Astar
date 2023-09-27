@@ -73,6 +73,8 @@ pub use astar_primitives::{
     AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 
+pub use crate::precompiles::WhitelistedCalls;
+
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 #[cfg(any(feature = "std", test))]

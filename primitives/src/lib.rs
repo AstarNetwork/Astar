@@ -32,6 +32,9 @@ pub mod xvm;
 /// EVM primitives.
 pub mod evm;
 
+/// Precompiles
+pub mod precompiles;
+
 /// Benchmark primitives
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarks;
