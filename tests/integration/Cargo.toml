@@ -10,6 +10,7 @@ repository.workspace = true
 [dependencies]
 env_logger = { workspace = true }
 hex = { workspace = true }
+libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
 parity-scale-codec = { workspace = true }
 sha3 = { workspace = true }
 
@@ -34,6 +35,7 @@ sp-runtime = { workspace = true }
 # astar dependencies
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
+pallet-unified-accounts = { workspace = true }
 precompile-utils = { workspace = true }
 
 astar-primitives = { workspace = true }

@@ -25,9 +25,10 @@ pub use frame_support::{
 };
 pub use pallet_evm::AddressMapping;
 pub use sp_core::{H160, H256, U256};
+pub use sp_io::hashing::keccak_256;
 pub use sp_runtime::{AccountId32, MultiAddress};
 
-pub use astar_primitives::ethereum_checked::AccountMapping;
+pub use astar_primitives::{ethereum_checked::AccountMapping, evm::UnifiedAddressMapper};
 
 #[cfg(feature = "shibuya")]
 pub use shibuya::*;
@@ -39,27 +40,18 @@ mod shibuya {
     /// 1 SBY.
     pub const UNIT: Balance = SBY;
 
-    // TODO: once Account Unification is finished, remove `alith` and `alicia`,
-    // which are mocks of two way account/address mapping.
-
-    /// H160 address mapped from `ALICE`.
-    pub fn alith() -> H160 {
-        h160_from(ALICE)
+    pub fn alith_secret_key() -> libsecp256k1::SecretKey {
+        libsecp256k1::SecretKey::parse(&keccak_256(b"Alith")).unwrap()
     }
 
-    /// `AccountId32` mapped from `alith()`.
-    pub fn alicia() -> AccountId32 {
-        account_id_from(alith())
+    /// H160 address mapped to `ALICE`.
+    pub fn alith() -> H160 {
+        UnifiedAccounts::eth_address(&alith_secret_key())
     }
 
     /// Convert `H160` to `AccountId32`.
     pub fn account_id_from(address: H160) -> AccountId32 {
         <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(address)
-    }
-
-    /// Convert `AccountId32` to `H160`.
-    pub fn h160_from(account_id: AccountId32) -> H160 {
-        <Runtime as pallet_ethereum_checked::Config>::AccountMapping::into_h160(account_id)
     }
 
     /// Deploy an EVM contract with code.
@@ -111,6 +103,29 @@ mod shibuya {
         // On instantiation, the contract got existential deposit.
         assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
         address
+    }
+
+    /// Build the signature payload for given native account and eth private key
+    fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
+        // sign the payload
+        UnifiedAccounts::eth_sign_prehash(&UnifiedAccounts::build_signing_payload(who), secret)
+    }
+
+    /// Create the mappings for the accounts
+    pub fn connect_accounts(who: &AccountId32, secret: &libsecp256k1::SecretKey) {
+        assert_ok!(UnifiedAccounts::claim_evm_address(
+            RuntimeOrigin::signed(who.clone()),
+            UnifiedAccounts::eth_address(secret),
+            get_evm_signature(who, secret)
+        ));
+    }
+
+    pub fn claim_default_accounts(account: AccountId) {
+        let default_h160 = UnifiedAccounts::to_default_h160(&account);
+        assert_ok!(UnifiedAccounts::claim_default_evm_address(
+            RuntimeOrigin::signed(account.clone())
+        ));
+        assert_eq!(UnifiedAccounts::to_h160(&account).unwrap(), default_h160);
     }
 }
 
@@ -185,8 +200,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             (ALICE, INITIAL_AMOUNT),
             (BOB, INITIAL_AMOUNT),
             (CAT, INITIAL_AMOUNT),
-            #[cfg(feature = "shibuya")]
-            (alicia(), INITIAL_AMOUNT),
         ])
         .build()
 }

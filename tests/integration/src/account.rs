@@ -16,21 +16,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! Runtime integration tests.
+use crate::setup::*;
+pub use sp_io::hashing::keccak_256;
 
-#![cfg(test)]
+#[test]
+fn transfer_to_h160_via_lookup() {
+    new_test_ext().execute_with(|| {
+        let eth_address = H160::from_slice(&keccak_256(b"Alice")[0..20]);
 
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod setup;
+        // make sure account is empty
+        assert!(EVM::is_account_empty(&eth_address));
 
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod proxy;
+        // tranfer to evm account
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(ALICE),
+            MultiAddress::Address20(eth_address.clone().into()),
+            UNIT,
+        ));
 
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod assets;
-
-#[cfg(feature = "shibuya")]
-mod xvm;
-
-#[cfg(feature = "shibuya")]
-mod account;
+        // evm account should have recieved the funds
+        let (account, _) = EVM::account_basic(&eth_address);
+        assert_eq!(account.balance, (UNIT - ExistentialDeposit::get()).into());
+    });
+}

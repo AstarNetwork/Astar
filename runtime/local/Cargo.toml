@@ -75,6 +75,7 @@ pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
+pallet-unified-accounts = { workspace = true }
 pallet-xvm = { workspace = true }
 
 # Moonbeam tracing
@@ -159,6 +160,7 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-treasury/std",
 	"pallet-xvm/std",
+	"pallet-unified-accounts/std",
 	"pallet-ethereum-checked/std",
 	"moonbeam-evm-tracer/std",
 	"moonbeam-rpc-primitives-debug/std",
@@ -181,6 +183,7 @@ runtime-benchmarks = [
 	"pallet-collective/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-ethereum-checked/runtime-benchmarks",
+	"pallet-unified-accounts/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 ]
@@ -204,6 +207,7 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
 	"pallet-xvm/try-runtime",
+	"pallet-unified-accounts/try-runtime",
 	"pallet-ethereum/try-runtime",
 	"pallet-assets/try-runtime",
 	"pallet-scheduler/try-runtime",
