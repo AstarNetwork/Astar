@@ -58,7 +58,7 @@ fn calling_into_same_vm_is_not_allowed() {
             weight_limit: Weight::from_parts(1_000_000, 1_000_000),
         };
         let wasm_vm_id = VmId::Wasm;
-        let wasm_target = MultiAddress::<AccountId, ()>::Id(ALICE).encode();
+        let wasm_target = ALICE.encode();
         let wasm_used_weight: Weight =
             weights::SubstrateWeight::<TestRuntime>::wasm_call_overheads();
         assert_noop!(

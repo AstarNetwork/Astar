@@ -16,5 +16,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-pub mod pallet_assets;
-pub mod pallet_balances;
+use crate::setup::*;
+pub use sp_io::hashing::keccak_256;
+
+#[test]
+fn transfer_to_h160_via_lookup() {
+    new_test_ext().execute_with(|| {
+        let eth_address = H160::from_slice(&keccak_256(b"Alice")[0..20]);
+
+        // make sure account is empty
+        assert!(EVM::is_account_empty(&eth_address));
+
+        // tranfer to evm account
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(ALICE),
+            MultiAddress::Address20(eth_address.clone().into()),
+            UNIT,
+        ));
+
+        // evm account should have recieved the funds
+        let (account, _) = EVM::account_basic(&eth_address);
+        assert_eq!(account.balance, (UNIT - ExistentialDeposit::get()).into());
+    });
+}

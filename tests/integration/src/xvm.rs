@@ -176,6 +176,9 @@ const CALL_EVM_PAYBLE_NAME: &'static str = "call_xvm_payable";
 #[test]
 fn evm_payable_call_via_xvm_works() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let evm_payable_addr = deploy_evm_contract(EVM_PAYABLE);
 
         let value = UNIT;
@@ -231,7 +234,7 @@ fn wasm_payable_call_via_xvm_works() {
             },
             VmId::Wasm,
             ALICE,
-            MultiAddress::<AccountId32, ()>::Id(wasm_payable_addr.clone()).encode(),
+            wasm_payable_addr.clone().encode(),
             // Calling `deposit`
             hex::decode("0000002a").expect("invalid selector hex"),
             value,
@@ -247,6 +250,9 @@ fn wasm_payable_call_via_xvm_works() {
 #[test]
 fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let _ = deploy_wasm_contract(WASM_PAYABLE_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
@@ -255,10 +261,10 @@ fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
             RuntimeOrigin::root(),
             alith(),
             evm_caller_addr.clone(),
-            // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
+            // to: 0xa8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
             // input: 0x0000002a (deposit)
             // value: 1000000000
-            hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000000002100a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
+            hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000020a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c00000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
             U256::from(value),
             1_000_000,
             U256::from(DefaultBaseFeePerGas::get()),
@@ -284,6 +290,9 @@ fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
 #[test]
 fn calling_wasm_payable_from_evm_works() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let wasm_payable_callee_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
@@ -295,10 +304,10 @@ fn calling_wasm_payable_from_evm_works() {
             RuntimeOrigin::root(),
             alith(),
             evm_caller_addr.clone(),
-            // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
+            // to: 0xa8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
             // input: 0x0000002a (deposit)
             // value: 1000000000
-            hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000000002100a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
+            hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000020a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c00000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
             U256::from(value),
             1_000_000,
             U256::from(DefaultBaseFeePerGas::get()),
@@ -314,16 +323,16 @@ fn calling_wasm_payable_from_evm_works() {
 #[test]
 fn calling_evm_payable_from_wasm_works() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let evm_payable_callee_addr = deploy_evm_contract(EVM_PAYABLE);
         let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
 
         let value = UNIT;
 
-        // TODO: after Account Unification finished, remove this mock account.
-        // It is needed now because currently the `AccountMapping` and `AddressMapping` are
-        // both one way mapping.
-        let mock_unified_wasm_account = account_id_from(h160_from(wasm_caller_addr.clone()));
-        let _ = Balances::deposit_creating(&mock_unified_wasm_account, value);
+        // claim the default mappings for wasm contract
+        claim_default_accounts(wasm_caller_addr.clone());
 
         let evm_payable = evm_payable_callee_addr.as_ref().to_vec();
         let deposit_func = hex::decode("d0e30db0").expect("invalid deposit function hex");
@@ -348,25 +357,28 @@ fn calling_evm_payable_from_wasm_works() {
             value
         );
 
-        // TODO: after Account Unification finished, enable the wasm address balance check
-        // and remove the mock account balance check.
-        // assert_eq!(Balances::free_balance(&wasm_address), ExistentialDeposit::get());
-        assert_eq!(Balances::free_balance(&mock_unified_wasm_account), 0);
+        assert_eq!(
+            Balances::free_balance(&wasm_caller_addr),
+            ExistentialDeposit::get()
+        );
     });
 }
 
 #[test]
 fn reentrance_not_allowed() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         // Call path: WASM -> EVM -> WASM
         let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
         let _ = deploy_wasm_contract(WASM_PAYABLE_NAME);
 
-        // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
+        // to: 0xa8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
         // input: 0x0000002a (deposit)
         // value: 1000000000
-        let call_wasm_payable_input = hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000000002100a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex");
+        let call_wasm_payable_input = hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000020a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c00000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex");
         let input = hex::decode("0000002a")
             .expect("invalid selector hex")
             .iter()
@@ -422,6 +434,9 @@ const EVM_DUMMY_ERROR: &'static str = "608060405234801561001057600080fd5b5061023
 #[test]
 fn evm_call_via_xvm_fails_if_revert() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let evm_callee_addr = deploy_evm_contract(EVM_DUMMY_ERROR);
 
         let result = Xvm::call(
@@ -513,6 +528,9 @@ const WASM_DUMMY_ERROR_NAME: &'static str = "dummy_error";
 #[test]
 fn wasm_call_via_xvm_fails_if_revert() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let wasm_callee_addr = deploy_wasm_contract(WASM_DUMMY_ERROR_NAME);
         let input = hex::decode("0000002a").expect("invalid selector hex");
         let result = Xvm::call(
@@ -522,7 +540,7 @@ fn wasm_call_via_xvm_fails_if_revert() {
             },
             VmId::Wasm,
             ALICE,
-            MultiAddress::<AccountId32, ()>::Id(wasm_callee_addr.clone()).encode(),
+            wasm_callee_addr.clone().encode(),
             input,
             0,
             None,
@@ -543,13 +561,16 @@ fn wasm_call_via_xvm_fails_if_revert() {
 #[test]
 fn evm_caller_reverts_if_wasm_callee_reverted() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let _ = deploy_wasm_contract(WASM_DUMMY_ERROR_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
-        // to: 0x00a0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a23
+        // to: 0xa0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a23
         // input: 0x0000002a (do_revert)
         // value: 0
-        let input = hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002100a0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a230000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex");
+        let input = hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020a0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a2300000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex");
         let tx = CheckedEthereumTx {
             target: evm_caller_addr.clone(),
             input: EthereumTxInput::try_from(input).expect("input too large"),
@@ -576,6 +597,9 @@ fn evm_caller_reverts_if_wasm_callee_reverted() {
 #[test]
 fn wasm_caller_reverts_if_evm_callee_reverted() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let evm_callee_addr = deploy_evm_contract(EVM_DUMMY_ERROR);
         let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
 
@@ -666,7 +690,7 @@ fn wasm_call_via_xvm_fails_if_storage_deposit_limit_exhausted() {
             },
             VmId::Wasm,
             ALICE,
-            MultiAddress::<AccountId32, ()>::Id(wasm_callee_addr.clone()).encode(),
+            wasm_callee_addr.clone().encode(),
             input,
             0,
             Some(0)
@@ -696,7 +720,7 @@ fn wasm_call_via_xvm_call_works_if_sufficient_storage_deposit_limit() {
             },
             VmId::Wasm,
             ALICE,
-            MultiAddress::<AccountId32, ()>::Id(wasm_callee_addr.clone()).encode(),
+            wasm_callee_addr.clone().encode(),
             input,
             0,
             Some(UNIT)
@@ -732,6 +756,9 @@ const CALL_XVM_PAYABLE_WITH_SDL: &'static str = "608060405234801561001057600080f
 #[test]
 fn calling_wasm_from_evm_works_if_sufficient_storage_deposit_limit() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let wasm_callee_addr = deploy_wasm_contract(WASM_SIMPLE_STORAGE_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_XVM_PAYABLE_WITH_SDL);
 
@@ -742,11 +769,11 @@ fn calling_wasm_from_evm_works_if_sufficient_storage_deposit_limit() {
             RuntimeOrigin::root(),
             alith(),
             evm_caller_addr.clone(),
-            // to: 0x000e0ddb5a5f0b99d7be468a3051a94073ec6b1900178316401a52b93415026999
+            // to: 0x0e0ddb5a5f0b99d7be468a3051a94073ec6b1900178316401a52b93415026999
             // input: 0x0000002a (store)
             // value: 0
             // storage_deposit_limit: 1_000_000_000_000
-            hex::decode("2d9338da000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e8d4a510000000000000000000000000000000000000000000000000000000000000000021000e0ddb5a5f0b99d7be468a3051a94073ec6b1900178316401a52b934150269990000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
+            hex::decode("2d9338da000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e8d4a5100000000000000000000000000000000000000000000000000000000000000000200e0ddb5a5f0b99d7be468a3051a94073ec6b1900178316401a52b9341502699900000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
             U256::zero(),
             1_000_000,
             U256::from(DefaultBaseFeePerGas::get()),

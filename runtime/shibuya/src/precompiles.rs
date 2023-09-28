@@ -18,6 +18,9 @@
 
 //! The Shibuya Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
+use crate::RuntimeCall;
+use astar_primitives::precompiles::DispatchFilterValidate;
+use frame_support::traits::Contains;
 use pallet_evm::{
     ExitRevert, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle,
     PrecompileResult, PrecompileSet,
@@ -45,6 +48,23 @@ use xcm::latest::prelude::MultiLocation;
 /// The asset precompile address prefix. Addresses that match against this prefix will be routed
 /// to Erc20AssetsPrecompileSet
 pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
+
+/// Filter that only allows whitelisted runtime call to pass through dispatch precompile
+pub struct WhitelistedCalls;
+
+impl Contains<RuntimeCall> for WhitelistedCalls {
+    fn contains(t: &RuntimeCall) -> bool {
+        match t {
+            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
+                calls.iter().all(|call| WhitelistedCalls::contains(call))
+            }
+            RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
+            RuntimeCall::DappsStaking(_) => true,
+            _ => false,
+        }
+    }
+}
 
 /// The PrecompileSet installed in the Shiden runtime.
 #[derive(Debug, Default, Clone, Copy)]
@@ -77,7 +97,7 @@ where
     XcmPrecompile<R, C>: Precompile,
     BatchPrecompile<R>: Precompile,
     XvmPrecompile<R, pallet_xvm::Pallet<R>>: Precompile,
-    Dispatch<R>: Precompile,
+    Dispatch<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config
         + pallet_xcm::Config
@@ -110,7 +130,10 @@ where
             a if a == hash(9) => Some(Blake2F::execute(handle)),
             // nor Ethereum precompiles :
             a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
-            a if a == hash(1025) => Some(Dispatch::<R>::execute(handle)),
+            a if a == hash(1025) => Some(Dispatch::<
+                R,
+                DispatchFilterValidate<RuntimeCall, WhitelistedCalls>,
+            >::execute(handle)),
             a if a == hash(1026) => Some(ECRecoverPublicKey::execute(handle)),
             a if a == hash(1027) => Some(Ed25519Verify::execute(handle)),
             // Astar precompiles (starts from 0x5000):

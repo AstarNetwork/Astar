@@ -19,10 +19,13 @@
 use crate::{AccountId, AssetId};
 
 use frame_support::ensure;
+use sp_core::H160;
 use sp_std::marker::PhantomData;
 
 use pallet_assets::AssetsCallback;
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
+
+pub type EvmAddress = H160;
 
 /// Revert opt code. It's inserted at the precompile addresses, to make them functional in EVM.
 pub const EVM_REVERT_CODE: &[u8] = &[0x60, 0x00, 0x60, 0x00, 0xfd];
@@ -53,4 +56,23 @@ where
         pallet_evm::AccountCodes::<R>::remove(address);
         Ok(())
     }
+}
+
+/// Mapping between Native and EVM Addresses
+pub trait UnifiedAddressMapper<AccountId> {
+    /// Gets the account id associated with given evm address, if mapped else None.
+    fn to_account_id(evm_address: &EvmAddress) -> Option<AccountId>;
+    /// Gets the account id associated with given evm address.
+    /// If no mapping exists, then return the default evm address.
+    fn to_account_id_or_default(evm_address: &EvmAddress) -> AccountId;
+    /// Gets the default account id which is associated with given evm address.
+    fn to_default_account_id(evm_address: &EvmAddress) -> AccountId;
+
+    /// Gets the evm address associated with given account id, if mapped else None.
+    fn to_h160(account_id: &AccountId) -> Option<EvmAddress>;
+    /// Gets the evm address associated with given account id.
+    /// If no mapping exists, then return the default account id.
+    fn to_h160_or_default(account_id: &AccountId) -> EvmAddress;
+    /// Gets the default evm address which is associated with given account id.
+    fn to_default_h160(account_id: &AccountId) -> EvmAddress;
 }
