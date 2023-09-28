@@ -217,7 +217,7 @@ pub fn run_to_block(n: u32) {
         AuraExt::on_finalize(block_number);
         PolkadotXcm::on_finalize(block_number);
         Ethereum::on_finalize(block_number);
-        BaseFee::on_finalize(block_number);
+        DynamicEvmBaseFee::on_finalize(block_number);
 
         System::set_block_number(block_number + 1);
 
@@ -227,7 +227,7 @@ pub fn run_to_block(n: u32) {
         Aura::on_initialize(block_number);
         AuraExt::on_initialize(block_number);
         Ethereum::on_initialize(block_number);
-        BaseFee::on_initialize(block_number);
+        DynamicEvmBaseFee::on_initialize(block_number);
         #[cfg(any(feature = "shibuya", feature = "shiden", features = "astar"))]
         RandomnessCollectiveFlip::on_initialize(block_number);
 
