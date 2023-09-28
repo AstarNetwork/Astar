@@ -762,7 +762,7 @@ fn calling_wasm_from_evm_works_if_sufficient_storage_deposit_limit() {
         let wasm_callee_addr = deploy_wasm_contract(WASM_SIMPLE_STORAGE_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_XVM_PAYABLE_WITH_SDL);
 
-        // Fund the EVM caller to pay for storage deposit.
+        // Fund the EVM contract to pay for storage deposit.
         let _ = Balances::deposit_creating(&account_id_from(evm_caller_addr.clone()), UNIT);
 
         assert_ok!(EVM::call(
