@@ -18,6 +18,7 @@
 
 use super::*;
 
+use fp_evm::FeeCalculator;
 use frame_benchmarking::v2::*;
 use frame_support::traits::Hooks;
 use frame_system::RawOrigin;

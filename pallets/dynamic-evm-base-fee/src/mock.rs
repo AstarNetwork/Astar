@@ -25,7 +25,7 @@ use frame_support::{
     construct_runtime, parameter_types,
     sp_io::TestExternalities,
     storage,
-    traits::{ConstU128, ConstU32, ConstU64},
+    traits::{ConstU128, ConstU32, ConstU64, Get},
     weights::constants::RocksDbWeight,
 };
 use parity_scale_codec::Encode;

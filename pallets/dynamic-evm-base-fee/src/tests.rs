@@ -21,7 +21,10 @@
 use super::*;
 use mock::*;
 
-use frame_support::{assert_noop, assert_ok, traits::OnFinalize};
+use frame_support::{
+    assert_noop, assert_ok,
+    traits::{Get, OnFinalize},
+};
 use num_traits::Bounded;
 use sp_runtime::{
     traits::{BadOrigin, One, Zero},
@@ -118,12 +121,11 @@ fn min_gas_price_works() {
             new_base_fee_per_gas
         ));
 
+        let expected_weight: Weight =
+            <<TestRuntime as pallet::Config>::WeightInfo as weights::WeightInfo>::min_gas_price();
         assert_eq!(
             DynamicEvmBaseFee::min_gas_price(),
-            (
-                new_base_fee_per_gas,
-                <TestRuntime as frame_system::Config>::DbWeight::get().reads(1)
-            )
+            (new_base_fee_per_gas, expected_weight)
         );
     });
 }
