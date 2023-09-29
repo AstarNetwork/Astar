@@ -137,8 +137,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    // For the PoV size, we estimate 64 kB per instruction - which will is once again very conservative.
-    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
+    // For the PoV size, we estimate 4 kB per instruction. This will be changed when we benchmark the instructions.
+    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 4 * 1024);
     pub const MaxInstructions: u32 = 100;
 }
 
