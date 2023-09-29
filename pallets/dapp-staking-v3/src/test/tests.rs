@@ -83,6 +83,22 @@ fn maintenace_mode_call_filtering_works() {
             DappStaking::unlock(RuntimeOrigin::signed(1), 100),
             Error::<Test>::Disabled
         );
+        assert_noop!(
+            DappStaking::claim_unlocked(RuntimeOrigin::signed(1)),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::relock_unlocking(RuntimeOrigin::signed(1)),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::stake(RuntimeOrigin::signed(1), MockSmartContract::default(), 100),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::unstake(RuntimeOrigin::signed(1), MockSmartContract::default(), 100),
+            Error::<Test>::Disabled
+        );
     })
 }
 

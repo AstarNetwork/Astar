@@ -117,6 +117,7 @@ impl pallet_dapp_staking::Config for Test {
     type UnlockingPeriod = ConstU64<20>;
 }
 
+// TODO: why not just change this to e.g. u32 for test?
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Hash)]
 pub enum MockSmartContract {
     Wasm(AccountId),

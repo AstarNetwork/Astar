@@ -567,6 +567,44 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// TODO
+        #[pallet::call_index(9)]
+        #[pallet::weight(Weight::zero())]
+        pub fn stake(
+            origin: OriginFor<T>,
+            smart_contract: T::SmartContract,
+            #[pallet::compact] amount: Balance,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            ensure!(
+                Self::is_active(&smart_contract),
+                Error::<T>::NotOperatedDApp
+            );
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let mut ledger = Ledger::<T>::get(&account);
+
+            // is it voting or b&e period?
+            // how much does user have available for staking?
+            // has user claimed past rewards? Can we force them to do it before they start staking again?
+
+            Ok(())
+        }
+
+        /// TODO
+        #[pallet::call_index(10)]
+        #[pallet::weight(Weight::zero())]
+        pub fn unstake(
+            origin: OriginFor<T>,
+            smart_contract: T::SmartContract,
+            #[pallet::compact] amount: Balance,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -608,6 +646,12 @@ pub mod pallet {
                 );
                 Ledger::<T>::insert(account, ledger);
             }
+        }
+
+        /// `true` if smart contract is active, `false` if it has been unregistered.
+        fn is_active(smart_contract: &T::SmartContract) -> bool {
+            IntegratedDApps::<T>::get(smart_contract)
+                .map_or(false, |dapp_info| dapp_info.state == DAppState::Registered)
         }
     }
 }

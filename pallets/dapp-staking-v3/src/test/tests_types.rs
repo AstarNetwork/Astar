@@ -94,7 +94,7 @@ fn sparse_bounded_amount_era_vec_add_amount_works() {
     // 4th scenario - add to the previous era, should fail and be a noop
     assert_eq!(
         vec.add_amount(init_amount, first_era),
-        Err(SparseBoundedError::OldEra)
+        Err(AccountLedgerError::OldEra)
     );
     assert_eq!(vec.0.len(), 2);
     assert_eq!(vec.0[0], DummyEraAmount::new(init_amount * 2, first_era));
@@ -106,7 +106,7 @@ fn sparse_bounded_amount_era_vec_add_amount_works() {
     }
     assert_eq!(
         vec.add_amount(init_amount, 100),
-        Err(SparseBoundedError::NoCapacity)
+        Err(AccountLedgerError::NoCapacity)
     );
 }
 
@@ -369,7 +369,7 @@ fn account_ledger_add_lock_amount_works() {
     // Adding to previous era should fail
     assert_eq!(
         acc_ledger.add_lock_amount(addition, first_era - 1),
-        Err(SparseBoundedError::OldEra)
+        Err(AccountLedgerError::OldEra)
     );
 
     // Add up to storage limit
@@ -387,7 +387,7 @@ fn account_ledger_add_lock_amount_works() {
     let acc_ledger_clone = acc_ledger.clone();
     assert_eq!(
         acc_ledger.add_lock_amount(addition, acc_ledger.lock_era() + 1),
-        Err(SparseBoundedError::NoCapacity)
+        Err(AccountLedgerError::NoCapacity)
     );
     assert_eq!(acc_ledger, acc_ledger_clone);
 }
@@ -522,7 +522,7 @@ fn account_ledger_subtract_lock_amount_overflow_fails() {
     let acc_ledger_clone = acc_ledger.clone();
     assert_eq!(
         acc_ledger.subtract_lock_amount(unlock_amount, LockedDummy::get() + 1),
-        Err(SparseBoundedError::NoCapacity)
+        Err(AccountLedgerError::NoCapacity)
     );
     assert_eq!(acc_ledger, acc_ledger_clone);
 }
@@ -799,7 +799,7 @@ fn account_ledger_add_unlocking_chunk_works() {
     let acc_ledger_snapshot = acc_ledger.clone();
     assert_eq!(
         acc_ledger.add_unlocking_chunk(1, block_number + UnlockingDummy::get() as u64 + 1),
-        Err(SparseBoundedError::NoCapacity)
+        Err(AccountLedgerError::NoCapacity)
     );
     assert_eq!(acc_ledger, acc_ledger_snapshot);
 }
@@ -829,6 +829,251 @@ fn active_stake_works() {
     // Period doesn't match
     assert!(acc_ledger.active_stake(period - 1).is_zero());
     assert!(acc_ledger.active_stake(period + 1).is_zero());
+}
+
+#[test]
+fn stakeable_amount_works() {
+    get_u32_type!(LockedDummy, 5);
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
+
+    // Sanity check for empty ledger
+    assert!(acc_ledger.stakeable_amount(1).is_zero());
+
+    // First scenario - some locked amount, no staking chunks
+    let first_era = 1;
+    let first_period = 1;
+    let locked_amount = 19;
+    assert!(acc_ledger.add_lock_amount(locked_amount, first_era).is_ok());
+    assert_eq!(
+        acc_ledger.stakeable_amount(first_period),
+        locked_amount,
+        "Stakeable amount has to be equal to the locked amount"
+    );
+
+    // Second scenario - some staked amount is introduced, period is still valid
+    let staked_amount = 7;
+    acc_ledger.staked = SparseBoundedAmountEraVec(
+        BoundedVec::try_from(vec![StakeChunk {
+            amount: staked_amount,
+            era: first_era,
+        }])
+        .expect("Only one chunk so creation should succeed."),
+    );
+    acc_ledger.staked_period = Some(first_period);
+
+    assert_eq!(
+        acc_ledger.stakeable_amount(first_period),
+        locked_amount - staked_amount,
+        "Total stakeable amount should be equal to the locked amount minus what is already staked."
+    );
+
+    // Third scenario - continuation of the previous, but we move to the next period.
+    assert_eq!(
+        acc_ledger.stakeable_amount(first_period + 1),
+        locked_amount,
+        "Stakeable amount has to be equal to the locked amount since old period staking isn't valid anymore"
+    );
+}
+
+#[test]
+fn staked_amount_works() {
+    get_u32_type!(LockedDummy, 5);
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
+
+    // Sanity check for empty ledger
+    assert!(acc_ledger.staked_amount(1).is_zero());
+
+    // First scenario - active period matches the ledger
+    let first_era = 1;
+    let first_period = 1;
+    let locked_amount = 19;
+    let staked_amount = 13;
+    assert!(acc_ledger.add_lock_amount(locked_amount, first_era).is_ok());
+    acc_ledger.staked = SparseBoundedAmountEraVec(
+        BoundedVec::try_from(vec![StakeChunk {
+            amount: staked_amount,
+            era: first_era,
+        }])
+        .expect("Only one chunk so creation should succeed."),
+    );
+    acc_ledger.staked_period = Some(first_period);
+
+    assert_eq!(acc_ledger.staked_amount(first_period), staked_amount);
+
+    // Second scenario - active period doesn't match the ledger
+    assert!(acc_ledger.staked_amount(first_period + 1).is_zero());
+}
+
+#[test]
+fn add_stake_amount_works() {
+    get_u32_type!(LockedDummy, 5);
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
+
+    // Sanity check
+    assert!(acc_ledger.add_stake_amount(0, 0, 0).is_ok());
+    assert!(acc_ledger.staked_period.is_none());
+    assert!(acc_ledger.staked.0.is_empty());
+
+    // First scenario - stake some amount, and ensure values are as expected
+    let first_era = 2;
+    let first_period = 1;
+    let lock_amount = 17;
+    let stake_amount = 11;
+    assert!(acc_ledger.add_lock_amount(lock_amount, first_era).is_ok());
+
+    assert!(acc_ledger
+        .add_stake_amount(stake_amount, first_era, first_period)
+        .is_ok());
+    assert_eq!(acc_ledger.staked_period, Some(first_period));
+    assert_eq!(acc_ledger.staked.0.len(), 1);
+    assert_eq!(
+        acc_ledger.staked.0[0],
+        StakeChunk {
+            amount: stake_amount,
+            era: first_era,
+        }
+    );
+    assert_eq!(acc_ledger.staked_amount(first_period), stake_amount);
+
+    // Second scenario - stake some more to the same era, only amount should change
+    assert!(acc_ledger
+        .add_stake_amount(1, first_era, first_period)
+        .is_ok());
+    assert_eq!(acc_ledger.staked.0.len(), 1);
+    assert_eq!(acc_ledger.staked_amount(first_period), stake_amount + 1);
+
+    // Third scenario - stake to the next era, new chunk should be added
+    let next_era = first_era + 3;
+    let remaining_not_staked = lock_amount - stake_amount - 1;
+    assert!(acc_ledger
+        .add_stake_amount(remaining_not_staked, next_era, first_period)
+        .is_ok());
+    assert_eq!(acc_ledger.staked.0.len(), 2);
+    assert_eq!(acc_ledger.staked_amount(first_period), lock_amount);
+}
+
+#[test]
+fn add_stake_amount_invalid_era_fails() {
+    get_u32_type!(LockedDummy, 5);
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
+
+    // Prep actions
+    let first_era = 5;
+    let first_period = 2;
+    let lock_amount = 13;
+    let stake_amount = 7;
+    assert!(acc_ledger.add_lock_amount(lock_amount, first_era).is_ok());
+    assert!(acc_ledger
+        .add_stake_amount(stake_amount, first_era, first_period)
+        .is_ok());
+    let acc_ledger_snapshot = acc_ledger.clone();
+
+    // Try to add to the next era, it should fail
+    assert_eq!(
+        acc_ledger.add_stake_amount(1, first_era, first_period + 1),
+        Err(AccountLedgerError::InvalidPeriod)
+    );
+    assert_eq!(
+        acc_ledger, acc_ledger_snapshot,
+        "Previous failed action must be a noop"
+    );
+
+    // Try to add to the previous era, it should fail
+    assert_eq!(
+        acc_ledger.add_stake_amount(1, first_era, first_period - 1),
+        Err(AccountLedgerError::InvalidPeriod)
+    );
+    assert_eq!(
+        acc_ledger, acc_ledger_snapshot,
+        "Previous failed action must be a noop"
+    );
+}
+
+#[test]
+fn add_stake_amount_too_large_amount_fails() {
+    get_u32_type!(LockedDummy, 5);
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
+
+    // Sanity check
+    assert_eq!(
+        acc_ledger.add_stake_amount(10, 1, 1),
+        Err(AccountLedgerError::TooLargeStakeAmount)
+    );
+
+    // Lock some amount, and try to stake more than that
+    let first_era = 5;
+    let first_period = 2;
+    let lock_amount = 13;
+    assert!(acc_ledger.add_lock_amount(lock_amount, first_era).is_ok());
+    assert_eq!(
+        acc_ledger.add_stake_amount(lock_amount + 1, first_era, first_period),
+        Err(AccountLedgerError::TooLargeStakeAmount)
+    );
+
+    // Additional check - have some active stake, and then try to overstake
+    assert!(acc_ledger
+        .add_stake_amount(lock_amount - 2, first_era, first_period)
+        .is_ok());
+    assert_eq!(
+        acc_ledger.add_stake_amount(3, first_era, first_period),
+        Err(AccountLedgerError::TooLargeStakeAmount)
+    );
+}
+
+#[test]
+fn add_stake_amount_exceeding_capacity_fails() {
+    get_u32_type!(LockedDummy, 5);
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger =
+        AccountLedger::<BlockNumber, LockedDummy, UnlockingDummy, StakingDummy>::default();
+
+    // Try to stake up to the capacity, it should work
+    // Lock some amount, and try to stake more than that
+    let first_era = 5;
+    let first_period = 2;
+    let lock_amount = 31;
+    let stake_amount = 3;
+    assert!(acc_ledger.add_lock_amount(lock_amount, first_era).is_ok());
+    for inc in 0..StakingDummy::get() {
+        assert!(acc_ledger
+            .add_stake_amount(stake_amount, first_era + inc, first_period)
+            .is_ok());
+        assert_eq!(
+            acc_ledger.staked_amount(first_period),
+            stake_amount * (inc as u128 + 1)
+        );
+    }
+
+    // Can still stake to the last staked era
+    assert!(acc_ledger
+        .add_stake_amount(
+            stake_amount,
+            first_era + StakingDummy::get() - 1,
+            first_period
+        )
+        .is_ok());
+
+    // But staking to the next era must fail with exceeded capacity
+    assert_eq!(
+        acc_ledger.add_stake_amount(stake_amount, first_era + StakingDummy::get(), first_period),
+        Err(AccountLedgerError::NoCapacity)
+    );
 }
 
 #[test]

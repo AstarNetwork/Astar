@@ -62,11 +62,15 @@ pub trait AmountEraPair: MaxEncodedLen + Default + Copy {
 
 /// Simple enum representing errors possible when using sparse bounded vector.
 #[derive(Debug, PartialEq, Eq)]
-pub enum SparseBoundedError {
+pub enum AccountLedgerError {
     /// Old era values cannot be added.
     OldEra,
     /// Bounded storage capacity exceeded.
     NoCapacity,
+    /// Invalid period specified.
+    InvalidPeriod,
+    /// Stake amount is to large in respect to what's available.
+    TooLargeStakeAmount,
 }
 
 /// Helper struct for easier manipulation of sparse <amount, era> pairs.
@@ -106,13 +110,13 @@ where
         &mut self,
         amount: Balance,
         era: EraNumber,
-    ) -> Result<(), SparseBoundedError> {
+    ) -> Result<(), AccountLedgerError> {
         if amount.is_zero() {
             return Ok(());
         }
 
         let mut chunk = if let Some(&chunk) = self.0.last() {
-            ensure!(chunk.get_era() <= era, SparseBoundedError::OldEra);
+            ensure!(chunk.get_era() <= era, AccountLedgerError::OldEra);
             chunk
         } else {
             P::default()
@@ -128,7 +132,7 @@ where
             chunk.set_era(era);
             self.0
                 .try_push(chunk)
-                .map_err(|_| SparseBoundedError::NoCapacity)?;
+                .map_err(|_| AccountLedgerError::NoCapacity)?;
         }
 
         Ok(())
@@ -155,7 +159,7 @@ where
         &mut self,
         amount: Balance,
         era: EraNumber,
-    ) -> Result<(), SparseBoundedError> {
+    ) -> Result<(), AccountLedgerError> {
         if amount.is_zero() || self.0.is_empty() {
             return Ok(());
         }
@@ -217,7 +221,7 @@ where
         }
 
         // Update `locked` to the new vector
-        self.0 = BoundedVec::try_from(inner).map_err(|_| SparseBoundedError::NoCapacity)?;
+        self.0 = BoundedVec::try_from(inner).map_err(|_| AccountLedgerError::NoCapacity)?;
 
         Ok(())
     }
@@ -452,6 +456,9 @@ where
 
     /// Returns active locked amount.
     /// If `zero`, means that associated account hasn't got any active locked funds.
+    ///
+    /// This value will always refer to the latest known locked amount.
+    /// It might be relevant for the current period, or for the next one.
     pub fn active_locked_amount(&self) -> Balance {
         self.latest_locked_chunk()
             .map_or(Balance::zero(), |locked| locked.amount)
@@ -492,6 +499,62 @@ where
         }
     }
 
+    /// Amount that is available for staking.
+    ///
+    /// This is equal to the total active locked amount, minus the staked amount already active.
+    pub fn stakeable_amount(&self, active_period: PeriodNumber) -> Balance {
+        self.active_locked_amount()
+            .saturating_sub(self.active_stake(active_period))
+    }
+
+    /// Amount that is staked, in respect to currently active period.
+    pub fn staked_amount(&self, active_period: PeriodNumber) -> Balance {
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period == active_period => self
+                .staked
+                .0
+                .last()
+                // We should never fallback to the default value since that would mean ledger is in invalid state.
+                // TODO: perhaps this can be implemented in a better way to have some error handling? Returning 0 might not be the most secure way to handle it.
+                .map_or(Balance::zero(), |chunk| chunk.amount),
+            _ => Balance::zero(),
+        }
+    }
+
+    /// Adds the specified amount to total staked amount, if possible.
+    ///
+    /// Staking is allowed only allowed if one of the two following conditions is met:
+    /// 1. Staker is staking again in the period in which they already staked.
+    /// 2. Staker is staking for the first time in this period, and there are no staking chunks from the previous eras.
+    ///
+    /// Additonally, the staked amount must not exceed what's available for staking.
+    pub fn add_stake_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+        current_period: PeriodNumber,
+    ) -> Result<(), AccountLedgerError> {
+        if amount.is_zero() {
+            return Ok(());
+        }
+
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period != current_period => {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+            _ => (),
+        }
+
+        if self.stakeable_amount(current_period) < amount {
+            return Err(AccountLedgerError::TooLargeStakeAmount);
+        }
+
+        self.staked.add_amount(amount, era)?;
+        self.staked_period = Some(current_period);
+
+        Ok(())
+    }
+
     /// Adds the specified amount to the total locked amount, if possible.
     /// Caller must ensure that the era matches the next one, not the current one.
     ///
@@ -503,7 +566,7 @@ where
         &mut self,
         amount: Balance,
         era: EraNumber,
-    ) -> Result<(), SparseBoundedError> {
+    ) -> Result<(), AccountLedgerError> {
         self.locked.add_amount(amount, era)
     }
 
@@ -517,7 +580,7 @@ where
         &mut self,
         amount: Balance,
         era: EraNumber,
-    ) -> Result<(), SparseBoundedError> {
+    ) -> Result<(), AccountLedgerError> {
         self.locked.subtract_amount(amount, era)
     }
 
@@ -531,7 +594,7 @@ where
         &mut self,
         amount: Balance,
         unlock_block: BlockNumber,
-    ) -> Result<(), SparseBoundedError> {
+    ) -> Result<(), AccountLedgerError> {
         if amount.is_zero() {
             return Ok(());
         }
@@ -551,7 +614,7 @@ where
                 };
                 self.unlocking
                     .try_insert(idx, new_unlocking_chunk)
-                    .map_err(|_| SparseBoundedError::NoCapacity)?;
+                    .map_err(|_| AccountLedgerError::NoCapacity)?;
             }
         }
 
