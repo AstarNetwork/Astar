@@ -175,11 +175,6 @@ impl<'a> EvmDataReader<'a> {
         })
     }
 
-    /// Return Option<&[u8]> from a given range for EvmDataReader
-    pub fn get_input_from_range(&self, range: Range<usize>) -> Option<&[u8]> {
-        self.input.get(range)
-    }
-
     /// Read remaining bytes
     pub fn read_till_end(&mut self) -> EvmResult<&[u8]> {
         let range = self.move_cursor(self.input.len() - self.cursor)?;
@@ -195,7 +190,7 @@ impl<'a> EvmDataReader<'a> {
     /// Move the reading cursor with provided length, and return a range from the previous cursor
     /// location to the new one.
     /// Checks cursor overflows.
-    pub fn move_cursor(&mut self, len: usize) -> EvmResult<Range<usize>> {
+    fn move_cursor(&mut self, len: usize) -> EvmResult<Range<usize>> {
         let start = self.cursor;
         let end = self
             .cursor

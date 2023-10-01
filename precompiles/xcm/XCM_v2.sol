@@ -39,7 +39,7 @@ interface XCM {
     /**
      * @dev Execute a transaction on a remote chain.
      * @param destination - Multilocation of destination chain
-     * @param payment_asset_id - ETH address of the local asset derivate used to pay for execution in the destination chain
+     * @param payment_asset_id - Address of the local asset derivate used to pay for execution in the destination chain
      * @param payment_amount - amount of payment asset to use for execution payment - should cover cost of XCM instructions + Transact call weight.
      * @param call - encoded call data (must be decodable by remote chain)
      * @param transact_weight - max weight that the encoded call is allowed to consume in the destination chain
