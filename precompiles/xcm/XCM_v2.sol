@@ -16,7 +16,6 @@ interface XCM {
     }
     
     /**
-     * @dev Withdraw assets using PalletXCM call.
      * @param asset_id - list of XC20 asset addresses
      * @param asset_amount - list of transfer amounts (must match with asset addresses above)
      * @param beneficiary - Multilocation of beneficiary in respect to destination parachain
@@ -37,7 +36,6 @@ interface XCM {
     ) external returns (bool);
 
     /**
-     * @dev Execute a transaction on a remote chain.
      * @param destination - Multilocation of destination chain
      * @param payment_asset_id - Address of the local asset derivate used to pay for execution in the destination chain
      * @param payment_amount - amount of payment asset to use for execution payment - should cover cost of XCM instructions + Transact call weight.
@@ -54,7 +52,6 @@ interface XCM {
     ) external returns (bool);
 
     /**
-     * @dev Reserve transfer assets using PalletXCM call.
      * @param asset_id - list of XC20 asset addresses
      * @param asset_amount - list of transfer amounts (must match with asset addresses above)
      * @param beneficiary - Multilocation of beneficiary in respect to destination parachain
@@ -74,7 +71,6 @@ interface XCM {
     ) external returns (bool);
 
     /**
-     * @dev send xcm using PalletXCM call.
      * @param destination - Multilocation of destination chain where to send this call
      * @param xcm_call - encoded xcm call you want to send to destination
      **/
