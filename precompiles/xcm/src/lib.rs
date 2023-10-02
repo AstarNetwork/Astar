@@ -24,7 +24,7 @@ use frame_support::{
     pallet_prelude::Weight,
     traits::{ConstU32, Get},
 };
-pub const XCM_SIZE_LIMIT: u32 = 2u32.pow(16);
+use astar_primitives::xcm::constants::XCM_SIZE_LIMIT;
 type GetXcmSizeLimit = ConstU32<XCM_SIZE_LIMIT>;
 
 use pallet_evm::{AddressMapping, Precompile};
