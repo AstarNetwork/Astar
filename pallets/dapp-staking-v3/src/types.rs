@@ -764,16 +764,16 @@ impl SingularStakingInfo {
     /// In case the `amount` being unstaked is larger than the amount staked in the `voting period`,
     /// and `voting period` has passed, this will remove the _loyalty_ flag from the staker.
     ///
-    /// Returns the amount that was unstaked from the `voting period` stake.
-    // TODO: Maybe both unstake values should be returned?
-    pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) -> Balance {
+    /// Returns the amount that was unstaked from the `voting period` stake, and from the `build&earn period` stake.
+    pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) -> (Balance, Balance) {
         // If B&E period stake can cover the unstaking amount, just reduce it.
         if self.bep_staked_amount >= amount {
             self.bep_staked_amount.saturating_reduce(amount);
-            Balance::zero()
+            (Balance::zero(), amount)
         } else {
             // In case we have to dip into the voting period stake, make sure B&E period stake is reduced first.
             // Also make sure to remove loyalty flag from the staker.
+            let bep_amount_snapshot = self.bep_staked_amount;
             let leftover_amount = amount.saturating_sub(self.bep_staked_amount);
             self.bep_staked_amount = Balance::zero();
 
@@ -782,10 +782,14 @@ impl SingularStakingInfo {
             self.bep_staked_amount = Balance::zero();
 
             // It's ok if staker reduces their stake amount during voting period.
-            self.loyal_staker = period_type == PeriodType::Voting;
+            // Once loyalty flag is removed, it cannot be returned.
+            self.loyal_staker = self.loyal_staker && period_type == PeriodType::Voting;
 
-            // Actual amount that was unstaked
-            vp_staked_amount_snapshot.saturating_sub(self.vp_staked_amount)
+            // Actual amount that was unstaked: (voting period unstake, B&E period unstake)
+            (
+                vp_staked_amount_snapshot.saturating_sub(self.vp_staked_amount),
+                bep_amount_snapshot,
+            )
         }
     }
 

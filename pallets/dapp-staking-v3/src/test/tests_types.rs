@@ -1229,3 +1229,136 @@ fn era_info_manipulation_works() {
     assert_eq!(era_info.unlocking, old_era_info.unlocking - 1);
     assert_eq!(era_info.active_era_locked, old_era_info.active_era_locked);
 }
+
+#[test]
+fn singular_staking_info_basics_are_ok() {
+    let period_number = 3;
+    let period_type = PeriodType::Voting;
+    let mut staking_info = SingularStakingInfo::new(period_number, period_type);
+
+    // Sanity checks
+    assert_eq!(staking_info.period_number(), period_number);
+    assert!(staking_info.is_loyal());
+    assert!(staking_info.total_staked_amount().is_zero());
+    assert!(!SingularStakingInfo::new(period_number, PeriodType::BuildAndEarn).is_loyal());
+
+    // Add some staked amount during `Voting` period
+    let vote_stake_amount_1 = 11;
+    staking_info.stake(vote_stake_amount_1, PeriodType::Voting);
+    assert_eq!(staking_info.total_staked_amount(), vote_stake_amount_1);
+    assert_eq!(
+        staking_info.staked_amount(PeriodType::Voting),
+        vote_stake_amount_1
+    );
+    assert!(staking_info
+        .staked_amount(PeriodType::BuildAndEarn)
+        .is_zero());
+
+    // Add some staked amount during `BuildAndEarn` period
+    let bep_stake_amount_1 = 23;
+    staking_info.stake(bep_stake_amount_1, PeriodType::BuildAndEarn);
+    assert_eq!(
+        staking_info.total_staked_amount(),
+        vote_stake_amount_1 + bep_stake_amount_1
+    );
+    assert_eq!(
+        staking_info.staked_amount(PeriodType::Voting),
+        vote_stake_amount_1
+    );
+    assert_eq!(
+        staking_info.staked_amount(PeriodType::BuildAndEarn),
+        bep_stake_amount_1
+    );
+}
+
+#[test]
+fn singular_staking_info_unstake_during_voting_is_ok() {
+    let period_number = 3;
+    let period_type = PeriodType::Voting;
+    let mut staking_info = SingularStakingInfo::new(period_number, period_type);
+
+    // Prep actions
+    let vote_stake_amount_1 = 11;
+    staking_info.stake(vote_stake_amount_1, PeriodType::Voting);
+
+    // Unstake some amount during `Voting` period, loyalty should remain as expected.
+    let unstake_amount_1 = 5;
+    assert_eq!(
+        staking_info.unstake(unstake_amount_1, PeriodType::Voting),
+        (unstake_amount_1, Balance::zero())
+    );
+    assert_eq!(
+        staking_info.total_staked_amount(),
+        vote_stake_amount_1 - unstake_amount_1
+    );
+    assert!(staking_info.is_loyal());
+
+    // Fully unstake, attempting to undersaturate, and ensure loyalty flag is still true.
+    let remaining_stake = staking_info.total_staked_amount();
+    assert_eq!(
+        staking_info.unstake(remaining_stake + 1, PeriodType::Voting),
+        (remaining_stake, Balance::zero())
+    );
+    assert!(staking_info.total_staked_amount().is_zero());
+    assert!(staking_info.is_loyal());
+}
+
+#[test]
+fn singular_staking_info_unstake_during_bep_is_ok() {
+    let period_number = 3;
+    let period_type = PeriodType::Voting;
+    let mut staking_info = SingularStakingInfo::new(period_number, period_type);
+
+    // Prep actions
+    let vote_stake_amount_1 = 11;
+    staking_info.stake(vote_stake_amount_1, PeriodType::Voting);
+    let bep_stake_amount_1 = 23;
+    staking_info.stake(bep_stake_amount_1, PeriodType::BuildAndEarn);
+
+    // 1st scenario - Unstake some of the amount staked during B&E period
+    let unstake_1 = 5;
+    assert_eq!(
+        staking_info.unstake(5, PeriodType::BuildAndEarn),
+        (Balance::zero(), unstake_1)
+    );
+    assert_eq!(
+        staking_info.total_staked_amount(),
+        vote_stake_amount_1 + bep_stake_amount_1 - unstake_1
+    );
+    assert_eq!(
+        staking_info.staked_amount(PeriodType::Voting),
+        vote_stake_amount_1
+    );
+    assert_eq!(
+        staking_info.staked_amount(PeriodType::BuildAndEarn),
+        bep_stake_amount_1 - unstake_1
+    );
+    assert!(staking_info.is_loyal());
+
+    // 2nd scenario - unstake all of the amount staked during B&E period, and then some more.
+    // The point is to take a chunk from the voting period stake too.
+    let current_total_stake = staking_info.total_staked_amount();
+    let current_bep_stake = staking_info.staked_amount(PeriodType::BuildAndEarn);
+    let voting_stake_overflow = 2;
+    let unstake_2 = current_bep_stake + voting_stake_overflow;
+
+    assert_eq!(
+        staking_info.unstake(unstake_2, PeriodType::BuildAndEarn),
+        (voting_stake_overflow, current_bep_stake)
+    );
+    assert_eq!(
+        staking_info.total_staked_amount(),
+        current_total_stake - unstake_2
+    );
+    assert_eq!(
+        staking_info.staked_amount(PeriodType::Voting),
+        vote_stake_amount_1 - voting_stake_overflow
+    );
+    assert!(staking_info
+        .staked_amount(PeriodType::BuildAndEarn)
+        .is_zero());
+    assert!(
+        !staking_info.is_loyal(),
+        "Loyalty flag should have been removed due to non-zero voting period unstake"
+    );
+}
