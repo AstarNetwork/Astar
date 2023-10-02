@@ -11,6 +11,7 @@ repository.workspace = true
 log = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
+smallvec = { workspace = true }
 
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
@@ -20,7 +21,6 @@ frame-system = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
-pallet-base-fee = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
@@ -70,6 +70,7 @@ pallet-block-reward = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-dapps-staking = { workspace = true }
+pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
@@ -116,7 +117,7 @@ std = [
 	"pallet-chain-extension-dapps-staking/std",
 	"pallet-chain-extension-xvm/std",
 	"pallet-dapps-staking/std",
-	"pallet-base-fee/std",
+	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
 	"pallet-evm-precompile-blake2/std",
@@ -186,6 +187,7 @@ runtime-benchmarks = [
 	"pallet-unified-accounts/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
+	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -216,7 +218,7 @@ try-runtime = [
 	"pallet-proxy/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-preimage/try-runtime",
-	"pallet-base-fee/try-runtime",
+	"pallet-dynamic-evm-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
 ]

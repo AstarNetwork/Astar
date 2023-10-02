@@ -31,8 +31,9 @@ use frame_support::{
         EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
-        constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
-        ConstantMultiplier, IdentityFee, Weight,
+        constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
+        ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
+        WeightToFeePolynomial,
     },
     ConsensusEngineId, PalletId,
 };
@@ -44,6 +45,7 @@ use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
+use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, ConstBool, OpaqueMetadata, H160, H256, U256};
@@ -54,7 +56,7 @@ use sp_runtime::{
         DispatchInfoOf, Dispatchable, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -72,12 +74,9 @@ pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::CurrencyAdapter;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
-
 #[cfg(feature = "std")]
 /// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
 pub fn wasm_binary_unwrap() -> &'static [u8] {
@@ -331,18 +330,81 @@ impl pallet_assets::Config for Runtime {
     type BenchmarkHelper = astar_primitives::benchmarks::AssetsBenchmarkHelper;
 }
 
+// These values are based on the Astar 2.0 Tokenomics Modeling report.
 parameter_types! {
-    pub const TransactionByteFee: Balance = 1;
+    pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 SBY per byte
+    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 SBY per unit of ref time.
+    pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 666_667); // 0.000_015
+    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 10); // 0.1
+    pub MaximumMultiplier: Multiplier = Multiplier::saturating_from_integer(10); // 10
+}
+
+/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
+/// node's balance type.
+///
+/// This should typically create a mapping between the following ranges:
+///   - [0, MAXIMUM_BLOCK_WEIGHT]
+///   - [Balance::min, Balance::max]
+///
+/// Yet, it can be used for any other sort of change to weight-fee. Some examples being:
+///   - Setting it to `0` will essentially disable the weight fee.
+///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
+pub struct WeightToFee;
+impl WeightToFeePolynomial for WeightToFee {
+    type Balance = Balance;
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        let p = WeightFeeFactor::get();
+        let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
+        smallvec::smallvec![WeightToFeeCoefficient {
+            degree: 1,
+            negative: false,
+            coeff_frac: Perbill::from_rational(p % q, q),
+            coeff_integer: p / q,
+        }]
+    }
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-    type WeightToFee = IdentityFee<Balance>;
+    type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
-    type FeeMultiplierUpdate = ();
-    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
+    type FeeMultiplierUpdate = TargetedFeeAdjustment<
+        Self,
+        TargetBlockFullness,
+        AdjustmentVariable,
+        MinimumMultiplier,
+        MaximumMultiplier,
+    >;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionLengthFeeFactor>;
+}
+
+parameter_types! {
+    pub DefaultBaseFeePerGas: U256 = U256::from(1_470_000_000_000_u128);
+    pub MinBaseFeePerGas: U256 = U256::from(800_000_000_000_u128);
+    pub MaxBaseFeePerGas: U256 = U256::from(80_000_000_000_000_u128);
+    pub StepLimitRatio: Perquintill = Perquintill::from_rational(5_u128, 100_000);
+}
+
+/// Simple wrapper for fetching current native transaction fee weight fee multiplier.
+pub struct AdjustmentFactorGetter;
+impl Get<Multiplier> for AdjustmentFactorGetter {
+    fn get() -> Multiplier {
+        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::get()
+    }
+}
+
+impl pallet_dynamic_evm_base_fee::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+    type MinBaseFeePerGas = MinBaseFeePerGas;
+    type MaxBaseFeePerGas = MaxBaseFeePerGas;
+    type AdjustmentFactor = AdjustmentFactorGetter;
+    type WeightFactor = WeightFeeFactor;
+    type StepLimitRatio = StepLimitRatio;
+    type WeightInfo = pallet_dynamic_evm_base_fee::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -477,33 +539,6 @@ impl pallet_xvm::Config for Runtime {
     type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
-    pub DefaultBaseFeePerGas: U256 = (MILLIAST / 1_000_000).into();
-    // At the moment, we don't use dynamic fee calculation for local chain by default
-    pub DefaultElasticity: Permill = Permill::zero();
-}
-
-pub struct BaseFeeThreshold;
-impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
-    fn lower() -> Permill {
-        Permill::zero()
-    }
-    fn ideal() -> Permill {
-        Permill::from_parts(500_000)
-    }
-    fn upper() -> Permill {
-        Permill::from_parts(1_000_000)
-    }
-}
-
-impl pallet_base_fee::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Threshold = BaseFeeThreshold;
-    type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
-    type DefaultElasticity = DefaultElasticity;
-}
-
 /// Current approximation of the gas/s consumption considering
 /// EVM execution over compiled WASM (on 4.4Ghz CPU).
 /// Given the 500ms Weight, from which 75% only are used for transactions,
@@ -552,7 +587,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-    type FeeCalculator = BaseFee;
+    type FeeCalculator = DynamicEvmBaseFee;
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
@@ -891,7 +926,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::DappsStaking(..)
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
-                        | RuntimeCall::BaseFee(..)
+                        | RuntimeCall::DynamicEvmBaseFee(..)
                         // Skip entire Contracts pallet
                         | RuntimeCall::Democracy(..)
                         | RuntimeCall::Council(..)
@@ -989,7 +1024,7 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment,
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,
-        BaseFee: pallet_base_fee,
+        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee,
         Contracts: pallet_contracts,
         Sudo: pallet_sudo,
         Assets: pallet_assets,
@@ -1117,6 +1152,7 @@ mod benches {
         [pallet_dapps_staking, DappsStaking]
         [pallet_block_reward, BlockReward]
         [pallet_ethereum_checked, EthereumChecked]
+        [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
     );
 }
 
@@ -1509,7 +1545,7 @@ impl_runtime_apis! {
         }
 
         fn elasticity() -> Option<Permill> {
-            Some(pallet_base_fee::Elasticity::<Runtime>::get())
+            Some(Permill::zero())
         }
 
         fn gas_limit_multiplier_support() {}

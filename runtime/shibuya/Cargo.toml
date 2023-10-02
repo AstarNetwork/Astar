@@ -41,7 +41,6 @@ pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
-pallet-base-fee = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
@@ -101,6 +100,7 @@ pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-dapps-staking = { workspace = true }
+pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-batch = { workspace = true }
@@ -166,7 +166,7 @@ std = [
 	"pallet-contracts-primitives/std",
 	"pallet-chain-extension-dapps-staking/std",
 	"pallet-chain-extension-xvm/std",
-	"pallet-base-fee/std",
+	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-preimage/std",
 	"pallet-evm/std",
@@ -259,6 +259,7 @@ runtime-benchmarks = [
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
+	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -301,7 +302,7 @@ try-runtime = [
 	"parachain-info/try-runtime",
 	"pallet-xvm/try-runtime",
 	"pallet-preimage/try-runtime",
-	"pallet-base-fee/try-runtime",
+	"pallet-dynamic-evm-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-unified-accounts/try-runtime",
 	"pallet-ethereum-checked/try-runtime",

@@ -5991,7 +5991,6 @@ dependencies = [
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
- "pallet-base-fee",
  "pallet-block-reward",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
@@ -6001,6 +6000,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-dapps-staking",
  "pallet-democracy",
+ "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
  "pallet-ethereum-checked",
  "pallet-evm",
@@ -6033,6 +6033,7 @@ dependencies = [
  "pallet-xvm",
  "parity-scale-codec",
  "scale-info",
+ "smallvec 1.11.0",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -7664,6 +7665,24 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-dynamic-evm-base-fee"
+version = "0.1.0"
+dependencies = [
+ "fp-evm",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "pallet-balances",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -13043,7 +13062,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-base-fee",
  "pallet-block-reward",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
@@ -13054,6 +13072,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-dapps-staking",
  "pallet-democracy",
+ "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
  "pallet-ethereum-checked",
  "pallet-evm",
