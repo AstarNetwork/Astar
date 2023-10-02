@@ -8,12 +8,12 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+astar-primitives = { workspace = true }
 log = { workspace = true }
 num_enum = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-xcm = { workspace = true }
 precompile-utils = { workspace = true }
-astar-primitives = { workspace = true }
 
 # Substrate
 frame-support = { workspace = true }

@@ -18,13 +18,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use astar_primitives::xcm::constants::XCM_SIZE_LIMIT;
 use fp_evm::{PrecompileHandle, PrecompileOutput};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
     pallet_prelude::Weight,
     traits::{ConstU32, Get},
 };
-use astar_primitives::xcm::constants::XCM_SIZE_LIMIT;
 type GetXcmSizeLimit = ConstU32<XCM_SIZE_LIMIT>;
 
 use pallet_evm::{AddressMapping, Precompile};

@@ -7481,6 +7481,7 @@ name = "pallet-evm-precompile-xcm"
 version = "0.9.1"
 dependencies = [
  "assert_matches",
+ "astar-primitives",
  "derive_more",
  "fp-evm",
  "frame-support",
