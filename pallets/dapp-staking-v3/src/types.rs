@@ -238,7 +238,7 @@ pub enum PeriodType {
 
 /// Wrapper type around current `PeriodType` and era number when it's expected to end.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct PeriodTypeAndEndingEra {
+pub struct PeriodInfo {
     pub period_type: PeriodType,
     #[codec(compact)]
     pub ending_era: EraNumber,
@@ -266,9 +266,10 @@ pub struct ProtocolState<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen> {
     pub next_era_start: BlockNumber,
     /// Ongoing period number.
     #[codec(compact)]
+    // TODO: move this under `PeriodInfo`?
     pub period: PeriodNumber,
     /// Ongoing period type and when is it expected to end.
-    pub period_type_and_ending_era: PeriodTypeAndEndingEra,
+    pub period_info: PeriodInfo,
     /// `true` if pallet is in maintenance mode (disabled), `false` otherwise.
     /// TODO: provide some configurable barrier to handle this on the runtime level instead? Make an item for this?
     pub maintenance: bool,
@@ -283,7 +284,7 @@ where
             era: 0,
             next_era_start: BlockNumber::from(1_u32),
             period: 0,
-            period_type_and_ending_era: PeriodTypeAndEndingEra {
+            period_info: PeriodInfo {
                 period_type: PeriodType::Voting,
                 ending_era: 2,
             },
@@ -725,10 +726,12 @@ pub struct SingularStakingInfo {
     bep_staked_amount: Balance,
     /// Period number for which this entry is relevant.
     #[codec(compact)]
+    // TODO: rename to period_number?
     period: PeriodNumber,
     /// Indicates whether a staker is a loyal staker or not.
     loyal_staker: bool,
     /// Indicates whether staker claimed rewards
+    // TODO: isn't this redundant?!
     reward_claimed: bool,
 }
 

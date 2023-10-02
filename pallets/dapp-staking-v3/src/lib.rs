@@ -607,7 +607,7 @@ pub mod pallet {
             let protocol_state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
 
-            // Increase stake amount for the current era & period.
+            // Increase stake amount for the current era & period in staker's ledger
             ledger
                 .add_stake_amount(amount, protocol_state.era, protocol_state.period)
                 .map_err(|err| match err {
@@ -618,6 +618,25 @@ pub mod pallet {
                     AccountLedgerError::NoCapacity => Error::<T>::TooManyStakeChunks,
                     AccountLedgerError::OldEra => Error::<T>::InternalStakeError,
                 })?;
+
+            // Update `StakerInfo` storage with the new stake amount on the specified contract.
+            let new_staking_info = if let Some(mut staking_info) = StakerInfo::<T>::get(&account, &smart_contract) {
+                // TODO: do I need to check for which era this is for? Not sure, but maybe it's safer to do so.
+                // TODO2: revisit this later.
+                ensure!(
+                    staking_info.period_number() == protocol_state.period,
+                    Error::<T>::InternalStakeError
+                );
+                staking_info.stake(amount, protocol_state.period_info.period_type);
+                staking_info
+            } else {
+                let mut staking_info = SingularStakingInfo::new(protocol_state.period);
+                staking_info.stake(amount, protocol_state.period_info.period_type);
+                // TODO: do I need to check if the stake amount is sufficient? Above minimum threshold?
+                staking_info
+            }
+
+            // Update contract's total stake info for this period
 
             // TODO: maybe keep track of pending bonus rewards in the AccountLedger struct?
             // That way it's easy to check if stake can even be called - bonus-rewards should be zero & last staked era should be None or current one.
@@ -633,9 +652,9 @@ pub mod pallet {
         #[pallet::call_index(10)]
         #[pallet::weight(Weight::zero())]
         pub fn unstake(
-            origin: OriginFor<T>,
-            smart_contract: T::SmartContract,
-            #[pallet::compact] amount: Balance,
+            _origin: OriginFor<T>,
+            _smart_contract: T::SmartContract,
+            #[pallet::compact] _amount: Balance,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             Ok(())
