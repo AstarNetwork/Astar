@@ -1012,7 +1012,7 @@ fn add_stake_amount_too_large_amount_fails() {
     // Sanity check
     assert_eq!(
         acc_ledger.add_stake_amount(10, 1, 1),
-        Err(AccountLedgerError::TooLargeStakeAmount)
+        Err(AccountLedgerError::UnavailableStakeFunds)
     );
 
     // Lock some amount, and try to stake more than that
@@ -1022,7 +1022,7 @@ fn add_stake_amount_too_large_amount_fails() {
     assert!(acc_ledger.add_lock_amount(lock_amount, first_era).is_ok());
     assert_eq!(
         acc_ledger.add_stake_amount(lock_amount + 1, first_era, first_period),
-        Err(AccountLedgerError::TooLargeStakeAmount)
+        Err(AccountLedgerError::UnavailableStakeFunds)
     );
 
     // Additional check - have some active stake, and then try to overstake
@@ -1031,12 +1031,12 @@ fn add_stake_amount_too_large_amount_fails() {
         .is_ok());
     assert_eq!(
         acc_ledger.add_stake_amount(3, first_era, first_period),
-        Err(AccountLedgerError::TooLargeStakeAmount)
+        Err(AccountLedgerError::UnavailableStakeFunds)
     );
 }
 
 #[test]
-fn add_stake_amount_exceeding_capacity_fails() {
+fn add_stake_amount_while_exceeding_capacity_fails() {
     get_u32_type!(LockedDummy, 5);
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);

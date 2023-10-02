@@ -157,7 +157,10 @@ impl ExtBuilder {
                 era: 1,
                 next_era_start: BlockNumber::from(101_u32),
                 period: 1,
-                period_type: PeriodType::Voting(16),
+                period_type_and_ending_era: PeriodTypeAndEndingEra {
+                    period_type: PeriodType::Voting,
+                    ending_era: 16,
+                },
                 maintenance: false,
             });
         });

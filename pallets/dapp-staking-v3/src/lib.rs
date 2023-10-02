@@ -193,6 +193,14 @@ pub mod pallet {
         NoUnlockedChunksToClaim,
         /// There are no unlocking chunks available to relock.
         NoUnlockingChunks,
+        /// The amount being staked is too large compared to what's available for staking.
+        UnavailableStakeFunds,
+        /// There are unclaimed rewards remaining from past periods. They should be claimed before staking again.
+        UnclaimedRewardsFromPastPeriods,
+        /// Cannot add additional stake chunks due to size limit.
+        TooManyStakeChunks,
+        /// An unexpected error occured while trying to stake.
+        InternalStakeError,
     }
 
     /// General information about dApp staking protocol state.
@@ -218,6 +226,18 @@ pub mod pallet {
     #[pallet::storage]
     pub type Ledger<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, AccountLedgerFor<T>, ValueQuery>;
+
+    /// Information about how much each staker has staked for each smart contract in some period.
+    #[pallet::storage]
+    pub type StakerInfo<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        Blake2_128Concat,
+        T::SmartContract,
+        SingularStakingInfo,
+        OptionQuery,
+    >;
 
     /// General information about the current era.
     #[pallet::storage]
@@ -586,6 +606,21 @@ pub mod pallet {
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
+
+            // Increase stake amount for the current era & period.
+            ledger
+                .add_stake_amount(amount, protocol_state.era, protocol_state.period)
+                .map_err(|err| match err {
+                    AccountLedgerError::InvalidPeriod => {
+                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                    }
+                    AccountLedgerError::UnavailableStakeFunds => Error::<T>::UnavailableStakeFunds,
+                    AccountLedgerError::NoCapacity => Error::<T>::TooManyStakeChunks,
+                    AccountLedgerError::OldEra => Error::<T>::InternalStakeError,
+                })?;
+
+            // TODO: maybe keep track of pending bonus rewards in the AccountLedger struct?
+            // That way it's easy to check if stake can even be called - bonus-rewards should be zero & last staked era should be None or current one.
 
             // is it voting or b&e period?
             // how much does user have available for staking?

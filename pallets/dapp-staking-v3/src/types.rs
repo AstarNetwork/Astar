@@ -70,7 +70,7 @@ pub enum AccountLedgerError {
     /// Invalid period specified.
     InvalidPeriod,
     /// Stake amount is to large in respect to what's available.
-    TooLargeStakeAmount,
+    UnavailableStakeFunds,
 }
 
 /// Helper struct for easier manipulation of sparse <amount, era> pairs.
@@ -231,11 +231,17 @@ where
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub enum PeriodType {
     /// Period during which the focus is on voting.
-    /// Inner value is the era in which the voting period ends.
-    Voting(#[codec(compact)] EraNumber),
+    Voting,
     /// Period during which dApps and stakers earn rewards.
-    /// Inner value is the era in which the Build&Eearn period ends.
-    BuildAndEarn(#[codec(compact)] EraNumber),
+    BuildAndEarn,
+}
+
+/// Wrapper type around current `PeriodType` and era number when it's expected to end.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+pub struct PeriodTypeAndEndingEra {
+    pub period_type: PeriodType,
+    #[codec(compact)]
+    pub ending_era: EraNumber,
 }
 
 /// Force types to speed up the next era, and even period.
@@ -262,7 +268,7 @@ pub struct ProtocolState<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen> {
     #[codec(compact)]
     pub period: PeriodNumber,
     /// Ongoing period type and when is it expected to end.
-    pub period_type: PeriodType,
+    pub period_type_and_ending_era: PeriodTypeAndEndingEra,
     /// `true` if pallet is in maintenance mode (disabled), `false` otherwise.
     /// TODO: provide some configurable barrier to handle this on the runtime level instead? Make an item for this?
     pub maintenance: bool,
@@ -277,7 +283,10 @@ where
             era: 0,
             next_era_start: BlockNumber::from(1_u32),
             period: 0,
-            period_type: PeriodType::Voting(0),
+            period_type_and_ending_era: PeriodTypeAndEndingEra {
+                period_type: PeriodType::Voting,
+                ending_era: 2,
+            },
             maintenance: false,
         }
     }
@@ -546,7 +555,7 @@ where
         }
 
         if self.stakeable_amount(current_period) < amount {
-            return Err(AccountLedgerError::TooLargeStakeAmount);
+            return Err(AccountLedgerError::UnavailableStakeFunds);
         }
 
         self.staked.add_amount(amount, era)?;
@@ -700,5 +709,107 @@ impl EraInfo {
     /// Update with the new amount that has been removed from unlocking.
     pub fn unlocking_removed(&mut self, amount: Balance) {
         self.unlocking.saturating_reduce(amount);
+    }
+}
+
+/// Information about how much a particular staker staked on a particular smart contract.
+///
+/// Keeps track of amount staked in the 'voting period', as well as 'build&earn period'.
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct SingularStakingInfo {
+    /// Total amount staked during the voting period.
+    #[codec(compact)]
+    vp_staked_amount: Balance,
+    /// Total amount staked during the build&earn period.
+    #[codec(compact)]
+    bep_staked_amount: Balance,
+    /// Period number for which this entry is relevant.
+    #[codec(compact)]
+    period: PeriodNumber,
+    /// Indicates whether a staker is a loyal staker or not.
+    loyal_staker: bool,
+    /// Indicates whether staker claimed rewards
+    reward_claimed: bool,
+}
+
+impl SingularStakingInfo {
+    /// Creates new instance of the struct.
+    ///
+    /// ## Args
+    ///
+    /// `period` - period number for which this entry is relevant.
+    /// `period_type` - period type during which this entry is created.
+    pub fn new(period: PeriodNumber, period_type: PeriodType) -> Self {
+        Self {
+            vp_staked_amount: Balance::zero(),
+            bep_staked_amount: Balance::zero(),
+            period,
+            // Loyalty staking is only possible if stake is first made during the voting period.
+            loyal_staker: period_type == PeriodType::Voting,
+            reward_claimed: false,
+        }
+    }
+
+    /// Stake the specified amount on the contract, for the specified period type.
+    pub fn stake(&mut self, amount: Balance, period_type: PeriodType) {
+        if period_type == PeriodType::Voting {
+            self.vp_staked_amount.saturating_accrue(amount);
+        } else {
+            self.bep_staked_amount.saturating_accrue(amount);
+        }
+    }
+
+    /// Unstakes some of the specified amount from the contract.
+    ///
+    /// In case the `amount` being unstaked is larger than the amount staked in the `voting period`,
+    /// and `voting period` has passed, this will remove the _loyalty_ flag from the staker.
+    ///
+    /// Returns the amount that was unstaked from the `voting period` stake.
+    // TODO: Maybe both unstake values should be returned?
+    pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) -> Balance {
+        // If B&E period stake can cover the unstaking amount, just reduce it.
+        if self.bep_staked_amount >= amount {
+            self.bep_staked_amount.saturating_reduce(amount);
+            Balance::zero()
+        } else {
+            // In case we have to dip into the voting period stake, make sure B&E period stake is reduced first.
+            // Also make sure to remove loyalty flag from the staker.
+            let leftover_amount = amount.saturating_sub(self.bep_staked_amount);
+            self.bep_staked_amount = Balance::zero();
+
+            let vp_staked_amount_snapshot = self.vp_staked_amount;
+            self.vp_staked_amount.saturating_reduce(leftover_amount);
+            self.bep_staked_amount = Balance::zero();
+
+            // It's ok if staker reduces their stake amount during voting period.
+            self.loyal_staker = period_type == PeriodType::Voting;
+
+            // Actual amount that was unstaked
+            vp_staked_amount_snapshot.saturating_sub(self.vp_staked_amount)
+        }
+    }
+
+    /// Total staked on the contract by the user. Both period type stakes are included.
+    pub fn total_staked_amount(&self) -> Balance {
+        self.vp_staked_amount.saturating_add(self.bep_staked_amount)
+    }
+
+    /// Returns amount staked in the specified period.
+    pub fn staked_amount(&self, period_type: PeriodType) -> Balance {
+        if period_type == PeriodType::Voting {
+            self.vp_staked_amount
+        } else {
+            self.bep_staked_amount
+        }
+    }
+
+    /// If `true` staker has staked during voting period and has never reduced their sta
+    pub fn is_loyal(&self) -> bool {
+        self.loyal_staker
+    }
+
+    /// Period for which this entry is relevant.
+    pub fn period_number(&self) -> PeriodNumber {
+        self.period
     }
 }
