@@ -172,10 +172,10 @@ pub struct CurrencyIdToMultiLocation;
 impl sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>> for CurrencyIdToMultiLocation {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
-            a if a == 1u128 => Some(PARENT),
-            a if a == 2u128 => Some(PARACHAIN),
-            a if a == 3u128 => Some(GENERAL_INDEX),
-            a if a == 4u128 => Some(LOCAL_ASSET),
+            1u128 => Some(PARENT),
+            2u128 => Some(PARACHAIN),
+            3u128 => Some(GENERAL_INDEX),
+            4u128 => Some(LOCAL_ASSET),
             _ => None,
         }
     }
@@ -580,6 +580,7 @@ impl ExtBuilder {
         ext
     }
 }
+
 pub(crate) fn events() -> Vec<RuntimeEvent> {
     System::events()
         .into_iter()

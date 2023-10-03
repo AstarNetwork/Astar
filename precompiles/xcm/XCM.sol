@@ -4,6 +4,13 @@ pragma solidity ^0.8.0;
  * @title XCM interface.
  */
 interface XCM {
+
+    // A multilocation is defined by its number of parents and the encoded junctions (interior)
+    struct Multilocation {
+        uint8 parents;
+        bytes[] interior;
+    }
+    
     /**
      * @param asset_id - list of XC20 asset addresses
      * @param asset_amount - list of transfer amounts (must match with asset addresses above)
@@ -108,5 +115,14 @@ interface XCM {
         bool      is_relay,
         uint256   parachain_id,
         uint256   fee_index
+    ) external returns (bool);
+    
+     /**
+     * @param destination - Multilocation of destination chain where to send this call
+     * @param xcm_call - encoded xcm call you want to send to destination
+     **/
+    function send_xcm(
+        Multilocation memory destination,
+        bytes memory xcm_call
     ) external returns (bool);
 }

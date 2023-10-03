@@ -1,4 +1,6 @@
+
 pragma solidity ^0.8.0;
+
 
 /**
  * @title XCM interface.
@@ -14,68 +16,104 @@ interface XCM {
         uint64 ref_time;
         uint64 proof_size;
     }
-    
-    /**
-     * @param asset_id - list of XC20 asset addresses
-     * @param asset_amount - list of transfer amounts (must match with asset addresses above)
-     * @param beneficiary - Multilocation of beneficiary in respect to destination parachain
-     * @param destination - Multilocation of destination chain
-     * @param fee_index - index of asset_id item that should be used as a XCM fee
-     * @return bool confirmation whether the XCM message sent.
-     *
-     * How method check that assets list is valid:
-     * - all assets resolved to multi-location (on runtime level)
-     * - all assets has corresponded amount (lenght of assets list matched to amount list)
-     */
-    function assets_withdraw(
-        address[] calldata asset_id,
-        uint256[] calldata asset_amount,
-        Multilocation memory beneficiary,
+
+    // A MultiAsset is defined by a multilocation and an amount
+    struct EvmMultiAsset {
+        Multilocation location;
+        uint256 amount;
+    }
+
+    // A Currency is defined by address and the amount to be transferred
+    struct Currency {
+        address currencyAddress;
+        uint256 amount;
+    }
+
+    /// Transfer a token through XCM based on its currencyId
+    ///
+    /// @dev The token transfer burns/transfers the corresponding amount before sending
+    /// @param currencyAddress The ERC20 address of the currency we want to transfer
+    /// @param amount The amount of tokens we want to transfer
+    /// @param destination The Multilocation to which we want to send the tokens
+    /// @param weight The weight we want to buy in the destination chain 
+    function transfer(
+        address currencyAddress,
+        uint256 amount,
         Multilocation memory destination,
-        uint256   fee_index
+        WeightV2 memory weight
     ) external returns (bool);
 
-    /**
-     * @param destination - Multilocation of destination chain
-     * @param payment_asset_id - Address of the local asset derivate used to pay for execution in the destination chain
-     * @param payment_amount - amount of payment asset to use for execution payment - should cover cost of XCM instructions + Transact call weight.
-     * @param call - encoded call data (must be decodable by remote chain)
-     * @param transact_weight - max weight that the encoded call is allowed to consume in the destination chain
-     * @return bool confirmation whether the XCM message sent.
-     */
-    function remote_transact(
+    /// Transfer a token through XCM based on its currencyId specifying fee
+    ///
+    /// @dev The token transfer burns/transfers the corresponding amount before sending
+    /// @param currencyAddress The ERC20 address of the currency we want to transfer
+    /// @param amount The amount of tokens we want to transfer
+    /// @param destination The Multilocation to which we want to send the tokens
+    /// @param weight The weight we want to buy in the destination chain 
+    function transfer_with_fee(
+        address currencyAddress,
+        uint256 amount,
+        uint256 fee,
         Multilocation memory destination,
-        address payment_asset_id,
-        uint256 payment_amount,
-        bytes calldata call,
-        WeightV2 memory transact_weight
+        WeightV2 memory weight
     ) external returns (bool);
 
-    /**
-     * @param asset_id - list of XC20 asset addresses
-     * @param asset_amount - list of transfer amounts (must match with asset addresses above)
-     * @param beneficiary - Multilocation of beneficiary in respect to destination parachain
-     * @param destination - Multilocation of destination chain
-     * @param fee_index - index of asset_id item that should be used as a XCM fee
-     * @return A boolean confirming whether the XCM message sent.
-     * How method check that assets list is valid:
-     * - all assets resolved to multi-location (on runtime level)
-     * - all assets has corresponded amount (lenght of assets list matched to amount list)
-     */
-    function assets_reserve_transfer(
-        address[] calldata asset_id,
-        uint256[] calldata asset_amount,
-        Multilocation memory beneficiary,
+    /// Transfer a token through XCM based on its MultiLocation
+    ///
+    /// @dev The token transfer burns/transfers the corresponding amount before sending
+    /// @param asset The asset we want to transfer, defined by its multilocation.
+    /// Currently only Concrete Fungible assets
+    /// @param amount The amount of tokens we want to transfer
+    /// @param destination The Multilocation to which we want to send the tokens
+    /// @param weight The weight we want to buy in the destination chain 
+    function transfer_multiasset(
+        Multilocation memory asset,
+        uint256 amount,
         Multilocation memory destination,
-        uint256   fee_index
+        WeightV2 memory weight
     ) external returns (bool);
 
-    /**
-     * @param destination - Multilocation of destination chain where to send this call
-     * @param xcm_call - encoded xcm call you want to send to destination
-     **/
-    function send_xcm(
+    /// Transfer a token through XCM based on its MultiLocation specifying fee
+    ///
+    /// @dev The token transfer burns/transfers the corresponding amount before sending
+    /// @param asset The asset we want to transfer, defined by its multilocation.
+    /// Currently only Concrete Fungible assets
+    /// @param amount The amount of tokens we want to transfer
+    /// @param destination The Multilocation to which we want to send the tokens
+    /// @param weight The weight we want to buy in the destination chain 
+    function transfer_multiasset_with_fee(
+        Multilocation memory asset,
+        uint256 amount,
+        uint256 fee,
         Multilocation memory destination,
-        bytes memory xcm_call
+        WeightV2 memory weight
+    ) external returns (bool);
+
+    /// Transfer several tokens at once through XCM based on its address specifying fee
+    ///
+    /// @dev The token transfer burns/transfers the corresponding amount before sending
+    /// @param currencies The currencies we want to transfer, defined by their address and amount.
+    /// @param feeItem Which of the currencies to be used as fee
+    /// @param destination The Multilocation to which we want to send the tokens
+    /// @param weight The weight we want to buy in the destination chain 
+    function transfer_multi_currencies(
+        Currency[] memory currencies,
+        uint32 feeItem,
+        Multilocation memory destination,
+        WeightV2 memory weight
+    ) external returns (bool);
+
+    /// Transfer several tokens at once through XCM based on its location specifying fee
+    ///
+    /// @dev The token transfer burns/transfers the corresponding amount before sending
+    /// @param assets The assets we want to transfer, defined by their location and amount.
+    /// @param feeItem Which of the currencies to be used as fee
+    /// @param destination The Multilocation to which we want to send the tokens
+    /// @param weight The weight we want to buy in the destination chain 
+    function transfer_multi_assets(
+        EvmMultiAsset[] memory assets,
+        uint32 feeItem,
+        Multilocation memory destination,
+        WeightV2 memory weight
     ) external returns (bool);
 }
