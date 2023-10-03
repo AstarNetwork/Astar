@@ -61,16 +61,16 @@ pub enum Action {
     AssetsReserveTransferEvm =
         "assets_reserve_transfer(address[],uint256[],address,bool,uint256,uint256)",
     SendXCM = "send_xcm((uint8,bytes[]),bytes)",
-    XtokensTransfer = "transfer(address,uint256,(uint8,bytes[]),uint64)",
-    XtokensTransferWithFee = "transfer_with_fee(address,uint256,uint256,(uint8,bytes[]),uint64)",
+    XtokensTransfer = "transfer(address,uint256,(uint8,bytes[]),(uint64,uint64))",
+    XtokensTransferWithFee =
+        "transfer_with_fee(address,uint256,uint256,(uint8,bytes[]),(uint64,uint64))",
     XtokensTransferMultiasset =
-        "transfer_multiasset((uint8,bytes[]),uint256,(uint8,bytes[]),uint64)",
-    XtokensTransferMultiassetWithFee =
-        "transfer_multiasset_with_fee((uint8,bytes[]),uint256,uint256,(uint8,bytes[]),uint64)",
+        "transfer_multiasset((uint8,bytes[]),uint256,(uint8,bytes[]),(uint64,uint64))",
+    XtokensTransferMultiassetWithFee = "transfer_multiasset_with_fee((uint8,bytes[]),uint256,uint256,(uint8,bytes[]),(uint64,uint64))",
     XtokensTransferMulticurrencies =
-        "transfer_multi_currencies((address,uint256)[],uint32,(uint8,bytes[]),uint64)",
+        "transfer_multi_currencies((address,uint256)[],uint32,(uint8,bytes[]),(uint64,uint64))",
     XtokensTransferMultiassets =
-        "transfet_multi_assets(((uint8,bytes[]),uint256)[],uint32,(uint8,bytes[]),uint64)",
+        "transfet_multi_assets(((uint8,bytes[]),uint256)[],uint32,(uint8,bytes[]),(uint64,uint64))",
 }
 
 /// Dummy H160 address representing native currency (e.g. ASTR or SDN)
