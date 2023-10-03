@@ -1432,13 +1432,13 @@ fn contract_staking_info_series_stake_is_ok() {
 
     // 1st scenario - stake some amount and verify state change
     let era_1 = 3;
-    let period = 5;
     let period_info = PeriodInfo {
+        number: 5,
         period_type: PeriodType::Voting,
         ending_era: 20,
     };
     let amount = 31;
-    series.stake(amount, period_info, era_1, period);
+    assert!(series.stake(amount, period_info, era_1).is_ok());
 
     assert_eq!(series.len(), 1);
     assert!(!series.is_empty());
@@ -1451,10 +1451,11 @@ fn contract_staking_info_series_stake_is_ok() {
 
     // 2nd scenario - stake some more to the same era but different period type, and verify state change.
     let period_info = PeriodInfo {
+        number: 5,
         period_type: PeriodType::BuildAndEarn,
         ending_era: 20,
     };
-    series.stake(amount, period_info, era_1, period);
+    assert!(series.stake(amount, period_info, era_1).is_ok());
     assert_eq!(
         series.len(),
         1,
@@ -1466,7 +1467,7 @@ fn contract_staking_info_series_stake_is_ok() {
 
     // 3rd scenario - stake some more but to the next era, and verify state change. Period remains the same.
     let era_2 = era_1 + 1;
-    series.stake(amount, period_info, era_2, period);
+    assert!(series.stake(amount, period_info, era_2).is_ok());
     assert_eq!(
         series.len(),
         2,
@@ -1483,11 +1484,27 @@ fn contract_staking_info_series_stake_is_ok() {
 
     // 4th scenario - stake in the 3rd era, expect a cleanup
     let era_3 = era_2 + 1;
-    series.stake(amount, period_info, era_3, period);
+    assert!(series.stake(amount, period_info, era_3).is_ok());
     assert_eq!(series.len(), 2, "Old entry should have been cleaned up.");
     let entry_3_1 = *series.get_for_era(era_2).unwrap();
     let entry_3_2 = *series.get_for_era(era_3).unwrap();
     assert_eq!(entry_3_1, entry_2_2);
     assert_eq!(entry_3_2.era(), era_3);
     assert_eq!(entry_3_2.total_staked_amount(), amount * 4);
+
+    // 5th scenario - stake in the 4th era, but also bump the period.
+    let era_4 = era_3 + 30;
+    let period_info = PeriodInfo {
+        number: 6,
+        period_type: PeriodType::BuildAndEarn,
+        ending_era: 50,
+    };
+    assert!(series.stake(amount, period_info, era_4).is_ok());
+    assert_eq!(
+        series.len(),
+        1,
+        "Entries older than 2 eras should have been cleaned up."
+    );
+    let entry_4_1 = *series.get_for_era(era_4).unwrap();
+    assert_eq!(entry_4_1.total_staked_amount(), amount);
 }

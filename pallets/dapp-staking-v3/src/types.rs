@@ -239,6 +239,8 @@ pub enum PeriodType {
 /// Wrapper type around current `PeriodType` and era number when it's expected to end.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct PeriodInfo {
+    #[codec(compact)]
+    pub number: PeriodNumber,
     pub period_type: PeriodType,
     #[codec(compact)]
     pub ending_era: EraNumber,
@@ -264,10 +266,6 @@ pub struct ProtocolState<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen> {
     /// I believe we should utilize `pallet-scheduler` to schedule the next era. Make an item for this.
     #[codec(compact)]
     pub next_era_start: BlockNumber,
-    /// Ongoing period number.
-    #[codec(compact)]
-    // TODO: move this under `PeriodInfo`?
-    pub period: PeriodNumber,
     /// Ongoing period type and when is it expected to end.
     pub period_info: PeriodInfo,
     /// `true` if pallet is in maintenance mode (disabled), `false` otherwise.
@@ -283,8 +281,8 @@ where
         Self {
             era: 0,
             next_era_start: BlockNumber::from(1_u32),
-            period: 0,
             period_info: PeriodInfo {
+                number: 0,
                 period_type: PeriodType::Voting,
                 ending_era: 2,
             },
@@ -781,7 +779,6 @@ impl SingularStakingInfo {
     /// and `voting period` has passed, this will remove the _loyalty_ flag from the staker.
     ///
     /// Returns the amount that was unstaked from the `voting period` stake, and from the `build&earn period` stake.
-    // TODO: remove period_type argument
     pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) -> (Balance, Balance) {
         // If B&E period stake can cover the unstaking amount, just reduce it.
         if self.bep_staked_amount >= amount {
@@ -913,8 +910,6 @@ impl ContractStakingInfo {
 }
 
 /// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
-///
-/// TODO: expand on the explanation here
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct ContractStakingInfoSeries(WeakBoundedVec<ContractStakingInfo, ConstU32<2>>);
 impl ContractStakingInfoSeries {
@@ -934,33 +929,41 @@ impl ContractStakingInfoSeries {
     }
 
     /// Stake the specified `amount` on the contract, for the specified `period_type` and `era`.
-    // TODO: change arguments to something simpler, maybe PeriodInfo? Or the entire ProtocolState?
     pub fn stake(
         &mut self,
         amount: Balance,
         period_info: PeriodInfo,
         era: EraNumber,
-        period: PeriodNumber,
-    ) {
+    ) -> Result<(), ()> {
         // TODO: Maybe this can be optimized to be both more readable & efficient.
-
-        // TODO2: should we keep history for 3 eras maybe?
-        // Not sure yet how tier calculation will work, but it might be beneficial
-        // to have more than 2, just to be on the safer side.
-        // That's the main motivation behind using weak bounded vec, but perhaps it's not needed at all.
-
-        // TODO3: perhaps check that latest entry is older then the new specified era? It's a defensive check but good to have.
-
-        // TODO4: if period doesn't match, it would mean the old value has become invalidated. Need to handle this!
 
         // Get the most relevant `ContractStakingInfo` type
         let mut inner = self.0.clone().into_inner();
+
+        // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
+        if !inner.is_empty() {
+            let last_element = inner[inner.len() - 1];
+            if last_element.era() > era || last_element.period() > period_info.number {
+                return Err(());
+            }
+        }
+
+        // Get the most relevant `ContractStakingInfo` instance
         let last_element_has_matching_era =
             !inner.is_empty() && inner[inner.len() - 1].era() == era;
+        let last_element_has_matching_period =
+            !inner.is_empty() && inner[inner.len() - 1].period() == period_info.number;
+
         let mut staking_info = if last_element_has_matching_era {
             inner.remove(inner.len() - 1)
+        } else if last_element_has_matching_period {
+            // Periods match so we should 'copy' the last element to get correct staking amount
+            let mut temp = inner[inner.len() - 1];
+            temp.era = era;
+            temp
         } else {
-            ContractStakingInfo::new(era, period)
+            // It's a new period, so we need a completely new instance
+            ContractStakingInfo::new(era, period_info.number)
         };
 
         // Update the stake amount and add it to the vector
@@ -970,12 +973,14 @@ impl ContractStakingInfoSeries {
         // Crate new WeakBoundedVec and cleanup old entries
         self.0 = WeakBoundedVec::force_from(inner, None);
         self.cleanup_old_entries(era);
+
+        Ok(())
     }
 
     /// Remove all entries which are older than 2 eras.
     /// We don't care about them anymore since rewards for them should have been calculated already.
     fn cleanup_old_entries(&mut self, era: EraNumber) {
         self.0
-            .retain(|staking_info| staking_info.era() >= era.saturating_sub(2));
+            .retain(|staking_info| staking_info.era() > era.saturating_sub(2));
     }
 }

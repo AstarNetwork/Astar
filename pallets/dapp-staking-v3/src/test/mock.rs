@@ -157,8 +157,8 @@ impl ExtBuilder {
             pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
                 era: 1,
                 next_era_start: BlockNumber::from(101_u32),
-                period: 1,
                 period_info: PeriodInfo {
+                    number: 1,
                     period_type: PeriodType::Voting,
                     ending_era: 16,
                 },
@@ -200,5 +200,5 @@ pub(crate) fn advance_to_era(era: EraNumber) {
 /// Function has no effect if period is already passed.
 pub(crate) fn advance_to_period(period: PeriodNumber) {
     // TODO: Properly implement this later when additional logic has been implemented
-    ActiveProtocolState::<Test>::mutate(|state| state.period = period);
+    ActiveProtocolState::<Test>::mutate(|state| state.period_info.number = period);
 }

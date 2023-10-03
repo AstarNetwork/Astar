@@ -501,7 +501,7 @@ pub mod pallet {
             let state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
 
-            let available_for_unlocking = ledger.unlockable_amount(state.period);
+            let available_for_unlocking = ledger.unlockable_amount(state.period_info.number);
             let amount_to_unlock = available_for_unlocking.min(amount);
 
             // Ensure we unlock everything if remaining amount is below threshold.
@@ -510,7 +510,7 @@ pub mod pallet {
                 .saturating_sub(amount_to_unlock);
             let amount_to_unlock = if remaining_amount < T::MinimumLockedAmount::get() {
                 ensure!(
-                    ledger.active_stake(state.period).is_zero(),
+                    ledger.active_stake(state.period_info.number).is_zero(),
                     Error::<T>::RemainingStakePreventsFullUnlock
                 );
                 ledger.active_locked_amount()
@@ -630,7 +630,11 @@ pub mod pallet {
             // 1.
             // Increase stake amount for the current era & period in staker's ledger
             ledger
-                .add_stake_amount(amount, protocol_state.era, protocol_state.period)
+                .add_stake_amount(
+                    amount,
+                    protocol_state.era,
+                    protocol_state.period_info.number,
+                )
                 .map_err(|err| match err {
                     AccountLedgerError::InvalidPeriod => {
                         Error::<T>::UnclaimedRewardsFromPastPeriods
@@ -647,7 +651,7 @@ pub mod pallet {
                     // TODO: do I need to check for which period this is for? Not sure, but maybe it's safer to do so.
                     // TODO2: revisit this later.
                     ensure!(
-                        staking_info.period_number() == protocol_state.period,
+                        staking_info.period_number() == protocol_state.period_info.number,
                         Error::<T>::InternalStakeError
                     );
                     staking_info.stake(amount, protocol_state.period_info.period_type);
@@ -658,7 +662,7 @@ pub mod pallet {
                         Error::<T>::InsufficientStakeAmount
                     );
                     let mut staking_info = SingularStakingInfo::new(
-                        protocol_state.period,
+                        protocol_state.period_info.number,
                         protocol_state.period_info.period_type,
                     );
                     staking_info.stake(amount, protocol_state.period_info.period_type);
@@ -668,11 +672,11 @@ pub mod pallet {
             // 3.
             // Update `ContractStake` storage with the new stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
-            contract_stake_info.stake(
-                amount,
-                protocol_state.period_info,
-                protocol_state.era,
-                protocol_state.period,
+            ensure!(
+                contract_stake_info
+                    .stake(amount, protocol_state.period_info, protocol_state.era)
+                    .is_ok(),
+                Error::<T>::InternalStakeError
             );
 
             // 4.

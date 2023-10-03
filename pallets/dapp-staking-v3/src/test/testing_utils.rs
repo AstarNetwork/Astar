@@ -232,7 +232,7 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
     let expected_unlock_amount = {
         // Cannot unlock more than is available
         let possible_unlock_amount = pre_ledger
-            .unlockable_amount(pre_snapshot.active_protocol_state.period)
+            .unlockable_amount(pre_snapshot.active_protocol_state.period_info.number)
             .min(amount);
 
         // When unlocking would take account below the minimum lock threshold, unlock everything
@@ -256,7 +256,7 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
     let post_snapshot = MemorySnapshot::new();
 
     // Verify ledger is as expected
-    let period_number = pre_snapshot.active_protocol_state.period;
+    let period_number = pre_snapshot.active_protocol_state.period_info.number;
     let post_ledger = &post_snapshot.ledger[&account];
     assert_eq!(
         pre_ledger.active_locked_amount(),

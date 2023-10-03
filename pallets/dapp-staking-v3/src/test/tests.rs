@@ -448,7 +448,7 @@ fn unlock_with_amount_higher_than_avaiable_is_ok() {
                 }])
                 .expect("Only one chunk so creation should succeed."),
             );
-            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period);
+            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period_info.number);
         });
 
         // Try to unlock more than is available, due to active staked amount
@@ -456,7 +456,7 @@ fn unlock_with_amount_higher_than_avaiable_is_ok() {
 
         // Ensure there is no effect of staked amount once we move to the following period
         assert_lock(account, lock_amount - stake_amount); // restore previous state
-        advance_to_period(ActiveProtocolState::<Test>::get().period + 1);
+        advance_to_period(ActiveProtocolState::<Test>::get().period_info.number + 1);
         assert_unlock(account, lock_amount - stake_amount + 1);
     })
 }
@@ -512,7 +512,7 @@ fn unlock_everything_with_active_stake_fails() {
                 }])
                 .expect("Only one chunk so creation should succeed."),
             );
-            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period);
+            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period_info.number);
         });
 
         // Try to unlock more than is available, due to active staked amount
@@ -547,7 +547,7 @@ fn unlock_with_zero_amount_fails() {
                 }])
                 .expect("Only one chunk so creation should succeed."),
             );
-            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period);
+            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period_info.number);
         });
 
         // Try to unlock anything, expect zero amount error
