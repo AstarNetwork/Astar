@@ -128,4 +128,13 @@ interface XCM {
         Multilocation memory destination,
         WeightV2 memory weight
     ) external returns (bool);
+
+    /**
+     * @param destination - Multilocation of destination chain where to send this call
+     * @param xcm_call - encoded xcm call you want to send to destination
+     **/
+    function send_xcm(
+        Multilocation memory destination,
+        bytes memory xcm_call
+    ) external returns (bool);
 }
