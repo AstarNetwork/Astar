@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::{pallet_prelude::*, BoundedVec};
+use frame_support::{pallet_prelude::*, BoundedVec, WeakBoundedVec};
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{
@@ -692,6 +692,12 @@ pub struct EraInfo {
     /// This amount still counts into locked amount.
     #[codec(compact)]
     pub unlocking: Balance,
+    /// How much balance is staked from the voting period.
+    #[codec(compact)]
+    pub vp_staked: Balance,
+    /// How much balance is staked from the build&earn period.
+    #[codec(compact)]
+    pub bep_staked: Balance,
 }
 
 impl EraInfo {
@@ -710,6 +716,14 @@ impl EraInfo {
     /// Update with the new amount that has been removed from unlocking.
     pub fn unlocking_removed(&mut self, amount: Balance) {
         self.unlocking.saturating_reduce(amount);
+    }
+
+    /// Add the specified `amount` to the appropriate stake amount, based on the `PeriodType`.
+    pub fn add_stake_amount(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.vp_staked.saturating_accrue(amount),
+            PeriodType::BuildAndEarn => self.bep_staked.saturating_accrue(amount),
+        }
     }
 }
 
@@ -755,10 +769,9 @@ impl SingularStakingInfo {
 
     /// Stake the specified amount on the contract, for the specified period type.
     pub fn stake(&mut self, amount: Balance, period_type: PeriodType) {
-        if period_type == PeriodType::Voting {
-            self.vp_staked_amount.saturating_accrue(amount);
-        } else {
-            self.bep_staked_amount.saturating_accrue(amount);
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount.saturating_accrue(amount),
+            PeriodType::BuildAndEarn => self.bep_staked_amount.saturating_accrue(amount),
         }
     }
 
@@ -768,6 +781,7 @@ impl SingularStakingInfo {
     /// and `voting period` has passed, this will remove the _loyalty_ flag from the staker.
     ///
     /// Returns the amount that was unstaked from the `voting period` stake, and from the `build&earn period` stake.
+    // TODO: remove period_type argument
     pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) -> (Balance, Balance) {
         // If B&E period stake can cover the unstaking amount, just reduce it.
         if self.bep_staked_amount >= amount {
@@ -803,10 +817,9 @@ impl SingularStakingInfo {
 
     /// Returns amount staked in the specified period.
     pub fn staked_amount(&self, period_type: PeriodType) -> Balance {
-        if period_type == PeriodType::Voting {
-            self.vp_staked_amount
-        } else {
-            self.bep_staked_amount
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount,
+            PeriodType::BuildAndEarn => self.bep_staked_amount,
         }
     }
 
@@ -818,5 +831,151 @@ impl SingularStakingInfo {
     /// Period for which this entry is relevant.
     pub fn period_number(&self) -> PeriodNumber {
         self.period
+    }
+}
+
+/// Information about how much was staked on a contract during a specific era or period.
+///
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+pub struct ContractStakingInfo {
+    #[codec(compact)]
+    vp_staked_amount: Balance,
+    #[codec(compact)]
+    bep_staked_amount: Balance,
+    #[codec(compact)]
+    era: EraNumber,
+    #[codec(compact)]
+    period: PeriodNumber,
+}
+
+impl ContractStakingInfo {
+    /// Create new instance of `ContractStakingInfo` with specified era & period.
+    /// These parameters are immutable.
+    ///
+    /// Staked amounts are initialized to zero and can be increased or decreased.
+    pub fn new(era: EraNumber, period: PeriodNumber) -> Self {
+        Self {
+            vp_staked_amount: Balance::zero(),
+            bep_staked_amount: Balance::zero(),
+            era,
+            period,
+        }
+    }
+
+    /// Total staked amount on the contract.
+    pub fn total_staked_amount(&self) -> Balance {
+        self.vp_staked_amount.saturating_add(self.bep_staked_amount)
+    }
+
+    /// Staked amount of the specified period type.
+    ///
+    /// Note:
+    /// It is possible that voting period stake is reduced during the build&earn period.
+    /// This is because stakers can unstake their funds during the build&earn period, which can
+    /// chip away from the voting period stake.
+    pub fn staked_amount(&self, period_type: PeriodType) -> Balance {
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount,
+            PeriodType::BuildAndEarn => self.bep_staked_amount,
+        }
+    }
+
+    /// Era for which this entry is relevant.
+    pub fn era(&self) -> EraNumber {
+        self.era
+    }
+
+    /// Period for which this entry is relevant.
+    pub fn period(&self) -> PeriodNumber {
+        self.period
+    }
+
+    /// Stake specified `amount` on the contract, for the specified `period_type`.
+    pub fn stake(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount.saturating_accrue(amount),
+            PeriodType::BuildAndEarn => self.bep_staked_amount.saturating_accrue(amount),
+        }
+    }
+
+    /// Unstake specified `amount` from the contract, for the specified `period_type`.
+    pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount.saturating_reduce(amount),
+            PeriodType::BuildAndEarn => self.bep_staked_amount.saturating_reduce(amount),
+        }
+    }
+
+    /// `true` if no stake exists, `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        self.vp_staked_amount.is_zero() && self.bep_staked_amount.is_zero()
+    }
+}
+
+/// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
+///
+/// TODO: expand on the explanation here
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct ContractStakingInfoSeries(WeakBoundedVec<ContractStakingInfo, ConstU32<2>>);
+impl ContractStakingInfoSeries {
+    /// Length of the series.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// `true` if series is empty, `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// Returns the `ContractStakingInfo` type for the specified era, if it exists.
+    pub fn get_for_era(&self, era: EraNumber) -> Option<&ContractStakingInfo> {
+        self.0.iter().find(|staking_info| staking_info.era() == era)
+    }
+
+    /// Stake the specified `amount` on the contract, for the specified `period_type` and `era`.
+    // TODO: change arguments to something simpler, maybe PeriodInfo? Or the entire ProtocolState?
+    pub fn stake(
+        &mut self,
+        amount: Balance,
+        period_info: PeriodInfo,
+        era: EraNumber,
+        period: PeriodNumber,
+    ) {
+        // TODO: Maybe this can be optimized to be both more readable & efficient.
+
+        // TODO2: should we keep history for 3 eras maybe?
+        // Not sure yet how tier calculation will work, but it might be beneficial
+        // to have more than 2, just to be on the safer side.
+        // That's the main motivation behind using weak bounded vec, but perhaps it's not needed at all.
+
+        // TODO3: perhaps check that latest entry is older then the new specified era? It's a defensive check but good to have.
+
+        // TODO4: if period doesn't match, it would mean the old value has become invalidated. Need to handle this!
+
+        // Get the most relevant `ContractStakingInfo` type
+        let mut inner = self.0.clone().into_inner();
+        let last_element_has_matching_era =
+            !inner.is_empty() && inner[inner.len() - 1].era() == era;
+        let mut staking_info = if last_element_has_matching_era {
+            inner.remove(inner.len() - 1)
+        } else {
+            ContractStakingInfo::new(era, period)
+        };
+
+        // Update the stake amount and add it to the vector
+        staking_info.stake(amount, period_info.period_type);
+        inner.push(staking_info);
+
+        // Crate new WeakBoundedVec and cleanup old entries
+        self.0 = WeakBoundedVec::force_from(inner, None);
+        self.cleanup_old_entries(era);
+    }
+
+    /// Remove all entries which are older than 2 eras.
+    /// We don't care about them anymore since rewards for them should have been calculated already.
+    fn cleanup_old_entries(&mut self, era: EraNumber) {
+        self.0
+            .retain(|staking_info| staking_info.era() >= era.saturating_sub(2));
     }
 }

@@ -114,6 +114,10 @@ pub mod pallet {
         /// Maximum number of staking chunks that can exist per account at a time.
         #[pallet::constant]
         type MaxStakingChunks: Get<u32>;
+
+        /// Minimum amount staker can stake on a contract.
+        #[pallet::constant]
+        type MinimumStakeAmount: Get<Balance>;
     }
 
     #[pallet::event]
@@ -160,6 +164,12 @@ pub mod pallet {
             account: T::AccountId,
             amount: Balance,
         },
+        /// Account has staked some amount on a smart contract.
+        Stake {
+            account: T::AccountId,
+            smart_contract: T::SmartContract,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -201,6 +211,8 @@ pub mod pallet {
         TooManyStakeChunks,
         /// An unexpected error occured while trying to stake.
         InternalStakeError,
+        /// Total staked amount on contract is below the minimum required value.
+        InsufficientStakeAmount,
     }
 
     /// General information about dApp staking protocol state.
@@ -238,6 +250,11 @@ pub mod pallet {
         SingularStakingInfo,
         OptionQuery,
     >;
+
+    /// Information about how much has been staked on a smart contract in some era or period.
+    #[pallet::storage]
+    pub type ContractStake<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::SmartContract, ContractStakingInfoSeries, ValueQuery>;
 
     /// General information about the current era.
     #[pallet::storage]
@@ -588,7 +605,10 @@ pub mod pallet {
             Ok(())
         }
 
-        /// TODO
+        /// Stake the specified amount on a smart contract.
+        /// The `amount` specified **must** be available for staking, otherwise the call will fail.
+        ///
+        /// Depending on the period type, appropriate stake amount will be updated.
         #[pallet::call_index(9)]
         #[pallet::weight(Weight::zero())]
         pub fn stake(
@@ -607,6 +627,7 @@ pub mod pallet {
             let protocol_state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
 
+            // 1.
             // Increase stake amount for the current era & period in staker's ledger
             ledger
                 .add_stake_amount(amount, protocol_state.era, protocol_state.period)
@@ -619,24 +640,58 @@ pub mod pallet {
                     AccountLedgerError::OldEra => Error::<T>::InternalStakeError,
                 })?;
 
+            // 2.
             // Update `StakerInfo` storage with the new stake amount on the specified contract.
-            let new_staking_info = if let Some(mut staking_info) = StakerInfo::<T>::get(&account, &smart_contract) {
-                // TODO: do I need to check for which era this is for? Not sure, but maybe it's safer to do so.
-                // TODO2: revisit this later.
-                ensure!(
-                    staking_info.period_number() == protocol_state.period,
-                    Error::<T>::InternalStakeError
-                );
-                staking_info.stake(amount, protocol_state.period_info.period_type);
-                staking_info
-            } else {
-                let mut staking_info = SingularStakingInfo::new(protocol_state.period);
-                staking_info.stake(amount, protocol_state.period_info.period_type);
-                // TODO: do I need to check if the stake amount is sufficient? Above minimum threshold?
-                staking_info
-            }
+            let new_staking_info =
+                if let Some(mut staking_info) = StakerInfo::<T>::get(&account, &smart_contract) {
+                    // TODO: do I need to check for which period this is for? Not sure, but maybe it's safer to do so.
+                    // TODO2: revisit this later.
+                    ensure!(
+                        staking_info.period_number() == protocol_state.period,
+                        Error::<T>::InternalStakeError
+                    );
+                    staking_info.stake(amount, protocol_state.period_info.period_type);
+                    staking_info
+                } else {
+                    ensure!(
+                        amount >= T::MinimumStakeAmount::get(),
+                        Error::<T>::InsufficientStakeAmount
+                    );
+                    let mut staking_info = SingularStakingInfo::new(
+                        protocol_state.period,
+                        protocol_state.period_info.period_type,
+                    );
+                    staking_info.stake(amount, protocol_state.period_info.period_type);
+                    staking_info
+                };
 
-            // Update contract's total stake info for this period
+            // 3.
+            // Update `ContractStake` storage with the new stake amount on the specified contract.
+            let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
+            contract_stake_info.stake(
+                amount,
+                protocol_state.period_info,
+                protocol_state.era,
+                protocol_state.period,
+            );
+
+            // 4.
+            // Update total staked amount in this era.
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.add_stake_amount(amount, protocol_state.period_info.period_type);
+            });
+
+            // 5.
+            // Update remaining storage entries
+            Self::update_ledger(&account, ledger);
+            StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
+            ContractStake::<T>::insert(&smart_contract, contract_stake_info);
+
+            Self::deposit_event(Event::<T>::Stake {
+                account,
+                smart_contract,
+                amount,
+            });
 
             // TODO: maybe keep track of pending bonus rewards in the AccountLedger struct?
             // That way it's easy to check if stake can even be called - bonus-rewards should be zero & last staked era should be None or current one.

@@ -1362,3 +1362,132 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         "Loyalty flag should have been removed due to non-zero voting period unstake"
     );
 }
+
+#[test]
+fn contract_stake_info_is_ok() {
+    let period = 2;
+    let era = 3;
+    let mut contract_stake_info = ContractStakingInfo::new(era, period);
+
+    // Sanity check
+    assert_eq!(contract_stake_info.period(), period);
+    assert_eq!(contract_stake_info.era(), era);
+    assert!(contract_stake_info.total_staked_amount().is_zero());
+    assert!(contract_stake_info.is_empty());
+
+    // 1st scenario - Add some staked amount to the voting period
+    let vote_stake_amount_1 = 11;
+    contract_stake_info.stake(vote_stake_amount_1, PeriodType::Voting);
+    assert_eq!(
+        contract_stake_info.total_staked_amount(),
+        vote_stake_amount_1
+    );
+    assert_eq!(
+        contract_stake_info.staked_amount(PeriodType::Voting),
+        vote_stake_amount_1
+    );
+    assert!(!contract_stake_info.is_empty());
+
+    // 2nd scenario - add some staked amount to the B&E period
+    let bep_stake_amount_1 = 23;
+    contract_stake_info.stake(bep_stake_amount_1, PeriodType::BuildAndEarn);
+    assert_eq!(
+        contract_stake_info.total_staked_amount(),
+        vote_stake_amount_1 + bep_stake_amount_1
+    );
+    assert_eq!(
+        contract_stake_info.staked_amount(PeriodType::Voting),
+        vote_stake_amount_1
+    );
+    assert_eq!(
+        contract_stake_info.staked_amount(PeriodType::BuildAndEarn),
+        bep_stake_amount_1
+    );
+
+    // 3rd scenario - reduce some of the staked amount from both periods and verify it's as expected.
+    // For the voting period, we want to unstake it completly, and then some more.
+    let reduction = vote_stake_amount_1 + 2;
+    contract_stake_info.unstake(reduction, PeriodType::Voting);
+    contract_stake_info.unstake(reduction, PeriodType::BuildAndEarn);
+    assert_eq!(
+        contract_stake_info.total_staked_amount(),
+        bep_stake_amount_1 - reduction
+    );
+    assert!(contract_stake_info
+        .staked_amount(PeriodType::Voting)
+        .is_zero());
+    assert_eq!(
+        contract_stake_info.staked_amount(PeriodType::BuildAndEarn),
+        bep_stake_amount_1 - reduction
+    );
+}
+
+#[test]
+fn contract_staking_info_series_stake_is_ok() {
+    let mut series = ContractStakingInfoSeries::default();
+
+    // Sanity check
+    assert!(series.is_empty());
+    assert!(series.len().is_zero());
+
+    // 1st scenario - stake some amount and verify state change
+    let era_1 = 3;
+    let period = 5;
+    let period_info = PeriodInfo {
+        period_type: PeriodType::Voting,
+        ending_era: 20,
+    };
+    let amount = 31;
+    series.stake(amount, period_info, era_1, period);
+
+    assert_eq!(series.len(), 1);
+    assert!(!series.is_empty());
+    assert!(series.get_for_era(era_1 - 1).is_none());
+    assert!(series.get_for_era(era_1 + 1).is_none());
+
+    let entry_1_1 = *series.get_for_era(era_1).unwrap();
+    assert_eq!(entry_1_1.era(), era_1);
+    assert_eq!(entry_1_1.total_staked_amount(), amount);
+
+    // 2nd scenario - stake some more to the same era but different period type, and verify state change.
+    let period_info = PeriodInfo {
+        period_type: PeriodType::BuildAndEarn,
+        ending_era: 20,
+    };
+    series.stake(amount, period_info, era_1, period);
+    assert_eq!(
+        series.len(),
+        1,
+        "No new entry should be created since it's the same era."
+    );
+    let entry_1_2 = *series.get_for_era(era_1).unwrap();
+    assert_eq!(entry_1_2.era(), era_1);
+    assert_eq!(entry_1_2.total_staked_amount(), amount * 2);
+
+    // 3rd scenario - stake some more but to the next era, and verify state change. Period remains the same.
+    let era_2 = era_1 + 1;
+    series.stake(amount, period_info, era_2, period);
+    assert_eq!(
+        series.len(),
+        2,
+        "New entry should be created since it's the next era."
+    );
+    let entry_2_1 = *series.get_for_era(era_1).unwrap();
+    assert_eq!(
+        entry_2_1, entry_1_2,
+        "First entry should not be modified at all."
+    );
+    let entry_2_2 = *series.get_for_era(era_2).unwrap();
+    assert_eq!(entry_2_2.era(), era_2);
+    assert_eq!(entry_2_2.total_staked_amount(), amount * 3);
+
+    // 4th scenario - stake in the 3rd era, expect a cleanup
+    let era_3 = era_2 + 1;
+    series.stake(amount, period_info, era_3, period);
+    assert_eq!(series.len(), 2, "Old entry should have been cleaned up.");
+    let entry_3_1 = *series.get_for_era(era_2).unwrap();
+    let entry_3_2 = *series.get_for_era(era_3).unwrap();
+    assert_eq!(entry_3_1, entry_2_2);
+    assert_eq!(entry_3_2.era(), era_3);
+    assert_eq!(entry_3_2.total_staked_amount(), amount * 4);
+}
