@@ -49,6 +49,7 @@ interface XCM {
     /// @dev The token transfer burns/transfers the corresponding amount before sending
     /// @param currencyAddress The ERC20 address of the currency we want to transfer
     /// @param amount The amount of tokens we want to transfer
+    /// @param fee The amount to be spent to pay for execution in destination chain
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the 
     /// weightlimit to Unlimited, you should use the value 0 for ref_time
@@ -82,6 +83,7 @@ interface XCM {
     /// @param asset The asset we want to transfer, defined by its multilocation.
     /// Currently only Concrete Fungible assets
     /// @param amount The amount of tokens we want to transfer
+    /// @param fee The amount to be spent to pay for execution in destination chain
     /// @param destination The Multilocation to which we want to send the tokens
     /// @param weight The weight we want to buy in the destination chain, to set the 
     /// weightlimit to Unlimited, you should use the value 0 for ref_time

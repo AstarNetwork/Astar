@@ -7478,7 +7478,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-xcm"
-version = "0.9.1"
+version = "0.10.0"
 dependencies = [
  "assert_matches",
  "astar-primitives",

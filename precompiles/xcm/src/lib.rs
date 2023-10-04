@@ -443,7 +443,7 @@ where
 
     fn send_xcm(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(3)?;
+        input.expect_arguments(2)?;
 
         // Raw call arguments
         let dest: MultiLocation = input.read::<MultiLocation>()?;
@@ -475,7 +475,7 @@ where
 
     fn transfer(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(5)?;
+        input.expect_arguments(4)?;
 
         // Read call arguments
         let currency_address = input.read::<Address>()?;
@@ -518,7 +518,7 @@ where
 
     fn transfer_with_fee(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(6)?;
+        input.expect_arguments(5)?;
 
         // Read call arguments
         let currency_address = input.read::<Address>()?;
@@ -567,7 +567,7 @@ where
 
     fn transfer_multiasset(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(5)?;
+        input.expect_arguments(4)?;
 
         // Read call arguments
         let asset_location = input.read::<MultiLocation>()?;
@@ -611,7 +611,7 @@ where
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(6)?;
+        input.expect_arguments(5)?;
 
         // Read call arguments
         let asset_location = input.read::<MultiLocation>()?;
@@ -660,7 +660,7 @@ where
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(5)?;
+        input.expect_arguments(4)?;
 
         let currencies: Vec<_> = input
             .read::<BoundedVec<Currency, GetMaxAssets<Runtime>>>()?
@@ -716,7 +716,7 @@ where
 
     fn transfer_multi_assets(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
-        input.expect_arguments(5)?;
+        input.expect_arguments(4)?;
 
         let assets: Vec<_> = input
             .read::<BoundedVec<EvmMultiAsset, GetMaxAssets<Runtime>>>()?
