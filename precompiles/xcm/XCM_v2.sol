@@ -18,7 +18,7 @@ interface XCM {
     }
 
     // A MultiAsset is defined by a multilocation and an amount
-    struct EvmMultiAsset {
+    struct MultiAsset {
         Multilocation location;
         uint256 amount;
     }
@@ -29,15 +29,14 @@ interface XCM {
         uint256 amount;
     }
 
-    /// Transfer a token through XCM based on its currencyId
+    /// Transfer a token through XCM based on its address
     ///
     /// @dev The token transfer burns/transfers the corresponding amount before sending
     /// @param currencyAddress The ERC20 address of the currency we want to transfer
     /// @param amount The amount of tokens we want to transfer
     /// @param destination The Multilocation to which we want to send the tokens
-    /// @param weight The weight we want to buy in the destination chain, to provide
-    /// unlimited weight, you should use maximum u64 value (i.e. 18446744073709551615 )
-    /// for ref_time
+    /// @param weight The weight we want to buy in the destination chain, to set the 
+    /// weightlimit to Unlimited, you should use the value 0 for ref_time
     function transfer(
         address currencyAddress,
         uint256 amount,
@@ -45,15 +44,14 @@ interface XCM {
         WeightV2 memory weight
     ) external returns (bool);
 
-    /// Transfer a token through XCM based on its currencyId specifying fee
+    /// Transfer a token through XCM based on its address specifying fee
     ///
     /// @dev The token transfer burns/transfers the corresponding amount before sending
     /// @param currencyAddress The ERC20 address of the currency we want to transfer
     /// @param amount The amount of tokens we want to transfer
     /// @param destination The Multilocation to which we want to send the tokens
-    /// @param weight The weight we want to buy in the destination chain, to provide
-    /// unlimited weight, you should use maximum u64 value (i.e. 18446744073709551615 )
-    /// for ref_time
+    /// @param weight The weight we want to buy in the destination chain, to set the 
+    /// weightlimit to Unlimited, you should use the value 0 for ref_time
     function transfer_with_fee(
         address currencyAddress,
         uint256 amount,
@@ -69,9 +67,8 @@ interface XCM {
     /// Currently only Concrete Fungible assets
     /// @param amount The amount of tokens we want to transfer
     /// @param destination The Multilocation to which we want to send the tokens
-    /// @param weight The weight we want to buy in the destination chain, to provide
-    /// unlimited weight, you should use maximum u64 value (i.e. 18446744073709551615 )
-    /// for ref_time
+    /// @param weight The weight we want to buy in the destination chain, to set the 
+    /// weightlimit to Unlimited, you should use the value 0 for ref_time
     function transfer_multiasset(
         Multilocation memory asset,
         uint256 amount,
@@ -86,9 +83,8 @@ interface XCM {
     /// Currently only Concrete Fungible assets
     /// @param amount The amount of tokens we want to transfer
     /// @param destination The Multilocation to which we want to send the tokens
-    /// @param weight The weight we want to buy in the destination chain, to provide
-    /// unlimited weight, you should use maximum u64 value (i.e. 18446744073709551615 )
-    /// for ref_time
+    /// @param weight The weight we want to buy in the destination chain, to set the 
+    /// weightlimit to Unlimited, you should use the value 0 for ref_time
     function transfer_multiasset_with_fee(
         Multilocation memory asset,
         uint256 amount,
@@ -103,9 +99,8 @@ interface XCM {
     /// @param currencies The currencies we want to transfer, defined by their address and amount.
     /// @param feeItem Which of the currencies to be used as fee
     /// @param destination The Multilocation to which we want to send the tokens
-    /// @param weight The weight we want to buy in the destination chain, to provide
-    /// unlimited weight, you should use maximum u64 value (i.e. 18446744073709551615 )
-    /// for ref_time
+    /// @param weight The weight we want to buy in the destination chain, to set the 
+    /// weightlimit to Unlimited, you should use the value 0 for ref_time
     function transfer_multi_currencies(
         Currency[] memory currencies,
         uint32 feeItem,
@@ -119,11 +114,10 @@ interface XCM {
     /// @param assets The assets we want to transfer, defined by their location and amount.
     /// @param feeItem Which of the currencies to be used as fee
     /// @param destination The Multilocation to which we want to send the tokens
-    /// @param weight The weight we want to buy in the destination chain, to provide
-    /// unlimited weight, you should use maximum u64 value (i.e. 18446744073709551615 )
-    /// for ref_time
+    /// @param weight The weight we want to buy in the destination chain, to set the 
+    /// weightlimit to Unlimited, you should use the value 0 for ref_time
     function transfer_multi_assets(
-        EvmMultiAsset[] memory assets,
+        MultiAsset[] memory assets,
         uint32 feeItem,
         Multilocation memory destination,
         WeightV2 memory weight

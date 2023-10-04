@@ -76,6 +76,7 @@ pub enum Action {
 /// Dummy H160 address representing native currency (e.g. ASTR or SDN)
 const NATIVE_ADDRESS: H160 = H160::zero();
 
+/// Default proof_size of 256KB
 const DEFAULT_PROOF_SIZE: u64 = 1024 * 256;
 
 pub type XBalanceOf<Runtime> = <Runtime as orml_xtokens::Config>::Balance;
@@ -487,7 +488,7 @@ where
 
         let asset_id = Runtime::address_to_asset_id(currency_address.into())
             .ok_or(revert("Failed to resolve fee asset id from address"))?;
-        let dest_weight_limit = if weight.is_max() {
+        let dest_weight_limit = if weight.is_zero() {
             WeightLimit::Unlimited
         } else {
             WeightLimit::Limited(weight.get_weight())
@@ -535,7 +536,7 @@ where
 
         let asset_id = Runtime::address_to_asset_id(currency_address.into())
             .ok_or(revert("Failed to resolve fee asset id from address"))?;
-        let dest_weight_limit = if weight.is_max() {
+        let dest_weight_limit = if weight.is_zero() {
             WeightLimit::Unlimited
         } else {
             WeightLimit::Limited(weight.get_weight())
@@ -577,7 +578,7 @@ where
         let destination = input.read::<MultiLocation>()?;
         let weight = input.read::<WeightV2>()?;
 
-        let dest_weight_limit = if weight.is_max() {
+        let dest_weight_limit = if weight.is_zero() {
             WeightLimit::Unlimited
         } else {
             WeightLimit::Limited(weight.get_weight())
@@ -625,7 +626,7 @@ where
         let destination = input.read::<MultiLocation>()?;
         let weight = input.read::<WeightV2>()?;
 
-        let dest_weight_limit = if weight.is_max() {
+        let dest_weight_limit = if weight.is_zero() {
             WeightLimit::Unlimited
         } else {
             WeightLimit::Limited(weight.get_weight())
@@ -685,7 +686,7 @@ where
                 ))
             })
             .collect::<EvmResult<_>>()?;
-        let dest_weight_limit = if weight.is_max() {
+        let dest_weight_limit = if weight.is_zero() {
             WeightLimit::Unlimited
         } else {
             WeightLimit::Limited(weight.get_weight())
@@ -724,7 +725,7 @@ where
         let destination = input.read::<MultiLocation>()?;
         let weight = input.read::<WeightV2>()?;
 
-        let dest_weight_limit = if weight.is_max() {
+        let dest_weight_limit = if weight.is_zero() {
             WeightLimit::Unlimited
         } else {
             WeightLimit::Limited(weight.get_weight())

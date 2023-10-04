@@ -24,6 +24,7 @@
 
 use crate::Address;
 use sp_core::U256;
+use sp_runtime::traits::Zero;
 use {
     crate::{bytes::*, revert, EvmData, EvmDataReader, EvmDataWriter, EvmResult},
     frame_support::{ensure, pallet_prelude::Weight, traits::ConstU32},
@@ -369,8 +370,8 @@ impl WeightV2 {
     pub fn get_weight(&self) -> Weight {
         Weight::from_parts(self.ref_time, self.proof_size)
     }
-    pub fn is_max(&self) -> bool {
-        self.ref_time == u64::MAX
+    pub fn is_zero(&self) -> bool {
+        self.ref_time.is_zero()
     }
 }
 impl EvmData for WeightV2 {

@@ -482,6 +482,7 @@ mod xcm_new_interface_test {
                     },
                 ),
             };
+            let native_token_location: MultiLocation = (Here).into();
 
             let amount = 4200u64;
             // relay token to relay
@@ -524,7 +525,7 @@ mod xcm_new_interface_test {
                         .write(relay_token_location) // zero address by convention
                         .write(U256::from(amount))
                         .write(para_destination)
-                        .write(weight)
+                        .write(weight.clone())
                         .build(),
                 )
                 .expect_no_logs()
@@ -532,6 +533,38 @@ mod xcm_new_interface_test {
 
             let expected_asset: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(relay_token_location),
+                fun: Fungibility::Fungible(amount.into()),
+            };
+            let expected: crate::mock::RuntimeEvent =
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                    sender: TestAccount::Alice.into(),
+                    assets: vec![expected_asset.clone()].into(),
+                    fee: expected_asset,
+                    dest: para_destination,
+                })
+                .into();
+
+            // Assert that the events vector contains the one expected
+            assert!(events().contains(&expected));
+
+            // native token to para
+
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    EvmDataWriter::new_with_selector(Action::XtokensTransferMultiasset)
+                        .write(native_token_location) // zero address by convention
+                        .write(U256::from(amount))
+                        .write(para_destination)
+                        .write(weight.clone())
+                        .build(),
+                )
+                .expect_no_logs()
+                .execute_returns(EvmDataWriter::new().write(true).build());
+
+            let expected_asset: MultiAsset = MultiAsset {
+                id: AssetId::Concrete(native_token_location),
                 fun: Fungibility::Fungible(amount.into()),
             };
             let expected: crate::mock::RuntimeEvent =
