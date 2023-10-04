@@ -356,35 +356,6 @@ fn lock_with_incorrect_amount_fails() {
 }
 
 #[test]
-fn lock_with_too_many_chunks_fails() {
-    ExtBuilder::build().execute_with(|| {
-        let max_locked_chunks = <Test as pallet_dapp_staking::Config>::MaxLockedChunks::get();
-        let minimum_locked_amount: Balance =
-            <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
-
-        // Fill up the locked chunks to the limit
-        let locker = 1;
-        assert_lock(locker, minimum_locked_amount);
-        for current_era in 1..max_locked_chunks {
-            advance_to_era(current_era + 1);
-            assert_lock(locker, 1);
-        }
-
-        // Ensure we can still lock in the current era since number of chunks should not increase
-        for _ in 0..10 {
-            assert_lock(locker, 1);
-        }
-
-        // Advance to the next era and ensure it's not possible to add additional chunks
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
-        assert_noop!(
-            DappStaking::lock(RuntimeOrigin::signed(locker), 1),
-            Error::<Test>::TooManyLockedBalanceChunks,
-        );
-    })
-}
-
-#[test]
 fn unlock_basic_example_is_ok() {
     ExtBuilder::build().execute_with(|| {
         // Lock some amount
@@ -559,33 +530,6 @@ fn unlock_with_zero_amount_fails() {
 }
 
 #[test]
-fn unlock_with_exceeding_locked_storage_limits_fails() {
-    ExtBuilder::build().execute_with(|| {
-        let account = 2;
-        let lock_amount = 103;
-        assert_lock(account, lock_amount);
-
-        let unlock_amount = 3;
-        for _ in 0..<Test as pallet_dapp_staking::Config>::MaxLockedChunks::get() {
-            advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
-            assert_unlock(account, unlock_amount);
-        }
-
-        // We can still unlock in the current era, theoretically
-        for _ in 0..5 {
-            assert_unlock(account, unlock_amount);
-        }
-
-        // Following unlock should fail due to exceeding storage limits
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
-        assert_noop!(
-            DappStaking::unlock(RuntimeOrigin::signed(account), unlock_amount),
-            Error::<Test>::TooManyLockedBalanceChunks,
-        );
-    })
-}
-
-#[test]
 fn unlock_with_exceeding_unlocking_chunks_storage_limits_fails() {
     ExtBuilder::build().execute_with(|| {
         // Lock some amount in a few eras
@@ -705,26 +649,6 @@ fn relock_unlocking_no_chunks_fails() {
         assert_noop!(
             DappStaking::relock_unlocking(RuntimeOrigin::signed(1)),
             Error::<Test>::NoUnlockingChunks,
-        );
-    })
-}
-
-#[test]
-fn relock_unlocking_too_many_chunks_fails() {
-    ExtBuilder::build().execute_with(|| {
-        let max_locked_chunks = <Test as pallet_dapp_staking::Config>::MaxLockedChunks::get();
-
-        // Fill up the locked chunks to the limit
-        let account = 3;
-        for current_era in 1..=max_locked_chunks {
-            assert_lock(account, 11);
-            advance_to_era(current_era + 1);
-        }
-        assert_unlock(account, 7);
-
-        assert_noop!(
-            DappStaking::relock_unlocking(RuntimeOrigin::signed(account)),
-            Error::<Test>::TooManyLockedBalanceChunks,
         );
     })
 }

@@ -197,14 +197,6 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
         locked_balance + expected_lock_amount,
         "Locked balance should be increased by the amount locked."
     );
-    assert_eq!(
-        post_snapshot
-            .ledger
-            .get(&account)
-            .expect("Ledger entry has to exist after succcessful lock call")
-            .lock_era(),
-        post_snapshot.active_protocol_state.era + 1
-    );
 
     assert_eq!(
         post_snapshot.current_era_info.total_locked,
@@ -381,10 +373,6 @@ pub(crate) fn assert_relock_unlocking(account: AccountId) {
     assert_eq!(
         post_ledger.active_locked_amount(),
         pre_snapshot.ledger[&account].active_locked_amount() + amount
-    );
-    assert_eq!(
-        post_ledger.lock_era(),
-        post_snapshot.active_protocol_state.era + 1
     );
 
     // Current era info

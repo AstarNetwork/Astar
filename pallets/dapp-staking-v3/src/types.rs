@@ -33,7 +33,6 @@ use crate::pallet::Config;
 /// Convenience type for `AccountLedger` usage.
 pub type AccountLedgerFor<T> = AccountLedger<
     BlockNumberFor<T>,
-    <T as Config>::MaxLockedChunks,
     <T as Config>::MaxUnlockingChunks,
     <T as Config>::MaxStakingChunks,
 >;
@@ -409,15 +408,14 @@ impl AmountEraPair for StakeChunk {
 
 /// General info about user's stakes
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[scale_info(skip_type_params(LockedLen, UnlockingLen, StakedLen))]
+#[scale_info(skip_type_params(UnlockingLen, StakedLen))]
 pub struct AccountLedger<
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
     StakedLen: Get<u32>,
 > {
-    /// How much was staked in each era
-    pub locked: SparseBoundedAmountEraVec<LockedChunk, LockedLen>,
+    /// How much active locked amount an account has.
+    pub locked: Balance,
     /// How much started unlocking on a certain block
     pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
     /// How much user had staked in some period
@@ -426,17 +424,16 @@ pub struct AccountLedger<
     pub staked_period: Option<PeriodNumber>,
 }
 
-impl<BlockNumber, LockedLen, UnlockingLen, StakedLen> Default
-    for AccountLedger<BlockNumber, LockedLen, UnlockingLen, StakedLen>
+impl<BlockNumber, UnlockingLen, StakedLen> Default
+    for AccountLedger<BlockNumber, UnlockingLen, StakedLen>
 where
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
     StakedLen: Get<u32>,
 {
     fn default() -> Self {
         Self {
-            locked: SparseBoundedAmountEraVec(BoundedVec::<LockedChunk, LockedLen>::default()),
+            locked: Balance::zero(),
             unlocking: BoundedVec::<UnlockingChunk<BlockNumber>, UnlockingLen>::default(),
             staked: SparseBoundedAmountEraVec(BoundedVec::<StakeChunk, StakedLen>::default()),
             staked_period: None,
@@ -444,32 +441,23 @@ where
     }
 }
 
-impl<BlockNumber, LockedLen, UnlockingLen, StakedLen>
-    AccountLedger<BlockNumber, LockedLen, UnlockingLen, StakedLen>
+impl<BlockNumber, UnlockingLen, StakedLen> AccountLedger<BlockNumber, UnlockingLen, StakedLen>
 where
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
     StakedLen: Get<u32>,
 {
     /// Empty if no locked/unlocking/staked info exists.
     pub fn is_empty(&self) -> bool {
-        self.locked.0.is_empty() && self.unlocking.is_empty() && self.staked.0.is_empty()
-    }
-
-    /// Returns latest locked chunk if it exists, `None` otherwise
-    pub fn latest_locked_chunk(&self) -> Option<&LockedChunk> {
-        self.locked.0.last()
+        self.locked.is_zero() && self.unlocking.is_empty() && self.staked.0.is_empty()
     }
 
     /// Returns active locked amount.
     /// If `zero`, means that associated account hasn't got any active locked funds.
     ///
-    /// This value will always refer to the latest known locked amount.
-    /// It might be relevant for the current period, or for the next one.
+    /// It is possible that some funds are undergoing the unlocking period, but they aren't considered active in that case.
     pub fn active_locked_amount(&self) -> Balance {
-        self.latest_locked_chunk()
-            .map_or(Balance::zero(), |locked| locked.amount)
+        self.locked
     }
 
     /// Returns unlocking amount.
@@ -485,12 +473,6 @@ where
     pub fn total_locked_amount(&self) -> Balance {
         self.active_locked_amount()
             .saturating_add(self.unlocking_amount())
-    }
-
-    /// Returns latest era in which locked amount was updated or zero in case no lock amount exists
-    pub fn lock_era(&self) -> EraNumber {
-        self.latest_locked_chunk()
-            .map_or(EraNumber::zero(), |locked| locked.era)
     }
 
     /// Active staked balance.
@@ -563,33 +545,14 @@ where
         Ok(())
     }
 
-    /// Adds the specified amount to the total locked amount, if possible.
-    /// Caller must ensure that the era matches the next one, not the current one.
-    ///
-    /// If entry for the specified era already exists, it's updated.
-    ///
-    /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
-    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
-    pub fn add_lock_amount(
-        &mut self,
-        amount: Balance,
-        era: EraNumber,
-    ) -> Result<(), AccountLedgerError> {
-        self.locked.add_amount(amount, era)
+    /// Adds the specified amount to the total locked amount.
+    pub fn add_lock_amount(&mut self, amount: Balance) {
+        self.locked.saturating_accrue(amount);
     }
 
-    /// Subtracts the specified amount of the total locked amount, if possible.
-    ///
-    /// If entry for the specified era already exists, it's updated.
-    ///
-    /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
-    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
-    pub fn subtract_lock_amount(
-        &mut self,
-        amount: Balance,
-        era: EraNumber,
-    ) -> Result<(), AccountLedgerError> {
-        self.locked.subtract_amount(amount, era)
+    /// Subtracts the specified amount of the total locked amount.
+    pub fn subtract_lock_amount(&mut self, amount: Balance) {
+        self.locked.saturating_reduce(amount);
     }
 
     /// Adds the specified amount to the unlocking chunks.
@@ -721,6 +684,19 @@ impl EraInfo {
         match period_type {
             PeriodType::Voting => self.vp_staked.saturating_accrue(amount),
             PeriodType::BuildAndEarn => self.bep_staked.saturating_accrue(amount),
+        }
+    }
+
+    /// Total staked amount in this era.
+    pub fn total_staked_amount(&self) -> Balance {
+        self.vp_staked.saturating_add(self.bep_staked)
+    }
+
+    /// Staked amount of specified `type` in this era.
+    pub fn staked_amount(&self, period_type: PeriodType) -> Balance {
+        match period_type {
+            PeriodType::Voting => self.vp_staked,
+            PeriodType::BuildAndEarn => self.bep_staked,
         }
     }
 }
@@ -909,6 +885,7 @@ impl ContractStakingInfo {
     }
 }
 
+// TODO: the limit `2` might need to be bumped to `3` since we also create one "future" entry when calling "stake"
 /// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct ContractStakingInfoSeries(WeakBoundedVec<ContractStakingInfo, ConstU32<2>>);

@@ -455,7 +455,6 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
 
             // Calculate & check amount available for locking
@@ -464,11 +463,8 @@ pub mod pallet {
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 
-            // Only lock for the next era onwards.
-            let lock_era = state.era.saturating_add(1);
-            ledger
-                .add_lock_amount(amount_to_lock, lock_era)
-                .map_err(|_| Error::<T>::TooManyLockedBalanceChunks)?;
+            ledger.add_lock_amount(amount_to_lock);
+
             ensure!(
                 ledger.active_locked_amount() >= T::MinimumLockedAmount::get(),
                 Error::<T>::LockedAmountBelowThreshold
@@ -522,9 +518,7 @@ pub mod pallet {
             ensure!(!amount_to_unlock.is_zero(), Error::<T>::ZeroAmount);
 
             // Update ledger with new lock and unlocking amounts
-            ledger
-                .subtract_lock_amount(amount_to_unlock, state.era)
-                .map_err(|_| Error::<T>::TooManyLockedBalanceChunks)?;
+            ledger.subtract_lock_amount(amount_to_unlock);
 
             let current_block = frame_system::Pallet::<T>::block_number();
             let unlock_block = current_block.saturating_add(T::UnlockingPeriod::get());
@@ -577,18 +571,13 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
 
             ensure!(!ledger.unlocking.is_empty(), Error::<T>::NoUnlockingChunks);
 
-            // Only lock for the next era onwards.
-            let lock_era = state.era.saturating_add(1);
             let amount = ledger.consume_unlocking_chunks();
 
-            ledger
-                .add_lock_amount(amount, lock_era)
-                .map_err(|_| Error::<T>::TooManyLockedBalanceChunks)?;
+            ledger.add_lock_amount(amount);
             ensure!(
                 ledger.active_locked_amount() >= T::MinimumLockedAmount::get(),
                 Error::<T>::LockedAmountBelowThreshold
@@ -626,15 +615,14 @@ pub mod pallet {
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
+            let stake_era = protocol_state.era.saturating_add(1);
+
+            // TODO: staker should be staking from the NEXT era
 
             // 1.
-            // Increase stake amount for the current era & period in staker's ledger
+            // Increase stake amount for the next era & current period in staker's ledger
             ledger
-                .add_stake_amount(
-                    amount,
-                    protocol_state.era,
-                    protocol_state.period_info.number,
-                )
+                .add_stake_amount(amount, stake_era, protocol_state.period_info.number)
                 .map_err(|err| match err {
                     AccountLedgerError::InvalidPeriod => {
                         Error::<T>::UnclaimedRewardsFromPastPeriods
@@ -646,10 +634,9 @@ pub mod pallet {
 
             // 2.
             // Update `StakerInfo` storage with the new stake amount on the specified contract.
+            // TODO: this might need to be modified - if rewards were claimed for the past period, it should be ok to overwrite the old storage item.
             let new_staking_info =
                 if let Some(mut staking_info) = StakerInfo::<T>::get(&account, &smart_contract) {
-                    // TODO: do I need to check for which period this is for? Not sure, but maybe it's safer to do so.
-                    // TODO2: revisit this later.
                     ensure!(
                         staking_info.period_number() == protocol_state.period_info.number,
                         Error::<T>::InternalStakeError
@@ -674,7 +661,7 @@ pub mod pallet {
             let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
             ensure!(
                 contract_stake_info
-                    .stake(amount, protocol_state.period_info, protocol_state.era)
+                    .stake(amount, protocol_state.period_info, stake_era)
                     .is_ok(),
                 Error::<T>::InternalStakeError
             );
@@ -700,9 +687,7 @@ pub mod pallet {
             // TODO: maybe keep track of pending bonus rewards in the AccountLedger struct?
             // That way it's easy to check if stake can even be called - bonus-rewards should be zero & last staked era should be None or current one.
 
-            // is it voting or b&e period?
-            // how much does user have available for staking?
-            // has user claimed past rewards? Can we force them to do it before they start staking again?
+            // TODO: has user claimed past rewards? Can we force them to do it before they start staking again?
 
             Ok(())
         }
