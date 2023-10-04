@@ -30,8 +30,6 @@
 //! Please refer to implementation below for more info.
 //!
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::AccountId;
 
 use frame_support::{
@@ -53,6 +51,8 @@ use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
 #[cfg(test)]
 mod tests;
+
+pub const XCM_SIZE_LIMIT: u32 = 2u32.pow(16);
 
 /// Used to convert between cross-chain asset multilocation and local asset Id.
 ///
