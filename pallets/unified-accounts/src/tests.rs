@@ -134,8 +134,8 @@ fn on_killed_account_hook() {
         )));
 
         // make sure mapping is removed
-        assert_eq!(EvmToNative::<TestRuntime>::get(ALICE), None);
-        assert_eq!(NativeToEvm::<TestRuntime>::get(alice_eth), None);
+        assert_eq!(NativeToEvm::<TestRuntime>::get(ALICE), None);
+        assert_eq!(EvmToNative::<TestRuntime>::get(alice_eth), None);
     });
 }
 
@@ -175,10 +175,10 @@ fn account_claim_should_work() {
 
         // make sure mappings are in place
         assert_eq!(
-			NativeToEvm::<TestRuntime>::get(alice_eth).unwrap(), ALICE
+			EvmToNative::<TestRuntime>::get(alice_eth).unwrap(), ALICE
 		);
         assert_eq!(
-            EvmToNative::<TestRuntime>::get(ALICE).unwrap(), alice_eth
+            NativeToEvm::<TestRuntime>::get(ALICE).unwrap(), alice_eth
         )
     });
 }
@@ -229,8 +229,8 @@ fn account_default_claim_should_not_work_if_collision() {
 
         // create mapping of alice native with bob's default address
         // in real world possibilty of this happening is minuscule
-        NativeToEvm::<TestRuntime>::insert(&bob_default_h160, &ALICE);
-        EvmToNative::<TestRuntime>::insert(&ALICE, &bob_default_h160);
+        EvmToNative::<TestRuntime>::insert(&bob_default_h160, &ALICE);
+        NativeToEvm::<TestRuntime>::insert(&ALICE, &bob_default_h160);
 
         // bob try claiming default h160 address, it should fail since alice already
         // has mapping in place with it.

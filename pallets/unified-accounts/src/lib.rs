@@ -142,15 +142,15 @@ pub mod pallet {
     }
 
     /// Native accounts for evm address
-    /// NativeToEvm: EvmAddress => Option<AccountId>
+    /// EvmToNative: EvmAddress => Option<AccountId>
     #[pallet::storage]
-    pub type NativeToEvm<T: Config> =
+    pub type EvmToNative<T: Config> =
         StorageMap<_, Blake2_128Concat, EvmAddress, T::AccountId, OptionQuery>;
 
     /// Evm addresses for native accounts
-    /// EvmToNative: AccountId => Option<EvmAddress>
+    /// NativeToEvm: AccountId => Option<EvmAddress>
     #[pallet::storage]
-    pub type EvmToNative<T: Config> =
+    pub type NativeToEvm<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, EvmAddress, OptionQuery>;
 
     #[pallet::call]
@@ -176,11 +176,11 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             // make sure no prior mapping exists
             ensure!(
-                !EvmToNative::<T>::contains_key(&who),
+                !NativeToEvm::<T>::contains_key(&who),
                 Error::<T>::AlreadyMapped
             );
             ensure!(
-                !NativeToEvm::<T>::contains_key(evm_address),
+                !EvmToNative::<T>::contains_key(evm_address),
                 Error::<T>::AlreadyMapped
             );
 
@@ -206,8 +206,8 @@ pub mod pallet {
             }
 
             // create double mappings for the pair
-            NativeToEvm::<T>::insert(&evm_address, &who);
-            EvmToNative::<T>::insert(&who, &evm_address);
+            EvmToNative::<T>::insert(&evm_address, &who);
+            NativeToEvm::<T>::insert(&who, &evm_address);
 
             Self::deposit_event(Event::AccountClaimed {
                 account_id: who,
@@ -235,7 +235,7 @@ impl<T: Config> Pallet<T> {
     /// Claim the default evm address
     fn do_claim_default_evm_address(account_id: T::AccountId) -> Result<EvmAddress, DispatchError> {
         ensure!(
-            !EvmToNative::<T>::contains_key(&account_id),
+            !NativeToEvm::<T>::contains_key(&account_id),
             Error::<T>::AlreadyMapped
         );
         // get the default evm address
@@ -243,12 +243,12 @@ impl<T: Config> Pallet<T> {
         // make sure default address is not already mapped, this should not
         // happen but for sanity check.
         ensure!(
-            !NativeToEvm::<T>::contains_key(&evm_address),
+            !EvmToNative::<T>::contains_key(&evm_address),
             Error::<T>::AlreadyMapped
         );
         // create double mappings for the pair with default evm address
-        NativeToEvm::<T>::insert(&evm_address, &account_id);
-        EvmToNative::<T>::insert(&account_id, &evm_address);
+        EvmToNative::<T>::insert(&evm_address, &account_id);
+        NativeToEvm::<T>::insert(&account_id, &evm_address);
 
         Self::deposit_event(Event::AccountClaimed {
             account_id,
@@ -326,11 +326,11 @@ impl<T: Config> Pallet<T> {
 /// and default address scheme from pallet's config
 impl<T: Config> UnifiedAddressMapper<T::AccountId> for Pallet<T> {
     fn to_account_id(evm_address: &EvmAddress) -> Option<T::AccountId> {
-        NativeToEvm::<T>::get(evm_address)
+        EvmToNative::<T>::get(evm_address)
     }
 
     fn to_account_id_or_default(evm_address: &EvmAddress) -> T::AccountId {
-        NativeToEvm::<T>::get(evm_address).unwrap_or_else(|| {
+        EvmToNative::<T>::get(evm_address).unwrap_or_else(|| {
             // fallback to default account_id
             T::DefaultEvmToNative::into_account_id(evm_address.clone())
         })
@@ -341,11 +341,11 @@ impl<T: Config> UnifiedAddressMapper<T::AccountId> for Pallet<T> {
     }
 
     fn to_h160(account_id: &T::AccountId) -> Option<EvmAddress> {
-        EvmToNative::<T>::get(account_id)
+        NativeToEvm::<T>::get(account_id)
     }
 
     fn to_h160_or_default(account_id: &T::AccountId) -> EvmAddress {
-        EvmToNative::<T>::get(account_id).unwrap_or_else(|| {
+        NativeToEvm::<T>::get(account_id).unwrap_or_else(|| {
             // fallback to default account_id
             T::DefaultNativeToEvm::into_h160(account_id.clone())
         })
@@ -376,9 +376,9 @@ pub struct KillAccountMapping<T>(PhantomData<T>);
 impl<T: Config> OnKilledAccount<T::AccountId> for KillAccountMapping<T> {
     fn on_killed_account(who: &T::AccountId) {
         // remove mapping created by `claim_account` or `get_or_create_evm_address`
-        if let Some(evm_addr) = EvmToNative::<T>::take(who) {
-            NativeToEvm::<T>::remove(evm_addr);
-            EvmToNative::<T>::remove(who);
+        if let Some(evm_addr) = NativeToEvm::<T>::take(who) {
+            EvmToNative::<T>::remove(evm_addr);
+            NativeToEvm::<T>::remove(who);
         }
     }
 }
