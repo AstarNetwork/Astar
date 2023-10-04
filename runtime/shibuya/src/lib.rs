@@ -1339,12 +1339,12 @@ pub struct ClearCorruptedUnifiedMappings;
 impl OnRuntimeUpgrade for ClearCorruptedUnifiedMappings {
     fn on_runtime_upgrade() -> Weight {
         let maybe_limit = pallet_unified_accounts::EvmToNative::<Runtime>::iter().count();
-        let total_w = maybe_limit as u64 * 2;
+        let total_rw = maybe_limit as u64 * 2;
         // remove all items
         let _ = pallet_unified_accounts::EvmToNative::<Runtime>::clear(maybe_limit as u32, None);
         let _ = pallet_unified_accounts::NativeToEvm::<Runtime>::clear(maybe_limit as u32, None);
 
-        <Runtime as frame_system::Config>::DbWeight::get().writes(total_w)
+        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(total_rw, total_rw)
     }
 }
 
