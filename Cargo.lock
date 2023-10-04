@@ -13011,7 +13011,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.19.0"
+version = "5.20.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
