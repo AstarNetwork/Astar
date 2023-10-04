@@ -1133,10 +1133,10 @@ fn contract_staking_info_series_stake_is_ok() {
     assert_eq!(entry_2_2.era(), era_2);
     assert_eq!(entry_2_2.total_staked_amount(), amount * 3);
 
-    // 4th scenario - stake in the 3rd era, expect a cleanup
+    // 4th scenario - stake in the 3rd era
     let era_3 = era_2 + 1;
     assert!(series.stake(amount, period_info, era_3).is_ok());
-    assert_eq!(series.len(), 2, "Old entry should have been cleaned up.");
+    assert_eq!(series.len(), 3, "Old entry should have been cleaned up.");
     let entry_3_1 = *series.get_for_era(era_2).unwrap();
     let entry_3_2 = *series.get_for_era(era_3).unwrap();
     assert_eq!(entry_3_1, entry_2_2);

@@ -885,10 +885,11 @@ impl ContractStakingInfo {
     }
 }
 
-// TODO: the limit `2` might need to be bumped to `3` since we also create one "future" entry when calling "stake"
+const STAKING_SERIES_HISTORY: u32 = 3;
+
 /// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-pub struct ContractStakingInfoSeries(WeakBoundedVec<ContractStakingInfo, ConstU32<2>>);
+pub struct ContractStakingInfoSeries(WeakBoundedVec<ContractStakingInfo, ConstU32<STAKING_SERIES_HISTORY>>);
 impl ContractStakingInfoSeries {
     /// Length of the series.
     pub fn len(&self) -> usize {
@@ -926,11 +927,17 @@ impl ContractStakingInfoSeries {
         }
 
         // Get the most relevant `ContractStakingInfo` instance
-        let last_element_has_matching_era =
-            !inner.is_empty() && inner[inner.len() - 1].era() == era;
-        let last_element_has_matching_period =
-            !inner.is_empty() && inner[inner.len() - 1].period() == period_info.number;
+        let (last_element_has_matching_era, last_element_has_matching_period) =
+            if let Some(last_element) = inner.last() {
+                (
+                    last_element.era() == era,
+                    last_element.period() == period_info.number,
+                )
+            } else {
+                (false, false)
+            };
 
+        // Prepare the new entry
         let mut staking_info = if last_element_has_matching_era {
             inner.remove(inner.len() - 1)
         } else if last_element_has_matching_period {
@@ -949,15 +956,16 @@ impl ContractStakingInfoSeries {
 
         // Crate new WeakBoundedVec and cleanup old entries
         self.0 = WeakBoundedVec::force_from(inner, None);
-        self.cleanup_old_entries(era);
+        self.align_and_cleanup_old_entries(era);
 
         Ok(())
     }
 
-    /// Remove all entries which are older than 2 eras.
+    /// Remove all entries which are older than 3 eras.
     /// We don't care about them anymore since rewards for them should have been calculated already.
-    fn cleanup_old_entries(&mut self, era: EraNumber) {
+    fn align_and_cleanup_old_entries(&mut self, era: EraNumber) {
+        // TODO: since we can have 3 entries, logic is needed that will align "old" entries around the current era
         self.0
-            .retain(|staking_info| staking_info.era() > era.saturating_sub(2));
+            .retain(|staking_info| staking_info.era() > era.saturating_sub(STAKING_SERIES_HISTORY));
     }
 }

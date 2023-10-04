@@ -615,9 +615,11 @@ pub mod pallet {
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
+
+            // Staker always stakes from the NEXT era
             let stake_era = protocol_state.era.saturating_add(1);
 
-            // TODO: staker should be staking from the NEXT era
+            // TODO: add a check if Build&Earn period ends in the next era. If it does, staking should fail since it's pointless.
 
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
@@ -634,16 +636,22 @@ pub mod pallet {
 
             // 2.
             // Update `StakerInfo` storage with the new stake amount on the specified contract.
-            // TODO: this might need to be modified - if rewards were claimed for the past period, it should be ok to overwrite the old storage item.
-            let new_staking_info =
-                if let Some(mut staking_info) = StakerInfo::<T>::get(&account, &smart_contract) {
-                    ensure!(
-                        staking_info.period_number() == protocol_state.period_info.number,
-                        Error::<T>::InternalStakeError
-                    );
+            //
+            // There are two distinct scenarios:
+            // 1. Existing entry matches the current period number - just update it.
+            // 2. Entry doesn't exist or it's for an older era - create a new one.
+            //
+            // This is ok since we only use this storage entry to keep track of how much each staker
+            // has staked on each contract in the current period. We only ever need the latest information.
+            // This is because `AccountLedger` is the one keeping information about how much was staked when.
+            let new_staking_info = match StakerInfo::<T>::get(&account, &smart_contract) {
+                Some(mut staking_info)
+                    if staking_info.period_number() == protocol_state.period_info.number =>
+                {
                     staking_info.stake(amount, protocol_state.period_info.period_type);
                     staking_info
-                } else {
+                }
+                _ => {
                     ensure!(
                         amount >= T::MinimumStakeAmount::get(),
                         Error::<T>::InsufficientStakeAmount
@@ -654,7 +662,8 @@ pub mod pallet {
                     );
                     staking_info.stake(amount, protocol_state.period_info.period_type);
                     staking_info
-                };
+                }
+            };
 
             // 3.
             // Update `ContractStake` storage with the new stake amount on the specified contract.
