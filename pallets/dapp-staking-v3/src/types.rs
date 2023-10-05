@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::{pallet_prelude::*, BoundedVec, WeakBoundedVec};
+use frame_support::{pallet_prelude::*, BoundedVec};
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{
@@ -646,6 +646,39 @@ pub struct RewardInfo {
     pub dapps: Balance,
 }
 
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct StakeAmount {
+    /// Amount of staked funds accounting for the voting period.
+    #[codec(compact)]
+    voting: Balance,
+    /// Amount of staked funds accounting for the build&earn period.
+    #[codec(compact)]
+    build_and_earn: Balance,
+}
+
+impl StakeAmount {
+    /// Total amount staked in both period types.
+    pub fn total(&self) -> Balance {
+        self.voting.saturating_add(self.build_and_earn)
+    }
+
+    /// Amount staked for the specified period type.
+    pub fn for_type(&self, period_type: PeriodType) -> Balance {
+        match period_type {
+            PeriodType::Voting => self.voting,
+            PeriodType::BuildAndEarn => self.build_and_earn,
+        }
+    }
+
+    /// Stake the specified `amount` for the specified `period_type`.
+    pub fn stake(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.voting.saturating_accrue(amount),
+            PeriodType::BuildAndEarn => self.build_and_earn.saturating_accrue(amount),
+        }
+    }
+}
+
 /// Info about current era, including the rewards, how much is locked, unlocking, etc.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct EraInfo {
@@ -663,12 +696,10 @@ pub struct EraInfo {
     /// This amount still counts into locked amount.
     #[codec(compact)]
     pub unlocking: Balance,
-    /// How much balance is staked from the voting period.
-    #[codec(compact)]
-    pub vp_staked: Balance,
-    /// How much balance is staked from the build&earn period.
-    #[codec(compact)]
-    pub bep_staked: Balance,
+    /// Stake amount valid for the ongoing era.
+    pub current_stake_amount: StakeAmount,
+    /// Stake amount valid from the next era.
+    pub next_stake_amount: StakeAmount,
 }
 
 impl EraInfo {
@@ -691,23 +722,27 @@ impl EraInfo {
 
     /// Add the specified `amount` to the appropriate stake amount, based on the `PeriodType`.
     pub fn add_stake_amount(&mut self, amount: Balance, period_type: PeriodType) {
-        match period_type {
-            PeriodType::Voting => self.vp_staked.saturating_accrue(amount),
-            PeriodType::BuildAndEarn => self.bep_staked.saturating_accrue(amount),
-        }
+        self.next_stake_amount.stake(amount, period_type);
     }
 
     /// Total staked amount in this era.
     pub fn total_staked_amount(&self) -> Balance {
-        self.vp_staked.saturating_add(self.bep_staked)
+        self.current_stake_amount.total()
     }
 
     /// Staked amount of specified `type` in this era.
     pub fn staked_amount(&self, period_type: PeriodType) -> Balance {
-        match period_type {
-            PeriodType::Voting => self.vp_staked,
-            PeriodType::BuildAndEarn => self.bep_staked,
-        }
+        self.current_stake_amount.for_type(period_type)
+    }
+
+    /// Total staked amount in the next era.
+    pub fn total_staked_amount_next_era(&self) -> Balance {
+        self.next_stake_amount.total()
+    }
+
+    /// Staked amount of specifeid `type` in the next era.
+    pub fn staked_amount_next_era(&self, period_type: PeriodType) -> Balance {
+        self.next_stake_amount.for_type(period_type)
     }
 }
 
@@ -900,12 +935,13 @@ const STAKING_SERIES_HISTORY: u32 = 3;
 /// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct ContractStakingInfoSeries(
-    WeakBoundedVec<ContractStakingInfo, ConstU32<STAKING_SERIES_HISTORY>>,
+    BoundedVec<ContractStakingInfo, ConstU32<STAKING_SERIES_HISTORY>>,
 );
 impl ContractStakingInfoSeries {
-    // TODO
+    /// Helper
+    #[cfg(test)]
     pub fn new(inner: Vec<ContractStakingInfo>) -> Self {
-        Self(WeakBoundedVec::force_from(inner, None))
+        Self(BoundedVec::try_from(inner).expect("Test should ensure this is always valid"))
     }
 
     /// Length of the series.
@@ -996,6 +1032,7 @@ impl ContractStakingInfoSeries {
             self.0.remove(0);
         }
 
-        self.0.try_push(staking_info)
+        // This should be infalible due to previous checks that ensure we don't end up overflowing the vector.
+        self.0.try_push(staking_info).map_err(|_| ())
     }
 }

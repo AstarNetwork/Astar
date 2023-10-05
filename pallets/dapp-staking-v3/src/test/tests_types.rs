@@ -865,19 +865,30 @@ fn era_info_stake_works() {
     // Add some voting period stake
     let vp_stake_amount = 7;
     era_info.add_stake_amount(vp_stake_amount, PeriodType::Voting);
-    assert_eq!(era_info.total_staked_amount(), vp_stake_amount);
-    assert_eq!(era_info.staked_amount(PeriodType::Voting), vp_stake_amount);
+    assert_eq!(era_info.total_staked_amount_next_era(), vp_stake_amount);
+    assert_eq!(
+        era_info.staked_amount_next_era(PeriodType::Voting),
+        vp_stake_amount
+    );
+    assert!(
+        era_info.total_staked_amount().is_zero(),
+        "Calling stake makes it available only from the next era."
+    );
 
     // Add some build&earn period stake
     let bep_stake_amount = 13;
     era_info.add_stake_amount(bep_stake_amount, PeriodType::BuildAndEarn);
     assert_eq!(
-        era_info.total_staked_amount(),
+        era_info.total_staked_amount_next_era(),
         vp_stake_amount + bep_stake_amount
     );
     assert_eq!(
-        era_info.staked_amount(PeriodType::BuildAndEarn),
+        era_info.staked_amount_next_era(PeriodType::BuildAndEarn),
         bep_stake_amount
+    );
+    assert!(
+        era_info.total_staked_amount().is_zero(),
+        "Calling stake makes it available only from the next era."
     );
 }
 
@@ -1200,28 +1211,28 @@ fn contract_staking_info_series_stake_is_ok() {
     assert_eq!(entry_4_3.total_staked_amount(), amount_3 + amount_4);
 }
 
-// #[test]
-// fn contract_staking_info_series_inconsistent_data_fails() {
-//     let mut series = ContractStakingInfoSeries::default();
+#[test]
+fn contract_staking_info_series_inconsistent_data_fails() {
+    let mut series = ContractStakingInfoSeries::default();
 
-//     // Create an entry with some staked amount
-//     let era = 5;
-//     let period_info = PeriodInfo {
-//         number: 7,
-//         period_type: PeriodType::Voting,
-//         ending_era: 31,
-//     };
-//     let amount = 37;
-//     assert!(series.stake(amount, period_info, era).is_ok());
+    // Create an entry with some staked amount
+    let era = 5;
+    let period_info = PeriodInfo {
+        number: 7,
+        period_type: PeriodType::Voting,
+        ending_era: 31,
+    };
+    let amount = 37;
+    assert!(series.stake(amount, period_info, era).is_ok());
 
-//     // 1st scenario - attempt to stake using old era
-//     assert!(series.stake(amount, period_info, era - 1).is_err());
+    // 1st scenario - attempt to stake using old era
+    assert!(series.stake(amount, period_info, era - 1).is_err());
 
-//     // 2nd scenario - attempt to stake using old period
-//     let period_info = PeriodInfo {
-//         number: period_info.number - 1,
-//         period_type: PeriodType::Voting,
-//         ending_era: 31,
-//     };
-//     assert!(series.stake(amount, period_info, era).is_err());
-// }
+    // 2nd scenario - attempt to stake using old period
+    let period_info = PeriodInfo {
+        number: period_info.number - 1,
+        period_type: PeriodType::Voting,
+        ending_era: 31,
+    };
+    assert!(series.stake(amount, period_info, era).is_err());
+}
