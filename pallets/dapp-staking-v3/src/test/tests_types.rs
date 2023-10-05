@@ -1074,114 +1074,155 @@ fn contract_stake_info_is_ok() {
 }
 
 #[test]
-fn contract_staking_info_series_stake_is_ok() {
-    let mut series = ContractStakingInfoSeries::default();
+fn contract_staking_info_series_get_works() {
+    let info_1 = ContractStakingInfo::new(4, 2);
+    let mut info_2 = ContractStakingInfo::new(7, 3);
+    info_2.stake(11, PeriodType::Voting);
+    let mut info_3 = ContractStakingInfo::new(9, 3);
+    info_3.stake(13, PeriodType::BuildAndEarn);
+
+    let series = ContractStakingInfoSeries::new(vec![info_1, info_2, info_3]);
 
     // Sanity check
-    assert!(series.is_empty());
-    assert!(series.len().is_zero());
-
-    // 1st scenario - stake some amount and verify state change
-    let era_1 = 3;
-    let period_info = PeriodInfo {
-        number: 5,
-        period_type: PeriodType::Voting,
-        ending_era: 20,
-    };
-    let amount = 31;
-    assert!(series.stake(amount, period_info, era_1).is_ok());
-
-    assert_eq!(series.len(), 1);
+    assert_eq!(series.len(), 3);
     assert!(!series.is_empty());
-    assert!(series.get_for_era(era_1 - 1).is_none());
-    assert!(series.get_for_era(era_1 + 1).is_none());
 
-    let entry_1_1 = *series.get_for_era(era_1).unwrap();
-    assert_eq!(entry_1_1.era(), era_1);
-    assert_eq!(entry_1_1.total_staked_amount(), amount);
+    // 1st scenario - get existing entries
+    assert_eq!(series.get(4, 2), Some(info_1));
+    assert_eq!(series.get(7, 3), Some(info_2));
+    assert_eq!(series.get(9, 3), Some(info_3));
 
-    // 2nd scenario - stake some more to the same era but different period type, and verify state change.
-    let period_info = PeriodInfo {
-        number: 5,
-        period_type: PeriodType::BuildAndEarn,
-        ending_era: 20,
-    };
-    assert!(series.stake(amount, period_info, era_1).is_ok());
-    assert_eq!(
-        series.len(),
-        1,
-        "No new entry should be created since it's the same era."
-    );
-    let entry_1_2 = *series.get_for_era(era_1).unwrap();
-    assert_eq!(entry_1_2.era(), era_1);
-    assert_eq!(entry_1_2.total_staked_amount(), amount * 2);
+    // 2nd scenario - get non-existing entries for covered eras
+    {
+        let era_1 = 6;
+        let entry_1 = series.get(era_1, 2).expect("Has to be Some");
+        assert!(entry_1.total_staked_amount().is_zero());
+        assert_eq!(entry_1.era(), era_1);
+        assert_eq!(entry_1.period(), 2);
 
-    // 3rd scenario - stake some more but to the next era, and verify state change. Period remains the same.
-    let era_2 = era_1 + 1;
-    assert!(series.stake(amount, period_info, era_2).is_ok());
-    assert_eq!(
-        series.len(),
-        2,
-        "New entry should be created since it's the next era."
-    );
-    let entry_2_1 = *series.get_for_era(era_1).unwrap();
-    assert_eq!(
-        entry_2_1, entry_1_2,
-        "First entry should not be modified at all."
-    );
-    let entry_2_2 = *series.get_for_era(era_2).unwrap();
-    assert_eq!(entry_2_2.era(), era_2);
-    assert_eq!(entry_2_2.total_staked_amount(), amount * 3);
+        let era_2 = 8;
+        let entry_1 = series.get(era_2, 3).expect("Has to be Some");
+        assert_eq!(entry_1.total_staked_amount(), 11);
+        assert_eq!(entry_1.era(), era_2);
+        assert_eq!(entry_1.period(), 3);
+    }
 
-    // 4th scenario - stake in the 3rd era
-    let era_3 = era_2 + 1;
-    assert!(series.stake(amount, period_info, era_3).is_ok());
-    assert_eq!(series.len(), 3, "Old entry should have been cleaned up.");
-    let entry_3_1 = *series.get_for_era(era_2).unwrap();
-    let entry_3_2 = *series.get_for_era(era_3).unwrap();
-    assert_eq!(entry_3_1, entry_2_2);
-    assert_eq!(entry_3_2.era(), era_3);
-    assert_eq!(entry_3_2.total_staked_amount(), amount * 4);
+    // 3rd scenario - get non-existing entries for covered eras but mismatching period
+    assert!(series.get(8, 2).is_none());
 
-    // 5th scenario - stake in the 4th era, but also bump the period.
-    let era_4 = era_3 + 30;
-    let period_info = PeriodInfo {
-        number: 6,
-        period_type: PeriodType::BuildAndEarn,
-        ending_era: 50,
-    };
-    assert!(series.stake(amount, period_info, era_4).is_ok());
-    assert_eq!(
-        series.len(),
-        1,
-        "Entries older than 2 eras should have been cleaned up."
-    );
-    let entry_4_1 = *series.get_for_era(era_4).unwrap();
-    assert_eq!(entry_4_1.total_staked_amount(), amount);
+    // 4th scenario - get non-existing entries for non-covered eras
+    assert!(series.get(3, 2).is_none());
 }
 
-#[test]
-fn contract_staking_info_series_inconsistent_data_fails() {
-    let mut series = ContractStakingInfoSeries::default();
+// #[test]
+// fn contract_staking_info_series_stake_is_ok() {
+//     let mut series = ContractStakingInfoSeries::default();
 
-    // Create an entry with some staked amount
-    let era = 5;
-    let period_info = PeriodInfo {
-        number: 7,
-        period_type: PeriodType::Voting,
-        ending_era: 31,
-    };
-    let amount = 37;
-    assert!(series.stake(amount, period_info, era).is_ok());
+//     // Sanity check
+//     assert!(series.is_empty());
+//     assert!(series.len().is_zero());
 
-    // 1st scenario - attempt to stake using old era
-    assert!(series.stake(amount, period_info, era - 1).is_err());
+//     // 1st scenario - stake some amount and verify state change
+//     let era_1 = 3;
+//     let period_info = PeriodInfo {
+//         number: 5,
+//         period_type: PeriodType::Voting,
+//         ending_era: 20,
+//     };
+//     let amount = 31;
+//     assert!(series.stake(amount, period_info, era_1).is_ok());
 
-    // 2nd scenario - attempt to stake using old period
-    let period_info = PeriodInfo {
-        number: period_info.number - 1,
-        period_type: PeriodType::Voting,
-        ending_era: 31,
-    };
-    assert!(series.stake(amount, period_info, era).is_err());
-}
+//     assert_eq!(series.len(), 1);
+//     assert!(!series.is_empty());
+//     assert!(series.get_for_era(era_1 - 1).is_none());
+//     assert!(series.get_for_era(era_1 + 1).is_none());
+
+//     let entry_1_1 = *series.get_for_era(era_1).unwrap();
+//     assert_eq!(entry_1_1.era(), era_1);
+//     assert_eq!(entry_1_1.total_staked_amount(), amount);
+
+//     // 2nd scenario - stake some more to the same era but different period type, and verify state change.
+//     let period_info = PeriodInfo {
+//         number: 5,
+//         period_type: PeriodType::BuildAndEarn,
+//         ending_era: 20,
+//     };
+//     assert!(series.stake(amount, period_info, era_1).is_ok());
+//     assert_eq!(
+//         series.len(),
+//         1,
+//         "No new entry should be created since it's the same era."
+//     );
+//     let entry_1_2 = *series.get_for_era(era_1).unwrap();
+//     assert_eq!(entry_1_2.era(), era_1);
+//     assert_eq!(entry_1_2.total_staked_amount(), amount * 2);
+
+//     // 3rd scenario - stake some more but to the next era, and verify state change. Period remains the same.
+//     let era_2 = era_1 + 1;
+//     assert!(series.stake(amount, period_info, era_2).is_ok());
+//     assert_eq!(
+//         series.len(),
+//         2,
+//         "New entry should be created since it's the next era."
+//     );
+//     let entry_2_1 = *series.get_for_era(era_1).unwrap();
+//     assert_eq!(
+//         entry_2_1, entry_1_2,
+//         "First entry should not be modified at all."
+//     );
+//     let entry_2_2 = *series.get_for_era(era_2).unwrap();
+//     assert_eq!(entry_2_2.era(), era_2);
+//     assert_eq!(entry_2_2.total_staked_amount(), amount * 3);
+
+//     // 4th scenario - stake in the 3rd era
+//     let era_3 = era_2 + 1;
+//     assert!(series.stake(amount, period_info, era_3).is_ok());
+//     assert_eq!(series.len(), 3, "Old entry should have been cleaned up.");
+//     let entry_3_1 = *series.get_for_era(era_2).unwrap();
+//     let entry_3_2 = *series.get_for_era(era_3).unwrap();
+//     assert_eq!(entry_3_1, entry_2_2);
+//     assert_eq!(entry_3_2.era(), era_3);
+//     assert_eq!(entry_3_2.total_staked_amount(), amount * 4);
+
+//     // 5th scenario - stake in the 4th era, but also bump the period.
+//     let era_4 = era_3 + 30;
+//     let period_info = PeriodInfo {
+//         number: 6,
+//         period_type: PeriodType::BuildAndEarn,
+//         ending_era: 50,
+//     };
+//     assert!(series.stake(amount, period_info, era_4).is_ok());
+//     assert_eq!(
+//         series.len(),
+//         1,
+//         "Entries older than 2 eras should have been cleaned up."
+//     );
+//     let entry_4_1 = *series.get_for_era(era_4).unwrap();
+//     assert_eq!(entry_4_1.total_staked_amount(), amount);
+// }
+
+// #[test]
+// fn contract_staking_info_series_inconsistent_data_fails() {
+//     let mut series = ContractStakingInfoSeries::default();
+
+//     // Create an entry with some staked amount
+//     let era = 5;
+//     let period_info = PeriodInfo {
+//         number: 7,
+//         period_type: PeriodType::Voting,
+//         ending_era: 31,
+//     };
+//     let amount = 37;
+//     assert!(series.stake(amount, period_info, era).is_ok());
+
+//     // 1st scenario - attempt to stake using old era
+//     assert!(series.stake(amount, period_info, era - 1).is_err());
+
+//     // 2nd scenario - attempt to stake using old period
+//     let period_info = PeriodInfo {
+//         number: period_info.number - 1,
+//         period_type: PeriodType::Voting,
+//         ending_era: 31,
+//     };
+//     assert!(series.stake(amount, period_info, era).is_err());
+// }

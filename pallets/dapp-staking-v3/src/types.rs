@@ -889,8 +889,15 @@ const STAKING_SERIES_HISTORY: u32 = 3;
 
 /// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-pub struct ContractStakingInfoSeries(WeakBoundedVec<ContractStakingInfo, ConstU32<STAKING_SERIES_HISTORY>>);
+pub struct ContractStakingInfoSeries(
+    WeakBoundedVec<ContractStakingInfo, ConstU32<STAKING_SERIES_HISTORY>>,
+);
 impl ContractStakingInfoSeries {
+    // TODO
+    pub fn new(inner: Vec<ContractStakingInfo>) -> Self {
+        Self(WeakBoundedVec::force_from(inner, None))
+    }
+
     /// Length of the series.
     pub fn len(&self) -> usize {
         self.0.len()
@@ -901,9 +908,33 @@ impl ContractStakingInfoSeries {
         self.0.is_empty()
     }
 
-    /// Returns the `ContractStakingInfo` type for the specified era, if it exists.
-    pub fn get_for_era(&self, era: EraNumber) -> Option<&ContractStakingInfo> {
-        self.0.iter().find(|staking_info| staking_info.era() == era)
+    /// Returns the `ContractStakingInfo` type for the specified era & period, if it exists.
+    pub fn get(&self, era: EraNumber, period: PeriodNumber) -> Option<ContractStakingInfo> {
+        let idx = self.0.binary_search_by(|info| info.era().cmp(&era));
+
+        // There are couple of distinct scenarios:
+        // 1. Era exists, so we just return it.
+        // 2. Era doesn't exist, and ideal index is zero, meaning there's nothing in history that would cover this era.
+        // 3. Era doesn't exist, and ideal index is greater than zero, meaning we can potentially use one of the previous entries to derive the information.
+        // 3.1. In case periods are matching, we return that value.
+        // 3.2. In case periods aren't matching, we return `None` since stakes don't carry over between periods.
+        match idx {
+            Ok(idx) => self.0.get(idx).map(|x| *x),
+            Err(idx) if idx.is_zero() => None,
+            Err(idx) if idx > 0 => {
+                let mut info = self.0[idx - 1];
+                if info.period() == period {
+                    info.era = era;
+                    Some(info)
+                } else {
+                    None
+                }
+            }
+            Err(_) => {
+                // TODO: this is unreachable, but compiler doesn't know that
+                None
+            }
+        }
     }
 
     /// Stake the specified `amount` on the contract, for the specified `period_type` and `era`.
@@ -916,11 +947,11 @@ impl ContractStakingInfoSeries {
         // TODO: Maybe this can be optimized to be both more readable & efficient.
 
         // Get the most relevant `ContractStakingInfo` type
+        // TODO: skip clone?
         let mut inner = self.0.clone().into_inner();
 
         // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
-        if !inner.is_empty() {
-            let last_element = inner[inner.len() - 1];
+        if let Some(last_element) = inner.last() {
             if last_element.era() > era || last_element.period() > period_info.number {
                 return Err(());
             }
@@ -950,22 +981,20 @@ impl ContractStakingInfoSeries {
             ContractStakingInfo::new(era, period_info.number)
         };
 
-        // Update the stake amount and add it to the vector
+        // Update the stake amount
         staking_info.stake(amount, period_info.period_type);
         inner.push(staking_info);
 
-        // Crate new WeakBoundedVec and cleanup old entries
+        // Prune the oldest entry if we have more than the limit
+        if inner.len() > STAKING_SERIES_HISTORY as usize {
+            // TODO: this can be perhaps optimized so we prune entries which are very old.
+            // However, this makes the code more complex & more error prone.
+            // If kept like this, we always make sure we cover the history, and we never exceed it.
+            inner.remove(0);
+        }
+
         self.0 = WeakBoundedVec::force_from(inner, None);
-        self.align_and_cleanup_old_entries(era);
 
         Ok(())
-    }
-
-    /// Remove all entries which are older than 3 eras.
-    /// We don't care about them anymore since rewards for them should have been calculated already.
-    fn align_and_cleanup_old_entries(&mut self, era: EraNumber) {
-        // TODO: since we can have 3 entries, logic is needed that will align "old" entries around the current era
-        self.0
-            .retain(|staking_info| staking_info.era() > era.saturating_sub(STAKING_SERIES_HISTORY));
     }
 }
