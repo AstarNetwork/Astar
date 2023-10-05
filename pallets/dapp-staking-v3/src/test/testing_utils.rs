@@ -19,8 +19,8 @@
 use crate::test::mock::*;
 use crate::types::*;
 use crate::{
-    pallet as pallet_dapp_staking, ActiveProtocolState, BlockNumberFor, CurrentEraInfo, DAppId,
-    Event, IntegratedDApps, Ledger, NextDAppId,
+    pallet as pallet_dapp_staking, ActiveProtocolState, BlockNumberFor, ContractStake,
+    CurrentEraInfo, DAppId, Event, IntegratedDApps, Ledger, NextDAppId, StakerInfo,
 };
 
 use frame_support::{assert_ok, traits::Get};
@@ -39,6 +39,15 @@ pub(crate) struct MemorySnapshot {
         DAppInfo<<Test as frame_system::Config>::AccountId>,
     >,
     ledger: HashMap<<Test as frame_system::Config>::AccountId, AccountLedgerFor<Test>>,
+    staker_info: HashMap<
+        (
+            <Test as frame_system::Config>::AccountId,
+            <Test as pallet_dapp_staking::Config>::SmartContract,
+        ),
+        SingularStakingInfo,
+    >,
+    contract_stake:
+        HashMap<<Test as pallet_dapp_staking::Config>::SmartContract, ContractStakingInfoSeries>,
 }
 
 impl MemorySnapshot {
@@ -50,6 +59,10 @@ impl MemorySnapshot {
             current_era_info: CurrentEraInfo::<Test>::get(),
             integrated_dapps: IntegratedDApps::<Test>::iter().collect(),
             ledger: Ledger::<Test>::iter().collect(),
+            staker_info: StakerInfo::<Test>::iter()
+                .map(|(k1, k2, v)| ((k1, k2), v))
+                .collect(),
+            contract_stake: ContractStake::<Test>::iter().collect(),
         }
     }
 
@@ -383,5 +396,182 @@ pub(crate) fn assert_relock_unlocking(account: AccountId) {
     assert_eq!(
         post_snapshot.current_era_info.total_locked,
         pre_snapshot.current_era_info.total_locked + amount
+    );
+}
+
+/// Stake some funds on the specified smart contract.
+pub(crate) fn assert_stake(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+    amount: Balance,
+) {
+    // TODO: this is a huge function - I could break it down, but I'm not sure it will help with readability.
+    let pre_snapshot = MemorySnapshot::new();
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, smart_contract.clone()));
+    let pre_contract_stake = pre_snapshot
+        .contract_stake
+        .get(&smart_contract)
+        .map_or(ContractStakingInfoSeries::default(), |series| {
+            series.clone()
+        });
+    let pre_era_info = pre_snapshot.current_era_info;
+
+    let stake_era = pre_snapshot.active_protocol_state.era + 1;
+    let stake_period = pre_snapshot.active_protocol_state.period_info.number;
+    let stake_period_type = pre_snapshot.active_protocol_state.period_info.period_type;
+
+    // Stake on smart contract & verify event
+    assert_ok!(DappStaking::stake(
+        RuntimeOrigin::signed(account),
+        smart_contract.clone(),
+        amount
+    ));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::Stake {
+        account,
+        smart_contract: smart_contract.clone(),
+        amount,
+    }));
+
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+    let post_staker_info = post_snapshot
+        .staker_info
+        .get(&(account, *smart_contract))
+        .expect("Entry must exist since 'stake' operation was successfull.");
+    let post_contract_stake = post_snapshot
+        .contract_stake
+        .get(&smart_contract)
+        .expect("Entry must exist since 'stake' operation was successfull.");
+    let post_era_info = post_snapshot.current_era_info;
+
+    // 1. verify ledger
+    // =====================
+    // =====================
+    assert_eq!(post_ledger.staked_period, Some(stake_period));
+    assert_eq!(
+        post_ledger.staked_amount(stake_period),
+        pre_ledger.staked_amount(stake_period) + amount,
+        "Stake amount must increase by the 'amount'"
+    );
+    assert_eq!(
+        post_ledger.stakeable_amount(stake_period),
+        pre_ledger.stakeable_amount(stake_period) - amount,
+        "Stakeable amount must decrease by the 'amount'"
+    );
+    match pre_ledger.last_stake_era() {
+        Some(last_stake_era) if last_stake_era == stake_era => {
+            assert_eq!(
+                post_ledger.staked.0.len(),
+                pre_ledger.staked.0.len(),
+                "Existing entry must be modified."
+            );
+        }
+        _ => {
+            assert_eq!(
+                post_ledger.staked.0.len(),
+                pre_ledger.staked.0.len() + 1,
+                "Additional entry must be added."
+            );
+        }
+    }
+
+    // 2. verify staker info
+    // =====================
+    // =====================
+    match pre_staker_info {
+        // We're just updating an existing entry
+        Some(pre_staker_info) if pre_staker_info.period_number() == stake_period => {
+            assert_eq!(
+                post_staker_info.total_staked_amount(),
+                pre_staker_info.total_staked_amount() + amount,
+                "Total staked amount must increase by the 'amount'"
+            );
+            assert_eq!(
+                post_staker_info.staked_amount(stake_period_type),
+                pre_staker_info.staked_amount(stake_period_type) + amount,
+                "Staked amount must increase by the 'amount'"
+            );
+            assert_eq!(post_staker_info.period_number(), stake_period);
+            assert_eq!(
+                post_staker_info.is_loyal(),
+                pre_staker_info.is_loyal(),
+                "Staking operation mustn't change loyalty flag."
+            );
+        }
+        // A new entry is created.
+        _ => {
+            assert_eq!(
+                post_staker_info.total_staked_amount(),
+                amount,
+                "Total staked amount must be equal to exactly the 'amount'"
+            );
+            assert!(amount >= <Test as pallet_dapp_staking::Config>::MinimumStakeAmount::get());
+            assert_eq!(
+                post_staker_info.staked_amount(stake_period_type),
+                amount,
+                "Staked amount must be equal to exactly the 'amount'"
+            );
+            assert_eq!(post_staker_info.period_number(), stake_period);
+            assert_eq!(
+                post_staker_info.is_loyal(),
+                stake_period_type == PeriodType::Voting
+            );
+        }
+    }
+
+    // 3. verify contract stake
+    // =========================
+    // =========================
+    // TODO: since default value is all zeros, maybe we can just skip the branching code and do it once?
+    match pre_contract_stake.last_stake_period() {
+        Some(last_stake_period) if last_stake_period == stake_period => {
+            assert_eq!(post_contract_stake.len(), pre_contract_stake.len());
+            assert_eq!(
+                post_contract_stake.total_staked_amount(stake_period),
+                pre_contract_stake.total_staked_amount(stake_period) + amount,
+                "Staked amount must increase by the 'amount'"
+            );
+            assert_eq!(
+                post_contract_stake.staked_amount(stake_period, stake_period_type),
+                pre_contract_stake.staked_amount(stake_period, stake_period_type) + amount,
+                "Staked amount must increase by the 'amount'"
+            );
+        }
+        _ => {
+            assert_eq!(post_contract_stake.len(), 1);
+            assert_eq!(
+                post_contract_stake.total_staked_amount(stake_period),
+                amount,
+                "Total staked amount must be equal to exactly the 'amount'"
+            );
+            assert_eq!(
+                post_contract_stake.staked_amount(stake_period, stake_period_type),
+                amount,
+                "Staked amount must be equal to exactly the 'amount'"
+            );
+        }
+    }
+    assert_eq!(post_contract_stake.last_stake_period(), Some(stake_period));
+    assert_eq!(post_contract_stake.last_stake_era(), Some(stake_era));
+
+    // 4. verify era info
+    // =========================
+    // =========================
+    assert_eq!(
+        post_era_info.total_staked_amount(),
+        pre_era_info.total_staked_amount(),
+        "Total staked amount for the current era must remain the same."
+    );
+    assert_eq!(
+        post_era_info.total_staked_amount_next_era(),
+        pre_era_info.total_staked_amount_next_era() + amount
+    );
+    assert_eq!(
+        post_era_info.staked_amount_next_era(stake_period_type),
+        pre_era_info.staked_amount_next_era(stake_period_type) + amount
     );
 }

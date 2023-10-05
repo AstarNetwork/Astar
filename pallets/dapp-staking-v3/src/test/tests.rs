@@ -698,3 +698,23 @@ fn relock_unlocking_insufficient_lock_amount_fails() {
         );
     })
 }
+
+#[test]
+fn stake_basic_example_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract & lock some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::default();
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let lock_amount = 300;
+        assert_lock(account, lock_amount);
+
+        // Stake some amount
+        let first_stake_amount = 100;
+        assert_stake(account, &smart_contract, first_stake_amount);
+
+        // continue here
+    })
+}

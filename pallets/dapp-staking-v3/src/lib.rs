@@ -213,6 +213,8 @@ pub mod pallet {
         InternalStakeError,
         /// Total staked amount on contract is below the minimum required value.
         InsufficientStakeAmount,
+        /// Stake operation is rejected since period ends in the next era.
+        PeriodEndsInNextEra,
     }
 
     /// General information about dApp staking protocol state.
@@ -614,12 +616,14 @@ pub mod pallet {
             );
 
             let protocol_state = ActiveProtocolState::<T>::get();
-            let mut ledger = Ledger::<T>::get(&account);
-
             // Staker always stakes from the NEXT era
             let stake_era = protocol_state.era.saturating_add(1);
+            ensure!(
+                !protocol_state.period_info.is_ending(stake_era),
+                Error::<T>::PeriodEndsInNextEra
+            );
 
-            // TODO: add a check if Build&Earn period ends in the next era. If it does, staking should fail since it's pointless.
+            let mut ledger = Ledger::<T>::get(&account);
 
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
@@ -639,7 +643,7 @@ pub mod pallet {
             //
             // There are two distinct scenarios:
             // 1. Existing entry matches the current period number - just update it.
-            // 2. Entry doesn't exist or it's for an older era - create a new one.
+            // 2. Entry doesn't exist or it's for an older period - create a new one.
             //
             // This is ok since we only use this storage entry to keep track of how much each staker
             // has staked on each contract in the current period. We only ever need the latest information.
@@ -676,7 +680,7 @@ pub mod pallet {
             );
 
             // 4.
-            // Update total staked amount in this era.
+            // Update total staked amount for the next era.
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.add_stake_amount(amount, protocol_state.period_info.period_type);
             });
@@ -693,10 +697,9 @@ pub mod pallet {
                 amount,
             });
 
-            // TODO: maybe keep track of pending bonus rewards in the AccountLedger struct?
-            // That way it's easy to check if stake can even be called - bonus-rewards should be zero & last staked era should be None or current one.
-
-            // TODO: has user claimed past rewards? Can we force them to do it before they start staking again?
+            // TODO: Handle both the bonus rewards, and the regular rewards via `AccountLedger`.
+            // Keep track of total stake both for both periods, and use it to calculate rewards.
+            // It literally seems like the simplest way to do it.
 
             Ok(())
         }

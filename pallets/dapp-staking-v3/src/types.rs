@@ -246,12 +246,18 @@ pub struct PeriodInfo {
 }
 
 impl PeriodInfo {
+    /// Create new instance of `PeriodInfo`
     pub fn new(number: PeriodNumber, period_type: PeriodType, ending_era: EraNumber) -> Self {
         Self {
             number,
             period_type,
             ending_era,
         }
+    }
+
+    /// `true` if period ends in the provided `era` argument, `false` otherwise
+    pub fn is_ending(&self, era: EraNumber) -> bool {
+        self.ending_era == era
     }
 }
 
@@ -485,76 +491,6 @@ where
             .saturating_add(self.unlocking_amount())
     }
 
-    /// Active staked balance.
-    ///
-    /// In case latest stored information is from the past period, active stake is considered to be zero.
-    pub fn active_stake(&self, active_period: PeriodNumber) -> Balance {
-        match self.staked_period {
-            Some(last_staked_period) if last_staked_period == active_period => self
-                .staked
-                .0
-                .last()
-                .map_or(Balance::zero(), |chunk| chunk.amount),
-            _ => Balance::zero(),
-        }
-    }
-
-    /// Amount that is available for staking.
-    ///
-    /// This is equal to the total active locked amount, minus the staked amount already active.
-    pub fn stakeable_amount(&self, active_period: PeriodNumber) -> Balance {
-        self.active_locked_amount()
-            .saturating_sub(self.active_stake(active_period))
-    }
-
-    /// Amount that is staked, in respect to currently active period.
-    pub fn staked_amount(&self, active_period: PeriodNumber) -> Balance {
-        match self.staked_period {
-            Some(last_staked_period) if last_staked_period == active_period => self
-                .staked
-                .0
-                .last()
-                // We should never fallback to the default value since that would mean ledger is in invalid state.
-                // TODO: perhaps this can be implemented in a better way to have some error handling? Returning 0 might not be the most secure way to handle it.
-                .map_or(Balance::zero(), |chunk| chunk.amount),
-            _ => Balance::zero(),
-        }
-    }
-
-    /// Adds the specified amount to total staked amount, if possible.
-    ///
-    /// Staking is allowed only allowed if one of the two following conditions is met:
-    /// 1. Staker is staking again in the period in which they already staked.
-    /// 2. Staker is staking for the first time in this period, and there are no staking chunks from the previous eras.
-    ///
-    /// Additonally, the staked amount must not exceed what's available for staking.
-    pub fn add_stake_amount(
-        &mut self,
-        amount: Balance,
-        era: EraNumber,
-        current_period: PeriodNumber,
-    ) -> Result<(), AccountLedgerError> {
-        if amount.is_zero() {
-            return Ok(());
-        }
-
-        match self.staked_period {
-            Some(last_staked_period) if last_staked_period != current_period => {
-                return Err(AccountLedgerError::InvalidPeriod);
-            }
-            _ => (),
-        }
-
-        if self.stakeable_amount(current_period) < amount {
-            return Err(AccountLedgerError::UnavailableStakeFunds);
-        }
-
-        self.staked.add_amount(amount, era)?;
-        self.staked_period = Some(current_period);
-
-        Ok(())
-    }
-
     /// Adds the specified amount to the total locked amount.
     pub fn add_lock_amount(&mut self, amount: Balance) {
         self.locked.saturating_accrue(amount);
@@ -632,6 +568,86 @@ where
         self.unlocking = Default::default();
 
         amount
+    }
+
+    /// Active staked balance.
+    ///
+    /// In case latest stored information is from the past period, active stake is considered to be zero.
+    pub fn active_stake(&self, active_period: PeriodNumber) -> Balance {
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period == active_period => self
+                .staked
+                .0
+                .last()
+                .map_or(Balance::zero(), |chunk| chunk.amount),
+            _ => Balance::zero(),
+        }
+    }
+
+    /// Amount that is available for staking.
+    ///
+    /// This is equal to the total active locked amount, minus the staked amount already active.
+    pub fn stakeable_amount(&self, active_period: PeriodNumber) -> Balance {
+        self.active_locked_amount()
+            .saturating_sub(self.active_stake(active_period))
+    }
+
+    /// Amount that is staked, in respect to currently active period.
+    pub fn staked_amount(&self, active_period: PeriodNumber) -> Balance {
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period == active_period => self
+                .staked
+                .0
+                .last()
+                // We should never fallback to the default value since that would mean ledger is in invalid state.
+                // TODO: perhaps this can be implemented in a better way to have some error handling? Returning 0 might not be the most secure way to handle it.
+                .map_or(Balance::zero(), |chunk| chunk.amount),
+            _ => Balance::zero(),
+        }
+    }
+
+    /// Adds the specified amount to total staked amount, if possible.
+    ///
+    /// Staking is allowed only allowed if one of the two following conditions is met:
+    /// 1. Staker is staking again in the period in which they already staked.
+    /// 2. Staker is staking for the first time in this period, and there are no staking chunks from the previous eras.
+    ///
+    /// Additonally, the staked amount must not exceed what's available for staking.
+    pub fn add_stake_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+        current_period: PeriodNumber,
+    ) -> Result<(), AccountLedgerError> {
+        if amount.is_zero() {
+            return Ok(());
+        }
+
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period != current_period => {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+            _ => (),
+        }
+
+        if self.stakeable_amount(current_period) < amount {
+            return Err(AccountLedgerError::UnavailableStakeFunds);
+        }
+
+        self.staked.add_amount(amount, era)?;
+        self.staked_period = Some(current_period);
+
+        Ok(())
+    }
+
+    /// Last era for which a stake entry exists.
+    /// If no stake entries exist, returns `None`.
+    pub fn last_stake_era(&self) -> Option<EraNumber> {
+        if let Some(chunk) = self.staked.0.last() {
+            Some(chunk.era)
+        } else {
+            None
+        }
     }
 }
 
@@ -938,10 +954,16 @@ pub struct ContractStakingInfoSeries(
     BoundedVec<ContractStakingInfo, ConstU32<STAKING_SERIES_HISTORY>>,
 );
 impl ContractStakingInfoSeries {
-    /// Helper
+    /// Helper TODO
     #[cfg(test)]
     pub fn new(inner: Vec<ContractStakingInfo>) -> Self {
         Self(BoundedVec::try_from(inner).expect("Test should ensure this is always valid"))
+    }
+
+    /// TODO
+    #[cfg(test)]
+    pub fn into_inner(self) -> Vec<ContractStakingInfo> {
+        self.0.into_inner()
     }
 
     /// Length of the series.
@@ -980,6 +1002,42 @@ impl ContractStakingInfoSeries {
                 // TODO: this is unreachable, but compiler doesn't know that
                 None
             }
+        }
+    }
+
+    /// Last era for which a stake entry exists, `None` if no entries exist.
+    pub fn last_stake_era(&self) -> Option<EraNumber> {
+        if let Some(last_element) = self.0.last() {
+            Some(last_element.era())
+        } else {
+            None
+        }
+    }
+
+    /// Last period for which a stake entry exists, `None` if no entries exist.
+    pub fn last_stake_period(&self) -> Option<PeriodNumber> {
+        if let Some(last_element) = self.0.last() {
+            Some(last_element.period())
+        } else {
+            None
+        }
+    }
+
+    pub fn total_staked_amount(&self, period: PeriodNumber) -> Balance {
+        match self.0.last() {
+            Some(last_element) if last_element.period() == period => {
+                last_element.total_staked_amount()
+            }
+            _ => Balance::zero(),
+        }
+    }
+
+    pub fn staked_amount(&self, period: PeriodNumber, period_type: PeriodType) -> Balance {
+        match self.0.last() {
+            Some(last_element) if last_element.period() == period => {
+                last_element.staked_amount(period_type)
+            }
+            _ => Balance::zero(),
         }
     }
 
