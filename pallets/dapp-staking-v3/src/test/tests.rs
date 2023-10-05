@@ -368,7 +368,7 @@ fn unlock_basic_example_is_ok() {
         assert_unlock(account, first_unlock_amount);
 
         // Advance era and unlock additional amount
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        advance_to_next_era();
         assert_unlock(account, first_unlock_amount);
 
         // Lock a bit more, and unlock again
@@ -384,7 +384,7 @@ fn unlock_with_remaining_amount_below_threshold_is_ok() {
         let account = 2;
         let lock_amount = 101;
         assert_lock(account, lock_amount);
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        advance_to_next_era();
         assert_lock(account, lock_amount);
         advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
 
@@ -406,7 +406,7 @@ fn unlock_with_amount_higher_than_avaiable_is_ok() {
         let account = 2;
         let lock_amount = 101;
         assert_lock(account, lock_amount);
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        advance_to_next_era();
         assert_lock(account, lock_amount);
 
         // TODO: Hacky, maybe improve later when staking is implemented?
@@ -445,7 +445,7 @@ fn unlock_advanced_examples_are_ok() {
         assert_unlock(account, unlock_amount);
 
         // Advance era and unlock additional amount
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        advance_to_next_era();
         assert_unlock(account, unlock_amount * 2);
 
         // Advance few more eras, and unlock everything
@@ -456,7 +456,7 @@ fn unlock_advanced_examples_are_ok() {
             .is_zero());
 
         // Advance one more era and ensure we can still lock & unlock
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        advance_to_next_era();
         assert_lock(account, lock_amount);
         assert_unlock(account, unlock_amount);
     })
@@ -468,7 +468,7 @@ fn unlock_everything_with_active_stake_fails() {
         let account = 2;
         let lock_amount = 101;
         assert_lock(account, lock_amount);
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        advance_to_next_era();
 
         // We stake so the amount is just below the minimum locked amount, causing full unlock impossible.
         let minimum_locked_amount: Balance =
@@ -500,7 +500,7 @@ fn unlock_with_zero_amount_fails() {
         let account = 2;
         let lock_amount = 101;
         assert_lock(account, lock_amount);
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+        advance_to_next_era();
 
         // Unlock with zero fails
         assert_noop!(
@@ -711,10 +711,27 @@ fn stake_basic_example_is_ok() {
         let lock_amount = 300;
         assert_lock(account, lock_amount);
 
-        // Stake some amount
-        let first_stake_amount = 100;
-        assert_stake(account, &smart_contract, first_stake_amount);
+        // 1st scenario - stake some amount, and then some more
+        let (stake_amount_1, stake_amount_2) = (31, 29);
+        assert_stake(account, &smart_contract, stake_amount_1);
+        assert_stake(account, &smart_contract, stake_amount_2);
 
-        // continue here
+        // 2nd scenario - stake in the next era
+        advance_to_next_era();
+        let stake_amount_3 = 23;
+        assert_stake(account, &smart_contract, stake_amount_3);
+
+        // 3rd scenario - advance era again but create a gap, and then stake
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
+        let stake_amount_4 = 19;
+        assert_stake(account, &smart_contract, stake_amount_4);
+
+        // 4th scenario - advance period, and stake
+        // TODO: Hacky! Improve this when proper era/period transition handling is implemented!
+        // advance_to_next_era();
+        // advance_to_next_period();
+        // let stake_amount_5 = 17;
+        // assert_stake(account, &smart_contract, stake_amount_5);
+        // TODO: this can only be tested after reward claiming has been implemented!!!
     })
 }

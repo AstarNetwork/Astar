@@ -962,8 +962,8 @@ impl ContractStakingInfoSeries {
 
     /// TODO
     #[cfg(test)]
-    pub fn into_inner(self) -> Vec<ContractStakingInfo> {
-        self.0.into_inner()
+    pub fn inner(&self) -> Vec<ContractStakingInfo> {
+        self.0.clone().into_inner()
     }
 
     /// Length of the series.

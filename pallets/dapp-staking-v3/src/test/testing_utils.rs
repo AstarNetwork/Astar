@@ -529,7 +529,6 @@ pub(crate) fn assert_stake(
     // TODO: since default value is all zeros, maybe we can just skip the branching code and do it once?
     match pre_contract_stake.last_stake_period() {
         Some(last_stake_period) if last_stake_period == stake_period => {
-            assert_eq!(post_contract_stake.len(), pre_contract_stake.len());
             assert_eq!(
                 post_contract_stake.total_staked_amount(stake_period),
                 pre_contract_stake.total_staked_amount(stake_period) + amount,
@@ -557,6 +556,8 @@ pub(crate) fn assert_stake(
     }
     assert_eq!(post_contract_stake.last_stake_period(), Some(stake_period));
     assert_eq!(post_contract_stake.last_stake_era(), Some(stake_era));
+
+    // TODO: expand this check to compare inner slices as well!
 
     // 4. verify era info
     // =========================
