@@ -245,6 +245,16 @@ pub struct PeriodInfo {
     pub ending_era: EraNumber,
 }
 
+impl PeriodInfo {
+    pub fn new(number: PeriodNumber, period_type: PeriodType, ending_era: EraNumber) -> Self {
+        Self {
+            number,
+            period_type,
+            ending_era,
+        }
+    }
+}
+
 /// Force types to speed up the next era, and even period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub enum ForcingTypes {
@@ -944,14 +954,8 @@ impl ContractStakingInfoSeries {
         period_info: PeriodInfo,
         era: EraNumber,
     ) -> Result<(), ()> {
-        // TODO: Maybe this can be optimized to be both more readable & efficient.
-
-        // Get the most relevant `ContractStakingInfo` type
-        // TODO: skip clone?
-        let mut inner = self.0.clone().into_inner();
-
         // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
-        if let Some(last_element) = inner.last() {
+        if let Some(last_element) = self.0.last() {
             if last_element.era() > era || last_element.period() > period_info.number {
                 return Err(());
             }
@@ -959,7 +963,7 @@ impl ContractStakingInfoSeries {
 
         // Get the most relevant `ContractStakingInfo` instance
         let (last_element_has_matching_era, last_element_has_matching_period) =
-            if let Some(last_element) = inner.last() {
+            if let Some(last_element) = self.0.last() {
                 (
                     last_element.era() == era,
                     last_element.period() == period_info.number,
@@ -970,10 +974,10 @@ impl ContractStakingInfoSeries {
 
         // Prepare the new entry
         let mut staking_info = if last_element_has_matching_era {
-            inner.remove(inner.len() - 1)
+            self.0.remove(self.0.len() - 1)
         } else if last_element_has_matching_period {
             // Periods match so we should 'copy' the last element to get correct staking amount
-            let mut temp = inner[inner.len() - 1];
+            let mut temp = self.0[self.0.len() - 1];
             temp.era = era;
             temp
         } else {
@@ -983,18 +987,15 @@ impl ContractStakingInfoSeries {
 
         // Update the stake amount
         staking_info.stake(amount, period_info.period_type);
-        inner.push(staking_info);
 
         // Prune the oldest entry if we have more than the limit
-        if inner.len() > STAKING_SERIES_HISTORY as usize {
+        if self.0.len() > STAKING_SERIES_HISTORY.saturating_sub(1) as usize {
             // TODO: this can be perhaps optimized so we prune entries which are very old.
             // However, this makes the code more complex & more error prone.
             // If kept like this, we always make sure we cover the history, and we never exceed it.
-            inner.remove(0);
+            self.0.remove(0);
         }
 
-        self.0 = WeakBoundedVec::force_from(inner, None);
-
-        Ok(())
+        self.0.try_push(staking_info)
     }
 }
