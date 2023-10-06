@@ -257,7 +257,7 @@ impl PeriodInfo {
 
     /// `true` if period ends in the provided `era` argument, `false` otherwise
     pub fn is_ending(&self, era: EraNumber) -> bool {
-        self.ending_era == era
+        self.period_type == PeriodType::BuildAndEarn && self.ending_era == era
     }
 }
 
