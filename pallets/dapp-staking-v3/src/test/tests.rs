@@ -722,7 +722,7 @@ fn stake_basic_example_is_ok() {
         assert_stake(account, &smart_contract, stake_amount_3);
 
         // 3rd scenario - advance era again but create a gap, and then stake
-        advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
         let stake_amount_4 = 19;
         assert_stake(account, &smart_contract, stake_amount_4);
 

@@ -109,9 +109,9 @@ impl pallet_dapp_staking::Config for Test {
     type Currency = Balances;
     type SmartContract = MockSmartContract;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type EraLength = ConstU64<8>;
-    type VotingPeriodLength = ConstU32<2>;
-    type BuildAndEarnPeriodLength = ConstU32<4>;
+    type EraLength = ConstU64<10>;
+    type VotingPeriodLength = ConstU32<8>;
+    type BuildAndEarnPeriodLength = ConstU32<16>;
     type MaxNumberOfContracts = ConstU16<10>;
     type MaxLockedChunks = ConstU32<5>;
     type MaxUnlockingChunks = ConstU32<5>;
@@ -156,14 +156,21 @@ impl ExtBuilder {
             System::set_block_number(1);
             DappStaking::on_initialize(System::block_number());
 
-            // TODO: remove this after proper on_init handling is implemented
+            // TODO: should pallet handle this?
+            // TODO2: not sure why the mess with type happens here, I can check it later
+            let era_length: BlockNumber =
+                <<Test as pallet_dapp_staking::Config>::EraLength as sp_core::Get<_>>::get();
+            let voting_period_length_in_eras: EraNumber =
+                <<Test as pallet_dapp_staking::Config>::VotingPeriodLength as sp_core::Get<_>>::get(
+                );
+
             pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
                 era: 1,
-                next_era_start: BlockNumber::from(101_u32),
+                next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()),
                 period_info: PeriodInfo {
                     number: 1,
                     period_type: PeriodType::Voting,
-                    ending_era: 16,
+                    ending_era: 2,
                 },
                 maintenance: false,
             });
@@ -175,7 +182,7 @@ impl ExtBuilder {
 
 /// Run to the specified block number.
 /// Function assumes first block has been initialized.
-pub(crate) fn _run_to_block(n: u64) {
+pub(crate) fn run_to_block(n: u64) {
     while System::block_number() < n {
         DappStaking::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
@@ -187,15 +194,17 @@ pub(crate) fn _run_to_block(n: u64) {
 /// Run for the specified number of blocks.
 /// Function assumes first block has been initialized.
 pub(crate) fn run_for_blocks(n: u64) {
-    _run_to_block(System::block_number() + n);
+    run_to_block(System::block_number() + n);
 }
 
 /// Advance blocks until the specified era has been reached.
 ///
 /// Function has no effect if era is already passed.
 pub(crate) fn advance_to_era(era: EraNumber) {
-    // TODO: Properly implement this later when additional logic has been implemented
-    ActiveProtocolState::<Test>::mutate(|state| state.era = era);
+    assert!(era >= ActiveProtocolState::<Test>::get().era);
+    while ActiveProtocolState::<Test>::get().era < era {
+        run_for_blocks(1);
+    }
 }
 
 /// Advance blocks until next era has been reached.
@@ -207,11 +216,13 @@ pub(crate) fn advance_to_next_era() {
 ///
 /// Function has no effect if period is already passed.
 pub(crate) fn advance_to_period(period: PeriodNumber) {
-    // TODO: Properly implement this later when additional logic has been implemented
-    ActiveProtocolState::<Test>::mutate(|state| state.period_info.number = period);
+    assert!(period >= ActiveProtocolState::<Test>::get().period_number());
+    while ActiveProtocolState::<Test>::get().period_number() < period {
+        run_for_blocks(1);
+    }
 }
 
 /// Advance blocks until next period has been reached.
 pub(crate) fn advance_to_next_period() {
-    advance_to_period(ActiveProtocolState::<Test>::get().period_info.number + 1);
+    advance_to_period(ActiveProtocolState::<Test>::get().period_number() + 1);
 }

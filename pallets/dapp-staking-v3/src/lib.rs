@@ -304,7 +304,7 @@ pub mod pallet {
                         let ending_era =
                             next_era.saturating_add(T::BuildAndEarnPeriodLength::get());
                         let build_and_earn_start_block = now.saturating_add(T::EraLength::get());
-                        protocol_state.next_period(ending_era, build_and_earn_start_block);
+                        protocol_state.next_period_type(ending_era, build_and_earn_start_block);
 
                         Some(Event::<T>::NewPeriod {
                             period_type: protocol_state.period_type(),
@@ -320,10 +320,11 @@ pub mod pallet {
                             let ending_era = next_era.saturating_add(1);
                             let voting_period_length = T::EraLength::get()
                                 .saturating_mul(T::VotingPeriodLength::get().into());
-                            let voting_start_block = now
+                            let next_era_start_block = now
                                 .saturating_add(voting_period_length)
                                 .saturating_add(One::one());
-                            protocol_state.next_period(ending_era, voting_start_block);
+                            protocol_state.next_period_type(ending_era, next_era_start_block);
+                            protocol_state.period_info.number.saturating_accrue(1);
 
                             // TODO: trigger tier configuration calculation based on internal & external params.
 

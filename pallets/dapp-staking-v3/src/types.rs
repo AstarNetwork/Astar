@@ -335,7 +335,7 @@ where
     }
 
     /// TODO
-    pub fn next_period(&mut self, ending_era: EraNumber, next_era_start: BlockNumber) {
+    pub fn next_period_type(&mut self, ending_era: EraNumber, next_era_start: BlockNumber) {
         self.period_info = PeriodInfo {
             number: self.period_number(),
             period_type: self.period_type().next(),
