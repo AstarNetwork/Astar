@@ -319,22 +319,23 @@ impl<BlockNumber> ProtocolState<BlockNumber>
 where
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
 {
-    /// TODO
+    /// Current period type.
     pub fn period_type(&self) -> PeriodType {
         self.period_info.period_type
     }
 
-    /// TODO
+    /// Current period number.
     pub fn period_number(&self) -> PeriodNumber {
         self.period_info.number
     }
 
-    /// TODO
+    /// Checks whether a new era should be triggered, based on the provided `BlockNumber` argument
+    /// or possibly other protocol state parameters.
     pub fn is_new_era(&self, now: BlockNumber) -> bool {
         self.next_era_start <= now
     }
 
-    /// TODO
+    /// Triggers the next period type, updating appropriate parameters.
     pub fn next_period_type(&mut self, ending_era: EraNumber, next_era_start: BlockNumber) {
         self.period_info = PeriodInfo {
             number: self.period_number(),
@@ -345,7 +346,7 @@ where
     }
 }
 
-/// dApp state in which some dApp is in.
+/// State in which some dApp is in.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub enum DAppState {
     /// dApp is registered and active.
@@ -366,42 +367,6 @@ pub struct DAppInfo<AccountId> {
     pub state: DAppState,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
     pub reward_destination: Option<AccountId>,
-}
-
-/// How much was locked in a specific era
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct LockedChunk {
-    #[codec(compact)]
-    pub amount: Balance,
-    #[codec(compact)]
-    pub era: EraNumber,
-}
-
-impl Default for LockedChunk {
-    fn default() -> Self {
-        Self {
-            amount: Balance::zero(),
-            era: EraNumber::zero(),
-        }
-    }
-}
-
-impl AmountEraPair for LockedChunk {
-    fn get_amount(&self) -> Balance {
-        self.amount
-    }
-    fn get_era(&self) -> EraNumber {
-        self.era
-    }
-    fn set_era(&mut self, era: EraNumber) {
-        self.era = era;
-    }
-    fn saturating_accrue(&mut self, increase: Balance) {
-        self.amount.saturating_accrue(increase);
-    }
-    fn saturating_reduce(&mut self, reduction: Balance) {
-        self.amount.saturating_reduce(reduction);
-    }
 }
 
 /// How much was unlocked in some block.
@@ -814,13 +779,9 @@ pub struct SingularStakingInfo {
     bep_staked_amount: Balance,
     /// Period number for which this entry is relevant.
     #[codec(compact)]
-    // TODO: rename to period_number?
     period: PeriodNumber,
     /// Indicates whether a staker is a loyal staker or not.
     loyal_staker: bool,
-    /// Indicates whether staker claimed rewards
-    // TODO: isn't this redundant?!
-    reward_claimed: bool,
 }
 
 impl SingularStakingInfo {
@@ -837,7 +798,6 @@ impl SingularStakingInfo {
             period,
             // Loyalty staking is only possible if stake is first made during the voting period.
             loyal_staker: period_type == PeriodType::Voting,
-            reward_claimed: false,
         }
     }
 
@@ -993,13 +953,13 @@ pub struct ContractStakingInfoSeries(
     BoundedVec<ContractStakingInfo, ConstU32<STAKING_SERIES_HISTORY>>,
 );
 impl ContractStakingInfoSeries {
-    /// Helper TODO
+    /// Helper function to create a new instance of `ContractStakingInfoSeries`.
     #[cfg(test)]
     pub fn new(inner: Vec<ContractStakingInfo>) -> Self {
         Self(BoundedVec::try_from(inner).expect("Test should ensure this is always valid"))
     }
 
-    /// TODO
+    /// Returns inner `Vec` of `ContractStakingInfo` instances. Useful for testing.
     #[cfg(test)]
     pub fn inner(&self) -> Vec<ContractStakingInfo> {
         self.0.clone().into_inner()
@@ -1027,19 +987,19 @@ impl ContractStakingInfoSeries {
         // 3.2. In case periods aren't matching, we return `None` since stakes don't carry over between periods.
         match idx {
             Ok(idx) => self.0.get(idx).map(|x| *x),
-            Err(idx) if idx.is_zero() => None,
-            Err(idx) if idx > 0 => {
-                let mut info = self.0[idx - 1];
-                if info.period() == period {
-                    info.era = era;
-                    Some(info)
-                } else {
+            Err(idx) => {
+                if idx.is_zero() {
                     None
+                } else {
+                    match self.0.get(idx - 1) {
+                        Some(info) if info.period() == period => {
+                            let mut info = *info;
+                            info.era = era;
+                            Some(info)
+                        }
+                        _ => None,
+                    }
                 }
-            }
-            Err(_) => {
-                // TODO: this is unreachable, but compiler doesn't know that
-                None
             }
         }
     }

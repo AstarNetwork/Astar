@@ -45,7 +45,7 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::traits::{BadOrigin, One, Saturating, Zero};
+use sp_runtime::traits::{BadOrigin, Saturating, Zero};
 
 use astar_primitives::Balance;
 
@@ -89,30 +89,24 @@ pub mod pallet {
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
-        /// Length of era in block numbers.
+        /// Length of a standard era in block numbers.
         #[pallet::constant]
-        type EraLength: Get<Self::BlockNumber>;
+        type StandardEraLength: Get<Self::BlockNumber>;
 
-        /// Length of the `Voting` period in eras.
-        /// Although `Voting` period only consumes one 'era', we still measure it's length in eras
+        /// Length of the `Voting` period in standard eras.
+        /// Although `Voting` period only consumes one 'era', we still measure it's length in standard eras
         /// for the sake of simplicity & consistency.
         #[pallet::constant]
-        type VotingPeriodLength: Get<EraNumber>;
+        type StandardErasPerVotingPeriod: Get<EraNumber>;
 
-        /// Length of the `Build&Earn` period in eras.
-        /// Each `Build&Earn` period consists of one or more distinct eras.
+        /// Length of the `Build&Earn` period in standard eras.
+        /// Each `Build&Earn` period consists of one or more distinct standard eras.
         #[pallet::constant]
-        type BuildAndEarnPeriodLength: Get<EraNumber>;
+        type StandardErasPerBuildAndEarnPeriod: Get<EraNumber>;
 
         /// Maximum number of contracts that can be integrated into dApp staking at once.
-        /// TODO: maybe this can be reworded or improved later on - but we want a ceiling!
         #[pallet::constant]
         type MaxNumberOfContracts: Get<DAppId>;
-
-        /// Maximum number of locked chunks that can exist per account at a time.
-        // TODO: should this just be hardcoded to 2? Nothing else makes sense really - current era and next era are required.
-        #[pallet::constant]
-        type MaxLockedChunks: Get<u32>;
 
         /// Maximum number of unlocking chunks that can exist per account at a time.
         #[pallet::constant]
@@ -302,8 +296,9 @@ pub mod pallet {
                     PeriodType::Voting => {
                         // For the sake of consistency
                         let ending_era =
-                            next_era.saturating_add(T::BuildAndEarnPeriodLength::get());
-                        let build_and_earn_start_block = now.saturating_add(T::EraLength::get());
+                            next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
+                        let build_and_earn_start_block =
+                            now.saturating_add(T::StandardEraLength::get());
                         protocol_state.next_period_type(ending_era, build_and_earn_start_block);
 
                         Some(Event::<T>::NewPeriod {
@@ -318,11 +313,9 @@ pub mod pallet {
                         if protocol_state.period_info.is_ending(next_era) {
                             // For the sake of consistency
                             let ending_era = next_era.saturating_add(1);
-                            let voting_period_length = T::EraLength::get()
-                                .saturating_mul(T::VotingPeriodLength::get().into());
-                            let next_era_start_block = now
-                                .saturating_add(voting_period_length)
-                                .saturating_add(One::one());
+                            let voting_period_length = Self::blocks_per_voting_period();
+                            let next_era_start_block = now.saturating_add(voting_period_length);
+
                             protocol_state.next_period_type(ending_era, next_era_start_block);
                             protocol_state.period_info.number.saturating_accrue(1);
 
@@ -333,6 +326,9 @@ pub mod pallet {
                                 number: protocol_state.period_number(),
                             })
                         } else {
+                            let next_era_start_block =
+                                now.saturating_add(T::StandardEraLength::get());
+                            protocol_state.next_era_start = next_era_start_block;
                             None
                         }
                     }
@@ -846,6 +842,11 @@ pub mod pallet {
                 );
                 Ledger::<T>::insert(account, ledger);
             }
+        }
+
+        /// Returns the number of blocks per voting period.
+        pub(crate) fn blocks_per_voting_period() -> BlockNumberFor<T> {
+            T::StandardEraLength::get().saturating_mul(T::StandardErasPerVotingPeriod::get().into())
         }
 
         /// `true` if smart contract is active, `false` if it has been unregistered.

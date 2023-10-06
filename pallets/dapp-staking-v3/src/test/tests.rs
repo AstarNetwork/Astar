@@ -19,11 +19,11 @@
 use crate::test::mock::*;
 use crate::test::testing_utils::*;
 use crate::{
-    pallet as pallet_dapp_staking, ActiveProtocolState, DAppId, Error, IntegratedDApps, Ledger,
-    NextDAppId, PeriodType, SparseBoundedAmountEraVec, StakeChunk,
+    pallet as pallet_dapp_staking, ActiveProtocolState, DAppId, EraNumber, Error, IntegratedDApps,
+    Ledger, NextDAppId, PeriodType,
 };
 
-use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get, BoundedVec};
+use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
 use sp_runtime::traits::Zero;
 
 #[test]
@@ -99,6 +99,67 @@ fn maintenace_mode_call_filtering_works() {
             DappStaking::unstake(RuntimeOrigin::signed(1), MockSmartContract::default(), 100),
             Error::<Test>::Disabled
         );
+    })
+}
+
+#[test]
+fn on_initialize_state_change_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Sanity check
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        assert_eq!(protocol_state.era, 1);
+        assert_eq!(protocol_state.period_number(), 1);
+        assert_eq!(protocol_state.period_type(), PeriodType::Voting);
+        assert_eq!(System::block_number(), 1);
+
+        let blocks_per_voting_period = DappStaking::blocks_per_voting_period();
+        assert_eq!(
+            protocol_state.next_era_start,
+            blocks_per_voting_period + 1,
+            "Counting starts from block 1, hence the +1."
+        );
+
+        // Advance eras until we reach the Build&Earn period part
+        run_to_block(protocol_state.next_era_start - 1);
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        assert_eq!(
+            protocol_state.period_type(),
+            PeriodType::Voting,
+            "Period type should still be the same."
+        );
+        assert_eq!(protocol_state.era, 1);
+
+        run_for_blocks(1);
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        assert_eq!(protocol_state.period_type(), PeriodType::BuildAndEarn);
+        assert_eq!(protocol_state.era, 2);
+        assert_eq!(protocol_state.period_number(), 1);
+
+        // Advance eras just until we reach the next voting period
+        let eras_per_bep_period: EraNumber =
+            <Test as pallet_dapp_staking::Config>::StandardErasPerBuildAndEarnPeriod::get();
+        let blocks_per_era: BlockNumber =
+            <Test as pallet_dapp_staking::Config>::StandardEraLength::get();
+        for era in 2..(2 + eras_per_bep_period - 1) {
+            let pre_block = System::block_number();
+            advance_to_next_era();
+            assert_eq!(System::block_number(), pre_block + blocks_per_era);
+            let protocol_state = ActiveProtocolState::<Test>::get();
+            assert_eq!(protocol_state.period_type(), PeriodType::BuildAndEarn);
+            assert_eq!(protocol_state.period_number(), 1);
+            assert_eq!(protocol_state.era, era + 1);
+        }
+
+        // Finaly advance over to the next era and ensure we're back to voting period
+        advance_to_next_era();
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        assert_eq!(protocol_state.period_type(), PeriodType::Voting);
+        assert_eq!(protocol_state.era, 2 + eras_per_bep_period);
+        assert_eq!(
+            protocol_state.next_era_start,
+            System::block_number() + blocks_per_voting_period
+        );
+        assert_eq!(protocol_state.period_number(), 2);
     })
 }
 
@@ -409,18 +470,11 @@ fn unlock_with_amount_higher_than_avaiable_is_ok() {
         advance_to_next_era();
         assert_lock(account, lock_amount);
 
-        // TODO: Hacky, maybe improve later when staking is implemented?
+        // Register contract & stake on it
+        let smart_contract = MockSmartContract::Wasm(1);
+        assert_register(1, &smart_contract);
         let stake_amount = 91;
-        Ledger::<Test>::mutate(&account, |ledger| {
-            ledger.staked = SparseBoundedAmountEraVec(
-                BoundedVec::try_from(vec![StakeChunk {
-                    amount: stake_amount,
-                    era: ActiveProtocolState::<Test>::get().era,
-                }])
-                .expect("Only one chunk so creation should succeed."),
-            );
-            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period_info.number);
-        });
+        assert_stake(account, &smart_contract, stake_amount);
 
         // Try to unlock more than is available, due to active staked amount
         assert_unlock(account, lock_amount - stake_amount + 1);
@@ -474,17 +528,11 @@ fn unlock_everything_with_active_stake_fails() {
         let minimum_locked_amount: Balance =
             <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
         let stake_amount = minimum_locked_amount - 1;
-        // TODO: Hacky, maybe improve later when staking is implemented?
-        Ledger::<Test>::mutate(&account, |ledger| {
-            ledger.staked = SparseBoundedAmountEraVec(
-                BoundedVec::try_from(vec![StakeChunk {
-                    amount: stake_amount,
-                    era: ActiveProtocolState::<Test>::get().era,
-                }])
-                .expect("Only one chunk so creation should succeed."),
-            );
-            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period_info.number);
-        });
+
+        // Register contract & stake on it
+        let smart_contract = MockSmartContract::Wasm(1);
+        assert_register(1, &smart_contract);
+        assert_stake(account, &smart_contract, stake_amount);
 
         // Try to unlock more than is available, due to active staked amount
         assert_noop!(
@@ -509,17 +557,9 @@ fn unlock_with_zero_amount_fails() {
         );
 
         // Stake everything, so available unlock amount is always zero
-        // TODO: Hacky, maybe improve later when staking is implemented?
-        Ledger::<Test>::mutate(&account, |ledger| {
-            ledger.staked = SparseBoundedAmountEraVec(
-                BoundedVec::try_from(vec![StakeChunk {
-                    amount: lock_amount,
-                    era: ActiveProtocolState::<Test>::get().era,
-                }])
-                .expect("Only one chunk so creation should succeed."),
-            );
-            ledger.staked_period = Some(ActiveProtocolState::<Test>::get().period_info.number);
-        });
+        let smart_contract = MockSmartContract::Wasm(1);
+        assert_register(1, &smart_contract);
+        assert_stake(account, &smart_contract, lock_amount);
 
         // Try to unlock anything, expect zero amount error
         assert_noop!(
@@ -769,7 +809,6 @@ fn stake_in_final_era_fails() {
         assert_lock(account, 300);
 
         // Force Build&Earn period
-        // TODO: handle this in a better way when transitioning is implemented
         ActiveProtocolState::<Test>::mutate(|state| {
             state.period_info.period_type = PeriodType::BuildAndEarn;
             state.period_info.ending_era = state.era + 1;

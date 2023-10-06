@@ -109,11 +109,10 @@ impl pallet_dapp_staking::Config for Test {
     type Currency = Balances;
     type SmartContract = MockSmartContract;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type EraLength = ConstU64<10>;
-    type VotingPeriodLength = ConstU32<8>;
-    type BuildAndEarnPeriodLength = ConstU32<16>;
+    type StandardEraLength = ConstU64<10>;
+    type StandardErasPerVotingPeriod = ConstU32<8>;
+    type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
     type MaxNumberOfContracts = ConstU16<10>;
-    type MaxLockedChunks = ConstU32<5>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MaxStakingChunks = ConstU32<8>;
     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
@@ -159,14 +158,14 @@ impl ExtBuilder {
             // TODO: should pallet handle this?
             // TODO2: not sure why the mess with type happens here, I can check it later
             let era_length: BlockNumber =
-                <<Test as pallet_dapp_staking::Config>::EraLength as sp_core::Get<_>>::get();
+                <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
             let voting_period_length_in_eras: EraNumber =
-                <<Test as pallet_dapp_staking::Config>::VotingPeriodLength as sp_core::Get<_>>::get(
+                <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingPeriod as sp_core::Get<_>>::get(
                 );
 
             pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
                 era: 1,
-                next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()),
+                next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
                 period_info: PeriodInfo {
                     number: 1,
                     period_type: PeriodType::Voting,
@@ -225,4 +224,12 @@ pub(crate) fn advance_to_period(period: PeriodNumber) {
 /// Advance blocks until next period has been reached.
 pub(crate) fn advance_to_next_period() {
     advance_to_period(ActiveProtocolState::<Test>::get().period_number() + 1);
+}
+
+/// Advance blocks until next period type has been reached.
+pub(crate) fn _advance_to_next_period_type() {
+    let period_type = ActiveProtocolState::<Test>::get().period_type();
+    while ActiveProtocolState::<Test>::get().period_type() == period_type {
+        run_for_blocks(1);
+    }
 }
