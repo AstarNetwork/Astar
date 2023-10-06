@@ -45,7 +45,7 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::traits::{BadOrigin, Saturating, Zero};
+use sp_runtime::traits::{BadOrigin, One, Saturating, Zero};
 
 use astar_primitives::Balance;
 
@@ -89,6 +89,21 @@ pub mod pallet {
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
+        /// Length of era in block numbers.
+        #[pallet::constant]
+        type EraLength: Get<Self::BlockNumber>;
+
+        /// Length of the `Voting` period in eras.
+        /// Although `Voting` period only consumes one 'era', we still measure it's length in eras
+        /// for the sake of simplicity & consistency.
+        #[pallet::constant]
+        type VotingPeriodLength: Get<EraNumber>;
+
+        /// Length of the `Build&Earn` period in eras.
+        /// Each `Build&Earn` period consists of one or more distinct eras.
+        #[pallet::constant]
+        type BuildAndEarnPeriodLength: Get<EraNumber>;
+
         /// Maximum number of contracts that can be integrated into dApp staking at once.
         /// TODO: maybe this can be reworded or improved later on - but we want a ceiling!
         #[pallet::constant]
@@ -123,6 +138,13 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// New era has started.
+        NewEra { era: EraNumber },
+        /// New period has started.
+        NewPeriod {
+            period_type: PeriodType,
+            number: PeriodNumber,
+        },
         /// A smart contract has been registered for dApp staking
         DAppRegistered {
             owner: T::AccountId,
@@ -261,6 +283,73 @@ pub mod pallet {
     /// General information about the current era.
     #[pallet::storage]
     pub type CurrentEraInfo<T: Config> = StorageValue<_, EraInfo, ValueQuery>;
+
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
+            let mut protocol_state = ActiveProtocolState::<T>::get();
+
+            // We should not modify pallet storage while in maintenance mode.
+            // This is a safety measure, since maintenance mode is expected to be
+            // enabled in case some misbehavior or corrupted storage is detected.
+            if protocol_state.maintenance {
+                return T::DbWeight::get().reads(1);
+            }
+
+            if protocol_state.is_new_era(now) {
+                let next_era = protocol_state.era.saturating_add(1);
+                let maybe_period_event = match protocol_state.period_type() {
+                    PeriodType::Voting => {
+                        // For the sake of consistency
+                        let ending_era =
+                            next_era.saturating_add(T::BuildAndEarnPeriodLength::get());
+                        let build_and_earn_start_block = now.saturating_add(T::EraLength::get());
+                        protocol_state.next_period(ending_era, build_and_earn_start_block);
+
+                        Some(Event::<T>::NewPeriod {
+                            period_type: protocol_state.period_type(),
+                            number: protocol_state.period_number(),
+                        })
+                    }
+                    PeriodType::BuildAndEarn => {
+                        // TODO: trigger reward calculation here. This will be implemented later.
+
+                        // Switch to `Voting` period if conditions are met.
+                        if protocol_state.period_info.is_ending(next_era) {
+                            // For the sake of consistency
+                            let ending_era = next_era.saturating_add(1);
+                            let voting_period_length = T::EraLength::get()
+                                .saturating_mul(T::VotingPeriodLength::get().into());
+                            let voting_start_block = now
+                                .saturating_add(voting_period_length)
+                                .saturating_add(One::one());
+                            protocol_state.next_period(ending_era, voting_start_block);
+
+                            // TODO: trigger tier configuration calculation based on internal & external params.
+
+                            Some(Event::<T>::NewPeriod {
+                                period_type: protocol_state.period_type(),
+                                number: protocol_state.period_number(),
+                            })
+                        } else {
+                            None
+                        }
+                    }
+                };
+
+                protocol_state.era = next_era;
+                ActiveProtocolState::<T>::put(protocol_state);
+
+                Self::deposit_event(Event::<T>::NewEra { era: next_era });
+                if let Some(period_event) = maybe_period_event {
+                    Self::deposit_event(period_event);
+                }
+            }
+
+            // TODO: benchmark later
+            T::DbWeight::get().reads_writes(1, 1)
+        }
+    }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {

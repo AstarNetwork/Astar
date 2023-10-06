@@ -109,6 +109,9 @@ impl pallet_dapp_staking::Config for Test {
     type Currency = Balances;
     type SmartContract = MockSmartContract;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type EraLength = ConstU64<8>;
+    type VotingPeriodLength = ConstU32<2>;
+    type BuildAndEarnPeriodLength = ConstU32<4>;
     type MaxNumberOfContracts = ConstU16<10>;
     type MaxLockedChunks = ConstU32<5>;
     type MaxUnlockingChunks = ConstU32<5>;

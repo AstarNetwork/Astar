@@ -235,6 +235,15 @@ pub enum PeriodType {
     BuildAndEarn,
 }
 
+impl PeriodType {
+    fn next(&self) -> Self {
+        match self {
+            PeriodType::Voting => PeriodType::BuildAndEarn,
+            PeriodType::BuildAndEarn => PeriodType::Voting,
+        }
+    }
+}
+
 /// Wrapper type around current `PeriodType` and era number when it's expected to end.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct PeriodInfo {
@@ -303,6 +312,36 @@ where
             },
             maintenance: false,
         }
+    }
+}
+
+impl<BlockNumber> ProtocolState<BlockNumber>
+where
+    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
+{
+    /// TODO
+    pub fn period_type(&self) -> PeriodType {
+        self.period_info.period_type
+    }
+
+    /// TODO
+    pub fn period_number(&self) -> PeriodNumber {
+        self.period_info.number
+    }
+
+    /// TODO
+    pub fn is_new_era(&self, now: BlockNumber) -> bool {
+        self.next_era_start <= now
+    }
+
+    /// TODO
+    pub fn next_period(&mut self, ending_era: EraNumber, next_era_start: BlockNumber) {
+        self.period_info = PeriodInfo {
+            number: self.period_number(),
+            period_type: self.period_type().next(),
+            ending_era,
+        };
+        self.next_era_start = next_era_start;
     }
 }
 
