@@ -324,14 +324,13 @@ pub mod pallet {
                         // TODO: trigger reward calculation here. This will be implemented later.
 
                         // Switch to `Voting` period if conditions are met.
-                        if protocol_state.period_info.is_ending(next_era) {
+                        if protocol_state.period_info.is_next_period(next_era) {
                             // For the sake of consistency
                             let ending_era = next_era.saturating_add(1);
                             let voting_period_length = Self::blocks_per_voting_period();
                             let next_era_start_block = now.saturating_add(voting_period_length);
 
                             protocol_state.next_period_type(ending_era, next_era_start_block);
-                            protocol_state.period_info.number.saturating_accrue(1);
 
                             // TODO: trigger tier configuration calculation based on internal & external params.
 
@@ -721,7 +720,7 @@ pub mod pallet {
             // Staker always stakes from the NEXT era
             let stake_era = protocol_state.era.saturating_add(1);
             ensure!(
-                !protocol_state.period_info.is_ending(stake_era),
+                !protocol_state.period_info.is_next_period(stake_era),
                 Error::<T>::PeriodEndsInNextEra
             );
 

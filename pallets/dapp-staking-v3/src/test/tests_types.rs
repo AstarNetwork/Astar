@@ -303,14 +303,112 @@ fn sparse_bounded_amount_era_vec_subtract_amount_advanced_non_consecutive_works(
 }
 
 #[test]
-fn protocol_state_default() {
-    let protoc_state = ProtocolState::<BlockNumber>::default();
+fn sparse_bounded_amount_era_vec_full_subtract_with_single_future_era() {
+    get_u32_type!(MaxLen, 5);
+    let mut vec = SparseBoundedAmountEraVec::<DummyEraAmount, MaxLen>::new();
 
-    assert_eq!(protoc_state.era, 0);
+    // A scenario where some amount is added, for the first time, for era X.
+    // Immediately afterward, the same amount is subtracted from era X - 1.
+    let (era_1, era_2) = (1, 2);
+    let amount = 19;
+    assert_ok!(vec.add_amount(amount, era_2));
+
+    assert_ok!(vec.subtract_amount(amount, era_1));
+    assert!(
+        vec.0.is_empty(),
+        "Future entry should have been cleaned up."
+    );
+}
+
+#[test]
+fn period_type_sanity_check() {
+    assert_eq!(PeriodType::Voting.next(), PeriodType::BuildAndEarn);
+    assert_eq!(PeriodType::BuildAndEarn.next(), PeriodType::Voting);
+}
+
+#[test]
+fn period_info_basic_checks() {
+    let period_number = 2;
+    let ending_era = 5;
+    let info = PeriodInfo::new(period_number, PeriodType::Voting, ending_era);
+
+    // Sanity checks
+    assert_eq!(info.number, period_number);
+    assert_eq!(info.period_type, PeriodType::Voting);
+    assert_eq!(info.ending_era, ending_era);
+
+    // Voting period checks
+    assert!(!info.is_next_period(ending_era - 1));
+    assert!(!info.is_next_period(ending_era));
+    assert!(!info.is_next_period(ending_era + 1));
+    for era in vec![ending_era - 1, ending_era, ending_era + 1] {
+        assert!(
+            !info.is_next_period(era),
+            "Cannot trigger 'true' in the Voting period type."
+        );
+    }
+
+    // Build&Earn period checks
+    let info = PeriodInfo::new(period_number, PeriodType::BuildAndEarn, ending_era);
+    assert!(!info.is_next_period(ending_era - 1));
+    assert!(info.is_next_period(ending_era));
+    assert!(info.is_next_period(ending_era + 1));
+}
+
+#[test]
+fn protocol_state_default() {
+    let protocol_state = ProtocolState::<BlockNumber>::default();
+
+    assert_eq!(protocol_state.era, 0);
     assert_eq!(
-        protoc_state.next_era_start, 1,
+        protocol_state.next_era_start, 1,
         "Era should start immediately on the first block"
     );
+}
+
+#[test]
+fn protocol_state_basic_checks() {
+    let mut protocol_state = ProtocolState::<BlockNumber>::default();
+    let period_number = 5;
+    let ending_era = 11;
+    let next_era_start = 31;
+    protocol_state.period_info = PeriodInfo::new(period_number, PeriodType::Voting, ending_era);
+    protocol_state.next_era_start = next_era_start;
+
+    assert_eq!(protocol_state.period_number(), period_number);
+    assert_eq!(protocol_state.period_type(), PeriodType::Voting);
+
+    // New era check
+    assert!(!protocol_state.is_new_era(next_era_start - 1));
+    assert!(protocol_state.is_new_era(next_era_start));
+    assert!(protocol_state.is_new_era(next_era_start + 1));
+
+    // Toggle new period type check - 'Voting' to 'BuildAndEarn'
+    let ending_era_1 = 23;
+    let next_era_start_1 = 41;
+    protocol_state.next_period_type(ending_era_1, next_era_start_1);
+    assert_eq!(protocol_state.period_type(), PeriodType::BuildAndEarn);
+    assert_eq!(
+        protocol_state.period_number(),
+        period_number,
+        "Switching from 'Voting' to 'BuildAndEarn' should not trigger period bump."
+    );
+    assert_eq!(protocol_state.ending_era(), ending_era_1);
+    assert!(!protocol_state.is_new_era(next_era_start_1 - 1));
+    assert!(protocol_state.is_new_era(next_era_start_1));
+
+    // Toggle from 'BuildAndEarn' over to 'Voting'
+    let ending_era_2 = 24;
+    let next_era_start_2 = 91;
+    protocol_state.next_period_type(ending_era_2, next_era_start_2);
+    assert_eq!(protocol_state.period_type(), PeriodType::Voting);
+    assert_eq!(
+        protocol_state.period_number(),
+        period_number + 1,
+        "Switching from 'BuildAndEarn' to 'Voting' must trigger period bump."
+    );
+    assert_eq!(protocol_state.ending_era(), ending_era_2);
+    assert!(protocol_state.is_new_era(next_era_start_2));
 }
 
 #[test]
@@ -450,7 +548,7 @@ fn account_ledger_add_unlocking_chunk_works() {
 }
 
 #[test]
-fn active_stake_works() {
+fn account_ledger_active_stake_works() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
@@ -475,7 +573,7 @@ fn active_stake_works() {
 }
 
 #[test]
-fn stakeable_amount_works() {
+fn account_ledger_stakeable_amount_works() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
@@ -520,7 +618,7 @@ fn stakeable_amount_works() {
 }
 
 #[test]
-fn staked_amount_works() {
+fn account_ledger_staked_amount_works() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
@@ -550,7 +648,7 @@ fn staked_amount_works() {
 }
 
 #[test]
-fn add_stake_amount_works() {
+fn account_ledger_add_stake_amount_works() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
@@ -599,7 +697,7 @@ fn add_stake_amount_works() {
 }
 
 #[test]
-fn add_stake_amount_invalid_era_fails() {
+fn account_ledger_add_stake_amount_invalid_era_fails() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
@@ -637,7 +735,7 @@ fn add_stake_amount_invalid_era_fails() {
 }
 
 #[test]
-fn add_stake_amount_too_large_amount_fails() {
+fn account_ledger_add_stake_amount_too_large_amount_fails() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
@@ -669,7 +767,7 @@ fn add_stake_amount_too_large_amount_fails() {
 }
 
 #[test]
-fn add_stake_amount_while_exceeding_capacity_fails() {
+fn account_ledger_add_stake_amount_while_exceeding_capacity_fails() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
@@ -708,7 +806,141 @@ fn add_stake_amount_while_exceeding_capacity_fails() {
 }
 
 #[test]
-fn unlockable_amount_works() {
+fn account_ledger_unstake_amount_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
+
+    // Prep actions
+    let amount_1 = 19;
+    let era_1 = 2;
+    let period_1 = 1;
+    acc_ledger.add_lock_amount(amount_1);
+    assert!(acc_ledger
+        .add_stake_amount(amount_1, era_1, period_1)
+        .is_ok());
+
+    // Sanity check
+    assert!(acc_ledger.unstake_amount(0, era_1, period_1).is_ok());
+
+    // 1st scenario - unstake some amount from the current era.
+    let unstake_amount_1 = 3;
+    assert!(acc_ledger
+        .unstake_amount(unstake_amount_1, era_1, period_1)
+        .is_ok());
+    assert_eq!(
+        acc_ledger.staked_amount(period_1),
+        amount_1 - unstake_amount_1
+    );
+    assert_eq!(
+        acc_ledger.staked.0.len(),
+        1,
+        "Only existing entry should be updated."
+    );
+
+    // 2nd scenario - unstake some more, but from the next era
+    let era_2 = era_1 + 1;
+    assert!(acc_ledger
+        .unstake_amount(unstake_amount_1, era_2, period_1)
+        .is_ok());
+    assert_eq!(
+        acc_ledger.staked_amount(period_1),
+        amount_1 - unstake_amount_1 * 2
+    );
+    assert_eq!(
+        acc_ledger.staked.0.len(),
+        2,
+        "New entry must be created to cover the new era stake."
+    );
+
+    // 3rd scenario - unstake some more, bump era by a larger number
+    let era_3 = era_2 + 3;
+    assert!(acc_ledger
+        .unstake_amount(unstake_amount_1, era_3, period_1)
+        .is_ok());
+    assert_eq!(
+        acc_ledger.staked_amount(period_1),
+        amount_1 - unstake_amount_1 * 3
+    );
+    assert_eq!(
+        acc_ledger.staked.0.len(),
+        3,
+        "New entry must be created to cover the new era stake."
+    );
+}
+
+#[test]
+fn account_ledger_unstake_from_invalid_era_fails() {
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
+
+    // Prep actions
+    let amount_1 = 13;
+    let era_1 = 2;
+    let period_1 = 1;
+    acc_ledger.add_lock_amount(amount_1);
+    assert!(acc_ledger
+        .add_stake_amount(amount_1, era_1, period_1)
+        .is_ok());
+
+    assert_eq!(
+        acc_ledger.unstake_amount(amount_1, era_1 + 1, period_1 + 1),
+        Err(AccountLedgerError::InvalidPeriod)
+    );
+}
+
+#[test]
+fn account_ledger_unstake_too_much_fails() {
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
+
+    // Prep actions
+    let amount_1 = 23;
+    let era_1 = 2;
+    let period_1 = 1;
+    acc_ledger.add_lock_amount(amount_1);
+    assert!(acc_ledger
+        .add_stake_amount(amount_1, era_1, period_1)
+        .is_ok());
+
+    assert_eq!(
+        acc_ledger.unstake_amount(amount_1 + 1, era_1, period_1),
+        Err(AccountLedgerError::UnstakeAmountLargerThanStake)
+    );
+}
+
+#[test]
+fn account_ledger_unstake_exceeds_capacity() {
+    get_u32_type!(UnlockingDummy, 5);
+    get_u32_type!(StakingDummy, 8);
+    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
+
+    // Prep actions
+    let amount_1 = 100;
+    let era_1 = 2;
+    let period_1 = 1;
+    acc_ledger.add_lock_amount(amount_1);
+    assert!(acc_ledger
+        .add_stake_amount(amount_1, era_1, period_1)
+        .is_ok());
+
+    for x in 0..StakingDummy::get() {
+        assert!(
+            acc_ledger.unstake_amount(3, era_1 + x, period_1).is_ok(),
+            "Capacity isn't full so unstake must work."
+        );
+    }
+
+    assert_eq!(
+        acc_ledger.unstake_amount(3, era_1 + StakingDummy::get(), period_1),
+        Err(AccountLedgerError::NoCapacity)
+    );
+}
+
+#[test]
+fn account_ledger_unlockable_amount_works() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
@@ -750,7 +982,7 @@ fn unlockable_amount_works() {
 }
 
 #[test]
-fn claim_unlocked_works() {
+fn account_ledger_claim_unlocked_works() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();
@@ -785,7 +1017,7 @@ fn claim_unlocked_works() {
 }
 
 #[test]
-fn consume_unlocking_chunks_works() {
+fn account_ledger_consume_unlocking_chunks_works() {
     get_u32_type!(UnlockingDummy, 5);
     get_u32_type!(StakingDummy, 8);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy, StakingDummy>::default();

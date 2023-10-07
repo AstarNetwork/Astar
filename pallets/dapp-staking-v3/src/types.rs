@@ -238,7 +238,7 @@ pub enum PeriodType {
 }
 
 impl PeriodType {
-    fn next(&self) -> Self {
+    pub fn next(&self) -> Self {
         match self {
             PeriodType::Voting => PeriodType::BuildAndEarn,
             PeriodType::BuildAndEarn => PeriodType::Voting,
@@ -266,9 +266,10 @@ impl PeriodInfo {
         }
     }
 
-    /// `true` if period ends in the provided `era` argument, `false` otherwise
-    pub fn is_ending(&self, era: EraNumber) -> bool {
-        self.period_type == PeriodType::BuildAndEarn && self.ending_era == era
+    /// `true` if the provided era belongs to the next period, `false` otherwise.
+    /// It's only possible to provide this information for the `BuildAndEarn` period type.
+    pub fn is_next_period(&self, era: EraNumber) -> bool {
+        self.period_type == PeriodType::BuildAndEarn && self.ending_era <= era
     }
 }
 
@@ -331,6 +332,10 @@ where
         self.period_info.number
     }
 
+    pub fn ending_era(&self) -> EraNumber {
+        self.period_info.ending_era
+    }
+
     /// Checks whether a new era should be triggered, based on the provided `BlockNumber` argument
     /// or possibly other protocol state parameters.
     pub fn is_new_era(&self, now: BlockNumber) -> bool {
@@ -339,8 +344,14 @@ where
 
     /// Triggers the next period type, updating appropriate parameters.
     pub fn next_period_type(&mut self, ending_era: EraNumber, next_era_start: BlockNumber) {
+        let period_number = if self.period_type() == PeriodType::BuildAndEarn {
+            self.period_number().saturating_add(1)
+        } else {
+            self.period_number()
+        };
+
         self.period_info = PeriodInfo {
-            number: self.period_number(),
+            number: period_number,
             period_type: self.period_type().next(),
             ending_era,
         };
@@ -614,7 +625,7 @@ where
 
     /// Adds the specified amount to total staked amount, if possible.
     ///
-    /// Staking is allowed only allowed if one of the two following conditions is met:
+    /// Staking is only allowed if one of the two following conditions is met:
     /// 1. Staker is staking again in the period in which they already staked.
     /// 2. Staker is staking for the first time in this period, and there are no staking chunks from the previous eras.
     ///
@@ -646,7 +657,10 @@ where
         Ok(())
     }
 
-    /// TODO
+    /// Subtracts the specified amount from the total staked amount, if possible.
+    ///
+    /// Unstaking will reduce total stake for the current era, and next era(s).
+    /// The specified amount must not exceed what's available for staking.
     pub fn unstake_amount(
         &mut self,
         amount: Balance,
@@ -1201,7 +1215,7 @@ impl ContractStakingInfoSeries {
         Ok(())
     }
 
-    /// Used to remove past enries, in case vector is full.
+    /// Used to remove past entries, in case vector is full.
     fn prune(&mut self) {
         // Prune the oldest entry if we have more than the limit
         if self.0.len() > STAKING_SERIES_HISTORY.saturating_sub(1) as usize {
