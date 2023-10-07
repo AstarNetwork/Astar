@@ -186,6 +186,12 @@ pub mod pallet {
             smart_contract: T::SmartContract,
             amount: Balance,
         },
+        /// Account has unstaked some amount from a smart contract.
+        Unstake {
+            account: T::AccountId,
+            smart_contract: T::SmartContract,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -231,6 +237,14 @@ pub mod pallet {
         InsufficientStakeAmount,
         /// Stake operation is rejected since period ends in the next era.
         PeriodEndsInNextEra,
+        /// Unstaking is rejected since the period in which past stake was active has passed.
+        UnstakeFromPastPeriod,
+        /// Unstake amount is greater than the staked amount.
+        UnstakeAmountTooLarge,
+        /// Account has no staking information for the contract.
+        NoStakingInfo,
+        /// An unexpected error occured while trying to unstake.
+        InternalUnstakeError,
     }
 
     /// General information about dApp staking protocol state.
@@ -696,6 +710,8 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
+            ensure!(amount > 0, Error::<T>::ZeroAmount);
+
             ensure!(
                 Self::is_active(&smart_contract),
                 Error::<T>::NotOperatedDApp
@@ -714,14 +730,14 @@ pub mod pallet {
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
             ledger
-                .add_stake_amount(amount, stake_era, protocol_state.period_info.number)
+                .add_stake_amount(amount, stake_era, protocol_state.period_number())
                 .map_err(|err| match err {
                     AccountLedgerError::InvalidPeriod => {
                         Error::<T>::UnclaimedRewardsFromPastPeriods
                     }
                     AccountLedgerError::UnavailableStakeFunds => Error::<T>::UnavailableStakeFunds,
                     AccountLedgerError::NoCapacity => Error::<T>::TooManyStakeChunks,
-                    AccountLedgerError::OldEra => Error::<T>::InternalStakeError,
+                    _ => Error::<T>::InternalStakeError,
                 })?;
 
             // 2.
@@ -736,7 +752,7 @@ pub mod pallet {
             // This is because `AccountLedger` is the one keeping information about how much was staked when.
             let new_staking_info = match StakerInfo::<T>::get(&account, &smart_contract) {
                 Some(mut staking_info)
-                    if staking_info.period_number() == protocol_state.period_info.number =>
+                    if staking_info.period_number() == protocol_state.period_number() =>
                 {
                     staking_info.stake(amount, protocol_state.period_info.period_type);
                     staking_info
@@ -768,7 +784,7 @@ pub mod pallet {
             // 4.
             // Update total staked amount for the next era.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.add_stake_amount(amount, protocol_state.period_info.period_type);
+                era_info.add_stake_amount(amount, protocol_state.period_type());
             });
 
             // 5.
@@ -783,10 +799,6 @@ pub mod pallet {
                 amount,
             });
 
-            // TODO: Handle both the bonus rewards, and the regular rewards via `AccountLedger`.
-            // Keep track of total stake both for both periods, and use it to calculate rewards.
-            // It literally seems like the simplest way to do it.
-
             Ok(())
         }
 
@@ -794,11 +806,86 @@ pub mod pallet {
         #[pallet::call_index(10)]
         #[pallet::weight(Weight::zero())]
         pub fn unstake(
-            _origin: OriginFor<T>,
-            _smart_contract: T::SmartContract,
-            #[pallet::compact] _amount: Balance,
+            origin: OriginFor<T>,
+            smart_contract: T::SmartContract,
+            #[pallet::compact] amount: Balance,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            ensure!(amount > 0, Error::<T>::ZeroAmount);
+
+            ensure!(
+                Self::is_active(&smart_contract),
+                Error::<T>::NotOperatedDApp
+            );
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let unstake_era = protocol_state.era;
+
+            let mut ledger = Ledger::<T>::get(&account);
+
+            // 1.
+            // Reduce stake amount
+            ledger
+                .unstake_amount(amount, unstake_era, protocol_state.period_number())
+                .map_err(|err| match err {
+                    AccountLedgerError::InvalidPeriod => Error::<T>::UnstakeFromPastPeriod,
+                    AccountLedgerError::UnstakeAmountLargerThanStake => {
+                        Error::<T>::UnstakeAmountTooLarge
+                    }
+                    AccountLedgerError::NoCapacity => Error::<T>::TooManyStakeChunks,
+                    _ => Error::<T>::InternalUnstakeError,
+                })?;
+
+            // 2.
+            // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
+            let new_staking_info = match StakerInfo::<T>::get(&account, &smart_contract) {
+                Some(mut staking_info) => {
+                    ensure!(
+                        staking_info.period_number() == protocol_state.period_number(),
+                        Error::<T>::UnstakeFromPastPeriod
+                    );
+                    ensure!(
+                        staking_info.total_staked_amount() >= amount,
+                        Error::<T>::UnstakeAmountTooLarge
+                    );
+                    staking_info.unstake(amount, protocol_state.period_type());
+                    staking_info
+                }
+                None => {
+                    return Err(Error::<T>::NoStakingInfo.into());
+                }
+            };
+
+            // 3.
+            // Update `ContractStake` storage with the reduced stake amount on the specified contract.
+            let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
+            ensure!(
+                contract_stake_info
+                    .unstake(amount, protocol_state.period_info, unstake_era)
+                    .is_ok(),
+                Error::<T>::InternalUnstakeError
+            );
+
+            // 4.
+            // Update total staked amount for the next era.
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.add_stake_amount(amount, protocol_state.period_type());
+            });
+
+            // 5.
+            // Update remaining storage entries
+            Self::update_ledger(&account, ledger);
+            StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
+            ContractStake::<T>::insert(&smart_contract, contract_stake_info);
+
+            Self::deposit_event(Event::<T>::Unstake {
+                account,
+                smart_contract,
+                amount,
+            });
+
             Ok(())
         }
     }

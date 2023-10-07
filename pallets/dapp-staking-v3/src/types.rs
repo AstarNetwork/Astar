@@ -70,6 +70,8 @@ pub enum AccountLedgerError {
     InvalidPeriod,
     /// Stake amount is to large in respect to what's available.
     UnavailableStakeFunds,
+    /// Unstake amount is to large in respect to what's staked.
+    UnstakeAmountLargerThanStake,
 }
 
 /// Helper struct for easier manipulation of sparse <amount, era> pairs.
@@ -644,6 +646,33 @@ where
         Ok(())
     }
 
+    /// TODO
+    pub fn unstake_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+        current_period: PeriodNumber,
+    ) -> Result<(), AccountLedgerError> {
+        if amount.is_zero() {
+            return Ok(());
+        }
+
+        // Cannot unstake if the period has passed.
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period != current_period => {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+            _ => (),
+        }
+
+        // User must be precise with their unstake amount.
+        if self.staked_amount(current_period) < amount {
+            return Err(AccountLedgerError::UnstakeAmountLargerThanStake);
+        }
+
+        self.staked.subtract_amount(amount, era)
+    }
+
     /// Last era for which a stake entry exists.
     /// If no stake entries exist, returns `None`.
     pub fn last_stake_era(&self) -> Option<EraNumber> {
@@ -697,6 +726,22 @@ impl StakeAmount {
             PeriodType::BuildAndEarn => self.build_and_earn.saturating_accrue(amount),
         }
     }
+
+    /// Unstake the specified `amount` for the specified `period_type`.
+    pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.voting.saturating_reduce(amount),
+            PeriodType::BuildAndEarn => {
+                if self.build_and_earn >= amount {
+                    self.build_and_earn.saturating_reduce(amount);
+                } else {
+                    let remainder = amount.saturating_sub(self.build_and_earn);
+                    self.build_and_earn = Balance::zero();
+                    self.voting.saturating_reduce(remainder);
+                }
+            }
+        }
+    }
 }
 
 /// Info about current era, including the rewards, how much is locked, unlocking, etc.
@@ -743,6 +788,10 @@ impl EraInfo {
     /// Add the specified `amount` to the appropriate stake amount, based on the `PeriodType`.
     pub fn add_stake_amount(&mut self, amount: Balance, period_type: PeriodType) {
         self.next_stake_amount.stake(amount, period_type);
+    }
+
+    pub fn unstake_amount(&mut self, amount: Balance, period_type: PeriodType) {
+        self.next_stake_amount.unstake(amount, period_type);
     }
 
     /// Total staked amount in this era.
@@ -1081,6 +1130,79 @@ impl ContractStakingInfoSeries {
         // Update the stake amount
         staking_info.stake(amount, period_info.period_type);
 
+        // Prune before pushing the new entry
+        self.prune();
+
+        // This should be infalible due to previous checks that ensure we don't end up overflowing the vector.
+        self.0.try_push(staking_info).map_err(|_| ())
+    }
+
+    /// Unstake the specified `amount` from the contract, for the specified `period_type` and `era`.
+    pub fn unstake(
+        &mut self,
+        amount: Balance,
+        period_info: PeriodInfo,
+        era: EraNumber,
+    ) -> Result<(), ()> {
+        // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
+        if let Some(last_element) = self.0.last() {
+            // It's possible last element refers to the upcoming era, hence the "+1" on the 'era' argument.
+            if last_element.era() > era.saturating_add(1)
+                || last_element.period() > period_info.number
+            {
+                return Err(());
+            }
+        } else {
+            // Vector is empty, should never happen.
+            return Err(());
+        }
+
+        // 1st step - remove the last element IFF it's for the next era.
+        // Unstake the requested amount from it.
+        let last_era_info = if let Some(last_element) = self.0.last() {
+            let mut last_element = *last_element;
+            last_element.unstake(amount, period_info.period_type);
+            self.0.remove(self.0.len() - 1);
+            Some(last_element)
+        } else {
+            None
+        };
+
+        // 2nd step - 3 options:
+        // 1. - last element has a matching era so we just update it.
+        // 2. - last element has a past era and matching period, so we'll create a new entry based on it.
+        // 3. - last element has a past era and past period, meaning it's invalid.
+        let second_last_era_info = if let Some(last_element) = self.0.last_mut() {
+            if last_element.era() == era {
+                last_element.unstake(amount, period_info.period_type);
+                None
+            } else if last_element.period() == period_info.number {
+                let mut new_entry = *last_element;
+                new_entry.unstake(amount, period_info.period_type);
+                Some(new_entry)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        // Prune before pushing the new entry
+        self.prune();
+
+        // 3rd step - push the new entries, if they exist.
+        if let Some(info) = second_last_era_info {
+            self.0.try_push(info).map_err(|_| ())?;
+        }
+        if let Some(info) = last_era_info {
+            self.0.try_push(info).map_err(|_| ())?;
+        }
+
+        Ok(())
+    }
+
+    /// Used to remove past enries, in case vector is full.
+    fn prune(&mut self) {
         // Prune the oldest entry if we have more than the limit
         if self.0.len() > STAKING_SERIES_HISTORY.saturating_sub(1) as usize {
             // TODO: this can be perhaps optimized so we prune entries which are very old.
@@ -1088,8 +1210,5 @@ impl ContractStakingInfoSeries {
             // If kept like this, we always make sure we cover the history, and we never exceed it.
             self.0.remove(0);
         }
-
-        // This should be infalible due to previous checks that ensure we don't end up overflowing the vector.
-        self.0.try_push(staking_info).map_err(|_| ())
     }
 }

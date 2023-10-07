@@ -777,6 +777,22 @@ fn stake_basic_example_is_ok() {
 }
 
 #[test]
+fn stake_with_zero_amount_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract & lock some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+        let account = 2;
+        assert_lock(account, 300);
+
+        assert_noop!(
+            DappStaking::stake(RuntimeOrigin::signed(account), smart_contract, 0),
+            Error::<Test>::ZeroAmount,
+        );
+    })
+}
+
+#[test]
 fn stake_on_invalid_dapp_fails() {
     ExtBuilder::build().execute_with(|| {
         let account = 2;
