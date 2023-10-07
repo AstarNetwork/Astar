@@ -108,7 +108,7 @@ where
         + From<orml_xtokens::Call<Runtime>>
         + Dispatchable<PostInfo = PostDispatchInfo>
         + GetDispatchInfo,
-    XBalanceOf<Runtime>: TryFrom<U256> + Into<U256>,
+    XBalanceOf<Runtime>: TryFrom<U256> + Into<U256> + From<u128>,
     <Runtime as orml_xtokens::Config>::CurrencyId:
         From<<Runtime as pallet_assets::Config>::AssetId>,
     C: Convert<MultiLocation, <Runtime as pallet_assets::Config>::AssetId>,
@@ -168,7 +168,7 @@ where
         + From<orml_xtokens::Call<Runtime>>
         + Dispatchable<PostInfo = PostDispatchInfo>
         + GetDispatchInfo,
-    XBalanceOf<Runtime>: TryFrom<U256> + Into<U256>,
+    XBalanceOf<Runtime>: TryFrom<U256> + Into<U256> + From<u128>,
     <Runtime as orml_xtokens::Config>::CurrencyId:
         From<<Runtime as pallet_assets::Config>::AssetId>,
     C: Convert<MultiLocation, <Runtime as pallet_assets::Config>::AssetId>,
@@ -479,30 +479,47 @@ where
 
         // Read call arguments
         let currency_address = input.read::<Address>()?;
-        let amount_of_tokens = input
+        let amount_of_tokens: u128 = input
             .read::<U256>()?
             .try_into()
             .map_err(|_| revert("error converting amount_of_tokens, maybe value too large"))?;
         let destination = input.read::<MultiLocation>()?;
         let weight = input.read::<WeightV2>()?;
 
-        let asset_id = Runtime::address_to_asset_id(currency_address.into())
-            .ok_or(revert("Failed to resolve fee asset id from address"))?;
         let dest_weight_limit = if weight.is_zero() {
             WeightLimit::Unlimited
         } else {
             WeightLimit::Limited(weight.get_weight())
         };
 
-        log::trace!(target: "xcm-precompile::transfer", "Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
-        weight: {:?}, calculated asset_id: {:?}",
-        currency_address, amount_of_tokens, destination, weight, asset_id);
+        let call = {
+            if currency_address == Address::from(NATIVE_ADDRESS) {
+                log::trace!(target: "xcm-precompile::transfer", "Raw arguments: currency_address: {:?} (this is native token), amount_of_tokens: {:?}, destination: {:?}, \
+                weight: {:?}",
+                currency_address, amount_of_tokens, destination, weight );
 
-        let call = orml_xtokens::Call::<Runtime>::transfer {
-            currency_id: asset_id.into(),
-            amount: amount_of_tokens,
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
-            dest_weight_limit,
+                orml_xtokens::Call::<Runtime>::transfer_multiasset {
+                    asset: Box::new(VersionedMultiAsset::V3(
+                        (MultiLocation::here(), amount_of_tokens).into(),
+                    )),
+                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    dest_weight_limit,
+                }
+            } else {
+                let asset_id = Runtime::address_to_asset_id(currency_address.into())
+                    .ok_or(revert("Failed to resolve fee asset id from address"))?;
+
+                log::trace!(target: "xcm-precompile::transfer", "Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
+                weight: {:?}, calculated asset_id: {:?}",
+                currency_address, amount_of_tokens, destination, weight, asset_id);
+
+                orml_xtokens::Call::<Runtime>::transfer {
+                    currency_id: asset_id.into(),
+                    amount: amount_of_tokens.into(),
+                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    dest_weight_limit,
+                }
+            }
         };
 
         let origin = Some(Runtime::AddressMapping::into_account_id(

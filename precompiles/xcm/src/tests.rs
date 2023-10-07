@@ -409,6 +409,49 @@ mod xcm_new_interface_test {
     }
 
     #[test]
+    fn xtokens_transfer_works_for_native_asset() {
+        let weight = WeightV2::from(3_000_000_000u64, 1024);
+        let parent_destination = MultiLocation {
+            parents: 1,
+            interior: Junctions::X1(Junction::AccountId32 {
+                network: None,
+                id: [1u8; 32],
+            }),
+        };
+
+        ExtBuilder::default().build().execute_with(|| {
+            // sending native token to relay
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    EvmDataWriter::new_with_selector(Action::XtokensTransfer)
+                        .write(Address::from(NATIVE_ADDRESS)) // zero address by convention
+                        .write(U256::from(42000u64))
+                        .write(parent_destination)
+                        .write(weight.clone())
+                        .build(),
+                )
+                .expect_no_logs()
+                .execute_returns(EvmDataWriter::new().write(true).build());
+
+            let expected_asset: MultiAsset = MultiAsset {
+                id: AssetId::Concrete(Here.into()),
+                fun: Fungibility::Fungible(42000),
+            };
+
+            let expected: crate::mock::RuntimeEvent =
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                    sender: TestAccount::Alice.into(),
+                    assets: vec![expected_asset.clone()].into(),
+                    fee: expected_asset,
+                    dest: parent_destination,
+                })
+                .into();
+            assert!(events().contains(&expected));
+        });
+    }
+    #[test]
     fn xtokens_transfer_with_fee_works() {
         let weight = WeightV2::from(3_000_000_000u64, 1024);
         ExtBuilder::default().build().execute_with(|| {
