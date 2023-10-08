@@ -91,6 +91,7 @@ where
         <R as orml_xtokens::Config>::MaxAssetsForTransfer::get() as u32
     }
 }
+
 /// A precompile that expose XCM related functions.
 pub struct XcmPrecompile<Runtime, C>(PhantomData<(Runtime, C)>);
 
@@ -181,19 +182,27 @@ where
         input.expect_arguments(6)?;
 
         // Read arguments and check it
-        let assets: Vec<MultiLocation> = input
-            .read::<Vec<Address>>()?
+        let assets_raw: Vec<_> = input
+            .read::<BoundedVec<Address, GetMaxAssets<Runtime>>>()?
+            .into();
+
+        let assets = assets_raw
             .iter()
             .cloned()
             .filter_map(|address| {
                 Runtime::address_to_asset_id(address.into()).and_then(|x| C::reverse_ref(x).ok())
             })
-            .collect();
-        let amounts_raw = input.read::<Vec<U256>>()?;
-        if amounts_raw.iter().any(|x| *x > u128::MAX.into()) {
-            return Err(revert("Asset amount is too big"));
-        }
-        let amounts: Vec<u128> = amounts_raw.iter().map(|x| x.low_u128()).collect();
+            .collect::<Vec<MultiLocation>>();
+
+        let amounts_raw: Vec<U256> = input
+            .read::<BoundedVec<U256, GetMaxAssets<Runtime>>>()?
+            .into();
+
+        let amounts = amounts_raw
+            .iter()
+            .map(|x| (*x).try_into())
+            .collect::<Result<Vec<u128>, _>>()
+            .map_err(|_| revert("error converting amounts, maybe value too large"))?;
 
         // Check that assets list is valid:
         // * all assets resolved to multi-location
@@ -202,57 +211,70 @@ where
             return Err(revert("Assets resolution failure."));
         }
 
-        let beneficiary: MultiLocation = match beneficiary_type {
+        let beneficiary: Junction = match beneficiary_type {
             BeneficiaryType::Account32 => {
                 let recipient: [u8; 32] = input.read::<H256>()?.into();
-                X1(Junction::AccountId32 {
+                Junction::AccountId32 {
                     network: None,
                     id: recipient,
-                })
+                }
             }
             BeneficiaryType::Account20 => {
                 let recipient: H160 = input.read::<Address>()?.into();
-                X1(Junction::AccountKey20 {
+                Junction::AccountKey20 {
                     network: None,
                     key: recipient.to_fixed_bytes(),
-                })
+                }
             }
         }
         .into();
 
         let is_relay = input.read::<bool>()?;
-        let parachain_id: u32 = input.read::<U256>()?.low_u32();
-        let fee_asset_item: u32 = input.read::<U256>()?.low_u32();
 
-        if fee_asset_item as usize > assets.len() {
-            return Err(revert("Bad fee index."));
-        }
+        let parachain_id: u32 = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting parachain_id, maybe value too large"))?;
 
-        // Prepare pallet-xcm call arguments
-        let dest = if is_relay {
+        let fee_item: u32 = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting fee_index, maybe value too large"))?;
+
+        let mut destination = if is_relay {
             MultiLocation::parent()
         } else {
             X1(Junction::Parachain(parachain_id)).into_exterior(1)
         };
 
-        let assets: MultiAssets = assets
+        destination
+            .push_interior(beneficiary)
+            .map_err(|_| revert("error converting destination multilocation"))?;
+
+        let assets = assets
             .iter()
             .cloned()
             .zip(amounts.iter().cloned())
             .map(Into::into)
-            .collect::<Vec<MultiAsset>>()
-            .into();
+            .collect::<Vec<MultiAsset>>();
 
         // Build call with origin.
         let origin = Some(Runtime::AddressMapping::into_account_id(
             handle.context().caller,
         ))
         .into();
-        let call = pallet_xcm::Call::<Runtime>::reserve_withdraw_assets {
-            dest: Box::new(dest.into()),
-            beneficiary: Box::new(beneficiary.into()),
-            assets: Box::new(assets.into()),
-            fee_asset_item,
+
+        // Since multiassets sorts them, we need to check whether the index is still correct,
+        // and error otherwise as there is not much we can do other than that
+        let multiassets = MultiAssets::from_sorted_and_deduplicated(assets).map_err(|_| {
+            revert("In field Assets, Provided assets either not sorted nor deduplicated")
+        })?;
+
+        let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
+            assets: Box::new(VersionedMultiAssets::V3(multiassets)),
+            fee_item,
+            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest_weight_limit: WeightLimit::Unlimited,
         };
 
         // Dispatch a call.
@@ -266,24 +288,32 @@ where
         input.expect_arguments(6)?;
 
         // Raw call arguments
-        let para_id: u32 = input.read::<U256>()?.low_u32();
+        let parachain_id: u32 = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting parachain_id, maybe value too large"))?;
+
         let is_relay = input.read::<bool>()?;
 
         let fee_asset_addr = input.read::<Address>()?;
-        let fee_amount = input.read::<U256>()?;
+
+        let fee_amount: u128 = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting fee_amount, maybe value too large"))?;
 
         let remote_call: Vec<u8> = input.read::<Bytes>()?.into();
         let transact_weight = input.read::<u64>()?;
 
         log::trace!(target: "xcm-precompile:remote_transact", "Raw arguments: para_id: {}, is_relay: {}, fee_asset_addr: {:?}, \
          fee_amount: {:?}, remote_call: {:?}, transact_weight: {}",
-        para_id, is_relay, fee_asset_addr, fee_amount, remote_call, transact_weight);
+         parachain_id, is_relay, fee_asset_addr, fee_amount, remote_call, transact_weight);
 
         // Process arguments
         let dest = if is_relay {
             MultiLocation::parent()
         } else {
-            X1(Junction::Parachain(para_id)).into_exterior(1)
+            X1(Junction::Parachain(parachain_id)).into_exterior(1)
         };
 
         let fee_asset = {
@@ -300,11 +330,6 @@ where
                 })?
             }
         };
-
-        if fee_amount > u128::MAX.into() {
-            return Err(revert("Fee amount is too big"));
-        }
-        let fee_amount = fee_amount.low_u128();
 
         let context = <Runtime as pallet_xcm::Config>::UniversalLocation::get();
         let fee_multilocation: MultiAsset = (fee_asset, fee_amount).into();
@@ -352,8 +377,11 @@ where
         input.expect_arguments(6)?;
 
         // Read arguments and check it
-        let assets: Vec<MultiLocation> = input
-            .read::<Vec<Address>>()?
+        let assets_raw: Vec<_> = input
+            .read::<BoundedVec<Address, GetMaxAssets<Runtime>>>()?
+            .into();
+
+        let assets: Vec<MultiLocation> = assets_raw
             .iter()
             .cloned()
             .filter_map(|address| {
@@ -367,11 +395,15 @@ where
                 }
             })
             .collect();
-        let amounts_raw = input.read::<Vec<U256>>()?;
-        if amounts_raw.iter().any(|x| *x > u128::MAX.into()) {
-            return Err(revert("Asset amount is too big"));
-        }
-        let amounts: Vec<u128> = amounts_raw.iter().map(|x| x.low_u128()).collect();
+        let amounts_raw: Vec<U256> = input
+            .read::<BoundedVec<U256, GetMaxAssets<Runtime>>>()?
+            .into();
+
+        let amounts = amounts_raw
+            .iter()
+            .map(|x| (*x).try_into())
+            .collect::<Result<Vec<u128>, _>>()
+            .map_err(|_| revert("error converting amounts, maybe value too large"))?;
 
         log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, amounts: {:?}", assets, amounts);
 
@@ -382,57 +414,70 @@ where
             return Err(revert("Assets resolution failure."));
         }
 
-        let beneficiary: MultiLocation = match beneficiary_type {
+        let beneficiary: Junction = match beneficiary_type {
             BeneficiaryType::Account32 => {
                 let recipient: [u8; 32] = input.read::<H256>()?.into();
-                X1(Junction::AccountId32 {
+                Junction::AccountId32 {
                     network: None,
                     id: recipient,
-                })
+                }
             }
             BeneficiaryType::Account20 => {
                 let recipient: H160 = input.read::<Address>()?.into();
-                X1(Junction::AccountKey20 {
+                Junction::AccountKey20 {
                     network: None,
                     key: recipient.to_fixed_bytes(),
-                })
+                }
             }
         }
         .into();
 
         let is_relay = input.read::<bool>()?;
-        let parachain_id: u32 = input.read::<U256>()?.low_u32();
-        let fee_asset_item: u32 = input.read::<U256>()?.low_u32();
+        let parachain_id: u32 = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting parachain_id, maybe value too large"))?;
 
-        if fee_asset_item as usize > assets.len() {
-            return Err(revert("Bad fee index."));
-        }
+        let fee_item: u32 = input
+            .read::<U256>()?
+            .try_into()
+            .map_err(|_| revert("error converting fee_index, maybe value too large"))?;
 
         // Prepare pallet-xcm call arguments
-        let dest = if is_relay {
+        let mut destination = if is_relay {
             MultiLocation::parent()
         } else {
             X1(Junction::Parachain(parachain_id)).into_exterior(1)
         };
 
-        let assets: MultiAssets = assets
+        destination
+            .push_interior(beneficiary)
+            .map_err(|_| revert("error converting destination multilocation"))?;
+
+        let assets = assets
             .iter()
             .cloned()
             .zip(amounts.iter().cloned())
             .map(Into::into)
-            .collect::<Vec<MultiAsset>>()
-            .into();
+            .collect::<Vec<MultiAsset>>();
 
         // Build call with origin.
         let origin = Some(Runtime::AddressMapping::into_account_id(
             handle.context().caller,
         ))
         .into();
-        let call = pallet_xcm::Call::<Runtime>::reserve_transfer_assets {
-            dest: Box::new(dest.into()),
-            beneficiary: Box::new(beneficiary.into()),
-            assets: Box::new(assets.into()),
-            fee_asset_item,
+
+        // Since multiassets sorts them, we need to check whether the index is still correct,
+        // and error otherwise as there is not much we can do other than that
+        let multiassets = MultiAssets::from_sorted_and_deduplicated(assets).map_err(|_| {
+            revert("In field Assets, Provided assets either not sorted nor deduplicated")
+        })?;
+
+        let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
+            assets: Box::new(VersionedMultiAssets::V3(multiassets)),
+            fee_item,
+            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest_weight_limit: WeightLimit::Unlimited,
         };
 
         // Dispatch a call.

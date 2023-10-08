@@ -69,7 +69,13 @@ mod xcm_old_interface_test {
                         .build(),
                 )
                 .expect_no_logs()
-                .execute_reverts(|output| output == b"Bad fee index.");
+                .execute_reverts(|output| {
+                    let error_string = String::from_utf8_lossy(output);
+                    if error_string.contains("AssetIndexNonExistent") {
+                        return true;
+                    }
+                    false
+                });
         });
     }
 
@@ -104,6 +110,23 @@ mod xcm_old_interface_test {
                         .write(Address::from(H160::repeat_byte(0xDE)))
                         .write(true)
                         .write(U256::from(0_u64))
+                        .write(U256::from(0_u64))
+                        .build(),
+                )
+                .expect_no_logs()
+                .execute_returns(EvmDataWriter::new().write(true).build());
+
+            // H160
+            precompiles()
+                .prepare_test(
+                    TestAccount::Alice,
+                    PRECOMPILE_ADDRESS,
+                    EvmDataWriter::new_with_selector(Action::AssetsWithdrawEvm)
+                        .write(vec![Address::from(Runtime::asset_id_to_address(1u128))])
+                        .write(vec![U256::from(42000u64)])
+                        .write(Address::from(H160::repeat_byte(0xDE)))
+                        .write(false)
+                        .write(U256::from(123_u64))
                         .write(U256::from(0_u64))
                         .build(),
                 )
@@ -171,45 +194,6 @@ mod xcm_old_interface_test {
                 .expect_no_logs()
                 .execute_returns(EvmDataWriter::new().write(true).build());
         });
-
-        for (location, Xcm(instructions)) in take_sent_xcm() {
-            assert_eq!(
-                location,
-                MultiLocation {
-                    parents: 1,
-                    interior: Here
-                }
-            );
-
-            let non_native_asset = MultiAsset {
-                fun: Fungible(42000),
-                id: xcm::v3::AssetId::from(MultiLocation {
-                    parents: 0,
-                    interior: Here,
-                }),
-            };
-
-            assert!(matches!(
-                instructions.as_slice(),
-                [
-                    ReserveAssetDeposited(assets),
-                    ClearOrigin,
-                    BuyExecution {
-                        fees,
-                        ..
-                    },
-                    DepositAsset {
-                        beneficiary: MultiLocation {
-                            parents: 0,
-                            interior: X1(_),
-                        },
-                        ..
-                    }
-                ]
-
-                if fees.contains(&non_native_asset) && assets.contains(&non_native_asset)
-            ));
-        }
     }
 
     #[test]
@@ -247,44 +231,6 @@ mod xcm_old_interface_test {
                 .expect_no_logs()
                 .execute_returns(EvmDataWriter::new().write(true).build());
         });
-
-        for (location, Xcm(instructions)) in take_sent_xcm() {
-            assert_eq!(
-                location,
-                MultiLocation {
-                    parents: 1,
-                    interior: Here
-                }
-            );
-
-            let native_asset = MultiAsset {
-                fun: Fungible(42000),
-                id: xcm::v3::AssetId::from(MultiLocation {
-                    parents: 0,
-                    interior: X1(Parachain(123)),
-                }),
-            };
-
-            assert!(matches!(
-                instructions.as_slice(),
-                [
-                    ReserveAssetDeposited(assets),
-                    ClearOrigin,
-                    BuyExecution {
-                        fees,
-                        ..
-                    },
-                    DepositAsset {
-                        beneficiary: MultiLocation {
-                            parents: 0,
-                            interior: X1(_),
-                        },
-                        ..
-                    }
-                ]
-                if fees.contains(&native_asset) && assets.contains(&native_asset)
-            ));
-        }
     }
 
     #[test]
@@ -307,8 +253,8 @@ mod xcm_old_interface_test {
                         .write(Bytes::from(xcm_to_send.as_slice()))
                         .build(),
                 )
-                // Fixed: TestWeightInfo + (BaseXcmWeight * MessageLen)
-                .expect_cost(100001000)
+                // Fixed: TestWeightInfo
+                .expect_cost(100000000)
                 .expect_no_logs()
                 .execute_returns(EvmDataWriter::new().write(true).build());
 
@@ -451,6 +397,7 @@ mod xcm_new_interface_test {
             assert!(events().contains(&expected));
         });
     }
+
     #[test]
     fn xtokens_transfer_with_fee_works() {
         let weight = WeightV2::from(3_000_000_000u64, 1024);

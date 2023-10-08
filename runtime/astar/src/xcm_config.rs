@@ -310,7 +310,9 @@ impl pallet_xcm::Config for Runtime {
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<0>;
-    type WeightInfo = pallet_xcm::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = pallet_xcm::TestWeightInfo;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type RemoteLockConsumerIdentifier = ();
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
     type AdminOrigin = EnsureRoot<AccountId>;
