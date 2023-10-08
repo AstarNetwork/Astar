@@ -1125,6 +1125,70 @@ fn era_info_stake_works() {
 }
 
 #[test]
+fn stake_amount_works() {
+    let mut stake_amount = StakeAmount::default();
+
+    // Sanity check
+    assert!(stake_amount.total().is_zero());
+    assert!(stake_amount.for_type(PeriodType::Voting).is_zero());
+    assert!(stake_amount.for_type(PeriodType::BuildAndEarn).is_zero());
+
+    // Stake some amount in voting period
+    let vp_stake_1 = 11;
+    stake_amount.stake(vp_stake_1, PeriodType::Voting);
+    assert_eq!(stake_amount.total(), vp_stake_1);
+    assert_eq!(stake_amount.for_type(PeriodType::Voting), vp_stake_1);
+    assert!(stake_amount.for_type(PeriodType::BuildAndEarn).is_zero());
+
+    // Stake some amount in build&earn period
+    let bep_stake_1 = 13;
+    stake_amount.stake(bep_stake_1, PeriodType::BuildAndEarn);
+    assert_eq!(stake_amount.total(), vp_stake_1 + bep_stake_1);
+    assert_eq!(stake_amount.for_type(PeriodType::Voting), vp_stake_1);
+    assert_eq!(stake_amount.for_type(PeriodType::BuildAndEarn), bep_stake_1);
+
+    // Unstake some amount from voting period
+    let vp_unstake_1 = 5;
+    stake_amount.unstake(5, PeriodType::Voting);
+    assert_eq!(
+        stake_amount.total(),
+        vp_stake_1 + bep_stake_1 - vp_unstake_1
+    );
+    assert_eq!(
+        stake_amount.for_type(PeriodType::Voting),
+        vp_stake_1 - vp_unstake_1
+    );
+    assert_eq!(stake_amount.for_type(PeriodType::BuildAndEarn), bep_stake_1);
+
+    // Unstake some amount from build&earn period
+    let bep_unstake_1 = 2;
+    stake_amount.unstake(bep_unstake_1, PeriodType::BuildAndEarn);
+    assert_eq!(
+        stake_amount.total(),
+        vp_stake_1 + bep_stake_1 - vp_unstake_1 - bep_unstake_1
+    );
+    assert_eq!(
+        stake_amount.for_type(PeriodType::Voting),
+        vp_stake_1 - vp_unstake_1
+    );
+    assert_eq!(
+        stake_amount.for_type(PeriodType::BuildAndEarn),
+        bep_stake_1 - bep_unstake_1
+    );
+
+    // Unstake some more from build&earn period, and chip away from the voting period
+    let total_stake = vp_stake_1 + bep_stake_1 - vp_unstake_1 - bep_unstake_1;
+    let bep_unstake_2 = bep_stake_1 - bep_unstake_1 + 1;
+    stake_amount.unstake(bep_unstake_2, PeriodType::BuildAndEarn);
+    assert_eq!(stake_amount.total(), total_stake - bep_unstake_2);
+    assert_eq!(
+        stake_amount.for_type(PeriodType::Voting),
+        vp_stake_1 - vp_unstake_1 - 1
+    );
+    assert!(stake_amount.for_type(PeriodType::BuildAndEarn).is_zero());
+}
+
+#[test]
 fn singular_staking_info_basics_are_ok() {
     let period_number = 3;
     let period_type = PeriodType::Voting;
@@ -1444,7 +1508,7 @@ fn contract_staking_info_series_stake_is_ok() {
 }
 
 #[test]
-fn contract_staking_info_series_inconsistent_data_fails() {
+fn contract_staking_info_series_stake_with_inconsistent_data_fails() {
     let mut series = ContractStakingInfoSeries::default();
 
     // Create an entry with some staked amount
@@ -1467,4 +1531,40 @@ fn contract_staking_info_series_inconsistent_data_fails() {
         ending_era: 31,
     };
     assert!(series.stake(amount, period_info, era).is_err());
+}
+
+#[test]
+fn contract_staking_info_series_unstake_is_ok() {
+    // let mut series = ContractStakingInfoSeries::default();
+    // TODO
+}
+
+#[test]
+fn contract_staking_info_series_unstake_with_inconsistent_data_fails() {
+    let mut series = ContractStakingInfoSeries::default();
+    let era = 5;
+    let period = 2;
+    let period_info = PeriodInfo {
+        number: period,
+        period_type: PeriodType::Voting,
+        ending_era: 31,
+    };
+
+    // 1st - Unstake from empty series
+    assert!(series.unstake(1, period_info, era).is_err());
+
+    // 2nd - Unstake with old period
+    let amount = 37;
+    assert!(series.stake(amount, period_info, era).is_ok());
+
+    let old_period_info = {
+        let mut temp = period_info.clone();
+        temp.number -= 1;
+        temp
+    };
+    assert!(series.unstake(1, old_period_info, era - 1).is_err());
+
+    // 3rd - Unstake with 'too' old era
+    assert!(series.unstake(1, period_info, era - 2).is_err());
+    assert!(series.unstake(1, period_info, era - 1).is_ok());
 }

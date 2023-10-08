@@ -733,6 +733,7 @@ impl StakeAmount {
         }
     }
 
+    // TODO: rename to add?
     /// Stake the specified `amount` for the specified `period_type`.
     pub fn stake(&mut self, amount: Balance, period_type: PeriodType) {
         match period_type {
@@ -741,6 +742,7 @@ impl StakeAmount {
         }
     }
 
+    // TODO: rename to subtract?
     /// Unstake the specified `amount` for the specified `period_type`.
     pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) {
         match period_type {
@@ -1160,8 +1162,8 @@ impl ContractStakingInfoSeries {
     ) -> Result<(), ()> {
         // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
         if let Some(last_element) = self.0.last() {
-            // It's possible last element refers to the upcoming era, hence the "+1" on the 'era' argument.
-            if last_element.era() > era.saturating_add(1)
+            // It's possible last element refers to the upcoming era, hence the "-1" on the 'era'.
+            if last_element.era().saturating_sub(1) > era
                 || last_element.period() > period_info.number
             {
                 return Err(());
