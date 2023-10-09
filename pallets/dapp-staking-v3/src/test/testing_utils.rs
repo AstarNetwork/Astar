@@ -576,3 +576,143 @@ pub(crate) fn assert_stake(
         pre_era_info.staked_amount_next_era(stake_period_type) + amount
     );
 }
+
+/// Unstake some funds from the specified smart contract.
+pub(crate) fn assert_unstake(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+    amount: Balance,
+) {
+    let pre_snapshot = MemorySnapshot::new();
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, smart_contract.clone()))
+        .expect("Entry must exist since 'unstake' is being called.");
+    let pre_contract_stake = pre_snapshot
+        .contract_stake
+        .get(&smart_contract)
+        .expect("Entry must exist since 'unstake' is being called.");
+    let pre_era_info = pre_snapshot.current_era_info;
+
+    let unstake_era = pre_snapshot.active_protocol_state.era;
+    let unstake_period = pre_snapshot.active_protocol_state.period_info.number;
+    let unstake_period_type = pre_snapshot.active_protocol_state.period_info.period_type;
+
+    // Unstake from smart contract & verify event
+    assert_ok!(DappStaking::unstake(
+        RuntimeOrigin::signed(account),
+        smart_contract.clone(),
+        amount
+    ));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::Unstake {
+        account,
+        smart_contract: smart_contract.clone(),
+        amount,
+    }));
+
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+    let post_staker_info = post_snapshot
+        .staker_info
+        .get(&(account, *smart_contract))
+        .expect("Entry must exist since 'stake' operation was successfull.");
+    let post_contract_stake = post_snapshot
+        .contract_stake
+        .get(&smart_contract)
+        .expect("Entry must exist since 'stake' operation was successfull.");
+    let post_era_info = post_snapshot.current_era_info;
+
+    // 1. verify ledger
+    // =====================
+    // =====================
+    assert_eq!(post_ledger.staked_period, Some(unstake_period));
+    assert_eq!(
+        post_ledger.staked_amount(unstake_period),
+        pre_ledger.staked_amount(unstake_period) - amount,
+        "Stake amount must decrease by the 'amount'"
+    );
+    assert_eq!(
+        post_ledger.stakeable_amount(unstake_period),
+        pre_ledger.stakeable_amount(unstake_period) + amount,
+        "Stakeable amount must increase by the 'amount'"
+    );
+    // TODO: maybe extend check with concrete value checks? E.g. if we modify past entry, we should check past & current entries are properly adjusted.
+
+    // 2. verify staker info
+    // =====================
+    // =====================
+    assert_eq!(post_staker_info.period_number(), unstake_period);
+    assert_eq!(
+        post_staker_info.total_staked_amount(),
+        pre_staker_info.total_staked_amount() - amount,
+        "Total staked amount must decrease by the 'amount'"
+    );
+    assert_eq!(
+        post_staker_info.staked_amount(unstake_period_type),
+        pre_staker_info.staked_amount(unstake_period_type) - amount,
+        "Staked amount must decrease by the 'amount'"
+    );
+
+    let is_loyal = unstake_period_type == PeriodType::BuildAndEarn
+        && post_staker_info.staked_amount(PeriodType::Voting)
+            < pre_staker_info.staked_amount(PeriodType::Voting);
+    assert_eq!(
+        post_staker_info.is_loyal(),
+        is_loyal,
+        "If 'Voting' stake amount is reduced in B&E period, loyalty flag must be set to false."
+    );
+
+    // 3. verify contract stake
+    // =========================
+    // =========================
+    assert_eq!(
+        post_contract_stake.total_staked_amount(unstake_period),
+        pre_contract_stake.total_staked_amount(unstake_period) + amount,
+        "Staked amount must decreased by the 'amount'"
+    );
+    assert_eq!(
+        post_contract_stake.staked_amount(unstake_period, unstake_period_type),
+        pre_contract_stake.staked_amount(unstake_period, unstake_period_type) + amount,
+        "Staked amount must decreased by the 'amount'"
+    );
+    // TODO: extend with concrete value checks later
+
+    // 4. verify era info
+    // =========================
+    // =========================
+
+    // It's possible next era has staked more than the current era. This is because 'stake' will always stake for the NEXT era.
+    if pre_era_info.total_staked_amount() > amount {
+        assert!(post_era_info.total_staked_amount().is_zero());
+    } else {
+        assert_eq!(
+            post_era_info.total_staked_amount(),
+            pre_era_info.total_staked_amount() - amount,
+            "Total staked amount for the current era must decrease by 'amount'."
+        );
+    }
+    assert_eq!(
+        post_era_info.total_staked_amount_next_era(),
+        pre_era_info.total_staked_amount_next_era() - amount,
+        "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
+    );
+
+    if pre_era_info.staked_amount_next_era(PeriodType::BuildAndEarn) < amount {
+        let overflow = amount - pre_era_info.staked_amount_next_era(PeriodType::BuildAndEarn);
+
+        assert!(post_era_info
+            .staked_amount_next_era(PeriodType::BuildAndEarn)
+            .is_zero());
+        assert_eq!(
+            post_era_info.staked_amount_next_era(PeriodType::Voting),
+            pre_era_info.staked_amount_next_era(PeriodType::Voting) - overflow
+        );
+    } else {
+        assert_eq!(
+            post_era_info.staked_amount_next_era(unstake_period_type),
+            pre_era_info.staked_amount_next_era(unstake_period_type) + amount
+        );
+    }
+}

@@ -535,6 +535,10 @@ pub mod pallet {
 
             // TODO: might require some modification later on, like additional checks to ensure contract can be unregistered.
 
+            // TODO2: we should remove staked amount from appropriate entries, since contract has been 'invalidated'
+
+            // TODO3: will need to add a call similar to what we have in DSv2, for stakers to 'unstake_from_unregistered_contract'
+
             Self::deposit_event(Event::<T>::DAppUnregistered {
                 smart_contract,
                 era: current_era,
