@@ -116,7 +116,7 @@ mod xcm_old_interface_test {
                 .expect_no_logs()
                 .execute_returns(EvmDataWriter::new().write(true).build());
 
-            // H160
+            // Checking for non-relay destination case
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
@@ -193,6 +193,45 @@ mod xcm_old_interface_test {
                 )
                 .expect_no_logs()
                 .execute_returns(EvmDataWriter::new().write(true).build());
+
+            for (location, Xcm(instructions)) in take_sent_xcm() {
+                assert_eq!(
+                    location,
+                    MultiLocation {
+                        parents: 1,
+                        interior: Here
+                    }
+                );
+
+                let non_native_asset = MultiAsset {
+                    fun: Fungible(42000),
+                    id: xcm::v3::AssetId::from(MultiLocation {
+                        parents: 0,
+                        interior: Here,
+                    }),
+                };
+                dbg!(instructions.clone());
+                assert!(matches!(
+                    instructions.as_slice(),
+                    [
+                        WithdrawAsset(assets),
+                        ClearOrigin,
+                        BuyExecution {
+                            fees,
+                            ..
+                        },
+                        DepositAsset {
+                            beneficiary: MultiLocation {
+                                parents: 0,
+                                interior: X1(_),
+                            },
+                            ..
+                        }
+                    ]
+
+                    if fees.contains(&non_native_asset) && assets.contains(&non_native_asset)
+                ));
+            }
         });
     }
 
@@ -230,6 +269,44 @@ mod xcm_old_interface_test {
                 )
                 .expect_no_logs()
                 .execute_returns(EvmDataWriter::new().write(true).build());
+
+            for (location, Xcm(instructions)) in take_sent_xcm() {
+                assert_eq!(
+                    location,
+                    MultiLocation {
+                        parents: 1,
+                        interior: Here
+                    }
+                );
+
+                let native_asset = MultiAsset {
+                    fun: Fungible(42000),
+                    id: xcm::v3::AssetId::from(MultiLocation {
+                        parents: 0,
+                        interior: X1(Parachain(123)),
+                    }),
+                };
+
+                assert!(matches!(
+                    instructions.as_slice(),
+                    [
+                        ReserveAssetDeposited(assets),
+                        ClearOrigin,
+                        BuyExecution {
+                            fees,
+                            ..
+                        },
+                        DepositAsset {
+                            beneficiary: MultiLocation {
+                                parents: 0,
+                                interior: X1(_),
+                            },
+                            ..
+                        }
+                    ]
+                    if fees.contains(&native_asset) && assets.contains(&native_asset)
+                ));
+            }
         });
     }
 

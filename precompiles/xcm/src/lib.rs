@@ -288,10 +288,10 @@ where
         input.expect_arguments(6)?;
 
         // Raw call arguments
-        let parachain_id: u32 = input
+        let para_id: u32 = input
             .read::<U256>()?
             .try_into()
-            .map_err(|_| revert("error converting parachain_id, maybe value too large"))?;
+            .map_err(|_| revert("error converting para_id, maybe value too large"))?;
 
         let is_relay = input.read::<bool>()?;
 
@@ -307,13 +307,13 @@ where
 
         log::trace!(target: "xcm-precompile:remote_transact", "Raw arguments: para_id: {}, is_relay: {}, fee_asset_addr: {:?}, \
          fee_amount: {:?}, remote_call: {:?}, transact_weight: {}",
-         parachain_id, is_relay, fee_asset_addr, fee_amount, remote_call, transact_weight);
+         para_id, is_relay, fee_asset_addr, fee_amount, remote_call, transact_weight);
 
         // Process arguments
         let dest = if is_relay {
             MultiLocation::parent()
         } else {
-            X1(Junction::Parachain(parachain_id)).into_exterior(1)
+            X1(Junction::Parachain(para_id)).into_exterior(1)
         };
 
         let fee_asset = {
