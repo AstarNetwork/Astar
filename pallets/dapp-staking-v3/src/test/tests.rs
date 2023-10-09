@@ -20,7 +20,7 @@ use crate::test::mock::*;
 use crate::test::testing_utils::*;
 use crate::{
     pallet as pallet_dapp_staking, ActiveProtocolState, DAppId, EraNumber, Error, IntegratedDApps,
-    Ledger, NextDAppId, PeriodType,
+    Ledger, NextDAppId, PeriodType, StakerInfo,
 };
 
 use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
@@ -993,6 +993,13 @@ fn unstake_basic_example_is_ok() {
         advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
         assert_unstake(account, &smart_contract, unstake_amount_3);
         assert_unstake(account, &smart_contract, unstake_amount_2);
+
+        // 4th scenario - perform a full unstake
+        advance_to_next_era();
+        let full_unstake_amount = StakerInfo::<Test>::get(&account, &smart_contract)
+            .unwrap()
+            .total_staked_amount();
+        assert_unstake(account, &smart_contract, full_unstake_amount);
     })
 }
 

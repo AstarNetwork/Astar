@@ -961,6 +961,11 @@ impl SingularStakingInfo {
     pub fn period_number(&self) -> PeriodNumber {
         self.period
     }
+
+    /// `true` if no stake exists, `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        self.vp_staked_amount.is_zero() && self.bep_staked_amount.is_zero()
+    }
 }
 
 /// Information about how much was staked on a contract during a specific era or period.

@@ -598,6 +598,7 @@ pub(crate) fn assert_unstake(
     let _unstake_era = pre_snapshot.active_protocol_state.era;
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
     let unstake_period_type = pre_snapshot.active_protocol_state.period_type();
+    let is_full_unstake = pre_staker_info.total_staked_amount() == amount;
 
     // Unstake from smart contract & verify event
     assert_ok!(DappStaking::unstake(
@@ -614,10 +615,6 @@ pub(crate) fn assert_unstake(
     // Verify post-state
     let post_snapshot = MemorySnapshot::new();
     let post_ledger = post_snapshot.ledger.get(&account).unwrap();
-    let post_staker_info = post_snapshot
-        .staker_info
-        .get(&(account, *smart_contract))
-        .expect("Entry must exist since 'stake' operation was successfull.");
     let post_contract_stake = post_snapshot
         .contract_stake
         .get(&smart_contract)
@@ -643,28 +640,39 @@ pub(crate) fn assert_unstake(
     // 2. verify staker info
     // =====================
     // =====================
-    assert_eq!(post_staker_info.period_number(), unstake_period);
-    assert_eq!(
-        post_staker_info.total_staked_amount(),
-        pre_staker_info.total_staked_amount() - amount,
-        "Total staked amount must decrease by the 'amount'"
-    );
-    assert_eq!(
-        post_staker_info.staked_amount(unstake_period_type),
-        pre_staker_info
-            .staked_amount(unstake_period_type)
-            .saturating_sub(amount),
-        "Staked amount must decrease by the 'amount'"
-    );
+    if is_full_unstake {
+        assert!(
+            !StakerInfo::<Test>::contains_key(&account, smart_contract),
+            "Entry must be deleted since it was a full unstake."
+        );
+    } else {
+        let post_staker_info = post_snapshot
+        .staker_info
+        .get(&(account, *smart_contract))
+        .expect("Entry must exist since 'stake' operation was successfull and it wasn't a full unstake.");
+        assert_eq!(post_staker_info.period_number(), unstake_period);
+        assert_eq!(
+            post_staker_info.total_staked_amount(),
+            pre_staker_info.total_staked_amount() - amount,
+            "Total staked amount must decrease by the 'amount'"
+        );
+        assert_eq!(
+            post_staker_info.staked_amount(unstake_period_type),
+            pre_staker_info
+                .staked_amount(unstake_period_type)
+                .saturating_sub(amount),
+            "Staked amount must decrease by the 'amount'"
+        );
 
-    let is_loyal = !(unstake_period_type == PeriodType::BuildAndEarn
-        && post_staker_info.staked_amount(PeriodType::Voting)
-            < pre_staker_info.staked_amount(PeriodType::Voting));
-    assert_eq!(
-        post_staker_info.is_loyal(),
-        is_loyal,
-        "If 'Voting' stake amount is reduced in B&E period, loyalty flag must be set to false."
-    );
+        let is_loyal = !(unstake_period_type == PeriodType::BuildAndEarn
+            && post_staker_info.staked_amount(PeriodType::Voting)
+                < pre_staker_info.staked_amount(PeriodType::Voting));
+        assert_eq!(
+            post_staker_info.is_loyal(),
+            is_loyal,
+            "If 'Voting' stake amount is reduced in B&E period, loyalty flag must be set to false."
+        );
+    }
 
     // 3. verify contract stake
     // =========================
@@ -691,8 +699,6 @@ pub(crate) fn assert_unstake(
     if pre_era_info.total_staked_amount() < amount {
         assert!(post_era_info.total_staked_amount().is_zero());
     } else {
-        println!("pre_era_info: {:?}", pre_era_info);
-        println!("post_era_info: {:?}", post_era_info);
         assert_eq!(
             post_era_info.total_staked_amount(),
             pre_era_info.total_staked_amount() - amount,

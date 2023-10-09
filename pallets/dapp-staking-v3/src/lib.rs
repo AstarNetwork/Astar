@@ -857,7 +857,6 @@ pub mod pallet {
                     _ => Error::<T>::InternalUnstakeError,
                 })?;
 
-            // TODO: if it's full unstake, entry must be removed!
             // 2.
             // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
             let new_staking_info = match StakerInfo::<T>::get(&account, &smart_contract) {
@@ -897,8 +896,13 @@ pub mod pallet {
             // 5.
             // Update remaining storage entries
             Self::update_ledger(&account, ledger);
-            StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
             ContractStake::<T>::insert(&smart_contract, contract_stake_info);
+
+            if new_staking_info.is_empty() {
+                StakerInfo::<T>::remove(&account, &smart_contract);
+            } else {
+                StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
+            }
 
             Self::deposit_event(Event::<T>::Unstake {
                 account,
