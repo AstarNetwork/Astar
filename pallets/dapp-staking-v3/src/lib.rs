@@ -305,6 +305,7 @@ pub mod pallet {
             }
 
             if protocol_state.is_new_era(now) {
+                let mut era_info = CurrentEraInfo::<T>::get();
                 let next_era = protocol_state.era.saturating_add(1);
                 let maybe_period_event = match protocol_state.period_type() {
                     PeriodType::Voting => {
@@ -314,6 +315,8 @@ pub mod pallet {
                         let build_and_earn_start_block =
                             now.saturating_add(T::StandardEraLength::get());
                         protocol_state.next_period_type(ending_era, build_and_earn_start_block);
+
+                        era_info.migrate_to_next_era(Some(protocol_state.period_type()));
 
                         Some(Event::<T>::NewPeriod {
                             period_type: protocol_state.period_type(),
@@ -332,6 +335,8 @@ pub mod pallet {
 
                             protocol_state.next_period_type(ending_era, next_era_start_block);
 
+                            era_info.migrate_to_next_era(Some(protocol_state.period_type()));
+
                             // TODO: trigger tier configuration calculation based on internal & external params.
 
                             Some(Event::<T>::NewPeriod {
@@ -342,6 +347,9 @@ pub mod pallet {
                             let next_era_start_block =
                                 now.saturating_add(T::StandardEraLength::get());
                             protocol_state.next_era_start = next_era_start_block;
+
+                            era_info.migrate_to_next_era(None);
+
                             None
                         }
                     }
@@ -350,6 +358,8 @@ pub mod pallet {
                 protocol_state.era = next_era;
                 ActiveProtocolState::<T>::put(protocol_state);
 
+                CurrentEraInfo::<T>::put(era_info);
+
                 Self::deposit_event(Event::<T>::NewEra { era: next_era });
                 if let Some(period_event) = maybe_period_event {
                     Self::deposit_event(period_event);
@@ -357,7 +367,7 @@ pub mod pallet {
             }
 
             // TODO: benchmark later
-            T::DbWeight::get().reads_writes(1, 1)
+            T::DbWeight::get().reads_writes(2, 2)
         }
     }
 
@@ -665,6 +675,8 @@ pub mod pallet {
 
             // TODO: We should ensure user doesn't unlock everything if they still have storage leftovers (e.g. unclaimed rewards?)
 
+            // TODO2: to make it more  bounded, we could add a limit to how much distinct stake entries an user can have
+
             Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
 
             Ok(())
@@ -805,7 +817,10 @@ pub mod pallet {
             Ok(())
         }
 
-        /// TODO
+        /// Unstake the specified amount from a smart contract.
+        /// The `amount` specified **must** not exceed what's staked, otherwise the call will fail.
+        ///
+        /// Depending on the period type, appropriate stake amount will be updated.
         #[pallet::call_index(10)]
         #[pallet::weight(Weight::zero())]
         pub fn unstake(
@@ -874,7 +889,7 @@ pub mod pallet {
             // 4.
             // Update total staked amount for the next era.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.add_stake_amount(amount, protocol_state.period_type());
+                era_info.unstake_amount(amount, protocol_state.period_type());
             });
 
             // 5.

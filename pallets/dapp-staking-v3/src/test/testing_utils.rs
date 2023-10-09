@@ -595,7 +595,7 @@ pub(crate) fn assert_unstake(
         .expect("Entry must exist since 'unstake' is being called.");
     let pre_era_info = pre_snapshot.current_era_info;
 
-    let unstake_era = pre_snapshot.active_protocol_state.era;
+    let _unstake_era = pre_snapshot.active_protocol_state.era;
     let unstake_period = pre_snapshot.active_protocol_state.period_info.number;
     let unstake_period_type = pre_snapshot.active_protocol_state.period_info.period_type;
 
@@ -651,13 +651,15 @@ pub(crate) fn assert_unstake(
     );
     assert_eq!(
         post_staker_info.staked_amount(unstake_period_type),
-        pre_staker_info.staked_amount(unstake_period_type) - amount,
+        pre_staker_info
+            .staked_amount(unstake_period_type)
+            .saturating_sub(amount),
         "Staked amount must decrease by the 'amount'"
     );
 
-    let is_loyal = unstake_period_type == PeriodType::BuildAndEarn
+    let is_loyal = !(unstake_period_type == PeriodType::BuildAndEarn
         && post_staker_info.staked_amount(PeriodType::Voting)
-            < pre_staker_info.staked_amount(PeriodType::Voting);
+            < pre_staker_info.staked_amount(PeriodType::Voting));
     assert_eq!(
         post_staker_info.is_loyal(),
         is_loyal,
@@ -669,12 +671,14 @@ pub(crate) fn assert_unstake(
     // =========================
     assert_eq!(
         post_contract_stake.total_staked_amount(unstake_period),
-        pre_contract_stake.total_staked_amount(unstake_period) + amount,
+        pre_contract_stake.total_staked_amount(unstake_period) - amount,
         "Staked amount must decreased by the 'amount'"
     );
     assert_eq!(
         post_contract_stake.staked_amount(unstake_period, unstake_period_type),
-        pre_contract_stake.staked_amount(unstake_period, unstake_period_type) + amount,
+        pre_contract_stake
+            .staked_amount(unstake_period, unstake_period_type)
+            .saturating_sub(amount),
         "Staked amount must decreased by the 'amount'"
     );
     // TODO: extend with concrete value checks later
@@ -684,9 +688,11 @@ pub(crate) fn assert_unstake(
     // =========================
 
     // It's possible next era has staked more than the current era. This is because 'stake' will always stake for the NEXT era.
-    if pre_era_info.total_staked_amount() > amount {
+    if pre_era_info.total_staked_amount() < amount {
         assert!(post_era_info.total_staked_amount().is_zero());
     } else {
+        println!("pre_era_info: {:?}", pre_era_info);
+        println!("post_era_info: {:?}", post_era_info);
         assert_eq!(
             post_era_info.total_staked_amount(),
             pre_era_info.total_staked_amount() - amount,

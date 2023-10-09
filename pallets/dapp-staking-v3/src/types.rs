@@ -722,6 +722,14 @@ pub struct StakeAmount {
 }
 
 impl StakeAmount {
+    /// Create new instance of `StakeAmount` with specified `voting` and `build_and_earn` amounts.
+    pub fn new(voting: Balance, build_and_earn: Balance) -> Self {
+        Self {
+            voting,
+            build_and_earn,
+        }
+    }
+
     /// Total amount staked in both period types.
     pub fn total(&self) -> Balance {
         self.voting.saturating_add(self.build_and_earn)
@@ -808,7 +816,9 @@ impl EraInfo {
         self.next_stake_amount.stake(amount, period_type);
     }
 
+    /// Subtract the specified `amount` from the appropriate stake amount, based on the `PeriodType`.
     pub fn unstake_amount(&mut self, amount: Balance, period_type: PeriodType) {
+        self.current_stake_amount.unstake(amount, period_type);
         self.next_stake_amount.unstake(amount, period_type);
     }
 
@@ -830,6 +840,25 @@ impl EraInfo {
     /// Staked amount of specifeid `type` in the next era.
     pub fn staked_amount_next_era(&self, period_type: PeriodType) -> Balance {
         self.next_stake_amount.for_type(period_type)
+    }
+
+    /// Updates `Self` to reflect the transition to the next era.
+    ///
+    ///  ## Args
+    /// `next_period_type` - `None` if no period type change, `Some(type)` if `type` is starting from the next era.
+    pub fn migrate_to_next_era(&mut self, next_period_type: Option<PeriodType>) {
+        self.rewards = Default::default();
+        self.active_era_locked = self.total_locked;
+        match next_period_type {
+            // If next era marks start of new voting period period, it means we're entering a new period
+            Some(PeriodType::Voting) => {
+                self.current_stake_amount = Default::default();
+                self.next_stake_amount = Default::default();
+            }
+            Some(PeriodType::BuildAndEarn) | None => {
+                self.current_stake_amount = self.next_stake_amount;
+            }
+        };
     }
 }
 

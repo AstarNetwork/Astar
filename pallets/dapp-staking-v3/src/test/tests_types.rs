@@ -1125,6 +1125,70 @@ fn era_info_stake_works() {
 }
 
 #[test]
+fn era_info_unstake_works() {
+    let mut era_info = EraInfo::default();
+
+    // Make dummy era info with stake amounts
+    let vp_stake_amount = 15;
+    let bep_stake_amount_1 = 23;
+    let bep_stake_amount_2 = bep_stake_amount_1 + 6;
+    era_info.current_stake_amount = StakeAmount::new(vp_stake_amount, bep_stake_amount_1);
+    era_info.next_stake_amount = StakeAmount::new(vp_stake_amount, bep_stake_amount_2);
+    let total_staked = era_info.total_staked_amount();
+    let total_staked_next_era = era_info.total_staked_amount_next_era();
+
+    // 1st scenario - unstake some amount, no overflow
+    let unstake_amount_1 = bep_stake_amount_1;
+    era_info.unstake_amount(unstake_amount_1, PeriodType::BuildAndEarn);
+
+    // Current era
+    assert_eq!(
+        era_info.total_staked_amount(),
+        total_staked - unstake_amount_1
+    );
+    assert_eq!(era_info.staked_amount(PeriodType::Voting), vp_stake_amount);
+    assert!(era_info.staked_amount(PeriodType::BuildAndEarn).is_zero());
+
+    // Next era
+    assert_eq!(
+        era_info.total_staked_amount_next_era(),
+        total_staked_next_era - unstake_amount_1
+    );
+    assert_eq!(
+        era_info.staked_amount_next_era(PeriodType::Voting),
+        vp_stake_amount
+    );
+    assert_eq!(
+        era_info.staked_amount_next_era(PeriodType::BuildAndEarn),
+        bep_stake_amount_2 - unstake_amount_1
+    );
+
+    // 2nd scenario - unstake some more, but with overflow
+    let overflow = 2;
+    let unstake_amount_2 = bep_stake_amount_2 - unstake_amount_1 + overflow;
+    era_info.unstake_amount(unstake_amount_2, PeriodType::BuildAndEarn);
+
+    // Current era
+    assert_eq!(
+        era_info.total_staked_amount(),
+        total_staked - unstake_amount_1 - unstake_amount_2
+    );
+
+    // Next era
+    assert_eq!(
+        era_info.total_staked_amount_next_era(),
+        vp_stake_amount - overflow
+    );
+    assert_eq!(
+        era_info.staked_amount_next_era(PeriodType::Voting),
+        vp_stake_amount - overflow
+    );
+    assert!(era_info
+        .staked_amount_next_era(PeriodType::BuildAndEarn)
+        .is_zero());
+}
+
+#[test]
 fn stake_amount_works() {
     let mut stake_amount = StakeAmount::default();
 

@@ -105,6 +105,8 @@ fn maintenace_mode_call_filtering_works() {
 #[test]
 fn on_initialize_state_change_works() {
     ExtBuilder::build().execute_with(|| {
+        // TODO: test `EraInfo` change and verify events. This would be good to do each time we call the helper functions to go to next era or period.
+
         // Sanity check
         let protocol_state = ActiveProtocolState::<Test>::get();
         assert_eq!(protocol_state.era, 1);
@@ -116,7 +118,7 @@ fn on_initialize_state_change_works() {
         assert_eq!(
             protocol_state.next_era_start,
             blocks_per_voting_period + 1,
-            "Counting starts from block 1, hence the +1."
+            "Counting starts from block 1, hence the '+ 1'."
         );
 
         // Advance eras until we reach the Build&Earn period part
@@ -767,7 +769,6 @@ fn stake_basic_example_is_ok() {
         assert_stake(account, &smart_contract, stake_amount_4);
 
         // 4th scenario - advance period, and stake
-        // TODO: Hacky! Improve this when proper era/period transition handling is implemented!
         // advance_to_next_era();
         // advance_to_next_period();
         // let stake_amount_5 = 17;
@@ -952,6 +953,227 @@ fn stake_fails_due_to_too_small_staking_amount() {
                 min_stake_amount - 1
             ),
             Error::<Test>::InsufficientStakeAmount
+        );
+    })
+}
+
+#[test]
+fn unstake_basic_example_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract & lock some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::default();
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let lock_amount = 400;
+        assert_lock(account, lock_amount);
+
+        // Prep step - stake some amount
+        let stake_amount_1 = 83;
+        assert_stake(account, &smart_contract, stake_amount_1);
+
+        // 1st scenario - unstake some amount, in the current era.
+        let unstake_amount_1 = 3;
+        assert_unstake(account, &smart_contract, unstake_amount_1);
+
+        // 2nd scenario - advance to next era/period type, and unstake some more
+        let unstake_amount_2 = 7;
+        let unstake_amount_3 = 11;
+        advance_to_next_era();
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().period_type(),
+            PeriodType::BuildAndEarn,
+            "Sanity check, period type change must happe."
+        );
+        assert_unstake(account, &smart_contract, unstake_amount_2);
+        assert_unstake(account, &smart_contract, unstake_amount_3);
+
+        // 3rd scenario - advance few eras to create a gap, and unstake some more
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
+        assert_unstake(account, &smart_contract, unstake_amount_3);
+        assert_unstake(account, &smart_contract, unstake_amount_2);
+    })
+}
+
+#[test]
+fn unstake_with_zero_amount_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract & lock some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+        let account = 2;
+        assert_lock(account, 300);
+        assert_stake(account, &smart_contract, 100);
+
+        assert_noop!(
+            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, 0),
+            Error::<Test>::ZeroAmount,
+        );
+    })
+}
+
+#[test]
+fn unstake_on_invalid_dapp_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let account = 2;
+        assert_lock(account, 300);
+
+        // Try to unstake from non-existing contract
+        let smart_contract = MockSmartContract::default();
+        assert_noop!(
+            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, 100),
+            Error::<Test>::NotOperatedDApp
+        );
+
+        // Try to unstake from unregistered smart contract
+        assert_register(1, &smart_contract);
+        assert_stake(account, &smart_contract, 100);
+        assert_unregister(&smart_contract);
+        assert_noop!(
+            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, 100),
+            Error::<Test>::NotOperatedDApp
+        );
+    })
+}
+
+#[test]
+fn unstake_with_exceeding_amount_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contracts & lock some amount
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+        let account = 2;
+        assert_lock(account, 300);
+
+        // 1st scenario - stake some amount on the first contract, and try to unstake more than was staked
+        let stake_amount_1 = 100;
+        assert_stake(account, &smart_contract_1, stake_amount_1);
+        assert_noop!(
+            DappStaking::unstake(
+                RuntimeOrigin::signed(account),
+                smart_contract_1,
+                stake_amount_1 + 1
+            ),
+            Error::<Test>::UnstakeAmountTooLarge
+        );
+
+        // 2nd scenario - have some stake on two distinct contracts, but unstaking more than staked per contract still fails
+        let stake_amount_2 = 50;
+        assert_stake(account, &smart_contract_2, stake_amount_2);
+        assert_noop!(
+            DappStaking::unstake(
+                RuntimeOrigin::signed(account),
+                smart_contract_2,
+                stake_amount_2 + 1
+            ),
+            Error::<Test>::UnstakeAmountTooLarge
+        );
+    })
+}
+
+#[test]
+fn unstake_from_non_staked_contract_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contracts & lock some amount
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+        let account = 2;
+        assert_lock(account, 300);
+
+        // Stake some amount on the first contract.
+        let stake_amount = 100;
+        assert_stake(account, &smart_contract_1, stake_amount);
+
+        // Try to unstake from the 2nd contract, which isn't staked on.
+        assert_noop!(
+            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract_2, 1,),
+            Error::<Test>::NoStakingInfo
+        );
+    })
+}
+
+#[test]
+fn unstake_from_a_contract_staked_in_past_period_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract & lock some amount
+        let smart_contract_1 = MockSmartContract::Wasm(1);
+        let smart_contract_2 = MockSmartContract::Wasm(2);
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+        let account = 2;
+        assert_lock(account, 300);
+
+        // Stake some amount on the 2nd contract.
+        let stake_amount = 100;
+        assert_stake(account, &smart_contract_2, stake_amount);
+
+        // Advance to the next period, and stake on the 1st contract.
+        advance_to_next_period();
+        // TODO: need to implement reward claiming for this check to work!
+        // assert_stake(account, &smart_contract_1, stake_amount);
+        // Try to unstake from the 2nd contract, which is no longer staked on due to period change.
+        // assert_noop!(
+        //     DappStaking::unstake(
+        //         RuntimeOrigin::signed(account),
+        //         smart_contract_2,
+        //         1,
+        //     ),
+        //     Error::<Test>::UnstakeFromPastPeriod
+        // );
+    })
+}
+
+#[test]
+fn unstake_from_past_period_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract & lock some amount
+        let smart_contract = MockSmartContract::Wasm(1);
+        assert_register(1, &smart_contract);
+        let account = 2;
+        assert_lock(account, 300);
+
+        // 1st scenario - stake some amount on the first contract, and try to unstake more than was staked
+        let stake_amount = 100;
+        assert_stake(account, &smart_contract, stake_amount);
+        advance_to_next_period();
+
+        assert_noop!(
+            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, stake_amount),
+            Error::<Test>::UnstakeFromPastPeriod
+        );
+    })
+}
+
+#[test]
+fn unstake_fails_due_to_too_many_chunks() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract,lock & stake some amount
+        let smart_contract = MockSmartContract::default();
+        let account = 2;
+        assert_register(1, &smart_contract);
+        let lock_amount = 1000;
+        assert_lock(account, lock_amount);
+        assert_stake(account, &smart_contract, lock_amount);
+
+        // Keep on unstaking & creating chunks until capacity is reached
+        for _ in 0..(<Test as pallet_dapp_staking::Config>::MaxStakingChunks::get()) {
+            advance_to_next_era();
+            assert_unstake(account, &smart_contract, 11);
+        }
+
+        // Ensure we can still unstake in the current era since an entry exists
+        assert_unstake(account, &smart_contract, 10);
+
+        // Staking in the next era results in error due to too many chunks
+        advance_to_next_era();
+        assert_noop!(
+            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract.clone(), 10),
+            Error::<Test>::TooManyStakeChunks
         );
     })
 }
