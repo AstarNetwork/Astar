@@ -210,6 +210,9 @@ jobs:
       SCCACHE_BUCKET: ${{ secrets.SCCACHE_BUCKET }}
       SCCACHE_REGION: ${{ secrets.SCCACHE_REGION }}
       SCCACHE_S3_KEY_PREFIX: "astar-macos"
+    permissions:
+      id-token: write
+      contents: read
     steps:
     - name: Checkout the source code
       uses: actions/checkout@v3
