@@ -709,6 +709,8 @@ pub struct RewardInfo {
     pub dapps: Balance,
 }
 
+// TODO: it would be nice to implement add/subtract logic on this struct and use it everywhere
+// we need to keep track of staking amount for periods. Right now I have logic duplication which is not good.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct StakeAmount {
     /// Amount of staked funds accounting for the voting period.
@@ -1000,7 +1002,11 @@ impl ContractStakingInfo {
     pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) {
         match period_type {
             PeriodType::Voting => self.vp_staked_amount.saturating_reduce(amount),
-            PeriodType::BuildAndEarn => self.bep_staked_amount.saturating_reduce(amount),
+            PeriodType::BuildAndEarn => {
+                let overflow = amount.saturating_sub(self.bep_staked_amount);
+                self.bep_staked_amount.saturating_reduce(amount);
+                self.vp_staked_amount.saturating_reduce(overflow);
+            }
         }
     }
 
@@ -1175,13 +1181,14 @@ impl ContractStakingInfoSeries {
 
         // 1st step - remove the last element IFF it's for the next era.
         // Unstake the requested amount from it.
-        let last_era_info = if let Some(last_element) = self.0.last() {
-            let mut last_element = *last_element;
-            last_element.unstake(amount, period_info.period_type);
-            self.0.remove(self.0.len() - 1);
-            Some(last_element)
-        } else {
-            None
+        let last_era_info = match self.0.last() {
+            Some(last_element) if last_element.era() == era.saturating_add(1) => {
+                let mut last_element = *last_element;
+                last_element.unstake(amount, period_info.period_type);
+                self.0.remove(self.0.len() - 1);
+                Some(last_element)
+            }
+            _ => None,
         };
 
         // 2nd step - 3 options:
@@ -1195,6 +1202,7 @@ impl ContractStakingInfoSeries {
             } else if last_element.period() == period_info.number {
                 let mut new_entry = *last_element;
                 new_entry.unstake(amount, period_info.period_type);
+                new_entry.era = era;
                 Some(new_entry)
             } else {
                 None

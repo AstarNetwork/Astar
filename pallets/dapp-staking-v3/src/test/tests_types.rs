@@ -1363,20 +1363,43 @@ fn contract_stake_info_is_ok() {
     );
 
     // 3rd scenario - reduce some of the staked amount from both periods and verify it's as expected.
-    // For the voting period, we want to unstake it completly, and then some more.
-    let reduction = vote_stake_amount_1 + 2;
-    contract_stake_info.unstake(reduction, PeriodType::Voting);
-    contract_stake_info.unstake(reduction, PeriodType::BuildAndEarn);
+    let total_staked = contract_stake_info.total_staked_amount();
+    let vp_reduction = 3;
+    contract_stake_info.unstake(vp_reduction, PeriodType::Voting);
     assert_eq!(
         contract_stake_info.total_staked_amount(),
-        bep_stake_amount_1 - reduction
+        total_staked - vp_reduction
     );
-    assert!(contract_stake_info
-        .staked_amount(PeriodType::Voting)
-        .is_zero());
+    assert_eq!(
+        contract_stake_info.staked_amount(PeriodType::Voting),
+        vote_stake_amount_1 - vp_reduction
+    );
+
+    let bp_reduction = 7;
+    contract_stake_info.unstake(bp_reduction, PeriodType::BuildAndEarn);
+    assert_eq!(
+        contract_stake_info.total_staked_amount(),
+        total_staked - vp_reduction - bp_reduction
+    );
     assert_eq!(
         contract_stake_info.staked_amount(PeriodType::BuildAndEarn),
-        bep_stake_amount_1 - reduction
+        bep_stake_amount_1 - bp_reduction
+    );
+
+    // 4th scenario - unstake everyhting, and some more, from Build&Earn period, chiping away from the voting period.
+    let overflow = 1;
+    let overflow_reduction = contract_stake_info.staked_amount(PeriodType::BuildAndEarn) + overflow;
+    contract_stake_info.unstake(overflow_reduction, PeriodType::BuildAndEarn);
+    assert_eq!(
+        contract_stake_info.total_staked_amount(),
+        vote_stake_amount_1 - vp_reduction - overflow
+    );
+    assert!(contract_stake_info
+        .staked_amount(PeriodType::BuildAndEarn)
+        .is_zero());
+    assert_eq!(
+        contract_stake_info.staked_amount(PeriodType::Voting),
+        vote_stake_amount_1 - vp_reduction - overflow
     );
 }
 
@@ -1535,8 +1558,73 @@ fn contract_staking_info_series_stake_with_inconsistent_data_fails() {
 
 #[test]
 fn contract_staking_info_series_unstake_is_ok() {
-    // let mut series = ContractStakingInfoSeries::default();
-    // TODO
+    let mut series = ContractStakingInfoSeries::default();
+
+    // Prep action - create a stake entry
+    let era_1 = 2;
+    let period = 3;
+    let period_info = PeriodInfo::new(period, PeriodType::Voting, 20);
+    let stake_amount = 100;
+    assert!(series.stake(stake_amount, period_info, era_1).is_ok());
+
+    // 1st scenario - unstake in the same era
+    let amount_1 = 5;
+    assert!(series.unstake(amount_1, period_info, era_1).is_ok());
+    assert_eq!(series.len(), 1);
+    assert_eq!(series.total_staked_amount(period), stake_amount - amount_1);
+    assert_eq!(
+        series.staked_amount(period, PeriodType::Voting),
+        stake_amount - amount_1
+    );
+
+    // 2nd scenario - unstake in the future era, creating a 'gap' in the series
+    // [(era: 2)] ---> [(era: 2), (era: 5)]
+    let period_info = PeriodInfo::new(period, PeriodType::BuildAndEarn, 40);
+    let era_2 = era_1 + 3;
+    let amount_2 = 7;
+    assert!(series.unstake(amount_2, period_info, era_2).is_ok());
+    assert_eq!(series.len(), 2);
+    assert_eq!(
+        series.total_staked_amount(period),
+        stake_amount - amount_1 - amount_2
+    );
+    assert_eq!(
+        series.staked_amount(period, PeriodType::Voting),
+        stake_amount - amount_1 - amount_2
+    );
+
+    // 3rd scenario - unstake in the era right before the last, inserting the new value in-between the old ones
+    // [(era: 2), (era: 5)] ---> [(era: 2), (era: 4), (era: 5)]
+    let era_3 = era_2 - 1;
+    let amount_3 = 11;
+    assert!(series.unstake(amount_3, period_info, era_3).is_ok());
+    assert_eq!(series.len(), 3);
+    assert_eq!(
+        series.total_staked_amount(period),
+        stake_amount - amount_1 - amount_2 - amount_3
+    );
+    assert_eq!(
+        series.staked_amount(period, PeriodType::Voting),
+        stake_amount - amount_1 - amount_2 - amount_3
+    );
+
+    // Check concrete entries
+    assert_eq!(
+        series.get(era_1, period).unwrap().total_staked_amount(),
+        stake_amount - amount_1,
+        "Oldest entry must remain unchanged."
+    );
+    assert_eq!(
+        series.get(era_2, period).unwrap().total_staked_amount(),
+        stake_amount - amount_1 - amount_2 - amount_3,
+        "Future era entry must be updated with all of the reductions."
+    );
+    assert_eq!(
+        series.get(era_3, period).unwrap().total_staked_amount(),
+        stake_amount - amount_1 - amount_3,
+        "Second to last era entry must be updated with first & last reduction\
+     because it derives its initial value from the oldest entry."
+    );
 }
 
 #[test]
