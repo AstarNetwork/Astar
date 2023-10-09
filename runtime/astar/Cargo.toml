@@ -46,7 +46,6 @@ pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
-pallet-evm-precompile-batch = { workspace = true }
 pallet-evm-precompile-blake2 = { workspace = true }
 pallet-evm-precompile-bn128 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
@@ -151,7 +150,6 @@ std = [
 	"pallet-block-reward/std",
 	"pallet-dapps-staking/std",
 	"pallet-evm-precompile-dapps-staking/std",
-	"pallet-evm-precompile-batch/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
