@@ -827,7 +827,7 @@ fn stake_in_final_era_fails() {
 
         // Force Build&Earn period
         ActiveProtocolState::<Test>::mutate(|state| {
-            state.period_type() = PeriodType::BuildAndEarn;
+            state.period_info.period_type = PeriodType::BuildAndEarn;
             state.period_info.ending_era = state.era + 1;
         });
 
