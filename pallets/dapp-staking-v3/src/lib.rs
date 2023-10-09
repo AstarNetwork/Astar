@@ -94,7 +94,7 @@ pub mod pallet {
         type StandardEraLength: Get<Self::BlockNumber>;
 
         /// Length of the `Voting` period in standard eras.
-        /// Although `Voting` period only consumes one 'era', we still measure it's length in standard eras
+        /// Although `Voting` period only consumes one 'era', we still measure its length in standard eras
         /// for the sake of simplicity & consistency.
         #[pallet::constant]
         type StandardErasPerVotingPeriod: Get<EraNumber>;
@@ -215,9 +215,9 @@ pub mod pallet {
         ZeroAmount,
         /// Total locked amount for staker is below minimum threshold.
         LockedAmountBelowThreshold,
-        /// Cannot add additional locked balance chunks due to size limit.
+        /// Cannot add additional locked balance chunks due to capacity limit.
         TooManyLockedBalanceChunks,
-        /// Cannot add additional unlocking chunks due to size limit
+        /// Cannot add additional unlocking chunks due to capacity limit.
         TooManyUnlockingChunks,
         /// Remaining stake prevents entire balance of starting the unlocking process.
         RemainingStakePreventsFullUnlock,
@@ -229,7 +229,7 @@ pub mod pallet {
         UnavailableStakeFunds,
         /// There are unclaimed rewards remaining from past periods. They should be claimed before staking again.
         UnclaimedRewardsFromPastPeriods,
-        /// Cannot add additional stake chunks due to size limit.
+        /// Cannot add additional stake chunks due to capacity limit.
         TooManyStakeChunks,
         /// An unexpected error occured while trying to stake.
         InternalStakeError,
@@ -675,7 +675,7 @@ pub mod pallet {
 
             // TODO: We should ensure user doesn't unlock everything if they still have storage leftovers (e.g. unclaimed rewards?)
 
-            // TODO2: to make it more  bounded, we could add a limit to how much distinct stake entries an user can have
+            // TODO2: to make it more  bounded, we could add a limit to how much distinct stake entries a user can have
 
             Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
 
@@ -752,6 +752,7 @@ pub mod pallet {
                     }
                     AccountLedgerError::UnavailableStakeFunds => Error::<T>::UnavailableStakeFunds,
                     AccountLedgerError::NoCapacity => Error::<T>::TooManyStakeChunks,
+                    // Defensive check, should never happen
                     _ => Error::<T>::InternalStakeError,
                 })?;
 
@@ -856,6 +857,7 @@ pub mod pallet {
                     _ => Error::<T>::InternalUnstakeError,
                 })?;
 
+            // TODO: if it's full unstake, entry must be removed!
             // 2.
             // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
             let new_staking_info = match StakerInfo::<T>::get(&account, &smart_contract) {

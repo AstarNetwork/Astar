@@ -1450,7 +1450,7 @@ fn contract_stake_info_is_ok() {
         bep_stake_amount_1 - bp_reduction
     );
 
-    // 4th scenario - unstake everyhting, and some more, from Build&Earn period, chiping away from the voting period.
+    // 4th scenario - unstake everything, and some more, from Build&Earn period, chiping away from the voting period.
     let overflow = 1;
     let overflow_reduction = contract_stake_info.staked_amount(PeriodType::BuildAndEarn) + overflow;
     contract_stake_info.unstake(overflow_reduction, PeriodType::BuildAndEarn);

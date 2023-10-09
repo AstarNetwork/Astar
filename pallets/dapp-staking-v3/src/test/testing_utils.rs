@@ -237,7 +237,7 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
     let expected_unlock_amount = {
         // Cannot unlock more than is available
         let possible_unlock_amount = pre_ledger
-            .unlockable_amount(pre_snapshot.active_protocol_state.period_info.number)
+            .unlockable_amount(pre_snapshot.active_protocol_state.period_number())
             .min(amount);
 
         // When unlocking would take account below the minimum lock threshold, unlock everything
@@ -261,7 +261,7 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
     let post_snapshot = MemorySnapshot::new();
 
     // Verify ledger is as expected
-    let period_number = pre_snapshot.active_protocol_state.period_info.number;
+    let period_number = pre_snapshot.active_protocol_state.period_number();
     let post_ledger = &post_snapshot.ledger[&account];
     assert_eq!(
         pre_ledger.active_locked_amount(),
@@ -420,8 +420,8 @@ pub(crate) fn assert_stake(
     let pre_era_info = pre_snapshot.current_era_info;
 
     let stake_era = pre_snapshot.active_protocol_state.era + 1;
-    let stake_period = pre_snapshot.active_protocol_state.period_info.number;
-    let stake_period_type = pre_snapshot.active_protocol_state.period_info.period_type;
+    let stake_period = pre_snapshot.active_protocol_state.period_number();
+    let stake_period_type = pre_snapshot.active_protocol_state.period_type();
 
     // Stake on smart contract & verify event
     assert_ok!(DappStaking::stake(
@@ -596,8 +596,8 @@ pub(crate) fn assert_unstake(
     let pre_era_info = pre_snapshot.current_era_info;
 
     let _unstake_era = pre_snapshot.active_protocol_state.era;
-    let unstake_period = pre_snapshot.active_protocol_state.period_info.number;
-    let unstake_period_type = pre_snapshot.active_protocol_state.period_info.period_type;
+    let unstake_period = pre_snapshot.active_protocol_state.period_number();
+    let unstake_period_type = pre_snapshot.active_protocol_state.period_type();
 
     // Unstake from smart contract & verify event
     assert_ok!(DappStaking::unstake(

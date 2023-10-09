@@ -483,7 +483,7 @@ fn unlock_with_amount_higher_than_avaiable_is_ok() {
 
         // Ensure there is no effect of staked amount once we move to the following period
         assert_lock(account, lock_amount - stake_amount); // restore previous state
-        advance_to_period(ActiveProtocolState::<Test>::get().period_info.number + 1);
+        advance_to_period(ActiveProtocolState::<Test>::get().period_number() + 1);
         assert_unlock(account, lock_amount - stake_amount + 1);
     })
 }
@@ -827,7 +827,7 @@ fn stake_in_final_era_fails() {
 
         // Force Build&Earn period
         ActiveProtocolState::<Test>::mutate(|state| {
-            state.period_info.period_type = PeriodType::BuildAndEarn;
+            state.period_type() = PeriodType::BuildAndEarn;
             state.period_info.ending_era = state.era + 1;
         });
 
@@ -1137,7 +1137,7 @@ fn unstake_from_past_period_fails() {
         let account = 2;
         assert_lock(account, 300);
 
-        // 1st scenario - stake some amount on the first contract, and try to unstake more than was staked
+        // Stake some amount, and advance to the next period
         let stake_amount = 100;
         assert_stake(account, &smart_contract, stake_amount);
         advance_to_next_period();
