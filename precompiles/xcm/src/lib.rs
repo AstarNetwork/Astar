@@ -264,8 +264,7 @@ where
         ))
         .into();
 
-        // Since multiassets sorts them, we need to check whether the index is still correct,
-        // and error otherwise as there is not much we can do other than that
+        // sorting Multiassets
         let multiassets = MultiAssets::from_sorted_and_deduplicated(assets).map_err(|_| {
             revert("In field Assets, Provided assets either not sorted nor deduplicated")
         })?;
@@ -467,8 +466,7 @@ where
         ))
         .into();
 
-        // Since multiassets sorts them, we need to check whether the index is still correct,
-        // and error otherwise as there is not much we can do other than that
+        // sorting multiassets
         let multiassets = MultiAssets::from_sorted_and_deduplicated(assets).map_err(|_| {
             revert("In field Assets, Provided assets either not sorted nor deduplicated")
         })?;

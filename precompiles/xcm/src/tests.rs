@@ -210,7 +210,6 @@ mod xcm_old_interface_test {
                         interior: Here,
                     }),
                 };
-                dbg!(instructions.clone());
                 assert!(matches!(
                     instructions.as_slice(),
                     [
