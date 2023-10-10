@@ -87,18 +87,22 @@ fn para_to_para_reserve_transfer_and_back_via_pallet_xcm() {
 
     // send assets back to ParaA
     ParaB::execute_with(|| {
-        assert_ok!(ParachainPalletXcm::reserve_withdraw_assets(
-            parachain::RuntimeOrigin::signed(ALICE),
-            Box::new((Parent, Parachain(1)).into()),
-            Box::new(
+        let destination: MultiLocation = MultiLocation {
+            parents: 1,
+            interior: X2(
+                Parachain(1),
                 AccountId32 {
                     network: None,
-                    id: ALICE.into()
-                }
-                .into()
+                    id: ALICE.into(),
+                },
             ),
+        };
+
+        assert_ok!(ParachainXtokens::transfer_multiasset(
+            parachain::RuntimeOrigin::signed(ALICE),
             Box::new((para_a_multiloc, remaining).into()),
-            0
+            Box::new(destination.into()),
+            WeightLimit::Unlimited
         ));
     });
 
@@ -477,13 +481,17 @@ fn receive_relay_asset_from_relay_and_send_them_back_via_pallet_xcm() {
         relay_alice_balance_before_sending = relay_chain::Balances::free_balance(&ALICE);
     });
 
+    let destination: MultiLocation = MultiLocation {
+        parents: 1,
+        interior: X1(alice.into()),
+    };
+
     ParaA::execute_with(|| {
-        assert_ok!(ParachainPalletXcm::reserve_withdraw_assets(
+        assert_ok!(ParachainXtokens::transfer_multiasset(
             parachain::RuntimeOrigin::signed(ALICE),
-            Box::new(Parent.into()),
-            Box::new(alice.into()),
             Box::new((Parent, para_a_alice_expected_balance).into()),
-            0,
+            Box::new(destination.into()),
+            WeightLimit::Unlimited,
         ));
     });
 
