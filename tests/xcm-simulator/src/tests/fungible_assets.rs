@@ -46,19 +46,21 @@ fn para_to_para_reserve_transfer_and_back_via_pallet_xcm() {
     // Next step is to send some of parachain A native asset to parachain B.
     let withdraw_amount = 567;
     ParaA::execute_with(|| {
-        assert_ok!(ParachainPalletXcm::reserve_transfer_assets(
-            parachain::RuntimeOrigin::signed(ALICE),
-            Box::new(MultiLocation::new(1, X1(Parachain(2))).into()),
-            Box::new(
-                X1(AccountId32 {
+        let destination = MultiLocation {
+            parents: 1,
+            interior: X2(
+                Parachain(2),
+                AccountId32 {
                     network: None,
-                    id: ALICE.into()
-                })
-                .into_location()
-                .into_versioned()
+                    id: ALICE.into(),
+                },
             ),
+        };
+        assert_ok!(ParachainXtokens::transfer_multiasset(
+            parachain::RuntimeOrigin::signed(ALICE),
             Box::new((Here, withdraw_amount).into()),
-            0,
+            Box::new(destination.into()),
+            WeightLimit::Unlimited
         ));
 
         // Parachain 2 sovereign account should have it's balance increased, while Alice balance should be decreased.

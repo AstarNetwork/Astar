@@ -242,6 +242,13 @@ impl Contains<RuntimeCall> for BaseFilter {
                 // registering the asset location should be good enough for users, any change can be handled via issue ticket or help request
                 _ => false,
             },
+            // We don't allow xcm assets transfer functions from `pallet-xcm`
+            // use orml_xtokens for token transfers using xcm
+            RuntimeCall::PolkadotXcm(method) => match method {
+                pallet_xcm::Call::limited_reserve_transfer_assets { .. }
+                | pallet_xcm::Call::reserve_transfer_assets { .. } => false,
+                _ => true,
+            },
             // These modules are not allowed to be called by transactions:
             // Other modules should works:
             _ => true,
