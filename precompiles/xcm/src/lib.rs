@@ -259,7 +259,7 @@ where
             .collect::<Vec<MultiAsset>>();
 
         log::trace!(target: "xcm-precompile:assets_withdraw", "Processed arguments: assets {:?}, destination: {:?}", assets, destination);
-        
+
         // Build call with origin.
         let origin = Some(Runtime::AddressMapping::into_account_id(
             handle.context().caller,
@@ -401,7 +401,6 @@ where
             .collect::<Result<Vec<u128>, _>>()
             .map_err(|_| revert("error converting amounts, maybe value too large"))?;
 
-
         // Check that assets list is valid:
         // * all assets resolved to multi-location
         // * all assets has corresponded amount
@@ -456,7 +455,7 @@ where
             .map(Into::into)
             .collect::<Vec<MultiAsset>>();
 
-            log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, destination: {:?}", assets, destination);
+        log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, destination: {:?}", assets, destination);
 
         // Build call with origin.
         let origin = Some(Runtime::AddressMapping::into_account_id(
