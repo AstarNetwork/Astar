@@ -1007,6 +1007,27 @@ fn unstake_basic_example_is_ok() {
 }
 
 #[test]
+fn unstake_with_leftover_amount_below_minimum_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract & lock some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::default();
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        assert_lock(account, 100);
+
+        // Prep step - stake exactly the minimum staking amount
+        let min_stake_amount: Balance =
+            <Test as pallet_dapp_staking::Config>::MinimumStakeAmount::get();
+        assert_stake(account, &smart_contract, min_stake_amount);
+
+        // Unstake 1, but it must prompt full unstake
+        assert_unstake(account, &smart_contract, 1);
+    })
+}
+
+#[test]
 fn unstake_with_zero_amount_fails() {
     ExtBuilder::build().execute_with(|| {
         // Register smart contract & lock some amount

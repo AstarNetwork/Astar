@@ -848,6 +848,37 @@ pub mod pallet {
             let mut ledger = Ledger::<T>::get(&account);
 
             // 1.
+            // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
+            let (new_staking_info, amount) = match StakerInfo::<T>::get(&account, &smart_contract) {
+                Some(mut staking_info) => {
+                    ensure!(
+                        staking_info.period_number() == protocol_state.period_number(),
+                        Error::<T>::UnstakeFromPastPeriod
+                    );
+                    ensure!(
+                        staking_info.total_staked_amount() >= amount,
+                        Error::<T>::UnstakeAmountTooLarge
+                    );
+
+                    // If unstaking would take the total staked amount below the minimum required value,
+                    // unstake everything.
+                    let amount = if staking_info.total_staked_amount().saturating_sub(amount)
+                        < T::MinimumStakeAmount::get()
+                    {
+                        staking_info.total_staked_amount()
+                    } else {
+                        amount
+                    };
+
+                    staking_info.unstake(amount, protocol_state.period_type());
+                    (staking_info, amount)
+                }
+                None => {
+                    return Err(Error::<T>::NoStakingInfo.into());
+                }
+            };
+
+            // 2.
             // Reduce stake amount
             ledger
                 .unstake_amount(amount, unstake_era, protocol_state.period_number())
@@ -859,26 +890,6 @@ pub mod pallet {
                     AccountLedgerError::NoCapacity => Error::<T>::TooManyStakeChunks,
                     _ => Error::<T>::InternalUnstakeError,
                 })?;
-
-            // 2.
-            // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
-            let new_staking_info = match StakerInfo::<T>::get(&account, &smart_contract) {
-                Some(mut staking_info) => {
-                    ensure!(
-                        staking_info.period_number() == protocol_state.period_number(),
-                        Error::<T>::UnstakeFromPastPeriod
-                    );
-                    ensure!(
-                        staking_info.total_staked_amount() >= amount,
-                        Error::<T>::UnstakeAmountTooLarge
-                    );
-                    staking_info.unstake(amount, protocol_state.period_type());
-                    staking_info
-                }
-                None => {
-                    return Err(Error::<T>::NoStakingInfo.into());
-                }
-            };
 
             // 3.
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.

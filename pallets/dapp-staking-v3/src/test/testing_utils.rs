@@ -598,7 +598,18 @@ pub(crate) fn assert_unstake(
     let _unstake_era = pre_snapshot.active_protocol_state.era;
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
     let unstake_period_type = pre_snapshot.active_protocol_state.period_type();
-    let is_full_unstake = pre_staker_info.total_staked_amount() == amount;
+
+    let minimum_stake_amount: Balance =
+        <Test as pallet_dapp_staking::Config>::MinimumStakeAmount::get();
+    let is_full_unstake =
+        pre_staker_info.total_staked_amount().saturating_sub(amount) < minimum_stake_amount;
+
+    // Unstake all if we expect to go below the minimum stake amount
+    let amount = if is_full_unstake {
+        pre_staker_info.total_staked_amount()
+    } else {
+        amount
+    };
 
     // Unstake from smart contract & verify event
     assert_ok!(DappStaking::unstake(
