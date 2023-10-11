@@ -26,6 +26,9 @@ use crate::{
 use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
 use sp_runtime::traits::Zero;
 
+// TODO: test scenarios
+// 1. user is staking, period passes, they can unlock their funds which were previously staked
+
 #[test]
 fn maintenace_mode_works() {
     ExtBuilder::build().execute_with(|| {

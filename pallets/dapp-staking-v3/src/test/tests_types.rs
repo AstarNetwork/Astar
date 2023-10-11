@@ -1692,6 +1692,60 @@ fn contract_staking_info_series_unstake_is_ok() {
 }
 
 #[test]
+fn contract_staking_info_unstake_with_worst_case_scenario_for_capacity_overflow() {
+    let (era_1, era_2, era_3) = (4, 7, 9);
+    let (period_1, period_2) = (2, 3);
+    let info_1 = ContractStakingInfo::new(era_1, period_1);
+    let mut info_2 = ContractStakingInfo::new(era_2, period_2);
+    let stake_amount_2 = 11;
+    info_2.stake(stake_amount_2, PeriodType::Voting);
+    let mut info_3 = ContractStakingInfo::new(era_3, period_2);
+    let stake_amount_3 = 13;
+    info_3.stake(stake_amount_3, PeriodType::BuildAndEarn);
+
+    // A gap between 2nd and 3rd era, and from that gap unstake will be done.
+    // This will force a new entry to be created, potentially overflowing the vector capacity.
+    let mut series = ContractStakingInfoSeries::new(vec![info_1, info_2, info_3]);
+
+    // Unstake between era 2 & 3, in attempt to overflow the inner vector capacity
+    let period_info = PeriodInfo {
+        number: period_2,
+        period_type: PeriodType::BuildAndEarn,
+        ending_era: 51,
+    };
+    let unstake_amount = 3;
+    assert!(series.unstake(3, period_info, era_2 + 1).is_ok());
+    assert_eq!(series.len(), 3);
+
+    assert_eq!(
+        series.get(era_1, period_1),
+        None,
+        "Oldest entry should have been prunned"
+    );
+    assert_eq!(
+        series
+            .get(era_2, period_2)
+            .expect("Entry must exist.")
+            .total_staked_amount(),
+        stake_amount_2
+    );
+    assert_eq!(
+        series
+            .get(era_2 + 1, period_2)
+            .expect("Entry must exist.")
+            .total_staked_amount(),
+        stake_amount_2 - unstake_amount
+    );
+    assert_eq!(
+        series
+            .get(era_3, period_2)
+            .expect("Entry must exist.")
+            .total_staked_amount(),
+        stake_amount_3 - unstake_amount
+    );
+}
+
+#[test]
 fn contract_staking_info_series_unstake_with_inconsistent_data_fails() {
     let mut series = ContractStakingInfoSeries::default();
     let era = 5;

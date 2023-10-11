@@ -332,6 +332,7 @@ where
         self.period_info.number
     }
 
+    /// Ending era of current period
     pub fn ending_era(&self) -> EraNumber {
         self.period_info.ending_era
     }
@@ -690,11 +691,7 @@ where
     /// Last era for which a stake entry exists.
     /// If no stake entries exist, returns `None`.
     pub fn last_stake_era(&self) -> Option<EraNumber> {
-        if let Some(chunk) = self.staked.0.last() {
-            Some(chunk.era)
-        } else {
-            None
-        }
+        self.staked.0.last().map(|chunk| chunk.era)
     }
 }
 
@@ -754,6 +751,11 @@ impl StakeAmount {
 
     // TODO: rename to subtract?
     /// Unstake the specified `amount` for the specified `period_type`.
+    ///
+    /// In case period type is `Voting`, the amount is subtracted from the voting period.
+    ///
+    /// In case period type is `Build&Earn`, the amount is first subtracted from the
+    /// build&earn amount, and any rollover is subtracted from the voting period.
     pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) {
         match period_type {
             PeriodType::Voting => self.voting.saturating_reduce(amount),
@@ -761,6 +763,7 @@ impl StakeAmount {
                 if self.build_and_earn >= amount {
                     self.build_and_earn.saturating_reduce(amount);
                 } else {
+                    // Rollover from build&earn to voting, is guaranteed to be larger than zero due to previous check
                     let remainder = amount.saturating_sub(self.build_and_earn);
                     self.build_and_earn = Balance::zero();
                     self.voting.saturating_reduce(remainder);
@@ -919,11 +922,10 @@ impl SingularStakingInfo {
         } else {
             // In case we have to dip into the voting period stake, make sure B&E period stake is reduced first.
             // Also make sure to remove loyalty flag from the staker.
+            let vp_staked_amount_snapshot = self.vp_staked_amount;
             let bep_amount_snapshot = self.bep_staked_amount;
             let leftover_amount = amount.saturating_sub(self.bep_staked_amount);
-            self.bep_staked_amount = Balance::zero();
 
-            let vp_staked_amount_snapshot = self.vp_staked_amount;
             self.vp_staked_amount.saturating_reduce(leftover_amount);
             self.bep_staked_amount = Balance::zero();
 
@@ -1092,11 +1094,11 @@ impl ContractStakingInfoSeries {
         // 3.2. In case periods aren't matching, we return `None` since stakes don't carry over between periods.
         match idx {
             Ok(idx) => self.0.get(idx).map(|x| *x),
-            Err(idx) => {
-                if idx.is_zero() {
+            Err(ideal_idx) => {
+                if ideal_idx.is_zero() {
                     None
                 } else {
-                    match self.0.get(idx - 1) {
+                    match self.0.get(ideal_idx - 1) {
                         Some(info) if info.period() == period => {
                             let mut info = *info;
                             info.era = era;
@@ -1111,31 +1113,25 @@ impl ContractStakingInfoSeries {
 
     /// Last era for which a stake entry exists, `None` if no entries exist.
     pub fn last_stake_era(&self) -> Option<EraNumber> {
-        if let Some(last_element) = self.0.last() {
-            Some(last_element.era())
-        } else {
-            None
-        }
+        self.0.last().map(|info| info.era())
     }
 
     /// Last period for which a stake entry exists, `None` if no entries exist.
     pub fn last_stake_period(&self) -> Option<PeriodNumber> {
-        if let Some(last_element) = self.0.last() {
-            Some(last_element.period())
-        } else {
-            None
-        }
+        self.0.last().map(|info| info.period())
     }
 
-    pub fn total_staked_amount(&self, period: PeriodNumber) -> Balance {
+    /// Total staked amount on the contract, in the active period.
+    pub fn total_staked_amount(&self, active_period: PeriodNumber) -> Balance {
         match self.0.last() {
-            Some(last_element) if last_element.period() == period => {
+            Some(last_element) if last_element.period() == active_period => {
                 last_element.total_staked_amount()
             }
             _ => Balance::zero(),
         }
     }
 
+    /// Staked amount on the contract, for specified period type, in the active period.
     pub fn staked_amount(&self, period: PeriodNumber, period_type: PeriodType) -> Balance {
         match self.0.last() {
             Some(last_element) if last_element.period() == period => {
@@ -1160,24 +1156,21 @@ impl ContractStakingInfoSeries {
         }
 
         // Get the most relevant `ContractStakingInfo` instance
-        let (last_element_has_matching_era, last_element_has_matching_period) =
-            if let Some(last_element) = self.0.last() {
-                (
-                    last_element.era() == era,
-                    last_element.period() == period_info.number,
-                )
+        let mut staking_info = if let Some(last_element) = self.0.last() {
+            if last_element.era() == era {
+                // Era matches, so we just update the last element.
+                let last_element = *last_element;
+                let _ = self.0.pop();
+                last_element
+            } else if last_element.period() == period_info.number {
+                // Periods match so we should 'copy' the last element to get correct staking amount
+                let mut temp = *last_element;
+                temp.era = era;
+                temp
             } else {
-                (false, false)
-            };
-
-        // Prepare the new entry
-        let mut staking_info = if last_element_has_matching_era {
-            self.0.remove(self.0.len() - 1)
-        } else if last_element_has_matching_period {
-            // Periods match so we should 'copy' the last element to get correct staking amount
-            let mut temp = self.0[self.0.len() - 1];
-            temp.era = era;
-            temp
+                // It's a new period, so we need a completely new instance
+                ContractStakingInfo::new(era, period_info.number)
+            }
         } else {
             // It's a new period, so we need a completely new instance
             ContractStakingInfo::new(era, period_info.number)
@@ -1219,7 +1212,7 @@ impl ContractStakingInfoSeries {
             Some(last_element) if last_element.era() == era.saturating_add(1) => {
                 let mut last_element = *last_element;
                 last_element.unstake(amount, period_info.period_type);
-                self.0.remove(self.0.len() - 1);
+                let _ = self.0.pop();
                 Some(last_element)
             }
             _ => None,
@@ -1245,14 +1238,13 @@ impl ContractStakingInfoSeries {
             None
         };
 
-        // Prune before pushing the new entry
-        self.prune();
-
         // 3rd step - push the new entries, if they exist.
         if let Some(info) = second_last_era_info {
+            self.prune();
             self.0.try_push(info).map_err(|_| ())?;
         }
         if let Some(info) = last_era_info {
+            self.prune();
             self.0.try_push(info).map_err(|_| ())?;
         }
 
@@ -1262,7 +1254,7 @@ impl ContractStakingInfoSeries {
     /// Used to remove past entries, in case vector is full.
     fn prune(&mut self) {
         // Prune the oldest entry if we have more than the limit
-        if self.0.len() > STAKING_SERIES_HISTORY.saturating_sub(1) as usize {
+        if self.0.len() == STAKING_SERIES_HISTORY as usize {
             // TODO: this can be perhaps optimized so we prune entries which are very old.
             // However, this makes the code more complex & more error prone.
             // If kept like this, we always make sure we cover the history, and we never exceed it.

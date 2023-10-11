@@ -304,66 +304,69 @@ pub mod pallet {
                 return T::DbWeight::get().reads(1);
             }
 
-            if protocol_state.is_new_era(now) {
-                let mut era_info = CurrentEraInfo::<T>::get();
-                let next_era = protocol_state.era.saturating_add(1);
-                let maybe_period_event = match protocol_state.period_type() {
-                    PeriodType::Voting => {
-                        // For the sake of consistency
-                        let ending_era =
-                            next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
-                        let build_and_earn_start_block =
-                            now.saturating_add(T::StandardEraLength::get());
-                        protocol_state.next_period_type(ending_era, build_and_earn_start_block);
+            // Nothing to do if it's not new era
+            if !protocol_state.is_new_era(now) {
+                return T::DbWeight::get().reads(1);
+            }
+
+            let mut era_info = CurrentEraInfo::<T>::get();
+            let next_era = protocol_state.era.saturating_add(1);
+            let maybe_period_event = match protocol_state.period_type() {
+                PeriodType::Voting => {
+                    // For the sake of consistency
+                    let ending_era =
+                        next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
+                    let build_and_earn_start_block =
+                        now.saturating_add(T::StandardEraLength::get());
+                    protocol_state.next_period_type(ending_era, build_and_earn_start_block);
+
+                    era_info.migrate_to_next_era(Some(protocol_state.period_type()));
+
+                    Some(Event::<T>::NewPeriod {
+                        period_type: protocol_state.period_type(),
+                        number: protocol_state.period_number(),
+                    })
+                }
+                PeriodType::BuildAndEarn => {
+                    // TODO: trigger reward calculation here. This will be implemented later.
+
+                    // Switch to `Voting` period if conditions are met.
+                    if protocol_state.period_info.is_next_period(next_era) {
+                        // For the sake of consistency we treat the whole `Voting` period as a single era.
+                        // This means no special handling is required for this period, it only lasts potentially longer than a single standard era.
+                        let ending_era = next_era.saturating_add(1);
+                        let voting_period_length = Self::blocks_per_voting_period();
+                        let next_era_start_block = now.saturating_add(voting_period_length);
+
+                        protocol_state.next_period_type(ending_era, next_era_start_block);
 
                         era_info.migrate_to_next_era(Some(protocol_state.period_type()));
+
+                        // TODO: trigger tier configuration calculation based on internal & external params.
 
                         Some(Event::<T>::NewPeriod {
                             period_type: protocol_state.period_type(),
                             number: protocol_state.period_number(),
                         })
+                    } else {
+                        let next_era_start_block = now.saturating_add(T::StandardEraLength::get());
+                        protocol_state.next_era_start = next_era_start_block;
+
+                        era_info.migrate_to_next_era(None);
+
+                        None
                     }
-                    PeriodType::BuildAndEarn => {
-                        // TODO: trigger reward calculation here. This will be implemented later.
-
-                        // Switch to `Voting` period if conditions are met.
-                        if protocol_state.period_info.is_next_period(next_era) {
-                            // For the sake of consistency
-                            let ending_era = next_era.saturating_add(1);
-                            let voting_period_length = Self::blocks_per_voting_period();
-                            let next_era_start_block = now.saturating_add(voting_period_length);
-
-                            protocol_state.next_period_type(ending_era, next_era_start_block);
-
-                            era_info.migrate_to_next_era(Some(protocol_state.period_type()));
-
-                            // TODO: trigger tier configuration calculation based on internal & external params.
-
-                            Some(Event::<T>::NewPeriod {
-                                period_type: protocol_state.period_type(),
-                                number: protocol_state.period_number(),
-                            })
-                        } else {
-                            let next_era_start_block =
-                                now.saturating_add(T::StandardEraLength::get());
-                            protocol_state.next_era_start = next_era_start_block;
-
-                            era_info.migrate_to_next_era(None);
-
-                            None
-                        }
-                    }
-                };
-
-                protocol_state.era = next_era;
-                ActiveProtocolState::<T>::put(protocol_state);
-
-                CurrentEraInfo::<T>::put(era_info);
-
-                Self::deposit_event(Event::<T>::NewEra { era: next_era });
-                if let Some(period_event) = maybe_period_event {
-                    Self::deposit_event(period_event);
                 }
+            };
+
+            protocol_state.era = next_era;
+            ActiveProtocolState::<T>::put(protocol_state);
+
+            CurrentEraInfo::<T>::put(era_info);
+
+            Self::deposit_event(Event::<T>::NewEra { era: next_era });
+            if let Some(period_event) = maybe_period_event {
+                Self::deposit_event(period_event);
             }
 
             // TODO: benchmark later
@@ -712,7 +715,7 @@ pub mod pallet {
         }
 
         /// Stake the specified amount on a smart contract.
-        /// The `amount` specified **must** be available for staking, otherwise the call will fail.
+        /// The `amount` specified **must** be available for staking and meet the required minimum, otherwise the call will fail.
         ///
         /// Depending on the period type, appropriate stake amount will be updated.
         #[pallet::call_index(9)]

@@ -155,14 +155,14 @@ impl ExtBuilder {
             System::set_block_number(1);
             DappStaking::on_initialize(System::block_number());
 
-            // TODO: should pallet handle this?
-            // TODO2: not sure why the mess with type happens here, I can check it later
+            // TODO: not sure why the mess with type happens here, I can check it later
             let era_length: BlockNumber =
                 <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
             let voting_period_length_in_eras: EraNumber =
                 <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingPeriod as sp_core::Get<_>>::get(
                 );
 
+            // TODO: handle this via GenesisConfig, and some helper functions to set the state
             pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
                 era: 1,
                 next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
