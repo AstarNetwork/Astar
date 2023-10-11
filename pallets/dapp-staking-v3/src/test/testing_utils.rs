@@ -675,9 +675,10 @@ pub(crate) fn assert_unstake(
             "Staked amount must decrease by the 'amount'"
         );
 
-        let is_loyal = !(unstake_period_type == PeriodType::BuildAndEarn
-            && post_staker_info.staked_amount(PeriodType::Voting)
-                < pre_staker_info.staked_amount(PeriodType::Voting));
+        let is_loyal = pre_staker_info.is_loyal()
+            && !(unstake_period_type == PeriodType::BuildAndEarn
+                && post_staker_info.staked_amount(PeriodType::Voting)
+                    < pre_staker_info.staked_amount(PeriodType::Voting));
         assert_eq!(
             post_staker_info.is_loyal(),
             is_loyal,
@@ -722,7 +723,9 @@ pub(crate) fn assert_unstake(
         "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
     );
 
-    if pre_era_info.staked_amount_next_era(PeriodType::BuildAndEarn) < amount {
+    if unstake_period_type == PeriodType::BuildAndEarn
+        && pre_era_info.staked_amount_next_era(PeriodType::BuildAndEarn) < amount
+    {
         let overflow = amount - pre_era_info.staked_amount_next_era(PeriodType::BuildAndEarn);
 
         assert!(post_era_info
@@ -735,7 +738,7 @@ pub(crate) fn assert_unstake(
     } else {
         assert_eq!(
             post_era_info.staked_amount_next_era(unstake_period_type),
-            pre_era_info.staked_amount_next_era(unstake_period_type) + amount
+            pre_era_info.staked_amount_next_era(unstake_period_type) - amount
         );
     }
 }

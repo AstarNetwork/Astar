@@ -1015,14 +1015,41 @@ fn unstake_with_leftover_amount_below_minimum_works() {
         assert_register(dev_account, &smart_contract);
 
         let account = 2;
-        assert_lock(account, 100);
+        let amount = 300;
+        assert_lock(account, amount);
 
-        // Prep step - stake exactly the minimum staking amount
         let min_stake_amount: Balance =
             <Test as pallet_dapp_staking::Config>::MinimumStakeAmount::get();
         assert_stake(account, &smart_contract, min_stake_amount);
 
-        // Unstake 1, but it must prompt full unstake
+        // Unstake some amount, bringing it below the minimum
+        assert_unstake(account, &smart_contract, 1);
+    })
+}
+
+#[test]
+fn unstake_with_entry_overflow_attempt_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract & lock some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::default();
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+
+        assert_stake(account, &smart_contract, amount);
+
+        // Advance one era, unstake some amount. The goal is to make a new entry.
+        advance_to_next_era();
+        assert_unstake(account, &smart_contract, 11);
+
+        // Advance 2 eras, stake some amount. This should create a new entry for the next era.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        assert_stake(account, &smart_contract, 3);
+
+        // Unstake some amount, which should result in the creation of the 4th entry, but the oldest one should be prunned.
         assert_unstake(account, &smart_contract, 1);
     })
 }
