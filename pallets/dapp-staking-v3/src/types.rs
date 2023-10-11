@@ -695,17 +695,6 @@ where
     }
 }
 
-/// Rewards pool for stakers & dApps
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-pub struct RewardInfo {
-    /// Rewards pool for accounts which have locked funds in dApp staking
-    #[codec(compact)]
-    pub participants: Balance,
-    /// Reward pool for dApps
-    #[codec(compact)]
-    pub dapps: Balance,
-}
-
 // TODO: it would be nice to implement add/subtract logic on this struct and use it everywhere
 // we need to keep track of staking amount for periods. Right now I have logic duplication which is not good.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
@@ -776,8 +765,6 @@ impl StakeAmount {
 /// Info about current era, including the rewards, how much is locked, unlocking, etc.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct EraInfo {
-    /// Info about era rewards
-    pub rewards: RewardInfo,
     /// How much balance is considered to be locked in the current era.
     /// This value influences the reward distribution.
     #[codec(compact)]
@@ -850,7 +837,6 @@ impl EraInfo {
     ///  ## Args
     /// `next_period_type` - `None` if no period type change, `Some(type)` if `type` is starting from the next era.
     pub fn migrate_to_next_era(&mut self, next_period_type: Option<PeriodType>) {
-        self.rewards = Default::default();
         self.active_era_locked = self.total_locked;
         match next_period_type {
             // If next era marks start of new voting period period, it means we're entering a new period
@@ -1259,6 +1245,129 @@ impl ContractStakingInfoSeries {
             // However, this makes the code more complex & more error prone.
             // If kept like this, we always make sure we cover the history, and we never exceed it.
             self.0.remove(0);
+        }
+    }
+}
+
+/// Information required for staker reward payout for a particular era.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct EraReward {
+    /// Total reward pool for staker rewards
+    #[codec(compact)]
+    staker_reward_pool: Balance,
+    /// Total amount which was staked at the end of an era
+    #[codec(compact)]
+    staked: Balance,
+}
+
+impl EraReward {
+    /// Create new instance of `EraReward` with specified `staker_reward_pool` and `staked` amounts.
+    pub fn new(staker_reward_pool: Balance, staked: Balance) -> Self {
+        Self {
+            staker_reward_pool,
+            staked,
+        }
+    }
+
+    /// Total reward pool for staker rewards.
+    pub fn staker_reward_pool(&self) -> Balance {
+        self.staker_reward_pool
+    }
+
+    /// Total amount which was staked at the end of an era.
+    pub fn staked(&self) -> Balance {
+        self.staked
+    }
+}
+
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+pub enum EraRewardSpanError {
+    /// Provided era is invalid. Must be exactly one era after the last one in the span.
+    InvalidEra,
+    /// Span has no more capacity for additional entries.
+    NoCapacity,
+}
+
+/// Used to efficiently store era span information.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct EraRewardSpan<SL: Get<u32>> {
+    /// Span of EraRewardInfo entries.
+    span: BoundedVec<EraReward, SL>,
+    /// The first era in the span.
+    #[codec(compact)]
+    first_era: EraNumber,
+    /// The final era in the span.
+    #[codec(compact)]
+    last_era: EraNumber,
+}
+
+impl<SL> EraRewardSpan<SL>
+where
+    SL: Get<u32>,
+{
+    /// Create new instance of the `EraRewardSpan`
+    pub fn new() -> Self {
+        Self {
+            span: Default::default(),
+            first_era: 0,
+            last_era: 0,
+        }
+    }
+
+    /// First era covered in the span.
+    pub fn first_era(&self) -> EraNumber {
+        self.first_era
+    }
+
+    /// Last era covered in the span
+    pub fn last_era(&self) -> EraNumber {
+        self.last_era
+    }
+
+    /// Span length.
+    pub fn len(&self) -> usize {
+        self.span.len()
+    }
+
+    /// `true` if span is empty, `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        self.first_era == 0 && self.last_era == 0
+    }
+
+    /// Push new `EraReward` entry into the span.
+    /// If span is non-empty, the provided `era` must be exactly one era after the last one in the span.
+    pub fn push(
+        &mut self,
+        era: EraNumber,
+        era_reward: EraReward,
+    ) -> Result<(), EraRewardSpanError> {
+        // First entry, no checks, just set eras to the provided value.
+        if self.span.is_empty() {
+            self.first_era = era;
+            self.last_era = era;
+            self.span
+                .try_push(era_reward)
+                .map_err(|_| EraRewardSpanError::NoCapacity)
+        } else {
+            // Defensive check to ensure next era rewards refers to era after the last one in the span.
+            if era != self.last_era.saturating_add(1) {
+                return Err(EraRewardSpanError::InvalidEra);
+            }
+
+            self.last_era = era;
+            self.span
+                .try_push(era_reward)
+                .map_err(|_| EraRewardSpanError::NoCapacity)
+        }
+    }
+
+    /// Get the `EraReward` entry for the specified `era`.
+    ///
+    /// In case `era` is not covered by the span, `None` is returned.
+    pub fn get(&self, era: EraNumber) -> Option<&EraReward> {
+        match self.first_era.checked_sub(era) {
+            Some(index) => self.span.get(index as usize),
+            None => None,
         }
     }
 }

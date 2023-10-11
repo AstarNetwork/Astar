@@ -926,6 +926,16 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// TODO
+        #[pallet::call_index(11)]
+        #[pallet::weight(Weight::zero())]
+        pub fn claim_staker_reward(origin: OriginFor<T>) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
