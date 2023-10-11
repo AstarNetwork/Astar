@@ -199,8 +199,8 @@ where
             .into();
 
         let amounts = amounts_raw
-            .iter()
-            .map(|x| (*x).try_into())
+            .into_iter()
+            .map(|x| x.try_into())
             .collect::<Result<Vec<u128>, _>>()
             .map_err(|_| revert("error converting amounts, maybe value too large"))?;
 
@@ -249,7 +249,7 @@ where
 
         destination
             .push_interior(beneficiary)
-            .map_err(|_| revert("error converting destination multilocation"))?;
+            .map_err(|_| revert("error building destination multilocation"))?;
 
         let assets = assets
             .iter()
@@ -258,19 +258,16 @@ where
             .map(Into::into)
             .collect::<Vec<MultiAsset>>();
 
+        log::trace!(target: "xcm-precompile:assets_withdraw", "Processed arguments: assets {:?}, destination: {:?}", assets, destination);
+        
         // Build call with origin.
         let origin = Some(Runtime::AddressMapping::into_account_id(
             handle.context().caller,
         ))
         .into();
 
-        // sorting Multiassets
-        let multiassets = MultiAssets::from_sorted_and_deduplicated(assets).map_err(|_| {
-            revert("In field Assets, Provided assets either not sorted nor deduplicated")
-        })?;
-
         let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
-            assets: Box::new(VersionedMultiAssets::V3(multiassets)),
+            assets: Box::new(VersionedMultiAssets::V3(assets.into())),
             fee_item,
             dest: Box::new(VersionedMultiLocation::V3(destination)),
             dest_weight_limit: WeightLimit::Unlimited,
@@ -399,12 +396,11 @@ where
             .into();
 
         let amounts = amounts_raw
-            .iter()
-            .map(|x| (*x).try_into())
+            .into_iter()
+            .map(|x| x.try_into())
             .collect::<Result<Vec<u128>, _>>()
             .map_err(|_| revert("error converting amounts, maybe value too large"))?;
 
-        log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, amounts: {:?}", assets, amounts);
 
         // Check that assets list is valid:
         // * all assets resolved to multi-location
@@ -451,7 +447,7 @@ where
 
         destination
             .push_interior(beneficiary)
-            .map_err(|_| revert("error converting destination multilocation"))?;
+            .map_err(|_| revert("error building destination multilocation"))?;
 
         let assets = assets
             .iter()
@@ -460,19 +456,16 @@ where
             .map(Into::into)
             .collect::<Vec<MultiAsset>>();
 
+            log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, destination: {:?}", assets, destination);
+
         // Build call with origin.
         let origin = Some(Runtime::AddressMapping::into_account_id(
             handle.context().caller,
         ))
         .into();
 
-        // sorting multiassets
-        let multiassets = MultiAssets::from_sorted_and_deduplicated(assets).map_err(|_| {
-            revert("In field Assets, Provided assets either not sorted nor deduplicated")
-        })?;
-
         let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
-            assets: Box::new(VersionedMultiAssets::V3(multiassets)),
+            assets: Box::new(VersionedMultiAssets::V3(assets.into())),
             fee_item,
             dest: Box::new(VersionedMultiLocation::V3(destination)),
             dest_weight_limit: WeightLimit::Unlimited,
