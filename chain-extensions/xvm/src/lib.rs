@@ -95,7 +95,7 @@ where
                 let source = env.ext().address();
 
                 // Claim a default account if needed.
-                if UA::to_h160(&source).is_none() {
+                if value > 0 && UA::to_h160(&source).is_none() {
                     let claim_result =
                         pallet_unified_accounts::Pallet::<T>::claim_default_evm_address(
                             RawOrigin::Signed(source.clone()).into(),
