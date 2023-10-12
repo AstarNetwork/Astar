@@ -95,7 +95,7 @@ where
                 // things on behalf of the caller via XVM.
                 let source = env.ext().address().clone();
 
-                // Claim a default account if needed.
+                // Claim the default evm address if needed.
                 let mut actual_weight = Weight::zero();
                 if value > 0 && UA::to_h160(&source).is_none() {
                     let weight_of_claim = <T as pallet_unified_accounts::Config>::WeightInfo::claim_default_evm_address();
