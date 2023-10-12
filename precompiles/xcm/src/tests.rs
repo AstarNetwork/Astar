@@ -116,7 +116,7 @@ mod xcm_old_interface_test {
                         ])
                         .write(H256::repeat_byte(0xF1))
                         .write(false)
-                        .write(U256::from(1_u64)) // parachain id should be
+                        .write(U256::from(1_u64))
                         .write(U256::from(0_u64))
                         .build(),
                 )

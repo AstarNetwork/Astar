@@ -210,13 +210,6 @@ impl Contains<RuntimeCall> for BaseFilter {
 
                 _ => true,
             },
-            // We don't allow xcm assets transfer functions from `pallet-xcm`
-            // use orml_xtokens for token transfers using xcm
-            RuntimeCall::PolkadotXcm(method) => match method {
-                pallet_xcm::Call::limited_reserve_transfer_assets { .. }
-                | pallet_xcm::Call::reserve_transfer_assets { .. } => false,
-                _ => true,
-            },
             // These modules are not allowed to be called by transactions:
             // To leave collator just shutdown it, next session funds will be released
             // Other modules should works:
