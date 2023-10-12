@@ -47,6 +47,7 @@ pub type DAppId = u16;
 // TODO: perhaps this trait is not needed and instead of having 2 separate '___Chunk' types, we can have just one?
 /// Trait for types that can be used as a pair of amount & era.
 pub trait AmountEraPair: MaxEncodedLen + Default + Copy {
+    fn new(amount: Balance, era: EraNumber) -> Self;
     /// Balance amount used somehow during the accompanied era.
     fn get_amount(&self) -> Balance;
     /// Era acting as timestamp for the accompanied amount.
@@ -72,6 +73,8 @@ pub enum AccountLedgerError {
     UnavailableStakeFunds,
     /// Unstake amount is to large in respect to what's staked.
     UnstakeAmountLargerThanStake,
+    /// Split era is invalid; it's not contained withing the vector's scope.
+    SplitEraInvalid,
 }
 
 /// Helper struct for easier manipulation of sparse <amount, era> pairs.
@@ -226,8 +229,87 @@ where
 
         Ok(())
     }
+
+    // TODO: unit test
+    /// Splits the vector into two parts, using the provided `era` as the splitting point.
+    ///
+    /// All entries which satisfy the condition `entry.era <= era` are removed from the vector.
+    /// After split is done, the _removed_ part is padded with an entry, IFF the last element doesn't cover the specified era.
+    /// The same is true for the remaining part of the vector.
+    ///
+    /// The `era` argument **must** be contained within the vector's scope.
+    ///
+    /// E.g.:
+    ///  a) [1,2,6,7] -- split(4) --> [1,2,4],[5,6,7]
+    ///  b) [1,2] -- split(4) --> [1,2,4],[5]
+    ///  c) [1,2,4,5] -- split(4) --> [1,2,4],[5]
+    ///  d) [1,2,4,6] -- split(4) --> [1,2,4],[5,6]
+    pub fn left_split(&mut self, era: EraNumber) -> Result<Self, AccountLedgerError> {
+        // TODO: this implementation can once again be optimized, sacrificing the code readability a bit.
+        // But I don't think it's worth doing, since we're aiming for the safe side here.
+
+        // Split the inner vector into two parts
+        let (mut left, mut right): (Vec<P>, Vec<P>) = self
+            .0
+            .clone()
+            .into_iter()
+            .partition(|chunk| chunk.get_era() <= era);
+
+        if left.is_empty() {
+            return Err(AccountLedgerError::SplitEraInvalid);
+        }
+
+        if let Some(&last_l_chunk) = left.last() {
+            // In case 'left' part is missing an entry covering the specified era, add it.
+            if last_l_chunk.get_era() < era {
+                let mut new_chunk = last_l_chunk;
+                new_chunk.set_era(era);
+                left.push(new_chunk);
+            }
+
+            // In case 'right' part is missing an entry covering the specified era, add it.
+            match right.first() {
+                Some(first_r_chunk) if first_r_chunk.get_era() > era.saturating_add(1) => {
+                    let mut new_chunk = last_l_chunk.clone();
+                    new_chunk.set_era(era.saturating_add(1));
+                    right.insert(0, new_chunk);
+                }
+                None => {
+                    let mut new_chunk = last_l_chunk.clone();
+                    new_chunk.set_era(era.saturating_add(1));
+                    right.insert(0, new_chunk);
+                }
+                _ => (),
+            }
+        }
+
+        // TODO: I could just use `expect` here since it's impossible for vectors to increase in size.
+        self.0 = BoundedVec::try_from(right).map_err(|_| AccountLedgerError::NoCapacity)?;
+
+        Ok(Self(
+            BoundedVec::<P, ML>::try_from(left).map_err(|_| AccountLedgerError::NoCapacity)?,
+        ))
+    }
+
+    // TODO: unit tests
+    /// Returns the most appropriate chunk for the specified era, if it exists.
+    pub fn get(&self, era: EraNumber) -> Option<P> {
+        match self.0.binary_search_by(|chunk| chunk.get_era().cmp(&era)) {
+            // Entry exists, all good.
+            Ok(idx) => self.0.get(idx).map(|x| *x),
+            // Entry doesn't exist, but another one covers it so we return it.
+            Err(idx) if idx > 0 => self.0.get(idx.saturating_sub(1)).map(|x| {
+                let mut new_chunk = *x;
+                new_chunk.set_era(era);
+                new_chunk
+            }),
+            // Era is out of scope.
+            _ => None,
+        }
+    }
 }
 
+// TODO: rename to SubperiodType? It would be less ambigious.
 /// Distinct period types in dApp staking protocol.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub enum PeriodType {
@@ -271,6 +353,17 @@ impl PeriodInfo {
     pub fn is_next_period(&self, era: EraNumber) -> bool {
         self.period_type == PeriodType::BuildAndEarn && self.ending_era <= era
     }
+}
+
+// TODO: doc
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+pub struct PeriodEndInfo {
+    #[codec(compact)]
+    pub bonus_reward_pool: Balance,
+    #[codec(compact)]
+    pub total_vp_stake: Balance,
+    #[codec(compact)]
+    pub final_era: EraNumber,
 }
 
 /// Force types to speed up the next era, and even period.
@@ -423,6 +516,9 @@ impl Default for StakeChunk {
 }
 
 impl AmountEraPair for StakeChunk {
+    fn new(amount: Balance, era: EraNumber) -> Self {
+        Self { amount, era }
+    }
     fn get_amount(&self) -> Balance {
         self.amount
     }
@@ -692,6 +788,12 @@ where
     /// If no stake entries exist, returns `None`.
     pub fn last_stake_era(&self) -> Option<EraNumber> {
         self.staked.0.last().map(|chunk| chunk.era)
+    }
+
+    /// First entry for which a stake entry exists.
+    /// If no stake entries exist, returns `None`.
+    pub fn oldest_stake_era(&self) -> Option<EraNumber> {
+        self.staked.0.first().map(|chunk| chunk.era)
     }
 }
 
@@ -1289,7 +1391,8 @@ pub enum EraRewardSpanError {
 }
 
 /// Used to efficiently store era span information.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[scale_info(skip_type_params(SL))]
 pub struct EraRewardSpan<SL: Get<u32>> {
     /// Span of EraRewardInfo entries.
     span: BoundedVec<EraReward, SL>,
@@ -1331,7 +1434,7 @@ where
 
     /// `true` if span is empty, `false` otherwise.
     pub fn is_empty(&self) -> bool {
-        self.first_era == 0 && self.last_era == 0
+        self.span.is_empty()
     }
 
     /// Push new `EraReward` entry into the span.
@@ -1347,6 +1450,7 @@ where
             self.last_era = era;
             self.span
                 .try_push(era_reward)
+                // Defensive check, should never happen since it means capacity is 'zero'.
                 .map_err(|_| EraRewardSpanError::NoCapacity)
         } else {
             // Defensive check to ensure next era rewards refers to era after the last one in the span.
@@ -1365,7 +1469,7 @@ where
     ///
     /// In case `era` is not covered by the span, `None` is returned.
     pub fn get(&self, era: EraNumber) -> Option<&EraReward> {
-        match self.first_era.checked_sub(era) {
+        match era.checked_sub(self.first_era()) {
             Some(index) => self.span.get(index as usize),
             None => None,
         }

@@ -45,7 +45,10 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::traits::{BadOrigin, Saturating, Zero};
+use sp_runtime::{
+    traits::{BadOrigin, Saturating, Zero},
+    Perbill,
+};
 
 use astar_primitives::Balance;
 
@@ -103,6 +106,15 @@ pub mod pallet {
         /// Each `Build&Earn` period consists of one or more distinct standard eras.
         #[pallet::constant]
         type StandardErasPerBuildAndEarnPeriod: Get<EraNumber>;
+
+        /// Maximum length of a single era reward span length entry.
+        #[pallet::constant]
+        type EraRewardSpanLength: Get<u32>;
+
+        /// Number of periods for which we keep rewards available for claiming.
+        /// After that period, they are no longer claimable.
+        #[pallet::constant]
+        type RewardRetentionInPeriods: Get<PeriodNumber>;
 
         /// Maximum number of contracts that can be integrated into dApp staking at once.
         #[pallet::constant]
@@ -192,6 +204,12 @@ pub mod pallet {
             smart_contract: T::SmartContract,
             amount: Balance,
         },
+        /// Account has claimed some stake rewards.
+        Reward {
+            account: T::AccountId,
+            era: EraNumber,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -245,6 +263,12 @@ pub mod pallet {
         NoStakingInfo,
         /// An unexpected error occured while trying to unstake.
         InternalUnstakeError,
+        /// Rewards are no longer claimable since they are too old.
+        StakerRewardsExpired,
+        /// There are no claimable rewards for the account.
+        NoClaimableRewards,
+        /// An unexpected error occured while trying to claim rewards.
+        InternalClaimStakerError,
     }
 
     /// General information about dApp staking protocol state.
@@ -292,6 +316,24 @@ pub mod pallet {
     #[pallet::storage]
     pub type CurrentEraInfo<T: Config> = StorageValue<_, EraInfo, ValueQuery>;
 
+    /// Information about rewards for each era.
+    ///
+    /// Since each entry is a 'span', covering up to `T::EraRewardSpanLength` entries, only certain era value keys can exist in storage.
+    /// For the sake of simplicity, valid `era` keys are calculated as:
+    ///
+    ///            era_key = era - (era % T::EraRewardSpanLength)
+    ///
+    /// This means that e.g. in case `EraRewardSpanLength = 8`, only era values 0, 8, 16, 24, etc. can exist in storage.
+    /// Eras 1-7 will be stored in the same entry as era 0, eras 9-15 will be stored in the same entry as era 8, etc.
+    #[pallet::storage]
+    pub type EraRewards<T: Config> =
+        StorageMap<_, Twox64Concat, EraNumber, EraRewardSpan<T::EraRewardSpanLength>, OptionQuery>;
+
+    /// Information about period's end.
+    #[pallet::storage]
+    pub type PeriodEnd<T: Config> =
+        StorageMap<_, Twox64Concat, PeriodNumber, PeriodEndInfo, OptionQuery>;
+
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
@@ -310,7 +352,10 @@ pub mod pallet {
             }
 
             let mut era_info = CurrentEraInfo::<T>::get();
-            let next_era = protocol_state.era.saturating_add(1);
+            let staker_reward_pool = Balance::from(1000_u128); // TODO: calculate this properly
+            let era_reward = EraReward::new(staker_reward_pool, era_info.total_staked_amount());
+            let ending_era = protocol_state.era;
+            let next_era = ending_era.saturating_add(1);
             let maybe_period_event = match protocol_state.period_type() {
                 PeriodType::Voting => {
                     // For the sake of consistency
@@ -359,10 +404,20 @@ pub mod pallet {
                 }
             };
 
+            // Update storage items
+
             protocol_state.era = next_era;
             ActiveProtocolState::<T>::put(protocol_state);
 
             CurrentEraInfo::<T>::put(era_info);
+
+            let era_span_index = Self::era_reward_span_index(ending_era);
+            let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
+            // TODO: error must not happen here. Log an error if it does.
+            // The consequence will be that some rewards will be temporarily lost/unavailable, but nothing protocol breaking.
+            // Will require a fix from the runtime team though.
+            let _ = span.push(ending_era, era_reward);
+            EraRewards::<T>::insert(&era_span_index, span);
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
             if let Some(period_event) = maybe_period_event {
@@ -370,7 +425,7 @@ pub mod pallet {
             }
 
             // TODO: benchmark later
-            T::DbWeight::get().reads_writes(2, 2)
+            T::DbWeight::get().reads_writes(3, 3)
         }
     }
 
@@ -934,6 +989,71 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let mut ledger = Ledger::<T>::get(&account);
+
+            let staked_period = ledger.staked_period.ok_or(Error::<T>::NoClaimableRewards)?;
+            ensure!(
+                staked_period
+                    >= protocol_state
+                        .period_number()
+                        .saturating_sub(T::RewardRetentionInPeriods::get()),
+                Error::<T>::StakerRewardsExpired
+            );
+
+            // Calculate the reward claim span
+            let first_claim_era = ledger
+                .oldest_stake_era()
+                .ok_or(Error::<T>::InternalClaimStakerError)?;
+            let era_rewards = EraRewards::<T>::get(Self::era_reward_span_index(first_claim_era))
+                .ok_or(Error::<T>::InternalClaimStakerError)?;
+
+            // TODO: need to know when period ended, storage item is needed for this.
+            // last_period_era or current_era - 1
+            let last_period_era = if staked_period == protocol_state.period_number() {
+                protocol_state.era.saturating_sub(1)
+            } else {
+                PeriodEnd::<T>::get(&staked_period)
+                    .ok_or(Error::<T>::InternalClaimStakerError)?
+                    .final_era
+            };
+            let last_claim_era = era_rewards.last_era().min(last_period_era);
+
+            // Get chunks for reward claiming
+            let chunks_for_claim = ledger
+                .staked
+                .left_split(last_claim_era)
+                .map_err(|_| Error::<T>::InternalClaimStakerError)?;
+
+            // Calculate rewards
+            let mut rewards: Vec<_> = Vec::new();
+            for era in first_claim_era..=last_claim_era {
+                let era_reward = era_rewards
+                    .get(era)
+                    .ok_or(Error::<T>::InternalClaimStakerError)?;
+
+                let chunk = chunks_for_claim
+                    .get(era)
+                    .ok_or(Error::<T>::InternalClaimStakerError)?;
+
+                let staker_reward = Perbill::from_rational(chunk.get_amount(), era_reward.staked())
+                    * era_reward.staker_reward_pool();
+                rewards.push((era, staker_reward));
+            }
+
+            let reward_sum = rewards.iter().fold(Balance::zero(), |acc, (_, reward)| {
+                acc.saturating_add(*reward)
+            });
+
+            T::Currency::deposit_into_existing(&account, reward_sum);
+            rewards.into_iter().for_each(|(era, reward)| {
+                Self::deposit_event(Event::<T>::Reward {
+                    account: account.clone(),
+                    era,
+                    amount: reward,
+                });
+            });
+
             Ok(())
         }
     }
@@ -988,6 +1108,11 @@ pub mod pallet {
         fn is_active(smart_contract: &T::SmartContract) -> bool {
             IntegratedDApps::<T>::get(smart_contract)
                 .map_or(false, |dapp_info| dapp_info.state == DAppState::Registered)
+        }
+
+        /// Calculates the `EraRewardSpan` index for the specified era.
+        fn era_reward_span_index(era: EraNumber) -> EraNumber {
+            era.saturating_sub(era % T::EraRewardSpanLength::get())
         }
     }
 }

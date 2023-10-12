@@ -1774,3 +1774,64 @@ fn contract_staking_info_series_unstake_with_inconsistent_data_fails() {
     assert!(series.unstake(1, period_info, era - 2).is_err());
     assert!(series.unstake(1, period_info, era - 1).is_ok());
 }
+
+#[test]
+fn era_reward_span_push_and_get_works() {
+    get_u32_type!(SpanLength, 8);
+    let mut era_reward_span = EraRewardSpan::<SpanLength>::new();
+
+    // Sanity checks
+    assert!(era_reward_span.is_empty());
+    assert!(era_reward_span.len().is_zero());
+    assert!(era_reward_span.first_era().is_zero());
+    assert!(era_reward_span.last_era().is_zero());
+
+    // Insert some values and verify state change
+    let era_1 = 5;
+    let era_reward_1 = EraReward::new(23, 41);
+    assert!(era_reward_span.push(era_1, era_reward_1).is_ok());
+    assert_eq!(era_reward_span.len(), 1);
+    assert_eq!(era_reward_span.first_era(), era_1);
+    assert_eq!(era_reward_span.last_era(), era_1);
+
+    // Insert another value and verify state change
+    let era_2 = era_1 + 1;
+    let era_reward_2 = EraReward::new(37, 53);
+    assert!(era_reward_span.push(era_2, era_reward_2).is_ok());
+    assert_eq!(era_reward_span.len(), 2);
+    assert_eq!(era_reward_span.first_era(), era_1);
+    assert_eq!(era_reward_span.last_era(), era_2);
+
+    // Get the values and verify they are as expected
+    assert_eq!(era_reward_span.get(era_1), Some(&era_reward_1));
+    assert_eq!(era_reward_span.get(era_2), Some(&era_reward_2));
+}
+
+#[test]
+fn era_reward_span_fails_when_expected() {
+    // Capacity is only 2 to make testing easier
+    get_u32_type!(SpanLength, 2);
+    let mut era_reward_span = EraRewardSpan::<SpanLength>::new();
+
+    // Push first values to get started
+    let era_1 = 5;
+    let era_reward = EraReward::new(23, 41);
+    assert!(era_reward_span.push(era_1, era_reward).is_ok());
+
+    // Attempting to push incorrect era results in an error
+    for wrong_era in &[era_1 - 1, era_1, era_1 + 2] {
+        assert_eq!(
+            era_reward_span.push(era_1 - 1, era_reward),
+            Err(EraRewardSpanError::InvalidEra)
+        );
+    }
+
+    // Pushing above capacity results in an error
+    let era_2 = era_1 + 1;
+    assert!(era_reward_span.push(era_2, era_reward).is_ok());
+    let era_3 = era_2 + 1;
+    assert_eq!(
+        era_reward_span.push(era_3, era_reward),
+        Err(EraRewardSpanError::NoCapacity)
+    );
+}
