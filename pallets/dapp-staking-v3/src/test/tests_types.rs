@@ -40,6 +40,9 @@ struct DummyEraAmount {
     era: u32,
 }
 impl AmountEraPair for DummyEraAmount {
+    fn new(amount: Balance, era: u32) -> Self {
+        Self { amount, era }
+    }
     fn get_amount(&self) -> Balance {
         self.amount
     }
@@ -305,6 +308,7 @@ fn sparse_bounded_amount_era_vec_subtract_amount_advanced_non_consecutive_works(
 #[test]
 fn sparse_bounded_amount_era_vec_full_subtract_with_single_future_era() {
     get_u32_type!(MaxLen, 5);
+
     let mut vec = SparseBoundedAmountEraVec::<DummyEraAmount, MaxLen>::new();
 
     // A scenario where some amount is added, for the first time, for era X.
@@ -317,6 +321,111 @@ fn sparse_bounded_amount_era_vec_full_subtract_with_single_future_era() {
     assert!(
         vec.0.is_empty(),
         "Future entry should have been cleaned up."
+    );
+}
+
+#[test]
+fn sparse_bounded_amount_era_vec_split_left_works() {
+    get_u32_type!(MaxLen, 4);
+
+    fn new_era_vec(vec: Vec<u32>) -> SparseBoundedAmountEraVec<DummyEraAmount, MaxLen> {
+        let vec: Vec<DummyEraAmount> = vec
+            .into_iter()
+            .map(|idx| DummyEraAmount::new(idx as Balance, idx))
+            .collect();
+        SparseBoundedAmountEraVec(BoundedVec::try_from(vec).unwrap())
+    }
+
+    // 1st scenario: [1,2,6,7] -- split(4) --> [1,2],[5,6,7]
+    let mut vec = new_era_vec(vec![1, 2, 6, 7]);
+    let result = vec.left_split(4).expect("Split should succeed.");
+    assert_eq!(result.0.len(), 2);
+    assert_eq!(result.0[0], DummyEraAmount::new(1, 1));
+    assert_eq!(result.0[1], DummyEraAmount::new(2, 2));
+
+    assert_eq!(vec.0.len(), 3);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(2, 5),
+        "Amount must come from last entry in the split."
+    );
+    assert_eq!(vec.0[1], DummyEraAmount::new(6, 6));
+    assert_eq!(vec.0[2], DummyEraAmount::new(7, 7));
+
+    // 2nd scenario: [1,2] -- split(4) --> [1,2],[5]
+    let mut vec = new_era_vec(vec![1, 2]);
+    let result = vec.left_split(4).expect("Split should succeed.");
+    assert_eq!(result.0.len(), 2);
+    assert_eq!(result.0[0], DummyEraAmount::new(1, 1));
+    assert_eq!(result.0[1], DummyEraAmount::new(2, 2));
+
+    assert_eq!(vec.0.len(), 1);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(2, 5),
+        "Amount must come from last entry in the split."
+    );
+
+    // 3rd scenario: [1,2,4,5] -- split(4) --> [1,2,4],[5]
+    let mut vec = new_era_vec(vec![1, 2, 4, 5]);
+    let result = vec.left_split(4).expect("Split should succeed.");
+    assert_eq!(result.0.len(), 3);
+    assert_eq!(result.0[0], DummyEraAmount::new(1, 1));
+    assert_eq!(result.0[1], DummyEraAmount::new(2, 2));
+    assert_eq!(result.0[2], DummyEraAmount::new(4, 4));
+
+    assert_eq!(vec.0.len(), 1);
+    assert_eq!(vec.0[0], DummyEraAmount::new(5, 5));
+
+    // 4th scenario: [1,2,4,6] -- split(4) --> [1,2,4],[5,6]
+    let mut vec = new_era_vec(vec![1, 2, 4, 6]);
+    let result = vec.left_split(4).expect("Split should succeed.");
+    assert_eq!(result.0.len(), 3);
+    assert_eq!(result.0[0], DummyEraAmount::new(1, 1));
+    assert_eq!(result.0[1], DummyEraAmount::new(2, 2));
+    assert_eq!(result.0[2], DummyEraAmount::new(4, 4));
+
+    assert_eq!(vec.0.len(), 2);
+    assert_eq!(
+        vec.0[0],
+        DummyEraAmount::new(4, 5),
+        "Amount must come from last entry in the split."
+    );
+    assert_eq!(vec.0[1], DummyEraAmount::new(6, 6));
+}
+
+#[test]
+fn sparse_bounded_amount_era_vec_split_left_fails_with_invalid_era() {
+    get_u32_type!(MaxLen, 4);
+    let mut vec = SparseBoundedAmountEraVec::<DummyEraAmount, MaxLen>::new();
+    assert!(vec.add_amount(5, 5).is_ok());
+
+    assert_eq!(vec.left_split(4), Err(AccountLedgerError::SplitEraInvalid));
+}
+
+#[test]
+fn sparse_bounded_amount_era_vec_get_works() {
+    get_u32_type!(MaxLen, 4);
+    let vec: Vec<DummyEraAmount> = vec![2, 3, 5]
+        .into_iter()
+        .map(|idx| DummyEraAmount::new(idx as Balance, idx))
+        .collect();
+    let vec =
+        SparseBoundedAmountEraVec::<DummyEraAmount, MaxLen>(BoundedVec::try_from(vec).unwrap());
+
+    assert_eq!(vec.get(1), None, "Era is not covered by the vector.");
+    assert_eq!(vec.get(2), Some(DummyEraAmount::new(2, 2)));
+    assert_eq!(vec.get(3), Some(DummyEraAmount::new(3, 3)));
+    assert_eq!(
+        vec.get(4),
+        Some(DummyEraAmount::new(3, 4)),
+        "Era is covered by the 3rd era."
+    );
+    assert_eq!(vec.get(5), Some(DummyEraAmount::new(5, 5)));
+    assert_eq!(
+        vec.get(6),
+        Some(DummyEraAmount::new(5, 6)),
+        "Era is covered by the 5th era."
     );
 }
 
@@ -1821,7 +1930,7 @@ fn era_reward_span_fails_when_expected() {
     // Attempting to push incorrect era results in an error
     for wrong_era in &[era_1 - 1, era_1, era_1 + 2] {
         assert_eq!(
-            era_reward_span.push(era_1 - 1, era_reward),
+            era_reward_span.push(*wrong_era, era_reward),
             Err(EraRewardSpanError::InvalidEra)
         );
     }

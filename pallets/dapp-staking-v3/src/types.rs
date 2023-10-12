@@ -230,7 +230,6 @@ where
         Ok(())
     }
 
-    // TODO: unit test
     /// Splits the vector into two parts, using the provided `era` as the splitting point.
     ///
     /// All entries which satisfy the condition `entry.era <= era` are removed from the vector.
@@ -240,8 +239,8 @@ where
     /// The `era` argument **must** be contained within the vector's scope.
     ///
     /// E.g.:
-    ///  a) [1,2,6,7] -- split(4) --> [1,2,4],[5,6,7]
-    ///  b) [1,2] -- split(4) --> [1,2,4],[5]
+    ///  a) [1,2,6,7] -- split(4) --> [1,2],[5,6,7]
+    ///  b) [1,2] -- split(4) --> [1,2],[5]
     ///  c) [1,2,4,5] -- split(4) --> [1,2,4],[5]
     ///  d) [1,2,4,6] -- split(4) --> [1,2,4],[5,6]
     pub fn left_split(&mut self, era: EraNumber) -> Result<Self, AccountLedgerError> {
@@ -249,7 +248,7 @@ where
         // But I don't think it's worth doing, since we're aiming for the safe side here.
 
         // Split the inner vector into two parts
-        let (mut left, mut right): (Vec<P>, Vec<P>) = self
+        let (left, mut right): (Vec<P>, Vec<P>) = self
             .0
             .clone()
             .into_iter()
@@ -260,13 +259,6 @@ where
         }
 
         if let Some(&last_l_chunk) = left.last() {
-            // In case 'left' part is missing an entry covering the specified era, add it.
-            if last_l_chunk.get_era() < era {
-                let mut new_chunk = last_l_chunk;
-                new_chunk.set_era(era);
-                left.push(new_chunk);
-            }
-
             // In case 'right' part is missing an entry covering the specified era, add it.
             match right.first() {
                 Some(first_r_chunk) if first_r_chunk.get_era() > era.saturating_add(1) => {
@@ -291,7 +283,6 @@ where
         ))
     }
 
-    // TODO: unit tests
     /// Returns the most appropriate chunk for the specified era, if it exists.
     pub fn get(&self, era: EraNumber) -> Option<P> {
         match self.0.binary_search_by(|chunk| chunk.get_era().cmp(&era)) {
@@ -794,6 +785,12 @@ where
     /// If no stake entries exist, returns `None`.
     pub fn oldest_stake_era(&self) -> Option<EraNumber> {
         self.staked.0.first().map(|chunk| chunk.era)
+    }
+
+    /// Notify ledger that all `stake` rewards have been claimed for the staked era.
+    pub fn all_stake_rewards_claimed(&mut self) {
+        self.staked = SparseBoundedAmountEraVec(BoundedVec::<StakeChunk, StakedLen>::default());
+        self.staked_period = None;
     }
 }
 

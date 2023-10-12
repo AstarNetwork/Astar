@@ -321,7 +321,7 @@ pub mod pallet {
     /// Since each entry is a 'span', covering up to `T::EraRewardSpanLength` entries, only certain era value keys can exist in storage.
     /// For the sake of simplicity, valid `era` keys are calculated as:
     ///
-    ///            era_key = era - (era % T::EraRewardSpanLength)
+    /// era_key = era - (era % T::EraRewardSpanLength)
     ///
     /// This means that e.g. in case `EraRewardSpanLength = 8`, only era values 0, 8, 16, 24, etc. can exist in storage.
     /// Eras 1-7 will be stored in the same entry as era 0, eras 9-15 will be stored in the same entry as era 8, etc.
@@ -1008,7 +1008,6 @@ pub mod pallet {
             let era_rewards = EraRewards::<T>::get(Self::era_reward_span_index(first_claim_era))
                 .ok_or(Error::<T>::InternalClaimStakerError)?;
 
-            // TODO: need to know when period ended, storage item is needed for this.
             // last_period_era or current_era - 1
             let last_period_era = if staked_period == protocol_state.period_number() {
                 protocol_state.era.saturating_sub(1)
@@ -1018,6 +1017,9 @@ pub mod pallet {
                     .final_era
             };
             let last_claim_era = era_rewards.last_era().min(last_period_era);
+
+            let is_full_period_claimed =
+                staked_period < protocol_state.period_number() && last_period_era == last_claim_era;
 
             // Get chunks for reward claiming
             let chunks_for_claim = ledger
@@ -1045,7 +1047,11 @@ pub mod pallet {
                 acc.saturating_add(*reward)
             });
 
-            T::Currency::deposit_into_existing(&account, reward_sum);
+            // TODO; update & write ledger
+            if is_full_period_claimed {}
+
+            T::Currency::deposit_into_existing(&account, reward_sum)
+                .map_err(|_| Error::<T>::InternalClaimStakerError)?;
             rewards.into_iter().for_each(|(era, reward)| {
                 Self::deposit_event(Event::<T>::Reward {
                     account: account.clone(),

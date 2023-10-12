@@ -113,6 +113,7 @@ impl pallet_dapp_staking::Config for Test {
     type StandardErasPerVotingPeriod = ConstU32<8>;
     type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
     type EraRewardSpanLength = ConstU32<8>;
+    type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU16<10>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MaxStakingChunks = ConstU32<8>;
