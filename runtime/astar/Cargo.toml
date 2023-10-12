@@ -114,9 +114,6 @@ moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 
-# TODO: remove this once we get rid of `pallet-xcm` fork & double dep
-polkadot-runtime = { workspace = true, optional = true }
-
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -221,7 +218,6 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
-	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",

@@ -248,13 +248,11 @@ polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", bra
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 
-# Temporary, to ensure `runtime-benchmarks` features can compile
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
-
 # XCM
 # (wasm)
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.43", default-features = false }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 xcm-simulator = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
@@ -276,7 +274,6 @@ pallet-collator-selection = { path = "./pallets/collator-selection", default-fea
 pallet-dapps-staking = { path = "./pallets/dapps-staking", default-features = false }
 pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features = false }
 pallet-xvm = { path = "./pallets/xvm", default-features = false }
-pallet-xcm = { path = "./pallets/pallet-xcm", default-features = false }
 pallet-ethereum-checked = { path = "./pallets/ethereum-checked", default-features = false }
 pallet-dynamic-evm-base-fee = { path = "./pallets/dynamic-evm-base-fee", default-features = false }
 pallet-unified-accounts = { path = "./pallets/unified-accounts", default-features = false }
