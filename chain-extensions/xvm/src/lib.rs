@@ -25,11 +25,12 @@ use astar_primitives::{
     evm::UnifiedAddressMapper,
     xvm::{Context, VmId, XvmCall},
 };
-use frame_support::dispatch::Encode;
+use frame_support::{dispatch::Encode, weights::Weight};
 use frame_system::RawOrigin;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, ReturnFlags,
 };
+use pallet_unified_accounts::WeightInfo;
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
 use xvm_chain_extension_types::{XvmCallArgs, XvmExecutionResult};
@@ -92,10 +93,14 @@ where
                 // Similar to EVM behavior, the `source` should be (limited to) the
                 // contract address. Otherwise contracts would be able to do arbitrary
                 // things on behalf of the caller via XVM.
-                let source = env.ext().address();
+                let source = env.ext().address().clone();
 
                 // Claim a default account if needed.
+                let mut actual_weight = Weight::zero();
                 if value > 0 && UA::to_h160(&source).is_none() {
+                    let weight_of_claim = <T as pallet_unified_accounts::Config>::WeightInfo::claim_default_evm_address();
+                    actual_weight.saturating_accrue(weight_of_claim);
+
                     let claim_result =
                         pallet_unified_accounts::Pallet::<T>::claim_default_evm_address(
                             RawOrigin::Signed(source.clone()).into(),
@@ -123,13 +128,13 @@ where
                         }
                     }
                 };
-                let call_result =
-                    XC::call(xvm_context, vm_id, source.clone(), to, input, value, None);
+                let call_result = XC::call(xvm_context, vm_id, source, to, input, value, None);
 
-                let actual_weight = match call_result {
+                let used_weight = match call_result {
                     Ok(ref info) => info.used_weight,
                     Err(ref err) => err.used_weight,
                 };
+                actual_weight.saturating_accrue(used_weight);
                 env.adjust_weight(charged_weight, actual_weight);
 
                 match call_result {
