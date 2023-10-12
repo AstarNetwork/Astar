@@ -119,14 +119,6 @@ mod shibuya {
             get_evm_signature(who, secret)
         ));
     }
-
-    pub fn claim_default_accounts(account: AccountId) {
-        let default_h160 = UnifiedAccounts::to_default_h160(&account);
-        assert_ok!(UnifiedAccounts::claim_default_evm_address(
-            RuntimeOrigin::signed(account.clone())
-        ));
-        assert_eq!(UnifiedAccounts::to_h160(&account).unwrap(), default_h160);
-    }
 }
 
 #[cfg(feature = "shiden")]

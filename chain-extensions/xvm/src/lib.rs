@@ -21,8 +21,12 @@
 extern crate alloc;
 use alloc::format;
 
-use astar_primitives::xvm::{Context, VmId, XvmCall};
+use astar_primitives::{
+    evm::UnifiedAddressMapper,
+    xvm::{Context, VmId, XvmCall},
+};
 use frame_support::dispatch::Encode;
+use frame_system::RawOrigin;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, ReturnFlags,
 };
@@ -48,18 +52,19 @@ impl TryFrom<u16> for XvmFuncId {
 }
 
 /// XVM chain extension.
-pub struct XvmExtension<T, XC>(PhantomData<(T, XC)>);
+pub struct XvmExtension<T, XC, UA>(PhantomData<(T, XC, UA)>);
 
-impl<T, XC> Default for XvmExtension<T, XC> {
+impl<T, XC, UA> Default for XvmExtension<T, XC, UA> {
     fn default() -> Self {
         XvmExtension(PhantomData)
     }
 }
 
-impl<T, XC> ChainExtension<T> for XvmExtension<T, XC>
+impl<T, XC, UA> ChainExtension<T> for XvmExtension<T, XC, UA>
 where
-    T: pallet_contracts::Config,
+    T: pallet_contracts::Config + pallet_unified_accounts::Config,
     XC: XvmCall<T::AccountId>,
+    UA: UnifiedAddressMapper<T::AccountId>,
 {
     fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
     where
@@ -88,6 +93,20 @@ where
                 // contract address. Otherwise contracts would be able to do arbitrary
                 // things on behalf of the caller via XVM.
                 let source = env.ext().address();
+
+                // Claim a default account if needed.
+                if UA::to_h160(&source).is_none() {
+                    let claim_result =
+                        pallet_unified_accounts::Pallet::<T>::claim_default_evm_address(
+                            RawOrigin::Signed(source.clone()).into(),
+                        );
+                    if claim_result.is_err() {
+                        return Ok(RetVal::Diverging {
+                            flags: ReturnFlags::REVERT,
+                            data: format!("{:?}", claim_result.err()).into(),
+                        });
+                    }
+                }
 
                 let xvm_context = Context {
                     source_vm_id: VmId::Wasm,

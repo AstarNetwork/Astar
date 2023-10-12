@@ -330,10 +330,6 @@ fn calling_evm_payable_from_wasm_works() {
         let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
 
         let value = UNIT;
-
-        // claim the default mappings for wasm contract
-        claim_default_accounts(wasm_caller_addr.clone());
-
         let evm_payable = evm_payable_callee_addr.as_ref().to_vec();
         let deposit_func = hex::decode("d0e30db0").expect("invalid deposit function hex");
         let input = hex::decode("0000002a")
