@@ -25,7 +25,7 @@ use astar_primitives::{
     evm::UnifiedAddressMapper,
     xvm::{Context, VmId, XvmCall},
 };
-use frame_support::{dispatch::Encode, weights::Weight};
+use frame_support::{dispatch::Encode, traits::Get, weights::Weight};
 use frame_system::RawOrigin;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, ReturnFlags,
@@ -97,19 +97,24 @@ where
 
                 // Claim the default evm address if needed.
                 let mut actual_weight = Weight::zero();
-                if value > 0 && UA::to_h160(&source).is_none() {
-                    let weight_of_claim = <T as pallet_unified_accounts::Config>::WeightInfo::claim_default_evm_address();
-                    actual_weight.saturating_accrue(weight_of_claim);
+                if value > 0 {
+                    // `UA::to_h160` 1 DB read.
+                    actual_weight.saturating_accrue(T::DbWeight::get().reads(1));
 
-                    let claim_result =
-                        pallet_unified_accounts::Pallet::<T>::claim_default_evm_address(
-                            RawOrigin::Signed(source.clone()).into(),
-                        );
-                    if claim_result.is_err() {
-                        return Ok(RetVal::Diverging {
-                            flags: ReturnFlags::REVERT,
-                            data: format!("{:?}", claim_result.err()).into(),
-                        });
+                    if UA::to_h160(&source).is_none() {
+                        let weight_of_claim = <T as pallet_unified_accounts::Config>::WeightInfo::claim_default_evm_address();
+                        actual_weight.saturating_accrue(weight_of_claim);
+
+                        let claim_result =
+                            pallet_unified_accounts::Pallet::<T>::claim_default_evm_address(
+                                RawOrigin::Signed(source.clone()).into(),
+                            );
+                        if claim_result.is_err() {
+                            return Ok(RetVal::Diverging {
+                                flags: ReturnFlags::REVERT,
+                                data: format!("{:?}", claim_result.err()).into(),
+                            });
+                        }
                     }
                 }
 
