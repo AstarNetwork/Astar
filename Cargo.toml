@@ -248,9 +248,6 @@ polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", bra
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 
-# Temporary, to ensure `runtime-benchmarks` features can compile
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
-
 # XCM
 # (wasm)
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.43", default-features = false }
