@@ -33,7 +33,6 @@ use crate::pallet::Config;
 /// Convenience type for `AccountLedger` usage.
 pub type AccountLedgerFor<T> = AccountLedger<
     BlockNumberFor<T>,
-    <T as Config>::MaxLockedChunks,
     <T as Config>::MaxUnlockingChunks,
     <T as Config>::MaxStakingChunks,
 >;
@@ -62,11 +61,17 @@ pub trait AmountEraPair: MaxEncodedLen + Default + Copy {
 
 /// Simple enum representing errors possible when using sparse bounded vector.
 #[derive(Debug, PartialEq, Eq)]
-pub enum SparseBoundedError {
+pub enum AccountLedgerError {
     /// Old era values cannot be added.
     OldEra,
     /// Bounded storage capacity exceeded.
     NoCapacity,
+    /// Invalid period specified.
+    InvalidPeriod,
+    /// Stake amount is to large in respect to what's available.
+    UnavailableStakeFunds,
+    /// Unstake amount is to large in respect to what's staked.
+    UnstakeAmountLargerThanStake,
 }
 
 /// Helper struct for easier manipulation of sparse <amount, era> pairs.
@@ -106,13 +111,13 @@ where
         &mut self,
         amount: Balance,
         era: EraNumber,
-    ) -> Result<(), SparseBoundedError> {
+    ) -> Result<(), AccountLedgerError> {
         if amount.is_zero() {
             return Ok(());
         }
 
         let mut chunk = if let Some(&chunk) = self.0.last() {
-            ensure!(chunk.get_era() <= era, SparseBoundedError::OldEra);
+            ensure!(chunk.get_era() <= era, AccountLedgerError::OldEra);
             chunk
         } else {
             P::default()
@@ -128,7 +133,7 @@ where
             chunk.set_era(era);
             self.0
                 .try_push(chunk)
-                .map_err(|_| SparseBoundedError::NoCapacity)?;
+                .map_err(|_| AccountLedgerError::NoCapacity)?;
         }
 
         Ok(())
@@ -155,7 +160,7 @@ where
         &mut self,
         amount: Balance,
         era: EraNumber,
-    ) -> Result<(), SparseBoundedError> {
+    ) -> Result<(), AccountLedgerError> {
         if amount.is_zero() || self.0.is_empty() {
             return Ok(());
         }
@@ -217,7 +222,7 @@ where
         }
 
         // Update `locked` to the new vector
-        self.0 = BoundedVec::try_from(inner).map_err(|_| SparseBoundedError::NoCapacity)?;
+        self.0 = BoundedVec::try_from(inner).map_err(|_| AccountLedgerError::NoCapacity)?;
 
         Ok(())
     }
@@ -227,11 +232,45 @@ where
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub enum PeriodType {
     /// Period during which the focus is on voting.
-    /// Inner value is the era in which the voting period ends.
-    Voting(#[codec(compact)] EraNumber),
+    Voting,
     /// Period during which dApps and stakers earn rewards.
-    /// Inner value is the era in which the Build&Eearn period ends.
-    BuildAndEarn(#[codec(compact)] EraNumber),
+    BuildAndEarn,
+}
+
+impl PeriodType {
+    pub fn next(&self) -> Self {
+        match self {
+            PeriodType::Voting => PeriodType::BuildAndEarn,
+            PeriodType::BuildAndEarn => PeriodType::Voting,
+        }
+    }
+}
+
+/// Wrapper type around current `PeriodType` and era number when it's expected to end.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+pub struct PeriodInfo {
+    #[codec(compact)]
+    pub number: PeriodNumber,
+    pub period_type: PeriodType,
+    #[codec(compact)]
+    pub ending_era: EraNumber,
+}
+
+impl PeriodInfo {
+    /// Create new instance of `PeriodInfo`
+    pub fn new(number: PeriodNumber, period_type: PeriodType, ending_era: EraNumber) -> Self {
+        Self {
+            number,
+            period_type,
+            ending_era,
+        }
+    }
+
+    /// `true` if the provided era belongs to the next period, `false` otherwise.
+    /// It's only possible to provide this information for the `BuildAndEarn` period type.
+    pub fn is_next_period(&self, era: EraNumber) -> bool {
+        self.period_type == PeriodType::BuildAndEarn && self.ending_era <= era
+    }
 }
 
 /// Force types to speed up the next era, and even period.
@@ -254,11 +293,8 @@ pub struct ProtocolState<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen> {
     /// I believe we should utilize `pallet-scheduler` to schedule the next era. Make an item for this.
     #[codec(compact)]
     pub next_era_start: BlockNumber,
-    /// Ongoing period number.
-    #[codec(compact)]
-    pub period: PeriodNumber,
     /// Ongoing period type and when is it expected to end.
-    pub period_type: PeriodType,
+    pub period_info: PeriodInfo,
     /// `true` if pallet is in maintenance mode (disabled), `false` otherwise.
     /// TODO: provide some configurable barrier to handle this on the runtime level instead? Make an item for this?
     pub maintenance: bool,
@@ -272,14 +308,59 @@ where
         Self {
             era: 0,
             next_era_start: BlockNumber::from(1_u32),
-            period: 0,
-            period_type: PeriodType::Voting(0),
+            period_info: PeriodInfo {
+                number: 0,
+                period_type: PeriodType::Voting,
+                ending_era: 2,
+            },
             maintenance: false,
         }
     }
 }
 
-/// dApp state in which some dApp is in.
+impl<BlockNumber> ProtocolState<BlockNumber>
+where
+    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
+{
+    /// Current period type.
+    pub fn period_type(&self) -> PeriodType {
+        self.period_info.period_type
+    }
+
+    /// Current period number.
+    pub fn period_number(&self) -> PeriodNumber {
+        self.period_info.number
+    }
+
+    /// Ending era of current period
+    pub fn ending_era(&self) -> EraNumber {
+        self.period_info.ending_era
+    }
+
+    /// Checks whether a new era should be triggered, based on the provided `BlockNumber` argument
+    /// or possibly other protocol state parameters.
+    pub fn is_new_era(&self, now: BlockNumber) -> bool {
+        self.next_era_start <= now
+    }
+
+    /// Triggers the next period type, updating appropriate parameters.
+    pub fn next_period_type(&mut self, ending_era: EraNumber, next_era_start: BlockNumber) {
+        let period_number = if self.period_type() == PeriodType::BuildAndEarn {
+            self.period_number().saturating_add(1)
+        } else {
+            self.period_number()
+        };
+
+        self.period_info = PeriodInfo {
+            number: period_number,
+            period_type: self.period_type().next(),
+            ending_era,
+        };
+        self.next_era_start = next_era_start;
+    }
+}
+
+/// State in which some dApp is in.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub enum DAppState {
     /// dApp is registered and active.
@@ -300,42 +381,6 @@ pub struct DAppInfo<AccountId> {
     pub state: DAppState,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
     pub reward_destination: Option<AccountId>,
-}
-
-/// How much was locked in a specific era
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct LockedChunk {
-    #[codec(compact)]
-    pub amount: Balance,
-    #[codec(compact)]
-    pub era: EraNumber,
-}
-
-impl Default for LockedChunk {
-    fn default() -> Self {
-        Self {
-            amount: Balance::zero(),
-            era: EraNumber::zero(),
-        }
-    }
-}
-
-impl AmountEraPair for LockedChunk {
-    fn get_amount(&self) -> Balance {
-        self.amount
-    }
-    fn get_era(&self) -> EraNumber {
-        self.era
-    }
-    fn set_era(&mut self, era: EraNumber) {
-        self.era = era;
-    }
-    fn saturating_accrue(&mut self, increase: Balance) {
-        self.amount.saturating_accrue(increase);
-    }
-    fn saturating_reduce(&mut self, reduction: Balance) {
-        self.amount.saturating_reduce(reduction);
-    }
 }
 
 /// How much was unlocked in some block.
@@ -397,15 +442,14 @@ impl AmountEraPair for StakeChunk {
 
 /// General info about user's stakes
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[scale_info(skip_type_params(LockedLen, UnlockingLen, StakedLen))]
+#[scale_info(skip_type_params(UnlockingLen, StakedLen))]
 pub struct AccountLedger<
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
     StakedLen: Get<u32>,
 > {
-    /// How much was staked in each era
-    pub locked: SparseBoundedAmountEraVec<LockedChunk, LockedLen>,
+    /// How much active locked amount an account has.
+    pub locked: Balance,
     /// How much started unlocking on a certain block
     pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
     /// How much user had staked in some period
@@ -414,17 +458,16 @@ pub struct AccountLedger<
     pub staked_period: Option<PeriodNumber>,
 }
 
-impl<BlockNumber, LockedLen, UnlockingLen, StakedLen> Default
-    for AccountLedger<BlockNumber, LockedLen, UnlockingLen, StakedLen>
+impl<BlockNumber, UnlockingLen, StakedLen> Default
+    for AccountLedger<BlockNumber, UnlockingLen, StakedLen>
 where
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
     StakedLen: Get<u32>,
 {
     fn default() -> Self {
         Self {
-            locked: SparseBoundedAmountEraVec(BoundedVec::<LockedChunk, LockedLen>::default()),
+            locked: Balance::zero(),
             unlocking: BoundedVec::<UnlockingChunk<BlockNumber>, UnlockingLen>::default(),
             staked: SparseBoundedAmountEraVec(BoundedVec::<StakeChunk, StakedLen>::default()),
             staked_period: None,
@@ -432,29 +475,23 @@ where
     }
 }
 
-impl<BlockNumber, LockedLen, UnlockingLen, StakedLen>
-    AccountLedger<BlockNumber, LockedLen, UnlockingLen, StakedLen>
+impl<BlockNumber, UnlockingLen, StakedLen> AccountLedger<BlockNumber, UnlockingLen, StakedLen>
 where
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-    LockedLen: Get<u32>,
     UnlockingLen: Get<u32>,
     StakedLen: Get<u32>,
 {
     /// Empty if no locked/unlocking/staked info exists.
     pub fn is_empty(&self) -> bool {
-        self.locked.0.is_empty() && self.unlocking.is_empty() && self.staked.0.is_empty()
-    }
-
-    /// Returns latest locked chunk if it exists, `None` otherwise
-    pub fn latest_locked_chunk(&self) -> Option<&LockedChunk> {
-        self.locked.0.last()
+        self.locked.is_zero() && self.unlocking.is_empty() && self.staked.0.is_empty()
     }
 
     /// Returns active locked amount.
     /// If `zero`, means that associated account hasn't got any active locked funds.
+    ///
+    /// It is possible that some funds are undergoing the unlocking period, but they aren't considered active in that case.
     pub fn active_locked_amount(&self) -> Balance {
-        self.latest_locked_chunk()
-            .map_or(Balance::zero(), |locked| locked.amount)
+        self.locked
     }
 
     /// Returns unlocking amount.
@@ -472,53 +509,14 @@ where
             .saturating_add(self.unlocking_amount())
     }
 
-    /// Returns latest era in which locked amount was updated or zero in case no lock amount exists
-    pub fn lock_era(&self) -> EraNumber {
-        self.latest_locked_chunk()
-            .map_or(EraNumber::zero(), |locked| locked.era)
+    /// Adds the specified amount to the total locked amount.
+    pub fn add_lock_amount(&mut self, amount: Balance) {
+        self.locked.saturating_accrue(amount);
     }
 
-    /// Active staked balance.
-    ///
-    /// In case latest stored information is from the past period, active stake is considered to be zero.
-    pub fn active_stake(&self, active_period: PeriodNumber) -> Balance {
-        match self.staked_period {
-            Some(last_staked_period) if last_staked_period == active_period => self
-                .staked
-                .0
-                .last()
-                .map_or(Balance::zero(), |chunk| chunk.amount),
-            _ => Balance::zero(),
-        }
-    }
-
-    /// Adds the specified amount to the total locked amount, if possible.
-    /// Caller must ensure that the era matches the next one, not the current one.
-    ///
-    /// If entry for the specified era already exists, it's updated.
-    ///
-    /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
-    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
-    pub fn add_lock_amount(
-        &mut self,
-        amount: Balance,
-        era: EraNumber,
-    ) -> Result<(), SparseBoundedError> {
-        self.locked.add_amount(amount, era)
-    }
-
-    /// Subtracts the specified amount of the total locked amount, if possible.
-    ///
-    /// If entry for the specified era already exists, it's updated.
-    ///
-    /// If entry for the specified era doesn't exist, it's created and insertion is attempted.
-    /// In case vector has no more capacity, error is returned, and whole operation is a noop.
-    pub fn subtract_lock_amount(
-        &mut self,
-        amount: Balance,
-        era: EraNumber,
-    ) -> Result<(), SparseBoundedError> {
-        self.locked.subtract_amount(amount, era)
+    /// Subtracts the specified amount of the total locked amount.
+    pub fn subtract_lock_amount(&mut self, amount: Balance) {
+        self.locked.saturating_reduce(amount);
     }
 
     /// Adds the specified amount to the unlocking chunks.
@@ -531,7 +529,7 @@ where
         &mut self,
         amount: Balance,
         unlock_block: BlockNumber,
-    ) -> Result<(), SparseBoundedError> {
+    ) -> Result<(), AccountLedgerError> {
         if amount.is_zero() {
             return Ok(());
         }
@@ -551,7 +549,7 @@ where
                 };
                 self.unlocking
                     .try_insert(idx, new_unlocking_chunk)
-                    .map_err(|_| SparseBoundedError::NoCapacity)?;
+                    .map_err(|_| AccountLedgerError::NoCapacity)?;
             }
         }
 
@@ -589,6 +587,112 @@ where
 
         amount
     }
+
+    /// Active staked balance.
+    ///
+    /// In case latest stored information is from the past period, active stake is considered to be zero.
+    pub fn active_stake(&self, active_period: PeriodNumber) -> Balance {
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period == active_period => self
+                .staked
+                .0
+                .last()
+                .map_or(Balance::zero(), |chunk| chunk.amount),
+            _ => Balance::zero(),
+        }
+    }
+
+    /// Amount that is available for staking.
+    ///
+    /// This is equal to the total active locked amount, minus the staked amount already active.
+    pub fn stakeable_amount(&self, active_period: PeriodNumber) -> Balance {
+        self.active_locked_amount()
+            .saturating_sub(self.active_stake(active_period))
+    }
+
+    /// Amount that is staked, in respect to currently active period.
+    pub fn staked_amount(&self, active_period: PeriodNumber) -> Balance {
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period == active_period => self
+                .staked
+                .0
+                .last()
+                // We should never fallback to the default value since that would mean ledger is in invalid state.
+                // TODO: perhaps this can be implemented in a better way to have some error handling? Returning 0 might not be the most secure way to handle it.
+                .map_or(Balance::zero(), |chunk| chunk.amount),
+            _ => Balance::zero(),
+        }
+    }
+
+    /// Adds the specified amount to total staked amount, if possible.
+    ///
+    /// Staking is only allowed if one of the two following conditions is met:
+    /// 1. Staker is staking again in the period in which they already staked.
+    /// 2. Staker is staking for the first time in this period, and there are no staking chunks from the previous eras.
+    ///
+    /// Additonally, the staked amount must not exceed what's available for staking.
+    pub fn add_stake_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+        current_period: PeriodNumber,
+    ) -> Result<(), AccountLedgerError> {
+        if amount.is_zero() {
+            return Ok(());
+        }
+
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period != current_period => {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+            _ => (),
+        }
+
+        if self.stakeable_amount(current_period) < amount {
+            return Err(AccountLedgerError::UnavailableStakeFunds);
+        }
+
+        self.staked.add_amount(amount, era)?;
+        self.staked_period = Some(current_period);
+
+        Ok(())
+    }
+
+    /// Subtracts the specified amount from the total staked amount, if possible.
+    ///
+    /// Unstaking will reduce total stake for the current era, and next era(s).
+    /// The specified amount must not exceed what's available for staking.
+    pub fn unstake_amount(
+        &mut self,
+        amount: Balance,
+        era: EraNumber,
+        current_period: PeriodNumber,
+    ) -> Result<(), AccountLedgerError> {
+        if amount.is_zero() {
+            return Ok(());
+        }
+
+        // Cannot unstake if the period has passed.
+        match self.staked_period {
+            Some(last_staked_period) if last_staked_period != current_period => {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+            _ => (),
+        }
+
+        // User must be precise with their unstake amount.
+        if self.staked_amount(current_period) < amount {
+            return Err(AccountLedgerError::UnstakeAmountLargerThanStake);
+        }
+
+        self.staked.subtract_amount(amount, era)
+    }
+
+    /// Last era for which a stake entry exists.
+    /// If no stake entries exist, returns `None`.
+    pub fn last_stake_era(&self) -> Option<EraNumber> {
+        self.staked.0.last().map(|chunk| chunk.era)
+    }
 }
 
 /// Rewards pool for stakers & dApps
@@ -600,6 +704,73 @@ pub struct RewardInfo {
     /// Reward pool for dApps
     #[codec(compact)]
     pub dapps: Balance,
+}
+
+// TODO: it would be nice to implement add/subtract logic on this struct and use it everywhere
+// we need to keep track of staking amount for periods. Right now I have logic duplication which is not good.
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct StakeAmount {
+    /// Amount of staked funds accounting for the voting period.
+    #[codec(compact)]
+    voting: Balance,
+    /// Amount of staked funds accounting for the build&earn period.
+    #[codec(compact)]
+    build_and_earn: Balance,
+}
+
+impl StakeAmount {
+    /// Create new instance of `StakeAmount` with specified `voting` and `build_and_earn` amounts.
+    pub fn new(voting: Balance, build_and_earn: Balance) -> Self {
+        Self {
+            voting,
+            build_and_earn,
+        }
+    }
+
+    /// Total amount staked in both period types.
+    pub fn total(&self) -> Balance {
+        self.voting.saturating_add(self.build_and_earn)
+    }
+
+    /// Amount staked for the specified period type.
+    pub fn for_type(&self, period_type: PeriodType) -> Balance {
+        match period_type {
+            PeriodType::Voting => self.voting,
+            PeriodType::BuildAndEarn => self.build_and_earn,
+        }
+    }
+
+    // TODO: rename to add?
+    /// Stake the specified `amount` for the specified `period_type`.
+    pub fn stake(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.voting.saturating_accrue(amount),
+            PeriodType::BuildAndEarn => self.build_and_earn.saturating_accrue(amount),
+        }
+    }
+
+    // TODO: rename to subtract?
+    /// Unstake the specified `amount` for the specified `period_type`.
+    ///
+    /// In case period type is `Voting`, the amount is subtracted from the voting period.
+    ///
+    /// In case period type is `Build&Earn`, the amount is first subtracted from the
+    /// build&earn amount, and any rollover is subtracted from the voting period.
+    pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.voting.saturating_reduce(amount),
+            PeriodType::BuildAndEarn => {
+                if self.build_and_earn >= amount {
+                    self.build_and_earn.saturating_reduce(amount);
+                } else {
+                    // Rollover from build&earn to voting, is guaranteed to be larger than zero due to previous check
+                    let remainder = amount.saturating_sub(self.build_and_earn);
+                    self.build_and_earn = Balance::zero();
+                    self.voting.saturating_reduce(remainder);
+                }
+            }
+        }
+    }
 }
 
 /// Info about current era, including the rewards, how much is locked, unlocking, etc.
@@ -619,6 +790,10 @@ pub struct EraInfo {
     /// This amount still counts into locked amount.
     #[codec(compact)]
     pub unlocking: Balance,
+    /// Stake amount valid for the ongoing era.
+    pub current_stake_amount: StakeAmount,
+    /// Stake amount valid from the next era.
+    pub next_stake_amount: StakeAmount,
 }
 
 impl EraInfo {
@@ -637,5 +812,453 @@ impl EraInfo {
     /// Update with the new amount that has been removed from unlocking.
     pub fn unlocking_removed(&mut self, amount: Balance) {
         self.unlocking.saturating_reduce(amount);
+    }
+
+    /// Add the specified `amount` to the appropriate stake amount, based on the `PeriodType`.
+    pub fn add_stake_amount(&mut self, amount: Balance, period_type: PeriodType) {
+        self.next_stake_amount.stake(amount, period_type);
+    }
+
+    /// Subtract the specified `amount` from the appropriate stake amount, based on the `PeriodType`.
+    pub fn unstake_amount(&mut self, amount: Balance, period_type: PeriodType) {
+        self.current_stake_amount.unstake(amount, period_type);
+        self.next_stake_amount.unstake(amount, period_type);
+    }
+
+    /// Total staked amount in this era.
+    pub fn total_staked_amount(&self) -> Balance {
+        self.current_stake_amount.total()
+    }
+
+    /// Staked amount of specified `type` in this era.
+    pub fn staked_amount(&self, period_type: PeriodType) -> Balance {
+        self.current_stake_amount.for_type(period_type)
+    }
+
+    /// Total staked amount in the next era.
+    pub fn total_staked_amount_next_era(&self) -> Balance {
+        self.next_stake_amount.total()
+    }
+
+    /// Staked amount of specifeid `type` in the next era.
+    pub fn staked_amount_next_era(&self, period_type: PeriodType) -> Balance {
+        self.next_stake_amount.for_type(period_type)
+    }
+
+    /// Updates `Self` to reflect the transition to the next era.
+    ///
+    ///  ## Args
+    /// `next_period_type` - `None` if no period type change, `Some(type)` if `type` is starting from the next era.
+    pub fn migrate_to_next_era(&mut self, next_period_type: Option<PeriodType>) {
+        self.rewards = Default::default();
+        self.active_era_locked = self.total_locked;
+        match next_period_type {
+            // If next era marks start of new voting period period, it means we're entering a new period
+            Some(PeriodType::Voting) => {
+                self.current_stake_amount = Default::default();
+                self.next_stake_amount = Default::default();
+            }
+            Some(PeriodType::BuildAndEarn) | None => {
+                self.current_stake_amount = self.next_stake_amount;
+            }
+        };
+    }
+}
+
+/// Information about how much a particular staker staked on a particular smart contract.
+///
+/// Keeps track of amount staked in the 'voting period', as well as 'build&earn period'.
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct SingularStakingInfo {
+    /// Total amount staked during the voting period.
+    #[codec(compact)]
+    vp_staked_amount: Balance,
+    /// Total amount staked during the build&earn period.
+    #[codec(compact)]
+    bep_staked_amount: Balance,
+    /// Period number for which this entry is relevant.
+    #[codec(compact)]
+    period: PeriodNumber,
+    /// Indicates whether a staker is a loyal staker or not.
+    loyal_staker: bool,
+}
+
+impl SingularStakingInfo {
+    /// Creates new instance of the struct.
+    ///
+    /// ## Args
+    ///
+    /// `period` - period number for which this entry is relevant.
+    /// `period_type` - period type during which this entry is created.
+    pub fn new(period: PeriodNumber, period_type: PeriodType) -> Self {
+        Self {
+            vp_staked_amount: Balance::zero(),
+            bep_staked_amount: Balance::zero(),
+            period,
+            // Loyalty staking is only possible if stake is first made during the voting period.
+            loyal_staker: period_type == PeriodType::Voting,
+        }
+    }
+
+    /// Stake the specified amount on the contract, for the specified period type.
+    pub fn stake(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount.saturating_accrue(amount),
+            PeriodType::BuildAndEarn => self.bep_staked_amount.saturating_accrue(amount),
+        }
+    }
+
+    /// Unstakes some of the specified amount from the contract.
+    ///
+    /// In case the `amount` being unstaked is larger than the amount staked in the `voting period`,
+    /// and `voting period` has passed, this will remove the _loyalty_ flag from the staker.
+    ///
+    /// Returns the amount that was unstaked from the `voting period` stake, and from the `build&earn period` stake.
+    pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) -> (Balance, Balance) {
+        // If B&E period stake can cover the unstaking amount, just reduce it.
+        if self.bep_staked_amount >= amount {
+            self.bep_staked_amount.saturating_reduce(amount);
+            (Balance::zero(), amount)
+        } else {
+            // In case we have to dip into the voting period stake, make sure B&E period stake is reduced first.
+            // Also make sure to remove loyalty flag from the staker.
+            let vp_staked_amount_snapshot = self.vp_staked_amount;
+            let bep_amount_snapshot = self.bep_staked_amount;
+            let leftover_amount = amount.saturating_sub(self.bep_staked_amount);
+
+            self.vp_staked_amount.saturating_reduce(leftover_amount);
+            self.bep_staked_amount = Balance::zero();
+
+            // It's ok if staker reduces their stake amount during voting period.
+            // Once loyalty flag is removed, it cannot be returned.
+            self.loyal_staker = self.loyal_staker && period_type == PeriodType::Voting;
+
+            // Actual amount that was unstaked: (voting period unstake, B&E period unstake)
+            (
+                vp_staked_amount_snapshot.saturating_sub(self.vp_staked_amount),
+                bep_amount_snapshot,
+            )
+        }
+    }
+
+    /// Total staked on the contract by the user. Both period type stakes are included.
+    pub fn total_staked_amount(&self) -> Balance {
+        self.vp_staked_amount.saturating_add(self.bep_staked_amount)
+    }
+
+    /// Returns amount staked in the specified period.
+    pub fn staked_amount(&self, period_type: PeriodType) -> Balance {
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount,
+            PeriodType::BuildAndEarn => self.bep_staked_amount,
+        }
+    }
+
+    /// If `true` staker has staked during voting period and has never reduced their sta
+    pub fn is_loyal(&self) -> bool {
+        self.loyal_staker
+    }
+
+    /// Period for which this entry is relevant.
+    pub fn period_number(&self) -> PeriodNumber {
+        self.period
+    }
+
+    /// `true` if no stake exists, `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        self.vp_staked_amount.is_zero() && self.bep_staked_amount.is_zero()
+    }
+}
+
+/// Information about how much was staked on a contract during a specific era or period.
+///
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+pub struct ContractStakingInfo {
+    #[codec(compact)]
+    vp_staked_amount: Balance,
+    #[codec(compact)]
+    bep_staked_amount: Balance,
+    #[codec(compact)]
+    era: EraNumber,
+    #[codec(compact)]
+    period: PeriodNumber,
+}
+
+impl ContractStakingInfo {
+    /// Create new instance of `ContractStakingInfo` with specified era & period.
+    /// These parameters are immutable.
+    ///
+    /// Staked amounts are initialized to zero and can be increased or decreased.
+    pub fn new(era: EraNumber, period: PeriodNumber) -> Self {
+        Self {
+            vp_staked_amount: Balance::zero(),
+            bep_staked_amount: Balance::zero(),
+            era,
+            period,
+        }
+    }
+
+    /// Total staked amount on the contract.
+    pub fn total_staked_amount(&self) -> Balance {
+        self.vp_staked_amount.saturating_add(self.bep_staked_amount)
+    }
+
+    /// Staked amount of the specified period type.
+    ///
+    /// Note:
+    /// It is possible that voting period stake is reduced during the build&earn period.
+    /// This is because stakers can unstake their funds during the build&earn period, which can
+    /// chip away from the voting period stake.
+    pub fn staked_amount(&self, period_type: PeriodType) -> Balance {
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount,
+            PeriodType::BuildAndEarn => self.bep_staked_amount,
+        }
+    }
+
+    /// Era for which this entry is relevant.
+    pub fn era(&self) -> EraNumber {
+        self.era
+    }
+
+    /// Period for which this entry is relevant.
+    pub fn period(&self) -> PeriodNumber {
+        self.period
+    }
+
+    /// Stake specified `amount` on the contract, for the specified `period_type`.
+    pub fn stake(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount.saturating_accrue(amount),
+            PeriodType::BuildAndEarn => self.bep_staked_amount.saturating_accrue(amount),
+        }
+    }
+
+    /// Unstake specified `amount` from the contract, for the specified `period_type`.
+    pub fn unstake(&mut self, amount: Balance, period_type: PeriodType) {
+        match period_type {
+            PeriodType::Voting => self.vp_staked_amount.saturating_reduce(amount),
+            PeriodType::BuildAndEarn => {
+                let overflow = amount.saturating_sub(self.bep_staked_amount);
+                self.bep_staked_amount.saturating_reduce(amount);
+                self.vp_staked_amount.saturating_reduce(overflow);
+            }
+        }
+    }
+
+    /// `true` if no stake exists, `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        self.vp_staked_amount.is_zero() && self.bep_staked_amount.is_zero()
+    }
+}
+
+const STAKING_SERIES_HISTORY: u32 = 3;
+
+/// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct ContractStakingInfoSeries(
+    BoundedVec<ContractStakingInfo, ConstU32<STAKING_SERIES_HISTORY>>,
+);
+impl ContractStakingInfoSeries {
+    /// Helper function to create a new instance of `ContractStakingInfoSeries`.
+    #[cfg(test)]
+    pub fn new(inner: Vec<ContractStakingInfo>) -> Self {
+        Self(BoundedVec::try_from(inner).expect("Test should ensure this is always valid"))
+    }
+
+    /// Returns inner `Vec` of `ContractStakingInfo` instances. Useful for testing.
+    #[cfg(test)]
+    pub fn inner(&self) -> Vec<ContractStakingInfo> {
+        self.0.clone().into_inner()
+    }
+
+    /// Length of the series.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// `true` if series is empty, `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// Returns the `ContractStakingInfo` type for the specified era & period, if it exists.
+    pub fn get(&self, era: EraNumber, period: PeriodNumber) -> Option<ContractStakingInfo> {
+        let idx = self.0.binary_search_by(|info| info.era().cmp(&era));
+
+        // There are couple of distinct scenarios:
+        // 1. Era exists, so we just return it.
+        // 2. Era doesn't exist, and ideal index is zero, meaning there's nothing in history that would cover this era.
+        // 3. Era doesn't exist, and ideal index is greater than zero, meaning we can potentially use one of the previous entries to derive the information.
+        // 3.1. In case periods are matching, we return that value.
+        // 3.2. In case periods aren't matching, we return `None` since stakes don't carry over between periods.
+        match idx {
+            Ok(idx) => self.0.get(idx).map(|x| *x),
+            Err(ideal_idx) => {
+                if ideal_idx.is_zero() {
+                    None
+                } else {
+                    match self.0.get(ideal_idx - 1) {
+                        Some(info) if info.period() == period => {
+                            let mut info = *info;
+                            info.era = era;
+                            Some(info)
+                        }
+                        _ => None,
+                    }
+                }
+            }
+        }
+    }
+
+    /// Last era for which a stake entry exists, `None` if no entries exist.
+    pub fn last_stake_era(&self) -> Option<EraNumber> {
+        self.0.last().map(|info| info.era())
+    }
+
+    /// Last period for which a stake entry exists, `None` if no entries exist.
+    pub fn last_stake_period(&self) -> Option<PeriodNumber> {
+        self.0.last().map(|info| info.period())
+    }
+
+    /// Total staked amount on the contract, in the active period.
+    pub fn total_staked_amount(&self, active_period: PeriodNumber) -> Balance {
+        match self.0.last() {
+            Some(last_element) if last_element.period() == active_period => {
+                last_element.total_staked_amount()
+            }
+            _ => Balance::zero(),
+        }
+    }
+
+    /// Staked amount on the contract, for specified period type, in the active period.
+    pub fn staked_amount(&self, period: PeriodNumber, period_type: PeriodType) -> Balance {
+        match self.0.last() {
+            Some(last_element) if last_element.period() == period => {
+                last_element.staked_amount(period_type)
+            }
+            _ => Balance::zero(),
+        }
+    }
+
+    /// Stake the specified `amount` on the contract, for the specified `period_type` and `era`.
+    pub fn stake(
+        &mut self,
+        amount: Balance,
+        period_info: PeriodInfo,
+        era: EraNumber,
+    ) -> Result<(), ()> {
+        // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
+        if let Some(last_element) = self.0.last() {
+            if last_element.era() > era || last_element.period() > period_info.number {
+                return Err(());
+            }
+        }
+
+        // Get the most relevant `ContractStakingInfo` instance
+        let mut staking_info = if let Some(last_element) = self.0.last() {
+            if last_element.era() == era {
+                // Era matches, so we just update the last element.
+                let last_element = *last_element;
+                let _ = self.0.pop();
+                last_element
+            } else if last_element.period() == period_info.number {
+                // Periods match so we should 'copy' the last element to get correct staking amount
+                let mut temp = *last_element;
+                temp.era = era;
+                temp
+            } else {
+                // It's a new period, so we need a completely new instance
+                ContractStakingInfo::new(era, period_info.number)
+            }
+        } else {
+            // It's a new period, so we need a completely new instance
+            ContractStakingInfo::new(era, period_info.number)
+        };
+
+        // Update the stake amount
+        staking_info.stake(amount, period_info.period_type);
+
+        // Prune before pushing the new entry
+        self.prune();
+
+        // This should be infalible due to previous checks that ensure we don't end up overflowing the vector.
+        self.0.try_push(staking_info).map_err(|_| ())
+    }
+
+    /// Unstake the specified `amount` from the contract, for the specified `period_type` and `era`.
+    pub fn unstake(
+        &mut self,
+        amount: Balance,
+        period_info: PeriodInfo,
+        era: EraNumber,
+    ) -> Result<(), ()> {
+        // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
+        if let Some(last_element) = self.0.last() {
+            // It's possible last element refers to the upcoming era, hence the "-1" on the 'era'.
+            if last_element.era().saturating_sub(1) > era
+                || last_element.period() > period_info.number
+            {
+                return Err(());
+            }
+        } else {
+            // Vector is empty, should never happen.
+            return Err(());
+        }
+
+        // 1st step - remove the last element IFF it's for the next era.
+        // Unstake the requested amount from it.
+        let last_era_info = match self.0.last() {
+            Some(last_element) if last_element.era() == era.saturating_add(1) => {
+                let mut last_element = *last_element;
+                last_element.unstake(amount, period_info.period_type);
+                let _ = self.0.pop();
+                Some(last_element)
+            }
+            _ => None,
+        };
+
+        // 2nd step - 3 options:
+        // 1. - last element has a matching era so we just update it.
+        // 2. - last element has a past era and matching period, so we'll create a new entry based on it.
+        // 3. - last element has a past era and past period, meaning it's invalid.
+        let second_last_era_info = if let Some(last_element) = self.0.last_mut() {
+            if last_element.era() == era {
+                last_element.unstake(amount, period_info.period_type);
+                None
+            } else if last_element.period() == period_info.number {
+                let mut new_entry = *last_element;
+                new_entry.unstake(amount, period_info.period_type);
+                new_entry.era = era;
+                Some(new_entry)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        // 3rd step - push the new entries, if they exist.
+        if let Some(info) = second_last_era_info {
+            self.prune();
+            self.0.try_push(info).map_err(|_| ())?;
+        }
+        if let Some(info) = last_era_info {
+            self.prune();
+            self.0.try_push(info).map_err(|_| ())?;
+        }
+
+        Ok(())
+    }
+
+    /// Used to remove past entries, in case vector is full.
+    fn prune(&mut self) {
+        // Prune the oldest entry if we have more than the limit
+        if self.0.len() == STAKING_SERIES_HISTORY as usize {
+            // TODO: this can be perhaps optimized so we prune entries which are very old.
+            // However, this makes the code more complex & more error prone.
+            // If kept like this, we always make sure we cover the history, and we never exceed it.
+            self.0.remove(0);
+        }
     }
 }

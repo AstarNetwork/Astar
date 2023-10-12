@@ -89,15 +89,24 @@ pub mod pallet {
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
+        /// Length of a standard era in block numbers.
+        #[pallet::constant]
+        type StandardEraLength: Get<Self::BlockNumber>;
+
+        /// Length of the `Voting` period in standard eras.
+        /// Although `Voting` period only consumes one 'era', we still measure its length in standard eras
+        /// for the sake of simplicity & consistency.
+        #[pallet::constant]
+        type StandardErasPerVotingPeriod: Get<EraNumber>;
+
+        /// Length of the `Build&Earn` period in standard eras.
+        /// Each `Build&Earn` period consists of one or more distinct standard eras.
+        #[pallet::constant]
+        type StandardErasPerBuildAndEarnPeriod: Get<EraNumber>;
+
         /// Maximum number of contracts that can be integrated into dApp staking at once.
-        /// TODO: maybe this can be reworded or improved later on - but we want a ceiling!
         #[pallet::constant]
         type MaxNumberOfContracts: Get<DAppId>;
-
-        /// Maximum number of locked chunks that can exist per account at a time.
-        // TODO: should this just be hardcoded to 2? Nothing else makes sense really - current era and next era are required.
-        #[pallet::constant]
-        type MaxLockedChunks: Get<u32>;
 
         /// Maximum number of unlocking chunks that can exist per account at a time.
         #[pallet::constant]
@@ -114,11 +123,22 @@ pub mod pallet {
         /// Maximum number of staking chunks that can exist per account at a time.
         #[pallet::constant]
         type MaxStakingChunks: Get<u32>;
+
+        /// Minimum amount staker can stake on a contract.
+        #[pallet::constant]
+        type MinimumStakeAmount: Get<Balance>;
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// New era has started.
+        NewEra { era: EraNumber },
+        /// New period has started.
+        NewPeriod {
+            period_type: PeriodType,
+            number: PeriodNumber,
+        },
         /// A smart contract has been registered for dApp staking
         DAppRegistered {
             owner: T::AccountId,
@@ -160,6 +180,18 @@ pub mod pallet {
             account: T::AccountId,
             amount: Balance,
         },
+        /// Account has staked some amount on a smart contract.
+        Stake {
+            account: T::AccountId,
+            smart_contract: T::SmartContract,
+            amount: Balance,
+        },
+        /// Account has unstaked some amount from a smart contract.
+        Unstake {
+            account: T::AccountId,
+            smart_contract: T::SmartContract,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -183,9 +215,9 @@ pub mod pallet {
         ZeroAmount,
         /// Total locked amount for staker is below minimum threshold.
         LockedAmountBelowThreshold,
-        /// Cannot add additional locked balance chunks due to size limit.
+        /// Cannot add additional locked balance chunks due to capacity limit.
         TooManyLockedBalanceChunks,
-        /// Cannot add additional unlocking chunks due to size limit
+        /// Cannot add additional unlocking chunks due to capacity limit.
         TooManyUnlockingChunks,
         /// Remaining stake prevents entire balance of starting the unlocking process.
         RemainingStakePreventsFullUnlock,
@@ -193,6 +225,26 @@ pub mod pallet {
         NoUnlockedChunksToClaim,
         /// There are no unlocking chunks available to relock.
         NoUnlockingChunks,
+        /// The amount being staked is too large compared to what's available for staking.
+        UnavailableStakeFunds,
+        /// There are unclaimed rewards remaining from past periods. They should be claimed before staking again.
+        UnclaimedRewardsFromPastPeriods,
+        /// Cannot add additional stake chunks due to capacity limit.
+        TooManyStakeChunks,
+        /// An unexpected error occured while trying to stake.
+        InternalStakeError,
+        /// Total staked amount on contract is below the minimum required value.
+        InsufficientStakeAmount,
+        /// Stake operation is rejected since period ends in the next era.
+        PeriodEndsInNextEra,
+        /// Unstaking is rejected since the period in which past stake was active has passed.
+        UnstakeFromPastPeriod,
+        /// Unstake amount is greater than the staked amount.
+        UnstakeAmountTooLarge,
+        /// Account has no staking information for the contract.
+        NoStakingInfo,
+        /// An unexpected error occured while trying to unstake.
+        InternalUnstakeError,
     }
 
     /// General information about dApp staking protocol state.
@@ -219,9 +271,108 @@ pub mod pallet {
     pub type Ledger<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, AccountLedgerFor<T>, ValueQuery>;
 
+    /// Information about how much each staker has staked for each smart contract in some period.
+    #[pallet::storage]
+    pub type StakerInfo<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        Blake2_128Concat,
+        T::SmartContract,
+        SingularStakingInfo,
+        OptionQuery,
+    >;
+
+    /// Information about how much has been staked on a smart contract in some era or period.
+    #[pallet::storage]
+    pub type ContractStake<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::SmartContract, ContractStakingInfoSeries, ValueQuery>;
+
     /// General information about the current era.
     #[pallet::storage]
     pub type CurrentEraInfo<T: Config> = StorageValue<_, EraInfo, ValueQuery>;
+
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
+            let mut protocol_state = ActiveProtocolState::<T>::get();
+
+            // We should not modify pallet storage while in maintenance mode.
+            // This is a safety measure, since maintenance mode is expected to be
+            // enabled in case some misbehavior or corrupted storage is detected.
+            if protocol_state.maintenance {
+                return T::DbWeight::get().reads(1);
+            }
+
+            // Nothing to do if it's not new era
+            if !protocol_state.is_new_era(now) {
+                return T::DbWeight::get().reads(1);
+            }
+
+            let mut era_info = CurrentEraInfo::<T>::get();
+            let next_era = protocol_state.era.saturating_add(1);
+            let maybe_period_event = match protocol_state.period_type() {
+                PeriodType::Voting => {
+                    // For the sake of consistency
+                    let ending_era =
+                        next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
+                    let build_and_earn_start_block =
+                        now.saturating_add(T::StandardEraLength::get());
+                    protocol_state.next_period_type(ending_era, build_and_earn_start_block);
+
+                    era_info.migrate_to_next_era(Some(protocol_state.period_type()));
+
+                    Some(Event::<T>::NewPeriod {
+                        period_type: protocol_state.period_type(),
+                        number: protocol_state.period_number(),
+                    })
+                }
+                PeriodType::BuildAndEarn => {
+                    // TODO: trigger reward calculation here. This will be implemented later.
+
+                    // Switch to `Voting` period if conditions are met.
+                    if protocol_state.period_info.is_next_period(next_era) {
+                        // For the sake of consistency we treat the whole `Voting` period as a single era.
+                        // This means no special handling is required for this period, it only lasts potentially longer than a single standard era.
+                        let ending_era = next_era.saturating_add(1);
+                        let voting_period_length = Self::blocks_per_voting_period();
+                        let next_era_start_block = now.saturating_add(voting_period_length);
+
+                        protocol_state.next_period_type(ending_era, next_era_start_block);
+
+                        era_info.migrate_to_next_era(Some(protocol_state.period_type()));
+
+                        // TODO: trigger tier configuration calculation based on internal & external params.
+
+                        Some(Event::<T>::NewPeriod {
+                            period_type: protocol_state.period_type(),
+                            number: protocol_state.period_number(),
+                        })
+                    } else {
+                        let next_era_start_block = now.saturating_add(T::StandardEraLength::get());
+                        protocol_state.next_era_start = next_era_start_block;
+
+                        era_info.migrate_to_next_era(None);
+
+                        None
+                    }
+                }
+            };
+
+            protocol_state.era = next_era;
+            ActiveProtocolState::<T>::put(protocol_state);
+
+            CurrentEraInfo::<T>::put(era_info);
+
+            Self::deposit_event(Event::<T>::NewEra { era: next_era });
+            if let Some(period_event) = maybe_period_event {
+                Self::deposit_event(period_event);
+            }
+
+            // TODO: benchmark later
+            T::DbWeight::get().reads_writes(2, 2)
+        }
+    }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -397,6 +548,10 @@ pub mod pallet {
 
             // TODO: might require some modification later on, like additional checks to ensure contract can be unregistered.
 
+            // TODO2: we should remove staked amount from appropriate entries, since contract has been 'invalidated'
+
+            // TODO3: will need to add a call similar to what we have in DSv2, for stakers to 'unstake_from_unregistered_contract'
+
             Self::deposit_event(Event::<T>::DAppUnregistered {
                 smart_contract,
                 era: current_era,
@@ -418,7 +573,6 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
 
             // Calculate & check amount available for locking
@@ -427,11 +581,8 @@ pub mod pallet {
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 
-            // Only lock for the next era onwards.
-            let lock_era = state.era.saturating_add(1);
-            ledger
-                .add_lock_amount(amount_to_lock, lock_era)
-                .map_err(|_| Error::<T>::TooManyLockedBalanceChunks)?;
+            ledger.add_lock_amount(amount_to_lock);
+
             ensure!(
                 ledger.active_locked_amount() >= T::MinimumLockedAmount::get(),
                 Error::<T>::LockedAmountBelowThreshold
@@ -464,7 +615,7 @@ pub mod pallet {
             let state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
 
-            let available_for_unlocking = ledger.unlockable_amount(state.period);
+            let available_for_unlocking = ledger.unlockable_amount(state.period_info.number);
             let amount_to_unlock = available_for_unlocking.min(amount);
 
             // Ensure we unlock everything if remaining amount is below threshold.
@@ -473,7 +624,7 @@ pub mod pallet {
                 .saturating_sub(amount_to_unlock);
             let amount_to_unlock = if remaining_amount < T::MinimumLockedAmount::get() {
                 ensure!(
-                    ledger.active_stake(state.period).is_zero(),
+                    ledger.active_stake(state.period_info.number).is_zero(),
                     Error::<T>::RemainingStakePreventsFullUnlock
                 );
                 ledger.active_locked_amount()
@@ -485,9 +636,7 @@ pub mod pallet {
             ensure!(!amount_to_unlock.is_zero(), Error::<T>::ZeroAmount);
 
             // Update ledger with new lock and unlocking amounts
-            ledger
-                .subtract_lock_amount(amount_to_unlock, state.era)
-                .map_err(|_| Error::<T>::TooManyLockedBalanceChunks)?;
+            ledger.subtract_lock_amount(amount_to_unlock);
 
             let current_block = frame_system::Pallet::<T>::block_number();
             let unlock_block = current_block.saturating_add(T::UnlockingPeriod::get());
@@ -529,6 +678,8 @@ pub mod pallet {
 
             // TODO: We should ensure user doesn't unlock everything if they still have storage leftovers (e.g. unclaimed rewards?)
 
+            // TODO2: to make it more  bounded, we could add a limit to how much distinct stake entries a user can have
+
             Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
 
             Ok(())
@@ -540,18 +691,13 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
 
             ensure!(!ledger.unlocking.is_empty(), Error::<T>::NoUnlockingChunks);
 
-            // Only lock for the next era onwards.
-            let lock_era = state.era.saturating_add(1);
             let amount = ledger.consume_unlocking_chunks();
 
-            ledger
-                .add_lock_amount(amount, lock_era)
-                .map_err(|_| Error::<T>::TooManyLockedBalanceChunks)?;
+            ledger.add_lock_amount(amount);
             ensure!(
                 ledger.active_locked_amount() >= T::MinimumLockedAmount::get(),
                 Error::<T>::LockedAmountBelowThreshold
@@ -564,6 +710,219 @@ pub mod pallet {
             });
 
             Self::deposit_event(Event::<T>::Relock { account, amount });
+
+            Ok(())
+        }
+
+        /// Stake the specified amount on a smart contract.
+        /// The `amount` specified **must** be available for staking and meet the required minimum, otherwise the call will fail.
+        ///
+        /// Depending on the period type, appropriate stake amount will be updated.
+        #[pallet::call_index(9)]
+        #[pallet::weight(Weight::zero())]
+        pub fn stake(
+            origin: OriginFor<T>,
+            smart_contract: T::SmartContract,
+            #[pallet::compact] amount: Balance,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            ensure!(amount > 0, Error::<T>::ZeroAmount);
+
+            ensure!(
+                Self::is_active(&smart_contract),
+                Error::<T>::NotOperatedDApp
+            );
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            // Staker always stakes from the NEXT era
+            let stake_era = protocol_state.era.saturating_add(1);
+            ensure!(
+                !protocol_state.period_info.is_next_period(stake_era),
+                Error::<T>::PeriodEndsInNextEra
+            );
+
+            let mut ledger = Ledger::<T>::get(&account);
+
+            // 1.
+            // Increase stake amount for the next era & current period in staker's ledger
+            ledger
+                .add_stake_amount(amount, stake_era, protocol_state.period_number())
+                .map_err(|err| match err {
+                    AccountLedgerError::InvalidPeriod => {
+                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                    }
+                    AccountLedgerError::UnavailableStakeFunds => Error::<T>::UnavailableStakeFunds,
+                    AccountLedgerError::NoCapacity => Error::<T>::TooManyStakeChunks,
+                    // Defensive check, should never happen
+                    _ => Error::<T>::InternalStakeError,
+                })?;
+
+            // 2.
+            // Update `StakerInfo` storage with the new stake amount on the specified contract.
+            //
+            // There are two distinct scenarios:
+            // 1. Existing entry matches the current period number - just update it.
+            // 2. Entry doesn't exist or it's for an older period - create a new one.
+            //
+            // This is ok since we only use this storage entry to keep track of how much each staker
+            // has staked on each contract in the current period. We only ever need the latest information.
+            // This is because `AccountLedger` is the one keeping information about how much was staked when.
+            let new_staking_info = match StakerInfo::<T>::get(&account, &smart_contract) {
+                Some(mut staking_info)
+                    if staking_info.period_number() == protocol_state.period_number() =>
+                {
+                    staking_info.stake(amount, protocol_state.period_info.period_type);
+                    staking_info
+                }
+                _ => {
+                    ensure!(
+                        amount >= T::MinimumStakeAmount::get(),
+                        Error::<T>::InsufficientStakeAmount
+                    );
+                    let mut staking_info = SingularStakingInfo::new(
+                        protocol_state.period_info.number,
+                        protocol_state.period_info.period_type,
+                    );
+                    staking_info.stake(amount, protocol_state.period_info.period_type);
+                    staking_info
+                }
+            };
+
+            // 3.
+            // Update `ContractStake` storage with the new stake amount on the specified contract.
+            let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
+            ensure!(
+                contract_stake_info
+                    .stake(amount, protocol_state.period_info, stake_era)
+                    .is_ok(),
+                Error::<T>::InternalStakeError
+            );
+
+            // 4.
+            // Update total staked amount for the next era.
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.add_stake_amount(amount, protocol_state.period_type());
+            });
+
+            // 5.
+            // Update remaining storage entries
+            Self::update_ledger(&account, ledger);
+            StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
+            ContractStake::<T>::insert(&smart_contract, contract_stake_info);
+
+            Self::deposit_event(Event::<T>::Stake {
+                account,
+                smart_contract,
+                amount,
+            });
+
+            Ok(())
+        }
+
+        /// Unstake the specified amount from a smart contract.
+        /// The `amount` specified **must** not exceed what's staked, otherwise the call will fail.
+        ///
+        /// Depending on the period type, appropriate stake amount will be updated.
+        #[pallet::call_index(10)]
+        #[pallet::weight(Weight::zero())]
+        pub fn unstake(
+            origin: OriginFor<T>,
+            smart_contract: T::SmartContract,
+            #[pallet::compact] amount: Balance,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            ensure!(amount > 0, Error::<T>::ZeroAmount);
+
+            ensure!(
+                Self::is_active(&smart_contract),
+                Error::<T>::NotOperatedDApp
+            );
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let unstake_era = protocol_state.era;
+
+            let mut ledger = Ledger::<T>::get(&account);
+
+            // 1.
+            // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
+            let (new_staking_info, amount) = match StakerInfo::<T>::get(&account, &smart_contract) {
+                Some(mut staking_info) => {
+                    ensure!(
+                        staking_info.period_number() == protocol_state.period_number(),
+                        Error::<T>::UnstakeFromPastPeriod
+                    );
+                    ensure!(
+                        staking_info.total_staked_amount() >= amount,
+                        Error::<T>::UnstakeAmountTooLarge
+                    );
+
+                    // If unstaking would take the total staked amount below the minimum required value,
+                    // unstake everything.
+                    let amount = if staking_info.total_staked_amount().saturating_sub(amount)
+                        < T::MinimumStakeAmount::get()
+                    {
+                        staking_info.total_staked_amount()
+                    } else {
+                        amount
+                    };
+
+                    staking_info.unstake(amount, protocol_state.period_type());
+                    (staking_info, amount)
+                }
+                None => {
+                    return Err(Error::<T>::NoStakingInfo.into());
+                }
+            };
+
+            // 2.
+            // Reduce stake amount
+            ledger
+                .unstake_amount(amount, unstake_era, protocol_state.period_number())
+                .map_err(|err| match err {
+                    AccountLedgerError::InvalidPeriod => Error::<T>::UnstakeFromPastPeriod,
+                    AccountLedgerError::UnstakeAmountLargerThanStake => {
+                        Error::<T>::UnstakeAmountTooLarge
+                    }
+                    AccountLedgerError::NoCapacity => Error::<T>::TooManyStakeChunks,
+                    _ => Error::<T>::InternalUnstakeError,
+                })?;
+
+            // 3.
+            // Update `ContractStake` storage with the reduced stake amount on the specified contract.
+            let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
+            ensure!(
+                contract_stake_info
+                    .unstake(amount, protocol_state.period_info, unstake_era)
+                    .is_ok(),
+                Error::<T>::InternalUnstakeError
+            );
+
+            // 4.
+            // Update total staked amount for the next era.
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.unstake_amount(amount, protocol_state.period_type());
+            });
+
+            // 5.
+            // Update remaining storage entries
+            Self::update_ledger(&account, ledger);
+            ContractStake::<T>::insert(&smart_contract, contract_stake_info);
+
+            if new_staking_info.is_empty() {
+                StakerInfo::<T>::remove(&account, &smart_contract);
+            } else {
+                StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
+            }
+
+            Self::deposit_event(Event::<T>::Unstake {
+                account,
+                smart_contract,
+                amount,
+            });
 
             Ok(())
         }
@@ -608,6 +967,17 @@ pub mod pallet {
                 );
                 Ledger::<T>::insert(account, ledger);
             }
+        }
+
+        /// Returns the number of blocks per voting period.
+        pub(crate) fn blocks_per_voting_period() -> BlockNumberFor<T> {
+            T::StandardEraLength::get().saturating_mul(T::StandardErasPerVotingPeriod::get().into())
+        }
+
+        /// `true` if smart contract is active, `false` if it has been unregistered.
+        fn is_active(smart_contract: &T::SmartContract) -> bool {
+            IntegratedDApps::<T>::get(smart_contract)
+                .map_or(false, |dapp_info| dapp_info.state == DAppState::Registered)
         }
     }
 }
