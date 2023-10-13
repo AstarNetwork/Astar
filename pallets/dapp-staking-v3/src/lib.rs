@@ -352,10 +352,10 @@ pub mod pallet {
             }
 
             let mut era_info = CurrentEraInfo::<T>::get();
-            let staker_reward_pool = Balance::from(1000_u128); // TODO: calculate this properly, inject it from outside (Tokenomics 2.0 pallet?)
+            let staker_reward_pool = Balance::from(1_000_000_000_000u128); // TODO: calculate this properly, inject it from outside (Tokenomics 2.0 pallet?)
             let era_reward = EraReward::new(staker_reward_pool, era_info.total_staked_amount());
-            let ending_era = protocol_state.era;
-            let next_era = ending_era.saturating_add(1);
+            let current_era = protocol_state.era;
+            let next_era = current_era.saturating_add(1);
             let maybe_period_event = match protocol_state.period_type() {
                 PeriodType::Voting => {
                     // For the sake of consistency
@@ -377,6 +377,17 @@ pub mod pallet {
 
                     // Switch to `Voting` period if conditions are met.
                     if protocol_state.period_info.is_next_period(next_era) {
+                        // Store info about period end
+                        let bonus_reward_pool = Balance::from(3_000_000_u32); // TODO: get this from Tokenomics 2.0 pallet
+                        PeriodEnd::<T>::insert(
+                            &protocol_state.period_number(),
+                            PeriodEndInfo {
+                                bonus_reward_pool,
+                                total_vp_stake: era_info.staked_amount(PeriodType::Voting),
+                                final_era: current_era,
+                            },
+                        );
+
                         // For the sake of consistency we treat the whole `Voting` period as a single era.
                         // This means no special handling is required for this period, it only lasts potentially longer than a single standard era.
                         let ending_era = next_era.saturating_add(1);
@@ -411,12 +422,12 @@ pub mod pallet {
 
             CurrentEraInfo::<T>::put(era_info);
 
-            let era_span_index = Self::era_reward_span_index(ending_era);
+            let era_span_index = Self::era_reward_span_index(current_era);
             let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
             // TODO: error must not happen here. Log an error if it does.
             // The consequence will be that some rewards will be temporarily lost/unavailable, but nothing protocol breaking.
             // Will require a fix from the runtime team though.
-            let _ = span.push(ending_era, era_reward);
+            let _ = span.push(current_era, era_reward);
             EraRewards::<T>::insert(&era_span_index, span);
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
@@ -1006,13 +1017,14 @@ pub mod pallet {
             );
 
             // Calculate the reward claim span
-            let first_claim_era = ledger
-                .oldest_stake_era()
+            let (first_chunk, last_chunk) = ledger
+                .first_and_last_stake_chunks()
                 .ok_or(Error::<T>::InternalClaimStakerError)?;
-            let era_rewards = EraRewards::<T>::get(Self::era_reward_span_index(first_claim_era))
-                .ok_or(Error::<T>::InternalClaimStakerError)?;
+            let era_rewards =
+                EraRewards::<T>::get(Self::era_reward_span_index(first_chunk.get_era()))
+                    .ok_or(Error::<T>::InternalClaimStakerError)?;
 
-            // last_period_era or current_era - 1
+            // The last era for which we can theoretically claim rewards.
             let last_period_era = if staked_period == protocol_state.period_number() {
                 protocol_state.era.saturating_sub(1)
             } else {
@@ -1020,10 +1032,20 @@ pub mod pallet {
                     .ok_or(Error::<T>::InternalClaimStakerError)?
                     .final_era
             };
-            let last_claim_era = era_rewards.last_era().min(last_period_era);
 
-            let is_full_period_claimed =
-                staked_period < protocol_state.period_number() && last_period_era == last_claim_era;
+            // The last era for which we can claim rewards for this account.
+            // Limiting factors are:
+            //    1. era reward span entries
+            //    2. last era in period limit
+            //    3. last era in which staker had non-zero stake
+            let last_claim_era = if last_chunk.get_amount().is_zero() {
+                era_rewards
+                    .last_era()
+                    .min(last_period_era)
+                    .min(last_chunk.get_era())
+            } else {
+                era_rewards.last_era().min(last_period_era)
+            };
 
             // Get chunks for reward claiming
             let chunks_for_claim = ledger
@@ -1032,10 +1054,17 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
             ensure!(chunks_for_claim.0.len() > 0, Error::<T>::NoClaimableRewards);
 
+            // Full reward claim is done if no more rewards are claimable.
+            // This can be either due to: 1) we've claimed the last period
+            // TODO: this is wrong, the first part of check needs to be improved
+            let is_full_period_claimed = staked_period < protocol_state.period_number()
+                && last_period_era == last_claim_era
+                || ledger.staked.0.is_empty();
+
             // Calculate rewards
             let mut rewards: Vec<_> = Vec::new();
             let mut reward_sum = Balance::zero();
-            for era in first_claim_era..=last_claim_era {
+            for era in first_chunk.get_era()..=last_claim_era {
                 let era_reward = era_rewards
                     .get(era)
                     .ok_or(Error::<T>::InternalClaimStakerError)?;
@@ -1046,6 +1075,9 @@ pub mod pallet {
 
                 let staker_reward = Perbill::from_rational(chunk.get_amount(), era_reward.staked())
                     * era_reward.staker_reward_pool();
+                if staker_reward.is_zero() {
+                    continue;
+                }
                 rewards.push((era, staker_reward));
                 reward_sum.saturating_accrue(staker_reward);
             }
@@ -1123,7 +1155,7 @@ pub mod pallet {
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.
-        fn era_reward_span_index(era: EraNumber) -> EraNumber {
+        pub fn era_reward_span_index(era: EraNumber) -> EraNumber {
             era.saturating_sub(era % T::EraRewardSpanLength::get())
         }
     }

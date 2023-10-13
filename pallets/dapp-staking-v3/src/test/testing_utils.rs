@@ -788,8 +788,6 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
     let (last_claim_era, is_full_claim) = if is_current_period_stake {
         (pre_snapshot.active_protocol_state.era - 1, false)
     } else {
-        let last_claim_era = era_rewards_span.last_era();
-
         let claim_period = pre_ledger.staked_period.unwrap();
         let period_end = pre_snapshot
             .period_end
@@ -824,6 +822,9 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
     let total_reward = rewards
         .iter()
         .fold(Balance::zero(), |acc, (_, reward)| acc + reward);
+
+    //clean up possible leftover events
+    System::reset_events();
 
     // Unstake from smart contract & verify event(s)
     assert_ok!(DappStaking::claim_staker_rewards(RuntimeOrigin::signed(
@@ -873,4 +874,55 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
             pre_ledger.staked.get(last_claim_era).unwrap().amount
         );
     }
+}
+
+/// Returns from which starting era to which ending era can rewards be claimed for the specified account.
+///
+/// If `None` is returned, there is nothing to claim.
+/// Doesn't consider reward expiration.
+pub(crate) fn claimable_reward_range(account: AccountId) -> Option<(EraNumber, EraNumber)> {
+    let ledger = Ledger::<Test>::get(&account);
+    let protocol_state = ActiveProtocolState::<Test>::get();
+
+    let (first_chunk, last_chunk) = if let Some(chunks) = ledger.first_and_last_stake_chunks() {
+        chunks
+    } else {
+        return None;
+    };
+
+    // Full unstake happened, no rewards past this.
+    let last_claim_era = if last_chunk.get_amount().is_zero() {
+        last_chunk.get_era() - 1
+    } else if ledger.staked_period == Some(protocol_state.period_number()) {
+        // Staked in the ongoing period, best we can do is claim up to last era
+        protocol_state.era - 1
+    } else {
+        // Period finished, we can claim up to its final era
+        let period_end = PeriodEnd::<Test>::get(ledger.staked_period.unwrap()).unwrap();
+        period_end.final_era
+    };
+
+    Some((first_chunk.get_era(), last_claim_era))
+}
+
+/// Number of times it's required to call `claim_staker_rewards` to claim all pending rewards.
+///
+/// In case no rewards are pending, return **zero**.
+pub(crate) fn required_number_of_reward_claims(account: AccountId) -> u32 {
+    let range = if let Some(range) = claimable_reward_range(account) {
+        range
+    } else {
+        return 0;
+    };
+
+    let era_span_length: EraNumber =
+        <Test as pallet_dapp_staking::Config>::EraRewardSpanLength::get();
+    let first = DappStaking::era_reward_span_index(range.0)
+        .checked_div(era_span_length)
+        .unwrap();
+    let second = DappStaking::era_reward_span_index(range.1)
+        .checked_div(era_span_length)
+        .unwrap();
+
+    second - first + 1
 }

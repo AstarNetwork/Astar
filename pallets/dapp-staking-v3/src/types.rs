@@ -243,6 +243,8 @@ where
     ///  b) [1,2] -- split(4) --> [1,2],[5]
     ///  c) [1,2,4,5] -- split(4) --> [1,2,4],[5]
     ///  d) [1,2,4,6] -- split(4) --> [1,2,4],[5,6]
+    ///  e) [1,2(0)]  -- split(4) --> [1,2],[]   // 2nd entry has 'zero' amount, so no need to keep it
+    // TODO: what if last element on the right is zero? We should cleanup the vector then.
     pub fn left_split(&mut self, era: EraNumber) -> Result<Self, AccountLedgerError> {
         // TODO: this implementation can once again be optimized, sacrificing the code readability a bit.
         // But I don't think it's worth doing, since we're aiming for the safe side here.
@@ -260,16 +262,24 @@ where
 
         if let Some(&last_l_chunk) = left.last() {
             // In case 'right' part is missing an entry covering the specified era, add it.
-            match right.first() {
+            let maybe_chunk = match right.first() {
                 Some(first_r_chunk) if first_r_chunk.get_era() > era.saturating_add(1) => {
                     let mut new_chunk = last_l_chunk.clone();
                     new_chunk.set_era(era.saturating_add(1));
-                    right.insert(0, new_chunk);
+                    Some(new_chunk)
                 }
                 None => {
                     let mut new_chunk = last_l_chunk.clone();
                     new_chunk.set_era(era.saturating_add(1));
-                    right.insert(0, new_chunk);
+                    Some(new_chunk)
+                }
+                _ => None,
+            };
+
+            // Only insert the chunk if it's non-zero
+            match maybe_chunk {
+                Some(chunk) if chunk.get_amount() > Balance::zero() => {
+                    right.insert(0, chunk);
                 }
                 _ => (),
             }
@@ -775,16 +785,29 @@ where
         self.staked.subtract_amount(amount, era)
     }
 
+    // TODO: remove this
     /// Last era for which a stake entry exists.
     /// If no stake entries exist, returns `None`.
     pub fn last_stake_era(&self) -> Option<EraNumber> {
         self.staked.0.last().map(|chunk| chunk.era)
     }
 
+    // TODO: remove this
     /// First entry for which a stake entry exists.
     /// If no stake entries exist, returns `None`.
     pub fn oldest_stake_era(&self) -> Option<EraNumber> {
         self.staked.0.first().map(|chunk| chunk.era)
+    }
+
+    // TODO
+    pub fn first_and_last_stake_chunks(&self) -> Option<(StakeChunk, StakeChunk)> {
+        let first = self.staked.0.first().map(|chunk| *chunk);
+        let last = self.staked.0.last().map(|chunk| *chunk);
+
+        match (first, last) {
+            (Some(first), Some(last)) => Some((first, last)),
+            _ => None,
+        }
     }
 
     /// Notify ledger that all `stake` rewards have been claimed for the staked era.

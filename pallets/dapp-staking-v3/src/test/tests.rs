@@ -1235,3 +1235,39 @@ fn unstake_fails_due_to_too_many_chunks() {
         );
     })
 }
+
+#[test]
+fn claim_staker_rewards_basic_example_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::default();
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let lock_amount = 300;
+        assert_lock(account, lock_amount);
+        let stake_amount = 93;
+        assert_stake(account, &smart_contract, stake_amount);
+
+        // Advance into Build&Earn period, and allow one era to pass. Claim reward for 1 era.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        assert_claim_staker_rewards(account);
+
+        // Advance a few more eras, and claim multiple rewards this time.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().period_number(),
+            1,
+            "Sanity check, we must still be in the 1st period."
+        );
+        assert_claim_staker_rewards(account);
+
+        // Advance into the next period, make sure we can still claim old rewards.
+        // TODO: I should calculate number of expected claims, so I know how much times `claim_staker_rewards` should be called.
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+    })
+}
