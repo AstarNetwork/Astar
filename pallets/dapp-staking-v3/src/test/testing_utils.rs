@@ -20,11 +20,12 @@ use crate::test::mock::*;
 use crate::types::*;
 use crate::{
     pallet as pallet_dapp_staking, ActiveProtocolState, BlockNumberFor, ContractStake,
-    CurrentEraInfo, DAppId, Event, IntegratedDApps, Ledger, NextDAppId, StakerInfo,
+    CurrentEraInfo, DAppId, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, PeriodEnd,
+    PeriodEndInfo, StakerInfo,
 };
 
 use frame_support::{assert_ok, traits::Get};
-use sp_runtime::traits::Zero;
+use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
 
 /// Helper struct used to store the entire pallet state snapshot.
@@ -48,6 +49,11 @@ pub(crate) struct MemorySnapshot {
     >,
     contract_stake:
         HashMap<<Test as pallet_dapp_staking::Config>::SmartContract, ContractStakingInfoSeries>,
+    era_rewards: HashMap<
+        EraNumber,
+        EraRewardSpan<<Test as pallet_dapp_staking::Config>::EraRewardSpanLength>,
+    >,
+    period_end: HashMap<PeriodNumber, PeriodEndInfo>,
 }
 
 impl MemorySnapshot {
@@ -63,6 +69,8 @@ impl MemorySnapshot {
                 .map(|(k1, k2, v)| ((k1, k2), v))
                 .collect(),
             contract_stake: ContractStake::<Test>::iter().collect(),
+            era_rewards: EraRewards::<Test>::iter().collect(),
+            period_end: PeriodEnd::<Test>::iter().collect(),
         }
     }
 
@@ -739,6 +747,130 @@ pub(crate) fn assert_unstake(
         assert_eq!(
             post_era_info.staked_amount_next_era(unstake_period_type),
             pre_era_info.staked_amount_next_era(unstake_period_type) - amount
+        );
+    }
+}
+
+/// Claim staker rewards.
+pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
+    let pre_snapshot = MemorySnapshot::new();
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let pre_total_issuance = <Test as pallet_dapp_staking::Config>::Currency::total_issuance();
+    let pre_free_balance = <Test as pallet_dapp_staking::Config>::Currency::free_balance(&account);
+
+    // Get the first eligible era for claiming rewards
+    let first_claim_era = pre_ledger
+        .staked
+        .0
+        .first()
+        .expect("Entry must exist, otherwise 'claim' is invalid.")
+        .get_era();
+
+    // Get the apprropriate era rewards span for the 'first era'
+    let era_span_length: EraNumber =
+        <Test as pallet_dapp_staking::Config>::EraRewardSpanLength::get();
+    let era_span_index = first_claim_era - (first_claim_era % era_span_length);
+    let era_rewards_span = pre_snapshot
+        .era_rewards
+        .get(&era_span_index)
+        .expect("Entry must exist, otherwise 'claim' is invalid.");
+
+    // Calculate the final era for claiming rewards. Also determine if this will fully claim all staked period rewards.
+    let is_current_period_stake = match pre_ledger.staked_period {
+        Some(staked_period)
+            if staked_period == pre_snapshot.active_protocol_state.period_number() =>
+        {
+            true
+        }
+        _ => false,
+    };
+
+    let (last_claim_era, is_full_claim) = if is_current_period_stake {
+        (pre_snapshot.active_protocol_state.era - 1, false)
+    } else {
+        let last_claim_era = era_rewards_span.last_era();
+
+        let claim_period = pre_ledger.staked_period.unwrap();
+        let period_end = pre_snapshot
+            .period_end
+            .get(&claim_period)
+            .expect("Entry must exist, since it's a past period.");
+
+        let last_claim_era = era_rewards_span.last_era().min(period_end.final_era);
+        let is_full_claim = last_claim_era == period_end.final_era;
+        (last_claim_era, is_full_claim)
+    };
+
+    assert!(
+        last_claim_era < pre_snapshot.active_protocol_state.era,
+        "Sanity check."
+    );
+
+    // Calculate the expected rewards
+    let mut rewards = Vec::new();
+    for era in first_claim_era..=last_claim_era {
+        let era_reward_info = era_rewards_span
+            .get(era)
+            .expect("Entry must exist, otherwise 'claim' is invalid.");
+        let stake_chunk = pre_ledger
+            .staked
+            .get(era)
+            .expect("Entry must exist, otherwise 'claim' is invalid.");
+
+        let reward = Perbill::from_rational(stake_chunk.amount, era_reward_info.staked())
+            * era_reward_info.staker_reward_pool();
+        rewards.push((era, reward));
+    }
+    let total_reward = rewards
+        .iter()
+        .fold(Balance::zero(), |acc, (_, reward)| acc + reward);
+
+    // Unstake from smart contract & verify event(s)
+    assert_ok!(DappStaking::claim_staker_rewards(RuntimeOrigin::signed(
+        account
+    ),));
+
+    let events = dapp_staking_events();
+    assert_eq!(events.len(), rewards.len());
+    for (event, (era, reward)) in events.iter().zip(rewards.iter()) {
+        assert_eq!(
+            event,
+            &Event::<Test>::Reward {
+                account,
+                era: *era,
+                amount: *reward,
+            }
+        );
+    }
+
+    // Verify post state
+
+    let post_total_issuance = <Test as pallet_dapp_staking::Config>::Currency::total_issuance();
+    assert_eq!(
+        post_total_issuance,
+        pre_total_issuance + total_reward,
+        "Total issuance must increase by the total reward amount."
+    );
+
+    let post_free_balance = <Test as pallet_dapp_staking::Config>::Currency::free_balance(&account);
+    assert_eq!(
+        post_free_balance,
+        pre_free_balance + total_reward,
+        "Free balance must increase by the total reward amount."
+    );
+
+    let post_snapshot = MemorySnapshot::new();
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+
+    if is_full_claim {
+        assert!(post_ledger.staked.0.is_empty());
+        assert!(post_ledger.staked_period.is_none());
+    } else {
+        let stake_chunk = post_ledger.staked.0.first().expect("Entry must exist");
+        assert_eq!(stake_chunk.era, last_claim_era + 1);
+        assert_eq!(
+            stake_chunk.amount,
+            pre_ledger.staked.get(last_claim_era).unwrap().amount
         );
     }
 }

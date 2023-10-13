@@ -352,7 +352,7 @@ pub mod pallet {
             }
 
             let mut era_info = CurrentEraInfo::<T>::get();
-            let staker_reward_pool = Balance::from(1000_u128); // TODO: calculate this properly
+            let staker_reward_pool = Balance::from(1000_u128); // TODO: calculate this properly, inject it from outside (Tokenomics 2.0 pallet?)
             let era_reward = EraReward::new(staker_reward_pool, era_info.total_staked_amount());
             let ending_era = protocol_state.era;
             let next_era = ending_era.saturating_add(1);
@@ -985,13 +985,17 @@ pub mod pallet {
         /// TODO
         #[pallet::call_index(11)]
         #[pallet::weight(Weight::zero())]
-        pub fn claim_staker_reward(origin: OriginFor<T>) -> DispatchResult {
+        pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
 
+            // TODO: how do we handle expired rewards? Add an additional call to clean them up?
+            // Putting this logic inside existing calls will add even more complexity.
+
+            // Check if the rewards have expired
             let staked_period = ledger.staked_period.ok_or(Error::<T>::NoClaimableRewards)?;
             ensure!(
                 staked_period
@@ -1026,9 +1030,11 @@ pub mod pallet {
                 .staked
                 .left_split(last_claim_era)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
+            ensure!(chunks_for_claim.0.len() > 0, Error::<T>::NoClaimableRewards);
 
             // Calculate rewards
             let mut rewards: Vec<_> = Vec::new();
+            let mut reward_sum = Balance::zero();
             for era in first_claim_era..=last_claim_era {
                 let era_reward = era_rewards
                     .get(era)
@@ -1041,14 +1047,14 @@ pub mod pallet {
                 let staker_reward = Perbill::from_rational(chunk.get_amount(), era_reward.staked())
                     * era_reward.staker_reward_pool();
                 rewards.push((era, staker_reward));
+                reward_sum.saturating_accrue(staker_reward);
             }
 
-            let reward_sum = rewards.iter().fold(Balance::zero(), |acc, (_, reward)| {
-                acc.saturating_add(*reward)
-            });
-
-            // TODO; update & write ledger
-            if is_full_period_claimed {}
+            // Write updated ledger back to storage
+            if is_full_period_claimed {
+                ledger.all_stake_rewards_claimed();
+            }
+            Self::update_ledger(&account, ledger);
 
             T::Currency::deposit_into_existing(&account, reward_sum)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;

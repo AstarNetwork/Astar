@@ -235,3 +235,18 @@ pub(crate) fn _advance_to_next_period_type() {
         run_for_blocks(1);
     }
 }
+
+// Return all dApp staking events from the event buffer.
+pub fn dapp_staking_events() -> Vec<crate::Event<Test>> {
+    System::events()
+        .into_iter()
+        .map(|r| r.event)
+        .filter_map(|e| {
+            if let RuntimeEvent::DappStaking(inner) = e {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+        .collect()
+}

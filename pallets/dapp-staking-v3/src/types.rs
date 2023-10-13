@@ -789,6 +789,7 @@ where
 
     /// Notify ledger that all `stake` rewards have been claimed for the staked era.
     pub fn all_stake_rewards_claimed(&mut self) {
+        // TODO: improve handling once bonus reward tracking is added
         self.staked = SparseBoundedAmountEraVec(BoundedVec::<StakeChunk, StakedLen>::default());
         self.staked_period = None;
     }
