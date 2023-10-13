@@ -392,6 +392,19 @@ fn sparse_bounded_amount_era_vec_split_left_works() {
         "Amount must come from last entry in the split."
     );
     assert_eq!(vec.0[1], DummyEraAmount::new(6, 6));
+
+    // 5th scenario: [1,2(0)]  -- split(4) --> [1,2],[]
+    let vec: Vec<DummyEraAmount> = vec![(1, 1), (0, 2)]
+        .into_iter()
+        .map(|(amount, era)| DummyEraAmount::new(amount as Balance, era))
+        .collect();
+    let mut vec = SparseBoundedAmountEraVec::<_, MaxLen>(BoundedVec::try_from(vec).unwrap());
+    let result = vec.left_split(4).expect("Split should succeed.");
+    assert_eq!(result.0.len(), 2);
+    assert_eq!(result.0[0], DummyEraAmount::new(1, 1));
+    assert_eq!(result.0[1], DummyEraAmount::new(0, 2));
+
+    assert!(vec.0.is_empty());
 }
 
 #[test]

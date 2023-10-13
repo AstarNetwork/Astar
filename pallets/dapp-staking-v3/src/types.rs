@@ -244,11 +244,7 @@ where
     ///  c) [1,2,4,5] -- split(4) --> [1,2,4],[5]
     ///  d) [1,2,4,6] -- split(4) --> [1,2,4],[5,6]
     ///  e) [1,2(0)]  -- split(4) --> [1,2],[]   // 2nd entry has 'zero' amount, so no need to keep it
-    // TODO: what if last element on the right is zero? We should cleanup the vector then.
     pub fn left_split(&mut self, era: EraNumber) -> Result<Self, AccountLedgerError> {
-        // TODO: this implementation can once again be optimized, sacrificing the code readability a bit.
-        // But I don't think it's worth doing, since we're aiming for the safe side here.
-
         // Split the inner vector into two parts
         let (left, mut right): (Vec<P>, Vec<P>) = self
             .0
@@ -810,11 +806,38 @@ where
         }
     }
 
-    /// Notify ledger that all `stake` rewards have been claimed for the staked era.
-    pub fn all_stake_rewards_claimed(&mut self) {
-        // TODO: improve handling once bonus reward tracking is added
-        self.staked = SparseBoundedAmountEraVec(BoundedVec::<StakeChunk, StakedLen>::default());
-        self.staked_period = None;
+    /// Claim up stake chunks up to the specified `era`.
+    /// Returns the vector describing claimable chunks.
+    ///
+    /// If `period_end` is provided, it's used to determine whether all applicable chunks have been claimed.
+    pub fn claim_up_to_era(
+        &mut self,
+        era: EraNumber,
+        period_end: Option<EraNumber>,
+    ) -> Result<SparseBoundedAmountEraVec<StakeChunk, StakedLen>, AccountLedgerError> {
+        let claim_chunks = self.staked.left_split(era)?;
+
+        // Check if all possible chunks have been claimed
+        match self.staked.0.first() {
+            Some(chunk) => {
+                match period_end {
+                    // If first chunk is after the period end, clearly everything has been claimed
+                    Some(period_end) if chunk.get_era() > period_end => {
+                        self.staked_period = None;
+                        self.staked = SparseBoundedAmountEraVec::new();
+                    }
+                    _ => (),
+                }
+            }
+            // No more chunks remain, meaning everything has been claimed
+            None => {
+                self.staked_period = None;
+            }
+        }
+
+        // TODO: this is a bit clunky - introduce variables instead that keep track whether rewards were claimed or not.
+
+        Ok(claim_chunks)
     }
 }
 

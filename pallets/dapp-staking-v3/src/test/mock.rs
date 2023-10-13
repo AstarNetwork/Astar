@@ -155,7 +155,6 @@ impl ExtBuilder {
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| {
             System::set_block_number(1);
-            DappStaking::on_initialize(System::block_number());
 
             // TODO: not sure why the mess with type happens here, I can check it later
             let era_length: BlockNumber =
@@ -175,6 +174,8 @@ impl ExtBuilder {
                 },
                 maintenance: false,
             });
+
+            // DappStaking::on_initialize(System::block_number());
         });
 
         ext

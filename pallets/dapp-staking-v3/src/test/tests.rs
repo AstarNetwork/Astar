@@ -19,8 +19,8 @@
 use crate::test::mock::*;
 use crate::test::testing_utils::*;
 use crate::{
-    pallet as pallet_dapp_staking, ActiveProtocolState, DAppId, EraNumber, Error, IntegratedDApps,
-    Ledger, NextDAppId, PeriodType, StakerInfo,
+    pallet as pallet_dapp_staking, ActiveProtocolState, DAppId, EraNumber, EraRewards, Error,
+    IntegratedDApps, Ledger, NextDAppId, PeriodType, StakerInfo,
 };
 
 use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
@@ -1264,10 +1264,49 @@ fn claim_staker_rewards_basic_example_is_ok() {
         assert_claim_staker_rewards(account);
 
         // Advance into the next period, make sure we can still claim old rewards.
-        // TODO: I should calculate number of expected claims, so I know how much times `claim_staker_rewards` should be called.
         advance_to_next_period();
         for _ in 0..required_number_of_reward_claims(account) {
             assert_claim_staker_rewards(account);
         }
+    })
+}
+
+#[test]
+fn claim_staker_rewards_no_claimable_rewards_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::default();
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let lock_amount = 300;
+        assert_lock(account, lock_amount);
+
+        // 1st scenario - try to claim with no stake at all.
+        assert_noop!(
+            DappStaking::claim_staker_rewards(RuntimeOrigin::signed(account)),
+            Error::<Test>::NoClaimableRewards,
+        );
+
+        // 2nd scenario - stake some amount, and try to claim in the same era.
+        // It's important this is the 1st era, when no `EraRewards` entry exists.
+        assert_eq!(ActiveProtocolState::<Test>::get().era, 1, "Sanity check");
+        assert!(EraRewards::<Test>::iter().next().is_none(), "Sanity check");
+        let stake_amount = 93;
+        assert_stake(account, &smart_contract, stake_amount);
+        assert_noop!(
+            DappStaking::claim_staker_rewards(RuntimeOrigin::signed(account)),
+            Error::<Test>::NoClaimableRewards,
+        );
+
+        // 3rd scenario - move over to the next era, but we still expect failure because
+        // stake is valid from era 2 (current era), and we're trying to claim rewards for era 1.
+        advance_to_next_era();
+        assert!(EraRewards::<Test>::iter().next().is_some(), "Sanity check");
+        assert_noop!(
+            DappStaking::claim_staker_rewards(RuntimeOrigin::signed(account)),
+            Error::<Test>::NoClaimableRewards,
+        );
     })
 }

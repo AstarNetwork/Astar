@@ -817,6 +817,10 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
 
         let reward = Perbill::from_rational(stake_chunk.amount, era_reward_info.staked())
             * era_reward_info.staker_reward_pool();
+        if reward.is_zero() {
+            continue;
+        }
+
         rewards.push((era, reward));
     }
     let total_reward = rewards
