@@ -1204,7 +1204,6 @@ impl pallet_xc_asset_config::Config for Runtime {
 }
 
 parameter_types! {
-    ///
     pub const AccountMappingStorageFee: u128 = deposit(2, 84);
 }
 

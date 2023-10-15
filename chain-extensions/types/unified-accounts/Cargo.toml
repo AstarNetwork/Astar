@@ -1,0 +1,27 @@
+[package]
+name = "unified-accounts-chain-extension-types"
+version = "0.1.0"
+description = "Types definitions for contracts using Unified Accounts chain-extension."
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+num_enum = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+#substarte
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"num_enum/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-core/std",
+	"sp-runtime/std",
+]

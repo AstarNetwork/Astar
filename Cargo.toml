@@ -17,6 +17,7 @@ members = [
 	"chain-extensions/dapps-staking",
 	"chain-extensions/pallet-assets",
 	"chain-extensions/xvm",
+	"chain-extensions/unified-accounts",
 	"chain-extensions/types/*",
 
 	"vendor/evm-tracing",
@@ -294,10 +295,12 @@ pallet-evm-precompile-batch = { path = "./precompiles/batch", default-features =
 pallet-chain-extension-dapps-staking = { path = "./chain-extensions/dapps-staking", default-features = false }
 pallet-chain-extension-xvm = { path = "./chain-extensions/xvm", default-features = false }
 pallet-chain-extension-assets = { path = "./chain-extensions/pallet-assets", default-features = false }
+pallet-chain-extension-unified-accounts = { path = "./chain-extensions/unified-accounts", default-features = false }
 
 dapps-staking-chain-extension-types = { path = "./chain-extensions/types/dapps-staking", default-features = false }
 xvm-chain-extension-types = { path = "./chain-extensions/types/xvm", default-features = false }
 assets-chain-extension-types = { path = "./chain-extensions/types/assets", default-features = false }
+unified-accounts-chain-extension-types = { path = "./chain-extensions/types/unified-accounts", default-features = false }
 
 precompile-utils = { path = "./precompiles/utils", default-features = false }
 

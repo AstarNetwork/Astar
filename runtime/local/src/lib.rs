@@ -507,12 +507,18 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const AccountMappingStorageFee: u128 = deposit(2, 84);
+}
+
 impl pallet_unified_accounts::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultEvmToNative = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type DefaultNativeToEvm = HashedAccountMapping<BlakeTwo256>;
+    type AccountMappingStorageFee = AccountMappingStorageFee;
     type ChainId = ChainId;
+
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
