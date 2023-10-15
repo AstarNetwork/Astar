@@ -331,6 +331,14 @@ fn calling_evm_payable_from_wasm_works() {
 
         let value = UNIT;
 
+        // fund the wasm contract addres for paying storage fees for
+        // AU mappings.
+        assert_ok!(Balances::transfer_allow_death(
+            RuntimeOrigin::signed(ALICE),
+            wasm_caller_addr.clone().into(),
+            AccountMappingStorageFee::get()
+        ));
+
         // claim the default mappings for wasm contract
         claim_default_accounts(wasm_caller_addr.clone());
 
