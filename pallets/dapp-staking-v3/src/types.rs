@@ -26,16 +26,10 @@ use sp_runtime::{
 
 use astar_primitives::Balance;
 
-// use crate::pallet::Config;
+use crate::pallet::Config;
 
-// TODO: instead of using `pub` visiblity for fields, either use `pub(crate)` or add dedicated methods for accessing them.
-
-/// Convenience type for `AccountLedger` usage.
-// pub type AccountLedgerFor<T> = AccountLedger<
-//     BlockNumberFor<T>,
-//     <T as Config>::MaxUnlockingChunks,
-//     <T as Config>::MaxStakingChunks,
-// >;
+// Convenience type for `AccountLedger` usage.
+pub type AccountLedgerFor<T> = AccountLedger<BlockNumberFor<T>, <T as Config>::MaxUnlockingChunks>;
 
 /// Era number type
 pub type EraNumber = u32;
@@ -462,11 +456,21 @@ where
         }
 
         // TODO: maybe the check can be nicer?
-        if self.staked.era > EraNumber::zero() {
+        if !self.staked.is_empty() {
+            // In case entry for the current era exists, it must match the era exactly.
             if self.staked.era != era {
                 return Err(AccountLedgerError::InvalidEra);
             }
             if self.staked.period != current_period_info.number {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+            // In case it doesn't (i.e. first time staking), then the future era must match exactly
+            // one era after the one provided via argument.
+        } else if let Some(stake_amount) = self.staked_future {
+            if stake_amount.era != era + 1 {
+                return Err(AccountLedgerError::InvalidEra);
+            }
+            if stake_amount.period != current_period_info.number {
                 return Err(AccountLedgerError::InvalidPeriod);
             }
         }
@@ -506,11 +510,24 @@ where
             return Ok(());
         }
 
-        if self.staked.era != era {
-            return Err(AccountLedgerError::InvalidEra);
-        }
-        if self.staked.period != current_period_info.number {
-            return Err(AccountLedgerError::InvalidPeriod);
+        // TODO: maybe the check can be nicer? (and not duplicated?)
+        if !self.staked.is_empty() {
+            // In case entry for the current era exists, it must match the era exactly.
+            if self.staked.era != era {
+                return Err(AccountLedgerError::InvalidEra);
+            }
+            if self.staked.period != current_period_info.number {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+            // In case it doesn't (i.e. first time staking), then the future era must match exactly
+            // one era after the one provided via argument.
+        } else if let Some(stake_amount) = self.staked_future {
+            if stake_amount.era != era + 1 {
+                return Err(AccountLedgerError::InvalidEra);
+            }
+            if stake_amount.period != current_period_info.number {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
         }
 
         // User must be precise with their unstake amount.
@@ -520,8 +537,18 @@ where
 
         self.staked
             .subtract(amount, current_period_info.period_type);
-        if let Some(stake_amount) = self.staked_future.as_mut() {
+        // Convenience cleanup
+        if self.staked.is_empty() {
+            self.staked = Default::default();
+        }
+        if let Some(mut stake_amount) = self.staked_future {
             stake_amount.subtract(amount, current_period_info.period_type);
+
+            self.staked_future = if stake_amount.is_empty() {
+                None
+            } else {
+                Some(stake_amount)
+            };
         }
 
         Ok(())
@@ -535,8 +562,9 @@ where
         &mut self,
         era: EraNumber,
         period_end: Option<EraNumber>,
-        // TODO: add a better type later
     ) -> Result<(EraNumber, EraNumber, Balance), AccountLedgerError> {
+        // TODO: the check also needs to ensure that future entry is covered!!!
+        // TODO2: the return type won't work since we can have 2 distinct values - one from staked, one from staked_future
         if era <= self.staked.era || self.staked.total().is_zero() {
             return Err(AccountLedgerError::NothingToClaim);
         }
@@ -817,9 +845,9 @@ const STAKING_SERIES_HISTORY: u32 = 3;
 
 /// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
-pub struct StakeAmountSeries(BoundedVec<StakeAmount, ConstU32<STAKING_SERIES_HISTORY>>);
-impl StakeAmountSeries {
-    /// Helper function to create a new instance of `StakeAmountSeries`.
+pub struct ContractStakeAmountSeries(BoundedVec<StakeAmount, ConstU32<STAKING_SERIES_HISTORY>>);
+impl ContractStakeAmountSeries {
+    /// Helper function to create a new instance of `ContractStakeAmountSeries`.
     #[cfg(test)]
     pub fn new(inner: Vec<StakeAmount>) -> Self {
         Self(BoundedVec::try_from(inner).expect("Test should ensure this is always valid"))
@@ -870,16 +898,6 @@ impl StakeAmountSeries {
                 }
             }
         }
-    }
-
-    /// Last era for which a stake entry exists, `None` if no entries exist.
-    pub fn last_stake_era(&self) -> Option<EraNumber> {
-        self.0.last().map(|info| info.era)
-    }
-
-    /// Last period for which a stake entry exists, `None` if no entries exist.
-    pub fn last_stake_period(&self) -> Option<PeriodNumber> {
-        self.0.last().map(|info| info.period)
     }
 
     /// Total staked amount on the contract, in the active period.

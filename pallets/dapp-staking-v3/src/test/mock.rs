@@ -39,215 +39,214 @@ pub(crate) type Balance = u128;
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(crate) const MINIMUM_LOCK_AMOUNT: Balance = 10;
 
-// type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-// type Block = frame_system::mocking::MockBlock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
-// construct_runtime!(
-//     pub struct Test
-//     where
-//         Block = Block,
-//         NodeBlock = Block,
-//         UncheckedExtrinsic = UncheckedExtrinsic,
-//     {
-//         System: frame_system,
-//         Balances: pallet_balances,
-//         DappStaking: pallet_dapp_staking,
-//     }
-// );
+construct_runtime!(
+    pub struct Test
+    where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
+        System: frame_system,
+        Balances: pallet_balances,
+        DappStaking: pallet_dapp_staking,
+    }
+);
 
-// parameter_types! {
-//     pub const BlockHashCount: u64 = 250;
-//     pub BlockWeights: frame_system::limits::BlockWeights =
-//         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
-// }
+parameter_types! {
+    pub const BlockHashCount: u64 = 250;
+    pub BlockWeights: frame_system::limits::BlockWeights =
+        frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
+}
 
-// impl frame_system::Config for Test {
-//     type BaseCallFilter = frame_support::traits::Everything;
-//     type BlockWeights = ();
-//     type BlockLength = ();
-//     type RuntimeOrigin = RuntimeOrigin;
-//     type Index = u64;
-//     type RuntimeCall = RuntimeCall;
-//     type BlockNumber = BlockNumber;
-//     type Hash = H256;
-//     type Hashing = BlakeTwo256;
-//     type AccountId = AccountId;
-//     type Lookup = IdentityLookup<Self::AccountId>;
-//     type Header = Header;
-//     type RuntimeEvent = RuntimeEvent;
-//     type BlockHashCount = BlockHashCount;
-//     type DbWeight = ();
-//     type Version = ();
-//     type PalletInfo = PalletInfo;
-//     type AccountData = pallet_balances::AccountData<Balance>;
-//     type OnNewAccount = ();
-//     type OnKilledAccount = ();
-//     type SystemWeightInfo = ();
-//     type SS58Prefix = ();
-//     type OnSetCode = ();
-//     type MaxConsumers = frame_support::traits::ConstU32<16>;
-// }
+impl frame_system::Config for Test {
+    type BaseCallFilter = frame_support::traits::Everything;
+    type BlockWeights = ();
+    type BlockLength = ();
+    type RuntimeOrigin = RuntimeOrigin;
+    type Index = u64;
+    type RuntimeCall = RuntimeCall;
+    type BlockNumber = BlockNumber;
+    type Hash = H256;
+    type Hashing = BlakeTwo256;
+    type AccountId = AccountId;
+    type Lookup = IdentityLookup<Self::AccountId>;
+    type Header = Header;
+    type RuntimeEvent = RuntimeEvent;
+    type BlockHashCount = BlockHashCount;
+    type DbWeight = ();
+    type Version = ();
+    type PalletInfo = PalletInfo;
+    type AccountData = pallet_balances::AccountData<Balance>;
+    type OnNewAccount = ();
+    type OnKilledAccount = ();
+    type SystemWeightInfo = ();
+    type SS58Prefix = ();
+    type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
+}
 
-// impl pallet_balances::Config for Test {
-//     type MaxLocks = ConstU32<4>;
-//     type MaxReserves = ();
-//     type ReserveIdentifier = [u8; 8];
-//     type Balance = Balance;
-//     type RuntimeEvent = RuntimeEvent;
-//     type DustRemoval = ();
-//     type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
-//     type AccountStore = System;
-//     type HoldIdentifier = ();
-//     type FreezeIdentifier = ();
-//     type MaxHolds = ConstU32<0>;
-//     type MaxFreezes = ConstU32<0>;
-//     type WeightInfo = ();
-// }
+impl pallet_balances::Config for Test {
+    type MaxLocks = ConstU32<4>;
+    type MaxReserves = ();
+    type ReserveIdentifier = [u8; 8];
+    type Balance = Balance;
+    type RuntimeEvent = RuntimeEvent;
+    type DustRemoval = ();
+    type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
+    type AccountStore = System;
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
+    type WeightInfo = ();
+}
 
-// impl pallet_dapp_staking::Config for Test {
-//     type RuntimeEvent = RuntimeEvent;
-//     type Currency = Balances;
-//     type SmartContract = MockSmartContract;
-//     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-//     type StandardEraLength = ConstU64<10>;
-//     type StandardErasPerVotingPeriod = ConstU32<8>;
-//     type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
-//     type EraRewardSpanLength = ConstU32<8>;
-//     type RewardRetentionInPeriods = ConstU32<2>;
-//     type MaxNumberOfContracts = ConstU16<10>;
-//     type MaxUnlockingChunks = ConstU32<5>;
-//     type MaxStakingChunks = ConstU32<8>;
-//     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
-//     type UnlockingPeriod = ConstU64<20>;
-//     type MinimumStakeAmount = ConstU128<3>;
-// }
+impl pallet_dapp_staking::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type SmartContract = MockSmartContract;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type StandardEraLength = ConstU64<10>;
+    type StandardErasPerVotingPeriod = ConstU32<8>;
+    type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
+    type EraRewardSpanLength = ConstU32<8>;
+    type RewardRetentionInPeriods = ConstU32<2>;
+    type MaxNumberOfContracts = ConstU16<10>;
+    type MaxUnlockingChunks = ConstU32<5>;
+    type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
+    type UnlockingPeriod = ConstU64<20>;
+    type MinimumStakeAmount = ConstU128<3>;
+}
 
-// // TODO: why not just change this to e.g. u32 for test?
-// #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Hash)]
-// pub enum MockSmartContract {
-//     Wasm(AccountId),
-//     Other(AccountId),
-// }
+// TODO: why not just change this to e.g. u32 for test?
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Hash)]
+pub enum MockSmartContract {
+    Wasm(AccountId),
+    Other(AccountId),
+}
 
-// impl Default for MockSmartContract {
-//     fn default() -> Self {
-//         MockSmartContract::Wasm(1)
-//     }
-// }
+impl Default for MockSmartContract {
+    fn default() -> Self {
+        MockSmartContract::Wasm(1)
+    }
+}
 
-// pub struct ExtBuilder;
-// impl ExtBuilder {
-//     pub fn build() -> TestExternalities {
-//         let mut storage = frame_system::GenesisConfig::default()
-//             .build_storage::<Test>()
-//             .unwrap();
+pub struct ExtBuilder;
+impl ExtBuilder {
+    pub fn build() -> TestExternalities {
+        let mut storage = frame_system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .unwrap();
 
-//         let balances = vec![1000; 9]
-//             .into_iter()
-//             .enumerate()
-//             .map(|(idx, amount)| (idx as u64 + 1, amount))
-//             .collect();
+        let balances = vec![1000; 9]
+            .into_iter()
+            .enumerate()
+            .map(|(idx, amount)| (idx as u64 + 1, amount))
+            .collect();
 
-//         pallet_balances::GenesisConfig::<Test> { balances: balances }
-//             .assimilate_storage(&mut storage)
-//             .ok();
+        pallet_balances::GenesisConfig::<Test> { balances: balances }
+            .assimilate_storage(&mut storage)
+            .ok();
 
-//         let mut ext = TestExternalities::from(storage);
-//         ext.execute_with(|| {
-//             System::set_block_number(1);
+        let mut ext = TestExternalities::from(storage);
+        ext.execute_with(|| {
+            System::set_block_number(1);
 
-//             // TODO: not sure why the mess with type happens here, I can check it later
-//             let era_length: BlockNumber =
-//                 <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
-//             let voting_period_length_in_eras: EraNumber =
-//                 <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingPeriod as sp_core::Get<_>>::get(
-//                 );
+            // TODO: not sure why the mess with type happens here, I can check it later
+            let era_length: BlockNumber =
+                <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
+            let voting_period_length_in_eras: EraNumber =
+                <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingPeriod as sp_core::Get<_>>::get(
+                );
 
-//             // TODO: handle this via GenesisConfig, and some helper functions to set the state
-//             pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
-//                 era: 1,
-//                 next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
-//                 period_info: PeriodInfo {
-//                     number: 1,
-//                     period_type: PeriodType::Voting,
-//                     ending_era: 2,
-//                 },
-//                 maintenance: false,
-//             });
+            // TODO: handle this via GenesisConfig, and some helper functions to set the state
+            pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
+                era: 1,
+                next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
+                period_info: PeriodInfo {
+                    number: 1,
+                    period_type: PeriodType::Voting,
+                    ending_era: 2,
+                },
+                maintenance: false,
+            });
 
-//             // DappStaking::on_initialize(System::block_number());
-//         });
+            // DappStaking::on_initialize(System::block_number());
+        });
 
-//         ext
-//     }
-// }
+        ext
+    }
+}
 
-// /// Run to the specified block number.
-// /// Function assumes first block has been initialized.
-// pub(crate) fn run_to_block(n: u64) {
-//     while System::block_number() < n {
-//         DappStaking::on_finalize(System::block_number());
-//         System::set_block_number(System::block_number() + 1);
-//         // This is performed outside of dapps staking but we expect it before on_initialize
-//         DappStaking::on_initialize(System::block_number());
-//     }
-// }
+/// Run to the specified block number.
+/// Function assumes first block has been initialized.
+pub(crate) fn run_to_block(n: u64) {
+    while System::block_number() < n {
+        DappStaking::on_finalize(System::block_number());
+        System::set_block_number(System::block_number() + 1);
+        // This is performed outside of dapps staking but we expect it before on_initialize
+        DappStaking::on_initialize(System::block_number());
+    }
+}
 
-// /// Run for the specified number of blocks.
-// /// Function assumes first block has been initialized.
-// pub(crate) fn run_for_blocks(n: u64) {
-//     run_to_block(System::block_number() + n);
-// }
+/// Run for the specified number of blocks.
+/// Function assumes first block has been initialized.
+pub(crate) fn run_for_blocks(n: u64) {
+    run_to_block(System::block_number() + n);
+}
 
-// /// Advance blocks until the specified era has been reached.
-// ///
-// /// Function has no effect if era is already passed.
-// pub(crate) fn advance_to_era(era: EraNumber) {
-//     assert!(era >= ActiveProtocolState::<Test>::get().era);
-//     while ActiveProtocolState::<Test>::get().era < era {
-//         run_for_blocks(1);
-//     }
-// }
+/// Advance blocks until the specified era has been reached.
+///
+/// Function has no effect if era is already passed.
+pub(crate) fn advance_to_era(era: EraNumber) {
+    assert!(era >= ActiveProtocolState::<Test>::get().era);
+    while ActiveProtocolState::<Test>::get().era < era {
+        run_for_blocks(1);
+    }
+}
 
-// /// Advance blocks until next era has been reached.
-// pub(crate) fn advance_to_next_era() {
-//     advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
-// }
+/// Advance blocks until next era has been reached.
+pub(crate) fn advance_to_next_era() {
+    advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+}
 
-// /// Advance blocks until the specified period has been reached.
-// ///
-// /// Function has no effect if period is already passed.
-// pub(crate) fn advance_to_period(period: PeriodNumber) {
-//     assert!(period >= ActiveProtocolState::<Test>::get().period_number());
-//     while ActiveProtocolState::<Test>::get().period_number() < period {
-//         run_for_blocks(1);
-//     }
-// }
+/// Advance blocks until the specified period has been reached.
+///
+/// Function has no effect if period is already passed.
+pub(crate) fn advance_to_period(period: PeriodNumber) {
+    assert!(period >= ActiveProtocolState::<Test>::get().period_number());
+    while ActiveProtocolState::<Test>::get().period_number() < period {
+        run_for_blocks(1);
+    }
+}
 
-// /// Advance blocks until next period has been reached.
-// pub(crate) fn advance_to_next_period() {
-//     advance_to_period(ActiveProtocolState::<Test>::get().period_number() + 1);
-// }
+/// Advance blocks until next period has been reached.
+pub(crate) fn advance_to_next_period() {
+    advance_to_period(ActiveProtocolState::<Test>::get().period_number() + 1);
+}
 
-// /// Advance blocks until next period type has been reached.
-// pub(crate) fn _advance_to_next_period_type() {
-//     let period_type = ActiveProtocolState::<Test>::get().period_type();
-//     while ActiveProtocolState::<Test>::get().period_type() == period_type {
-//         run_for_blocks(1);
-//     }
-// }
+/// Advance blocks until next period type has been reached.
+pub(crate) fn _advance_to_next_period_type() {
+    let period_type = ActiveProtocolState::<Test>::get().period_type();
+    while ActiveProtocolState::<Test>::get().period_type() == period_type {
+        run_for_blocks(1);
+    }
+}
 
-// // Return all dApp staking events from the event buffer.
-// pub fn dapp_staking_events() -> Vec<crate::Event<Test>> {
-//     System::events()
-//         .into_iter()
-//         .map(|r| r.event)
-//         .filter_map(|e| {
-//             if let RuntimeEvent::DappStaking(inner) = e {
-//                 Some(inner)
-//             } else {
-//                 None
-//             }
-//         })
-//         .collect()
-// }
+// Return all dApp staking events from the event buffer.
+pub fn dapp_staking_events() -> Vec<crate::Event<Test>> {
+    System::events()
+        .into_iter()
+        .map(|r| r.event)
+        .filter_map(|e| {
+            if let RuntimeEvent::DappStaking(inner) = e {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
