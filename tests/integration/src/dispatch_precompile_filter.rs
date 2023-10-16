@@ -187,7 +187,6 @@ fn test_incorrect_dispatch_info_fails() {
         struct Filter;
         struct AccountId;
         enum RuntimeCall {
-            System,
             DappsStaking,
         }
         impl GetDispatchInfo for RuntimeCall {
@@ -204,7 +203,6 @@ fn test_incorrect_dispatch_info_fails() {
             fn contains(t: &RuntimeCall) -> bool {
                 match t {
                     RuntimeCall::DappsStaking => true,
-                    _ => false,
                 }
             }
         }
