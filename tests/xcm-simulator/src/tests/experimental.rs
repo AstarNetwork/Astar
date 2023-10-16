@@ -183,7 +183,7 @@ fn xcm_remote_transact_contract() {
         );
 
         // check for flip status
-        let (res, _, _) = call_wasm_contract_method::<parachain::Runtime, Result<bool, ()>>(
+        let (res, _, _) = call_wasm_contract_method::<parachain::Runtime, bool>(
             ALICE.into(),
             contract_id.clone(),
             0,
@@ -192,7 +192,7 @@ fn xcm_remote_transact_contract() {
             SELECTOR_GET.to_vec(),
             true,
         );
-        assert_eq!(res, Ok(true));
+        assert_eq!(res, true);
     });
 
     ParaB::execute_with(|| {
@@ -229,7 +229,7 @@ fn xcm_remote_transact_contract() {
 
     // check for flip status, it should be false
     ParaA::execute_with(|| {
-        let (res, _, _) = call_wasm_contract_method::<parachain::Runtime, Result<bool, ()>>(
+        let (res, _, _) = call_wasm_contract_method::<parachain::Runtime, bool>(
             ALICE.into(),
             contract_id.clone(),
             0,
@@ -238,7 +238,7 @@ fn xcm_remote_transact_contract() {
             SELECTOR_GET.to_vec(),
             true,
         );
-        assert_eq!(res, Ok(false));
+        assert_eq!(res, false);
     });
 }
 
@@ -310,7 +310,7 @@ fn test_async_xcm_contract_call_no_ce() {
     //
     ParaA::execute_with(|| {
         assert_eq!(
-            call_wasm_contract_method::<parachain::Runtime, Result<bool, ()>>(
+            call_wasm_contract_method::<parachain::Runtime, bool>(
                 ALICE.into(),
                 contract_id.clone(),
                 0,
@@ -343,7 +343,7 @@ fn test_async_xcm_contract_call_no_ce() {
                 true,
             )
             .0,
-            Ok(true)
+            true
         );
     });
 
@@ -360,7 +360,7 @@ fn test_async_xcm_contract_call_no_ce() {
     // Check for contract method called
     ParaA::execute_with(|| {
         assert_eq!(
-            call_wasm_contract_method::<parachain::Runtime, Result<Option<bool>, ()>>(
+            call_wasm_contract_method::<parachain::Runtime, Option<bool>>(
                 ALICE.into(),
                 contract_id.clone(),
                 0,
@@ -370,7 +370,7 @@ fn test_async_xcm_contract_call_no_ce() {
                 true,
             )
             .0,
-            Ok(Some(true))
+            Some(true)
         );
     });
 }
