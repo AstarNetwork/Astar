@@ -17,4 +17,5 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 pub mod pallet_assets;
-pub mod xcm;
+pub mod pallet_balances;
+pub mod pallet_xcm;

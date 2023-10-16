@@ -20,8 +20,8 @@ use super::{
     AccountId, AllPalletsWithSystem, AssetId, Assets, Balance, Balances, DealWithFees,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
     ShibuyaAssetLocationIdConverter, TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
 };
+use crate::weights;
 use frame_support::{
     match_types, parameter_types,
     traits::{ConstU32, Everything, Nothing},
@@ -35,10 +35,10 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
-    EnsureXcmOrigin, FungiblesAdapter, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents, WeightInfoBounds, WithComputedOrigin,
+    EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{Convert as XcmConvert, JustTry},
@@ -171,12 +171,12 @@ pub type ShibuyaXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     TreasuryAccountId,
 >;
 
-// pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
-pub type Weigher = WeightInfoBounds<
-    crate::weights::xcm::ShibuyaXcmWeight<RuntimeCall>,
-    RuntimeCall,
-    MaxInstructions,
->;
+pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+// pub type Weigher = WeightInfoBounds<
+//     crate::weights::xcm::ShibuyaXcmWeight<RuntimeCall>,
+//     RuntimeCall,
+//     MaxInstructions,
+// >;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -207,10 +207,6 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = Nothing;
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
-}
-
-parameter_types! {
-    pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(10);
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -251,7 +247,9 @@ impl pallet_xcm::Config for Runtime {
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<0>;
-    type WeightInfo = pallet_xcm::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_xcm::SubstrateWeight<Runtime>;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type RemoteLockConsumerIdentifier = ();
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
     type AdminOrigin = EnsureRoot<AccountId>;

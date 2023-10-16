@@ -3,17 +3,11 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
-jobs:
-  clean-up-actions:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel Previous Runs
-        # Only cancel non-master branch runs
-        if: ${{ github.ref != 'refs/heads/master' }}
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ github.token }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
+jobs:
   coverage:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest

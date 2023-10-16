@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "5.17.0"
+version = "5.20.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -100,7 +100,6 @@ frame-try-runtime = { workspace = true, optional = true }
 astar-primitives = { workspace = true }
 pallet-block-reward = { workspace = true }
 pallet-collator-selection = { workspace = true }
-pallet-custom-signatures = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
@@ -114,9 +113,6 @@ pallet-xcm = { workspace = true }
 moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
-
-# TODO: remove this once we get rid of `pallet-xcm` fork & double dep
-polkadot-runtime = { workspace = true, optional = true }
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
@@ -149,7 +145,6 @@ std = [
 	"pallet-balances/std",
 	"pallet-proxy/std",
 	"pallet-block-reward/std",
-	"pallet-custom-signatures/std",
 	"pallet-dapps-staking/std",
 	"pallet-evm-precompile-dapps-staking/std",
 	"pallet-evm-precompile-sr25519/std",
@@ -223,7 +218,6 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
-	"polkadot-runtime/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
@@ -239,7 +233,6 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-block-reward/try-runtime",
-	"pallet-custom-signatures/try-runtime",
 	"pallet-dapps-staking/try-runtime",
 	"pallet-block-reward/try-runtime",
 	"pallet-sudo/try-runtime",
