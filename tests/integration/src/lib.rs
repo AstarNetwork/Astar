@@ -32,7 +32,7 @@ mod assets;
 #[cfg(feature = "shibuya")]
 mod xvm;
 
-#[cfg(feature = "shibuya")]
-mod account;
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod dispatch_precompile_filter;
+#[cfg(feature = "shibuya")]
+mod unified_accounts;

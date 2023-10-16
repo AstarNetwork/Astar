@@ -331,7 +331,7 @@ fn calling_evm_payable_from_wasm_works() {
 
         let value = UNIT;
 
-        // fund the wasm contract addres for paying storage fees for
+        // fund the wasm contract address for paying storage fees for
         // AU mappings.
         assert_ok!(Balances::transfer_allow_death(
             RuntimeOrigin::signed(ALICE),

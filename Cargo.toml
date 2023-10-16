@@ -8,6 +8,7 @@ members = [
 	"runtime/shibuya",
 	"tests/xcm-simulator",
 	"tests/integration",
+	"tests/utils",
 
 	"pallets/*",
 	"precompiles/*",
@@ -283,6 +284,7 @@ pallet-dynamic-evm-base-fee = { path = "./pallets/dynamic-evm-base-fee", default
 pallet-unified-accounts = { path = "./pallets/unified-accounts", default-features = false }
 
 astar-primitives = { path = "./primitives", default-features = false }
+astar-test-utils = { path = "./tests/utils", default-features = false }
 
 pallet-evm-precompile-assets-erc20 = { path = "./precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-sr25519 = { path = "./precompiles/sr25519", default-features = false }

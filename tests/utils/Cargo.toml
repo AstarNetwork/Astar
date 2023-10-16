@@ -1,0 +1,29 @@
+[package]
+name = "astar-test-utils"
+version = "0.1.0"
+description = "Astar test utils"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+# Base functionality
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-contracts = { workspace = true }
+pallet-contracts-primitives = { workspace = true }
+sp-runtime = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
+]

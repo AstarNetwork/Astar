@@ -22,6 +22,7 @@ use crate::mocks::{
     *,
 };
 
+use astar_test_utils::{call_wasm_contract_method, deploy_wasm_contract};
 use frame_support::{assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
 use sp_runtime::traits::Bounded;
@@ -171,7 +172,7 @@ fn xcm_remote_transact_contract() {
     // deploy and initialize flipper contract with `true` in ParaA
     let mut contract_id = [0u8; 32].into();
     ParaA::execute_with(|| {
-        (contract_id, _) = deploy_contract::<parachain::Runtime>(
+        (contract_id, _) = deploy_wasm_contract::<parachain::Runtime>(
             "flipper",
             ALICE.into(),
             0,
@@ -182,7 +183,7 @@ fn xcm_remote_transact_contract() {
         );
 
         // check for flip status
-        let (res, _, _) = call_contract_method::<parachain::Runtime, Result<bool, ()>>(
+        let (res, _, _) = call_wasm_contract_method::<parachain::Runtime, Result<bool, ()>>(
             ALICE.into(),
             contract_id.clone(),
             0,
@@ -228,7 +229,7 @@ fn xcm_remote_transact_contract() {
 
     // check for flip status, it should be false
     ParaA::execute_with(|| {
-        let (res, _, _) = call_contract_method::<parachain::Runtime, Result<bool, ()>>(
+        let (res, _, _) = call_wasm_contract_method::<parachain::Runtime, Result<bool, ()>>(
             ALICE.into(),
             contract_id.clone(),
             0,
@@ -273,7 +274,7 @@ fn test_async_xcm_contract_call_no_ce() {
     //
     let contract_id = ParaA::execute_with(|| {
         // deploy contract
-        let (contract_id, _) = deploy_contract::<parachain::Runtime>(
+        let (contract_id, _) = deploy_wasm_contract::<parachain::Runtime>(
             "async-xcm-call-no-ce",
             ALICE.into(),
             0,
@@ -309,7 +310,7 @@ fn test_async_xcm_contract_call_no_ce() {
     //
     ParaA::execute_with(|| {
         assert_eq!(
-            call_contract_method::<parachain::Runtime, Result<bool, ()>>(
+            call_wasm_contract_method::<parachain::Runtime, Result<bool, ()>>(
                 ALICE.into(),
                 contract_id.clone(),
                 0,
@@ -359,7 +360,7 @@ fn test_async_xcm_contract_call_no_ce() {
     // Check for contract method called
     ParaA::execute_with(|| {
         assert_eq!(
-            call_contract_method::<parachain::Runtime, Result<Option<bool>, ()>>(
+            call_wasm_contract_method::<parachain::Runtime, Result<Option<bool>, ()>>(
                 ALICE.into(),
                 contract_id.clone(),
                 0,

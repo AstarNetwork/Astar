@@ -637,6 +637,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "astar-test-utils"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+]
+
+[[package]]
 name = "async-channel"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4923,6 +4936,7 @@ version = "0.1.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
+ "astar-test-utils",
  "env_logger 0.10.0",
  "fp-evm",
  "frame-support",
@@ -16641,6 +16655,7 @@ name = "xcm-simulator-tests"
 version = "0.1.0"
 dependencies = [
  "astar-primitives",
+ "astar-test-utils",
  "cumulus-pallet-xcm",
  "frame-support",
  "frame-system",

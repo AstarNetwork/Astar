@@ -41,11 +41,12 @@ precompile-utils = { workspace = true }
 
 astar-primitives = { workspace = true }
 astar-runtime = { workspace = true, features = ["std"], optional = true }
+astar-test-utils = { workspace = true, features = ["std"] }
 shibuya-runtime = { workspace = true, features = ["std"], optional = true }
 shiden-runtime = { workspace = true, features = ["std"], optional = true }
 
 [features]
-default = ["std"]
+default = ["std", "shibuya"]
 std = []
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]
