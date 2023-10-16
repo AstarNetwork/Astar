@@ -525,6 +525,8 @@ impl pallet_xcm::Config for Runtime {
     type Currency = Balances;
     type CurrencyMatcher = ();
     type MaxLockers = frame_support::traits::ConstU32<8>;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type RemoteLockConsumerIdentifier = ();
     type WeightInfo = pallet_xcm::TestWeightInfo;
     type AdminOrigin = frame_system::EnsureRoot<AccountId>;
     #[cfg(feature = "runtime-benchmarks")]

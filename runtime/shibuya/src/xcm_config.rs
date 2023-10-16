@@ -21,6 +21,7 @@ use super::{
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
     ShibuyaAssetLocationIdConverter, TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue,
 };
+use crate::weights;
 use frame_support::{
     match_types, parameter_types,
     traits::{ConstU32, Everything, Nothing},
@@ -241,7 +242,9 @@ impl pallet_xcm::Config for Runtime {
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<0>;
-    type WeightInfo = pallet_xcm::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_xcm::SubstrateWeight<Runtime>;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type RemoteLockConsumerIdentifier = ();
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
     type AdminOrigin = EnsureRoot<AccountId>;

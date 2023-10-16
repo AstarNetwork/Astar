@@ -585,7 +585,6 @@ dependencies = [
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
- "pallet-evm-precompile-batch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapps-staking",
@@ -608,12 +607,11 @@ dependencies = [
  "pallet-utility",
  "pallet-vesting",
  "pallet-xc-asset-config",
- "pallet-xcm 0.9.40",
+ "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-primitives",
- "polkadot-runtime",
  "polkadot-runtime-common",
  "scale-info",
  "smallvec 1.11.0",
@@ -5307,7 +5305,7 @@ dependencies = [
  "pallet-utility",
  "pallet-vesting",
  "pallet-whitelist",
- "pallet-xcm 0.9.43",
+ "pallet-xcm",
  "pallet-xcm-benchmarks",
  "parity-scale-codec",
  "polkadot-primitives",
@@ -6020,7 +6018,6 @@ dependencies = [
  "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
- "pallet-evm-precompile-batch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapps-staking",
@@ -7181,7 +7178,7 @@ dependencies = [
  "frame-system",
  "orml-traits",
  "orml-xcm-support",
- "pallet-xcm 0.9.43",
+ "pallet-xcm",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -7507,6 +7504,7 @@ dependencies = [
  "num-traits",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-unified-accounts",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -7884,34 +7882,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-evm-precompile-batch"
-version = "0.1.0"
-dependencies = [
- "derive_more",
- "evm",
- "fp-evm",
- "frame-support",
- "frame-system",
- "hex-literal",
- "log",
- "num_enum 0.5.11",
- "pallet-balances",
- "pallet-evm",
- "pallet-timestamp",
- "parity-scale-codec",
- "paste",
- "precompile-utils",
- "scale-info",
- "serde",
- "sha3",
- "slices",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.43#46cd85967849be241dac2bb72f561b942a463729"
@@ -8052,7 +8022,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-xcm"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "assert_matches",
  "astar-primitives",
@@ -8071,7 +8041,7 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-timestamp",
- "pallet-xcm 0.9.40",
+ "pallet-xcm",
  "parity-scale-codec",
  "precompile-utils",
  "scale-info",
@@ -8816,30 +8786,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "xcm",
-]
-
-[[package]]
-name = "pallet-xcm"
-version = "0.9.40"
-dependencies = [
- "bounded-collections",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "parity-scale-codec",
- "polkadot-parachain",
- "polkadot-runtime-parachains",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-builder",
- "xcm-executor",
 ]
 
 [[package]]
@@ -10123,7 +10069,7 @@ dependencies = [
  "pallet-utility",
  "pallet-vesting",
  "pallet-whitelist",
- "pallet-xcm 0.9.43",
+ "pallet-xcm",
  "parity-scale-codec",
  "polkadot-primitives",
  "polkadot-runtime-common",
@@ -11249,7 +11195,7 @@ dependencies = [
  "pallet-treasury",
  "pallet-utility",
  "pallet-vesting",
- "pallet-xcm 0.9.43",
+ "pallet-xcm",
  "pallet-xcm-benchmarks",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -13118,7 +13064,6 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-chain-id",
  "pallet-evm-precompile-assets-erc20",
- "pallet-evm-precompile-batch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapps-staking",
@@ -13147,13 +13092,12 @@ dependencies = [
  "pallet-utility",
  "pallet-vesting",
  "pallet-xc-asset-config",
- "pallet-xcm 0.9.40",
+ "pallet-xcm",
  "pallet-xvm",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-primitives",
- "polkadot-runtime",
  "polkadot-runtime-common",
  "scale-info",
  "smallvec 1.11.0",
@@ -13220,7 +13164,6 @@ dependencies = [
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
- "pallet-evm-precompile-batch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapps-staking",
@@ -13244,12 +13187,11 @@ dependencies = [
  "pallet-utility",
  "pallet-vesting",
  "pallet-xc-asset-config",
- "pallet-xcm 0.9.40",
+ "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-primitives",
- "polkadot-runtime",
  "polkadot-runtime-common",
  "scale-info",
  "smallvec 1.11.0",
@@ -16165,7 +16107,7 @@ dependencies = [
  "pallet-treasury",
  "pallet-utility",
  "pallet-vesting",
- "pallet-xcm 0.9.43",
+ "pallet-xcm",
  "pallet-xcm-benchmarks",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -16674,7 +16616,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-utility",
  "pallet-xc-asset-config",
- "pallet-xcm 0.9.40",
+ "pallet-xcm",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
