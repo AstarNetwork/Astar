@@ -39,6 +39,10 @@
 //! * `claim_default_evm_address`: Creates the double mapping with default evm address given that
 //!    no prior mapping exists.
 //!
+//! ## Storage Fee
+//! User is also charged a storage fee [`AccountMappingStorageFee`](`crate::Config::AccountMappingStorageFee`)
+//! before mappings are created to prevent storage abuse.
+//!
 //! WARNINGS:
 //! * This pallet only handles transfer of native balance only, for the rest of native assets
 //!   hold by evm address like XC20, DAppStaking unclaimed rewards, etc should be transferred
@@ -120,8 +124,9 @@ pub mod pallet {
         /// EVM chain id
         #[pallet::constant]
         type ChainId: Get<u64>;
-        /// The amount of currency needed per mapping to be added.
-        /// TODO: calculate total bytes key + value in storage for mappings
+        /// The amount of currency needed for mappings to be added.
+        /// Two storage items with values sizes, sizeof(AccountId) and sizeof(H160)
+        /// respectively
         #[pallet::constant]
         type AccountMappingStorageFee: Get<BalanceOf<Self>>;
         /// Weight information for the extrinsics in this module
@@ -394,7 +399,7 @@ impl<T: Config> AddressMapping<T::AccountId> for Pallet<T> {
 pub struct KillAccountMapping<T>(PhantomData<T>);
 impl<T: Config> OnKilledAccount<T::AccountId> for KillAccountMapping<T> {
     fn on_killed_account(who: &T::AccountId) {
-        // remove mapping of account reaped and burn the deposit
+        // remove mappings of account reaped
         if let Some(evm_addr) = NativeToEvm::<T>::take(who) {
             EvmToNative::<T>::remove(evm_addr);
             NativeToEvm::<T>::remove(who);

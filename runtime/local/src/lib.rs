@@ -508,7 +508,8 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub const AccountMappingStorageFee: u128 = deposit(2, 84);
+    // 2 storage items with value size 20 and 32
+    pub const AccountMappingStorageFee: u128 = deposit(2, 32 + 20);
 }
 
 impl pallet_unified_accounts::Config for Runtime {
@@ -516,9 +517,8 @@ impl pallet_unified_accounts::Config for Runtime {
     type Currency = Balances;
     type DefaultEvmToNative = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type DefaultNativeToEvm = HashedAccountMapping<BlakeTwo256>;
-    type AccountMappingStorageFee = AccountMappingStorageFee;
     type ChainId = ChainId;
-
+    type AccountMappingStorageFee = AccountMappingStorageFee;
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
