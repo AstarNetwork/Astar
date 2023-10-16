@@ -33,6 +33,7 @@ sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 
 # frame dependencies
+astar-xcm-benchmarks = { workspace = true }
 frame-executive = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
@@ -70,7 +71,6 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
-pallet-xcm-benchmarks = { workspace = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
@@ -259,7 +259,7 @@ runtime-benchmarks = [
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
-	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"astar-xcm-benchmarks/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",

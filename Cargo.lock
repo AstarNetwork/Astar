@@ -627,6 +627,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "astar-xcm-benchmarks"
+version = "0.1.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-xcm 0.9.40",
+ "pallet-xcm-benchmarks",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+]
+
+[[package]]
 name = "async-channel"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12354,6 +12378,7 @@ version = "5.17.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
+ "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -12428,7 +12453,6 @@ dependencies = [
  "pallet-vesting",
  "pallet-xc-asset-config",
  "pallet-xcm 0.9.40",
- "pallet-xcm-benchmarks",
  "pallet-xvm",
  "parachain-info",
  "parity-scale-codec",

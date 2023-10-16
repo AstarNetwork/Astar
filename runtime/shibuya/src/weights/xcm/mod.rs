@@ -27,7 +27,7 @@ use xcm::{
     DoubleEncoded,
 };
 
-use astar_primitives::xcm::constants::MAX_ASSETS;
+use astar_primitives::xcm::MAX_ASSETS;
 use core::cmp::min;
 use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
 use pallet_xcm_benchmarks_generic::WeightInfo as XcmGeneric;
@@ -47,7 +47,7 @@ impl WeighMultiAssetsFilter for MultiAssetFilter {
                 weight.saturating_mul(assets.inner().into_iter().count() as u64)
             }
             Self::Wild(AllCounted(count) | AllOfCounted { count, .. }) => {
-                weight.saturating_mul(min(MAX_ASSETS, *count) as u64)
+                weight.saturating_mul(min(MAX_ASSETS, (*count).into()) as u64)
             }
             Self::Wild(All | AllOf { .. }) => weight.saturating_mul(MAX_ASSETS as u64),
         }

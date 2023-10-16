@@ -1420,7 +1420,7 @@ mod benches {
         [pallet_xcm, PolkadotXcm]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_xvm, Xvm]
-        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
+        [astar_xcm_benchmarks::generic, astar_xcm_benchmarks::generic::Pallet::<Runtime>]
     );
 }
 
@@ -1903,41 +1903,63 @@ impl_runtime_apis! {
             use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
             use frame_system_benchmarking::Pallet as SystemBench;
             use baseline::Pallet as BaselineBench;
-            use xcm_config::{XcmConfig, LocationToAccountId, ShibuyaLocation};
+            use xcm_config::{XcmConfig, LocationToAccountId};
             use xcm::latest::prelude::*;
 
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
             use frame_support::traits::WhitelistedStorageKeys;
-            impl pallet_xcm_benchmarks::Config for Runtime {
+            impl astar_xcm_benchmarks::Config for Runtime {
                 type XcmConfig = XcmConfig;
                 type AccountIdConverter = LocationToAccountId;
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-                    let valid_destination: MultiLocation = Junction::AccountId32 {
-                        network: None,
-                        id: [0u8; 32],
-                    }
-                    .into();
-
-                    Ok(valid_destination)
+                    Ok(MultiLocation::parent())
                 }
                 fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
-                    let assets: Vec<MultiAsset> = vec![MultiAsset {
-                        id: Concrete(MultiLocation::parent()),
-                        fun: Fungible(u128::MAX),
-                    }];
+                    const HOLDING_FUNGIBLES: u32 = 62;
+                            let fungibles_amount: u128 = 100;
+                            let assets = (0..HOLDING_FUNGIBLES).map(|i| {
+                                let location: MultiLocation = GeneralIndex(i as u128).into();
+                                MultiAsset {
+                                    id: Concrete(location),
+                                    fun: Fungible(fungibles_amount * i as u128),
+                                }
+                                .into()
+                            })
+                            .chain(
+                                core::iter::once(
+                                    MultiAsset {
+                                        id: Concrete(MultiLocation::parent()),
+                                        fun: Fungible(u128::MAX)
+                                    }
+                                )
+                            )
+                            .chain(
+                                core::iter::once(
+                                    MultiAsset {
+                                        id: Concrete(MultiLocation::here()),
+                                        fun: Fungible(u128::MAX)
+                                    }
+                                )
+                            )
+                            .collect::<Vec<_>>();
                     assets.into()
                 }
             }
-            impl pallet_xcm_benchmarks::generic::Config for Runtime {
+            impl astar_xcm_benchmarks::generic::Config for Runtime {
                 type RuntimeCall = RuntimeCall;
 
                 fn worst_case_response() -> (u64, Response) {
                     // not sure what will be the worst case for Response
                     // either `Assets(MultiAssets)` or `PalletsInfo(BoundedVec<PalletInfo, MaxPalletsInfo>)`
                     // in either case, what will be the worst case?
-                    (0u64, Response::Version(Default::default()))
+                    let assets: Vec<MultiAsset> = vec![MultiAsset {
+                        id: Concrete(MultiLocation::parent()),
+                        fun: Fungible(u128::MAX),
+                    }];
+                    (0u64, Response::Assets(assets.into()))
+
                 }
 
                 fn worst_case_asset_exchange() -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
@@ -1954,17 +1976,21 @@ impl_runtime_apis! {
                     // We don't care about the call itself, since that is accounted for in the weight parameter
                     // and included in the final weight calculation. So this is just the overhead of submitting
                     // a noop call.
-                    Ok((ShibuyaLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
+                    Ok((MultiLocation::parent(), frame_system::Call::remark_with_event {
+                        remark: vec![]
+                    }.into()))
                 }
 
                 fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(ShibuyaLocation::get())
+                    Ok(MultiLocation::parent())
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let assets: MultiAssets = (Concrete(Here.into()), 100).into();
-                    let ticket = MultiLocation { parents: 0, interior: X1(GeneralIndex(0)) };
-                    Ok((Default::default(), ticket, assets))
+                    let origin = MultiLocation::parent();
+                            let assets: MultiAssets = (Concrete(MultiLocation::parent()), 1_000u128)
+                                .into();
+                            let ticket = MultiLocation { parents: 0, interior: Here };
+                            Ok((origin, ticket, assets))
                 }
 
                 fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
