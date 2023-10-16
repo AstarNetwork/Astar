@@ -26,7 +26,7 @@ xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
 # Benchmarks
-frame-benchmarking = { workspace = true, optional = true }
+frame-benchmarking = { workspace = true }
 
 [dev-dependencies]
 pallet-assets = { workspace = true }
@@ -35,7 +35,7 @@ pallet-xcm = { workspace = true }
 sp-core = { workspace = true }
 
 [features]
-default = ["std", "runtime-benchmarks"]
+default = ["std"]
 std = [
 	"frame-benchmarking/std",
 	"frame-support/std",
@@ -52,7 +52,7 @@ std = [
 runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
-	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 ]
