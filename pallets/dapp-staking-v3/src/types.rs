@@ -537,10 +537,12 @@ where
 
         self.staked
             .subtract(amount, current_period_info.period_type);
+
         // Convenience cleanup
         if self.staked.is_empty() {
             self.staked = Default::default();
         }
+
         if let Some(mut stake_amount) = self.staked_future {
             stake_amount.subtract(amount, current_period_info.period_type);
 
@@ -586,7 +588,7 @@ where
             return Err(AccountLedgerError::NothingToClaim);
         } else if let Some(stake_amount) = self.staked_future {
             // Future entry exists, but era isn't 'in history'
-            if era <= stake_amount.era {
+            if era < stake_amount.era {
                 return Err(AccountLedgerError::NothingToClaim);
             }
         }
@@ -610,8 +612,11 @@ where
 
         let result = RewardsIter::new(span, maybe_other);
 
-        // Update latest 'staked' era
-        self.staked.era = era;
+        // Rollover future to 'current' stake amount
+        if let Some(stake_amount) = self.staked_future.take() {
+            self.staked = stake_amount;
+        }
+        self.staked.era = era.saturating_add(1);
 
         // Make sure to clean up the entries
         match period_end {

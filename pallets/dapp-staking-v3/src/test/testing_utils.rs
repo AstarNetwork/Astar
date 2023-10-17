@@ -19,9 +19,8 @@
 use crate::test::mock::*;
 use crate::types::*;
 use crate::{
-    pallet as pallet_dapp_staking, ActiveProtocolState, BlockNumberFor, ContractStake,
-    CurrentEraInfo, DAppId, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, PeriodEnd,
-    PeriodEndInfo, StakeAmount, StakerInfo,
+    pallet::Config, ActiveProtocolState, BlockNumberFor, ContractStake, CurrentEraInfo, DAppId,
+    EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, PeriodEnd, PeriodEndInfo, StakerInfo,
 };
 
 use frame_support::{assert_ok, traits::Get};
@@ -36,23 +35,19 @@ pub(crate) struct MemorySnapshot {
     next_dapp_id: DAppId,
     current_era_info: EraInfo,
     integrated_dapps: HashMap<
-        <Test as pallet_dapp_staking::Config>::SmartContract,
+        <Test as Config>::SmartContract,
         DAppInfo<<Test as frame_system::Config>::AccountId>,
     >,
     ledger: HashMap<<Test as frame_system::Config>::AccountId, AccountLedgerFor<Test>>,
     staker_info: HashMap<
         (
             <Test as frame_system::Config>::AccountId,
-            <Test as pallet_dapp_staking::Config>::SmartContract,
+            <Test as Config>::SmartContract,
         ),
         SingularStakingInfo,
     >,
-    contract_stake:
-        HashMap<<Test as pallet_dapp_staking::Config>::SmartContract, ContractStakeAmountSeries>,
-    era_rewards: HashMap<
-        EraNumber,
-        EraRewardSpan<<Test as pallet_dapp_staking::Config>::EraRewardSpanLength>,
-    >,
+    contract_stake: HashMap<<Test as Config>::SmartContract, ContractStakeAmountSeries>,
+    era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
     period_end: HashMap<PeriodNumber, PeriodEndInfo>,
 }
 
@@ -250,7 +245,7 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
 
         // When unlocking would take account below the minimum lock threshold, unlock everything
         let locked_amount = pre_ledger.active_locked_amount();
-        let min_locked_amount = <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
+        let min_locked_amount = <Test as Config>::MinimumLockedAmount::get();
         if locked_amount.saturating_sub(possible_unlock_amount) < min_locked_amount {
             locked_amount
         } else {
@@ -506,7 +501,7 @@ pub(crate) fn assert_stake(
                 amount,
                 "Total staked amount must be equal to exactly the 'amount'"
             );
-            assert!(amount >= <Test as pallet_dapp_staking::Config>::MinimumStakeAmount::get());
+            assert!(amount >= <Test as Config>::MinimumStakeAmount::get());
             assert_eq!(
                 post_staker_info.staked_amount(stake_period_type),
                 amount,
@@ -577,8 +572,7 @@ pub(crate) fn assert_unstake(
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
     let unstake_period_type = pre_snapshot.active_protocol_state.period_type();
 
-    let minimum_stake_amount: Balance =
-        <Test as pallet_dapp_staking::Config>::MinimumStakeAmount::get();
+    let minimum_stake_amount: Balance = <Test as Config>::MinimumStakeAmount::get();
     let is_full_unstake =
         pre_staker_info.total_staked_amount().saturating_sub(amount) < minimum_stake_amount;
 
@@ -723,8 +717,8 @@ pub(crate) fn assert_unstake(
 pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
     let pre_snapshot = MemorySnapshot::new();
     let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
-    let pre_total_issuance = <Test as pallet_dapp_staking::Config>::Currency::total_issuance();
-    let pre_free_balance = <Test as pallet_dapp_staking::Config>::Currency::free_balance(&account);
+    let pre_total_issuance = <Test as Config>::Currency::total_issuance();
+    let pre_free_balance = <Test as Config>::Currency::free_balance(&account);
 
     // Get the first eligible era for claiming rewards
     let first_claim_era = pre_ledger
@@ -732,8 +726,7 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
         .expect("Entry must exist, otherwise 'claim' is invalid.");
 
     // Get the apprropriate era rewards span for the 'first era'
-    let era_span_length: EraNumber =
-        <Test as pallet_dapp_staking::Config>::EraRewardSpanLength::get();
+    let era_span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
     let era_span_index = first_claim_era - (first_claim_era % era_span_length);
     let era_rewards_span = pre_snapshot
         .era_rewards
@@ -820,14 +813,14 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
 
     // Verify post state
 
-    let post_total_issuance = <Test as pallet_dapp_staking::Config>::Currency::total_issuance();
+    let post_total_issuance = <Test as Config>::Currency::total_issuance();
     assert_eq!(
         post_total_issuance,
         pre_total_issuance + total_reward,
         "Total issuance must increase by the total reward amount."
     );
 
-    let post_free_balance = <Test as pallet_dapp_staking::Config>::Currency::free_balance(&account);
+    let post_free_balance = <Test as Config>::Currency::free_balance(&account);
     assert_eq!(
         post_free_balance,
         pre_free_balance + total_reward,
@@ -881,8 +874,7 @@ pub(crate) fn required_number_of_reward_claims(account: AccountId) -> u32 {
         return 0;
     };
 
-    let era_span_length: EraNumber =
-        <Test as pallet_dapp_staking::Config>::EraRewardSpanLength::get();
+    let era_span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
     let first = DappStaking::era_reward_span_index(range.0)
         .checked_div(era_span_length)
         .unwrap();

@@ -438,7 +438,6 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     assert!(acc_ledger
         .add_stake_amount(stake_amount, first_era, period_info_1)
         .is_ok());
-    let acc_ledger_snapshot = acc_ledger.clone();
 
     // Try to add to the next era, it should fail.
     assert_eq!(
