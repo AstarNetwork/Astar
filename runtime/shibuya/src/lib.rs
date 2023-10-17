@@ -1441,7 +1441,7 @@ mod benches {
         [pallet_xvm, Xvm]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [pallet_unified_accounts, UnifiedAccounts]
-        [astar_xcm_benchmarks::generic, astar_xcm_benchmarks::generic::Pallet::<Runtime>]
+        [astar_xcm_benchmarks, astar_xcm_benchmarks::Pallet::<Runtime>]
     );
 }
 

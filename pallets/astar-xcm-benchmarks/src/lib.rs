@@ -31,6 +31,9 @@ use xcm_executor::{traits::Convert, Config as XcmConfig};
 pub mod fungible;
 pub mod generic;
 
+#[cfg(feature = "runtime-benchmarks")]
+pub use generic::{benchmarking, Pallet};
+
 #[cfg(test)]
 mod mock;
 
