@@ -554,6 +554,24 @@ where
         Ok(())
     }
 
+    // TODO
+    pub fn staked_period(&self) -> Option<PeriodNumber> {
+        if self.staked.is_empty() {
+            self.staked_future.map(|stake_amount| stake_amount.period)
+        } else {
+            Some(self.staked.period)
+        }
+    }
+
+    // TODO
+    pub fn earliest_staked_era(&self) -> Option<EraNumber> {
+        if self.staked.is_empty() {
+            self.staked_future.map(|stake_amount| stake_amount.era)
+        } else {
+            Some(self.staked.era)
+        }
+    }
+
     /// Claim up stake chunks up to the specified `era`.
     /// Returns the vector describing claimable chunks.
     ///
@@ -562,22 +580,44 @@ where
         &mut self,
         era: EraNumber,
         period_end: Option<EraNumber>,
-    ) -> Result<(EraNumber, EraNumber, Balance), AccountLedgerError> {
-        // TODO: the check also needs to ensure that future entry is covered!!!
-        // TODO2: the return type won't work since we can have 2 distinct values - one from staked, one from staked_future
-        if era <= self.staked.era || self.staked.total().is_zero() {
+    ) -> Result<RewardsIter, AccountLedgerError> {
+        // Main entry exists, but era isn't 'in history'
+        if !self.staked.is_empty() && era <= self.staked.era {
             return Err(AccountLedgerError::NothingToClaim);
+        } else if let Some(stake_amount) = self.staked_future {
+            // Future entry exists, but era isn't 'in history'
+            if era <= stake_amount.era {
+                return Err(AccountLedgerError::NothingToClaim);
+            }
         }
 
-        let result = (self.staked.era, era, self.staked.total());
+        // There are multiple options:
+        // 1. We only have future entry, no current entry
+        // 2. We have both current and future entry
+        // 3. We only have current entry, no future entry
+        let (span, maybe_other) = if let Some(stake_amount) = self.staked_future {
+            if self.staked.is_empty() {
+                ((stake_amount.era, era, stake_amount.total()), None)
+            } else {
+                (
+                    (stake_amount.era, era, stake_amount.total()),
+                    Some((self.staked.era, self.staked.total())),
+                )
+            }
+        } else {
+            ((self.staked.era, era, self.staked.total()), None)
+        };
+
+        let result = RewardsIter::new(span, maybe_other);
 
         // Update latest 'staked' era
         self.staked.era = era;
 
-        // Make sure to clean
+        // Make sure to clean up the entries
         match period_end {
             Some(ending_era) if era >= ending_era => {
                 self.staker_rewards_claimed = true;
+                // TODO: probably not the right thing to do, need to check if pending bonus rewards need to be claimed as well
                 self.staked = Default::default();
                 self.staked_future = None;
             }
@@ -585,6 +625,56 @@ where
         }
 
         Ok(result)
+    }
+}
+
+// TODO: docs & test
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct RewardsIter {
+    maybe_other: Option<(EraNumber, Balance)>,
+    start_era: EraNumber,
+    end_era: EraNumber,
+    amount: Balance,
+}
+
+impl RewardsIter {
+    pub fn new(
+        span: (EraNumber, EraNumber, Balance),
+        maybe_other: Option<(EraNumber, Balance)>,
+    ) -> Self {
+        if let Some((era, _amount)) = maybe_other {
+            debug_assert!(
+                span.0 == era + 1,
+                "The 'other', if it exists, must cover era preceding the span."
+            );
+        }
+
+        Self {
+            maybe_other,
+            start_era: span.0,
+            end_era: span.1,
+            amount: span.2,
+        }
+    }
+}
+
+impl Iterator for RewardsIter {
+    type Item = (EraNumber, Balance);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Fist cover the scenario where we have a unique first value
+        if let Some((era, amount)) = self.maybe_other.take() {
+            return Some((era, amount));
+        }
+
+        // Afterwards, just keep returning the same amount for different eras
+        if self.start_era <= self.end_era {
+            let value = (self.start_era, self.amount);
+            self.start_era.saturating_accrue(1);
+            return Some(value);
+        } else {
+            None
+        }
     }
 }
 
@@ -869,6 +959,16 @@ impl ContractStakeAmountSeries {
         self.0.is_empty()
     }
 
+    // TODO
+    pub fn last_stake_period(&self) -> Option<PeriodNumber> {
+        self.0.last().map(|x| x.period)
+    }
+
+    // TODO
+    pub fn last_stake_era(&self) -> Option<EraNumber> {
+        self.0.last().map(|x| x.era)
+    }
+
     /// Returns the `StakeAmount` type for the specified era & period, if it exists.
     pub fn get(&self, era: EraNumber, period: PeriodNumber) -> Option<StakeAmount> {
         let idx = self
@@ -923,18 +1023,20 @@ impl ContractStakeAmountSeries {
         &mut self,
         amount: Balance,
         period_info: PeriodInfo,
-        era: EraNumber,
+        current_era: EraNumber,
     ) -> Result<(), ()> {
+        let stake_era = current_era.saturating_add(1);
+
         // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
         if let Some(stake_amount) = self.0.last() {
-            if stake_amount.era > era || stake_amount.period > period_info.number {
+            if stake_amount.era > stake_era || stake_amount.period > period_info.number {
                 return Err(());
             }
         }
 
         // Get the most relevant `StakeAmount` instance
         let mut stake_amount = if let Some(stake_amount) = self.0.last() {
-            if stake_amount.era == era {
+            if stake_amount.era == stake_era {
                 // Era matches, so we just update the last element.
                 let stake_amount = *stake_amount;
                 let _ = self.0.pop();
@@ -942,15 +1044,25 @@ impl ContractStakeAmountSeries {
             } else if stake_amount.period == period_info.number {
                 // Periods match so we should 'copy' the last element to get correct staking amount
                 let mut temp = *stake_amount;
-                temp.era = era;
+                temp.era = stake_era;
                 temp
             } else {
                 // It's a new period, so we need a completely new instance
-                StakeAmount::new(Balance::zero(), Balance::zero(), era, period_info.number)
+                StakeAmount::new(
+                    Balance::zero(),
+                    Balance::zero(),
+                    stake_era,
+                    period_info.number,
+                )
             }
         } else {
             // It's a new period, so we need a completely new instance
-            StakeAmount::new(Balance::zero(), Balance::zero(), era, period_info.number)
+            StakeAmount::new(
+                Balance::zero(),
+                Balance::zero(),
+                stake_era,
+                period_info.number,
+            )
         };
 
         // Update the stake amount

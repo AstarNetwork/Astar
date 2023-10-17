@@ -21,7 +21,7 @@ use crate::types::*;
 use crate::{
     pallet as pallet_dapp_staking, ActiveProtocolState, BlockNumberFor, ContractStake,
     CurrentEraInfo, DAppId, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, PeriodEnd,
-    PeriodEndInfo, StakerInfo,
+    PeriodEndInfo, StakeAmount, StakerInfo,
 };
 
 use frame_support::{assert_ok, traits::Get};
@@ -48,7 +48,7 @@ pub(crate) struct MemorySnapshot {
         SingularStakingInfo,
     >,
     contract_stake:
-        HashMap<<Test as pallet_dapp_staking::Config>::SmartContract, ContractStakingInfoSeries>,
+        HashMap<<Test as pallet_dapp_staking::Config>::SmartContract, ContractStakeAmountSeries>,
     era_rewards: HashMap<
         EraNumber,
         EraRewardSpan<<Test as pallet_dapp_staking::Config>::EraRewardSpanLength>,
@@ -422,7 +422,7 @@ pub(crate) fn assert_stake(
     let pre_contract_stake = pre_snapshot
         .contract_stake
         .get(&smart_contract)
-        .map_or(ContractStakingInfoSeries::default(), |series| {
+        .map_or(ContractStakeAmountSeries::default(), |series| {
             series.clone()
         });
     let pre_era_info = pre_snapshot.current_era_info;
@@ -459,7 +459,11 @@ pub(crate) fn assert_stake(
     // 1. verify ledger
     // =====================
     // =====================
-    assert_eq!(post_ledger.staked_period, Some(stake_period));
+    assert_eq!(
+        post_ledger.staked, pre_ledger.staked,
+        "Must remain exactly the same."
+    );
+    assert_eq!(post_ledger.staked_future.unwrap().period, stake_period);
     assert_eq!(
         post_ledger.staked_amount(stake_period),
         pre_ledger.staked_amount(stake_period) + amount,
@@ -470,22 +474,7 @@ pub(crate) fn assert_stake(
         pre_ledger.stakeable_amount(stake_period) - amount,
         "Stakeable amount must decrease by the 'amount'"
     );
-    match pre_ledger.last_stake_era() {
-        Some(last_stake_era) if last_stake_era == stake_era => {
-            assert_eq!(
-                post_ledger.staked.0.len(),
-                pre_ledger.staked.0.len(),
-                "Existing entry must be modified."
-            );
-        }
-        _ => {
-            assert_eq!(
-                post_ledger.staked.0.len(),
-                pre_ledger.staked.0.len() + 1,
-                "Additional entry must be added."
-            );
-        }
-    }
+    // TODO: maybe expand checks here?
 
     // 2. verify staker info
     // =====================
@@ -534,38 +523,19 @@ pub(crate) fn assert_stake(
     // 3. verify contract stake
     // =========================
     // =========================
-    // TODO: since default value is all zeros, maybe we can just skip the branching code and do it once?
-    match pre_contract_stake.last_stake_period() {
-        Some(last_stake_period) if last_stake_period == stake_period => {
-            assert_eq!(
-                post_contract_stake.total_staked_amount(stake_period),
-                pre_contract_stake.total_staked_amount(stake_period) + amount,
-                "Staked amount must increase by the 'amount'"
-            );
-            assert_eq!(
-                post_contract_stake.staked_amount(stake_period, stake_period_type),
-                pre_contract_stake.staked_amount(stake_period, stake_period_type) + amount,
-                "Staked amount must increase by the 'amount'"
-            );
-        }
-        _ => {
-            assert_eq!(post_contract_stake.len(), 1);
-            assert_eq!(
-                post_contract_stake.total_staked_amount(stake_period),
-                amount,
-                "Total staked amount must be equal to exactly the 'amount'"
-            );
-            assert_eq!(
-                post_contract_stake.staked_amount(stake_period, stake_period_type),
-                amount,
-                "Staked amount must be equal to exactly the 'amount'"
-            );
-        }
-    }
+    assert_eq!(
+        post_contract_stake.total_staked_amount(stake_period),
+        pre_contract_stake.total_staked_amount(stake_period) + amount,
+        "Staked amount must increase by the 'amount'"
+    );
+    assert_eq!(
+        post_contract_stake.staked_amount(stake_period, stake_period_type),
+        pre_contract_stake.staked_amount(stake_period, stake_period_type) + amount,
+        "Staked amount must increase by the 'amount'"
+    );
+
     assert_eq!(post_contract_stake.last_stake_period(), Some(stake_period));
     assert_eq!(post_contract_stake.last_stake_era(), Some(stake_era));
-
-    // TODO: expand this check to compare inner slices as well!
 
     // 4. verify era info
     // =========================
@@ -643,7 +613,6 @@ pub(crate) fn assert_unstake(
     // 1. verify ledger
     // =====================
     // =====================
-    assert_eq!(post_ledger.staked_period, Some(unstake_period));
     assert_eq!(
         post_ledger.staked_amount(unstake_period),
         pre_ledger.staked_amount(unstake_period) - amount,
@@ -654,7 +623,7 @@ pub(crate) fn assert_unstake(
         pre_ledger.stakeable_amount(unstake_period) + amount,
         "Stakeable amount must increase by the 'amount'"
     );
-    // TODO: maybe extend check with concrete value checks? E.g. if we modify past entry, we should check past & current entries are properly adjusted.
+    // TODO: expand with more detailed checks of staked and staked_future
 
     // 2. verify staker info
     // =====================
@@ -709,7 +678,6 @@ pub(crate) fn assert_unstake(
             .saturating_sub(amount),
         "Staked amount must decreased by the 'amount'"
     );
-    // TODO: extend with concrete value checks later
 
     // 4. verify era info
     // =========================
@@ -760,11 +728,8 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
 
     // Get the first eligible era for claiming rewards
     let first_claim_era = pre_ledger
-        .staked
-        .0
-        .first()
-        .expect("Entry must exist, otherwise 'claim' is invalid.")
-        .get_era();
+        .earliest_staked_era()
+        .expect("Entry must exist, otherwise 'claim' is invalid.");
 
     // Get the apprropriate era rewards span for the 'first era'
     let era_span_length: EraNumber =
@@ -776,19 +741,24 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
         .expect("Entry must exist, otherwise 'claim' is invalid.");
 
     // Calculate the final era for claiming rewards. Also determine if this will fully claim all staked period rewards.
-    let is_current_period_stake = match pre_ledger.staked_period {
-        Some(staked_period)
-            if staked_period == pre_snapshot.active_protocol_state.period_number() =>
-        {
-            true
-        }
-        _ => false,
+    let claim_period_end = if pre_ledger.staked_period().unwrap()
+        == pre_snapshot.active_protocol_state.period_number()
+    {
+        None
+    } else {
+        Some(
+            pre_snapshot
+                .period_end
+                .get(&pre_ledger.staked_period().unwrap())
+                .expect("Entry must exist, since it's the current period.")
+                .final_era,
+        )
     };
 
-    let (last_claim_era, is_full_claim) = if is_current_period_stake {
+    let (last_claim_era, is_full_claim) = if claim_period_end.is_none() {
         (pre_snapshot.active_protocol_state.era - 1, false)
     } else {
-        let claim_period = pre_ledger.staked_period.unwrap();
+        let claim_period = pre_ledger.staked_period().unwrap();
         let period_end = pre_snapshot
             .period_end
             .get(&claim_period)
@@ -806,16 +776,16 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
 
     // Calculate the expected rewards
     let mut rewards = Vec::new();
-    for era in first_claim_era..=last_claim_era {
+    for (era, amount) in pre_ledger
+        .clone()
+        .claim_up_to_era(last_claim_era, claim_period_end)
+        .unwrap()
+    {
         let era_reward_info = era_rewards_span
             .get(era)
             .expect("Entry must exist, otherwise 'claim' is invalid.");
-        let stake_chunk = pre_ledger
-            .staked
-            .get(era)
-            .expect("Entry must exist, otherwise 'claim' is invalid.");
 
-        let reward = Perbill::from_rational(stake_chunk.amount, era_reward_info.staked())
+        let reward = Perbill::from_rational(amount, era_reward_info.staked())
             * era_reward_info.staker_reward_pool();
         if reward.is_zero() {
             continue;
@@ -868,15 +838,11 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
     let post_ledger = post_snapshot.ledger.get(&account).unwrap();
 
     if is_full_claim {
-        assert!(post_ledger.staked.0.is_empty());
-        assert!(post_ledger.staked_period.is_none());
+        assert!(post_ledger.staked.is_empty());
+        assert!(post_ledger.staked_future.is_none());
     } else {
-        let stake_chunk = post_ledger.staked.0.first().expect("Entry must exist");
-        assert_eq!(stake_chunk.era, last_claim_era + 1);
-        assert_eq!(
-            stake_chunk.amount,
-            pre_ledger.staked.get(last_claim_era).unwrap().amount
-        );
+        assert_eq!(post_ledger.staked.era, last_claim_era + 1);
+        // TODO: expand check?
     }
 }
 
@@ -888,25 +854,21 @@ pub(crate) fn claimable_reward_range(account: AccountId) -> Option<(EraNumber, E
     let ledger = Ledger::<Test>::get(&account);
     let protocol_state = ActiveProtocolState::<Test>::get();
 
-    let (first_chunk, last_chunk) = if let Some(chunks) = ledger.first_and_last_stake_chunks() {
-        chunks
+    let earliest_stake_era = if let Some(era) = ledger.earliest_staked_era() {
+        era
     } else {
         return None;
     };
 
-    // Full unstake happened, no rewards past this.
-    let last_claim_era = if last_chunk.get_amount().is_zero() {
-        last_chunk.get_era() - 1
-    } else if ledger.staked_period == Some(protocol_state.period_number()) {
-        // Staked in the ongoing period, best we can do is claim up to last era
+    let last_claim_era = if ledger.staked_period() == Some(protocol_state.period_number()) {
         protocol_state.era - 1
     } else {
         // Period finished, we can claim up to its final era
-        let period_end = PeriodEnd::<Test>::get(ledger.staked_period.unwrap()).unwrap();
+        let period_end = PeriodEnd::<Test>::get(ledger.staked_period().unwrap()).unwrap();
         period_end.final_era
     };
 
-    Some((first_chunk.get_era(), last_claim_era))
+    Some((earliest_stake_era, last_claim_era))
 }
 
 /// Number of times it's required to call `claim_staker_rewards` to claim all pending rewards.

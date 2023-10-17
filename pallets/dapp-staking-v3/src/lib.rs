@@ -806,10 +806,11 @@ pub mod pallet {
             );
 
             let protocol_state = ActiveProtocolState::<T>::get();
-            // Staker always stakes from the NEXT era
-            let stake_era = protocol_state.era.saturating_add(1);
+            let stake_era = protocol_state.era;
             ensure!(
-                !protocol_state.period_info.is_next_period(stake_era),
+                !protocol_state
+                    .period_info
+                    .is_next_period(stake_era.saturating_add(1)),
                 Error::<T>::PeriodEndsInNextEra
             );
 
@@ -820,7 +821,7 @@ pub mod pallet {
             ledger
                 .add_stake_amount(amount, stake_era, protocol_state.period_info)
                 .map_err(|err| match err {
-                    AccountLedgerError::InvalidPeriod => {
+                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
                         Error::<T>::UnclaimedRewardsFromPastPeriods
                     }
                     AccountLedgerError::UnavailableStakeFunds => Error::<T>::UnavailableStakeFunds,
@@ -952,7 +953,9 @@ pub mod pallet {
             ledger
                 .unstake_amount(amount, unstake_era, protocol_state.period_info)
                 .map_err(|err| match err {
-                    AccountLedgerError::InvalidPeriod => Error::<T>::UnstakeFromPastPeriod,
+                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
+                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                    }
                     AccountLedgerError::UnstakeAmountLargerThanStake => {
                         Error::<T>::UnstakeAmountTooLarge
                     }
@@ -995,109 +998,97 @@ pub mod pallet {
             Ok(())
         }
 
-        // /// TODO
-        // #[pallet::call_index(11)]
-        // #[pallet::weight(Weight::zero())]
-        // pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResult {
-        //     Self::ensure_pallet_enabled()?;
-        //     let account = ensure_signed(origin)?;
+        /// TODO
+        #[pallet::call_index(11)]
+        #[pallet::weight(Weight::zero())]
+        pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
 
-        //     let protocol_state = ActiveProtocolState::<T>::get();
-        //     let mut ledger = Ledger::<T>::get(&account);
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let mut ledger = Ledger::<T>::get(&account);
 
-        //     // TODO: how do we handle expired rewards? Add an additional call to clean them up?
-        //     // Putting this logic inside existing calls will add even more complexity.
+            // TODO: how do we handle expired rewards? Add an additional call to clean them up?
+            // Putting this logic inside existing calls will add even more complexity.
 
-        //     // Check if the rewards have expired
-        //     let staked_period = ledger.staked_period.ok_or(Error::<T>::NoClaimableRewards)?;
-        //     ensure!(
-        //         staked_period
-        //             >= protocol_state
-        //                 .period_number()
-        //                 .saturating_sub(T::RewardRetentionInPeriods::get()),
-        //         Error::<T>::StakerRewardsExpired
-        //     );
+            // Check if the rewards have expired
+            let staked_period = ledger
+                .staked_period()
+                .ok_or(Error::<T>::NoClaimableRewards)?;
+            ensure!(
+                staked_period
+                    >= protocol_state
+                        .period_number()
+                        .saturating_sub(T::RewardRetentionInPeriods::get()),
+                Error::<T>::StakerRewardsExpired
+            );
 
-        //     // Calculate the reward claim span
-        //     let (first_chunk, last_chunk) = ledger
-        //         .first_and_last_stake_chunks()
-        //         .ok_or(Error::<T>::InternalClaimStakerError)?;
-        //     let era_rewards =
-        //         EraRewards::<T>::get(Self::era_reward_span_index(first_chunk.get_era()))
-        //             .ok_or(Error::<T>::NoClaimableRewards)?;
+            // Calculate the reward claim span
+            let earliest_staked_era = ledger
+                .earliest_staked_era()
+                .ok_or(Error::<T>::InternalClaimStakerError)?;
+            let era_rewards =
+                EraRewards::<T>::get(Self::era_reward_span_index(earliest_staked_era))
+                    .ok_or(Error::<T>::NoClaimableRewards)?;
 
-        //     // The last era for which we can theoretically claim rewards.
-        //     // And indicator if we know the period's ending era.
-        //     let (last_period_era, period_end) = if staked_period == protocol_state.period_number() {
-        //         (protocol_state.era.saturating_sub(1), None)
-        //     } else {
-        //         PeriodEnd::<T>::get(&staked_period)
-        //             .map(|info| (info.final_era, Some(info.final_era)))
-        //             .ok_or(Error::<T>::InternalClaimStakerError)?
-        //     };
+            // The last era for which we can theoretically claim rewards.
+            // And indicator if we know the period's ending era.
+            let (last_period_era, period_end) = if staked_period == protocol_state.period_number() {
+                (protocol_state.era.saturating_sub(1), None)
+            } else {
+                PeriodEnd::<T>::get(&staked_period)
+                    .map(|info| (info.final_era, Some(info.final_era)))
+                    .ok_or(Error::<T>::InternalClaimStakerError)?
+            };
 
-        //     // The last era for which we can claim rewards for this account.
-        //     // Limiting factors are:
-        //     //    1. era reward span entries
-        //     //    2. last era in period limit
-        //     //    3. last era in which staker had non-zero stake
-        //     let last_claim_era = if last_chunk.get_amount().is_zero() {
-        //         era_rewards
-        //             .last_era()
-        //             .min(last_period_era)
-        //             .min(last_chunk.get_era())
-        //     } else {
-        //         era_rewards.last_era().min(last_period_era)
-        //     };
+            // The last era for which we can claim rewards for this account.
+            let last_claim_era = era_rewards.last_era().min(last_period_era);
 
-        //     // Get chunks for reward claiming
-        //     let chunks_for_claim =
-        //         ledger
-        //             .claim_up_to_era(last_claim_era, period_end)
-        //             .map_err(|err| match err {
-        //                 AccountLedgerError::SplitEraInvalid => Error::<T>::NoClaimableRewards,
-        //                 _ => Error::<T>::InternalClaimStakerError,
-        //             })?;
+            // Get chunks for reward claiming
+            let rewards_iter =
+                ledger
+                    .claim_up_to_era(last_claim_era, period_end)
+                    .map_err(|err| match err {
+                        AccountLedgerError::NothingToClaim => Error::<T>::NoClaimableRewards,
+                        _ => Error::<T>::InternalClaimStakerError,
+                    })?;
 
-        //     // Calculate rewards
-        //     let mut rewards: Vec<_> = Vec::new();
-        //     let mut reward_sum = Balance::zero();
-        //     for era in first_chunk.get_era()..=last_claim_era {
-        //         // TODO: this should be zipped, and values should be fetched only once
-        //         let era_reward = era_rewards
-        //             .get(era)
-        //             .ok_or(Error::<T>::InternalClaimStakerError)?;
+            // Calculate rewards
+            let mut rewards: Vec<_> = Vec::new();
+            let mut reward_sum = Balance::zero();
+            for (era, amount) in rewards_iter {
+                // TODO: this should be zipped, and values should be fetched only once
+                let era_reward = era_rewards
+                    .get(era)
+                    .ok_or(Error::<T>::InternalClaimStakerError)?;
 
-        //         let chunk = chunks_for_claim
-        //             .get(era)
-        //             .ok_or(Error::<T>::InternalClaimStakerError)?;
+                // Optimization, and zero-division protection
+                if amount.is_zero() || era_reward.staked().is_zero() {
+                    continue;
+                }
+                let staker_reward = Perbill::from_rational(amount, era_reward.staked())
+                    * era_reward.staker_reward_pool();
 
-        //         // Optimization, and zero-division protection
-        //         if chunk.get_amount().is_zero() || era_reward.staked().is_zero() {
-        //             continue;
-        //         }
-        //         let staker_reward = Perbill::from_rational(chunk.get_amount(), era_reward.staked())
-        //             * era_reward.staker_reward_pool();
+                rewards.push((era, staker_reward));
+                reward_sum.saturating_accrue(staker_reward);
+            }
 
-        //         rewards.push((era, staker_reward));
-        //         reward_sum.saturating_accrue(staker_reward);
-        //     }
+            // TODO: add negative test for this.
+            T::Currency::deposit_into_existing(&account, reward_sum)
+                .map_err(|_| Error::<T>::InternalClaimStakerError)?;
 
-        //     T::Currency::deposit_into_existing(&account, reward_sum)
-        //         .map_err(|_| Error::<T>::InternalClaimStakerError)?;
+            Self::update_ledger(&account, ledger);
 
-        //     Self::update_ledger(&account, ledger);
+            rewards.into_iter().for_each(|(era, reward)| {
+                Self::deposit_event(Event::<T>::Reward {
+                    account: account.clone(),
+                    era,
+                    amount: reward,
+                });
+            });
 
-        //     rewards.into_iter().for_each(|(era, reward)| {
-        //         Self::deposit_event(Event::<T>::Reward {
-        //             account: account.clone(),
-        //             era,
-        //             amount: reward,
-        //         });
-        //     });
-
-        //     Ok(())
-        // }
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
