@@ -29,12 +29,14 @@ while getopts 'bc:fo:p:v' flag; do
       skip_build='true'
       ;;
     c)
-      chain=$(echo ${OPTARG} | tr '[:upper:]' '[:lower:]')
-      chains=("astar-dev" "shiden-dev" "shibuya-dev" "dev")
-      if [[ ! " ${chains[*]} " =~ " ${chain} " ]]; then
-        echo "Chain input is invalid. not included in ${chains[*]}"
-        exit 1
-      fi
+      chains=$(echo ${OPTARG} | tr '[:upper:]' '[:lower:]')
+      chains_default=("astar-dev" "shiden-dev" "shibuya-dev" "dev")
+      for chain in ${chains//,/ }; do
+        if [[ ! " ${chains_default[*]} " =~ " ${chain} " ]]; then
+          echo "Chain input is invalid. ${chain} not included in ${chains_default[*]}"
+          exit 1
+        fi
+      done
       ;;
     f)
       # Fail if any sub-command in a pipe fails, not just the last one.
@@ -100,54 +102,62 @@ fi
 
 echo "[+] Benchmarking ${#PALLETS[@]} Astar collator pallets."
 
-# Define the error file.
-ERR_FILE="$output_path/bench_errors.txt"
-# Delete the error file before each run.
-rm -f $ERR_FILE
+ERR_RC=0
+ERR_FILES=""
+for chain in ${chains//,/ }; do
+    mkdir $output_path/$chain
+    # Define the error file.
+    ERR_FILE="$output_path/$chain/bench_errors.txt"
+    # Delete the error file before each run.
+    rm -f $ERR_FILE
 
-# Benchmark each pallet.
-for PALLET in "${PALLETS[@]}"; do
-  NAME=${PALLET#*_};
-  # WEIGHT_FILE="./weights/${FOLDER}/weights.rs"
-  WEIGHT_FILE="$output_path/${NAME}_weights.rs"
-  echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
+    # Benchmark each pallet.
+    for PALLET in "${PALLETS[@]}"; do
+      NAME_PRFX=${PALLET#*_}
+      NAME=${NAME_PRFX//::/_}
+      # WEIGHT_FILE="./weights/${FOLDER}/weights.rs"
+      WEIGHT_FILE="$output_path/$chain/${NAME}_weights.rs"
+      echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
-  OUTPUT=$(
-    $ASTAR_COLLATOR benchmark pallet \
-    --chain=$chain \
-    --steps=50 \
-    --repeat=20 \
-    --pallet="$PALLET" \
-    --extrinsic="*" \
-    --execution=wasm \
-    --wasm-execution=compiled \
-    --heap-pages=4096 \
-    --output="$WEIGHT_FILE" \
-    --template=./scripts/templates/weight-template.hbs 2>&1
-  )
-  if [ $? -ne 0 ]; then
-    echo "$OUTPUT" >> "$ERR_FILE"
-    echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
-  fi
+      OUTPUT=$(
+        $ASTAR_COLLATOR benchmark pallet \
+        --chain=$chain \
+        --steps=50 \
+        --repeat=20 \
+        --pallet="$PALLET" \
+        --extrinsic="*" \
+        --execution=wasm \
+        --wasm-execution=compiled \
+        --heap-pages=4096 \
+        --output="$WEIGHT_FILE" \
+        --template=./scripts/templates/weight-template.hbs 2>&1
+      )
+      if [ $? -ne 0 ]; then
+        echo "$OUTPUT" >> "$ERR_FILE"
+        echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
+      fi
+    done
+
+    echo "[+] Benchmarking the machine..."
+    OUTPUT=$(
+      $ASTAR_COLLATOR benchmark machine --chain=$chain 2>&1
+    )
+    if [ $? -ne 0 ]; then
+      echo "[-] Failed the machine benchmark"
+      echo "$OUTPUT" >> "$ERR_FILE"
+    else
+      echo "$OUTPUT" >> "$output_path/$chain/$chain-machine-bench.txt"
+    fi
+
+    # Check if the error file exists.
+    if [ -f "$ERR_FILE" ]; then
+      ERR_FILES="$ERR_FILES $ERR_FILE"
+      ERR_RC=1
+    fi
 done
 
-echo "[+] Benchmarking the machine..."
-OUTPUT=$(
-  $ASTAR_COLLATOR benchmark machine --chain=$chain 2>&1
-)
-if [ $? -ne 0 ]; then
-  # Do not write the error to the error file since it is not a benchmarking error.
-  echo "[-] Failed the machine benchmark"
-  echo "$OUTPUT" >> "$ERR_FILE"
+if [ $ERR_RC -ne 0 ]; then
+    echo "[-] Benchmarks failed: $ERR_FILES"
 else
-  echo "$OUTPUT" >> "$output_path/machine-bench.txt"
-fi
-
-# Check if the error file exists.
-if [ -f "$ERR_FILE" ]; then
-  echo "[-] Some benchmarks failed. See: $ERR_FILE"
-  exit 1
-else
-  echo "[+] All benchmarks passed."
-  exit 0
+    echo "[+] All benchmarks passed."
 fi
