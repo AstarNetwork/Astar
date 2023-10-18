@@ -78,12 +78,15 @@ impl PeriodType {
     }
 }
 
-/// Wrapper type around current `PeriodType` and era number when it's expected to end.
+/// Info about the ongoing period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct PeriodInfo {
+    /// Period number. Increments after each build&earn period type.
     #[codec(compact)]
     pub number: PeriodNumber,
+    /// Subperiod type.
     pub period_type: PeriodType,
+    /// Last ear of the sub-period, after this a new sub-period should start.
     #[codec(compact)]
     pub ending_era: EraNumber,
 }
@@ -105,13 +108,16 @@ impl PeriodInfo {
     }
 }
 
-// TODO: doc
+/// Information describing relevant information for a finished period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct PeriodEndInfo {
+    /// Bonus reward pool allocated for 'loyal' stakers
     #[codec(compact)]
     pub bonus_reward_pool: Balance,
+    /// Total amount staked (remaining) from the voting period.
     #[codec(compact)]
     pub total_vp_stake: Balance,
+    /// Final era, inclusive, in which the period ended.
     #[codec(compact)]
     pub final_era: EraNumber,
 }
@@ -132,14 +138,11 @@ pub struct ProtocolState<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen> {
     #[codec(compact)]
     pub era: EraNumber,
     /// Block number at which the next era should start.
-    /// TODO: instead of abusing on-initialize and wasting block-space,
-    /// I believe we should utilize `pallet-scheduler` to schedule the next era. Make an item for this.
     #[codec(compact)]
     pub next_era_start: BlockNumber,
-    /// Ongoing period type and when is it expected to end.
+    /// Information about the ongoing period.
     pub period_info: PeriodInfo,
     /// `true` if pallet is in maintenance mode (disabled), `false` otherwise.
-    /// TODO: provide some configurable barrier to handle this on the runtime level instead? Make an item for this?
     pub maintenance: bool,
 }
 
@@ -165,7 +168,7 @@ impl<BlockNumber> ProtocolState<BlockNumber>
 where
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
 {
-    /// Current period type.
+    /// Current sub-period type.
     pub fn period_type(&self) -> PeriodType {
         self.period_info.period_type
     }
@@ -230,8 +233,10 @@ pub struct DAppInfo<AccountId> {
 /// How much was unlocked in some block.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct UnlockingChunk<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+    /// Amount undergoing the unlocking period.
     #[codec(compact)]
     pub amount: Balance,
+    /// Block in which the unlocking period is finished.
     #[codec(compact)]
     pub unlock_block: BlockNumber,
 }
@@ -257,16 +262,19 @@ pub struct AccountLedger<
 > {
     /// How much active locked amount an account has.
     pub locked: Balance,
-    /// How much started unlocking on a certain block
+    /// Vector of all the unlocking chunks.
     pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
-    /// How much user has/had staked in a particular era.
+    /// Primary field used to store how much was staked in a particular era.
     pub staked: StakeAmount,
-    /// Helper staked amount to keep track of future era stakes.
+    /// Secondary field used to store 'stake' information for the 'next era'.
+    /// This is needed since stake amount is only applicable from the next era after it's been staked.
+    ///
     /// Both `stake` and `staked_future` must ALWAYS refer to the same period.
+    /// If `staked_future` is `Some`, it will always be **EXACTLY** one era after the `staked` field era.
     pub staked_future: Option<StakeAmount>,
-    /// TODO
+    /// Indicator whether staker rewards for the entire period have been claimed.
     pub staker_rewards_claimed: bool,
-    /// TODO
+    /// Indicator whether bonus rewards for the period has been claimed.
     pub bonus_reward_claimed: bool,
 }
 
@@ -422,21 +430,16 @@ where
         }
     }
 
-    // TODO
-    pub fn staked_amount_for_type(
-        &self,
-        period_type: PeriodType,
-        active_period: PeriodNumber,
-    ) -> Balance {
+    /// How much is staked for the specified period type, in respect to the specified era.
+    // TODO: if period is force-ended, this could be abused to get bigger rewards. I need to make the check more strict when claiming bonus rewards!
+    pub fn staked_amount_for_type(&self, period_type: PeriodType, period: PeriodNumber) -> Balance {
         // First check the 'future' entry, afterwards check the 'first' entry
         match self.staked_future {
-            Some(stake_amount) if stake_amount.period == active_period => {
+            Some(stake_amount) if stake_amount.period == period => {
                 stake_amount.for_type(period_type)
             }
             _ => match self.staked {
-                stake_amount if stake_amount.period == active_period => {
-                    stake_amount.for_type(period_type)
-                }
+                stake_amount if stake_amount.period == period => stake_amount.for_type(period_type),
                 _ => Balance::zero(),
             },
         }
@@ -445,9 +448,13 @@ where
     // TODO: update this
     /// Adds the specified amount to total staked amount, if possible.
     ///
-    /// Staking is only allowed if one of the two following conditions is met:
-    /// 1. Staker is staking again in the period in which they already staked.
-    /// 2. Staker is staking for the first time in this period, and there are no staking chunks from the previous eras.
+    /// Staking can only be done for the ongoing period, and era.
+    /// 1. The `period` requirement enforces staking in the ongoing period.
+    /// 2. The `era` requirement enforces staking in the ongoing era.
+    ///
+    /// The 2nd condition is needed to prevent stakers from building a significant histort of stakes,
+    /// without claiming the rewards. So if a historic era exists as an entry, stakers will first need to claim
+    /// the pending rewards, before they can stake again.
     ///
     /// Additonally, the staked amount must not exceed what's available for staking.
     pub fn add_stake_amount(
@@ -460,7 +467,6 @@ where
             return Ok(());
         }
 
-        // TODO: maybe the check can be nicer?
         if !self.staked.is_empty() {
             // In case entry for the current era exists, it must match the era exactly.
             if self.staked.era != era {
@@ -503,8 +509,9 @@ where
 
     /// Subtracts the specified amount from the total staked amount, if possible.
     ///
-    /// Unstaking will reduce total stake for the current era, and next era(s).
-    /// The specified amount must not exceed what's available for staking.
+    /// Unstake can only be called if the entry for the current era exists.
+    /// In case historic entry exists, rewards first need to be claimed, before unstaking is possible.
+    /// Similar as with stake functionality, this is to prevent staker from building a significant history of stakes.
     pub fn unstake_amount(
         &mut self,
         amount: Balance,
@@ -515,7 +522,7 @@ where
             return Ok(());
         }
 
-        // TODO: maybe the check can be nicer? (and not duplicated?)
+        // TODO: this is a duplicated check, maybe I should extract it into a function?
         if !self.staked.is_empty() {
             // In case entry for the current era exists, it must match the era exactly.
             if self.staked.era != era {
@@ -588,7 +595,7 @@ where
         &mut self,
         era: EraNumber,
         period_end: Option<EraNumber>,
-    ) -> Result<RewardsIter, AccountLedgerError> {
+    ) -> Result<EraStakePairIter, AccountLedgerError> {
         if self.staker_rewards_claimed {
             return Err(AccountLedgerError::AlreadyClaimed);
         }
@@ -620,7 +627,7 @@ where
             ((self.staked.era, era, self.staked.total()), None)
         };
 
-        let result = RewardsIter::new(span, maybe_other);
+        let result = EraStakePairIter::new(span, maybe_other);
 
         // Rollover future to 'current' stake amount
         if let Some(stake_amount) = self.staked_future.take() {
@@ -688,16 +695,30 @@ where
     }
 }
 
-// TODO: docs & test
+/// Helper internal struct for iterating over `(era, stake amount)` pairs.
+///
+/// Due to how `AccountLedger` is implemented, few scenarios are possible when claming rewards:
+///
+/// 1. `staked` has some amount, `staked_future` is `None`
+///   * `maybe_other` is `None`, span describes the entire range
+/// 2. `staked` has nothing, `staked_future` is some and has some amount
+///   * `maybe_other` is `None`, span describes the entire range
+/// 3. `staked` has some amount, `staked_future` has some amount
+///   * `maybe_other` is `Some` and covers the `staked` entry, span describes the entire range except the first pair.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct RewardsIter {
+pub struct EraStakePairIter {
+    /// Denotes whether the first entry is different than the others.
     maybe_other: Option<(EraNumber, Balance)>,
+    /// Starting era of the span.
     start_era: EraNumber,
+    /// Ending era of the span.
     end_era: EraNumber,
+    /// Staked amount in the span.
     amount: Balance,
 }
 
-impl RewardsIter {
+impl EraStakePairIter {
+    /// Create new iterator struct for `(era, staked amount)` pairs.
     pub fn new(
         span: (EraNumber, EraNumber, Balance),
         maybe_other: Option<(EraNumber, Balance)>,
@@ -718,7 +739,7 @@ impl RewardsIter {
     }
 }
 
-impl Iterator for RewardsIter {
+impl Iterator for EraStakePairIter {
     type Item = (EraNumber, Balance);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -738,7 +759,7 @@ impl Iterator for RewardsIter {
     }
 }
 
-// TODO
+/// Describes stake amount in an particular era/period.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct StakeAmount {
     /// Amount of staked funds accounting for the voting period.
@@ -771,6 +792,7 @@ impl StakeAmount {
         }
     }
 
+    /// `true` if nothing is stked, `false` otherwise
     pub fn is_empty(&self) -> bool {
         self.voting.is_zero() && self.build_and_earn.is_zero()
     }
@@ -1019,13 +1041,13 @@ impl ContractStakeAmountSeries {
         self.0.is_empty()
     }
 
-    // TODO
-    pub fn last_stake_period(&self) -> Option<PeriodNumber> {
+    /// Latest period for which stake entry exists.
+    pub fn latest_stake_period(&self) -> Option<PeriodNumber> {
         self.0.last().map(|x| x.period)
     }
 
-    // TODO
-    pub fn last_stake_era(&self) -> Option<EraNumber> {
+    /// Latest era for which stake entry exists.
+    pub fn latest_stake_era(&self) -> Option<EraNumber> {
         self.0.last().map(|x| x.era)
     }
 

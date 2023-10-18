@@ -529,8 +529,11 @@ pub(crate) fn assert_stake(
         "Staked amount must increase by the 'amount'"
     );
 
-    assert_eq!(post_contract_stake.last_stake_period(), Some(stake_period));
-    assert_eq!(post_contract_stake.last_stake_era(), Some(stake_era));
+    assert_eq!(
+        post_contract_stake.latest_stake_period(),
+        Some(stake_period)
+    );
+    assert_eq!(post_contract_stake.latest_stake_era(), Some(stake_era));
 
     // 4. verify era info
     // =========================
