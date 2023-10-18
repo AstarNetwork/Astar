@@ -28,9 +28,9 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly,
-        FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced,
-        WithdrawReasons,
+        fungible::ItemOf, AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize,
+        OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -53,7 +53,7 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
+use sp_core::{ConstBool, ConstU128, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -1441,7 +1441,9 @@ mod benches {
         [pallet_xvm, Xvm]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [pallet_unified_accounts, UnifiedAccounts]
-        [astar_xcm_benchmarks, astar_xcm_benchmarks::Pallet::<Runtime>]
+        [astar_xcm_benchmarks::generic, astar_xcm_benchmarks::generic::Pallet::<Runtime>]
+        [astar_xcm_benchmarks::fungible::balances, astar_xcm_benchmarks::fungible::balances::Pallet::<Runtime>]
+        [astar_xcm_benchmarks::fungible::assets, astar_xcm_benchmarks::fungible::assets::Pallet::<Runtime>]
     );
 }
 
@@ -1926,11 +1928,17 @@ impl_runtime_apis! {
             use baseline::Pallet as BaselineBench;
             use xcm_config::{XcmConfig, LocationToAccountId};
             use xcm::latest::prelude::*;
+            use xcm_builder::MintLocation;
+            use sp_runtime::AccountId32;
 
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
-            use frame_support::traits::WhitelistedStorageKeys;
+            parameter_types! {
+                pub const NoCheckingAccount: Option<(<Runtime as frame_system::Config>::AccountId, MintLocation)> = None;
+                pub const NoTeleporter: Option<(xcm::latest::MultiLocation, xcm::latest::MultiAsset)> = None;
+            }
+            use frame_support::{traits::WhitelistedStorageKeys,assert_ok};
             impl astar_xcm_benchmarks::Config for Runtime {
                 type XcmConfig = XcmConfig;
                 type AccountIdConverter = LocationToAccountId;
@@ -2023,6 +2031,50 @@ impl_runtime_apis! {
                 ) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
                     // Shibuya doesn't support exporting messages
                     Err(BenchmarkError::Skip)
+                }
+            }
+
+            impl astar_xcm_benchmarks::fungible::balances::Config for Runtime {
+                type TransactAsset = Balances;
+
+                /// The account used to check assets being teleported.
+                type CheckedAccount = NoCheckingAccount;
+
+                /// A trusted location which we allow teleports from, and the asset we allow to teleport.
+                type TrustedTeleporter = NoTeleporter;
+
+                /// Give me a fungible asset that your asset transactor is going to accept.
+                fn get_multi_asset() -> MultiAsset {
+                MultiAsset {
+                    id: Concrete(Here.into()),
+                    fun: Fungible(u128::MAX),
+                }
+                }
+            }
+
+            impl astar_xcm_benchmarks::fungible::assets::Config for Runtime {
+                type TransactAsset = ItemOf<Assets, ConstU128<1>, AccountId>;
+
+                /// The account used to check assets being teleported.
+                type CheckedAccount = NoCheckingAccount;
+
+                /// A trusted location which we allow teleports from, and the asset we allow to teleport.
+                type TrustedTeleporter = NoTeleporter;
+
+                /// Give me a fungible asset that your asset transactor is going to accept.
+                fn get_multi_asset() -> MultiAsset {
+                    // send some token to alice for existential deposit
+
+                    // create an asset
+                    assert_ok!(pallet_assets::Pallet::<Runtime>::force_create(RuntimeOrigin::root(),parity_scale_codec::Compact(1),sp_runtime::MultiAddress::Id(AccountId32::new([0u8; 32])),true,1));
+                    let location = MultiLocation { parents : 0, interior :X1(GeneralIndex(1)) };
+                    // convert mapping for asset id
+                    assert_ok!(pallet_xc_asset_config::Pallet::<Runtime>::register_asset_location(RuntimeOrigin::root(),Box::new(location.clone().into_versioned()),1));
+
+                MultiAsset {
+                    id: Concrete(location),
+                    fun: Fungible(100_000_000_000u128),
+                }
                 }
             }
 

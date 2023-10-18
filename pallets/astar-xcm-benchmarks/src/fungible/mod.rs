@@ -17,35 +17,6 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
-// Benchmarking for the `AssetTransactor` trait via `Fungible`.
 
-pub use pallet::*;
-
-#[cfg(feature = "runtime-benchmarks")]
-pub mod benchmarking;
-#[cfg(test)]
-mod mock;
-
-#[frame_support::pallet]
-pub mod pallet {
-    use frame_support::pallet_prelude::Get;
-    #[pallet::config]
-    pub trait Config<I: 'static = ()>: frame_system::Config + crate::Config {
-        /// The type of `fungible` that is being used under the hood.
-        ///
-        /// This is useful for testing and checking.
-        type TransactAsset: frame_support::traits::fungible::Mutate<Self::AccountId>;
-
-        /// The account used to check assets being teleported.
-        type CheckedAccount: Get<Option<(Self::AccountId, xcm_builder::MintLocation)>>;
-
-        /// A trusted location which we allow teleports from, and the asset we allow to teleport.
-        type TrustedTeleporter: Get<Option<(xcm::latest::MultiLocation, xcm::latest::MultiAsset)>>;
-
-        /// Give me a fungible asset that your asset transactor is going to accept.
-        fn get_multi_asset() -> xcm::latest::MultiAsset;
-    }
-
-    #[pallet::pallet]
-    pub struct Pallet<T, I = ()>(_);
-}
+pub mod assets;
+pub mod balances;
