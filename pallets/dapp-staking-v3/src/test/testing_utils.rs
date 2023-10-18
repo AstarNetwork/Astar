@@ -831,18 +831,68 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
     let post_ledger = post_snapshot.ledger.get(&account).unwrap();
 
     if is_full_claim {
-        assert!(post_ledger.staked.is_empty());
-        assert!(post_ledger.staked_future.is_none());
+        assert!(post_ledger.staker_rewards_claimed);
     } else {
         assert_eq!(post_ledger.staked.era, last_claim_era + 1);
         // TODO: expand check?
     }
 }
 
+/// Claim staker rewards.
+pub(crate) fn assert_claim_bonus_reward(account: AccountId) {
+    let pre_snapshot = MemorySnapshot::new();
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let pre_total_issuance = <Test as Config>::Currency::total_issuance();
+    let pre_free_balance = <Test as Config>::Currency::free_balance(&account);
+
+    let staked_period = pre_ledger
+        .staked_period()
+        .expect("Must have a staked period.");
+    let stake_amount = pre_ledger.staked_amount_for_type(PeriodType::Voting, staked_period);
+
+    let period_end_info = pre_snapshot
+        .period_end
+        .get(&staked_period)
+        .expect("Entry must exist, since it's a past period.");
+
+    let reward = Perbill::from_rational(stake_amount, period_end_info.total_vp_stake)
+        * period_end_info.bonus_reward_pool;
+
+    // Unstake from smart contract & verify event(s)
+    assert_ok!(DappStaking::claim_bonus_reward(RuntimeOrigin::signed(
+        account
+    ),));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::BonusReward {
+        account,
+        period: staked_period,
+        amount: reward,
+    }));
+
+    // Verify post state
+
+    let post_total_issuance = <Test as Config>::Currency::total_issuance();
+    assert_eq!(
+        post_total_issuance,
+        pre_total_issuance + reward,
+        "Total issuance must increase by the reward amount."
+    );
+
+    let post_free_balance = <Test as Config>::Currency::free_balance(&account);
+    assert_eq!(
+        post_free_balance,
+        pre_free_balance + reward,
+        "Free balance must increase by the reward amount."
+    );
+
+    let post_snapshot = MemorySnapshot::new();
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+}
+
 /// Returns from which starting era to which ending era can rewards be claimed for the specified account.
 ///
 /// If `None` is returned, there is nothing to claim.
-/// Doesn't consider reward expiration.
+///
+/// **NOTE:** Doesn't consider reward expiration.
 pub(crate) fn claimable_reward_range(account: AccountId) -> Option<(EraNumber, EraNumber)> {
     let ledger = Ledger::<Test>::get(&account);
     let protocol_state = ActiveProtocolState::<Test>::get();

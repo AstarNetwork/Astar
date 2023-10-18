@@ -206,6 +206,11 @@ pub mod pallet {
             era: EraNumber,
             amount: Balance,
         },
+        BonusReward {
+            account: T::AccountId,
+            period: PeriodNumber,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -259,8 +264,14 @@ pub mod pallet {
         StakerRewardsExpired,
         /// There are no claimable rewards for the account.
         NoClaimableRewards,
-        /// An unexpected error occured while trying to claim rewards.
+        /// An unexpected error occured while trying to claim staker rewards.
         InternalClaimStakerError,
+        /// Bonus rewards have already been claimed.
+        BonusRewardAlreadyClaimed,
+        /// Account is has no eligible stake amount for bonus reward.
+        NotEligibleForBonusReward,
+        /// An unexpected error occured while trying to claim bonus reward.
+        InternalClaimBonusError,
     }
 
     /// General information about dApp staking protocol state.
@@ -1011,7 +1022,11 @@ pub mod pallet {
             // TODO: how do we handle expired rewards? Add an additional call to clean them up?
             // Putting this logic inside existing calls will add even more complexity.
 
-            // Check if the rewards have expired
+            ensure!(
+                !ledger.staker_rewards_claimed,
+                Error::<T>::NoClaimableRewards
+            ); // TODO: maybe different error type?
+               // Check if the rewards have expired
             let staked_period = ledger
                 .staked_period()
                 .ok_or(Error::<T>::NoClaimableRewards)?;
@@ -1073,7 +1088,7 @@ pub mod pallet {
                 reward_sum.saturating_accrue(staker_reward);
             }
 
-            // TODO: add negative test for this.
+            // TODO: add negative test for this?
             T::Currency::deposit_into_existing(&account, reward_sum)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
 
@@ -1085,6 +1100,78 @@ pub mod pallet {
                     era,
                     amount: reward,
                 });
+            });
+
+            Ok(())
+        }
+
+        /// TODO
+        #[pallet::call_index(12)]
+        #[pallet::weight(Weight::zero())]
+        pub fn claim_bonus_reward(origin: OriginFor<T>) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let mut ledger = Ledger::<T>::get(&account);
+
+            ensure!(
+                !ledger.staker_rewards_claimed,
+                Error::<T>::BonusRewardAlreadyClaimed
+            );
+            // Check if the rewards have expired
+            let staked_period = ledger
+                .staked_period()
+                .ok_or(Error::<T>::NoClaimableRewards)?;
+            ensure!(
+                staked_period
+                    >= protocol_state
+                        .period_number()
+                        .saturating_sub(T::RewardRetentionInPeriods::get()),
+                Error::<T>::StakerRewardsExpired
+            );
+
+            // Check if period has ended
+            ensure!(
+                staked_period < protocol_state.period_number(),
+                Error::<T>::NoClaimableRewards
+            );
+
+            // Check if user is applicable for bonus reward
+            let eligible_amount =
+                ledger
+                    .claim_bonus_reward(staked_period)
+                    .map_err(|err| match err {
+                        AccountLedgerError::NothingToClaim => Error::<T>::NoClaimableRewards,
+                        _ => Error::<T>::InternalClaimBonusError,
+                    })?;
+            ensure!(
+                !eligible_amount.is_zero(),
+                Error::<T>::NotEligibleForBonusReward
+            );
+
+            let period_end_info =
+                PeriodEnd::<T>::get(&staked_period).ok_or(Error::<T>::InternalClaimBonusError)?;
+            // Defensive check, situation should never happen.
+            ensure!(
+                !period_end_info.total_vp_stake.is_zero(),
+                Error::<T>::InternalClaimBonusError
+            );
+
+            let bonus_reward =
+                Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
+                    * period_end_info.bonus_reward_pool;
+
+            // TODO: add negative test for this?
+            T::Currency::deposit_into_existing(&account, bonus_reward)
+                .map_err(|_| Error::<T>::InternalClaimStakerError)?;
+
+            Self::update_ledger(&account, ledger);
+
+            Self::deposit_event(Event::<T>::BonusReward {
+                account: account.clone(),
+                period: staked_period,
+                amount: bonus_reward,
             });
 
             Ok(())

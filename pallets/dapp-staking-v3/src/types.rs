@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+// TODO: docs
+
 use frame_support::{pallet_prelude::*, BoundedVec};
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
@@ -53,6 +55,8 @@ pub enum AccountLedgerError {
     UnstakeAmountLargerThanStake,
     /// Nothing to claim.
     NothingToClaim,
+    /// Rewards have already been claimed
+    AlreadyClaimed,
 }
 
 // TODO: rename to SubperiodType? It would be less ambigious.
@@ -418,6 +422,7 @@ where
         }
     }
 
+    // TODO
     pub fn staked_amount_for_type(
         &self,
         period_type: PeriodType,
@@ -556,7 +561,7 @@ where
         Ok(())
     }
 
-    // TODO
+    /// Period for which account has staking information or `None` if no staking information exists.
     pub fn staked_period(&self) -> Option<PeriodNumber> {
         if self.staked.is_empty() {
             self.staked_future.map(|stake_amount| stake_amount.period)
@@ -565,7 +570,7 @@ where
         }
     }
 
-    // TODO
+    /// Earliest era for which the account has staking information or `None` if no staking information exists.
     pub fn earliest_staked_era(&self) -> Option<EraNumber> {
         if self.staked.is_empty() {
             self.staked_future.map(|stake_amount| stake_amount.era)
@@ -574,8 +579,9 @@ where
         }
     }
 
-    /// Claim up stake chunks up to the specified `era`.
-    /// Returns the vector describing claimable chunks.
+    /// 'Claim' rewards up to the specified era.
+    /// Returns an iterator over the `(era, amount)` pairs, where `amount`
+    /// describes the staked amount eligible for reward in the appropriate era.
     ///
     /// If `period_end` is provided, it's used to determine whether all applicable chunks have been claimed.
     pub fn claim_up_to_era(
@@ -583,6 +589,10 @@ where
         era: EraNumber,
         period_end: Option<EraNumber>,
     ) -> Result<RewardsIter, AccountLedgerError> {
+        if self.staker_rewards_claimed {
+            return Err(AccountLedgerError::AlreadyClaimed);
+        }
+
         // Main entry exists, but era isn't 'in history'
         if !self.staked.is_empty() && era <= self.staked.era {
             return Err(AccountLedgerError::NothingToClaim);
@@ -622,14 +632,59 @@ where
         match period_end {
             Some(ending_era) if era >= ending_era => {
                 self.staker_rewards_claimed = true;
-                // TODO: probably not the right thing to do, need to check if pending bonus rewards need to be claimed as well
-                self.staked = Default::default();
-                self.staked_future = None;
+                self.maybe_cleanup_stake_entries();
             }
             _ => (),
         }
 
         Ok(result)
+    }
+
+    /// Claim bonus reward, if possible.
+    ///
+    /// Returns the amount eligible for bonus reward calculation, or an error.
+    pub fn claim_bonus_reward(
+        &mut self,
+        period: PeriodNumber,
+    ) -> Result<Balance, AccountLedgerError> {
+        if self.bonus_reward_claimed {
+            return Err(AccountLedgerError::AlreadyClaimed);
+        }
+
+        let amount = self.staked_amount_for_type(PeriodType::Voting, period);
+
+        if amount.is_zero() {
+            Err(AccountLedgerError::NothingToClaim)
+        } else {
+            self.bonus_reward_claimed = true;
+            self.maybe_cleanup_stake_entries();
+            Ok(amount)
+        }
+    }
+
+    /// Cleanup fields related to stake & rewards, in case all possible rewards for the current state
+    /// have been claimed.
+    fn maybe_cleanup_stake_entries(&mut self) {
+        // Stake rewards are either all claimed, or there's nothing to claim.
+        let stake_cleanup =
+            self.staker_rewards_claimed || (self.staked.is_empty() && self.staked_future.is_none());
+
+        // Bonus reward might be covered by the 'future' entry.
+        let has_future_entry_stake = if let Some(stake_amount) = self.staked_future {
+            !stake_amount.voting.is_zero()
+        } else {
+            false
+        };
+        // Either rewards have already been claimed, or there are no possible bonus rewards to claim.
+        let bonus_cleanup =
+            self.bonus_reward_claimed || self.staked.voting.is_zero() && !has_future_entry_stake;
+
+        if stake_cleanup && bonus_cleanup {
+            self.staked = Default::default();
+            self.staked_future = None;
+            self.staker_rewards_claimed = false;
+            self.bonus_reward_claimed = false;
+        }
     }
 }
 
