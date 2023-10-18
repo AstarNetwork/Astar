@@ -16,8 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-mod pallet_xcm_benchmarks_fungible;
-mod pallet_xcm_benchmarks_generic;
+mod fungible_assets_benchmarks;
+mod fungible_balances_benchmarks;
+mod generic_benchmarks;
 
 use crate::Runtime;
 use frame_support::weights::Weight;
@@ -29,11 +30,18 @@ use xcm::{
 
 use astar_primitives::xcm::MAX_ASSETS;
 use core::cmp::min;
-use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
-use pallet_xcm_benchmarks_generic::WeightInfo as XcmGeneric;
+use fungible_assets_benchmarks::WeightInfo as XcmFungibleAssetsWeight;
+use fungible_balances_benchmarks::WeightInfo as XcmFungibleBalancesWeight;
+use generic_benchmarks::WeightInfo as XcmGeneric;
 
 trait WeighMultiAssets {
     fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight;
+}
+
+impl WeighMultiAssets for MultiAssets {
+    fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight {
+        weight.saturating_mul(self.inner().into_iter().count() as u64)
+    }
 }
 
 trait WeighMultiAssetsFilter {
@@ -54,25 +62,25 @@ impl WeighMultiAssetsFilter for MultiAssetFilter {
     }
 }
 
-impl WeighMultiAssets for MultiAssets {
-    fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight {
-        weight.saturating_mul(self.inner().into_iter().count() as u64)
-    }
-}
-
 pub struct ShibuyaXcmWeight<RuntimeCall>(core::marker::PhantomData<RuntimeCall>);
 impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
     fn withdraw_asset(assets: &MultiAssets) -> XCMWeight {
-        assets.inner().iter().fold(Weight::zero(), |acc, _asset| {
-            acc.saturating_add(XcmFungibleWeight::<Runtime>::withdraw_asset())
-        })
+        assets.weigh_multi_assets(
+            XcmFungibleBalancesWeight::<Runtime>::withdraw_asset()
+                .max(XcmFungibleAssetsWeight::<Runtime>::withdraw_asset()),
+        )
     }
-    // Currently there is no trusted reserve
-    fn reserve_asset_deposited(_assets: &MultiAssets) -> XCMWeight {
-        XcmFungibleWeight::<Runtime>::reserve_asset_deposited()
+    fn reserve_asset_deposited(assets: &MultiAssets) -> XCMWeight {
+        assets.weigh_multi_assets(
+            XcmFungibleBalancesWeight::<Runtime>::reserve_asset_deposited()
+                .max(XcmFungibleAssetsWeight::<Runtime>::reserve_asset_deposited()),
+        )
     }
     fn receive_teleported_asset(assets: &MultiAssets) -> XCMWeight {
-        assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())
+        assets.weigh_multi_assets(
+            XcmFungibleBalancesWeight::<Runtime>::receive_teleported_asset()
+                .max(XcmFungibleAssetsWeight::<Runtime>::receive_teleported_asset()),
+        )
     }
     fn query_response(
         _query_id: &u64,
@@ -83,18 +91,20 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
         XcmGeneric::<Runtime>::query_response()
     }
     fn transfer_asset(assets: &MultiAssets, _dest: &MultiLocation) -> XCMWeight {
-        assets.inner().iter().fold(Weight::zero(), |acc, _asset| {
-            acc.saturating_add(XcmFungibleWeight::<Runtime>::transfer_asset())
-        })
+        assets.weigh_multi_assets(
+            XcmFungibleBalancesWeight::<Runtime>::transfer_asset()
+                .max(XcmFungibleAssetsWeight::<Runtime>::transfer_asset()),
+        )
     }
     fn transfer_reserve_asset(
         assets: &MultiAssets,
         _dest: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
-        assets.inner().iter().fold(Weight::zero(), |acc, _asset| {
-            acc.saturating_add(XcmFungibleWeight::<Runtime>::transfer_reserve_asset())
-        })
+        assets.weigh_multi_assets(
+            XcmFungibleBalancesWeight::<Runtime>::transfer_reserve_asset()
+                .max(XcmFungibleAssetsWeight::<Runtime>::transfer_reserve_asset()),
+        )
     }
     fn transact(
         _origin_type: &OriginKind,
@@ -129,14 +139,20 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
         XcmGeneric::<Runtime>::report_error()
     }
     fn deposit_asset(assets: &MultiAssetFilter, _dest: &MultiLocation) -> XCMWeight {
-        assets.weigh_multi_assets_filter(XcmFungibleWeight::<Runtime>::deposit_asset())
+        assets.weigh_multi_assets_filter(
+            XcmFungibleBalancesWeight::<Runtime>::deposit_asset()
+                .max(XcmFungibleAssetsWeight::<Runtime>::deposit_asset()),
+        )
     }
     fn deposit_reserve_asset(
         assets: &MultiAssetFilter,
         _dest: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
-        assets.weigh_multi_assets_filter(XcmFungibleWeight::<Runtime>::deposit_reserve_asset())
+        assets.weigh_multi_assets_filter(
+            XcmFungibleBalancesWeight::<Runtime>::deposit_reserve_asset()
+                .max(XcmFungibleAssetsWeight::<Runtime>::deposit_reserve_asset()),
+        )
     }
     fn exchange_asset(
         _give: &MultiAssetFilter,
@@ -150,17 +166,19 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
         _reserve: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
+        /// TODO: Clear wrong
         // This is not correct. initiate reserve withdraw does not to that many db reads
         // the only thing it does based on number of assets is a take from a local variable
         //assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw())
-        XcmFungibleWeight::<Runtime>::initiate_reserve_withdraw()
+        XcmGeneric::<Runtime>::initiate_reserve_withdraw()
     }
     fn initiate_teleport(
         _assets: &MultiAssetFilter,
         _dest: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
-        XcmFungibleWeight::<Runtime>::initiate_teleport()
+        // max weight
+        XcmFungibleBalancesWeight::<Runtime>::initiate_teleport()
     }
     fn report_holding(_response_info: &QueryResponseInfo, _assets: &MultiAssetFilter) -> Weight {
         XcmGeneric::<Runtime>::report_holding()
@@ -193,9 +211,12 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
         XcmGeneric::<Runtime>::unsubscribe_version()
     }
     fn burn_asset(assets: &MultiAssets) -> Weight {
+        //TODO: This should not be multiploed by assets, we are already burning worse case
+        // assets
         assets.weigh_multi_assets(XcmGeneric::<Runtime>::burn_asset())
     }
     fn expect_asset(assets: &MultiAssets) -> Weight {
+        // TODO same here
         assets.weigh_multi_assets(XcmGeneric::<Runtime>::expect_asset())
     }
     fn expect_origin(_origin: &Option<MultiLocation>) -> Weight {

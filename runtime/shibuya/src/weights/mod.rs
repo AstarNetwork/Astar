@@ -19,3 +19,4 @@
 pub mod pallet_assets;
 pub mod pallet_balances;
 pub mod pallet_xcm;
+pub mod xcm_instruction_benchmarks;
