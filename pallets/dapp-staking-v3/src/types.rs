@@ -276,6 +276,7 @@ pub struct AccountLedger<
     pub staker_rewards_claimed: bool,
     /// Indicator whether bonus rewards for the period has been claimed.
     pub bonus_reward_claimed: bool,
+    // TODO: introduce a variable which keeps track of on how many contracts this account has stake entries for.
 }
 
 impl<BlockNumber, UnlockingLen> Default for AccountLedger<BlockNumber, UnlockingLen>
@@ -445,7 +446,6 @@ where
         }
     }
 
-    // TODO: update this
     /// Adds the specified amount to total staked amount, if possible.
     ///
     /// Staking can only be done for the ongoing period, and era.
@@ -1225,7 +1225,7 @@ impl ContractStakeAmountSeries {
     fn prune(&mut self) {
         // Prune the oldest entry if we have more than the limit
         if self.0.len() == STAKING_SERIES_HISTORY as usize {
-            // TODO: this can be perhaps optimized so we prune entries which are very old.
+            // This can be perhaps optimized so we prune entries which are very old.
             // However, this makes the code more complex & more error prone.
             // If kept like this, we always make sure we cover the history, and we never exceed it.
             self.0.remove(0);

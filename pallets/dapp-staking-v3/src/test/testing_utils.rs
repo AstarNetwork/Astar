@@ -796,7 +796,7 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
     //clean up possible leftover events
     System::reset_events();
 
-    // Unstake from smart contract & verify event(s)
+    // Claim staker rewards & verify all events
     assert_ok!(DappStaking::claim_staker_rewards(RuntimeOrigin::signed(
         account
     ),));
@@ -833,11 +833,16 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
     let post_snapshot = MemorySnapshot::new();
     let post_ledger = post_snapshot.ledger.get(&account).unwrap();
 
-    if is_full_claim {
+    if is_full_claim && pre_ledger.bonus_reward_claimed {
+        assert_eq!(post_ledger.staked, StakeAmount::default());
+        assert!(post_ledger.staked_future.is_none());
+        assert!(!post_ledger.staker_rewards_claimed);
+        assert!(!post_ledger.bonus_reward_claimed);
+    } else if is_full_claim {
         assert!(post_ledger.staker_rewards_claimed);
     } else {
         assert_eq!(post_ledger.staked.era, last_claim_era + 1);
-        // TODO: expand check?
+        assert!(post_ledger.staked_future.is_none());
     }
 }
 
@@ -861,7 +866,7 @@ pub(crate) fn assert_claim_bonus_reward(account: AccountId) {
     let reward = Perbill::from_rational(stake_amount, period_end_info.total_vp_stake)
         * period_end_info.bonus_reward_pool;
 
-    // Unstake from smart contract & verify event(s)
+    // Claim bonus reward & verify event
     assert_ok!(DappStaking::claim_bonus_reward(RuntimeOrigin::signed(
         account
     ),));
@@ -889,6 +894,17 @@ pub(crate) fn assert_claim_bonus_reward(account: AccountId) {
 
     let post_snapshot = MemorySnapshot::new();
     let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+
+    // All rewards for period have been claimed
+    if pre_ledger.staker_rewards_claimed {
+        assert_eq!(post_ledger.staked, StakeAmount::default());
+        assert!(post_ledger.staked_future.is_none());
+        assert!(!post_ledger.staker_rewards_claimed);
+        assert!(!post_ledger.bonus_reward_claimed);
+    } else {
+        // Staker still has some staker rewards remaining
+        assert!(post_ledger.bonus_reward_claimed);
+    }
 }
 
 /// Returns from which starting era to which ending era can rewards be claimed for the specified account.

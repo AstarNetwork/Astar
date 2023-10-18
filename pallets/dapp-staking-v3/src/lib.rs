@@ -261,7 +261,9 @@ pub mod pallet {
         /// An unexpected error occured while trying to unstake.
         InternalUnstakeError,
         /// Rewards are no longer claimable since they are too old.
-        StakerRewardsExpired,
+        RewardExpired,
+        /// All staker rewards for the period have been claimed.
+        StakerRewardsAlreadyClaimed,
         /// There are no claimable rewards for the account.
         NoClaimableRewards,
         /// An unexpected error occured while trying to claim staker rewards.
@@ -964,6 +966,7 @@ pub mod pallet {
             ledger
                 .unstake_amount(amount, unstake_era, protocol_state.period_info)
                 .map_err(|err| match err {
+                    // These are all defensive checks, which should never happen since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
                         Error::<T>::UnclaimedRewardsFromPastPeriods
                     }
@@ -1024,9 +1027,10 @@ pub mod pallet {
 
             ensure!(
                 !ledger.staker_rewards_claimed,
-                Error::<T>::NoClaimableRewards
-            ); // TODO: maybe different error type?
-               // Check if the rewards have expired
+                Error::<T>::StakerRewardsAlreadyClaimed
+            );
+
+            // Check if the rewards have expired
             let staked_period = ledger
                 .staked_period()
                 .ok_or(Error::<T>::NoClaimableRewards)?;
@@ -1035,7 +1039,7 @@ pub mod pallet {
                     >= protocol_state
                         .period_number()
                         .saturating_sub(T::RewardRetentionInPeriods::get()),
-                Error::<T>::StakerRewardsExpired
+                Error::<T>::RewardExpired
             );
 
             // Calculate the reward claim span
@@ -1088,7 +1092,6 @@ pub mod pallet {
                 reward_sum.saturating_accrue(staker_reward);
             }
 
-            // TODO: add negative test for this?
             T::Currency::deposit_into_existing(&account, reward_sum)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
 
@@ -1116,7 +1119,7 @@ pub mod pallet {
             let mut ledger = Ledger::<T>::get(&account);
 
             ensure!(
-                !ledger.staker_rewards_claimed,
+                !ledger.bonus_reward_claimed,
                 Error::<T>::BonusRewardAlreadyClaimed
             );
             // Check if the rewards have expired
@@ -1128,7 +1131,7 @@ pub mod pallet {
                     >= protocol_state
                         .period_number()
                         .saturating_sub(T::RewardRetentionInPeriods::get()),
-                Error::<T>::StakerRewardsExpired
+                Error::<T>::RewardExpired
             );
 
             // Check if period has ended
@@ -1145,24 +1148,28 @@ pub mod pallet {
                         AccountLedgerError::NothingToClaim => Error::<T>::NoClaimableRewards,
                         _ => Error::<T>::InternalClaimBonusError,
                     })?;
-            ensure!(
-                !eligible_amount.is_zero(),
-                Error::<T>::NotEligibleForBonusReward
-            );
 
             let period_end_info =
                 PeriodEnd::<T>::get(&staked_period).ok_or(Error::<T>::InternalClaimBonusError)?;
-            // Defensive check, situation should never happen.
+
+            // Defensive check - we should never get this far in function if no voting period stake exists.
             ensure!(
                 !period_end_info.total_vp_stake.is_zero(),
                 Error::<T>::InternalClaimBonusError
             );
 
+            // TODO: this functionality is incomplete - what we should do is iterate over all stake entries in the storage,
+            // and check if the smart contract was still registered when period ended.
+            //
+            // This is important since we cannot allow unregistered contracts to be subject for bonus rewards.
+            // This means 'a loop' but it will be bounded by max limit of unique stakes.
+            // A function should also be introduced to prepare the account ledger for next era (or to cleanup old expired rewards)
+            // in case bonus rewards weren't claimed.
+
             let bonus_reward =
                 Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
                     * period_end_info.bonus_reward_pool;
 
-            // TODO: add negative test for this?
             T::Currency::deposit_into_existing(&account, bonus_reward)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
 
