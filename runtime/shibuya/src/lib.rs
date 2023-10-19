@@ -1946,6 +1946,8 @@ impl_runtime_apis! {
                     Ok(MultiLocation::parent())
                 }
                 fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
+                    // we can have max of 64 assets in holding so this should be
+                    // a good estimate for worst case
                     const HOLDING_FUNGIBLES: u32 = 62;
                             let fungibles_amount: u128 = 100;
                             let assets = (0..HOLDING_FUNGIBLES).map(|i| {
@@ -1983,11 +1985,12 @@ impl_runtime_apis! {
                     // not sure what will be the worst case for Response
                     // either `Assets(MultiAssets)` or `PalletsInfo(BoundedVec<PalletInfo, MaxPalletsInfo>)`
                     // in either case, what will be the worst case?
-                    let assets: Vec<MultiAsset> = vec![MultiAsset {
-                        id: Concrete(MultiLocation::parent()),
-                        fun: Fungible(u128::MAX),
-                    }];
-                    (0u64, Response::Assets(assets.into()))
+                    // let assets: Vec<MultiAsset> = vec![MultiAsset {
+                    //     id: Concrete(MultiLocation::parent()),
+                    //     fun: Fungible(u128::MAX),
+                    // }];
+                    // (0u64, Response::Assets(assets.into()))
+                    (0u64, Response::Version(Default::default()))
 
                 }
 
@@ -2063,9 +2066,7 @@ impl_runtime_apis! {
 
                 /// Give me a fungible asset that your asset transactor is going to accept.
                 fn get_multi_asset() -> MultiAsset {
-                    // send some token to alice for existential deposit
-
-                    // create an asset
+                    // create an asset and make it sufficient
                     assert_ok!(pallet_assets::Pallet::<Runtime>::force_create(RuntimeOrigin::root(),parity_scale_codec::Compact(1),sp_runtime::MultiAddress::Id(AccountId32::new([0u8; 32])),true,1));
                     let location = MultiLocation { parents : 0, interior :X1(GeneralIndex(1)) };
                     // convert mapping for asset id
