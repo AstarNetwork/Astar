@@ -55,7 +55,7 @@ mod shibuya {
         <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(address)
     }
 
-    /// Deploy an EVM contract with code.
+    /// Deploy an EVM contract with code via ALICE as origin.
     pub fn deploy_evm_contract(code: &str) -> H160 {
         assert_ok!(EVM::create2(
             RuntimeOrigin::root(),
@@ -97,16 +97,20 @@ mod shibuya {
         address
     }
 
-    /// Call a wasm smart contract method with ALICE as origin
-    pub fn call_wasm_contract_method<V: Decode>(contract_id: AccountId, data: Vec<u8>) -> V {
+    /// Call a wasm smart contract method
+    pub fn call_wasm_contract_method<V: Decode>(
+        origin: AccountId,
+        contract_id: AccountId,
+        data: Vec<u8>,
+    ) -> V {
         let (value, _, _) = astar_test_utils::call_wasm_contract_method::<Runtime, V>(
-            ALICE,
+            origin,
             contract_id,
             0,
             Weight::from_parts(10_000_000_000, 1024 * 1024),
             None,
             data,
-            true,
+            false,
         );
         value
     }
