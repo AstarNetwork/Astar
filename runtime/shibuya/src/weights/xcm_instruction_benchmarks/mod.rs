@@ -159,14 +159,14 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
         _receive: &MultiAssets,
         _maximal: &bool,
     ) -> XCMWeight {
-        Weight::MAX
+        XcmGeneric::<Runtime>::exchange_asset()
     }
     fn initiate_reserve_withdraw(
         _assets: &MultiAssetFilter,
         _reserve: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
-        /// TODO: Clear wrong
+        // TODO: Clear wrong
         // This is not correct. initiate reserve withdraw does not to that many db reads
         // the only thing it does based on number of assets is a take from a local variable
         //assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw())
@@ -179,6 +179,7 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
     ) -> XCMWeight {
         // max weight
         XcmFungibleBalancesWeight::<Runtime>::initiate_teleport()
+            .max(XcmFungibleAssetsWeight::<Runtime>::initiate_teleport())
     }
     fn report_holding(_response_info: &QueryResponseInfo, _assets: &MultiAssetFilter) -> Weight {
         XcmGeneric::<Runtime>::report_holding()
@@ -247,22 +248,22 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
         XcmGeneric::<Runtime>::clear_transact_status()
     }
     fn universal_origin(_: &Junction) -> Weight {
-        Weight::MAX
+        XcmGeneric::<Runtime>::universal_origin()
     }
     fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> Weight {
-        Weight::MAX
+        XcmGeneric::<Runtime>::export_message()
     }
     fn lock_asset(_: &MultiAsset, _: &MultiLocation) -> Weight {
-        Weight::MAX
+        XcmGeneric::<Runtime>::lock_asset()
     }
     fn unlock_asset(_: &MultiAsset, _: &MultiLocation) -> Weight {
-        Weight::MAX
+        XcmGeneric::<Runtime>::unlock_asset()
     }
     fn note_unlockable(_: &MultiAsset, _: &MultiLocation) -> Weight {
-        Weight::MAX
+        XcmGeneric::<Runtime>::note_unlockable()
     }
     fn request_unlock(_: &MultiAsset, _: &MultiLocation) -> Weight {
-        Weight::MAX
+        XcmGeneric::<Runtime>::request_unlock()
     }
     fn set_fees_mode(_: &bool) -> Weight {
         XcmGeneric::<Runtime>::set_fees_mode()
