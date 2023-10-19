@@ -114,7 +114,7 @@ pub mod pallet {
         /// The overarching event type
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// The Currency for managing evm address assets
-        type Currency: FungibleMutate<Self::AccountId>;
+        type Currency: FungibleMutate<Self::AccountId, Balance = Balance>;
         /// Default evm address to account id conversion
         type DefaultEvmToNative: AddressMapping<Self::AccountId>;
         /// Default account id to evm address conversion

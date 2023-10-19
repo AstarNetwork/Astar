@@ -20,6 +20,7 @@
 
 use super::*;
 use frame_benchmarking::v2::*;
+use frame_support::assert_ok;
 use frame_system::RawOrigin;
 
 /// Assert that the last event equals the provided one.
@@ -42,6 +43,10 @@ mod benchmarks {
         )
         .into();
 
+        assert_ok!(T::Currency::mint_into(
+            &caller,
+            T::AccountMappingStorageFee::get()
+        ));
         let caller_clone = caller.clone();
 
         #[extrinsic_call]
@@ -61,6 +66,11 @@ mod benchmarks {
         let caller: T::AccountId = whitelisted_caller();
         let caller_clone = caller.clone();
         let evm_address = T::DefaultNativeToEvm::into_h160(caller.clone());
+
+        assert_ok!(T::Currency::mint_into(
+            &caller,
+            T::AccountMappingStorageFee::get()
+        ));
 
         #[extrinsic_call]
         _(RawOrigin::Signed(caller));
