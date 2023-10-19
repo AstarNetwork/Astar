@@ -68,6 +68,7 @@
 use astar_primitives::{
     ethereum_checked::AccountMapping,
     evm::{EvmAddress, UnifiedAddressMapper},
+    Balance,
 };
 use frame_support::{
     pallet_prelude::*,
@@ -101,9 +102,6 @@ mod tests;
 /// ECDSA Signature type, with last bit for recovering address
 type EvmSignature = [u8; 65];
 
-type BalanceOf<T> =
-    <<T as Config>::Currency as FungibleInspect<<T as frame_system::Config>::AccountId>>::Balance;
-
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -128,7 +126,7 @@ pub mod pallet {
         /// Two storage items with values sizes, sizeof(AccountId) and sizeof(H160)
         /// respectively
         #[pallet::constant]
-        type AccountMappingStorageFee: Get<BalanceOf<Self>>;
+        type AccountMappingStorageFee: Get<Balance>;
         /// Weight information for the extrinsics in this module
         type WeightInfo: WeightInfo;
     }
@@ -277,7 +275,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Charge the (exact) storage fee (polietly) from the user and burn it
-    fn charge_storage_fee(who: &T::AccountId) -> Result<BalanceOf<T>, DispatchError> {
+    fn charge_storage_fee(who: &T::AccountId) -> Result<Balance, DispatchError> {
         T::Currency::burn_from(who, T::AccountMappingStorageFee::get(), Exact, Polite)
     }
 }

@@ -41,4 +41,5 @@ std = [
 	# Astar
 	"astar-primitives/std",
 	"pallet-unified-accounts/std",
+    "unified-accounts-chain-extension-types/std"
 ]

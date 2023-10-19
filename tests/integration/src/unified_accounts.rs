@@ -91,7 +91,7 @@ fn unified_accounts_chain_extension_works() {
         //
         connect_accounts(&ALICE, &alith_secret_key());
 
-        // ALICE mapped h160 address should alith
+        // ALICE mapped h160 address should be alith
         assert_eq!(
             call_wasm_contract_method::<Option<H160>>(
                 contract_id.clone(),
