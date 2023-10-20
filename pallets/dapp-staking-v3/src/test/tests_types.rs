@@ -17,6 +17,8 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::assert_ok;
+use sp_arithmetic::fixed_point::FixedU64;
+use sp_runtime::Permill;
 
 use crate::test::mock::{Balance, *};
 use crate::*;
@@ -1513,4 +1515,50 @@ fn era_reward_span_fails_when_expected() {
         era_reward_span.push(era_3, era_reward),
         Err(EraRewardSpanError::NoCapacity)
     );
+}
+
+#[test]
+fn tier_slot_configuration_basic_tests() {
+    // TODO: this should be expanded & improved later
+    get_u32_type!(TiersNum, 4);
+    let params = TierSlotParameters::<TiersNum> {
+        reward_portion: BoundedVec::try_from(vec![
+            Permill::from_percent(40),
+            Permill::from_percent(30),
+            Permill::from_percent(20),
+            Permill::from_percent(10),
+        ])
+        .unwrap(),
+        slot_distribution: BoundedVec::try_from(vec![
+            Permill::from_percent(10),
+            Permill::from_percent(20),
+            Permill::from_percent(30),
+            Permill::from_percent(40),
+        ])
+        .unwrap(),
+        tier_thresholds: BoundedVec::try_from(vec![
+            TierThreshold::DynamicTvlAmount { amount: 1000 },
+            TierThreshold::DynamicTvlAmount { amount: 500 },
+            TierThreshold::DynamicTvlAmount { amount: 100 },
+            TierThreshold::FixedTvlAmount { amount: 50 },
+        ])
+        .unwrap(),
+    };
+    assert!(params.is_valid(), "Example params must be valid!");
+
+    // Create a configuration with some values
+    let init_config = TierSlotConfiguration::<TiersNum> {
+        number_of_slots: 100,
+        slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
+        reward_portion: params.reward_portion.clone(),
+        tier_thresholds: params.tier_thresholds.clone(),
+    };
+    assert!(init_config.is_valid(), "Init config must be valid!");
+
+    // Create a new config, based on a new price
+    let new_price = FixedU64::from_rational(20, 100); // in production will be expressed in USD
+    let new_config = init_config.calculate_new(new_price, &params);
+    assert!(new_config.is_valid());
+
+    // TODO: expand tests, add more sanity checks (e.g. tier 3 requirement should never be lower than tier 4, etc.)
 }

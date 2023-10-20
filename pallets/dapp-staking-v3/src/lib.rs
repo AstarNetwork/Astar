@@ -1012,7 +1012,8 @@ pub mod pallet {
             Ok(())
         }
 
-        /// TODO
+        // TODO: perhaps this should be changed to include smart contract from which rewards are being claimed.
+        /// TODO: docs
         #[pallet::call_index(11)]
         #[pallet::weight(Weight::zero())]
         pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResult {
@@ -1108,7 +1109,8 @@ pub mod pallet {
             Ok(())
         }
 
-        /// TODO
+        // TODO: perhaps this should be changed to include smart contract from which rewards are being claimed.
+        /// TODO: documentation
         #[pallet::call_index(12)]
         #[pallet::weight(Weight::zero())]
         pub fn claim_bonus_reward(origin: OriginFor<T>) -> DispatchResult {

@@ -21,9 +21,10 @@
 use frame_support::{pallet_prelude::*, BoundedVec};
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, Zero},
-    Saturating,
+    traits::{AtLeast32BitUnsigned, UniqueSaturatedInto, Zero},
+    FixedPointNumber, Permill, Saturating,
 };
 
 use astar_primitives::Balance;
@@ -1355,5 +1356,151 @@ where
             Some(index) => self.span.get(index as usize),
             None => None,
         }
+    }
+}
+
+/// Description of tier entry requirement.
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+pub enum TierThreshold {
+    /// Entry into tier is mandated by minimum amount of staked funds.
+    /// Value is fixed, and is not expected to change in between periods.
+    FixedTvlAmount { amount: Balance },
+    /// Entry into tier is mandated by minimum amount of staked funds.
+    /// Value is expected to dynamically change in-between periods, depending on the system parameters.
+    DynamicTvlAmount { amount: Balance },
+    // TODO: perhaps add a type that is dynamic but has lower bound below which the value cannot go?
+    // Otherwise we could allow e.g. tier 3 to go below tier 4, which doesn't make sense.
+}
+
+/// Top level description of tier slot parameters used to calculate tier configuration.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[scale_info(skip_type_params(NT))]
+pub struct TierSlotParameters<NT: Get<u32>> {
+    /// Reward distribution per tier, in percentage.
+    /// First entry refers to the first tier, and so on.
+    /// The sum of all values must be exactly equal to 1.
+    pub reward_portion: BoundedVec<Permill, NT>,
+    /// Distribution of number of slots per tier, in percentage.
+    /// First entry refers to the first tier, and so on.
+    /// The sum of all values must be exactly equal to 1.
+    pub slot_distribution: BoundedVec<Permill, NT>,
+    /// Requirements for entry into each tier.
+    /// First entry refers to the first tier, and so on.
+    pub tier_thresholds: BoundedVec<TierThreshold, NT>,
+}
+
+impl<NT: Get<u32>> TierSlotParameters<NT> {
+    /// Check if configuration is valid.
+    /// All vectors are expected to have exactly the amount of entries as `number_of_tiers`.
+    pub fn is_valid(&self) -> bool {
+        let number_of_tiers: usize = NT::get() as usize;
+        number_of_tiers == self.reward_portion.len()
+            && number_of_tiers == self.slot_distribution.len()
+            && number_of_tiers == self.tier_thresholds.len()
+    }
+}
+
+/// Configuration of dApp tiers.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[scale_info(skip_type_params(NT))]
+pub struct TierSlotConfiguration<NT: Get<u32>> {
+    /// Total number of slots.
+    #[codec(compact)]
+    pub number_of_slots: u16,
+    /// Number of slots per tier.
+    /// First entry refers to the first tier, and so on.
+    pub slots_per_tier: BoundedVec<u16, NT>,
+    /// Reward distribution per tier, in percentage.
+    /// First entry refers to the first tier, and so on.
+    /// The sum of all values must be exactly equal to 1.
+    pub reward_portion: BoundedVec<Permill, NT>,
+    /// Requirements for entry into each tier.
+    /// First entry refers to the first tier, and so on.
+    pub tier_thresholds: BoundedVec<TierThreshold, NT>,
+}
+
+impl<NT: Get<u32>> TierSlotConfiguration<NT> {
+    /// Check if parameters are valid.
+    pub fn is_valid(&self) -> bool {
+        let number_of_tiers: usize = NT::get() as usize;
+        number_of_tiers == self.slots_per_tier.len()
+            // All vecs length must match number of tiers.
+            && number_of_tiers == self.reward_portion.len()
+            && number_of_tiers == self.tier_thresholds.len()
+            // Total number of slots must match the sum of slots per tier. 
+            && self.slots_per_tier.iter().fold(0, |acc, x| acc + x) == self.number_of_slots
+    }
+
+    /// TODO
+    pub fn calculate_new(&self, native_price: FixedU64, params: &TierSlotParameters<NT>) -> Self {
+        let new_number_of_slots = Self::calculate_number_of_slots(native_price);
+
+        // TODO: ugly, unsafe, refactor later
+        let new_slots_per_tier: Vec<u16> = params
+            .slot_distribution
+            .clone()
+            .into_inner()
+            .iter()
+            .map(|x| *x * new_number_of_slots as u128)
+            .map(|x| x.unique_saturated_into())
+            .collect();
+        let new_slots_per_tier =
+            BoundedVec::<u16, NT>::try_from(new_slots_per_tier).unwrap_or_default();
+
+        // TODO: document this, and definitely refactor it to be simpler.
+        let new_tier_thresholds = if new_number_of_slots > self.number_of_slots {
+            let delta_threshold_decrease = FixedU64::from_rational(
+                (new_number_of_slots - self.number_of_slots).into(),
+                new_number_of_slots.into(),
+            );
+
+            let mut new_tier_thresholds = self.tier_thresholds.clone();
+            new_tier_thresholds
+                .iter_mut()
+                .for_each(|threshold| match threshold {
+                    TierThreshold::DynamicTvlAmount { amount } => {
+                        *amount = amount
+                            .saturating_sub(delta_threshold_decrease.saturating_mul_int(*amount));
+                    }
+                    _ => (),
+                });
+
+            new_tier_thresholds
+        } else if new_number_of_slots < self.number_of_slots {
+            let delta_threshold_increase = FixedU64::from_rational(
+                (self.number_of_slots - new_number_of_slots).into(),
+                new_number_of_slots.into(),
+            );
+
+            let mut new_tier_thresholds = self.tier_thresholds.clone();
+            new_tier_thresholds
+                .iter_mut()
+                .for_each(|threshold| match threshold {
+                    TierThreshold::DynamicTvlAmount { amount } => {
+                        *amount = amount
+                            .saturating_add(delta_threshold_increase.saturating_mul_int(*amount));
+                    }
+                    _ => (),
+                });
+
+            new_tier_thresholds
+        } else {
+            self.tier_thresholds.clone()
+        };
+
+        Self {
+            number_of_slots: new_number_of_slots,
+            slots_per_tier: new_slots_per_tier,
+            reward_portion: params.reward_portion.clone(),
+            tier_thresholds: new_tier_thresholds,
+        }
+    }
+
+    /// Calculate number of slots, based on the provided native token price.
+    pub fn calculate_number_of_slots(native_price: FixedU64) -> u16 {
+        // floor(1000 x price + 50)
+        let result: u64 = native_price.saturating_mul_int(1000).saturating_add(50);
+
+        result.unique_saturated_into()
     }
 }
