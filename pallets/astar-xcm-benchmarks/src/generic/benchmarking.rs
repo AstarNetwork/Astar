@@ -107,7 +107,7 @@ benchmarks! {
     }: {
         executor.bench_process(xcm)?;
     } verify {
-        // TODO Make the assertion configurable?
+        // The assert above is enough to show this XCM succeeded
     }
 
     refund_surplus {

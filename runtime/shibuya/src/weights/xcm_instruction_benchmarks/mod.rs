@@ -166,10 +166,6 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
         _reserve: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
-        // TODO: Clear wrong
-        // This is not correct. initiate reserve withdraw does not to that many db reads
-        // the only thing it does based on number of assets is a take from a local variable
-        //assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw())
         XcmGeneric::<Runtime>::initiate_reserve_withdraw()
     }
     fn initiate_teleport(
