@@ -51,8 +51,6 @@ use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 
 /// Max assets allowed in holding register
 pub const MAX_ASSETS: u64 = 64;
-/// Default Proof Size for XCM
-pub const DEFAULT_PROOF_SIZE: u64 = 64 * 1024;
 #[cfg(test)]
 mod tests;
 
