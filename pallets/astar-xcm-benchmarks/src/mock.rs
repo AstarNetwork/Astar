@@ -50,15 +50,18 @@ impl xcm_executor::traits::OnResponse for DevNull {
 }
 
 pub struct AccountIdConverter;
-impl xcm_executor::traits::ConvertLocation<u64> for AccountIdConverter {
-    fn convert_location(ml: &MultiLocation) -> Option<u64> {
+impl xcm_executor::traits::Convert<MultiLocation, u64> for AccountIdConverter {
+    fn convert(ml: MultiLocation) -> Result<u64, MultiLocation> {
         match ml {
             MultiLocation {
                 parents: 0,
                 interior: X1(Junction::AccountId32 { id, .. }),
-            } => Some(<u64 as codec::Decode>::decode(&mut &*id.to_vec()).unwrap()),
-            _ => None,
+            } => Ok(<u64 as parity_scale_codec::Decode>::decode(&mut &*id.to_vec()).unwrap()),
+            _ => Err(ml),
         }
+    }
+    fn reverse(acc: u64) -> Result<MultiLocation, u64> {
+        Err(acc)
     }
 }
 

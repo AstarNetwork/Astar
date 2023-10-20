@@ -23,25 +23,36 @@ use crate::{fungible::assets as xcm_assets_benchmark, mock::*};
 use frame_benchmarking::BenchmarkError;
 use frame_support::{
     parameter_types,
-    traits::{ConstU32, Everything, Nothing},
+    traits::{AsEnsureOriginWithArg, ConstU32, Everything, Nothing},
     weights::Weight,
 };
+use frame_system::{EnsureRoot, EnsureSigned};
+use parity_scale_codec::Compact;
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::{
+    testing::Header,
+    traits::{BlakeTwo256, IdentityLookup},
+};
+use sp_std::borrow::Borrow;
 use xcm::latest::prelude::*;
-use xcm_builder::{AllowUnpaidExecutionFrom, ConvertedConcreteId, IsConcrete, MintLocation};
-use xcm_executor::traits::JustTry;
+use xcm_builder::{AllowUnpaidExecutionFrom, ConvertedConcreteId, MintLocation};
+use xcm_executor::traits::{Convert, JustTry};
 
 type Block = frame_system::mocking::MockBlock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 // For testing the pallet, we construct a mock runtime.
 frame_support::construct_runtime!(
-    pub enum Test
+    pub struct Test
+    where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        XcmAssetsBenchmark: xcm_assets_benchmark::{Pallet},
-        Assets : pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        System: frame_system,
+        Balances: pallet_balances,
+        XcmAssetsBenchmark: xcm_assets_benchmark,
+        Assets: pallet_assets,
     }
 );
 
@@ -56,13 +67,14 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
     type Hash = H256;
+    type Index = u64;
+    type Header = Header;
+    type BlockNumber = u64;
     type RuntimeCall = RuntimeCall;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -90,10 +102,10 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
+    type HoldIdentifier = ();
 }
 
 parameter_types! {
@@ -103,7 +115,7 @@ parameter_types! {
     pub const MetadataDepositBase: u64 = 10 * ExistentialDeposit::get();
     pub const MetadataDepositPerByte: u64 = 1 * ExistentialDeposit::get();
     pub const AssetAccountDeposit: u64 = 1 * ExistentialDeposit::get();
-    const AssetsStringLimit: u32 = 50;
+    pub const AssetsStringLimit: u32 = 50;
 
 }
 
@@ -112,8 +124,8 @@ impl pallet_assets::Config for Test {
     type Balance = u64;
     type AssetId = u64;
     type Currency = Balances;
-    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-    type ForceOrigin = EnsureRoot<AccountId>;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<u64>>;
+    type ForceOrigin = EnsureRoot<u64>;
     type AssetDeposit = AssetDeposit;
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -130,6 +142,9 @@ impl pallet_assets::Config for Test {
     type BenchmarkHelper = ();
 }
 
+parameter_types! {
+    pub const DummyCheckingAccount : u64 = 0;
+}
 // Use fungible transactor as the asset transactor.
 pub type AssetTransactor = xcm_builder::FungiblesAdapter<
     Assets,
@@ -137,14 +152,14 @@ pub type AssetTransactor = xcm_builder::FungiblesAdapter<
     AccountIdConverter,
     u64,
     xcm_builder::NoChecking,
-    0,
+    DummyCheckingAccount,
 >;
 
 pub struct AssetLocationIdConverter;
 impl Convert<MultiLocation, u64> for AssetLocationIdConverter {
     fn convert_ref(location: impl Borrow<MultiLocation>) -> Result<u64, ()> {
         if let X1(GeneralIndex(i)) = location.borrow().clone().interior {
-            Ok(i.into())
+            Ok(<u128 as TryInto<u64>>::try_into(i).map_err(|_| ())?)
         } else {
             Err(())
         }
@@ -187,7 +202,6 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = Nothing;
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
-    type Aliasers = Nothing;
 }
 
 impl crate::Config for Test {

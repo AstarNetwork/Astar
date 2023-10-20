@@ -19,7 +19,7 @@
 // Copyright (C) Parity Technologies (UK) Ltd.
 //! A mock runtime for XCM benchmarking.
 
-use crate::{fungible as xcm_balances_benchmark, mock::*};
+use crate::{fungible::balances as xcm_balances_benchmark, mock::*};
 use frame_benchmarking::BenchmarkError;
 use frame_support::{
     parameter_types,
@@ -27,19 +27,27 @@ use frame_support::{
     weights::Weight,
 };
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::{
+    testing::Header,
+    traits::{BlakeTwo256, IdentityLookup},
+};
 use xcm::latest::prelude::*;
 use xcm_builder::{AllowUnpaidExecutionFrom, MintLocation};
 
 type Block = frame_system::mocking::MockBlock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 // For testing the pallet, we construct a mock runtime.
 frame_support::construct_runtime!(
-    pub enum Test
+    pub struct Test
+    where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        XcmBalancesBenchmark: xcm_balances_benchmark::{Pallet},
+        System: frame_system,
+        Balances: pallet_balances,
+        XcmBalancesBenchmark: xcm_balances_benchmark,
     }
 );
 
@@ -54,13 +62,14 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
     type Hash = H256;
+    type Index = u64;
+    type Header = Header;
+    type BlockNumber = u64;
     type RuntimeCall = RuntimeCall;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -88,10 +97,10 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
+    type HoldIdentifier = ();
 }
 
 parameter_types! {
@@ -155,7 +164,6 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = Nothing;
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
-    type Aliasers = Nothing;
 }
 
 impl crate::Config for Test {

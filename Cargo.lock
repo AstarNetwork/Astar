@@ -629,6 +629,7 @@ dependencies = [
 name = "astar-xcm-benchmarks"
 version = "0.1.0"
 dependencies = [
+ "astar-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -637,12 +638,14 @@ dependencies = [
  "pallet-balances",
  "pallet-xcm",
  "parity-scale-codec",
+ "paste",
  "scale-info",
  "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "sp-tracing",
  "xcm",
  "xcm-builder",
  "xcm-executor",

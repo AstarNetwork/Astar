@@ -20,30 +20,38 @@
 //! A mock runtime for XCM benchmarking.
 
 use crate::{generic, mock::*, *};
-use codec::Decode;
 use frame_support::{
     match_types, parameter_types,
     traits::{Everything, OriginTrait},
     weights::Weight,
 };
+use parity_scale_codec::Decode;
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup, TrailingZeroInput};
+use sp_runtime::{
+    testing::Header,
+    traits::{BlakeTwo256, IdentityLookup, TrailingZeroInput},
+};
 use xcm_builder::{
     test_utils::{
         Assets, TestAssetExchanger, TestAssetLocker, TestAssetTrap, TestSubscriptionService,
         TestUniversalAliases,
     },
-    AliasForeignAccountId32, AllowUnpaidExecutionFrom,
+    AllowUnpaidExecutionFrom,
 };
 use xcm_executor::traits::ConvertOrigin;
 
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlock<TestRuntime>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
 frame_support::construct_runtime!(
-    pub enum Test
+    pub struct TestRuntime
+    where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
-        XcmGenericBenchmarks: generic::{Pallet},
+        System: frame_system,
+        XcmGenericBenchmarks: generic,
     }
 );
 
@@ -53,19 +61,17 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, u64::MAX));
 }
 
-impl frame_system::Config for Test {
+impl frame_system::Config for TestRuntime {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Nonce = u64;
     type Hash = H256;
     type RuntimeCall = RuntimeCall;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Block = Block;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -77,6 +83,9 @@ impl frame_system::Config for Test {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type Index = u64;
+    type Header = Header;
+    type BlockNumber = u64;
 }
 
 /// The benchmarks in this pallet should never need an asset transactor to begin with.
@@ -106,7 +115,6 @@ match_types! {
     };
 }
 
-type Aliasers = AliasForeignAccountId32<OnlyParachains>;
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
@@ -133,10 +141,9 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = TestUniversalAliases;
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
-    type Aliasers = Aliasers;
 }
 
-impl crate::Config for Test {
+impl crate::Config for TestRuntime {
     type XcmConfig = XcmConfig;
     type AccountIdConverter = AccountIdConverter;
     fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
@@ -156,7 +163,7 @@ impl crate::Config for Test {
     }
 }
 
-impl generic::Config for Test {
+impl generic::Config for TestRuntime {
     type RuntimeCall = RuntimeCall;
 
     fn worst_case_response() -> (u64, Response) {
@@ -202,23 +209,6 @@ impl generic::Config for Test {
     ) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
         // No MessageExporter in tests
         Err(BenchmarkError::Skip)
-    }
-
-    fn alias_origin() -> Result<(MultiLocation, MultiLocation), BenchmarkError> {
-        let origin: MultiLocation = (
-            Parachain(1),
-            AccountId32 {
-                network: None,
-                id: [0; 32],
-            },
-        )
-            .into();
-        let target: MultiLocation = AccountId32 {
-            network: None,
-            id: [0; 32],
-        }
-        .into();
-        Ok((origin, target))
     }
 }
 
