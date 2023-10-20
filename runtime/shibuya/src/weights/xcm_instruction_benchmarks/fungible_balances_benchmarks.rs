@@ -54,48 +54,36 @@ use core::marker::PhantomData;
 /// Weight functions for `astar_xcm_benchmarks::fungible::assets`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo<T> {
-	/// Storage: XcAssetConfig AssetLocationToId (r:1 w:0)
-	/// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Assets Asset (r:1 w:1)
-	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
-	/// Storage: Assets Account (r:1 w:1)
-	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
 	/// Storage: System Account (r:1 w:1)
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	/// Storage: UnifiedAccounts NativeToEvm (r:1 w:0)
 	/// Proof: UnifiedAccounts NativeToEvm (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
 	pub(crate) fn withdraw_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `688`
-		//  Estimated: `4153`
-		// Minimum execution time: 116_000_000 picoseconds.
-		Weight::from_parts(116_000_000, 0)
-			.saturating_add(Weight::from_parts(0, 4153))
-			.saturating_add(T::DbWeight::get().reads(5))
-			.saturating_add(T::DbWeight::get().writes(3))
+		//  Measured:  `182`
+		//  Estimated: `3593`
+		// Minimum execution time: 29_196_000 picoseconds.
+		Weight::from_parts(29_523_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: XcAssetConfig AssetLocationToId (r:1 w:0)
-	/// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Assets Asset (r:1 w:1)
-	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
-	/// Storage: Assets Account (r:2 w:2)
-	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
+	/// Storage: System Account (r:2 w:2)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: UnifiedAccounts NativeToEvm (r:1 w:0)
+	/// Proof: UnifiedAccounts NativeToEvm (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
 	pub(crate) fn transfer_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `622`
-		//  Estimated: `6232`
-		// Minimum execution time: 107_000_000 picoseconds.
-		Weight::from_parts(107_000_000, 0)
-			.saturating_add(Weight::from_parts(0, 6232))
-			.saturating_add(T::DbWeight::get().reads(4))
-			.saturating_add(T::DbWeight::get().writes(3))
+		//  Measured:  `182`
+		//  Estimated: `6196`
+		// Minimum execution time: 51_481_000 picoseconds.
+		Weight::from_parts(52_599_000, 6196)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
-	/// Storage: XcAssetConfig AssetLocationToId (r:1 w:0)
-	/// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Assets Asset (r:1 w:1)
-	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
-	/// Storage: Assets Account (r:2 w:2)
-	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
+	/// Storage: System Account (r:2 w:2)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: UnifiedAccounts NativeToEvm (r:1 w:0)
+	/// Proof: UnifiedAccounts NativeToEvm (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
 	/// Storage: ParachainInfo ParachainId (r:1 w:0)
 	/// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
@@ -110,13 +98,12 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn transfer_reserve_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `836`
-		//  Estimated: `6232`
-		// Minimum execution time: 151_000_000 picoseconds.
-		Weight::from_parts(151_000_000, 0)
-			.saturating_add(Weight::from_parts(0, 6232))
-			.saturating_add(T::DbWeight::get().reads(10))
-			.saturating_add(T::DbWeight::get().writes(5))
+		//  Measured:  `396`
+		//  Estimated: `6196`
+		// Minimum execution time: 74_937_000 picoseconds.
+		Weight::from_parts(75_528_000, 6196)
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 	/// Storage: Benchmark Override (r:0 w:0)
 	/// Proof Skipped: Benchmark Override (max_values: None, max_size: None, mode: Measured)
@@ -126,32 +113,18 @@ impl<T: frame_system::Config> WeightInfo<T> {
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		Weight::from_parts(18_446_744_073_709_551_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
 	}
-	/// Storage: XcAssetConfig AssetLocationToId (r:1 w:0)
-	/// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Assets Asset (r:1 w:1)
-	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
-	/// Storage: Assets Account (r:1 w:1)
-	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
 	/// Storage: System Account (r:1 w:1)
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	pub(crate) fn deposit_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `424`
-		//  Estimated: `3889`
-		// Minimum execution time: 79_000_000 picoseconds.
-		Weight::from_parts(79_000_000, 0)
-			.saturating_add(Weight::from_parts(0, 3889))
-			.saturating_add(T::DbWeight::get().reads(4))
-			.saturating_add(T::DbWeight::get().writes(3))
+		//  Measured:  `0`
+		//  Estimated: `3593`
+		// Minimum execution time: 25_946_000 picoseconds.
+		Weight::from_parts(26_173_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: XcAssetConfig AssetLocationToId (r:1 w:0)
-	/// Proof Skipped: XcAssetConfig AssetLocationToId (max_values: None, max_size: None, mode: Measured)
-	/// Storage: Assets Asset (r:1 w:1)
-	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
-	/// Storage: Assets Account (r:1 w:1)
-	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
 	/// Storage: System Account (r:1 w:1)
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	/// Storage: ParachainInfo ParachainId (r:1 w:0)
@@ -168,13 +141,12 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
 	pub(crate) fn deposit_reserve_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `638`
-		//  Estimated: `4103`
-		// Minimum execution time: 121_000_000 picoseconds.
-		Weight::from_parts(121_000_000, 0)
-			.saturating_add(Weight::from_parts(0, 4103))
-			.saturating_add(T::DbWeight::get().reads(10))
-			.saturating_add(T::DbWeight::get().writes(5))
+		//  Measured:  `214`
+		//  Estimated: `3679`
+		// Minimum execution time: 51_389_000 picoseconds.
+		Weight::from_parts(51_915_000, 3679)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	/// Storage: Benchmark Override (r:0 w:0)
 	/// Proof Skipped: Benchmark Override (max_values: None, max_size: None, mode: Measured)
@@ -184,9 +156,8 @@ impl<T: frame_system::Config> WeightInfo<T> {
 		//  Estimated: `0`
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		Weight::from_parts(18_446_744_073_709_551_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
 	}
-	
+
 	pub(crate) fn reserve_asset_deposited() -> Weight {
 		// This instruction is a no-op for PoV (no storage access)
 		Weight::from_parts(200_000_000 as u64, 0)
