@@ -1469,7 +1469,11 @@ fn era_reward_span_push_and_get_works() {
 
     // Insert some values and verify state change
     let era_1 = 5;
-    let era_reward_1 = EraReward::new(23, 41);
+    let era_reward_1 = EraReward {
+        staker_reward_pool: 23,
+        staked: 41,
+        dapp_reward_pool: 17,
+    };
     assert!(era_reward_span.push(era_1, era_reward_1).is_ok());
     assert_eq!(era_reward_span.len(), 1);
     assert_eq!(era_reward_span.first_era(), era_1);
@@ -1477,7 +1481,11 @@ fn era_reward_span_push_and_get_works() {
 
     // Insert another value and verify state change
     let era_2 = era_1 + 1;
-    let era_reward_2 = EraReward::new(37, 53);
+    let era_reward_2 = EraReward {
+        staker_reward_pool: 37,
+        staked: 53,
+        dapp_reward_pool: 19,
+    };
     assert!(era_reward_span.push(era_2, era_reward_2).is_ok());
     assert_eq!(era_reward_span.len(), 2);
     assert_eq!(era_reward_span.first_era(), era_1);
@@ -1496,7 +1504,11 @@ fn era_reward_span_fails_when_expected() {
 
     // Push first values to get started
     let era_1 = 5;
-    let era_reward = EraReward::new(23, 41);
+    let era_reward = EraReward {
+        staker_reward_pool: 23,
+        staked: 41,
+        dapp_reward_pool: 17,
+    };
     assert!(era_reward_span.push(era_1, era_reward).is_ok());
 
     // Attempting to push incorrect era results in an error
@@ -1521,7 +1533,7 @@ fn era_reward_span_fails_when_expected() {
 fn tier_slot_configuration_basic_tests() {
     // TODO: this should be expanded & improved later
     get_u32_type!(TiersNum, 4);
-    let params = TierSlotParameters::<TiersNum> {
+    let params = TierParameters::<TiersNum> {
         reward_portion: BoundedVec::try_from(vec![
             Permill::from_percent(40),
             Permill::from_percent(30),
@@ -1547,7 +1559,7 @@ fn tier_slot_configuration_basic_tests() {
     assert!(params.is_valid(), "Example params must be valid!");
 
     // Create a configuration with some values
-    let init_config = TierSlotConfiguration::<TiersNum> {
+    let init_config = TierConfiguration::<TiersNum> {
         number_of_slots: 100,
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),

@@ -781,8 +781,8 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
             .get(era)
             .expect("Entry must exist, otherwise 'claim' is invalid.");
 
-        let reward = Perbill::from_rational(amount, era_reward_info.staked())
-            * era_reward_info.staker_reward_pool();
+        let reward = Perbill::from_rational(amount, era_reward_info.staked)
+            * era_reward_info.staker_reward_pool;
         if reward.is_zero() {
             continue;
         }

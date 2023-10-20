@@ -28,6 +28,7 @@ use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    Permill,
 };
 
 use sp_io::TestExternalities;
@@ -119,6 +120,7 @@ impl pallet_dapp_staking::Config for Test {
     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
     type UnlockingPeriod = ConstU64<20>;
     type MinimumStakeAmount = ConstU128<3>;
+    type NumberOfTiers = ConstU32<4>;
 }
 
 // TODO: why not just change this to e.g. u32 for test?
@@ -174,8 +176,43 @@ impl ExtBuilder {
                 maintenance: false,
             });
 
+            // TODO: improve this laterm should be handled via genesis?
+            let tier_params = TierParameters::<<Test as Config>::NumberOfTiers> {
+                reward_portion: BoundedVec::try_from(vec![
+                    Permill::from_percent(40),
+                    Permill::from_percent(30),
+                    Permill::from_percent(20),
+                    Permill::from_percent(10),
+                ])
+                .unwrap(),
+                slot_distribution: BoundedVec::try_from(vec![
+                    Permill::from_percent(10),
+                    Permill::from_percent(20),
+                    Permill::from_percent(30),
+                    Permill::from_percent(40),
+                ])
+                .unwrap(),
+                tier_thresholds: BoundedVec::try_from(vec![
+                    TierThreshold::DynamicTvlAmount { amount: 1000 },
+                    TierThreshold::DynamicTvlAmount { amount: 500 },
+                    TierThreshold::DynamicTvlAmount { amount: 100 },
+                    TierThreshold::FixedTvlAmount { amount: 50 },
+                ])
+                .unwrap(),
+            };
+            let init_tier_config = TierConfiguration::<<Test as Config>::NumberOfTiers> {
+                number_of_slots: 100,
+                slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
+                reward_portion: tier_params.reward_portion.clone(),
+                tier_thresholds: tier_params.tier_thresholds.clone(),
+            };
+
+            pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);
+            pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config);
+
             // DappStaking::on_initialize(System::block_number());
-        });
+        }
+        );
 
         ext
     }

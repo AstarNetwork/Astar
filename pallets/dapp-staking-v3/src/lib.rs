@@ -45,6 +45,7 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
     traits::{BadOrigin, Saturating, Zero},
     Perbill,
@@ -135,6 +136,10 @@ pub mod pallet {
         /// Minimum amount staker can stake on a contract.
         #[pallet::constant]
         type MinimumStakeAmount: Get<Balance>;
+
+        /// Number of different tiers.
+        #[pallet::constant]
+        type NumberOfTiers: Get<u32>;
     }
 
     #[pallet::event]
@@ -285,6 +290,7 @@ pub mod pallet {
     #[pallet::storage]
     pub type NextDAppId<T: Config> = StorageValue<_, DAppId, ValueQuery>;
 
+    // TODO: where to track TierLabels? E.g. a label to bootstrap a dApp into a specific tier.
     /// Map of all dApps integrated into dApp staking protocol.
     #[pallet::storage]
     pub type IntegratedDApps<T: Config> = CountedStorageMap<
@@ -339,6 +345,21 @@ pub mod pallet {
     pub type PeriodEnd<T: Config> =
         StorageMap<_, Twox64Concat, PeriodNumber, PeriodEndInfo, OptionQuery>;
 
+    /// Static tier parameters used to calculate tier configuration.
+    #[pallet::storage]
+    pub type StaticTierParams<T: Config> =
+        StorageValue<_, TierParameters<T::NumberOfTiers>, ValueQuery>;
+
+    /// Tier configuration to be used during the newly started period
+    #[pallet::storage]
+    pub type NextTierConfig<T: Config> =
+        StorageValue<_, TierConfiguration<T::NumberOfTiers>, ValueQuery>;
+
+    /// Tier configuration user for current & preceding eras.
+    #[pallet::storage]
+    pub type TierConfig<T: Config> =
+        StorageValue<_, TierConfiguration<T::NumberOfTiers>, ValueQuery>;
+
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
@@ -363,8 +384,11 @@ pub mod pallet {
             let (maybe_period_event, era_reward) = match protocol_state.period_type() {
                 PeriodType::Voting => {
                     // For the sake of consistency, we put zero reward into storage
-                    let era_reward =
-                        EraReward::new(Balance::zero(), era_info.total_staked_amount());
+                    let era_reward = EraReward {
+                        staker_reward_pool: Balance::zero(),
+                        staked: era_info.total_staked_amount(),
+                        dapp_reward_pool: Balance::zero(),
+                    };
 
                     let ending_era =
                         next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
@@ -373,6 +397,10 @@ pub mod pallet {
                     protocol_state.next_period_type(ending_era, build_and_earn_start_block);
 
                     era_info.migrate_to_next_era(Some(protocol_state.period_type()));
+
+                    // Update tier configuration to be used when calculating rewards for the upcoming eras
+                    let next_tier_config = NextTierConfig::<T>::take();
+                    TierConfig::<T>::put(next_tier_config);
 
                     (
                         Some(Event::<T>::NewPeriod {
@@ -383,11 +411,15 @@ pub mod pallet {
                     )
                 }
                 PeriodType::BuildAndEarn => {
-                    // TODO: trigger dAPp tier reward calculation here. This will be implemented later.
+                    // TODO: trigger dApp tier reward calculation here. This will be implemented later.
 
                     let staker_reward_pool = Balance::from(1_000_000_000_000u128); // TODO: calculate this properly, inject it from outside (Tokenomics 2.0 pallet?)
-                    let era_reward =
-                        EraReward::new(staker_reward_pool, era_info.total_staked_amount());
+                    let dapp_reward_pool = Balance::from(1_000_000_000u128); // TODO: same as above
+                    let era_reward = EraReward {
+                        staker_reward_pool,
+                        staked: era_info.total_staked_amount(),
+                        dapp_reward_pool,
+                    };
 
                     // Switch to `Voting` period if conditions are met.
                     if protocol_state.period_info.is_next_period(next_era) {
@@ -412,7 +444,12 @@ pub mod pallet {
 
                         era_info.migrate_to_next_era(Some(protocol_state.period_type()));
 
-                        // TODO: trigger tier configuration calculation based on internal & external params.
+                        // Re-calculate tier configuration for the upcoming new period
+                        let tier_params = StaticTierParams::<T>::get();
+                        let average_price = FixedU64::from_rational(1, 10); // TODO: implement price fetching later
+                        let new_tier_config =
+                            TierConfig::<T>::get().calculate_new(average_price, &tier_params);
+                        NextTierConfig::<T>::put(new_tier_config);
 
                         (
                             Some(Event::<T>::NewPeriod {
@@ -1083,11 +1120,11 @@ pub mod pallet {
                     .ok_or(Error::<T>::InternalClaimStakerError)?;
 
                 // Optimization, and zero-division protection
-                if amount.is_zero() || era_reward.staked().is_zero() {
+                if amount.is_zero() || era_reward.staked.is_zero() {
                     continue;
                 }
-                let staker_reward = Perbill::from_rational(amount, era_reward.staked())
-                    * era_reward.staker_reward_pool();
+                let staker_reward = Perbill::from_rational(amount, era_reward.staked)
+                    * era_reward.staker_reward_pool;
 
                 rewards.push((era, staker_reward));
                 reward_sum.saturating_accrue(staker_reward);
@@ -1234,7 +1271,7 @@ pub mod pallet {
         }
 
         /// `true` if smart contract is active, `false` if it has been unregistered.
-        fn is_active(smart_contract: &T::SmartContract) -> bool {
+        pub fn is_active(smart_contract: &T::SmartContract) -> bool {
             IntegratedDApps::<T>::get(smart_contract)
                 .map_or(false, |dapp_info| dapp_info.state == DAppState::Registered)
         }
@@ -1242,6 +1279,42 @@ pub mod pallet {
         /// Calculates the `EraRewardSpan` index for the specified era.
         pub fn era_reward_span_index(era: EraNumber) -> EraNumber {
             era.saturating_sub(era % T::EraRewardSpanLength::get())
+        }
+
+        // TODO - by breaking this into multiple steps, if they are too heavy for a single block, we can distribute them between multiple blocks.
+        pub fn dapp_tier_assignment(era: EraNumber, period: PeriodNumber) {
+            let tier_config = TierConfig::<T>::get();
+            // TODO: this really looks ugly, and too complicated. Botom line is, this value has to exist. If it doesn't we have to assume it's `Default`.
+            // Rewards will just end up being all zeroes.
+            let reward_info = EraRewards::<T>::get(Self::era_reward_span_index(era))
+                .map(|span| span.get(era).map(|x| *x).unwrap_or_default())
+                .unwrap_or_default();
+
+            let mut dapp_stakes = Vec::with_capacity(IntegratedDApps::<T>::count() as usize);
+
+            // 1.
+            // This is bounded by max amount of dApps we allow to be registered
+            for (smart_contract, dapp_info) in IntegratedDApps::<T>::iter() {
+                // Skip unregistered dApps
+                if dapp_info.state != DAppState::Registered {
+                    continue;
+                }
+
+                // Skip dApps which don't have ANY amount staked (TODO: potential improvement is to prune all dApps below minimum threshold)
+                let stake_amount = match ContractStake::<T>::get(&smart_contract).get(era, period) {
+                    Some(stake_amount) if !stake_amount.total().is_zero() => stake_amount,
+                    _ => continue,
+                };
+
+                // TODO: maybe also push the 'Label' here?
+                dapp_stakes.push((dapp_info.id, stake_amount.total()));
+            }
+
+            // 2.
+            // Sort by amount staked, in reverse - top dApp will end in the first place, 0th index.
+            dapp_stakes.sort_unstable_by(|(_, amount_1), (_, amount_2)| amount_2.cmp(amount_1));
+
+            // TODO: continue here
         }
     }
 }

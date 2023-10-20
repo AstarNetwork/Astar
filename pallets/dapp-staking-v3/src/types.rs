@@ -288,7 +288,7 @@ where
     fn default() -> Self {
         Self {
             locked: Balance::zero(),
-            unlocking: BoundedVec::<UnlockingChunk<BlockNumber>, UnlockingLen>::default(),
+            unlocking: BoundedVec::default(),
             staked: StakeAmount::default(),
             staked_future: None,
             staker_rewards_claimed: false,
@@ -1239,30 +1239,13 @@ impl ContractStakeAmountSeries {
 pub struct EraReward {
     /// Total reward pool for staker rewards
     #[codec(compact)]
-    staker_reward_pool: Balance,
+    pub staker_reward_pool: Balance,
     /// Total amount which was staked at the end of an era
     #[codec(compact)]
-    staked: Balance,
-}
-
-impl EraReward {
-    /// Create new instance of `EraReward` with specified `staker_reward_pool` and `staked` amounts.
-    pub fn new(staker_reward_pool: Balance, staked: Balance) -> Self {
-        Self {
-            staker_reward_pool,
-            staked,
-        }
-    }
-
-    /// Total reward pool for staker rewards.
-    pub fn staker_reward_pool(&self) -> Balance {
-        self.staker_reward_pool
-    }
-
-    /// Total amount which was staked at the end of an era.
-    pub fn staked(&self) -> Balance {
-        self.staked
-    }
+    pub staked: Balance,
+    /// Total reward pool for dApp rewards
+    #[codec(compact)]
+    pub dapp_reward_pool: Balance,
 }
 
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
@@ -1375,7 +1358,7 @@ pub enum TierThreshold {
 /// Top level description of tier slot parameters used to calculate tier configuration.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[scale_info(skip_type_params(NT))]
-pub struct TierSlotParameters<NT: Get<u32>> {
+pub struct TierParameters<NT: Get<u32>> {
     /// Reward distribution per tier, in percentage.
     /// First entry refers to the first tier, and so on.
     /// The sum of all values must be exactly equal to 1.
@@ -1389,7 +1372,7 @@ pub struct TierSlotParameters<NT: Get<u32>> {
     pub tier_thresholds: BoundedVec<TierThreshold, NT>,
 }
 
-impl<NT: Get<u32>> TierSlotParameters<NT> {
+impl<NT: Get<u32>> TierParameters<NT> {
     /// Check if configuration is valid.
     /// All vectors are expected to have exactly the amount of entries as `number_of_tiers`.
     pub fn is_valid(&self) -> bool {
@@ -1400,10 +1383,20 @@ impl<NT: Get<u32>> TierSlotParameters<NT> {
     }
 }
 
+impl<NT: Get<u32>> Default for TierParameters<NT> {
+    fn default() -> Self {
+        Self {
+            reward_portion: BoundedVec::default(),
+            slot_distribution: BoundedVec::default(),
+            tier_thresholds: BoundedVec::default(),
+        }
+    }
+}
+
 /// Configuration of dApp tiers.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[scale_info(skip_type_params(NT))]
-pub struct TierSlotConfiguration<NT: Get<u32>> {
+pub struct TierConfiguration<NT: Get<u32>> {
     /// Total number of slots.
     #[codec(compact)]
     pub number_of_slots: u16,
@@ -1419,7 +1412,18 @@ pub struct TierSlotConfiguration<NT: Get<u32>> {
     pub tier_thresholds: BoundedVec<TierThreshold, NT>,
 }
 
-impl<NT: Get<u32>> TierSlotConfiguration<NT> {
+impl<NT: Get<u32>> Default for TierConfiguration<NT> {
+    fn default() -> Self {
+        Self {
+            number_of_slots: 0,
+            slots_per_tier: BoundedVec::default(),
+            reward_portion: BoundedVec::default(),
+            tier_thresholds: BoundedVec::default(),
+        }
+    }
+}
+
+impl<NT: Get<u32>> TierConfiguration<NT> {
     /// Check if parameters are valid.
     pub fn is_valid(&self) -> bool {
         let number_of_tiers: usize = NT::get() as usize;
@@ -1432,7 +1436,7 @@ impl<NT: Get<u32>> TierSlotConfiguration<NT> {
     }
 
     /// TODO
-    pub fn calculate_new(&self, native_price: FixedU64, params: &TierSlotParameters<NT>) -> Self {
+    pub fn calculate_new(&self, native_price: FixedU64, params: &TierParameters<NT>) -> Self {
         let new_number_of_slots = Self::calculate_number_of_slots(native_price);
 
         // TODO: ugly, unsafe, refactor later
