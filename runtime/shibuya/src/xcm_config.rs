@@ -137,9 +137,6 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-    // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    // For the PoV size, we estimate 64 kB per instruction - which will is once again very conservative.
-    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, astar_primitives::xcm::DEFAULT_PROOF_SIZE);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -171,7 +168,6 @@ pub type ShibuyaXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     TreasuryAccountId,
 >;
 
-// pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 pub type Weigher = WeightInfoBounds<
     crate::weights::xcm_instruction_benchmarks::ShibuyaXcmWeight<RuntimeCall>,
     RuntimeCall,

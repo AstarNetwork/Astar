@@ -129,19 +129,6 @@ impl pallet_assets::Config for Test {
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
 }
-// pub struct MatchAnyFungible;
-// impl xcm_executor::traits::MatchesFungible<u64> for MatchAnyFungible {
-//     fn matches_fungible(m: &MultiAsset) -> Option<u64> {
-//         use sp_runtime::traits::SaturatedConversion;
-//         match m {
-//             MultiAsset {
-//                 fun: Fungible(amount),
-//                 ..
-//             } => Some((*amount).saturated_into::<u64>()),
-//             _ => None,
-//         }
-//     }
-// }
 
 // Use fungible transactor as the asset transactor.
 pub type AssetTransactor = xcm_builder::FungiblesAdapter<

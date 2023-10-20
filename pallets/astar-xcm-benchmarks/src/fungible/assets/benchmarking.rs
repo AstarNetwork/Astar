@@ -37,6 +37,12 @@ benchmarks_instance_pallet! {
             as
             TryInto<u128>
         >::Error: sp_std::fmt::Debug,
+
+            <   T::TransactAsset
+                as
+                Inspect<T::AccountId>
+            >::Balance : Into<u128>
+
     }
 
     withdraw_asset {
@@ -86,14 +92,12 @@ benchmarks_instance_pallet! {
             },
         ).unwrap();
         assert!(T::TransactAsset::balance(&dest_account).is_zero());
+
         // reducing some assets for Existential deposit
         if let Fungible(x) = asset.fun {
             asset.fun = Fungible(x/10)
         };
 
-        log::trace!(
-            target: "xcm::process",
-            "asset is {:?}",asset.clone());
         let assets: MultiAssets = vec![ asset.clone() ].into();
         log::trace!(
             target: "xcm::process",
@@ -116,13 +120,14 @@ benchmarks_instance_pallet! {
             target: "xcm::process",
             "destination balance is {:?}, sender balance is {:?}",T::TransactAsset::balance(&dest_account),T::TransactAsset::balance(&sender_account));
         assert!(!T::TransactAsset::balance(&dest_account).is_zero());
+        let previous_balance: u128 = T::TransactAsset::balance(&dest_account).into();
     }: {
         executor.bench_process(xcm)?;
     } verify {
         log::trace!(
             target: "xcm::process",
             "destination balance is {:?}, sender balance is {:?}",T::TransactAsset::balance(&dest_account),T::TransactAsset::balance(&sender_account));
-        assert!(!T::TransactAsset::balance(&dest_account).is_zero());
+        assert!(T::TransactAsset::balance(&dest_account).into() == 2 * previous_balance);
     }
 
     transfer_reserve_asset {
@@ -165,10 +170,12 @@ benchmarks_instance_pallet! {
             xcm: Xcm::new()
         };
         let xcm = Xcm(vec![instruction]);
+        assert!(!T::TransactAsset::balance(&dest_account).is_zero());
+        let previous_balance: u128 = T::TransactAsset::balance(&dest_account).into();
     }: {
         executor.bench_process(xcm)?;
     } verify {
-        assert!(!T::TransactAsset::balance(&dest_account).is_zero());
+        assert!(T::TransactAsset::balance(&dest_account).into() == 2 * previous_balance);
     }
 
     receive_teleported_asset {

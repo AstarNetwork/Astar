@@ -1982,15 +1982,11 @@ impl_runtime_apis! {
                 type RuntimeCall = RuntimeCall;
 
                 fn worst_case_response() -> (u64, Response) {
-                    // not sure what will be the worst case for Response
-                    // either `Assets(MultiAssets)` or `PalletsInfo(BoundedVec<PalletInfo, MaxPalletsInfo>)`
-                    // in either case, what will be the worst case?
-                    // let assets: Vec<MultiAsset> = vec![MultiAsset {
-                    //     id: Concrete(MultiLocation::parent()),
-                    //     fun: Fungible(u128::MAX),
-                    // }];
-                    // (0u64, Response::Assets(assets.into()))
-                    (0u64, Response::Version(Default::default()))
+                    let assets: Vec<MultiAsset> = vec![MultiAsset {
+                        id: Concrete(MultiLocation::parent()),
+                        fun: Fungible(u128::MAX),
+                    }];
+                    (0u64, Response::Assets(assets.into()))
 
                 }
 

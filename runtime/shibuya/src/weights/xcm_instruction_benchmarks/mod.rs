@@ -212,12 +212,9 @@ impl<RuntimeCall> XcmWeightInfo<RuntimeCall> for ShibuyaXcmWeight<RuntimeCall> {
         XcmGeneric::<Runtime>::unsubscribe_version()
     }
     fn burn_asset(assets: &MultiAssets) -> Weight {
-        //TODO: This should not be multiploed by assets, we are already burning worse case
-        // assets
         assets.weigh_multi_assets(XcmGeneric::<Runtime>::burn_asset())
     }
     fn expect_asset(assets: &MultiAssets) -> Weight {
-        // TODO same here
         assets.weigh_multi_assets(XcmGeneric::<Runtime>::expect_asset())
     }
     fn expect_origin(_origin: &Option<MultiLocation>) -> Weight {

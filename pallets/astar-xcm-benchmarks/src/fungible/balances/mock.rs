@@ -126,8 +126,6 @@ pub type AssetTransactor = xcm_builder::CurrencyAdapter<
 >;
 
 parameter_types! {
-    /// Maximum number of instructions in a single XCM fragment. A sanity check against weight
-    /// calculations getting too crazy.
     pub const MaxInstructions: u32 = 100;
     pub const MaxAssetsIntoHolding: u32 = 64;
 }
