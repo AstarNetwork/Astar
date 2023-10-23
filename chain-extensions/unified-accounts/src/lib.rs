@@ -30,7 +30,6 @@ use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, Result as DispatchResult, RetVal,
 };
 use pallet_evm::AddressMapping;
-use pallet_unified_accounts::{EvmToNative, NativeToEvm};
 use parity_scale_codec::Encode;
 pub use unified_accounts_chain_extension_types::Command::{self, *};
 
@@ -65,7 +64,7 @@ where
                 env.charge_weight(base_weight)?;
 
                 // read the storage item
-                let mapped = NativeToEvm::<T>::get(account_id.clone());
+                let mapped = UA::to_h160(&account_id);
 
                 let is_mapped = mapped.is_some();
                 let evm_address = mapped.unwrap_or_else(|| {
@@ -90,7 +89,7 @@ where
                 env.charge_weight(base_weight)?;
 
                 // read the storage item
-                let mapped = EvmToNative::<T>::get(evm_address.clone());
+                let mapped = UA::to_account_id(&evm_address);
 
                 let is_mapped = mapped.is_some();
                 let native_address = mapped.unwrap_or_else(|| {
