@@ -7484,6 +7484,7 @@ dependencies = [
  "num-traits",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-evm",
  "pallet-unified-accounts",
  "parity-scale-codec",
  "scale-info",

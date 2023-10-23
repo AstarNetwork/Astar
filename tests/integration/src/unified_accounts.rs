@@ -64,12 +64,12 @@ fn unified_accounts_chain_extension_works() {
         );
         // default h160 address should match
         assert_eq!(
-            call_wasm_contract_method::<H160>(
+            call_wasm_contract_method::<(H160, bool)>(
                 ALICE,
                 contract_id.clone(),
                 [GET_H160_OR_DEFAULT.to_vec(), ALICE.encode()].concat()
             ),
-            UnifiedAccounts::to_h160_or_default(&ALICE)
+            (UnifiedAccounts::to_h160_or_default(&ALICE), false)
         );
         // mapped native address should be None
         assert_eq!(
@@ -82,12 +82,12 @@ fn unified_accounts_chain_extension_works() {
         );
         // default native address should match
         assert_eq!(
-            call_wasm_contract_method::<AccountId>(
+            call_wasm_contract_method::<(AccountId, bool)>(
                 ALICE,
                 contract_id.clone(),
                 [GET_NATIVE_OR_DEFAULT.to_vec(), alith().encode()].concat()
             ),
-            UnifiedAccounts::to_account_id_or_default(&alith())
+            (UnifiedAccounts::to_account_id_or_default(&alith()), false)
         );
 
         //

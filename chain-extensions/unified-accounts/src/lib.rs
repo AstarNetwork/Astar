@@ -18,7 +18,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::evm::{EvmAddress, UnifiedAddressMapper};
+use astar_primitives::{
+    ethereum_checked::AccountMapping,
+    evm::{EvmAddress, UnifiedAddressMapper},
+};
 use core::marker::PhantomData;
 use sp_runtime::DispatchError;
 
@@ -26,6 +29,8 @@ use frame_support::{traits::Get, DefaultNoBound};
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, Result as DispatchResult, RetVal,
 };
+use pallet_evm::AddressMapping;
+use pallet_unified_accounts::{EvmToNative, NativeToEvm};
 use parity_scale_codec::Encode;
 pub use unified_accounts_chain_extension_types::Command::{self, *};
 
@@ -58,8 +63,17 @@ where
 
                 let base_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
                 env.charge_weight(base_weight)?;
+
+                // read the storage item
+                let mapped = NativeToEvm::<T>::get(account_id.clone());
+
+                let is_mapped = mapped.is_some();
+                let evm_address = mapped.unwrap_or_else(|| {
+                    // fallback to default account_id
+                    T::DefaultNativeToEvm::into_h160(account_id)
+                });
                 // write to buffer
-                UA::to_h160_or_default(&account_id).using_encoded(|r| env.write(r, false, None))?;
+                (evm_address, is_mapped).using_encoded(|r| env.write(r, false, None))?;
             }
             GetNativeAddress => {
                 let evm_address: EvmAddress = env.read_as()?;
@@ -74,9 +88,18 @@ where
 
                 let base_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
                 env.charge_weight(base_weight)?;
+
+                // read the storage item
+                let mapped = EvmToNative::<T>::get(evm_address.clone());
+
+                let is_mapped = mapped.is_some();
+                let native_address = mapped.unwrap_or_else(|| {
+                    // fallback to default evm_address
+                    T::DefaultEvmToNative::into_account_id(evm_address)
+                });
+
                 // write to buffer
-                UA::to_account_id_or_default(&evm_address)
-                    .using_encoded(|r| env.write(r, false, None))?;
+                (native_address, is_mapped).using_encoded(|r| env.write(r, false, None))?;
             }
         };
         Ok(RetVal::Converging(0))
