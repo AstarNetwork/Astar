@@ -1559,7 +1559,7 @@ fn tier_slot_configuration_basic_tests() {
     assert!(params.is_valid(), "Example params must be valid!");
 
     // Create a configuration with some values
-    let init_config = TierConfiguration::<TiersNum> {
+    let init_config = TiersConfiguration::<TiersNum> {
         number_of_slots: 100,
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),

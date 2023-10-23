@@ -34,6 +34,18 @@ use crate::pallet::Config;
 // Convenience type for `AccountLedger` usage.
 pub type AccountLedgerFor<T> = AccountLedger<BlockNumberFor<T>, <T as Config>::MaxUnlockingChunks>;
 
+// Convenience type for `DAppTierRewards` usage.
+pub type DAppTierRewardsFor<T> =
+    DAppTierRewards<MaxNumberOfContractsU32<T>, <T as Config>::NumberOfTiers>;
+
+// Helper struct for converting `u16` getter into `u32`
+pub struct MaxNumberOfContractsU32<T: Config>(PhantomData<T>);
+impl<T: Config> Get<u32> for MaxNumberOfContractsU32<T> {
+    fn get() -> u32 {
+        T::MaxNumberOfContracts::get() as u32
+    }
+}
+
 /// Era number type
 pub type EraNumber = u32;
 /// Period number type
@@ -1355,6 +1367,16 @@ pub enum TierThreshold {
     // Otherwise we could allow e.g. tier 3 to go below tier 4, which doesn't make sense.
 }
 
+impl TierThreshold {
+    /// Used to check if stake amount satisfies the threshold or not.
+    pub fn is_satisfied(&self, stake: Balance) -> bool {
+        match self {
+            Self::FixedTvlAmount { amount } => stake >= *amount,
+            Self::DynamicTvlAmount { amount } => stake >= *amount,
+        }
+    }
+}
+
 /// Top level description of tier slot parameters used to calculate tier configuration.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[scale_info(skip_type_params(NT))]
@@ -1393,10 +1415,12 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
     }
 }
 
+// TODO: refactor these structs so we only have 1 bounded vector, where each entry contains all the necessary info to describe the tier
+
 /// Configuration of dApp tiers.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[scale_info(skip_type_params(NT))]
-pub struct TierConfiguration<NT: Get<u32>> {
+pub struct TiersConfiguration<NT: Get<u32>> {
     /// Total number of slots.
     #[codec(compact)]
     pub number_of_slots: u16,
@@ -1412,7 +1436,7 @@ pub struct TierConfiguration<NT: Get<u32>> {
     pub tier_thresholds: BoundedVec<TierThreshold, NT>,
 }
 
-impl<NT: Get<u32>> Default for TierConfiguration<NT> {
+impl<NT: Get<u32>> Default for TiersConfiguration<NT> {
     fn default() -> Self {
         Self {
             number_of_slots: 0,
@@ -1423,7 +1447,7 @@ impl<NT: Get<u32>> Default for TierConfiguration<NT> {
     }
 }
 
-impl<NT: Get<u32>> TierConfiguration<NT> {
+impl<NT: Get<u32>> TiersConfiguration<NT> {
     /// Check if parameters are valid.
     pub fn is_valid(&self) -> bool {
         let number_of_tiers: usize = NT::get() as usize;
@@ -1435,7 +1459,7 @@ impl<NT: Get<u32>> TierConfiguration<NT> {
             && self.slots_per_tier.iter().fold(0, |acc, x| acc + x) == self.number_of_slots
     }
 
-    /// TODO
+    /// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
     pub fn calculate_new(&self, native_price: FixedU64, params: &TierParameters<NT>) -> Self {
         let new_number_of_slots = Self::calculate_number_of_slots(native_price);
 
@@ -1445,13 +1469,13 @@ impl<NT: Get<u32>> TierConfiguration<NT> {
             .clone()
             .into_inner()
             .iter()
-            .map(|x| *x * new_number_of_slots as u128)
+            .map(|percent| *percent * new_number_of_slots as u128)
             .map(|x| x.unique_saturated_into())
             .collect();
         let new_slots_per_tier =
             BoundedVec::<u16, NT>::try_from(new_slots_per_tier).unwrap_or_default();
 
-        // TODO: document this, and definitely refactor it to be simpler.
+        // TODO: document this!
         let new_tier_thresholds = if new_number_of_slots > self.number_of_slots {
             let delta_threshold_decrease = FixedU64::from_rational(
                 (new_number_of_slots - self.number_of_slots).into(),
@@ -1506,5 +1530,75 @@ impl<NT: Get<u32>> TierConfiguration<NT> {
         let result: u64 = native_price.saturating_mul_int(1000).saturating_add(50);
 
         result.unique_saturated_into()
+    }
+}
+
+/// Used to represent into which tier does a particular dApp fall into.
+///
+/// In case tier Id is `None`, it means that either reward was already claimed, or dApp is not eligible for rewards.
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+pub struct DAppTier {
+    /// Unique dApp id in dApp staking protocol.
+    #[codec(compact)]
+    pub dapp_id: DAppId,
+    /// `Some(tier_id)` if dApp belongs to tier and has unclaimed rewards, `None` otherwise.
+    pub tier_id: Option<u8>,
+}
+
+/// Information about all of the dApps that got into tiers, and tier rewards
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[scale_info(skip_type_params(MD, NT))]
+pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
+    /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
+    pub dapps: BoundedVec<DAppTier, MD>,
+    /// Rewards for each tier. First entry refers to the first tier, and so on.
+    pub rewards: BoundedVec<Balance, NT>,
+}
+
+impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
+    fn default() -> Self {
+        Self {
+            dapps: BoundedVec::default(),
+            rewards: BoundedVec::default(),
+        }
+    }
+}
+
+impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
+    /// Attempt to construct `DAppTierRewards` struct.
+    /// If the provided arguments exceed the allowed capacity, return an error.
+    pub fn new(dapps: Vec<DAppTier>, rewards: Vec<Balance>) -> Result<Self, ()> {
+        let dapps = BoundedVec::try_from(dapps).map_err(|_| ())?;
+        let rewards = BoundedVec::try_from(rewards).map_err(|_| ())?;
+        Ok(Self { dapps, rewards })
+    }
+
+    /// Consume reward for the specified dapp id, returning its amount.
+    /// In case dapp isn't applicable for rewards, or they have already been consumed, returns **zero**.
+    pub fn consume(&mut self, dapp_id: DAppId) -> Balance {
+        // Check if dApp Id exists.
+        let dapp_idx = match self
+            .dapps
+            .binary_search_by(|entry| entry.dapp_id.cmp(&dapp_id))
+        {
+            Ok(idx) => idx,
+            // dApp Id doesn't exist
+            _ => return Balance::zero(),
+        };
+
+        match self.dapps.get_mut(dapp_idx) {
+            Some(dapp_tier) => {
+                if let Some(tier_id) = dapp_tier.tier_id.take() {
+                    self.rewards
+                        .get(tier_id as usize)
+                        .map_or(Balance::zero(), |x| *x)
+                } else {
+                    // In case reward has already been claimed
+                    Balance::zero()
+                }
+            }
+            // unreachable code, at this point it was proved that index exists
+            _ => Balance::zero(),
+        }
     }
 }

@@ -353,12 +353,17 @@ pub mod pallet {
     /// Tier configuration to be used during the newly started period
     #[pallet::storage]
     pub type NextTierConfig<T: Config> =
-        StorageValue<_, TierConfiguration<T::NumberOfTiers>, ValueQuery>;
+        StorageValue<_, TiersConfiguration<T::NumberOfTiers>, ValueQuery>;
 
     /// Tier configuration user for current & preceding eras.
     #[pallet::storage]
     pub type TierConfig<T: Config> =
-        StorageValue<_, TierConfiguration<T::NumberOfTiers>, ValueQuery>;
+        StorageValue<_, TiersConfiguration<T::NumberOfTiers>, ValueQuery>;
+
+    /// Information about which tier a dApp belonged to in a specific era.
+    #[pallet::storage]
+    pub type DAppTiers<T: Config> =
+        StorageMap<_, Twox64Concat, EraNumber, DAppTierRewardsFor<T>, OptionQuery>;
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
@@ -411,8 +416,6 @@ pub mod pallet {
                     )
                 }
                 PeriodType::BuildAndEarn => {
-                    // TODO: trigger dApp tier reward calculation here. This will be implemented later.
-
                     let staker_reward_pool = Balance::from(1_000_000_000_000u128); // TODO: calculate this properly, inject it from outside (Tokenomics 2.0 pallet?)
                     let dapp_reward_pool = Balance::from(1_000_000_000u128); // TODO: same as above
                     let era_reward = EraReward {
@@ -420,6 +423,14 @@ pub mod pallet {
                         staked: era_info.total_staked_amount(),
                         dapp_reward_pool,
                     };
+
+                    // Distribute dapps into tiers, write it into storage
+                    let dapp_tier_rewards = Self::get_dapp_tier_assignment(
+                        current_era,
+                        protocol_state.period_number(),
+                        dapp_reward_pool,
+                    );
+                    DAppTiers::<T>::insert(&current_era, dapp_tier_rewards);
 
                     // Switch to `Voting` period if conditions are met.
                     if protocol_state.period_info.is_next_period(next_era) {
@@ -1282,13 +1293,13 @@ pub mod pallet {
         }
 
         // TODO - by breaking this into multiple steps, if they are too heavy for a single block, we can distribute them between multiple blocks.
-        pub fn dapp_tier_assignment(era: EraNumber, period: PeriodNumber) {
+        // TODO2: documentation
+        pub fn get_dapp_tier_assignment(
+            era: EraNumber,
+            period: PeriodNumber,
+            dapp_reward_pool: Balance,
+        ) -> DAppTierRewardsFor<T> {
             let tier_config = TierConfig::<T>::get();
-            // TODO: this really looks ugly, and too complicated. Botom line is, this value has to exist. If it doesn't we have to assume it's `Default`.
-            // Rewards will just end up being all zeroes.
-            let reward_info = EraRewards::<T>::get(Self::era_reward_span_index(era))
-                .map(|span| span.get(era).map(|x| *x).unwrap_or_default())
-                .unwrap_or_default();
 
             let mut dapp_stakes = Vec::with_capacity(IntegratedDApps::<T>::count() as usize);
 
@@ -1307,6 +1318,11 @@ pub mod pallet {
                 };
 
                 // TODO: maybe also push the 'Label' here?
+                // TODO2: proposition for label handling:
+                // Split them into 'musts' and 'good-to-have'
+                // In case of 'must', reduce appropriate tier size, and insert them at the end
+                // For good to have, we can insert them immediately, and then see if we need to adjust them later.
+                // Anyhow, labels bring complexity. For starters, we should only deliver the one for 'bootstraping' purposes.
                 dapp_stakes.push((dapp_info.id, stake_amount.total()));
             }
 
@@ -1314,7 +1330,60 @@ pub mod pallet {
             // Sort by amount staked, in reverse - top dApp will end in the first place, 0th index.
             dapp_stakes.sort_unstable_by(|(_, amount_1), (_, amount_2)| amount_2.cmp(amount_1));
 
-            // TODO: continue here
+            // 3.
+            // Calculate slices representing each tier
+            let mut dapp_tiers = Vec::with_capacity(dapp_stakes.len());
+
+            let mut global_idx = 0;
+            let mut tier_id = 0;
+            for (tier_capacity, tier_threshold) in tier_config
+                .slots_per_tier
+                .iter()
+                .zip(tier_config.tier_thresholds.iter())
+            {
+                let max_idx = global_idx.saturating_add(*tier_capacity as usize);
+
+                // Iterate over dApps until one of two conditions has been met:
+                // 1. Tier has no more capacity
+                // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition)
+                for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
+                    if tier_threshold.is_satisfied(*stake_amount) {
+                        global_idx.saturating_accrue(1);
+                        dapp_tiers.push(DAppTier {
+                            dapp_id: *dapp_id,
+                            tier_id: Some(tier_id),
+                        });
+                    } else {
+                        break;
+                    }
+                }
+
+                tier_id.saturating_accrue(1);
+            }
+
+            // 4.
+            // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is guaranteed due to lack of duplicated Ids)
+            // TODO: Sorting requirement can change - if we put it into tree, then we don't need to sort (explicitly at least).
+            // Important requirement is to have efficient deletion, and fast lookup. Sorted vector with entry like (dAppId, Option<tier>) is probably the best.
+            // The drawback being the size of the struct DOES NOT decrease with each claim.
+            // But then again, this will be used for dApp reward claiming, so 'best case scenario' (or worst) is ~1000 claims per day which is still very minor.
+            dapp_tiers.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
+
+            // 5. Calculate rewards.
+            let tier_rewards = tier_config
+                .reward_portion
+                .iter()
+                .map(|percent| *percent * dapp_reward_pool)
+                .collect::<Vec<_>>();
+
+            // 6.
+            // Prepare and return tier & rewards info
+            // In case rewards creation fails, we just write the default value. This should never happen though.
+            DAppTierRewards::<MaxNumberOfContractsU32<T>, T::NumberOfTiers>::new(
+                dapp_tiers,
+                tier_rewards,
+            )
+            .unwrap_or_default()
         }
     }
 }
