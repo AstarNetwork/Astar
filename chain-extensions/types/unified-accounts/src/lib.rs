@@ -37,6 +37,10 @@ pub enum Command {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum UnifiedAddress<T: Encode + Decode> {
+    /// The address fetched from the mappings and the account
+    /// is unified
     Mapped(T),
+    /// The default address associated with account as there
+    /// is no mapping found and accounts are not unified
     Default(T),
 }
