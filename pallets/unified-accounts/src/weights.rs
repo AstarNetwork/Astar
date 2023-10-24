@@ -51,6 +51,10 @@ use core::marker::PhantomData;
 pub trait WeightInfo {
 	fn claim_evm_address() -> Weight;
 	fn claim_default_evm_address() -> Weight;
+	fn uam_to_account_id() -> Weight;
+	fn uam_to_account_id_or_default() -> Weight;
+	fn uam_to_h160() -> Weight;
+	fn uam_to_h160_or_default() -> Weight;
 }
 
 /// Weights for pallet_unified_accounts using the Substrate node and recommended hardware.
@@ -88,6 +92,46 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
+	/// Storage: UnifiedAccounts EvmToNative (r:1 w:0)
+	/// Proof: UnifiedAccounts EvmToNative (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
+	fn uam_to_account_id() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `170`
+		//  Estimated: `3533`
+		// Minimum execution time: 6_000_000 picoseconds.
+		Weight::from_parts(7_000_000, 3533)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
+	/// Storage: UnifiedAccounts EvmToNative (r:1 w:0)
+	/// Proof: UnifiedAccounts EvmToNative (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
+	fn uam_to_account_id_or_default() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `170`
+		//  Estimated: `3533`
+		// Minimum execution time: 6_000_000 picoseconds.
+		Weight::from_parts(7_000_000, 3533)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
+	/// Storage: UnifiedAccounts NativeToEvm (r:1 w:0)
+	/// Proof: UnifiedAccounts NativeToEvm (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
+	fn uam_to_h160() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `170`
+		//  Estimated: `3533`
+		// Minimum execution time: 6_000_000 picoseconds.
+		Weight::from_parts(6_000_000, 3533)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
+	/// Storage: UnifiedAccounts NativeToEvm (r:1 w:0)
+	/// Proof: UnifiedAccounts NativeToEvm (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
+	fn uam_to_h160_or_default() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `170`
+		//  Estimated: `3533`
+		// Minimum execution time: 6_000_000 picoseconds.
+		Weight::from_parts(6_000_000, 3533)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -123,5 +167,45 @@ impl WeightInfo for () {
 		Weight::from_parts(16_806_000, 3533)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+	/// Storage: UnifiedAccounts EvmToNative (r:1 w:0)
+	/// Proof: UnifiedAccounts EvmToNative (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
+	fn uam_to_account_id() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `170`
+		//  Estimated: `3533`
+		// Minimum execution time: 6_000_000 picoseconds.
+		Weight::from_parts(7_000_000, 3533)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+	}
+	/// Storage: UnifiedAccounts EvmToNative (r:1 w:0)
+	/// Proof: UnifiedAccounts EvmToNative (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
+	fn uam_to_account_id_or_default() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `170`
+		//  Estimated: `3533`
+		// Minimum execution time: 6_000_000 picoseconds.
+		Weight::from_parts(7_000_000, 3533)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+	}
+	/// Storage: UnifiedAccounts NativeToEvm (r:1 w:0)
+	/// Proof: UnifiedAccounts NativeToEvm (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
+	fn uam_to_h160() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `170`
+		//  Estimated: `3533`
+		// Minimum execution time: 6_000_000 picoseconds.
+		Weight::from_parts(6_000_000, 3533)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+	}
+	/// Storage: UnifiedAccounts NativeToEvm (r:1 w:0)
+	/// Proof: UnifiedAccounts NativeToEvm (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
+	fn uam_to_h160_or_default() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `170`
+		//  Estimated: `3533`
+		// Minimum execution time: 6_000_000 picoseconds.
+		Weight::from_parts(6_000_000, 3533)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
 	}
 }
