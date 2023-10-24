@@ -1060,7 +1060,6 @@ pub mod pallet {
             Ok(())
         }
 
-        // TODO: perhaps this should be changed to include smart contract from which rewards are being claimed.
         /// TODO: docs
         #[pallet::call_index(11)]
         #[pallet::weight(Weight::zero())]
@@ -1125,7 +1124,6 @@ pub mod pallet {
             let mut rewards: Vec<_> = Vec::new();
             let mut reward_sum = Balance::zero();
             for (era, amount) in rewards_iter {
-                // TODO: this should be zipped, and values should be fetched only once
                 let era_reward = era_rewards
                     .get(era)
                     .ok_or(Error::<T>::InternalClaimStakerError)?;
@@ -1207,14 +1205,6 @@ pub mod pallet {
                 !period_end_info.total_vp_stake.is_zero(),
                 Error::<T>::InternalClaimBonusError
             );
-
-            // TODO: this functionality is incomplete - what we should do is iterate over all stake entries in the storage,
-            // and check if the smart contract was still registered when period ended.
-            //
-            // This is important since we cannot allow unregistered contracts to be subject for bonus rewards.
-            // This means 'a loop' but it will be bounded by max limit of unique stakes.
-            // A function should also be introduced to prepare the account ledger for next era (or to cleanup old expired rewards)
-            // in case bonus rewards weren't claimed.
 
             let bonus_reward =
                 Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)

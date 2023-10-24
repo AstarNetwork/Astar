@@ -123,7 +123,6 @@ impl pallet_dapp_staking::Config for Test {
     type NumberOfTiers = ConstU32<4>;
 }
 
-// TODO: why not just change this to e.g. u32 for test?
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Hash)]
 pub enum MockSmartContract {
     Wasm(AccountId),
@@ -193,14 +192,14 @@ impl ExtBuilder {
                 ])
                 .unwrap(),
                 tier_thresholds: BoundedVec::try_from(vec![
-                    TierThreshold::DynamicTvlAmount { amount: 1000 },
-                    TierThreshold::DynamicTvlAmount { amount: 500 },
                     TierThreshold::DynamicTvlAmount { amount: 100 },
-                    TierThreshold::FixedTvlAmount { amount: 50 },
+                    TierThreshold::DynamicTvlAmount { amount: 50 },
+                    TierThreshold::DynamicTvlAmount { amount: 20 },
+                    TierThreshold::FixedTvlAmount { amount: 10 },
                 ])
                 .unwrap(),
             };
-            let init_tier_config = TierConfiguration::<<Test as Config>::NumberOfTiers> {
+            let init_tier_config = TiersConfiguration::<<Test as Config>::NumberOfTiers> {
                 number_of_slots: 100,
                 slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),

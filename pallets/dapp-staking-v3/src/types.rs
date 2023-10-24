@@ -1415,7 +1415,7 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
     }
 }
 
-// TODO: refactor these structs so we only have 1 bounded vector, where each entry contains all the necessary info to describe the tier
+// TODO: refactor these structs so we only have 1 bounded vector, where each entry contains all the necessary info to describe the tier?
 
 /// Configuration of dApp tiers.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
