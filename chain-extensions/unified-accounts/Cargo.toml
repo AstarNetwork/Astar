@@ -1,0 +1,47 @@
+[package]
+name = "pallet-chain-extension-unified-accounts"
+version = "0.1.0"
+description = "Chain extension for AU"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+num-traits = { workspace = true }
+pallet-contracts = { workspace = true }
+pallet-contracts-primitives = { workspace = true }
+pallet-evm = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# Astar
+astar-primitives = { workspace = true }
+pallet-unified-accounts = { workspace = true }
+unified-accounts-chain-extension-types = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"num-traits/std",
+	"pallet-contracts/std",
+	"pallet-evm/std",
+	"pallet-contracts-primitives/std",
+	"scale-info/std",
+	"sp-std/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	# Astar
+	"astar-primitives/std",
+	"pallet-unified-accounts/std",
+	"unified-accounts-chain-extension-types/std",
+]

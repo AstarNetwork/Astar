@@ -38,9 +38,11 @@ pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 precompile-utils = { workspace = true }
+unified-accounts-chain-extension-types = { workspace = true }
 
 astar-primitives = { workspace = true }
 astar-runtime = { workspace = true, features = ["std"], optional = true }
+astar-test-utils = { workspace = true, features = ["std"] }
 shibuya-runtime = { workspace = true, features = ["std"], optional = true }
 shiden-runtime = { workspace = true, features = ["std"], optional = true }
 

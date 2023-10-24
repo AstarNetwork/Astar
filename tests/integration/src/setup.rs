@@ -35,6 +35,7 @@ pub use shibuya::*;
 #[cfg(feature = "shibuya")]
 mod shibuya {
     use super::*;
+    use parity_scale_codec::Decode;
     pub use shibuya_runtime::*;
 
     /// 1 SBY.
@@ -54,7 +55,7 @@ mod shibuya {
         <Runtime as pallet_evm::Config>::AddressMapping::into_account_id(address)
     }
 
-    /// Deploy an EVM contract with code.
+    /// Deploy an EVM contract with code via ALICE as origin.
     pub fn deploy_evm_contract(code: &str) -> H160 {
         assert_ok!(EVM::create2(
             RuntimeOrigin::root(),
@@ -79,30 +80,39 @@ mod shibuya {
         }
     }
 
-    /// Deploy a WASM contract with its name. (The code is in `resource/`.)
+    /// Deploy a WASM contract via ALICE as origin. (The code is in `../ink-contracts/`.)
+    /// Assumption: Contract constructor is called "new" and take no arguments
     pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
-        let path = format!("ink-contracts/{}.wasm", name);
-        let code = std::fs::read(path).expect("invalid path");
-        let instantiate_result = Contracts::bare_instantiate(
+        let (address, _) = astar_test_utils::deploy_wasm_contract::<Runtime>(
+            name,
             ALICE,
             0,
             Weight::from_parts(10_000_000_000, 1024 * 1024),
             None,
-            pallet_contracts_primitives::Code::Upload(code),
-            // `new` constructor
             hex::decode("9bae9d5e").expect("invalid data hex"),
-            vec![],
-            pallet_contracts::DebugInfo::Skip,
-            pallet_contracts::CollectEvents::Skip,
         );
 
-        let address = instantiate_result
-            .result
-            .expect("instantiation failed")
-            .account_id;
         // On instantiation, the contract got existential deposit.
         assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
         address
+    }
+
+    /// Call a wasm smart contract method
+    pub fn call_wasm_contract_method<V: Decode>(
+        origin: AccountId,
+        contract_id: AccountId,
+        data: Vec<u8>,
+    ) -> V {
+        let (value, _, _) = astar_test_utils::call_wasm_contract_method::<Runtime, V>(
+            origin,
+            contract_id,
+            0,
+            Weight::from_parts(10_000_000_000, 1024 * 1024),
+            None,
+            data,
+            false,
+        );
+        value
     }
 
     /// Build the signature payload for given native account and eth private key

@@ -23,6 +23,7 @@ pub use pallet_chain_extension_assets::AssetsExtension;
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 
 pub use pallet_chain_extension_dapps_staking::DappsStakingExtension;
+pub use pallet_chain_extension_unified_accounts::UnifiedAccountsExtension;
 pub use pallet_chain_extension_xvm::XvmExtension;
 
 // Following impls defines chain extension IDs.
@@ -39,4 +40,8 @@ impl<W: pallet_chain_extension_assets::weights::WeightInfo> RegisteredChainExten
     for AssetsExtension<Runtime, W>
 {
     const ID: u16 = 02;
+}
+
+impl RegisteredChainExtension<Runtime> for UnifiedAccountsExtension<Runtime, UnifiedAccounts> {
+    const ID: u16 = 03;
 }

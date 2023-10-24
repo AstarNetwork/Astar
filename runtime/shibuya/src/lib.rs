@@ -668,6 +668,7 @@ impl pallet_contracts::Config for Runtime {
         DappsStakingExtension<Self>,
         XvmExtension<Self, Xvm, UnifiedAccounts>,
         AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
+        UnifiedAccountsExtension<Self, UnifiedAccounts>,
     );
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
@@ -1203,12 +1204,18 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
+parameter_types! {
+    // 2 storage items with values 20 and 32
+    pub const AccountMappingStorageFee: u128 = deposit(2, 32 + 20);
+}
+
 impl pallet_unified_accounts::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type DefaultEvmToNative = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type DefaultNativeToEvm = HashedAccountMapping<BlakeTwo256>;
     type ChainId = EVMChainId;
+    type AccountMappingStorageFee = AccountMappingStorageFee;
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 

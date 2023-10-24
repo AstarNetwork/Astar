@@ -635,6 +635,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "astar-test-utils"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+]
+
+[[package]]
 name = "async-channel"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4921,6 +4934,7 @@ version = "0.1.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
+ "astar-test-utils",
  "env_logger 0.10.0",
  "fp-evm",
  "frame-support",
@@ -4947,6 +4961,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "unified-accounts-chain-extension-types",
 ]
 
 [[package]]
@@ -5992,6 +6007,7 @@ dependencies = [
  "pallet-block-reward",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
+ "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
  "pallet-collective",
  "pallet-contracts",
@@ -7456,6 +7472,27 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-chain-extension-unified-accounts"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "pallet-evm",
+ "pallet-unified-accounts",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "unified-accounts-chain-extension-types",
 ]
 
 [[package]]
@@ -13015,6 +13052,7 @@ dependencies = [
  "pallet-block-reward",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
+ "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
  "pallet-collator-selection",
  "pallet-collective",
@@ -15190,6 +15228,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 
 [[package]]
+name = "unified-accounts-chain-extension-types"
+version = "0.1.0"
+dependencies = [
+ "num_enum 0.5.11",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "universal-hash"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -16550,6 +16599,7 @@ name = "xcm-simulator-tests"
 version = "0.1.0"
 dependencies = [
  "astar-primitives",
+ "astar-test-utils",
  "cumulus-pallet-xcm",
  "frame-support",
  "frame-system",

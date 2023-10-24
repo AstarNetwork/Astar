@@ -39,6 +39,10 @@
 //! * `claim_default_evm_address`: Creates the double mapping with default evm address given that
 //!    no prior mapping exists.
 //!
+//! ## Storage Fee
+//! User is also charged a storage fee [`AccountMappingStorageFee`](`crate::Config::AccountMappingStorageFee`)
+//! before mappings are created to prevent storage abuse.
+//!
 //! WARNINGS:
 //! * This pallet only handles transfer of native balance only, for the rest of native assets
 //!   hold by evm address like XC20, DAppStaking unclaimed rewards, etc should be transferred
@@ -64,12 +68,13 @@
 use astar_primitives::{
     ethereum_checked::AccountMapping,
     evm::{EvmAddress, UnifiedAddressMapper},
+    Balance,
 };
 use frame_support::{
     pallet_prelude::*,
     traits::{
-        fungible::{Inspect, Mutate},
-        tokens::{Fortitude::*, Preservation::*},
+        fungible::{Inspect as FungibleInspect, Mutate as FungibleMutate},
+        tokens::{Fortitude::*, Precision::*, Preservation::*},
         IsType, OnKilledAccount,
     },
 };
@@ -109,13 +114,19 @@ pub mod pallet {
         /// The overarching event type
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// The Currency for managing evm address assets
-        type Currency: Mutate<Self::AccountId>;
+        type Currency: FungibleMutate<Self::AccountId, Balance = Balance>;
         /// Default evm address to account id conversion
         type DefaultEvmToNative: AddressMapping<Self::AccountId>;
         /// Default account id to evm address conversion
         type DefaultNativeToEvm: AccountMapping<Self::AccountId>;
         /// EVM chain id
+        #[pallet::constant]
         type ChainId: Get<u64>;
+        /// The amount of currency needed for mappings to be added.
+        /// Two storage items with values sizes, sizeof(AccountId) and sizeof(H160)
+        /// respectively
+        #[pallet::constant]
+        type AccountMappingStorageFee: Get<Balance>;
         /// Weight information for the extrinsics in this module
         type WeightInfo: WeightInfo;
     }
@@ -190,6 +201,9 @@ pub mod pallet {
 
             ensure!(evm_address == address, Error::<T>::InvalidSignature);
 
+            // charge the storage fee
+            Self::charge_storage_fee(&who)?;
+
             // Check if the default account id already exists for this evm address
             let default_account_id = T::DefaultEvmToNative::into_account_id(evm_address.clone());
             if frame_system::Pallet::<T>::account_exists(&default_account_id) {
@@ -246,6 +260,9 @@ impl<T: Config> Pallet<T> {
             !EvmToNative::<T>::contains_key(&evm_address),
             Error::<T>::AlreadyMapped
         );
+
+        Self::charge_storage_fee(&account_id)?;
+
         // create double mappings for the pair with default evm address
         EvmToNative::<T>::insert(&evm_address, &account_id);
         NativeToEvm::<T>::insert(&account_id, &evm_address);
@@ -255,6 +272,11 @@ impl<T: Config> Pallet<T> {
             evm_address,
         });
         Ok(evm_address)
+    }
+
+    /// Charge the (exact) storage fee (polietly) from the user and burn it
+    fn charge_storage_fee(who: &T::AccountId) -> Result<Balance, DispatchError> {
+        T::Currency::burn_from(who, T::AccountMappingStorageFee::get(), Exact, Polite)
     }
 }
 
@@ -375,7 +397,7 @@ impl<T: Config> AddressMapping<T::AccountId> for Pallet<T> {
 pub struct KillAccountMapping<T>(PhantomData<T>);
 impl<T: Config> OnKilledAccount<T::AccountId> for KillAccountMapping<T> {
     fn on_killed_account(who: &T::AccountId) {
-        // remove mapping created by `claim_account` or `get_or_create_evm_address`
+        // remove mappings of account reaped
         if let Some(evm_addr) = NativeToEvm::<T>::take(who) {
             EvmToNative::<T>::remove(evm_addr);
             NativeToEvm::<T>::remove(who);

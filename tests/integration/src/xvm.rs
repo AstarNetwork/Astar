@@ -330,6 +330,15 @@ fn calling_evm_payable_from_wasm_works() {
         let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
 
         let value = UNIT;
+
+        // fund the wasm contract address for paying storage fees for
+        // AU mappings.
+        assert_ok!(Balances::transfer_allow_death(
+            RuntimeOrigin::signed(ALICE),
+            wasm_caller_addr.clone().into(),
+            AccountMappingStorageFee::get()
+        ));
+
         let evm_payable = evm_payable_callee_addr.as_ref().to_vec();
         let deposit_func = hex::decode("d0e30db0").expect("invalid deposit function hex");
         let input = hex::decode("0000002a")

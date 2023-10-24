@@ -144,7 +144,8 @@ fn account_claim_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
         // default ss58 account associated with eth address
-        let alice_eth_old_account =  <TestRuntime as Config>::DefaultEvmToNative::into_account_id(alice_eth.clone());
+        let alice_eth_old_account =
+            <TestRuntime as Config>::DefaultEvmToNative::into_account_id(alice_eth.clone());
         let signature = get_evm_signature(&ALICE, &alice_secret());
 
         // transfer some funds to alice_eth (H160)
@@ -165,21 +166,28 @@ fn account_claim_should_work() {
         // old account (alice_eth_old_account)
         assert!(System::events().iter().any(|r| matches!(
             &r.event,
-            RuntimeEvent::System(frame_system::Event::KilledAccount { account }) if account == &alice_eth_old_account
+            RuntimeEvent::System(frame_system::Event::KilledAccount { account })
+                if account == &alice_eth_old_account
+        )));
+
+        // check if storage fee is charged and burned
+        assert!(System::events().iter().any(|r| matches!(
+            &r.event,
+            RuntimeEvent::Balances(pallet_balances::Event::Burned { who, amount })
+                if who == &ALICE && amount == &AccountMappingStorageFee::get()
         )));
 
         // check for claim account event
-        System::assert_last_event(
-            RuntimeEvent::UnifiedAccounts(crate::Event::AccountClaimed { account_id: ALICE.clone(), evm_address: alice_eth.clone()})
-        );
+        System::assert_last_event(RuntimeEvent::UnifiedAccounts(
+            crate::Event::AccountClaimed {
+                account_id: ALICE.clone(),
+                evm_address: alice_eth.clone(),
+            },
+        ));
 
         // make sure mappings are in place
-        assert_eq!(
-			EvmToNative::<TestRuntime>::get(alice_eth).unwrap(), ALICE
-		);
-        assert_eq!(
-            NativeToEvm::<TestRuntime>::get(ALICE).unwrap(), alice_eth
-        )
+        assert_eq!(EvmToNative::<TestRuntime>::get(alice_eth).unwrap(), ALICE);
+        assert_eq!(NativeToEvm::<TestRuntime>::get(ALICE).unwrap(), alice_eth)
     });
 }
 
@@ -199,6 +207,13 @@ fn account_default_claim_works() {
                 evm_address: alice_default_evm.clone(),
             },
         ));
+
+        // check if storage fee is charged and burned
+        assert!(System::events().iter().any(|r| matches!(
+            &r.event,
+            RuntimeEvent::Balances(pallet_balances::Event::Burned { who, amount })
+                if who == &ALICE && amount == &AccountMappingStorageFee::get()
+        )));
 
         // check UnifiedAddressMapper's mapping works
         assert_eq!(

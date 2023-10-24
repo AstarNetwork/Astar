@@ -149,7 +149,7 @@ impl pallet_ethereum::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub TxWeightLimit: Weight = Weight::from_parts(u64::max_value(), 0);
+    pub const AccountMappingStorageFee: u128 = 100_000_000;
 }
 
 impl pallet_unified_accounts::Config for TestRuntime {
@@ -158,6 +158,7 @@ impl pallet_unified_accounts::Config for TestRuntime {
     type DefaultEvmToNative = HashedAddressMapping<BlakeTwo256>;
     type DefaultNativeToEvm = HashedAccountMapping<BlakeTwo256>;
     type ChainId = ChainId;
+    type AccountMappingStorageFee = AccountMappingStorageFee;
     type WeightInfo = ();
 }
 
