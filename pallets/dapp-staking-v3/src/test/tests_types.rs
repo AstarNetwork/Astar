@@ -1549,9 +1549,18 @@ fn tier_slot_configuration_basic_tests() {
         ])
         .unwrap(),
         tier_thresholds: BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount { amount: 1000 },
-            TierThreshold::DynamicTvlAmount { amount: 500 },
-            TierThreshold::DynamicTvlAmount { amount: 100 },
+            TierThreshold::DynamicTvlAmount {
+                amount: 1000,
+                minimum_amount: 800,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 500,
+                minimum_amount: 350,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 100,
+                minimum_amount: 70,
+            },
             TierThreshold::FixedTvlAmount { amount: 50 },
         ])
         .unwrap(),

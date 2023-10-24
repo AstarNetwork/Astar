@@ -24,6 +24,7 @@ use frame_support::{
     weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
@@ -105,22 +106,24 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
 }
 
-impl pallet_dapp_staking::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type SmartContract = MockSmartContract;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type StandardEraLength = ConstU64<10>;
-    type StandardErasPerVotingPeriod = ConstU32<8>;
-    type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
-    type EraRewardSpanLength = ConstU32<8>;
-    type RewardRetentionInPeriods = ConstU32<2>;
-    type MaxNumberOfContracts = ConstU16<10>;
-    type MaxUnlockingChunks = ConstU32<5>;
-    type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
-    type UnlockingPeriod = ConstU64<20>;
-    type MinimumStakeAmount = ConstU128<3>;
-    type NumberOfTiers = ConstU32<4>;
+pub struct DummyPriceProvider;
+impl PriceProvider for DummyPriceProvider {
+    fn average_price() -> FixedU64 {
+        FixedU64::from_rational(1, 10)
+    }
+}
+
+pub struct DummyRewardPoolProvider;
+impl RewardPoolProvider for DummyRewardPoolProvider {
+    fn normal_reward_pools() -> (Balance, Balance) {
+        (
+            Balance::from(1_000_000_000_000_u128),
+            Balance::from(1_000_000_000_u128),
+        )
+    }
+    fn bonus_reward_pool() -> Balance {
+        Balance::from(3_000_000_u128)
+    }
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Hash)]
@@ -133,6 +136,26 @@ impl Default for MockSmartContract {
     fn default() -> Self {
         MockSmartContract::Wasm(1)
     }
+}
+
+impl pallet_dapp_staking::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type SmartContract = MockSmartContract;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type NativePriceProvider = DummyPriceProvider;
+    type RewardPoolProvider = DummyRewardPoolProvider;
+    type StandardEraLength = ConstU64<10>;
+    type StandardErasPerVotingPeriod = ConstU32<8>;
+    type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
+    type EraRewardSpanLength = ConstU32<8>;
+    type RewardRetentionInPeriods = ConstU32<2>;
+    type MaxNumberOfContracts = ConstU16<10>;
+    type MaxUnlockingChunks = ConstU32<5>;
+    type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
+    type UnlockingPeriod = ConstU64<20>;
+    type MinimumStakeAmount = ConstU128<3>;
+    type NumberOfTiers = ConstU32<4>;
 }
 
 pub struct ExtBuilder;
@@ -192,9 +215,9 @@ impl ExtBuilder {
                 ])
                 .unwrap(),
                 tier_thresholds: BoundedVec::try_from(vec![
-                    TierThreshold::DynamicTvlAmount { amount: 100 },
-                    TierThreshold::DynamicTvlAmount { amount: 50 },
-                    TierThreshold::DynamicTvlAmount { amount: 20 },
+                    TierThreshold::DynamicTvlAmount { amount: 100, minimum_amount: 80 },
+                    TierThreshold::DynamicTvlAmount { amount: 50, minimum_amount: 40 },
+                    TierThreshold::DynamicTvlAmount { amount: 20, minimum_amount: 20 },
                     TierThreshold::FixedTvlAmount { amount: 10 },
                 ])
                 .unwrap(),
@@ -210,6 +233,7 @@ impl ExtBuilder {
             pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());
             pallet_dapp_staking::NextTierConfig::<Test>::put(init_tier_config);
 
+            // TODO: include this into every test unless it explicitly doesn't need ot/
             // DappStaking::on_initialize(System::block_number());
         }
         );

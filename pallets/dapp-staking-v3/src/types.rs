@@ -1375,9 +1375,11 @@ pub enum TierThreshold {
     FixedTvlAmount { amount: Balance },
     /// Entry into tier is mandated by minimum amount of staked funds.
     /// Value is expected to dynamically change in-between periods, depending on the system parameters.
-    DynamicTvlAmount { amount: Balance },
-    // TODO: perhaps add a type that is dynamic but has lower bound below which the value cannot go?
-    // Otherwise we could allow e.g. tier 3 to go below tier 4, which doesn't make sense.
+    /// The `amount` should never go below the `minimum_amount`.
+    DynamicTvlAmount {
+        amount: Balance,
+        minimum_amount: Balance,
+    },
 }
 
 impl TierThreshold {
@@ -1385,7 +1387,7 @@ impl TierThreshold {
     pub fn is_satisfied(&self, stake: Balance) -> bool {
         match self {
             Self::FixedTvlAmount { amount } => stake >= *amount,
-            Self::DynamicTvlAmount { amount } => stake >= *amount,
+            Self::DynamicTvlAmount { amount, .. } => stake >= *amount,
         }
     }
 }
@@ -1476,7 +1478,7 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
     pub fn calculate_new(&self, native_price: FixedU64, params: &TierParameters<NT>) -> Self {
         let new_number_of_slots = Self::calculate_number_of_slots(native_price);
 
-        // TODO: ugly, unsafe, refactor later
+        // Calculate how much each tier gets slots.
         let new_slots_per_tier: Vec<u16> = params
             .slot_distribution
             .clone()
@@ -1488,7 +1490,31 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
         let new_slots_per_tier =
             BoundedVec::<u16, NT>::try_from(new_slots_per_tier).unwrap_or_default();
 
-        // TODO: document this!
+        // Update tier thresholds.
+        // In case number of slots increase, we decrease thresholds required to enter the tier.
+        // In case number of slots decrease, we increase the threshold required to enter the tier.
+        //
+        // According to formula: %_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
+        //
+        // where delta_%_slots is simply: (old_num_slots - new_num_slots) / old_num_slots
+        //
+        // When these entries are put into the threshold formula, we get:
+        // = 1 / ( 1 - (old_num_slots - new_num_slots) / old_num_slots ) - 1
+        // = 1 / ( new / old) - 1
+        // = old / new - 1
+        // = (old - new) / new
+        //
+        // This number can be negative. In order to keep all operations in unsigned integer domain,
+        // formulas are adjusted like:
+        //
+        // 1. Number of slots has increased, threshold is expected to decrease
+        // %_threshold = (new_num_slots - old_num_slots) / new_num_slots
+        // new_threshold = old_threshold * (1 - %_threshold)
+        //
+        // 2. Number of slots has decreased, threshold is expected to increase
+        // %_threshold = (old_num_slots - new_num_slots) / new_num_slots
+        // new_threshold = old_threshold * (1 + %_threshold)
+        //
         let new_tier_thresholds = if new_number_of_slots > self.number_of_slots {
             let delta_threshold_decrease = FixedU64::from_rational(
                 (new_number_of_slots - self.number_of_slots).into(),
@@ -1499,9 +1525,13 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
             new_tier_thresholds
                 .iter_mut()
                 .for_each(|threshold| match threshold {
-                    TierThreshold::DynamicTvlAmount { amount } => {
+                    TierThreshold::DynamicTvlAmount {
+                        amount,
+                        minimum_amount,
+                    } => {
                         *amount = amount
                             .saturating_sub(delta_threshold_decrease.saturating_mul_int(*amount));
+                        *amount = *amount.max(minimum_amount);
                     }
                     _ => (),
                 });
@@ -1517,7 +1547,7 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
             new_tier_thresholds
                 .iter_mut()
                 .for_each(|threshold| match threshold {
-                    TierThreshold::DynamicTvlAmount { amount } => {
+                    TierThreshold::DynamicTvlAmount { amount, .. } => {
                         *amount = amount
                             .saturating_add(delta_threshold_increase.saturating_mul_int(*amount));
                     }
@@ -1539,7 +1569,7 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
 
     /// Calculate number of slots, based on the provided native token price.
     pub fn calculate_number_of_slots(native_price: FixedU64) -> u16 {
-        // floor(1000 x price + 50)
+        // floor(1000 x price + 50), formula proposed in Tokenomics 2.0 document.
         let result: u64 = native_price.saturating_mul_int(1000).saturating_add(50);
 
         result.unique_saturated_into()
@@ -1566,7 +1596,7 @@ pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     pub dapps: BoundedVec<DAppTier, MD>,
     /// Rewards for each tier. First entry refers to the first tier, and so on.
     pub rewards: BoundedVec<Balance, NT>,
-    // TODO: perhaps I can add 'PeriodNumber' here so it's easy to identify expired rewards
+    // TODO: perhaps I can add 'PeriodNumber' here so it's easy to identify expired rewards?
 }
 
 impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
@@ -1628,4 +1658,35 @@ pub enum DAppTierError {
     RewardAlreadyClaimed,
     /// Internal, unexpected error occured.
     InternalError,
+}
+
+///////////////////////////////////////////////////////////////////////
+////////////   MOVE THIS TO SOME PRIMITIVES CRATE LATER    ////////////
+///////////////////////////////////////////////////////////////////////
+
+/// Interface for fetching price of the native token.
+///
+/// TODO: discussion about below
+/// The assumption is that the underlying implementation will ensure
+/// this price is averaged and/or weighted over a certain period of time.
+/// Alternative is to provide e.g. number of blocks for which an approximately averaged value is needed,
+/// and let the underlying implementation take care converting block range into value best represening it.
+pub trait PriceProvider {
+    /// Get the price of the native token.
+    fn average_price() -> FixedU64;
+}
+
+pub trait RewardPoolProvider {
+    /// Get the reward pools for stakers and dApps.
+    ///
+    /// TODO: discussion about below
+    /// The assumption is that the underlying implementation keeps track of how often this is called.
+    /// E.g. let's assume it's supposed to be called at the end of each era.
+    /// In case era is forced, it will last shorter. If pallet is put into maintenance mode, era might last longer.
+    /// Reward should adjust to that accordingly.
+    /// Alternative is to provide number of blocks for which era lasted.
+    fn normal_reward_pools() -> (Balance, Balance);
+
+    /// Get the bonus pool for stakers.
+    fn bonus_reward_pool() -> Balance;
 }

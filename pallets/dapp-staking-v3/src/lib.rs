@@ -17,6 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! # dApp Staking v3 Pallet
+//! TODO
 //!
 //! - [`Config`]
 //!
@@ -92,6 +93,12 @@ pub mod pallet {
 
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
+
+        /// Used to provide price information about the native token.
+        type NativePriceProvider: PriceProvider;
+
+        /// Used to provide reward pools amount.
+        type RewardPoolProvider: RewardPoolProvider;
 
         /// Length of a standard era in block numbers.
         #[pallet::constant]
@@ -439,8 +446,8 @@ pub mod pallet {
                     )
                 }
                 PeriodType::BuildAndEarn => {
-                    let staker_reward_pool = Balance::from(1_000_000_000_000u128); // TODO: calculate this properly, inject it from outside (Tokenomics 2.0 pallet?)
-                    let dapp_reward_pool = Balance::from(1_000_000_000u128); // TODO: same as above
+                    let (staker_reward_pool, dapp_reward_pool) =
+                        T::RewardPoolProvider::normal_reward_pools();
                     let era_reward = EraReward {
                         staker_reward_pool,
                         staked: era_info.total_staked_amount(),
@@ -458,7 +465,7 @@ pub mod pallet {
                     // Switch to `Voting` period if conditions are met.
                     if protocol_state.period_info.is_next_period(next_era) {
                         // Store info about period end
-                        let bonus_reward_pool = Balance::from(3_000_000_u32); // TODO: get this from Tokenomics 2.0 pallet
+                        let bonus_reward_pool = T::RewardPoolProvider::bonus_reward_pool();
                         PeriodEnd::<T>::insert(
                             &protocol_state.period_number(),
                             PeriodEndInfo {
@@ -480,7 +487,7 @@ pub mod pallet {
 
                         // Re-calculate tier configuration for the upcoming new period
                         let tier_params = StaticTierParams::<T>::get();
-                        let average_price = FixedU64::from_rational(1, 10); // TODO: implement price fetching later
+                        let average_price = T::NativePriceProvider::average_price();
                         let new_tier_config =
                             TierConfig::<T>::get().calculate_new(average_price, &tier_params);
                         NextTierConfig::<T>::put(new_tier_config);
@@ -512,9 +519,7 @@ pub mod pallet {
 
             let era_span_index = Self::era_reward_span_index(current_era);
             let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
-            // TODO: error must not happen here. Log an error if it does.
-            // The consequence will be that some rewards will be temporarily lost/unavailable, but nothing protocol breaking.
-            // Will require a fix from the runtime team though.
+            // TODO: Error "cannot" happen here. Log an error if it does though.
             let _ = span.push(current_era, era_reward);
             EraRewards::<T>::insert(&era_span_index, span);
 
@@ -704,8 +709,6 @@ pub mod pallet {
             // total stake in active era info. This is fine, from the logic perspective, it doesn't cause any issues.
             // TODO: left as potential discussion topic, remove later.
             ContractStake::<T>::remove(&smart_contract);
-
-            // TODO3: will need to add a call similar to what we have in DSv2, for stakers to 'unstake_from_unregistered_contract'
 
             Self::deposit_event(Event::<T>::DAppUnregistered {
                 smart_contract,
@@ -1084,7 +1087,9 @@ pub mod pallet {
             Ok(())
         }
 
-        /// TODO: docs
+        /// Claims some staker rewards, if user has any.
+        /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening
+        /// if appropriate entries exist in account's ledger.
         #[pallet::call_index(11)]
         #[pallet::weight(Weight::zero())]
         pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResult {
@@ -1181,7 +1186,7 @@ pub mod pallet {
         }
 
         // TODO: perhaps this should be changed to include smart contract from which rewards are being claimed.
-        /// TODO: documentation
+        /// Used to claim bonus reward for the eligible era, if applicable.
         #[pallet::call_index(12)]
         #[pallet::weight(Weight::zero())]
         pub fn claim_bonus_reward(origin: OriginFor<T>) -> DispatchResult {
@@ -1250,7 +1255,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// TODO: documentation
+        /// Used to claim dApp reward for the specified era.
         #[pallet::call_index(13)]
         #[pallet::weight(Weight::zero())]
         pub fn claim_dapp_reward(
@@ -1298,14 +1303,14 @@ pub mod pallet {
             Ok(())
         }
 
-        /// TODO
+        /// Used to unstake funds from a contract that was unregistered after an account staked on it.
         #[pallet::call_index(14)]
         #[pallet::weight(Weight::zero())]
         pub fn unstake_from_unregistered(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
-            // TODO: this call needs to be tested
+            // TODO: tests are missing but will be added later.
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -1421,19 +1426,24 @@ pub mod pallet {
             era.saturating_sub(era % T::EraRewardSpanLength::get())
         }
 
-        // TODO - by breaking this into multiple steps, if they are too heavy for a single block, we can distribute them between multiple blocks.
-        // TODO2: documentation
+        /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
+        ///
+        /// The returned object contains information about each dApp that made it into a tier.
         pub fn get_dapp_tier_assignment(
             era: EraNumber,
             period: PeriodNumber,
             dapp_reward_pool: Balance,
         ) -> DAppTierRewardsFor<T> {
-            let tier_config = TierConfig::<T>::get();
+            // TODO - by breaking this into multiple steps, if they are too heavy for a single block, we can distribute them between multiple blocks.
+            // Benchmarks will show this, but I don't believe it will be needed, especially with increased block capacity we'll get with async backing.
+            // Even without async backing though, we should have enough capacity to handle this.
 
+            let tier_config = TierConfig::<T>::get();
             let mut dapp_stakes = Vec::with_capacity(IntegratedDApps::<T>::count() as usize);
 
             // 1.
-            // This is bounded by max amount of dApps we allow to be registered
+            // Iterate over all registered dApps, and collect their stake amount.
+            // This is bounded by max amount of dApps we allow to be registered.
             for (smart_contract, dapp_info) in IntegratedDApps::<T>::iter() {
                 // Skip unregistered dApps
                 if dapp_info.state != DAppState::Registered {
@@ -1446,8 +1456,8 @@ pub mod pallet {
                     _ => continue,
                 };
 
-                // TODO: maybe also push the 'Label' here?
-                // TODO2: proposition for label handling:
+                // TODO: Need to handle labels!
+                // Proposition for label handling:
                 // Split them into 'musts' and 'good-to-have'
                 // In case of 'must', reduce appropriate tier size, and insert them at the end
                 // For good to have, we can insert them immediately, and then see if we need to adjust them later.
@@ -1460,7 +1470,9 @@ pub mod pallet {
             dapp_stakes.sort_unstable_by(|(_, amount_1), (_, amount_2)| amount_2.cmp(amount_1));
 
             // 3.
-            // Calculate slices representing each tier
+            // Iterate over configured tier and potential dApps.
+            // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
+            // and tier capacity hasn't been filled yet.
             let mut dapp_tiers = Vec::with_capacity(dapp_stakes.len());
 
             let mut global_idx = 0;
@@ -1476,7 +1488,7 @@ pub mod pallet {
 
                 // Iterate over dApps until one of two conditions has been met:
                 // 1. Tier has no more capacity
-                // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition)
+                // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
                 for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
                     if tier_threshold.is_satisfied(*stake_amount) {
                         global_idx.saturating_accrue(1);
@@ -1493,11 +1505,7 @@ pub mod pallet {
             }
 
             // 4.
-            // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is guaranteed due to lack of duplicated Ids)
-            // TODO: Sorting requirement can change - if we put it into tree, then we don't need to sort (explicitly at least).
-            // Important requirement is to have efficient deletion, and fast lookup. Sorted vector with entry like (dAppId, Option<tier>) is probably the best.
-            // The drawback being the size of the struct DOES NOT decrease with each claim.
-            // But then again, this will be used for dApp reward claiming, so 'best case scenario' (or worst) is ~1000 claims per day which is still very minor.
+            // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is guaranteed due to lack of duplicated Ids).
             dapp_tiers.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
 
             // 5. Calculate rewards.
@@ -1508,7 +1516,7 @@ pub mod pallet {
                 .collect::<Vec<_>>();
 
             // 6.
-            // Prepare and return tier & rewards info
+            // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
             DAppTierRewards::<MaxNumberOfContractsU32<T>, T::NumberOfTiers>::new(
                 dapp_tiers,
