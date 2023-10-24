@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x5eb72ad6cdb6869bb8419ae07ff533bca787346360e58713c679f14679e188f7",
+    "hash": "0x0cfe2b4d2b98a121c0ce38b07d826f1e4d0c7d9870ff84239cd554b32904617d",
     "language": "ink! 4.3.0",
     "compiler": "rustc 1.72.0",
     "build_info": {
@@ -52,32 +52,32 @@
         "displayName": [
           "Balance"
         ],
-        "type": 14
+        "type": 16
       },
       "blockNumber": {
         "displayName": [
           "BlockNumber"
         ],
-        "type": 17
+        "type": 19
       },
       "chainExtension": {
         "displayName": [
           "ChainExtension"
         ],
-        "type": 18
+        "type": 20
       },
       "hash": {
         "displayName": [
           "Hash"
         ],
-        "type": 15
+        "type": 17
       },
       "maxEventTopics": 4,
       "timestamp": {
         "displayName": [
           "Timestamp"
         ],
-        "type": 16
+        "type": 18
       }
     },
     "events": [],
@@ -105,7 +105,7 @@
         "docs": [],
         "label": "to_h160",
         "mutates": false,
-        "payable": true,
+        "payable": false,
         "returnType": {
           "displayName": [
             "ink",
@@ -131,7 +131,7 @@
         "docs": [],
         "label": "to_h160_or_default",
         "mutates": false,
-        "payable": true,
+        "payable": false,
         "returnType": {
           "displayName": [
             "ink",
@@ -157,13 +157,13 @@
         "docs": [],
         "label": "to_account_id",
         "mutates": false,
-        "payable": true,
+        "payable": false,
         "returnType": {
           "displayName": [
             "ink",
             "MessageResult"
           ],
-          "type": 11
+          "type": 12
         },
         "selector": "0x0000002c"
       },
@@ -183,13 +183,13 @@
         "docs": [],
         "label": "to_account_id_or_default",
         "mutates": false,
-        "payable": true,
+        "payable": false,
         "returnType": {
           "displayName": [
             "ink",
             "MessageResult"
           ],
-          "type": 13
+          "type": 14
         },
         "selector": "0x0000002d"
       }
@@ -429,7 +429,7 @@
               {
                 "fields": [
                   {
-                    "type": 8
+                    "type": 11
                   }
                 ],
                 "index": 0,
@@ -450,7 +450,7 @@
         "params": [
           {
             "name": "T",
-            "type": 8
+            "type": 11
           },
           {
             "name": "E",
@@ -471,7 +471,48 @@
               {
                 "fields": [
                   {
-                    "type": 12
+                    "type": 8,
+                    "typeName": "T"
+                  }
+                ],
+                "index": 0,
+                "name": "Mapped"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 8,
+                    "typeName": "T"
+                  }
+                ],
+                "index": 1,
+                "name": "Default"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 8
+          }
+        ],
+        "path": [
+          "unified_accounts_chain_extension_types",
+          "UnifiedAddress"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 13
                   }
                 ],
                 "index": 0,
@@ -492,7 +533,7 @@
         "params": [
           {
             "name": "T",
-            "type": 12
+            "type": 13
           },
           {
             "name": "E",
@@ -505,7 +546,7 @@
       }
     },
     {
-      "id": 12,
+      "id": 13,
       "type": {
         "def": {
           "variant": {
@@ -538,7 +579,7 @@
       }
     },
     {
-      "id": 13,
+      "id": 14,
       "type": {
         "def": {
           "variant": {
@@ -546,7 +587,7 @@
               {
                 "fields": [
                   {
-                    "type": 3
+                    "type": 15
                   }
                 ],
                 "index": 0,
@@ -567,7 +608,7 @@
         "params": [
           {
             "name": "T",
-            "type": 3
+            "type": 15
           },
           {
             "name": "E",
@@ -580,7 +621,48 @@
       }
     },
     {
-      "id": 14,
+      "id": 15,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 3,
+                    "typeName": "T"
+                  }
+                ],
+                "index": 0,
+                "name": "Mapped"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 3,
+                    "typeName": "T"
+                  }
+                ],
+                "index": 1,
+                "name": "Default"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 3
+          }
+        ],
+        "path": [
+          "unified_accounts_chain_extension_types",
+          "UnifiedAddress"
+        ]
+      }
+    },
+    {
+      "id": 16,
       "type": {
         "def": {
           "primitive": "u128"
@@ -588,7 +670,7 @@
       }
     },
     {
-      "id": 15,
+      "id": 17,
       "type": {
         "def": {
           "composite": {
@@ -608,7 +690,7 @@
       }
     },
     {
-      "id": 16,
+      "id": 18,
       "type": {
         "def": {
           "primitive": "u64"
@@ -616,7 +698,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 19,
       "type": {
         "def": {
           "primitive": "u32"
@@ -624,7 +706,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 20,
       "type": {
         "def": {
           "variant": {}

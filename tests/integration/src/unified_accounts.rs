@@ -18,7 +18,8 @@
 
 use crate::setup::*;
 use parity_scale_codec::Encode;
-pub use sp_io::hashing::keccak_256;
+use sp_io::hashing::keccak_256;
+use unified_accounts_chain_extension_types::UnifiedAddress;
 
 const AU_CE_GETTER: &'static str = "au_ce_getters";
 
@@ -64,12 +65,12 @@ fn unified_accounts_chain_extension_works() {
         );
         // default h160 address should match
         assert_eq!(
-            call_wasm_contract_method::<(H160, bool)>(
+            call_wasm_contract_method::<UnifiedAddress<H160>>(
                 ALICE,
                 contract_id.clone(),
                 [GET_H160_OR_DEFAULT.to_vec(), ALICE.encode()].concat()
             ),
-            (UnifiedAccounts::to_h160_or_default(&ALICE), false)
+            UnifiedAddress::Default(UnifiedAccounts::to_h160_or_default(&ALICE))
         );
         // mapped native address should be None
         assert_eq!(
@@ -82,12 +83,12 @@ fn unified_accounts_chain_extension_works() {
         );
         // default native address should match
         assert_eq!(
-            call_wasm_contract_method::<(AccountId, bool)>(
+            call_wasm_contract_method::<UnifiedAddress<AccountId>>(
                 ALICE,
                 contract_id.clone(),
                 [GET_NATIVE_OR_DEFAULT.to_vec(), alith().encode()].concat()
             ),
-            (UnifiedAccounts::to_account_id_or_default(&alith()), false)
+            UnifiedAddress::Default(UnifiedAccounts::to_account_id_or_default(&alith()))
         );
 
         //

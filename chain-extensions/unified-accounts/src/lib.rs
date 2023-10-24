@@ -31,7 +31,10 @@ use pallet_contracts::chain_extension::{
 };
 use pallet_evm::AddressMapping;
 use parity_scale_codec::Encode;
-pub use unified_accounts_chain_extension_types::Command::{self, *};
+pub use unified_accounts_chain_extension_types::{
+    Command::{self, *},
+    UnifiedAddress,
+};
 
 #[derive(DefaultNoBound)]
 pub struct UnifiedAccountsExtension<T, UA>(PhantomData<(T, UA)>);
@@ -63,16 +66,13 @@ where
                 let base_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
                 env.charge_weight(base_weight)?;
 
-                // read the storage item
-                let mapped = UA::to_h160(&account_id);
-
-                let is_mapped = mapped.is_some();
-                let evm_address = mapped.unwrap_or_else(|| {
-                    // fallback to default account_id
-                    T::DefaultNativeToEvm::into_h160(account_id)
-                });
+                let evm_address = if let Some(h160) = UA::to_h160(&account_id) {
+                    UnifiedAddress::Mapped(h160)
+                } else {
+                    UnifiedAddress::Default(T::DefaultNativeToEvm::into_h160(account_id))
+                };
                 // write to buffer
-                (evm_address, is_mapped).using_encoded(|r| env.write(r, false, None))?;
+                evm_address.using_encoded(|r| env.write(r, false, None))?;
             }
             GetNativeAddress => {
                 let evm_address: EvmAddress = env.read_as()?;
@@ -89,16 +89,14 @@ where
                 env.charge_weight(base_weight)?;
 
                 // read the storage item
-                let mapped = UA::to_account_id(&evm_address);
-
-                let is_mapped = mapped.is_some();
-                let native_address = mapped.unwrap_or_else(|| {
-                    // fallback to default evm_address
-                    T::DefaultEvmToNative::into_account_id(evm_address)
-                });
+                let native_address = if let Some(native) = UA::to_account_id(&evm_address) {
+                    UnifiedAddress::Mapped(native)
+                } else {
+                    UnifiedAddress::Default(T::DefaultEvmToNative::into_account_id(evm_address))
+                };
 
                 // write to buffer
-                (native_address, is_mapped).using_encoded(|r| env.write(r, false, None))?;
+                native_address.using_encoded(|r| env.write(r, false, None))?;
             }
         };
         Ok(RetVal::Converging(0))

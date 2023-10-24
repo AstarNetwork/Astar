@@ -19,7 +19,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
 #[repr(u16)]
 #[derive(TryFromPrimitive, IntoPrimitive, Decode, Encode)]
@@ -32,4 +32,11 @@ pub enum Command {
     GetNativeAddress = 2,
     /// Get the mapped Native address if any otheriwse default associated Native address
     GetNativeAddressOrDefault = 3,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub enum UnifiedAddress<T: Encode + Decode> {
+    Mapped(T),
+    Default(T),
 }
