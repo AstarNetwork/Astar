@@ -19,7 +19,9 @@
 use crate::{AccountId, AssetId};
 
 use frame_support::ensure;
-use sp_core::H160;
+use pallet_evm::{AddressMapping, HashedAddressMapping};
+use parity_scale_codec::Encode;
+use sp_core::{Hasher, H160, H256};
 use sp_std::marker::PhantomData;
 
 use pallet_assets::AssetsCallback;
@@ -64,7 +66,12 @@ pub trait UnifiedAddressMapper<AccountId> {
     fn to_account_id(evm_address: &EvmAddress) -> Option<AccountId>;
     /// Gets the account id associated with given evm address.
     /// If no mapping exists, then return the default evm address.
-    fn to_account_id_or_default(evm_address: &EvmAddress) -> AccountId;
+    fn to_account_id_or_default(evm_address: &EvmAddress) -> AccountId {
+        Self::to_account_id(evm_address).unwrap_or_else(|| {
+            // fallback to default account_id
+            Self::to_default_account_id(evm_address)
+        })
+    }
     /// Gets the default account id which is associated with given evm address.
     fn to_default_account_id(evm_address: &EvmAddress) -> AccountId;
 
@@ -72,7 +79,33 @@ pub trait UnifiedAddressMapper<AccountId> {
     fn to_h160(account_id: &AccountId) -> Option<EvmAddress>;
     /// Gets the evm address associated with given account id.
     /// If no mapping exists, then return the default account id.
-    fn to_h160_or_default(account_id: &AccountId) -> EvmAddress;
+    fn to_h160_or_default(account_id: &AccountId) -> EvmAddress {
+        Self::to_h160(account_id).unwrap_or_else(|| {
+            // fallback to default account_id
+            Self::to_default_h160(account_id)
+        })
+    }
     /// Gets the default evm address which is associated with given account id.
     fn to_default_h160(account_id: &AccountId) -> EvmAddress;
+}
+
+/// Mappings derieved from hashing the original address
+pub struct HashedDefaultMappings<H>(PhantomData<H>);
+impl<H: Hasher<Out = H256>> UnifiedAddressMapper<AccountId> for HashedDefaultMappings<H> {
+    fn to_default_account_id(evm_address: &EvmAddress) -> AccountId {
+        HashedAddressMapping::<H>::into_account_id(evm_address.clone())
+    }
+
+    fn to_default_h160(account_id: &AccountId) -> EvmAddress {
+        let payload = (b"evm:", account_id);
+        H160::from_slice(&payload.using_encoded(H::hash)[0..20])
+    }
+
+    fn to_account_id(_: &EvmAddress) -> Option<AccountId> {
+        None
+    }
+
+    fn to_h160(_: &AccountId) -> Option<EvmAddress> {
+        None
+    }
 }

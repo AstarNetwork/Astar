@@ -18,10 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::{
-    ethereum_checked::AccountMapping,
-    evm::{EvmAddress, UnifiedAddressMapper},
-};
+use astar_primitives::evm::{EvmAddress, UnifiedAddressMapper};
 use core::marker::PhantomData;
 use sp_runtime::DispatchError;
 
@@ -29,7 +26,6 @@ use frame_support::{traits::Get, DefaultNoBound};
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, Result as DispatchResult, RetVal,
 };
-use pallet_evm::AddressMapping;
 use parity_scale_codec::Encode;
 pub use unified_accounts_chain_extension_types::{
     Command::{self, *},
@@ -69,7 +65,7 @@ where
                 let evm_address = if let Some(h160) = UA::to_h160(&account_id) {
                     UnifiedAddress::Mapped(h160)
                 } else {
-                    UnifiedAddress::Default(T::DefaultNativeToEvm::into_h160(account_id))
+                    UnifiedAddress::Default(UA::to_default_h160(&account_id))
                 };
                 // write to buffer
                 evm_address.using_encoded(|r| env.write(r, false, None))?;
@@ -92,7 +88,7 @@ where
                 let native_address = if let Some(native) = UA::to_account_id(&evm_address) {
                     UnifiedAddress::Mapped(native)
                 } else {
-                    UnifiedAddress::Default(T::DefaultEvmToNative::into_account_id(evm_address))
+                    UnifiedAddress::Default(UA::to_default_account_id(&evm_address))
                 };
 
                 // write to buffer

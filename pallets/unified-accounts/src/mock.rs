@@ -20,7 +20,7 @@
 
 use super::*;
 use crate as pallet_unified_accounts;
-use astar_primitives::ethereum_checked::HashedAccountMapping;
+use astar_primitives::evm::HashedDefaultMappings;
 use frame_support::{
     construct_runtime, parameter_types,
     sp_io::TestExternalities,
@@ -28,7 +28,7 @@ use frame_support::{
     weights::Weight,
 };
 use pallet_ethereum::PostLogContent;
-use pallet_evm::{FeeCalculator, HashedAddressMapping};
+use pallet_evm::FeeCalculator;
 use sp_core::{keccak_256, H160, H256, U256};
 use sp_runtime::{
     testing::Header,
@@ -155,8 +155,7 @@ parameter_types! {
 impl pallet_unified_accounts::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type DefaultEvmToNative = HashedAddressMapping<BlakeTwo256>;
-    type DefaultNativeToEvm = HashedAccountMapping<BlakeTwo256>;
+    type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
     type ChainId = ChainId;
     type AccountMappingStorageFee = AccountMappingStorageFee;
     type WeightInfo = ();

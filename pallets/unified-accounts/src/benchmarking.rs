@@ -64,8 +64,7 @@ mod benchmarks {
     #[benchmark]
     fn claim_default_evm_address() {
         let caller: T::AccountId = whitelisted_caller();
-        let caller_clone = caller.clone();
-        let evm_address = T::DefaultNativeToEvm::into_h160(caller.clone());
+        let evm_address = T::DefaultMappings::to_default_h160(&caller);
 
         assert_ok!(T::Currency::mint_into(
             &caller,
@@ -73,11 +72,11 @@ mod benchmarks {
         ));
 
         #[extrinsic_call]
-        _(RawOrigin::Signed(caller));
+        _(RawOrigin::Signed(caller.clone()));
 
         assert_last_event::<T>(
             Event::<T>::AccountClaimed {
-                account_id: caller_clone,
+                account_id: caller,
                 evm_address,
             }
             .into(),

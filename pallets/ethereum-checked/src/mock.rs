@@ -127,21 +127,41 @@ impl AddressMapping<AccountId32> for MockAddressMapping {
     }
 }
 
-pub struct MockAccountMapping;
-impl AccountMapping<AccountId32> for MockAccountMapping {
-    fn into_h160(account_id: AccountId) -> H160 {
-        if account_id == ALICE {
+pub struct MockAddressMapper;
+impl UnifiedAddressMapper<AccountId32> for MockAddressMapper {
+    fn to_h160_or_default(account_id: &AccountId) -> H160 {
+        if account_id == &ALICE {
             return ALICE_H160;
         }
-        if account_id == BOB {
+        if account_id == &BOB {
             return BOB_H160;
         }
-        if account_id == CHARLIE {
+        if account_id == &CHARLIE {
             return CHARLIE_H160;
         }
 
         let data = (b"evm:", account_id);
         return H160::from_slice(&data.using_encoded(blake2_256)[0..20]);
+    }
+
+    // this method is not used in tests
+    fn to_account_id(_: &H160) -> Option<AccountId32> {
+        None
+    }
+
+    // this method is not used in tests
+    fn to_h160(_: &AccountId32) -> Option<H160> {
+        None
+    }
+
+    // this method is not used in tests
+    fn to_default_account_id(_: &H160) -> AccountId32 {
+        [0u8; 32].into()
+    }
+
+    // this method is not used in tests
+    fn to_default_h160(_: &AccountId32) -> H160 {
+        [0u8; 20].into()
     }
 }
 
@@ -193,7 +213,7 @@ impl pallet_ethereum_checked::Config for TestRuntime {
     type XvmTxWeightLimit = TxWeightLimit;
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
-    type AccountMapping = MockAccountMapping;
+    type AddressMapper = MockAddressMapper;
     type XcmTransactOrigin = EnsureXcmEthereumTx<AccountId32>;
     type WeightInfo = ();
 }
