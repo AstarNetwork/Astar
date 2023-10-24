@@ -223,6 +223,11 @@ pub mod pallet {
             era: EraNumber,
             amount: Balance,
         },
+        UnstakeFromUnregistered {
+            account: T::AccountId,
+            smart_contract: T::SmartContract,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -295,6 +300,8 @@ pub mod pallet {
         DAppRewardAlreadyClaimed,
         /// An unexpected error occured while trying to claim dApp reward.
         InternalClaimDAppError,
+        /// Contract is still active, not unregistered.
+        ContractStillActive,
     }
 
     /// General information about dApp staking protocol state.
@@ -693,9 +700,10 @@ pub mod pallet {
                 },
             )?;
 
-            // TODO: might require some modification later on, like additional checks to ensure contract can be unregistered.
-
-            // TODO2: we should remove staked amount from appropriate entries, since contract has been 'invalidated'
+            // As a consequence, this means that the sum of all stakes from `ContractStake` storage won't match
+            // total stake in active era info. This is fine, from the logic perspective, it doesn't cause any issues.
+            // TODO: left as potential discussion topic, remove later.
+            ContractStake::<T>::remove(&smart_contract);
 
             // TODO3: will need to add a call similar to what we have in DSv2, for stakers to 'unstake_from_unregistered_contract'
 
@@ -1284,6 +1292,71 @@ pub mod pallet {
                 smart_contract,
                 tier_id,
                 era,
+                amount,
+            });
+
+            Ok(())
+        }
+
+        /// TODO
+        #[pallet::call_index(14)]
+        #[pallet::weight(Weight::zero())]
+        pub fn unstake_from_unregistered(
+            origin: OriginFor<T>,
+            smart_contract: T::SmartContract,
+        ) -> DispatchResult {
+            // TODO: this call needs to be tested
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            ensure!(
+                !Self::is_active(&smart_contract),
+                Error::<T>::ContractStillActive
+            );
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let unstake_era = protocol_state.era;
+
+            // Extract total staked amount on the specified unregistered contract
+            let amount = match StakerInfo::<T>::get(&account, &smart_contract) {
+                Some(staking_info) => {
+                    ensure!(
+                        staking_info.period_number() == protocol_state.period_number(),
+                        Error::<T>::UnstakeFromPastPeriod
+                    );
+
+                    staking_info.total_staked_amount()
+                }
+                None => {
+                    return Err(Error::<T>::NoStakingInfo.into());
+                }
+            };
+
+            // Reduce stake amount in ledger
+            let mut ledger = Ledger::<T>::get(&account);
+            ledger
+                .unstake_amount(amount, unstake_era, protocol_state.period_info)
+                .map_err(|err| match err {
+                    // These are all defensive checks, which should never happen since we already checked them above.
+                    AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
+                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                    }
+                    _ => Error::<T>::InternalUnstakeError,
+                })?;
+
+            // Update total staked amount for the next era.
+            // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.unstake_amount(amount, protocol_state.period_type());
+            });
+
+            // Update remaining storage entries
+            Self::update_ledger(&account, ledger);
+            StakerInfo::<T>::remove(&account, &smart_contract);
+
+            Self::deposit_event(Event::<T>::UnstakeFromUnregistered {
+                account,
+                smart_contract,
                 amount,
             });
 

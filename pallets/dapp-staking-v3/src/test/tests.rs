@@ -330,13 +330,29 @@ fn set_dapp_owner_fails() {
 }
 
 #[test]
-fn unregister_is_ok() {
+fn unregister_no_stake_is_ok() {
     ExtBuilder::build().execute_with(|| {
         // Prepare dApp
         let owner = 1;
         let smart_contract = MockSmartContract::Wasm(3);
         assert_register(owner, &smart_contract);
 
+        // Nothing staked on contract, just unregister it.
+        assert_unregister(&smart_contract);
+    })
+}
+
+#[test]
+fn unregister_with_active_stake_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Prepare dApp
+        let owner = 1;
+        let smart_contract = MockSmartContract::Wasm(3);
+        assert_register(owner, &smart_contract);
+        assert_lock(owner, 100);
+        assert_stake(owner, &smart_contract, 100);
+
+        // Some amount is staked, unregister must still work.
         assert_unregister(&smart_contract);
     })
 }

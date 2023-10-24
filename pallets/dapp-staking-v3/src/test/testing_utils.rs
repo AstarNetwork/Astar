@@ -187,6 +187,7 @@ pub(crate) fn assert_unregister(smart_contract: &MockSmartContract) {
         IntegratedDApps::<Test>::get(&smart_contract).unwrap().state,
         DAppState::Unregistered(pre_snapshot.active_protocol_state.era),
     );
+    assert!(!ContractStake::<Test>::contains_key(&smart_contract));
 }
 
 /// Lock funds into dApp staking and assert success.
