@@ -216,6 +216,13 @@ pub mod pallet {
             period: PeriodNumber,
             amount: Balance,
         },
+        DAppReward {
+            beneficiary: T::AccountId,
+            smart_contract: T::SmartContract,
+            tier_id: TierId,
+            era: EraNumber,
+            amount: Balance,
+        },
     }
 
     #[pallet::error]
@@ -269,7 +276,7 @@ pub mod pallet {
         RewardExpired,
         /// All staker rewards for the period have been claimed.
         StakerRewardsAlreadyClaimed,
-        /// There are no claimable rewards for the account.
+        /// There are no claimable rewards.
         NoClaimableRewards,
         /// An unexpected error occured while trying to claim staker rewards.
         InternalClaimStakerError,
@@ -279,6 +286,15 @@ pub mod pallet {
         NotEligibleForBonusReward,
         /// An unexpected error occured while trying to claim bonus reward.
         InternalClaimBonusError,
+        /// Claim era is invalid - it must be in history, and rewards must exist for it.
+        InvalidClaimEra,
+        /// No dApp tier info exists for the specified era. This can be because era has expired
+        /// or because during the specified era there were no eligible rewards or protocol wasn't active.
+        NoDAppTierInfo,
+        /// dApp reward has already been claimed for this era.
+        DAppRewardAlreadyClaimed,
+        /// An unexpected error occured while trying to claim dApp reward.
+        InternalClaimDAppError,
     }
 
     /// General information about dApp staking protocol state.
@@ -1139,6 +1155,7 @@ pub mod pallet {
                 reward_sum.saturating_accrue(staker_reward);
             }
 
+            // Account exists since it has locked funds.
             T::Currency::deposit_into_existing(&account, reward_sum)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
 
@@ -1210,6 +1227,7 @@ pub mod pallet {
                 Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
                     * period_end_info.bonus_reward_pool;
 
+            // Account exists since it has locked funds.
             T::Currency::deposit_into_existing(&account, bonus_reward)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
 
@@ -1219,6 +1237,54 @@ pub mod pallet {
                 account: account.clone(),
                 period: staked_period,
                 amount: bonus_reward,
+            });
+
+            Ok(())
+        }
+
+        /// TODO: documentation
+        #[pallet::call_index(13)]
+        #[pallet::weight(Weight::zero())]
+        pub fn claim_dapp_reward(
+            origin: OriginFor<T>,
+            smart_contract: T::SmartContract,
+            #[pallet::compact] era: EraNumber,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            let _ = ensure_signed(origin)?;
+
+            let dapp_info =
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
+
+            // Make sure provided era has ended
+            let protocol_state = ActiveProtocolState::<T>::get();
+            ensure!(era < protocol_state.era, Error::<T>::InvalidClaimEra);
+
+            // 'Consume' dApp reward for the specified era, if possible.
+            let mut dapp_tiers = DAppTiers::<T>::get(&era).ok_or(Error::<T>::NoDAppTierInfo)?;
+            let (amount, tier_id) =
+                dapp_tiers
+                    .try_consume(dapp_info.id)
+                    .map_err(|error| match error {
+                        DAppTierError::NoDAppInTiers => Error::<T>::NoClaimableRewards,
+                        DAppTierError::RewardAlreadyClaimed => Error::<T>::DAppRewardAlreadyClaimed,
+                        _ => Error::<T>::InternalClaimDAppError,
+                    })?;
+
+            // Get reward destination, and deposit the reward.
+            // TODO: should we check reward is greater than zero, or even more precise, it's greater than the existential deposit? Seems redundant but still...
+            let reward_destination = dapp_info.get_reward_destination();
+            T::Currency::deposit_creating(reward_destination, amount);
+
+            // Write back updated struct to prevent double reward claims
+            DAppTiers::<T>::insert(&era, dapp_tiers);
+
+            Self::deposit_event(Event::<T>::DAppReward {
+                beneficiary: reward_destination.clone(),
+                smart_contract,
+                tier_id,
+                era,
+                amount,
             });
 
             Ok(())

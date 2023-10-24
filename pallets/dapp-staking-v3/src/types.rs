@@ -52,6 +52,8 @@ pub type EraNumber = u32;
 pub type PeriodNumber = u32;
 /// Dapp Id type
 pub type DAppId = u16;
+/// Tier Id type
+pub type TierId = u8;
 
 /// Simple enum representing errors possible when using sparse bounded vector.
 #[derive(Debug, PartialEq, Eq)]
@@ -241,6 +243,16 @@ pub struct DAppInfo<AccountId> {
     pub state: DAppState,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
     pub reward_destination: Option<AccountId>,
+}
+
+impl<AccountId> DAppInfo<AccountId> {
+    /// Reward destination account for this dApp.
+    pub fn get_reward_destination(&self) -> &AccountId {
+        match &self.reward_destination {
+            Some(account_id) => account_id,
+            None => &self.owner,
+        }
+    }
 }
 
 /// How much was unlocked in some block.
@@ -1542,7 +1554,7 @@ pub struct DAppTier {
     #[codec(compact)]
     pub dapp_id: DAppId,
     /// `Some(tier_id)` if dApp belongs to tier and has unclaimed rewards, `None` otherwise.
-    pub tier_id: Option<u8>,
+    pub tier_id: Option<TierId>,
 }
 
 /// Information about all of the dApps that got into tiers, and tier rewards
@@ -1573,32 +1585,45 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
         Ok(Self { dapps, rewards })
     }
 
-    /// Consume reward for the specified dapp id, returning its amount.
-    /// In case dapp isn't applicable for rewards, or they have already been consumed, returns **zero**.
-    pub fn consume(&mut self, dapp_id: DAppId) -> Balance {
+    /// Consume reward for the specified dapp id, returning its amount and tier Id.
+    /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
+    pub fn try_consume(&mut self, dapp_id: DAppId) -> Result<(Balance, TierId), DAppTierError> {
         // Check if dApp Id exists.
         let dapp_idx = match self
             .dapps
             .binary_search_by(|entry| entry.dapp_id.cmp(&dapp_id))
         {
             Ok(idx) => idx,
-            // dApp Id doesn't exist
-            _ => return Balance::zero(),
+            _ => {
+                return Err(DAppTierError::NoDAppInTiers);
+            }
         };
 
         match self.dapps.get_mut(dapp_idx) {
             Some(dapp_tier) => {
                 if let Some(tier_id) = dapp_tier.tier_id.take() {
-                    self.rewards
-                        .get(tier_id as usize)
-                        .map_or(Balance::zero(), |x| *x)
+                    Ok((
+                        self.rewards
+                            .get(tier_id as usize)
+                            .map_or(Balance::zero(), |x| *x),
+                        tier_id,
+                    ))
                 } else {
-                    // In case reward has already been claimed
-                    Balance::zero()
+                    Err(DAppTierError::RewardAlreadyClaimed)
                 }
             }
             // unreachable code, at this point it was proved that index exists
-            _ => Balance::zero(),
+            _ => Err(DAppTierError::InternalError),
         }
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum DAppTierError {
+    /// Specified dApp Id doesn't exist in any tier.
+    NoDAppInTiers,
+    /// Reward has already been claimed for this dApp.
+    RewardAlreadyClaimed,
+    /// Internal, unexpected error occured.
+    InternalError,
 }
