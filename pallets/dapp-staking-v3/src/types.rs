@@ -39,6 +39,7 @@ pub type DAppTierRewardsFor<T> =
     DAppTierRewards<MaxNumberOfContractsU32<T>, <T as Config>::NumberOfTiers>;
 
 // Helper struct for converting `u16` getter into `u32`
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MaxNumberOfContractsU32<T: Config>(PhantomData<T>);
 impl<T: Config> Get<u32> for MaxNumberOfContractsU32<T> {
     fn get() -> u32 {
@@ -247,7 +248,7 @@ pub struct DAppInfo<AccountId> {
 
 impl<AccountId> DAppInfo<AccountId> {
     /// Reward destination account for this dApp.
-    pub fn get_reward_destination(&self) -> &AccountId {
+    pub fn get_reward_beneficiary(&self) -> &AccountId {
         match &self.reward_destination {
             Some(account_id) => account_id,
             None => &self.owner,
@@ -1565,6 +1566,7 @@ pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     pub dapps: BoundedVec<DAppTier, MD>,
     /// Rewards for each tier. First entry refers to the first tier, and so on.
     pub rewards: BoundedVec<Balance, NT>,
+    // TODO: perhaps I can add 'PeriodNumber' here so it's easy to identify expired rewards
 }
 
 impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {

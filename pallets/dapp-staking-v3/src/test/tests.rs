@@ -1406,3 +1406,144 @@ fn claim_bonus_reward_after_expiry_fails() {
         );
     })
 }
+
+#[test]
+fn claim_dapp_reward_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::default();
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount);
+
+        // Advance 2 eras so we have an entry for reward claiming
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        assert_eq!(ActiveProtocolState::<Test>::get().era, 3, "Sanity check");
+
+        assert_claim_dapp_reward(
+            account,
+            &smart_contract,
+            ActiveProtocolState::<Test>::get().era - 1,
+        );
+
+        // Advance to next era, and ensure rewards can be paid out to a custom beneficiary
+        let new_beneficiary = 17;
+        assert_set_dapp_reward_destination(dev_account, &smart_contract, Some(new_beneficiary));
+        advance_to_next_era();
+        assert_claim_dapp_reward(
+            account,
+            &smart_contract,
+            ActiveProtocolState::<Test>::get().era - 1,
+        );
+    })
+}
+
+#[test]
+fn claim_dapp_reward_from_non_existing_contract_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let smart_contract = MockSmartContract::default();
+        assert_noop!(
+            DappStaking::claim_dapp_reward(RuntimeOrigin::signed(1), smart_contract, 1),
+            Error::<Test>::ContractNotFound,
+        );
+    })
+}
+
+#[test]
+fn claim_dapp_reward_from_invalid_era_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount);
+
+        // Advance 2 eras and try to claim from the ongoing era.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        assert_noop!(
+            DappStaking::claim_dapp_reward(
+                RuntimeOrigin::signed(1),
+                smart_contract,
+                ActiveProtocolState::<Test>::get().era
+            ),
+            Error::<Test>::InvalidClaimEra,
+        );
+
+        // Try to claim from the era which corresponds to the voting period. No tier info should
+        assert_noop!(
+            DappStaking::claim_dapp_reward(RuntimeOrigin::signed(1), smart_contract, 1),
+            Error::<Test>::NoDAppTierInfo,
+        );
+    })
+}
+
+#[test]
+fn claim_dapp_reward_if_dapp_not_in_any_tier_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract_1 = MockSmartContract::Wasm(3);
+        let smart_contract_2 = MockSmartContract::Wasm(5);
+        assert_register(1, &smart_contract_1);
+        assert_register(1, &smart_contract_2);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract_1, amount);
+
+        // Advance 2 eras and try to claim reward for non-staked dApp.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        let account = 2;
+        let claim_era = ActiveProtocolState::<Test>::get().era - 1;
+        assert_noop!(
+            DappStaking::claim_dapp_reward(
+                RuntimeOrigin::signed(account),
+                smart_contract_2,
+                claim_era
+            ),
+            Error::<Test>::NoClaimableRewards,
+        );
+        // Staked dApp should still be able to claim.
+        assert_claim_dapp_reward(account, &smart_contract_1, claim_era);
+    })
+}
+
+#[test]
+fn claim_dapp_reward_twice_for_same_era_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount);
+
+        // Advance 3 eras and claim rewards.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
+
+        // We can only claim reward ONCE for a particular era
+        let claim_era_1 = ActiveProtocolState::<Test>::get().era - 2;
+        assert_claim_dapp_reward(account, &smart_contract, claim_era_1);
+        assert_noop!(
+            DappStaking::claim_dapp_reward(
+                RuntimeOrigin::signed(account),
+                smart_contract,
+                claim_era_1
+            ),
+            Error::<Test>::DAppRewardAlreadyClaimed,
+        );
+
+        // We can still claim for another valid era
+        let claim_era_2 = claim_era_1 + 1;
+        assert_claim_dapp_reward(account, &smart_contract, claim_era_2);
+    })
+}

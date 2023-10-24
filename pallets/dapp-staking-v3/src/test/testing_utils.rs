@@ -20,7 +20,8 @@ use crate::test::mock::*;
 use crate::types::*;
 use crate::{
     pallet::Config, ActiveProtocolState, BlockNumberFor, ContractStake, CurrentEraInfo, DAppId,
-    EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, PeriodEnd, PeriodEndInfo, StakerInfo,
+    DAppTiers, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, PeriodEnd, PeriodEndInfo,
+    StakerInfo,
 };
 
 use frame_support::{assert_ok, traits::Get};
@@ -49,6 +50,7 @@ pub(crate) struct MemorySnapshot {
     contract_stake: HashMap<<Test as Config>::SmartContract, ContractStakeAmountSeries>,
     era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
     period_end: HashMap<PeriodNumber, PeriodEndInfo>,
+    dapp_tiers: HashMap<EraNumber, DAppTierRewardsFor<Test>>,
 }
 
 impl MemorySnapshot {
@@ -66,6 +68,7 @@ impl MemorySnapshot {
             contract_stake: ContractStake::<Test>::iter().collect(),
             era_rewards: EraRewards::<Test>::iter().collect(),
             period_end: PeriodEnd::<Test>::iter().collect(),
+            dapp_tiers: DAppTiers::<Test>::iter().collect(),
         }
     }
 
@@ -905,6 +908,71 @@ pub(crate) fn assert_claim_bonus_reward(account: AccountId) {
         // Staker still has some staker rewards remaining
         assert!(post_ledger.bonus_reward_claimed);
     }
+}
+
+/// Claim dapp reward for a particular era.
+pub(crate) fn assert_claim_dapp_reward(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+    era: EraNumber,
+) {
+    let pre_snapshot = MemorySnapshot::new();
+    let dapp_info = pre_snapshot.integrated_dapps.get(smart_contract).unwrap();
+    let beneficiary = dapp_info.get_reward_beneficiary();
+    let pre_total_issuance = <Test as Config>::Currency::total_issuance();
+    let pre_free_balance = <Test as Config>::Currency::free_balance(beneficiary);
+
+    let (expected_reward, expected_tier_id) = {
+        let mut info = pre_snapshot
+            .dapp_tiers
+            .get(&era)
+            .expect("Entry must exist.")
+            .clone();
+
+        info.try_consume(dapp_info.id).unwrap()
+    };
+
+    // Claim dApp reward & verify event
+    assert_ok!(DappStaking::claim_dapp_reward(
+        RuntimeOrigin::signed(account),
+        smart_contract.clone(),
+        era,
+    ));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppReward {
+        beneficiary: beneficiary.clone(),
+        smart_contract: smart_contract.clone(),
+        tier_id: expected_tier_id,
+        era,
+        amount: expected_reward,
+    }));
+
+    // Verify post-state
+
+    let post_total_issuance = <Test as Config>::Currency::total_issuance();
+    assert_eq!(
+        post_total_issuance,
+        pre_total_issuance + expected_reward,
+        "Total issuance must increase by the reward amount."
+    );
+
+    let post_free_balance = <Test as Config>::Currency::free_balance(beneficiary);
+    assert_eq!(
+        post_free_balance,
+        pre_free_balance + expected_reward,
+        "Free balance must increase by the reward amount."
+    );
+
+    let post_snapshot = MemorySnapshot::new();
+    let mut info = post_snapshot
+        .dapp_tiers
+        .get(&era)
+        .expect("Entry must exist.")
+        .clone();
+    assert_eq!(
+        info.try_consume(dapp_info.id),
+        Err(DAppTierError::RewardAlreadyClaimed),
+        "It must not be possible to claim the same reward twice!.",
+    );
 }
 
 /// Returns from which starting era to which ending era can rewards be claimed for the specified account.

@@ -1273,14 +1273,14 @@ pub mod pallet {
 
             // Get reward destination, and deposit the reward.
             // TODO: should we check reward is greater than zero, or even more precise, it's greater than the existential deposit? Seems redundant but still...
-            let reward_destination = dapp_info.get_reward_destination();
-            T::Currency::deposit_creating(reward_destination, amount);
+            let beneficiary = dapp_info.get_reward_beneficiary();
+            T::Currency::deposit_creating(beneficiary, amount);
 
             // Write back updated struct to prevent double reward claims
             DAppTiers::<T>::insert(&era, dapp_tiers);
 
             Self::deposit_event(Event::<T>::DAppReward {
-                beneficiary: reward_destination.clone(),
+                beneficiary: beneficiary.clone(),
                 smart_contract,
                 tier_id,
                 era,
@@ -1397,7 +1397,9 @@ pub mod pallet {
                 .iter()
                 .zip(tier_config.tier_thresholds.iter())
             {
-                let max_idx = global_idx.saturating_add(*tier_capacity as usize);
+                let max_idx = global_idx
+                    .saturating_add(*tier_capacity as usize)
+                    .min(dapp_stakes.len());
 
                 // Iterate over dApps until one of two conditions has been met:
                 // 1. Tier has no more capacity
