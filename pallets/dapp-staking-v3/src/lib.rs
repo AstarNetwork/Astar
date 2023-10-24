@@ -46,7 +46,6 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
-use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
     traits::{BadOrigin, Saturating, Zero},
     Perbill,
