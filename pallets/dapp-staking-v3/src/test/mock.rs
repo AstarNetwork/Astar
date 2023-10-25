@@ -154,6 +154,7 @@ impl pallet_dapp_staking::Config for Test {
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
     type UnlockingPeriod = ConstU64<20>;
+    type MaxNumberOfStakedContracts = ConstU32<3>;
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
 }

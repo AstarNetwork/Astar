@@ -287,6 +287,7 @@ pub struct AccountLedger<
     UnlockingLen: Get<u32>,
 > {
     /// How much active locked amount an account has.
+    #[codec(compact)]
     pub locked: Balance,
     /// Vector of all the unlocking chunks.
     pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
@@ -302,7 +303,9 @@ pub struct AccountLedger<
     pub staker_rewards_claimed: bool,
     /// Indicator whether bonus rewards for the period has been claimed.
     pub bonus_reward_claimed: bool,
-    // TODO: introduce a variable which keeps track of on how many contracts this account has stake entries for.
+    /// Number of contract stake entries in storage.
+    #[codec(compact)]
+    pub contract_stake_count: u32,
 }
 
 impl<BlockNumber, UnlockingLen> Default for AccountLedger<BlockNumber, UnlockingLen>
@@ -318,6 +321,7 @@ where
             staked_future: None,
             staker_rewards_claimed: false,
             bonus_reward_claimed: false,
+            contract_stake_count: Zero::zero(),
         }
     }
 }
@@ -609,6 +613,23 @@ where
             self.staked_future.map(|stake_amount| stake_amount.era)
         } else {
             Some(self.staked.era)
+        }
+    }
+
+    /// Cleanup staking information if it has expired.
+    ///
+    /// # Args
+    /// `threshold_period` - last period for which entries can still be considered valid.
+    ///
+    /// `true` if any change was made, `false` otherwise.
+    pub fn maybe_cleanup_expired(&mut self, threshold_period: PeriodNumber) -> bool {
+        match self.staked_period() {
+            Some(staked_period) if staked_period < threshold_period => {
+                self.staked = Default::default();
+                self.staked_future = None;
+                true
+            }
+            _ => false,
         }
     }
 

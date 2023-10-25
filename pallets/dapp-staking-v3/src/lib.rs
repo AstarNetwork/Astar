@@ -139,6 +139,10 @@ pub mod pallet {
         #[pallet::constant]
         type UnlockingPeriod: Get<BlockNumberFor<Self>>;
 
+        /// Maximum amount of stake entries contract is allowed to have at once.
+        #[pallet::constant]
+        type MaxNumberOfStakedContracts: Get<u32>;
+
         /// Minimum amount staker can stake on a contract.
         #[pallet::constant]
         type MinimumStakeAmount: Get<Balance>;
@@ -308,6 +312,8 @@ pub mod pallet {
         InternalClaimDAppError,
         /// Contract is still active, not unregistered.
         ContractStillActive,
+        /// There are too many contract stake entries for the account. This can be cleaned up by either unstaking or cleaning expired entries.
+        TooManyStakedContracts,
     }
 
     /// General information about dApp staking protocol state.
@@ -704,9 +710,6 @@ pub mod pallet {
                 },
             )?;
 
-            // As a consequence, this means that the sum of all stakes from `ContractStake` storage won't match
-            // total stake in active era info. This is fine, from the logic perspective, it doesn't cause any issues.
-            // TODO: left as potential discussion topic, remove later.
             ContractStake::<T>::remove(&smart_contract);
 
             Self::deposit_event(Event::<T>::DAppUnregistered {
@@ -828,14 +831,22 @@ pub mod pallet {
             let amount = ledger.claim_unlocked(current_block);
             ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
 
+            // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
+            // TODO: will be used after benchmarks
+            let _removed_entries = if ledger.is_empty() {
+                let _ = StakerInfo::<T>::clear_prefix(&account, ledger.contract_stake_count, None);
+                ledger.contract_stake_count
+            } else {
+                0
+            };
+
+            // TODO: discussion point - it's possible that this will "kill" users ability to withdraw past rewards.
+            // This can be handled by the frontend though.
+
             Self::update_ledger(&account, ledger);
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unlocking_removed(amount);
             });
-
-            // TODO: We should ensure user doesn't unlock everything if they still have storage leftovers (e.g. unclaimed rewards?)
-
-            // TODO2: to make it more  bounded, we could add a limit to how much distinct stake entries a user can have
 
             Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
 
@@ -926,26 +937,44 @@ pub mod pallet {
             // This is ok since we only use this storage entry to keep track of how much each staker
             // has staked on each contract in the current period. We only ever need the latest information.
             // This is because `AccountLedger` is the one keeping information about how much was staked when.
-            let new_staking_info = match StakerInfo::<T>::get(&account, &smart_contract) {
-                Some(mut staking_info)
-                    if staking_info.period_number() == protocol_state.period_number() =>
-                {
-                    staking_info.stake(amount, protocol_state.period_info.period_type);
-                    staking_info
-                }
-                _ => {
-                    ensure!(
-                        amount >= T::MinimumStakeAmount::get(),
-                        Error::<T>::InsufficientStakeAmount
-                    );
-                    let mut staking_info = SingularStakingInfo::new(
-                        protocol_state.period_info.number,
-                        protocol_state.period_info.period_type,
-                    );
-                    staking_info.stake(amount, protocol_state.period_info.period_type);
-                    staking_info
-                }
-            };
+            let (mut new_staking_info, is_new_entry) =
+                match StakerInfo::<T>::get(&account, &smart_contract) {
+                    // Entry with matching period exists
+                    Some(staking_info)
+                        if staking_info.period_number() == protocol_state.period_number() =>
+                    {
+                        (staking_info, false)
+                    }
+                    // Entry exists but period doesn't match
+                    Some(_) => (
+                        SingularStakingInfo::new(
+                            protocol_state.period_number(),
+                            protocol_state.period_type(),
+                        ),
+                        false,
+                    ),
+                    // No entry exists
+                    None => (
+                        SingularStakingInfo::new(
+                            protocol_state.period_number(),
+                            protocol_state.period_type(),
+                        ),
+                        true,
+                    ),
+                };
+            new_staking_info.stake(amount, protocol_state.period_type());
+            ensure!(
+                new_staking_info.total_staked_amount() >= T::MinimumStakeAmount::get(),
+                Error::<T>::InsufficientStakeAmount
+            );
+
+            if is_new_entry {
+                ledger.contract_stake_count.saturating_inc();
+                ensure!(
+                    ledger.contract_stake_count <= T::MaxNumberOfStakedContracts::get(),
+                    Error::<T>::TooManyStakedContracts
+                );
+            }
 
             // 3.
             // Update `ContractStake` storage with the new stake amount on the specified contract.
@@ -1068,14 +1097,16 @@ pub mod pallet {
 
             // 5.
             // Update remaining storage entries
-            Self::update_ledger(&account, ledger);
             ContractStake::<T>::insert(&smart_contract, contract_stake_info);
 
             if new_staking_info.is_empty() {
+                ledger.contract_stake_count.saturating_dec();
                 StakerInfo::<T>::remove(&account, &smart_contract);
             } else {
                 StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
             }
+
+            Self::update_ledger(&account, ledger);
 
             Self::deposit_event(Event::<T>::Unstake {
                 account,
@@ -1097,9 +1128,6 @@ pub mod pallet {
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
-
-            // TODO: how do we handle expired rewards? Add an additional call to clean them up?
-            // Putting this logic inside existing calls will add even more complexity.
 
             ensure!(
                 !ledger.staker_rewards_claimed,
@@ -1363,6 +1391,44 @@ pub mod pallet {
                 smart_contract,
                 amount,
             });
+
+            Ok(())
+        }
+
+        /// Used to unstake funds from a contract that was unregistered after an account staked on it.
+        #[pallet::call_index(15)]
+        #[pallet::weight(Weight::zero())]
+        pub fn cleanup_expired_entries(origin: OriginFor<T>) -> DispatchResult {
+            // TODO: tests are missing but will be added later.
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let current_period = protocol_state.period_number();
+
+            // Find all entries which have expired. This is bounded by max allowed number of entries.
+            let to_be_deleted: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(&account)
+                .filter_map(|(smart_contract, stake_info)| {
+                    if stake_info.period_number() < current_period {
+                        Some(smart_contract)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            // Remove all expired entries.
+            for smart_contract in to_be_deleted {
+                StakerInfo::<T>::remove(&account, &smart_contract);
+            }
+
+            // Remove expired ledger stake entries, if needed.
+            let threshold_period =
+                current_period.saturating_sub(T::RewardRetentionInPeriods::get());
+            let mut ledger = Ledger::<T>::get(&account);
+            if ledger.maybe_cleanup_expired(threshold_period) {
+                Self::update_ledger(&account, ledger);
+            }
 
             Ok(())
         }

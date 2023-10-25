@@ -364,6 +364,17 @@ pub(crate) fn assert_claim_unlocked(account: AccountId) {
         post_snapshot.current_era_info.unlocking,
         pre_snapshot.current_era_info.unlocking - amount
     );
+
+    // In case of full withdrawal from the protocol
+    if post_ledger.is_empty() {
+        assert!(!Ledger::<Test>::contains_key(&account));
+        assert!(
+            StakerInfo::<Test>::iter_prefix_values(&account)
+                .count()
+                .is_zero(),
+            "All stake entries need to be cleaned up."
+        );
+    }
 }
 
 /// Claims the unlocked funds back into free balance of the user and assert success.
