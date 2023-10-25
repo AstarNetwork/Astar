@@ -100,7 +100,7 @@ where
                 if value > 0 {
                     // `UA::to_h160`.
                     actual_weight.saturating_accrue(
-                        <T as pallet_unified_accounts::Config>::WeightInfo::uam_to_h160(),
+                        <T as pallet_unified_accounts::Config>::WeightInfo::to_h160(),
                     );
 
                     if UA::to_h160(&source).is_none() {

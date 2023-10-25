@@ -58,14 +58,14 @@ where
             GetEvmAddress => {
                 let account_id: T::AccountId = env.read_as()?;
                 // charge weight
-                env.charge_weight(UAWeight::<T>::uam_to_h160())?;
+                env.charge_weight(UAWeight::<T>::to_h160())?;
                 // write to buffer
                 UA::to_h160(&account_id).using_encoded(|r| env.write(r, false, None))?;
             }
             GetEvmAddressOrDefault => {
                 let account_id: T::AccountId = env.read_as()?;
                 // charge weight
-                env.charge_weight(UAWeight::<T>::uam_to_h160_or_default())?;
+                env.charge_weight(UAWeight::<T>::to_h160_or_default())?;
 
                 let evm_address = if let Some(h160) = UA::to_h160(&account_id) {
                     UnifiedAddress::Mapped(h160)
@@ -78,14 +78,14 @@ where
             GetNativeAddress => {
                 let evm_address: EvmAddress = env.read_as()?;
                 // charge weight
-                env.charge_weight(UAWeight::<T>::uam_to_account_id())?;
+                env.charge_weight(UAWeight::<T>::to_account_id())?;
                 // write to buffer
                 UA::to_account_id(&evm_address).using_encoded(|r| env.write(r, false, None))?;
             }
             GetNativeAddressOrDefault => {
                 let evm_address: EvmAddress = env.read_as()?;
                 // charge weight
-                env.charge_weight(UAWeight::<T>::uam_to_account_id_or_default())?;
+                env.charge_weight(UAWeight::<T>::to_account_id_or_default())?;
 
                 // read the storage item
                 let native_address = if let Some(native) = UA::to_account_id(&evm_address) {
