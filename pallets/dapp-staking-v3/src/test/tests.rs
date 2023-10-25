@@ -1179,7 +1179,7 @@ fn claim_staker_rewards_double_call_fails() {
 
         assert_noop!(
             DappStaking::claim_staker_rewards(RuntimeOrigin::signed(account)),
-            Error::<Test>::StakerRewardsAlreadyClaimed,
+            Error::<Test>::NoClaimableRewards,
         );
     })
 }
@@ -1285,7 +1285,7 @@ fn claim_bonus_reward_works() {
 
         // 1st scenario - advance to the next period, first claim bonus reward, then staker rewards
         advance_to_next_period();
-        assert_claim_bonus_reward(account);
+        assert_claim_bonus_reward(account, &smart_contract);
         for _ in 0..required_number_of_reward_claims(account) {
             assert_claim_staker_rewards(account);
         }
@@ -1297,10 +1297,10 @@ fn claim_bonus_reward_works() {
             assert_claim_staker_rewards(account);
         }
         assert!(
-            Ledger::<Test>::get(&account).staker_rewards_claimed,
+            Ledger::<Test>::get(&account).staked.is_empty(),
             "Sanity check."
         );
-        assert_claim_bonus_reward(account);
+        assert_claim_bonus_reward(account, &smart_contract);
     })
 }
 
@@ -1320,11 +1320,11 @@ fn claim_bonus_reward_double_call_fails() {
 
         // Advance to the next period, claim bonus reward, then try to do it again
         advance_to_next_period();
-        assert_claim_bonus_reward(account);
+        assert_claim_bonus_reward(account, &smart_contract);
 
         assert_noop!(
-            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account)),
-            Error::<Test>::BonusRewardAlreadyClaimed,
+            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account), smart_contract),
+            Error::<Test>::NoClaimableRewards,
         );
     })
 }
@@ -1343,7 +1343,7 @@ fn claim_bonus_reward_when_nothing_to_claim_fails() {
 
         // 1st - try to claim bonus reward when no stake is present
         assert_noop!(
-            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account)),
+            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account), smart_contract),
             Error::<Test>::NoClaimableRewards,
         );
 
@@ -1351,7 +1351,7 @@ fn claim_bonus_reward_when_nothing_to_claim_fails() {
         let stake_amount = 93;
         assert_stake(account, &smart_contract, stake_amount);
         assert_noop!(
-            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account)),
+            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account), smart_contract),
             Error::<Test>::NoClaimableRewards,
         );
     })
@@ -1381,8 +1381,8 @@ fn claim_bonus_reward_with_only_build_and_earn_stake_fails() {
 
         advance_to_next_period();
         assert_noop!(
-            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account)),
-            Error::<Test>::NoClaimableRewards,
+            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account), smart_contract),
+            Error::<Test>::NotEligibleForBonusReward,
         );
     })
 }
@@ -1406,7 +1406,7 @@ fn claim_bonus_reward_after_expiry_fails() {
         advance_to_period(
             ActiveProtocolState::<Test>::get().period_number() + reward_retention_in_periods,
         );
-        assert_claim_bonus_reward(account);
+        assert_claim_bonus_reward(account, &smart_contract);
         for _ in 0..required_number_of_reward_claims(account) {
             assert_claim_staker_rewards(account);
         }
@@ -1417,7 +1417,7 @@ fn claim_bonus_reward_after_expiry_fails() {
             ActiveProtocolState::<Test>::get().period_number() + reward_retention_in_periods + 1,
         );
         assert_noop!(
-            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account)),
+            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account), smart_contract),
             Error::<Test>::RewardExpired,
         );
     })

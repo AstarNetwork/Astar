@@ -945,14 +945,10 @@ pub mod pallet {
                     {
                         (staking_info, false)
                     }
-                    // Entry exists but period doesn't match
-                    Some(_) => (
-                        SingularStakingInfo::new(
-                            protocol_state.period_number(),
-                            protocol_state.period_type(),
-                        ),
-                        false,
-                    ),
+                    // Entry exists but period doesn't match. Either reward should be claimed or cleaned up.
+                    Some(_) => {
+                        return Err(Error::<T>::UnclaimedRewardsFromPastPeriods.into());
+                    }
                     // No entry exists
                     None => (
                         SingularStakingInfo::new(
@@ -1126,18 +1122,13 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let protocol_state = ActiveProtocolState::<T>::get();
             let mut ledger = Ledger::<T>::get(&account);
-
-            ensure!(
-                !ledger.staker_rewards_claimed,
-                Error::<T>::StakerRewardsAlreadyClaimed
-            );
-
-            // Check if the rewards have expired
             let staked_period = ledger
                 .staked_period()
                 .ok_or(Error::<T>::NoClaimableRewards)?;
+
+            // Check if the rewards have expired
+            let protocol_state = ActiveProtocolState::<T>::get();
             ensure!(
                 staked_period
                     >= protocol_state
@@ -1216,47 +1207,40 @@ pub mod pallet {
         /// Used to claim bonus reward for the eligible era, if applicable.
         #[pallet::call_index(12)]
         #[pallet::weight(Weight::zero())]
-        pub fn claim_bonus_reward(origin: OriginFor<T>) -> DispatchResult {
+        pub fn claim_bonus_reward(
+            origin: OriginFor<T>,
+            smart_contract: T::SmartContract,
+        ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let protocol_state = ActiveProtocolState::<T>::get();
-            let mut ledger = Ledger::<T>::get(&account);
-
-            ensure!(
-                !ledger.bonus_reward_claimed,
-                Error::<T>::BonusRewardAlreadyClaimed
-            );
-            // Check if the rewards have expired
-            let staked_period = ledger
-                .staked_period()
+            let staker_info = StakerInfo::<T>::get(&account, &smart_contract)
                 .ok_or(Error::<T>::NoClaimableRewards)?;
+            let protocol_state = ActiveProtocolState::<T>::get();
+
+            // Check if period has ended
+            let staked_period = staker_info.period_number();
             ensure!(
-                staked_period
+                staked_period < protocol_state.period_number(),
+                Error::<T>::NoClaimableRewards
+            );
+            ensure!(
+                staker_info.is_loyal(),
+                Error::<T>::NotEligibleForBonusReward
+            );
+            ensure!(
+                staker_info.period_number()
                     >= protocol_state
                         .period_number()
                         .saturating_sub(T::RewardRetentionInPeriods::get()),
                 Error::<T>::RewardExpired
             );
 
-            // Check if period has ended
-            ensure!(
-                staked_period < protocol_state.period_number(),
-                Error::<T>::NoClaimableRewards
-            );
-
             // Check if user is applicable for bonus reward
-            let eligible_amount =
-                ledger
-                    .claim_bonus_reward(staked_period)
-                    .map_err(|err| match err {
-                        AccountLedgerError::NothingToClaim => Error::<T>::NoClaimableRewards,
-                        _ => Error::<T>::InternalClaimBonusError,
-                    })?;
+            let eligible_amount = staker_info.staked_amount(PeriodType::Voting);
 
             let period_end_info =
                 PeriodEnd::<T>::get(&staked_period).ok_or(Error::<T>::InternalClaimBonusError)?;
-
             // Defensive check - we should never get this far in function if no voting period stake exists.
             ensure!(
                 !period_end_info.total_vp_stake.is_zero(),
@@ -1271,7 +1255,8 @@ pub mod pallet {
             T::Currency::deposit_into_existing(&account, bonus_reward)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
 
-            Self::update_ledger(&account, ledger);
+            // Cleanup entry since the reward has been claimed
+            StakerInfo::<T>::remove(&account, &smart_contract);
 
             Self::deposit_event(Event::<T>::BonusReward {
                 account: account.clone(),

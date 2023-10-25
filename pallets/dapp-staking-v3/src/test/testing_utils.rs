@@ -848,13 +848,9 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
     let post_snapshot = MemorySnapshot::new();
     let post_ledger = post_snapshot.ledger.get(&account).unwrap();
 
-    if is_full_claim && pre_ledger.bonus_reward_claimed {
+    if is_full_claim {
         assert_eq!(post_ledger.staked, StakeAmount::default());
         assert!(post_ledger.staked_future.is_none());
-        assert!(!post_ledger.staker_rewards_claimed);
-        assert!(!post_ledger.bonus_reward_claimed);
-    } else if is_full_claim {
-        assert!(post_ledger.staker_rewards_claimed);
     } else {
         assert_eq!(post_ledger.staked.era, last_claim_era + 1);
         assert!(post_ledger.staked_future.is_none());
@@ -862,16 +858,17 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
 }
 
 /// Claim staker rewards.
-pub(crate) fn assert_claim_bonus_reward(account: AccountId) {
+pub(crate) fn assert_claim_bonus_reward(account: AccountId, smart_contract: &MockSmartContract) {
     let pre_snapshot = MemorySnapshot::new();
-    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, *smart_contract))
+        .unwrap();
     let pre_total_issuance = <Test as Config>::Currency::total_issuance();
     let pre_free_balance = <Test as Config>::Currency::free_balance(&account);
 
-    let staked_period = pre_ledger
-        .staked_period()
-        .expect("Must have a staked period.");
-    let stake_amount = pre_ledger.staked_amount_for_type(PeriodType::Voting, staked_period);
+    let staked_period = pre_staker_info.period_number();
+    let stake_amount = pre_staker_info.staked_amount(PeriodType::Voting);
 
     let period_end_info = pre_snapshot
         .period_end
@@ -882,9 +879,10 @@ pub(crate) fn assert_claim_bonus_reward(account: AccountId) {
         * period_end_info.bonus_reward_pool;
 
     // Claim bonus reward & verify event
-    assert_ok!(DappStaking::claim_bonus_reward(RuntimeOrigin::signed(
-        account
-    ),));
+    assert_ok!(DappStaking::claim_bonus_reward(
+        RuntimeOrigin::signed(account),
+        smart_contract.clone(),
+    ));
     System::assert_last_event(RuntimeEvent::DappStaking(Event::BonusReward {
         account,
         period: staked_period,
@@ -907,19 +905,10 @@ pub(crate) fn assert_claim_bonus_reward(account: AccountId) {
         "Free balance must increase by the reward amount."
     );
 
-    let post_snapshot = MemorySnapshot::new();
-    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
-
-    // All rewards for period have been claimed
-    if pre_ledger.staker_rewards_claimed {
-        assert_eq!(post_ledger.staked, StakeAmount::default());
-        assert!(post_ledger.staked_future.is_none());
-        assert!(!post_ledger.staker_rewards_claimed);
-        assert!(!post_ledger.bonus_reward_claimed);
-    } else {
-        // Staker still has some staker rewards remaining
-        assert!(post_ledger.bonus_reward_claimed);
-    }
+    assert!(
+        !StakerInfo::<Test>::contains_key(&account, smart_contract),
+        "Entry must be removed after successful reward claim."
+    );
 }
 
 /// Claim dapp reward for a particular era.

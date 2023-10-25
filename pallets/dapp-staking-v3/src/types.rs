@@ -299,10 +299,6 @@ pub struct AccountLedger<
     /// Both `stake` and `staked_future` must ALWAYS refer to the same period.
     /// If `staked_future` is `Some`, it will always be **EXACTLY** one era after the `staked` field era.
     pub staked_future: Option<StakeAmount>,
-    /// Indicator whether staker rewards for the entire period have been claimed.
-    pub staker_rewards_claimed: bool,
-    /// Indicator whether bonus rewards for the period has been claimed.
-    pub bonus_reward_claimed: bool,
     /// Number of contract stake entries in storage.
     #[codec(compact)]
     pub contract_stake_count: u32,
@@ -319,8 +315,6 @@ where
             unlocking: BoundedVec::default(),
             staked: StakeAmount::default(),
             staked_future: None,
-            staker_rewards_claimed: false,
-            bonus_reward_claimed: false,
             contract_stake_count: Zero::zero(),
         }
     }
@@ -462,7 +456,6 @@ where
     }
 
     /// How much is staked for the specified period type, in respect to the specified era.
-    // TODO: if period is force-ended, this could be abused to get bigger rewards. I need to make the check more strict when claiming bonus rewards!
     pub fn staked_amount_for_type(&self, period_type: PeriodType, period: PeriodNumber) -> Balance {
         // First check the 'future' entry, afterwards check the 'first' entry
         match self.staked_future {
@@ -643,10 +636,6 @@ where
         era: EraNumber,
         period_end: Option<EraNumber>,
     ) -> Result<EraStakePairIter, AccountLedgerError> {
-        if self.staker_rewards_claimed {
-            return Err(AccountLedgerError::AlreadyClaimed);
-        }
-
         // Main entry exists, but era isn't 'in history'
         if !self.staked.is_empty() && era <= self.staked.era {
             return Err(AccountLedgerError::NothingToClaim);
@@ -682,63 +671,16 @@ where
         }
         self.staked.era = era.saturating_add(1);
 
-        // Make sure to clean up the entries
+        // Make sure to clean up the entries if all rewards for the period have been claimed.
         match period_end {
             Some(ending_era) if era >= ending_era => {
-                self.staker_rewards_claimed = true;
-                self.maybe_cleanup_stake_entries();
+                self.staked = Default::default();
+                self.staked_future = None;
             }
             _ => (),
         }
 
         Ok(result)
-    }
-
-    /// Claim bonus reward, if possible.
-    ///
-    /// Returns the amount eligible for bonus reward calculation, or an error.
-    pub fn claim_bonus_reward(
-        &mut self,
-        period: PeriodNumber,
-    ) -> Result<Balance, AccountLedgerError> {
-        if self.bonus_reward_claimed {
-            return Err(AccountLedgerError::AlreadyClaimed);
-        }
-
-        let amount = self.staked_amount_for_type(PeriodType::Voting, period);
-
-        if amount.is_zero() {
-            Err(AccountLedgerError::NothingToClaim)
-        } else {
-            self.bonus_reward_claimed = true;
-            self.maybe_cleanup_stake_entries();
-            Ok(amount)
-        }
-    }
-
-    /// Cleanup fields related to stake & rewards, in case all possible rewards for the current state
-    /// have been claimed.
-    fn maybe_cleanup_stake_entries(&mut self) {
-        // Stake rewards are either all claimed, or there's nothing to claim.
-        let stake_cleanup =
-            self.staker_rewards_claimed || (self.staked.is_empty() && self.staked_future.is_none());
-
-        // Bonus reward might be covered by the 'future' entry.
-        let has_future_entry_stake = if let Some(stake_amount) = self.staked_future {
-            !stake_amount.voting.is_zero()
-        } else {
-            false
-        };
-        // Either rewards have already been claimed, or there are no possible bonus rewards to claim.
-        let bonus_cleanup =
-            self.bonus_reward_claimed || self.staked.voting.is_zero() && !has_future_entry_stake;
-
-        if stake_cleanup && bonus_cleanup {
-            self.staked = Default::default();
-            self.staked_future = None;
-            self.staker_rewards_claimed = false;
-            self.bonus_reward_claimed = false;
-        }
     }
 }
 
