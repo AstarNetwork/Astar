@@ -47,7 +47,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
-    traits::{BadOrigin, Saturating, Zero},
+    traits::{BadOrigin, One, Saturating, Zero},
     Perbill, Permill,
 };
 pub use sp_std::vec::Vec;
@@ -60,9 +60,12 @@ pub use pallet::*;
 mod test;
 
 mod types;
-pub use types::*; // TODO: maybe make it more restrictive later
+use types::*;
+pub use types::{PriceProvider, RewardPoolProvider, TierThreshold};
 
 const STAKING_ID: LockIdentifier = *b"dapstake";
+
+// TODO: add tracing!
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -1487,6 +1490,31 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// Used to enable or disable maintenance mode.
+        /// Can only be called by manager origin.
+        #[pallet::call_index(16)]
+        #[pallet::weight(Weight::zero())]
+        pub fn force(origin: OriginFor<T>, force_type: ForcingType) -> DispatchResult {
+            // TODO: tests are missing but will be added later.
+            Self::ensure_pallet_enabled()?;
+            T::ManagerOrigin::ensure_origin(origin)?;
+
+            // Ensure a 'change' happens on the next block
+            ActiveProtocolState::<T>::mutate(|state| {
+                let current_block = frame_system::Pallet::<T>::block_number();
+                state.next_era_start = current_block.saturating_add(One::one());
+
+                match force_type {
+                    ForcingType::Era => (),
+                    ForcingType::PeriodType => {
+                        state.period_info.ending_era = state.era.saturating_add(1);
+                    }
+                }
+            });
+
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -1536,31 +1564,31 @@ pub mod pallet {
         }
 
         /// `true` if smart contract is active, `false` if it has been unregistered.
-        pub fn is_active(smart_contract: &T::SmartContract) -> bool {
+        pub(crate) fn is_active(smart_contract: &T::SmartContract) -> bool {
             IntegratedDApps::<T>::get(smart_contract)
                 .map_or(false, |dapp_info| dapp_info.state == DAppState::Registered)
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.
-        pub fn era_reward_span_index(era: EraNumber) -> EraNumber {
+        pub(crate) fn era_reward_span_index(era: EraNumber) -> EraNumber {
             era.saturating_sub(era % T::EraRewardSpanLength::get())
         }
 
         /// Return the oldest period for which rewards can be claimed.
         /// All rewards before that period are considered to be expired.
-        pub fn oldest_claimable_period(current_period: PeriodNumber) -> PeriodNumber {
+        pub(crate) fn oldest_claimable_period(current_period: PeriodNumber) -> PeriodNumber {
             current_period.saturating_sub(T::RewardRetentionInPeriods::get())
         }
 
         /// Unlocking period expressed in the number of blocks.
-        pub fn unlock_period() -> BlockNumberFor<T> {
+        pub(crate) fn unlock_period() -> BlockNumberFor<T> {
             T::StandardEraLength::get().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
         ///
         /// The returned object contains information about each dApp that made it into a tier.
-        pub fn get_dapp_tier_assignment(
+        pub(crate) fn get_dapp_tier_assignment(
             era: EraNumber,
             period: PeriodNumber,
             dapp_reward_pool: Balance,

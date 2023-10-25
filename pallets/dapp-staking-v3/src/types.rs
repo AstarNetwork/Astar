@@ -141,11 +141,11 @@ pub struct PeriodEndInfo {
 
 /// Force types to speed up the next era, and even period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub enum ForcingTypes {
+pub enum ForcingType {
     /// Force the next era to start.
-    NewEra,
-    /// Force the current period phase to end, and new one to start
-    NewEraAndPeriodPhase,
+    Era,
+    /// Force the current period type to end, and new one to start. It will also force a new era to start.
+    PeriodType,
 }
 
 /// General information & state of the dApp staking protocol.
@@ -1011,6 +1011,10 @@ impl SingularStakingInfo {
         self.staked.is_empty()
     }
 }
+
+// TODO: Current implementation doesn't require off-chain worker so we don't need 3 entries - only 2 are enough.
+// This means that implementation can be simplified to work similar as `AccountLedger` does, where current and future entry exist.
+// Even in case reward calculation requires multiple blocks to finish, we could simply mark all stake calls as invalid during this short period.
 
 const STAKING_SERIES_HISTORY: u32 = 3;
 

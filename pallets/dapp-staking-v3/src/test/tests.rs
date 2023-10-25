@@ -19,8 +19,8 @@
 use crate::test::mock::*;
 use crate::test::testing_utils::*;
 use crate::{
-    pallet::Config, ActiveProtocolState, DAppId, EraNumber, EraRewards, Error, IntegratedDApps,
-    Ledger, NextDAppId, PeriodNumber, PeriodType,
+    pallet::Config, ActiveProtocolState, DAppId, EraNumber, EraRewards, Error, ForcingType,
+    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, PeriodType,
 };
 
 use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
@@ -127,6 +127,10 @@ fn maintenace_mode_call_filtering_works() {
         );
         assert_noop!(
             DappStaking::cleanup_expired_entries(RuntimeOrigin::signed(1)),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::force(RuntimeOrigin::root(), ForcingType::Era),
             Error::<Test>::Disabled
         );
     })
