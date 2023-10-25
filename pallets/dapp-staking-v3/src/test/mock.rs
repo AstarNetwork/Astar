@@ -199,7 +199,7 @@ impl ExtBuilder {
                 maintenance: false,
             });
 
-            // TODO: improve this laterm should be handled via genesis?
+            // TODO: improve this later, should be handled via genesis?
             let tier_params = TierParameters::<<Test as Config>::NumberOfTiers> {
                 reward_portion: BoundedVec::try_from(vec![
                     Permill::from_percent(40),

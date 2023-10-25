@@ -223,6 +223,7 @@ pub mod pallet {
         },
         BonusReward {
             account: T::AccountId,
+            smart_contract: T::SmartContract,
             period: PeriodNumber,
             amount: Balance,
         },
@@ -289,14 +290,10 @@ pub mod pallet {
         InternalUnstakeError,
         /// Rewards are no longer claimable since they are too old.
         RewardExpired,
-        /// All staker rewards for the period have been claimed.
-        StakerRewardsAlreadyClaimed,
         /// There are no claimable rewards.
         NoClaimableRewards,
         /// An unexpected error occured while trying to claim staker rewards.
         InternalClaimStakerError,
-        /// Bonus rewards have already been claimed.
-        BonusRewardAlreadyClaimed,
         /// Account is has no eligible stake amount for bonus reward.
         NotEligibleForBonusReward,
         /// An unexpected error occured while trying to claim bonus reward.
@@ -840,7 +837,7 @@ pub mod pallet {
                 0
             };
 
-            // TODO: discussion point - it's possible that this will "kill" users ability to withdraw past rewards.
+            // TODO: discussion point - this will "kill" users ability to withdraw past rewards.
             // This can be handled by the frontend though.
 
             Self::update_ledger(&account, ledger);
@@ -1130,10 +1127,7 @@ pub mod pallet {
             // Check if the rewards have expired
             let protocol_state = ActiveProtocolState::<T>::get();
             ensure!(
-                staked_period
-                    >= protocol_state
-                        .period_number()
-                        .saturating_sub(T::RewardRetentionInPeriods::get()),
+                staked_period >= Self::oldest_claimable_period(protocol_state.period_number()),
                 Error::<T>::RewardExpired
             );
 
@@ -1203,8 +1197,7 @@ pub mod pallet {
             Ok(())
         }
 
-        // TODO: perhaps this should be changed to include smart contract from which rewards are being claimed.
-        /// Used to claim bonus reward for the eligible era, if applicable.
+        /// Used to claim bonus reward for a smart contract, if eligible.
         #[pallet::call_index(12)]
         #[pallet::weight(Weight::zero())]
         pub fn claim_bonus_reward(
@@ -1218,7 +1211,10 @@ pub mod pallet {
                 .ok_or(Error::<T>::NoClaimableRewards)?;
             let protocol_state = ActiveProtocolState::<T>::get();
 
-            // Check if period has ended
+            // Ensure:
+            // 1. Period for which rewards are being claimed has ended.
+            // 2. Account has been a loyal staker.
+            // 3. Rewards haven't expired.
             let staked_period = staker_info.period_number();
             ensure!(
                 staked_period < protocol_state.period_number(),
@@ -1230,14 +1226,9 @@ pub mod pallet {
             );
             ensure!(
                 staker_info.period_number()
-                    >= protocol_state
-                        .period_number()
-                        .saturating_sub(T::RewardRetentionInPeriods::get()),
+                    >= Self::oldest_claimable_period(protocol_state.period_number()),
                 Error::<T>::RewardExpired
             );
-
-            // Check if user is applicable for bonus reward
-            let eligible_amount = staker_info.staked_amount(PeriodType::Voting);
 
             let period_end_info =
                 PeriodEnd::<T>::get(&staked_period).ok_or(Error::<T>::InternalClaimBonusError)?;
@@ -1247,6 +1238,7 @@ pub mod pallet {
                 Error::<T>::InternalClaimBonusError
             );
 
+            let eligible_amount = staker_info.staked_amount(PeriodType::Voting);
             let bonus_reward =
                 Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
                     * period_end_info.bonus_reward_pool;
@@ -1260,6 +1252,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::BonusReward {
                 account: account.clone(),
+                smart_contract,
                 period: staked_period,
                 amount: bonus_reward,
             });
@@ -1287,6 +1280,11 @@ pub mod pallet {
 
             // 'Consume' dApp reward for the specified era, if possible.
             let mut dapp_tiers = DAppTiers::<T>::get(&era).ok_or(Error::<T>::NoDAppTierInfo)?;
+            ensure!(
+                Self::oldest_claimable_period(dapp_tiers.period) <= protocol_state.period_number(),
+                Error::<T>::RewardExpired
+            );
+
             let (amount, tier_id) =
                 dapp_tiers
                     .try_consume(dapp_info.id)
@@ -1408,8 +1406,7 @@ pub mod pallet {
             }
 
             // Remove expired ledger stake entries, if needed.
-            let threshold_period =
-                current_period.saturating_sub(T::RewardRetentionInPeriods::get());
+            let threshold_period = Self::oldest_claimable_period(current_period);
             let mut ledger = Ledger::<T>::get(&account);
             if ledger.maybe_cleanup_expired(threshold_period) {
                 Self::update_ledger(&account, ledger);
@@ -1474,6 +1471,12 @@ pub mod pallet {
         /// Calculates the `EraRewardSpan` index for the specified era.
         pub fn era_reward_span_index(era: EraNumber) -> EraNumber {
             era.saturating_sub(era % T::EraRewardSpanLength::get())
+        }
+
+        /// Return the oldest period for which rewards can be claimed.
+        /// All rewards before that period are considered to be expired.
+        pub fn oldest_claimable_period(current_period: PeriodNumber) -> PeriodNumber {
+            current_period.saturating_sub(T::RewardRetentionInPeriods::get())
         }
 
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
@@ -1541,7 +1544,7 @@ pub mod pallet {
                 // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
                 for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
                     if tier_threshold.is_satisfied(*stake_amount) {
-                        global_idx.saturating_accrue(1);
+                        global_idx.saturating_inc();
                         dapp_tiers.push(DAppTier {
                             dapp_id: *dapp_id,
                             tier_id: Some(tier_id),
@@ -1551,7 +1554,7 @@ pub mod pallet {
                     }
                 }
 
-                tier_id.saturating_accrue(1);
+                tier_id.saturating_inc();
             }
 
             // 4.
@@ -1571,6 +1574,7 @@ pub mod pallet {
             DAppTierRewards::<MaxNumberOfContractsU32<T>, T::NumberOfTiers>::new(
                 dapp_tiers,
                 tier_rewards,
+                period,
             )
             .unwrap_or_default()
         }

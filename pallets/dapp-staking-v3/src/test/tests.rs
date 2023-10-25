@@ -102,6 +102,33 @@ fn maintenace_mode_call_filtering_works() {
             DappStaking::unstake(RuntimeOrigin::signed(1), MockSmartContract::default(), 100),
             Error::<Test>::Disabled
         );
+        assert_noop!(
+            DappStaking::claim_staker_rewards(RuntimeOrigin::signed(1)),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(1), MockSmartContract::default()),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::claim_dapp_reward(
+                RuntimeOrigin::signed(1),
+                MockSmartContract::default(),
+                1
+            ),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::unstake_from_unregistered(
+                RuntimeOrigin::signed(1),
+                MockSmartContract::default()
+            ),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::cleanup_expired_entries(RuntimeOrigin::signed(1)),
+            Error::<Test>::Disabled
+        );
     })
 }
 

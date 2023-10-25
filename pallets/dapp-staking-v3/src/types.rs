@@ -740,7 +740,7 @@ impl Iterator for EraStakePairIter {
         // Afterwards, just keep returning the same amount for different eras
         if self.start_era <= self.end_era {
             let value = (self.start_era, self.amount);
-            self.start_era.saturating_accrue(1);
+            self.start_era.saturating_inc();
             return Some(value);
         } else {
             None
@@ -1559,7 +1559,9 @@ pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     pub dapps: BoundedVec<DAppTier, MD>,
     /// Rewards for each tier. First entry refers to the first tier, and so on.
     pub rewards: BoundedVec<Balance, NT>,
-    // TODO: perhaps I can add 'PeriodNumber' here so it's easy to identify expired rewards?
+    /// Period during which this struct was created.
+    #[codec(compact)]
+    pub period: PeriodNumber,
 }
 
 impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
@@ -1567,6 +1569,7 @@ impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
         Self {
             dapps: BoundedVec::default(),
             rewards: BoundedVec::default(),
+            period: 0,
         }
     }
 }
@@ -1574,10 +1577,18 @@ impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
 impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
     /// Attempt to construct `DAppTierRewards` struct.
     /// If the provided arguments exceed the allowed capacity, return an error.
-    pub fn new(dapps: Vec<DAppTier>, rewards: Vec<Balance>) -> Result<Self, ()> {
+    pub fn new(
+        dapps: Vec<DAppTier>,
+        rewards: Vec<Balance>,
+        period: PeriodNumber,
+    ) -> Result<Self, ()> {
         let dapps = BoundedVec::try_from(dapps).map_err(|_| ())?;
         let rewards = BoundedVec::try_from(rewards).map_err(|_| ())?;
-        Ok(Self { dapps, rewards })
+        Ok(Self {
+            dapps,
+            rewards,
+            period,
+        })
     }
 
     /// Consume reward for the specified dapp id, returning its amount and tier Id.

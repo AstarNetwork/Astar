@@ -335,9 +335,6 @@ fn account_ledger_add_stake_amount_basic_example_works() {
         .is_ok());
     assert!(acc_ledger.staked.is_empty());
     assert!(acc_ledger.staked_future.is_none());
-    assert!(acc_ledger
-        .staked_amount_for_type(PeriodType::Voting, period_number)
-        .is_zero());
 
     // 1st scenario - stake some amount, and ensure values are as expected.
     let first_era = 1;

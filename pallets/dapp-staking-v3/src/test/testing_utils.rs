@@ -484,7 +484,7 @@ pub(crate) fn assert_stake(
         pre_ledger.stakeable_amount(stake_period) - amount,
         "Stakeable amount must decrease by the 'amount'"
     );
-    // TODO: maybe expand checks here?
+    // TODO: expand with more detailed checks of staked and staked_future
 
     // 2. verify staker info
     // =====================
@@ -885,6 +885,7 @@ pub(crate) fn assert_claim_bonus_reward(account: AccountId, smart_contract: &Moc
     ));
     System::assert_last_event(RuntimeEvent::DappStaking(Event::BonusReward {
         account,
+        smart_contract: *smart_contract,
         period: staked_period,
         amount: reward,
     }));
