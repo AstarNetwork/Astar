@@ -203,6 +203,7 @@ try-runtime = [
 	"pallet-contracts/try-runtime",
 	"pallet-custom-signatures/try-runtime",
 	"pallet-dapps-staking/try-runtime",
+	"pallet-dapp-staking-v3/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-sudo/try-runtime",
