@@ -48,14 +48,11 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
     traits::{BadOrigin, Saturating, Zero},
-    Perbill,
+    Perbill, Permill,
 };
 pub use sp_std::vec::Vec;
 
 use astar_primitives::Balance;
-
-use crate::types::*;
-pub use crate::types::{PriceProvider, RewardPoolProvider};
 
 pub use pallet::*;
 
@@ -63,6 +60,7 @@ pub use pallet::*;
 mod test;
 
 mod types;
+pub use types::*; // TODO: maybe make it more restrictive later
 
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
@@ -400,6 +398,77 @@ pub mod pallet {
     #[pallet::storage]
     pub type DAppTiers<T: Config> =
         StorageMap<_, Twox64Concat, EraNumber, DAppTierRewardsFor<T>, OptionQuery>;
+
+    #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
+    pub struct GenesisConfig {
+        pub reward_portion: Vec<Permill>,
+        pub slot_distribution: Vec<Permill>,
+        pub tier_thresholds: Vec<TierThreshold>,
+        pub slots_per_tier: Vec<u16>,
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+        fn build(&self) {
+            // Prepare tier parameters & verify their correctness
+            let tier_params = TierParameters::<T::NumberOfTiers> {
+                reward_portion: BoundedVec::<Permill, T::NumberOfTiers>::try_from(
+                    self.reward_portion.clone(),
+                )
+                .expect("Invalid number of reward portions provided."),
+                slot_distribution: BoundedVec::<Permill, T::NumberOfTiers>::try_from(
+                    self.slot_distribution.clone(),
+                )
+                .expect("Invalid number of slot distributions provided."),
+                tier_thresholds: BoundedVec::<TierThreshold, T::NumberOfTiers>::try_from(
+                    self.tier_thresholds.clone(),
+                )
+                .expect("Invalid number of tier thresholds provided."),
+            };
+            assert!(
+                tier_params.is_valid(),
+                "Invalid tier parameters values provided."
+            );
+
+            // Prepare tier configuration and verify its correctness
+            let number_of_slots = self
+                .slots_per_tier
+                .iter()
+                .fold(0, |acc, &slots| acc + slots);
+            let tier_config = TiersConfiguration::<T::NumberOfTiers> {
+                number_of_slots,
+                slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
+                    self.slots_per_tier.clone(),
+                )
+                .expect("Invalid number of slots per tier entries provided."),
+                reward_portion: tier_params.reward_portion.clone(),
+                tier_thresholds: tier_params.tier_thresholds.clone(),
+            };
+            assert!(
+                tier_params.is_valid(),
+                "Invalid tier config values provided."
+            );
+
+            // Prepare initial protocol state
+            let protocol_state = ProtocolState {
+                era: 1,
+                next_era_start: Pallet::<T>::blocks_per_voting_period() + 1_u32.into(),
+                period_info: PeriodInfo {
+                    number: 1,
+                    period_type: PeriodType::Voting,
+                    ending_era: 2,
+                },
+                maintenance: false,
+            };
+
+            // Initialize necessary storage items
+            ActiveProtocolState::<T>::put(protocol_state);
+            StaticTierParams::<T>::put(tier_params);
+            TierConfig::<T>::put(tier_config.clone());
+            NextTierConfig::<T>::put(tier_config);
+        }
+    }
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {

@@ -26,7 +26,7 @@ use sp_runtime::{
     traits::{AtLeast32BitUnsigned, UniqueSaturatedInto, Zero},
     FixedPointNumber, Permill, Saturating,
 };
-pub use sp_std::vec::Vec;
+pub use sp_std::{fmt::Debug, vec::Vec};
 
 use astar_primitives::Balance;
 
@@ -281,10 +281,19 @@ where
 }
 
 /// General info about user's stakes
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    RuntimeDebugNoBound,
+    PartialEqNoBound,
+    EqNoBound,
+    CloneNoBound,
+    TypeInfo,
+)]
 #[scale_info(skip_type_params(UnlockingLen))]
 pub struct AccountLedger<
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
+    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
     UnlockingLen: Get<u32>,
 > {
     /// How much active locked amount an account has.
@@ -307,7 +316,7 @@ pub struct AccountLedger<
 
 impl<BlockNumber, UnlockingLen> Default for AccountLedger<BlockNumber, UnlockingLen>
 where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
+    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
     UnlockingLen: Get<u32>,
 {
     fn default() -> Self {
@@ -323,7 +332,7 @@ where
 
 impl<BlockNumber, UnlockingLen> AccountLedger<BlockNumber, UnlockingLen>
 where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
+    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
     UnlockingLen: Get<u32>,
 {
     /// Empty if no locked/unlocking/staked info exists.
@@ -1006,7 +1015,17 @@ impl SingularStakingInfo {
 const STAKING_SERIES_HISTORY: u32 = 3;
 
 /// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    RuntimeDebugNoBound,
+    PartialEqNoBound,
+    EqNoBound,
+    CloneNoBound,
+    TypeInfo,
+    Default,
+)]
 pub struct ContractStakeAmountSeries(BoundedVec<StakeAmount, ConstU32<STAKING_SERIES_HISTORY>>);
 impl ContractStakeAmountSeries {
     /// Helper function to create a new instance of `ContractStakeAmountSeries`.
@@ -1246,7 +1265,16 @@ pub enum EraRewardSpanError {
 }
 
 /// Used to efficiently store era span information.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    RuntimeDebugNoBound,
+    PartialEqNoBound,
+    EqNoBound,
+    CloneNoBound,
+    TypeInfo,
+)]
 #[scale_info(skip_type_params(SL))]
 pub struct EraRewardSpan<SL: Get<u32>> {
     /// Span of EraRewardInfo entries.
@@ -1333,6 +1361,7 @@ where
 
 /// Description of tier entry requirement.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum TierThreshold {
     /// Entry into tier is mandated by minimum amount of staked funds.
     /// Value is fixed, and is not expected to change in between periods.
@@ -1357,7 +1386,16 @@ impl TierThreshold {
 }
 
 /// Top level description of tier slot parameters used to calculate tier configuration.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    RuntimeDebugNoBound,
+    PartialEqNoBound,
+    EqNoBound,
+    CloneNoBound,
+    TypeInfo,
+)]
 #[scale_info(skip_type_params(NT))]
 pub struct TierParameters<NT: Get<u32>> {
     /// Reward distribution per tier, in percentage.
@@ -1381,6 +1419,8 @@ impl<NT: Get<u32>> TierParameters<NT> {
         number_of_tiers == self.reward_portion.len()
             && number_of_tiers == self.slot_distribution.len()
             && number_of_tiers == self.tier_thresholds.len()
+
+        // TODO: Make check more detailed, verify that entries sum up to 1 or 100%
     }
 }
 
@@ -1397,7 +1437,16 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
 // TODO: refactor these structs so we only have 1 bounded vector, where each entry contains all the necessary info to describe the tier?
 
 /// Configuration of dApp tiers.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    RuntimeDebugNoBound,
+    PartialEqNoBound,
+    EqNoBound,
+    CloneNoBound,
+    TypeInfo,
+)]
 #[scale_info(skip_type_params(NT))]
 pub struct TiersConfiguration<NT: Get<u32>> {
     /// Total number of slots.
@@ -1553,7 +1602,16 @@ pub struct DAppTier {
 }
 
 /// Information about all of the dApps that got into tiers, and tier rewards
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    RuntimeDebugNoBound,
+    PartialEqNoBound,
+    EqNoBound,
+    CloneNoBound,
+    TypeInfo,
+)]
 #[scale_info(skip_type_params(MD, NT))]
 pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
@@ -1651,6 +1709,9 @@ pub trait PriceProvider {
     fn average_price() -> FixedU64;
 }
 
+// TODO: however the implementation ends up looking,
+// it should consider total staked amount when filling up the bonus pool.
+// This is to ensure bonus rewards aren't too large in case there is little amount of staked funds.
 pub trait RewardPoolProvider {
     /// Get the reward pools for stakers and dApps.
     ///

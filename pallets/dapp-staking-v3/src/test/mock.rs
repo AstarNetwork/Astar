@@ -180,14 +180,14 @@ impl ExtBuilder {
         ext.execute_with(|| {
             System::set_block_number(1);
 
-            // TODO: not sure why the mess with type happens here, I can check it later
+            // Not sure why the mess with type happens here, but trait specification is needed to compile
             let era_length: BlockNumber =
                 <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
             let voting_period_length_in_eras: EraNumber =
                 <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingPeriod as sp_core::Get<_>>::get(
                 );
 
-            // TODO: handle this via GenesisConfig, and some helper functions to set the state
+            // Init protocol state
             pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
                 era: 1,
                 next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
@@ -199,7 +199,7 @@ impl ExtBuilder {
                 maintenance: false,
             });
 
-            // TODO: improve this later, should be handled via genesis?
+            // Init tier params
             let tier_params = TierParameters::<<Test as Config>::NumberOfTiers> {
                 reward_portion: BoundedVec::try_from(vec![
                     Permill::from_percent(40),
@@ -223,6 +223,8 @@ impl ExtBuilder {
                 ])
                 .unwrap(),
             };
+
+            // Init tier config, based on the initial params
             let init_tier_config = TiersConfiguration::<<Test as Config>::NumberOfTiers> {
                 number_of_slots: 100,
                 slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
