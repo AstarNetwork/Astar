@@ -12,22 +12,19 @@ concurrency:
 
 jobs:
   compile-and-check:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
-    - name: Free disk space
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /opt/ghc
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-        df -h
-
     - name: Checkout the source code
       uses: actions/checkout@v3
 
     - name: Install deps
-      run: sudo apt -y install protobuf-compiler
+      run: |
+        sudo apt -y install protobuf-compiler pkg-config
+        if ! command -v sccache; then
+            cargo install sccache --locked
+        fi
+        echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+        echo "SCCACHE_CACHE_SIZE=100G" >> $GITHUB_ENV
 
     - name: Install & display rust toolchain
       run: rustup show
