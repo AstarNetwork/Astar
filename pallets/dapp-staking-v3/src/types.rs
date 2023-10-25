@@ -26,6 +26,7 @@ use sp_runtime::{
     traits::{AtLeast32BitUnsigned, UniqueSaturatedInto, Zero},
     FixedPointNumber, Permill, Saturating,
 };
+pub use sp_std::vec::Vec;
 
 use astar_primitives::Balance;
 

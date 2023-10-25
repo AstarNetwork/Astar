@@ -50,10 +50,13 @@ use sp_runtime::{
     traits::{BadOrigin, Saturating, Zero},
     Perbill,
 };
+pub use sp_std::vec::Vec;
 
 use astar_primitives::Balance;
 
 use crate::types::*;
+pub use crate::types::{PriceProvider, RewardPoolProvider};
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -135,9 +138,10 @@ pub mod pallet {
         #[pallet::constant]
         type MinimumLockedAmount: Get<Balance>;
 
-        /// Amount of blocks that need to pass before unlocking chunks can be claimed by the owner.
+        /// Number of standard eras that need to pass before unlocking chunk can be claimed.
+        /// Even though it's expressed in 'eras', it's actually measured in number of blocks.
         #[pallet::constant]
-        type UnlockingPeriod: Get<BlockNumberFor<Self>>;
+        type UnlockingPeriod: Get<EraNumber>;
 
         /// Maximum amount of stake entries contract is allowed to have at once.
         #[pallet::constant]
@@ -796,7 +800,7 @@ pub mod pallet {
             ledger.subtract_lock_amount(amount_to_unlock);
 
             let current_block = frame_system::Pallet::<T>::block_number();
-            let unlock_block = current_block.saturating_add(T::UnlockingPeriod::get());
+            let unlock_block = current_block.saturating_add(Self::unlock_period());
             ledger
                 .add_unlocking_chunk(amount_to_unlock, unlock_block)
                 .map_err(|_| Error::<T>::TooManyUnlockingChunks)?;
@@ -1477,6 +1481,11 @@ pub mod pallet {
         /// All rewards before that period are considered to be expired.
         pub fn oldest_claimable_period(current_period: PeriodNumber) -> PeriodNumber {
             current_period.saturating_sub(T::RewardRetentionInPeriods::get())
+        }
+
+        /// Unlocking period expressed in the number of blocks.
+        pub fn unlock_period() -> BlockNumberFor<T> {
+            T::StandardEraLength::get().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.

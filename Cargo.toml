@@ -274,6 +274,7 @@ pallet-block-reward = { path = "./pallets/block-reward", default-features = fals
 pallet-collator-selection = { path = "./pallets/collator-selection", default-features = false }
 pallet-custom-signatures = { path = "./pallets/custom-signatures", default-features = false }
 pallet-dapps-staking = { path = "./pallets/dapps-staking", default-features = false }
+pallet-dapp-staking-v3 = { path = "./pallets/dapp-staking-v3", default-features = false }
 pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features = false }
 pallet-xvm = { path = "./pallets/xvm", default-features = false }
 pallet-xcm = { path = "./pallets/pallet-xcm", default-features = false }
