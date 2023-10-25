@@ -39,8 +39,10 @@ pub enum Command {
 pub enum UnifiedAddress<T: Encode + Decode> {
     /// The address fetched from the mappings and the account
     /// is unified
+    #[codec(index = 0)]
     Mapped(T),
     /// The default address associated with account as there
     /// is no mapping found and accounts are not unified
+    #[codec(index = 1)]
     Default(T),
 }
