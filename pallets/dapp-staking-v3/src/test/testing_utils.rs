@@ -114,13 +114,13 @@ pub(crate) fn assert_register(owner: AccountId, smart_contract: &MockSmartContra
 }
 
 /// Update dApp reward destination and assert success
-pub(crate) fn assert_set_dapp_reward_destination(
+pub(crate) fn assert_set_dapp_reward_beneficiary(
     owner: AccountId,
     smart_contract: &MockSmartContract,
     beneficiary: Option<AccountId>,
 ) {
     // Change reward destination
-    assert_ok!(DappStaking::set_dapp_reward_destination(
+    assert_ok!(DappStaking::set_dapp_reward_beneficiary(
         RuntimeOrigin::signed(owner),
         smart_contract.clone(),
         beneficiary,

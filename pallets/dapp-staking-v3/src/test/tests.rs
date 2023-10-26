@@ -63,7 +63,7 @@ fn maintenace_mode_call_filtering_works() {
             Error::<Test>::Disabled
         );
         assert_noop!(
-            DappStaking::set_dapp_reward_destination(
+            DappStaking::set_dapp_reward_beneficiary(
                 RuntimeOrigin::signed(1),
                 MockSmartContract::Wasm(1),
                 Some(2)
@@ -270,7 +270,7 @@ fn register_past_sentinel_value_of_id_fails() {
 }
 
 #[test]
-fn set_dapp_reward_destination_for_contract_is_ok() {
+fn set_dapp_reward_beneficiary_for_contract_is_ok() {
     ExtBuilder::build().execute_with(|| {
         // Prepare & register smart contract
         let owner = 1;
@@ -282,21 +282,21 @@ fn set_dapp_reward_destination_for_contract_is_ok() {
             .unwrap()
             .reward_destination
             .is_none());
-        assert_set_dapp_reward_destination(owner, &smart_contract, Some(3));
-        assert_set_dapp_reward_destination(owner, &smart_contract, Some(5));
-        assert_set_dapp_reward_destination(owner, &smart_contract, None);
+        assert_set_dapp_reward_beneficiary(owner, &smart_contract, Some(3));
+        assert_set_dapp_reward_beneficiary(owner, &smart_contract, Some(5));
+        assert_set_dapp_reward_beneficiary(owner, &smart_contract, None);
     })
 }
 
 #[test]
-fn set_dapp_reward_destination_fails() {
+fn set_dapp_reward_beneficiary_fails() {
     ExtBuilder::build().execute_with(|| {
         let owner = 1;
         let smart_contract = MockSmartContract::Wasm(3);
 
         // Contract doesn't exist yet
         assert_noop!(
-            DappStaking::set_dapp_reward_destination(
+            DappStaking::set_dapp_reward_beneficiary(
                 RuntimeOrigin::signed(owner),
                 smart_contract,
                 Some(5)
@@ -307,7 +307,7 @@ fn set_dapp_reward_destination_fails() {
         // Non-owner cannnot change reward destination
         assert_register(owner, &smart_contract);
         assert_noop!(
-            DappStaking::set_dapp_reward_destination(
+            DappStaking::set_dapp_reward_beneficiary(
                 RuntimeOrigin::signed(owner + 1),
                 smart_contract,
                 Some(5)
@@ -1479,7 +1479,7 @@ fn claim_dapp_reward_works() {
 
         // Advance to next era, and ensure rewards can be paid out to a custom beneficiary
         let new_beneficiary = 17;
-        assert_set_dapp_reward_destination(dev_account, &smart_contract, Some(new_beneficiary));
+        assert_set_dapp_reward_beneficiary(dev_account, &smart_contract, Some(new_beneficiary));
         advance_to_next_era();
         assert_claim_dapp_reward(
             account,

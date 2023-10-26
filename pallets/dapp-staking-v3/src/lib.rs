@@ -478,6 +478,8 @@ pub mod pallet {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
             let mut protocol_state = ActiveProtocolState::<T>::get();
 
+            // TODO: maybe do lazy history cleanup in this function?
+
             // We should not modify pallet storage while in maintenance mode.
             // This is a safety measure, since maintenance mode is expected to be
             // enabled in case some misbehavior or corrupted storage is detected.
@@ -671,13 +673,13 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Used to modify the reward destination account for a dApp.
+        /// Used to modify the reward beneficiary account for a dApp.
         ///
         /// Caller has to be dApp owner.
         /// If set to `None`, rewards will be deposited to the dApp owner.
         #[pallet::call_index(2)]
         #[pallet::weight(Weight::zero())]
-        pub fn set_dapp_reward_destination(
+        pub fn set_dapp_reward_beneficiary(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
             beneficiary: Option<T::AccountId>,
