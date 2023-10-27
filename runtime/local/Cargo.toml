@@ -189,6 +189,7 @@ runtime-benchmarks = [
 	"pallet-ethereum-checked/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
+	"pallet-dapp-staking-v3/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",

@@ -59,6 +59,9 @@ pub use pallet::*;
 #[cfg(test)]
 mod test;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 mod types;
 use types::*;
 pub use types::{PriceProvider, RewardPoolProvider, TierThreshold};
