@@ -172,7 +172,7 @@ impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 /// Constant values used within the runtime.
 pub const MICROSDN: Balance = 1_000_000_000_000;
 pub const MILLISDN: Balance = 1_000 * MICROSDN;
-/// We assume that ~10% of the block weight is consumed by `on_initalize` handlers.
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
