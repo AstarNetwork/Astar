@@ -696,7 +696,7 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-    pub DefaultBaseFeePerGas: U256 = U256::from(147_000_000_000_u128);
+    pub DefaultBaseFeePerGas: U256 = U256::from(14_700_000_000_u128);
     pub MinBaseFeePerGas: U256 = U256::from(8_000_000_000_u128);
     pub MaxBaseFeePerGas: U256 = U256::from(800_000_000_000_u128);
     pub StepLimitRatio: Perquintill = Perquintill::from_rational(5_u128, 100_000);
