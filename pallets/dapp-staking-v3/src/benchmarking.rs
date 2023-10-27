@@ -19,13 +19,29 @@
 use super::*;
 
 use frame_benchmarking::v2::*;
-use frame_support::weights::Weight;
-
 use astar_primitives::Balance;
 
 #[benchmarks]
 mod benchmarks {
     use super::*;
+
+    #[benchmark]
+    fn dapp_tier_assignment() {
+        let era = 10;
+        let period = 1;
+        let reward_pool = Balance::from(1e30 as u128);
+
+        TierConfig:<T>::put()
+        // TODO: TierConfig setting
+        // TODO: dApp registration
+        // TODO: ContractStake filling
+
+
+        #[block]
+        {
+            let _ = Pallet::<T>::get_dapp_tier_assignment(era, period, reward_pool);
+        }
+    }
 
     impl_benchmark_test_suite!(
         Pallet,
