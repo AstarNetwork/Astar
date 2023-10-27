@@ -989,6 +989,8 @@ pub mod pallet {
 
             let mut ledger = Ledger::<T>::get(&account);
 
+
+            // TODO: suggestion is to change this a bit so we clean up ledger if rewards have expired
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
             ledger
@@ -1001,6 +1003,8 @@ pub mod pallet {
                     // Defensive check, should never happen
                     _ => Error::<T>::InternalStakeError,
                 })?;
+
+            // TODO: also change this to check if rewards have expired
 
             // 2.
             // Update `StakerInfo` storage with the new stake amount on the specified contract.
@@ -1456,6 +1460,7 @@ pub mod pallet {
             Ok(())
         }
 
+        // TODO: an alternative to this could would be to allow `unstake` call to cleanup old entries, however that means more complexity in that call
         /// Used to unstake funds from a contract that was unregistered after an account staked on it.
         #[pallet::call_index(15)]
         #[pallet::weight(Weight::zero())]
