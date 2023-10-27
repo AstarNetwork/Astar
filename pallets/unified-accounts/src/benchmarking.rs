@@ -88,6 +88,10 @@ mod benchmarks {
     fn to_account_id() {
         let caller: T::AccountId = whitelisted_caller();
         let evm_address = T::DefaultNativeToEvm::into_h160(caller.clone());
+        assert_ok!(T::Currency::mint_into(
+            &caller,
+            T::AccountMappingStorageFee::get()
+        ));
         // claim mapping
         assert_ok!(Pallet::<T>::claim_default_evm_address(
             RawOrigin::Signed(caller.clone()).into()
@@ -103,6 +107,10 @@ mod benchmarks {
     fn to_account_id_or_default() {
         let caller: T::AccountId = whitelisted_caller();
         let evm_address = T::DefaultNativeToEvm::into_h160(caller.clone());
+        assert_ok!(T::Currency::mint_into(
+            &caller,
+            T::AccountMappingStorageFee::get()
+        ));
         // claim mapping
         assert_ok!(Pallet::<T>::claim_default_evm_address(
             RawOrigin::Signed(caller.clone()).into()
@@ -119,6 +127,10 @@ mod benchmarks {
     #[benchmark]
     fn to_h160() {
         let caller: T::AccountId = whitelisted_caller();
+        assert_ok!(T::Currency::mint_into(
+            &caller,
+            T::AccountMappingStorageFee::get()
+        ));
         // claim mapping
         assert_ok!(Pallet::<T>::claim_default_evm_address(
             RawOrigin::Signed(caller.clone()).into()
@@ -133,6 +145,10 @@ mod benchmarks {
     #[benchmark]
     fn to_h160_or_default() {
         let caller: T::AccountId = whitelisted_caller();
+        assert_ok!(T::Currency::mint_into(
+            &caller,
+            T::AccountMappingStorageFee::get()
+        ));
         // claim mapping
         assert_ok!(Pallet::<T>::claim_default_evm_address(
             RawOrigin::Signed(caller.clone()).into()
