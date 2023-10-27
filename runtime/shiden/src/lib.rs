@@ -93,12 +93,12 @@ pub use precompiles::{ShidenNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX}
 pub type Precompiles = ShidenNetworkPrecompiles<Runtime, ShidenAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
-pub const PICOSDN: Balance = 1_000_000_000;
-pub const MICROSDN: Balance = 1_000 * PICOSDN;
+pub const NANOSDN: Balance = 1_000_000_000;
+pub const MICROSDN: Balance = 1_000 * NANOSDN;
 pub const MILLISDN: Balance = 1_000 * MICROSDN;
 pub const SDN: Balance = 1_000 * MILLISDN;
 
-pub const STORAGE_BYTE_FEE: Balance = 200 * PICOSDN;
+pub const STORAGE_BYTE_FEE: Balance = 200 * NANOSDN;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -1043,7 +1043,7 @@ parameter_types! {
     pub const BaseFeeStr: &'static str = "BaseFee";
 }
 
-/// Simple `OnRuntimeUpgrade` logic to prepare Shibuya runtime for `DynamicEvmBaseFee` pallet.
+/// Simple `OnRuntimeUpgrade` logic to prepare Shiden runtime for `DynamicEvmBaseFee` pallet.
 pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
 pub struct DynamicEvmBaseFeeMigration;
 impl OnRuntimeUpgrade for DynamicEvmBaseFeeMigration {
