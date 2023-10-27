@@ -989,7 +989,6 @@ pub mod pallet {
 
             let mut ledger = Ledger::<T>::get(&account);
 
-
             // TODO: suggestion is to change this a bit so we clean up ledger if rewards have expired
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
