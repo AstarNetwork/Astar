@@ -363,6 +363,7 @@ impl<T: Config> UnifiedAddressMapper<T::AccountId> for Pallet<T> {
 impl<T: Config> AddressMapping<T::AccountId> for Pallet<T> {
     fn into_account_id(evm_address: H160) -> T::AccountId {
         <Self as UnifiedAddressMapper<T::AccountId>>::to_account_id_or_default(&evm_address)
+            .into_address()
     }
 }
 
@@ -389,7 +390,8 @@ impl<T: Config> StaticLookup for Pallet<T> {
             MultiAddress::Address20(i) => Ok(
                 <Self as UnifiedAddressMapper<T::AccountId>>::to_account_id_or_default(
                     &EvmAddress::from_slice(&i),
-                ),
+                )
+                .into_address(),
             ),
             _ => Err(LookupError),
         }

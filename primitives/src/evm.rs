@@ -20,7 +20,8 @@ use crate::{AccountId, AssetId};
 
 use frame_support::ensure;
 use pallet_evm::{AddressMapping, HashedAddressMapping};
-use parity_scale_codec::Encode;
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
 use sp_core::{Hasher, H160, H256};
 use sp_std::marker::PhantomData;
 
@@ -64,27 +65,32 @@ where
 pub trait UnifiedAddressMapper<AccountId> {
     /// Gets the account id associated with given evm address, if mapped else None.
     fn to_account_id(evm_address: &EvmAddress) -> Option<AccountId>;
+
     /// Gets the account id associated with given evm address.
     /// If no mapping exists, then return the default evm address.
-    fn to_account_id_or_default(evm_address: &EvmAddress) -> AccountId {
-        Self::to_account_id(evm_address).unwrap_or_else(|| {
+    fn to_account_id_or_default(evm_address: &EvmAddress) -> UnifiedAddress<AccountId> {
+        Self::to_account_id(evm_address).map_or_else(
             // fallback to default account_id
-            Self::to_default_account_id(evm_address)
-        })
+            || UnifiedAddress::Default(Self::to_default_account_id(evm_address)),
+            |a| UnifiedAddress::Mapped(a),
+        )
     }
     /// Gets the default account id which is associated with given evm address.
     fn to_default_account_id(evm_address: &EvmAddress) -> AccountId;
 
     /// Gets the evm address associated with given account id, if mapped else None.
     fn to_h160(account_id: &AccountId) -> Option<EvmAddress>;
+
     /// Gets the evm address associated with given account id.
     /// If no mapping exists, then return the default account id.
-    fn to_h160_or_default(account_id: &AccountId) -> EvmAddress {
-        Self::to_h160(account_id).unwrap_or_else(|| {
+    fn to_h160_or_default(account_id: &AccountId) -> UnifiedAddress<H160> {
+        Self::to_h160(account_id).map_or_else(
             // fallback to default account_id
-            Self::to_default_h160(account_id)
-        })
+            || UnifiedAddress::Default(Self::to_default_h160(account_id)),
+            |a| UnifiedAddress::Mapped(a),
+        )
     }
+
     /// Gets the default evm address which is associated with given account id.
     fn to_default_h160(account_id: &AccountId) -> EvmAddress;
 }
@@ -107,5 +113,27 @@ impl<H: Hasher<Out = H256>> UnifiedAddressMapper<AccountId> for HashedDefaultMap
 
     fn to_h160(_: &AccountId) -> Option<EvmAddress> {
         None
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+pub enum UnifiedAddress<Address> {
+    /// The address fetched from the mappings and the account
+    /// is unified
+    #[codec(index = 0)]
+    Mapped(Address),
+    /// The default address associated with account as there
+    /// is no mapping found and accounts are not unified
+    #[codec(index = 1)]
+    Default(Address),
+}
+
+impl<Address> UnifiedAddress<Address> {
+    /// Get the underlying address
+    pub fn into_address(self) -> Address {
+        match self {
+            Self::Default(a) => a,
+            Self::Mapped(a) => a,
+        }
     }
 }

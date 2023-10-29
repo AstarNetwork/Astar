@@ -171,7 +171,7 @@ pub mod pallet {
         pub fn transact(origin: OriginFor<T>, tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
             let source = T::XcmTransactOrigin::ensure_origin(origin)?;
             Self::do_transact(
-                T::AddressMapper::to_h160_or_default(&source),
+                T::AddressMapper::to_h160_or_default(&source).into_address(),
                 tx.into(),
                 CheckedEthereumTxKind::Xcm,
                 false,
@@ -284,7 +284,7 @@ impl<T: Config> Pallet<T> {
     ) -> DispatchResultWithPostInfo {
         let source = T::XcmTransactOrigin::ensure_origin(origin)?;
         Self::do_transact(
-            T::AddressMapper::to_h160_or_default(&source),
+            T::AddressMapper::to_h160_or_default(&source).into_address(),
             tx.into(),
             CheckedEthereumTxKind::Xcm,
             true,

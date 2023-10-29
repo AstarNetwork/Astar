@@ -129,29 +129,21 @@ impl AddressMapping<AccountId32> for MockAddressMapping {
 
 pub struct MockAddressMapper;
 impl UnifiedAddressMapper<AccountId32> for MockAddressMapper {
-    fn to_h160_or_default(account_id: &AccountId) -> H160 {
+    fn to_h160(account_id: &AccountId32) -> Option<H160> {
         if account_id == &ALICE {
-            return ALICE_H160;
+            Some(ALICE_H160)
+        } else if account_id == &BOB {
+            Some(BOB_H160)
+        } else if account_id == &CHARLIE {
+            Some(CHARLIE_H160)
+        } else {
+            None
         }
-        if account_id == &BOB {
-            return BOB_H160;
-        }
-        if account_id == &CHARLIE {
-            return CHARLIE_H160;
-        }
+    }
 
+    fn to_default_h160(account_id: &AccountId32) -> H160 {
         let data = (b"evm:", account_id);
-        return H160::from_slice(&data.using_encoded(blake2_256)[0..20]);
-    }
-
-    // this method is not used in tests
-    fn to_account_id(_: &H160) -> Option<AccountId32> {
-        None
-    }
-
-    // this method is not used in tests
-    fn to_h160(_: &AccountId32) -> Option<H160> {
-        None
+        H160::from_slice(&data.using_encoded(blake2_256)[0..20])
     }
 
     // this method is not used in tests
@@ -160,8 +152,8 @@ impl UnifiedAddressMapper<AccountId32> for MockAddressMapper {
     }
 
     // this method is not used in tests
-    fn to_default_h160(_: &AccountId32) -> H160 {
-        [0u8; 20].into()
+    fn to_account_id(_: &H160) -> Option<AccountId32> {
+        None
     }
 }
 

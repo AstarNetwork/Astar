@@ -212,7 +212,7 @@ where
         let weight_limit = context.weight_limit.saturating_sub(overheads);
         let gas_limit = U256::from(T::GasWeightMapping::weight_to_gas(weight_limit));
 
-        let source = T::AddressMapper::to_h160_or_default(&source);
+        let source = T::AddressMapper::to_h160_or_default(&source).into_address();
         let tx = CheckedEthereumTx {
             gas_limit,
             target: target_decoded,
