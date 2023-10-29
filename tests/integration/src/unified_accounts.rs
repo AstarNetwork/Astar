@@ -17,9 +17,9 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::setup::*;
+use astar_primitives::evm::UnifiedAddress;
 use parity_scale_codec::Encode;
 use sp_io::hashing::keccak_256;
-use unified_accounts_chain_extension_types::UnifiedAddress;
 
 const AU_CE_GETTER: &'static str = "au_ce_getters";
 
@@ -70,7 +70,7 @@ fn unified_accounts_chain_extension_works() {
                 contract_id.clone(),
                 [GET_H160_OR_DEFAULT.to_vec(), ALICE.encode()].concat()
             ),
-            UnifiedAddress::Default(UnifiedAccounts::to_h160_or_default(&ALICE))
+            UnifiedAccounts::to_h160_or_default(&ALICE)
         );
         // mapped native address should be None
         assert_eq!(
@@ -88,7 +88,7 @@ fn unified_accounts_chain_extension_works() {
                 contract_id.clone(),
                 [GET_NATIVE_OR_DEFAULT.to_vec(), alith().encode()].concat()
             ),
-            UnifiedAddress::Default(UnifiedAccounts::to_account_id_or_default(&alith()))
+            UnifiedAccounts::to_account_id_or_default(&alith())
         );
 
         //

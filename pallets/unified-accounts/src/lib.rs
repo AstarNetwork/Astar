@@ -67,7 +67,7 @@
 
 use astar_primitives::{
     ethereum_checked::AccountMapping,
-    evm::{EvmAddress, UnifiedAddressMapper},
+    evm::{EvmAddress, UnifiedAddress, UnifiedAddressMapper},
     Balance,
 };
 use frame_support::{
@@ -351,11 +351,12 @@ impl<T: Config> UnifiedAddressMapper<T::AccountId> for Pallet<T> {
         EvmToNative::<T>::get(evm_address)
     }
 
-    fn to_account_id_or_default(evm_address: &EvmAddress) -> T::AccountId {
-        EvmToNative::<T>::get(evm_address).unwrap_or_else(|| {
-            // fallback to default account_id
-            T::DefaultEvmToNative::into_account_id(evm_address.clone())
-        })
+    fn to_account_id_or_default(evm_address: &EvmAddress) -> UnifiedAddress<T::AccountId> {
+        if let Some(native) = Self::to_account_id(&evm_address) {
+            UnifiedAddress::Mapped(native)
+        } else {
+            UnifiedAddress::Default(T::DefaultEvmToNative::into_account_id(evm_address.clone()))
+        }
     }
 
     fn to_default_account_id(evm_address: &EvmAddress) -> T::AccountId {
@@ -366,11 +367,12 @@ impl<T: Config> UnifiedAddressMapper<T::AccountId> for Pallet<T> {
         NativeToEvm::<T>::get(account_id)
     }
 
-    fn to_h160_or_default(account_id: &T::AccountId) -> EvmAddress {
-        NativeToEvm::<T>::get(account_id).unwrap_or_else(|| {
-            // fallback to default account_id
-            T::DefaultNativeToEvm::into_h160(account_id.clone())
-        })
+    fn to_h160_or_default(account_id: &T::AccountId) -> UnifiedAddress<EvmAddress> {
+        if let Some(h160) = Self::to_h160(&account_id) {
+            UnifiedAddress::Mapped(h160)
+        } else {
+            UnifiedAddress::Default(T::DefaultNativeToEvm::into_h160(account_id.clone()))
+        }
     }
 
     fn to_default_h160(account_id: &T::AccountId) -> EvmAddress {
@@ -381,7 +383,7 @@ impl<T: Config> UnifiedAddressMapper<T::AccountId> for Pallet<T> {
 /// AccountMapping wrapper implementation
 impl<T: Config> AccountMapping<T::AccountId> for Pallet<T> {
     fn into_h160(account: T::AccountId) -> H160 {
-        <Self as UnifiedAddressMapper<T::AccountId>>::to_h160_or_default(&account)
+        <Self as UnifiedAddressMapper<T::AccountId>>::to_h160_or_default(&account).into_address()
     }
 }
 
@@ -389,6 +391,7 @@ impl<T: Config> AccountMapping<T::AccountId> for Pallet<T> {
 impl<T: Config> AddressMapping<T::AccountId> for Pallet<T> {
     fn into_account_id(evm_address: H160) -> T::AccountId {
         <Self as UnifiedAddressMapper<T::AccountId>>::to_account_id_or_default(&evm_address)
+            .into_address()
     }
 }
 
@@ -415,7 +418,8 @@ impl<T: Config> StaticLookup for Pallet<T> {
             MultiAddress::Address20(i) => Ok(
                 <Self as UnifiedAddressMapper<T::AccountId>>::to_account_id_or_default(
                     &EvmAddress::from_slice(&i),
-                ),
+                )
+                .into_address(),
             ),
             _ => Err(LookupError),
         }

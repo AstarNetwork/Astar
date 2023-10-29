@@ -18,23 +18,19 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::{
-    ethereum_checked::AccountMapping,
-    evm::{EvmAddress, UnifiedAddressMapper},
-};
+use astar_primitives::evm::{EvmAddress, UnifiedAddressMapper};
 use core::marker::PhantomData;
 use sp_runtime::DispatchError;
 
-use frame_support::{traits::Get, DefaultNoBound};
+use frame_support::DefaultNoBound;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, Result as DispatchResult, RetVal,
 };
-use pallet_evm::AddressMapping;
+use pallet_unified_accounts::WeightInfo;
 use parity_scale_codec::Encode;
-pub use unified_accounts_chain_extension_types::{
-    Command::{self, *},
-    UnifiedAddress,
-};
+pub use unified_accounts_chain_extension_types::Command::{self, *};
+
+type UAWeight<T> = <T as pallet_unified_accounts::Config>::WeightInfo;
 
 #[derive(DefaultNoBound)]
 pub struct UnifiedAccountsExtension<T, UA>(PhantomData<(T, UA)>);
@@ -54,49 +50,34 @@ where
         })? {
             GetEvmAddress => {
                 let account_id: T::AccountId = env.read_as()?;
-
-                let base_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
-                env.charge_weight(base_weight)?;
+                // charge weight
+                env.charge_weight(UAWeight::<T>::to_h160())?;
                 // write to buffer
                 UA::to_h160(&account_id).using_encoded(|r| env.write(r, false, None))?;
             }
             GetEvmAddressOrDefault => {
                 let account_id: T::AccountId = env.read_as()?;
+                // charge weight
+                env.charge_weight(UAWeight::<T>::to_h160_or_default())?;
 
-                let base_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
-                env.charge_weight(base_weight)?;
-
-                let evm_address = if let Some(h160) = UA::to_h160(&account_id) {
-                    UnifiedAddress::Mapped(h160)
-                } else {
-                    UnifiedAddress::Default(T::DefaultNativeToEvm::into_h160(account_id))
-                };
                 // write to buffer
-                evm_address.using_encoded(|r| env.write(r, false, None))?;
+                UA::to_h160_or_default(&account_id).using_encoded(|r| env.write(r, false, None))?;
             }
             GetNativeAddress => {
                 let evm_address: EvmAddress = env.read_as()?;
-
-                let base_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
-                env.charge_weight(base_weight)?;
+                // charge weight
+                env.charge_weight(UAWeight::<T>::to_account_id())?;
                 // write to buffer
                 UA::to_account_id(&evm_address).using_encoded(|r| env.write(r, false, None))?;
             }
             GetNativeAddressOrDefault => {
                 let evm_address: EvmAddress = env.read_as()?;
-
-                let base_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
-                env.charge_weight(base_weight)?;
-
-                // read the storage item
-                let native_address = if let Some(native) = UA::to_account_id(&evm_address) {
-                    UnifiedAddress::Mapped(native)
-                } else {
-                    UnifiedAddress::Default(T::DefaultEvmToNative::into_account_id(evm_address))
-                };
+                // charge weight
+                env.charge_weight(UAWeight::<T>::to_account_id_or_default())?;
 
                 // write to buffer
-                native_address.using_encoded(|r| env.write(r, false, None))?;
+                UA::to_account_id_or_default(&evm_address)
+                    .using_encoded(|r| env.write(r, false, None))?;
             }
         };
         Ok(RetVal::Converging(0))

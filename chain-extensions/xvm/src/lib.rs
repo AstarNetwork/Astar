@@ -25,7 +25,7 @@ use astar_primitives::{
     evm::UnifiedAddressMapper,
     xvm::{Context, VmId, XvmCall},
 };
-use frame_support::{dispatch::Encode, traits::Get, weights::Weight};
+use frame_support::{dispatch::Encode, weights::Weight};
 use frame_system::RawOrigin;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, ReturnFlags,
@@ -98,8 +98,10 @@ where
                 // Claim the default evm address if needed.
                 let mut actual_weight = Weight::zero();
                 if value > 0 {
-                    // `UA::to_h160` 1 DB read.
-                    actual_weight.saturating_accrue(T::DbWeight::get().reads(1));
+                    // `UA::to_h160`.
+                    actual_weight.saturating_accrue(
+                        <T as pallet_unified_accounts::Config>::WeightInfo::to_h160(),
+                    );
 
                     if UA::to_h160(&source).is_none() {
                         let weight_of_claim = <T as pallet_unified_accounts::Config>::WeightInfo::claim_default_evm_address();
