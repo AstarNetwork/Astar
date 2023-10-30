@@ -78,10 +78,7 @@ where
             XvmFuncId::Call => {
                 // We need to immediately charge for the worst case scenario. Gas equals Weight in pallet-contracts context.
                 let weight_limit = env.ext().gas_meter().gas_left();
-                // TODO: track proof size in align fees ticket
-                // We don't track used proof size, so we can't refund after.
-                // So we will charge a 32KB dummy value as a temporary replacement.
-                let charged_weight = env.charge_weight(weight_limit.set_proof_size(32 * 1024))?;
+                let charged_weight = env.charge_weight(weight_limit)?;
 
                 let XvmCallArgs {
                     vm_id,
@@ -97,21 +94,20 @@ where
 
                 // Claim the default evm address if needed.
                 let mut actual_weight = Weight::zero();
-                let charged_weight_amount = charged_weight.amount();
                 if value > 0 {
                     // `UA::to_h160`.
                     actual_weight.saturating_accrue(
                         <T as pallet_unified_accounts::Config>::WeightInfo::to_h160(),
                     );
 
-                    if actual_weight.any_gt(charged_weight_amount) {
+                    if actual_weight.any_gt(weight_limit) {
                         return out_of_gas_err(actual_weight);
                     }
 
                     if UA::to_h160(&source).is_none() {
                         let weight_of_claim = <T as pallet_unified_accounts::Config>::WeightInfo::claim_default_evm_address();
                         actual_weight.saturating_accrue(weight_of_claim);
-                        if actual_weight.any_gt(charged_weight_amount) {
+                        if actual_weight.any_gt(weight_limit) {
                             return out_of_gas_err(actual_weight);
                         }
 
@@ -130,7 +126,8 @@ where
 
                 let xvm_context = Context {
                     source_vm_id: VmId::Wasm,
-                    weight_limit: charged_weight_amount.saturating_sub(actual_weight),
+                    // Weight limit left for XVM call.
+                    weight_limit: weight_limit.saturating_sub(actual_weight),
                 };
                 let vm_id = {
                     match TryInto::<VmId>::try_into(vm_id) {
