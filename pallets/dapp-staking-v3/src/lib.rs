@@ -81,6 +81,11 @@ pub mod pallet {
     #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
+    #[cfg(feature = "runtime-benchmarks")]
+    pub trait BenchmarkHelper<SmartContract> {
+        fn get_smart_contract(id: u32) -> SmartContract;
+    }
+
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
@@ -158,6 +163,10 @@ pub mod pallet {
         /// Number of different tiers.
         #[pallet::constant]
         type NumberOfTiers: Get<u32>;
+
+        /// Helper trait for benchmarks.
+        #[cfg(feature = "runtime-benchmarks")]
+        type BenchmarkHelper: BenchmarkHelper<Self::SmartContract>;
     }
 
     #[pallet::event]

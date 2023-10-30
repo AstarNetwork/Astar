@@ -22,7 +22,7 @@ use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig,
     BlockRewardConfig, CouncilConfig, DappStakingConfig, DemocracyConfig, EVMConfig, GenesisConfig,
     GrandpaConfig, GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig,
-    TechnicalCommitteeConfig, TreasuryConfig, VestingConfig,
+    TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -114,7 +114,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 1_000_000_000_000_000_000_000_000_000))
+                .map(|k| (k, 1_000_000_000 * AST))
                 .collect(),
         },
         block_reward: BlockRewardConfig {
@@ -198,18 +198,18 @@ fn testnet_genesis(
             ],
             tier_thresholds: vec![
                 TierThreshold::DynamicTvlAmount {
-                    amount: 100,
-                    minimum_amount: 80,
+                    amount: 100 * AST,
+                    minimum_amount: 80 * AST,
                 },
                 TierThreshold::DynamicTvlAmount {
-                    amount: 50,
-                    minimum_amount: 40,
+                    amount: 50 * AST,
+                    minimum_amount: 40 * AST,
                 },
                 TierThreshold::DynamicTvlAmount {
-                    amount: 20,
-                    minimum_amount: 20,
+                    amount: 20 * AST,
+                    minimum_amount: 20 * AST,
                 },
-                TierThreshold::FixedTvlAmount { amount: 10 },
+                TierThreshold::FixedTvlAmount { amount: 10 * AST },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
         },

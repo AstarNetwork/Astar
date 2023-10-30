@@ -138,6 +138,15 @@ impl Default for MockSmartContract {
     }
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkHelper<SC>(sp_std::marker::PhantomData<SC>);
+#[cfg(feature = "runtime-benchmarks")]
+impl crate::BenchmarkHelper<MockSmartContract> for BenchmarkHelper<MockSmartContract> {
+    fn get_smart_contract(id: u32) -> MockSmartContract {
+        MockSmartContract::Wasm(id as AccountId)
+    }
+}
+
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -157,6 +166,8 @@ impl pallet_dapp_staking::Config for Test {
     type MaxNumberOfStakedContracts = ConstU32<3>;
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = BenchmarkHelper<MockSmartContract>;
 }
 
 pub struct ExtBuilder;

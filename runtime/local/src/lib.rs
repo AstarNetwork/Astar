@@ -459,6 +459,16 @@ impl pallet_dapp_staking_v3::RewardPoolProvider for DummyRewardPoolProvider {
         Balance::from(3_000_000 * AST)
     }
 }
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkHelper<SC>(sp_std::marker::PhantomData<SC>);
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>>
+    for BenchmarkHelper<SmartContract<AccountId>>
+{
+    fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
+        SmartContract::Wasm(AccountId::from([id as u8; 32]))
+    }
+}
 
 impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -472,13 +482,15 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type StandardErasPerBuildAndEarnPeriod = ConstU32<10>;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
-    type MaxNumberOfContracts = ConstU16<10>;
+    type MaxNumberOfContracts = ConstU16<100>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<AST>;
     type UnlockingPeriod = ConstU32<2>;
     type MaxNumberOfStakedContracts = ConstU32<3>;
     type MinimumStakeAmount = ConstU128<AST>;
     type NumberOfTiers = ConstU32<4>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>>;
 }
 
 impl pallet_utility::Config for Runtime {
