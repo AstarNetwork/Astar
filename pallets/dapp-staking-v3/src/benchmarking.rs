@@ -180,7 +180,8 @@ mod benchmarks {
             ));
         }
 
-        let mut amount = MIN_TIER_THRESHOLD;
+        // TODO: try to make this more "shuffled" so the generated vector ends up being more random
+        let mut amount = 1000 * MIN_TIER_THRESHOLD;
         for id in 0..x {
             let staker = account("staker", id.into(), 1337);
             T::Currency::make_free_balance_be(&staker, amount);
@@ -196,8 +197,8 @@ mod benchmarks {
                 amount,
             ));
 
-            // Slowly increase the stake amount
-            amount.saturating_accrue(UNIT);
+            // Slowly decrease the stake amount
+            amount.saturating_dec(UNIT);
         }
 
         // Advance to next era
