@@ -18,8 +18,8 @@
 
 use super::*;
 
-use frame_benchmarking::v2::*;
 use astar_primitives::Balance;
+use frame_benchmarking::v2::*;
 
 #[benchmarks]
 mod benchmarks {
@@ -31,11 +31,9 @@ mod benchmarks {
         let period = 1;
         let reward_pool = Balance::from(1e30 as u128);
 
-        TierConfig:<T>::put()
         // TODO: TierConfig setting
         // TODO: dApp registration
         // TODO: ContractStake filling
-
 
         #[block]
         {
