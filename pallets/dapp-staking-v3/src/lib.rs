@@ -66,6 +66,8 @@ mod types;
 use types::*;
 pub use types::{PriceProvider, RewardPoolProvider, TierThreshold};
 
+mod dsv3_weight;
+
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
 // TODO: add tracing!

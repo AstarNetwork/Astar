@@ -30,6 +30,17 @@ use sp_runtime::traits::Zero;
 // 1. user is staking, period passes, they can unlock their funds which were previously staked
 
 #[test]
+fn print_test() {
+    ExtBuilder::build().execute_with(|| {
+        use crate::dsv3_weight::WeightInfo;
+        println!(
+            ">>> {:?}",
+            crate::dsv3_weight::SubstrateWeight::<Test>::dapp_tier_assignment(200)
+        );
+    })
+}
+
+#[test]
 fn maintenace_mode_works() {
     ExtBuilder::build().execute_with(|| {
         // Check that maintenance mode is disabled by default

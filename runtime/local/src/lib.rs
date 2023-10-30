@@ -459,6 +459,7 @@ impl pallet_dapp_staking_v3::RewardPoolProvider for DummyRewardPoolProvider {
         Balance::from(3_000_000 * AST)
     }
 }
+
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC>(sp_std::marker::PhantomData<SC>);
 #[cfg(feature = "runtime-benchmarks")]
@@ -1192,6 +1193,7 @@ mod benches {
         [pallet_dapps_staking, DappsStaking]
         [pallet_block_reward, BlockReward]
         [pallet_ethereum_checked, EthereumChecked]
+        [pallet_dapp_staking_v3, DappStaking]
     );
 }
 
