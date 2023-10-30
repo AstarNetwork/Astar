@@ -8023,6 +8023,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-precompile-unified-accounts"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "derive_more",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal",
+ "log",
+ "num_enum 0.5.11",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-timestamp",
+ "pallet-unified-accounts",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-evm-precompile-xcm"
 version = "0.11.0"
 dependencies = [
@@ -13076,6 +13103,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
+ "pallet-evm-precompile-unified-accounts",
  "pallet-evm-precompile-xcm",
  "pallet-evm-precompile-xvm",
  "pallet-identity",
