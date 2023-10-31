@@ -50,9 +50,8 @@ use sp_core::{H160, U256};
 use sp_std::{marker::PhantomData, prelude::*};
 
 use astar_primitives::{
-    ethereum_checked::{
-        AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, EthereumTxInput,
-    },
+    ethereum_checked::{CheckedEthereumTransact, CheckedEthereumTx, EthereumTxInput},
+    evm::UnifiedAddressMapper,
     xvm::{
         CallFailure, CallOutput, CallResult, Context, FailureError::*, FailureRevert::*, VmId,
         XvmCall,
@@ -85,7 +84,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_contracts::Config {
         /// Mapping from `Account` to `H160`.
-        type AccountMapping: AccountMapping<Self::AccountId>;
+        type AddressMapper: UnifiedAddressMapper<Self::AccountId>;
 
         /// Mapping from Ethereum gas to Substrate weight.
         type GasWeightMapping: GasWeightMapping;
@@ -213,7 +212,7 @@ where
         let weight_limit = context.weight_limit.saturating_sub(overheads);
         let gas_limit = U256::from(T::GasWeightMapping::weight_to_gas(weight_limit));
 
-        let source = T::AccountMapping::into_h160(source);
+        let source = T::AddressMapper::to_h160_or_default(&source).into_address();
         let tx = CheckedEthereumTx {
             gas_limit,
             target: target_decoded,

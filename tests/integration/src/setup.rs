@@ -28,7 +28,7 @@ pub use sp_core::{H160, H256, U256};
 pub use sp_io::hashing::keccak_256;
 pub use sp_runtime::{AccountId32, MultiAddress};
 
-pub use astar_primitives::{ethereum_checked::AccountMapping, evm::UnifiedAddressMapper};
+pub use astar_primitives::evm::UnifiedAddressMapper;
 
 #[cfg(feature = "shibuya")]
 pub use shibuya::*;
