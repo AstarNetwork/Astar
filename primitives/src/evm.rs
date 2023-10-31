@@ -68,6 +68,7 @@ pub trait UnifiedAddressMapper<AccountId> {
 
     /// Gets the account id associated with given evm address.
     /// If no mapping exists, then return the default evm address.
+    /// Returns `UnifiedAddress` enum which wraps the inner account id
     fn to_account_id_or_default(evm_address: &EvmAddress) -> UnifiedAddress<AccountId> {
         Self::to_account_id(evm_address).map_or_else(
             // fallback to default account_id
@@ -83,6 +84,7 @@ pub trait UnifiedAddressMapper<AccountId> {
 
     /// Gets the evm address associated with given account id.
     /// If no mapping exists, then return the default account id.
+    /// Returns `UnifiedAddress` enum which wraps the inner evm address
     fn to_h160_or_default(account_id: &AccountId) -> UnifiedAddress<H160> {
         Self::to_h160(account_id).map_or_else(
             // fallback to default account_id

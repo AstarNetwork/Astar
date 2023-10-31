@@ -148,12 +148,12 @@ impl UnifiedAddressMapper<AccountId32> for MockAddressMapper {
 
     // this method is not used in tests
     fn to_default_account_id(_: &H160) -> AccountId32 {
-        [0u8; 32].into()
+        unimplemented!("not used in tests")
     }
 
     // this method is not used in tests
     fn to_account_id(_: &H160) -> Option<AccountId32> {
-        None
+        unimplemented!("not used in tests")
     }
 }
 
