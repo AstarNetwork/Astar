@@ -1381,7 +1381,7 @@ pub mod pallet {
 
             // Get reward destination, and deposit the reward.
             // TODO: should we check reward is greater than zero, or even more precise, it's greater than the existential deposit? Seems redundant but still...
-            let beneficiary = dapp_info.get_reward_beneficiary();
+            let beneficiary = dapp_info.reward_beneficiary();
             T::Currency::deposit_creating(beneficiary, amount);
 
             // Write back updated struct to prevent double reward claims

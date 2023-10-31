@@ -920,7 +920,7 @@ pub(crate) fn assert_claim_dapp_reward(
 ) {
     let pre_snapshot = MemorySnapshot::new();
     let dapp_info = pre_snapshot.integrated_dapps.get(smart_contract).unwrap();
-    let beneficiary = dapp_info.get_reward_beneficiary();
+    let beneficiary = dapp_info.reward_beneficiary();
     let pre_total_issuance = <Test as Config>::Currency::total_issuance();
     let pre_free_balance = <Test as Config>::Currency::free_balance(beneficiary);
 

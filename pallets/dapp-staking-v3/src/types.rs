@@ -87,6 +87,7 @@ pub enum PeriodType {
 }
 
 impl PeriodType {
+    /// Next period type, after `self`.
     pub fn next(&self) -> Self {
         match self {
             PeriodType::Voting => PeriodType::BuildAndEarn,
@@ -98,7 +99,7 @@ impl PeriodType {
 /// Info about the ongoing period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct PeriodInfo {
-    /// Period number. Increments after each build&earn period type.
+    /// Period number.
     #[codec(compact)]
     pub number: PeriodNumber,
     /// Subperiod type.
@@ -196,7 +197,7 @@ where
     }
 
     /// Ending era of current period
-    pub fn ending_era(&self) -> EraNumber {
+    pub fn period_end_era(&self) -> EraNumber {
         self.period_info.ending_era
     }
 
@@ -249,7 +250,7 @@ pub struct DAppInfo<AccountId> {
 
 impl<AccountId> DAppInfo<AccountId> {
     /// Reward destination account for this dApp.
-    pub fn get_reward_beneficiary(&self) -> &AccountId {
+    pub fn reward_beneficiary(&self) -> &AccountId {
         match &self.reward_destination {
             Some(account_id) => account_id,
             None => &self.owner,
@@ -263,7 +264,7 @@ pub struct UnlockingChunk<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Co
     /// Amount undergoing the unlocking period.
     #[codec(compact)]
     pub amount: Balance,
-    /// Block in which the unlocking period is finished.
+    /// Block in which the unlocking period is finished for this chunk.
     #[codec(compact)]
     pub unlock_block: BlockNumber,
 }
@@ -791,7 +792,7 @@ impl StakeAmount {
         }
     }
 
-    /// `true` if nothing is stked, `false` otherwise
+    /// `true` if nothing is staked, `false` otherwise
     pub fn is_empty(&self) -> bool {
         self.voting.is_zero() && self.build_and_earn.is_zero()
     }

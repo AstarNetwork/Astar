@@ -16,11 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+use astar_primitives::{Balance, BlockNumber};
 use frame_support::assert_ok;
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::Permill;
 
-use crate::test::mock::{Balance, *};
 use crate::*;
 
 // Helper to generate custom `Get` types for testing the `AccountLedger` struct.
@@ -109,7 +109,7 @@ fn protocol_state_basic_checks() {
         period_number,
         "Switching from 'Voting' to 'BuildAndEarn' should not trigger period bump."
     );
-    assert_eq!(protocol_state.ending_era(), ending_era_1);
+    assert_eq!(protocol_state.period_end_era(), ending_era_1);
     assert!(!protocol_state.is_new_era(next_era_start_1 - 1));
     assert!(protocol_state.is_new_era(next_era_start_1));
 
@@ -123,7 +123,7 @@ fn protocol_state_basic_checks() {
         period_number + 1,
         "Switching from 'BuildAndEarn' to 'Voting' must trigger period bump."
     );
-    assert_eq!(protocol_state.ending_era(), ending_era_2);
+    assert_eq!(protocol_state.period_end_era(), ending_era_2);
     assert!(protocol_state.is_new_era(next_era_start_2));
 }
 
@@ -240,7 +240,7 @@ fn account_ledger_add_unlocking_chunk_works() {
     for i in 2..=UnlockingDummy::get() {
         let new_unlock_amount = unlock_amount + i as u128;
         assert!(acc_ledger
-            .add_unlocking_chunk(new_unlock_amount, block_number + i as u64)
+            .add_unlocking_chunk(new_unlock_amount, block_number + i)
             .is_ok());
         total_unlocking += new_unlock_amount;
         assert_eq!(acc_ledger.unlocking_amount(), total_unlocking);
@@ -253,7 +253,7 @@ fn account_ledger_add_unlocking_chunk_works() {
     // Any further addition should fail, resulting in a noop
     let acc_ledger_snapshot = acc_ledger.clone();
     assert_eq!(
-        acc_ledger.add_unlocking_chunk(1, block_number + UnlockingDummy::get() as u64 + 1),
+        acc_ledger.add_unlocking_chunk(1, block_number + UnlockingDummy::get() + 1),
         Err(AccountLedgerError::NoCapacity)
     );
     assert_eq!(acc_ledger, acc_ledger_snapshot);
