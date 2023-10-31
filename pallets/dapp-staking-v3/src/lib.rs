@@ -1067,12 +1067,7 @@ pub mod pallet {
             // 3.
             // Update `ContractStake` storage with the new stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
-            ensure!(
-                contract_stake_info
-                    .stake(amount, protocol_state.period_info, stake_era)
-                    .is_ok(),
-                Error::<T>::InternalStakeError
-            );
+            contract_stake_info.stake(amount, protocol_state.period_info, stake_era);
 
             // 4.
             // Update total staked amount for the next era.
@@ -1170,12 +1165,7 @@ pub mod pallet {
             // 3.
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
-            ensure!(
-                contract_stake_info
-                    .unstake(amount, protocol_state.period_info, unstake_era)
-                    .is_ok(),
-                Error::<T>::InternalUnstakeError
-            );
+            contract_stake_info.unstake(amount, protocol_state.period_info, unstake_era);
 
             // 4.
             // Update total staked amount for the next era.

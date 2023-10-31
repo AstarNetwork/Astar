@@ -198,7 +198,7 @@ mod benchmarks {
             ));
 
             // Slowly decrease the stake amount
-            amount.saturating_dec(UNIT);
+            amount.saturating_reduce(UNIT);
         }
 
         // Advance to next era

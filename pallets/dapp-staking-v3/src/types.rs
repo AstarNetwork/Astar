@@ -1012,236 +1012,158 @@ impl SingularStakingInfo {
     }
 }
 
-// TODO: Current implementation doesn't require off-chain worker so we don't need 3 entries - only 2 are enough.
-// This means that implementation can be simplified to work similar as `AccountLedger` does, where current and future entry exist.
-// Even in case reward calculation requires multiple blocks to finish, we could simply mark all stake calls as invalid during this short period.
-
-const STAKING_SERIES_HISTORY: u32 = 3;
-
 /// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
-#[derive(
-    Encode,
-    Decode,
-    MaxEncodedLen,
-    RuntimeDebugNoBound,
-    PartialEqNoBound,
-    EqNoBound,
-    CloneNoBound,
-    TypeInfo,
-    Default,
-)]
-pub struct ContractStakeAmountSeries(BoundedVec<StakeAmount, ConstU32<STAKING_SERIES_HISTORY>>);
+#[derive(Encode, Decode, MaxEncodedLen, RuntimeDebug, PartialEq, Eq, Clone, TypeInfo, Default)]
+pub struct ContractStakeAmountSeries {
+    pub staked: StakeAmount,
+    pub staked_future: Option<StakeAmount>,
+}
 impl ContractStakeAmountSeries {
-    /// Helper function to create a new instance of `ContractStakeAmountSeries`.
-    #[cfg(test)]
-    pub fn new(inner: Vec<StakeAmount>) -> Self {
-        Self(BoundedVec::try_from(inner).expect("Test should ensure this is always valid"))
-    }
-
-    /// Returns inner `Vec` of `StakeAmount` instances. Useful for testing.
-    #[cfg(test)]
-    pub fn inner(&self) -> Vec<StakeAmount> {
-        self.0.clone().into_inner()
-    }
-
-    /// Length of the series.
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
     /// `true` if series is empty, `false` otherwise.
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.staked.is_empty() && self.staked_future.is_none()
     }
 
     /// Latest period for which stake entry exists.
     pub fn latest_stake_period(&self) -> Option<PeriodNumber> {
-        self.0.last().map(|x| x.period)
+        if let Some(stake_amount) = self.staked_future {
+            Some(stake_amount.period)
+        } else if !self.staked.is_empty() {
+            Some(self.staked.period)
+        } else {
+            None
+        }
     }
 
     /// Latest era for which stake entry exists.
     pub fn latest_stake_era(&self) -> Option<EraNumber> {
-        self.0.last().map(|x| x.era)
+        if let Some(stake_amount) = self.staked_future {
+            Some(stake_amount.era)
+        } else if !self.staked.is_empty() {
+            Some(self.staked.era)
+        } else {
+            None
+        }
     }
 
     /// Returns the `StakeAmount` type for the specified era & period, if it exists.
     pub fn get(&self, era: EraNumber, period: PeriodNumber) -> Option<StakeAmount> {
-        let idx = self
-            .0
-            .binary_search_by(|stake_amount| stake_amount.era.cmp(&era));
-
-        // There are couple of distinct scenarios:
-        // 1. Era exists, so we just return it.
-        // 2. Era doesn't exist, and ideal index is zero, meaning there's nothing in history that would cover this era.
-        // 3. Era doesn't exist, and ideal index is greater than zero, meaning we can potentially use one of the previous entries to derive the information.
-        // 3.1. In case periods are matching, we return that value.
-        // 3.2. In case periods aren't matching, we return `None` since stakes don't carry over between periods.
-        match idx {
-            Ok(idx) => self.0.get(idx).map(|x| *x),
-            Err(ideal_idx) => {
-                if ideal_idx.is_zero() {
-                    None
+        let mut maybe_result = match (self.staked, self.staked_future) {
+            (_, Some(staked_future)) if staked_future.era <= era => {
+                if staked_future.period == period {
+                    Some(staked_future)
                 } else {
-                    match self.0.get(ideal_idx - 1) {
-                        Some(info) if info.period == period => {
-                            let mut info = *info;
-                            info.era = era;
-                            Some(info)
-                        }
-                        _ => None,
-                    }
+                    None
                 }
             }
+            (staked, _) if staked.era <= era && staked.period == period => Some(staked),
+            _ => None,
+        };
+
+        if let Some(result) = maybe_result.as_mut() {
+            result.era = era;
         }
+
+        maybe_result
     }
 
     /// Total staked amount on the contract, in the active period.
     pub fn total_staked_amount(&self, active_period: PeriodNumber) -> Balance {
-        match self.0.last() {
-            Some(stake_amount) if stake_amount.period == active_period => stake_amount.total(),
+        match (self.staked, self.staked_future) {
+            (_, Some(staked_future)) if staked_future.period == active_period => {
+                staked_future.total()
+            }
+            (staked, _) if staked.period == active_period => staked.total(),
             _ => Balance::zero(),
         }
     }
 
     /// Staked amount on the contract, for specified period type, in the active period.
-    pub fn staked_amount(&self, period: PeriodNumber, period_type: PeriodType) -> Balance {
-        match self.0.last() {
-            Some(stake_amount) if stake_amount.period == period => {
-                stake_amount.for_type(period_type)
+    pub fn staked_amount(&self, active_period: PeriodNumber, period_type: PeriodType) -> Balance {
+        match (self.staked, self.staked_future) {
+            (_, Some(staked_future)) if staked_future.period == active_period => {
+                staked_future.for_type(period_type)
             }
+            (staked, _) if staked.period == active_period => staked.for_type(period_type),
             _ => Balance::zero(),
         }
     }
 
     /// Stake the specified `amount` on the contract, for the specified `period_type` and `era`.
-    pub fn stake(
-        &mut self,
-        amount: Balance,
-        period_info: PeriodInfo,
-        current_era: EraNumber,
-    ) -> Result<(), ()> {
+    pub fn stake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
         let stake_era = current_era.saturating_add(1);
+        // TODO: maybe keep the check that period/era aren't historical?
+        // TODO2: tests need to be re-writen for this after the refactoring
 
-        // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
-        if let Some(stake_amount) = self.0.last() {
-            if stake_amount.era > stake_era || stake_amount.period > period_info.number {
-                return Err(());
+        match self.staked_future.as_mut() {
+            // Future entry matches the era, just updated it and return
+            Some(stake_amount) if stake_amount.era == stake_era => {
+                stake_amount.add(amount, period_info.period_type);
+                return;
             }
+            // Future entry has older era, but periods match so overwrite the 'current' entry with it
+            Some(stake_amount) if stake_amount.period == period_info.number => {
+                self.staked = *stake_amount;
+            }
+            // Otherwise do nothing
+            _ => (),
         }
 
-        // Get the most relevant `StakeAmount` instance
-        let mut stake_amount = if let Some(stake_amount) = self.0.last() {
-            if stake_amount.era == stake_era {
-                // Era matches, so we just update the last element.
-                let stake_amount = *stake_amount;
-                let _ = self.0.pop();
-                stake_amount
-            } else if stake_amount.period == period_info.number {
-                // Periods match so we should 'copy' the last element to get correct staking amount
-                let mut temp = *stake_amount;
-                temp.era = stake_era;
-                temp
-            } else {
-                // It's a new period, so we need a completely new instance
-                StakeAmount::new(
-                    Balance::zero(),
-                    Balance::zero(),
-                    stake_era,
-                    period_info.number,
-                )
-            }
-        } else {
-            // It's a new period, so we need a completely new instance
-            StakeAmount::new(
-                Balance::zero(),
-                Balance::zero(),
-                stake_era,
-                period_info.number,
-            )
+        // Prepare new entry
+        let mut new_entry = match self.staked {
+            // 'current' entry period matches so we use it as base for the new entry
+            stake_amount if stake_amount.period == period_info.number => stake_amount,
+            // otherwise just create a dummy new entry
+            _ => Default::default(),
         };
+        new_entry.add(amount, period_info.period_type);
+        new_entry.era = stake_era;
+        new_entry.period = period_info.number;
 
-        // Update the stake amount
-        stake_amount.add(amount, period_info.period_type);
+        self.staked_future = Some(new_entry);
 
-        // This should be infalible due to previous checks that ensure we don't end up overflowing the vector.
-        self.prune();
-        self.0.try_push(stake_amount).map_err(|_| ())
+        // Convenience cleanup
+        if self.staked.period < period_info.number {
+            self.staked = Default::default();
+        }
     }
 
     /// Unstake the specified `amount` from the contract, for the specified `period_type` and `era`.
-    pub fn unstake(
-        &mut self,
-        amount: Balance,
-        period_info: PeriodInfo,
-        era: EraNumber,
-    ) -> Result<(), ()> {
-        // TODO: look into refactoring/optimizing this - right now it's a bit complex.
+    pub fn unstake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
+        // TODO: tests need to be re-writen for this after the refactoring
 
-        // Defensive check to ensure we don't end up in a corrupted state. Should never happen.
-        if let Some(stake_amount) = self.0.last() {
-            // It's possible last element refers to the upcoming era, hence the "-1" on the 'era'.
-            if stake_amount.era.saturating_sub(1) > era || stake_amount.period > period_info.number
+        // First align entries - we only need to keep track of the current era, and the next one
+        match self.staked_future {
+            // Future entry exists, but it covers current or older era.
+            Some(stake_amount)
+                if stake_amount.era <= current_era && stake_amount.period == period_info.number =>
             {
-                return Err(());
+                self.staked = stake_amount;
+                self.staked.era = current_era;
+                self.staked_future = None;
             }
-        } else {
-            // Vector is empty, should never happen.
-            return Err(());
+            _ => (),
         }
 
-        // 1st step - remove the last element IFF it's for the next era.
-        // Unstake the requested amount from it.
-        let last_era_info = match self.0.last() {
-            Some(stake_amount) if stake_amount.era == era.saturating_add(1) => {
-                let mut stake_amount = *stake_amount;
-                stake_amount.subtract(amount, period_info.period_type);
-                let _ = self.0.pop();
-                Some(stake_amount)
-            }
-            _ => None,
-        };
-
-        // 2nd step - 3 options:
-        // 1. - last element has a matching era so we just update it.
-        // 2. - last element has a past era and matching period, so we'll create a new entry based on it.
-        // 3. - last element has a past era and past period, meaning it's invalid.
-        let second_last_era_info = if let Some(stake_amount) = self.0.last_mut() {
-            if stake_amount.era == era {
-                stake_amount.subtract(amount, period_info.period_type);
-                None
-            } else if stake_amount.period == period_info.number {
-                let mut new_entry = *stake_amount;
-                new_entry.subtract(amount, period_info.period_type);
-                new_entry.era = era;
-                Some(new_entry)
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-
-        // 3rd step - push the new entries, if they exist.
-        if let Some(info) = second_last_era_info {
-            self.prune();
-            self.0.try_push(info).map_err(|_| ())?;
-        }
-        if let Some(info) = last_era_info {
-            self.prune();
-            self.0.try_push(info).map_err(|_| ())?;
+        // Current entry is from the right period, but older era. Shift it to the current era.
+        if self.staked.era < current_era && self.staked.period == period_info.number {
+            self.staked.era = current_era;
         }
 
-        Ok(())
-    }
+        // Subtract both amounts
+        self.staked.subtract(amount, period_info.period_type);
+        if let Some(stake_amount) = self.staked_future.as_mut() {
+            stake_amount.subtract(amount, period_info.period_type);
+        }
 
-    /// Used to remove past entries, in case vector is full.
-    fn prune(&mut self) {
-        // Prune the oldest entry if we have more than the limit
-        if self.0.len() == STAKING_SERIES_HISTORY as usize {
-            // This can be perhaps optimized so we prune entries which are very old.
-            // However, this makes the code more complex & more error prone.
-            // If kept like this, we always make sure we cover the history, and we never exceed it.
-            self.0.remove(0);
+        // Conevnience cleanup
+        if self.staked.is_empty() {
+            self.staked = Default::default();
+        }
+        if let Some(stake_amount) = self.staked_future {
+            if stake_amount.is_empty() {
+                self.staked_future = None;
+            }
         }
     }
 }
