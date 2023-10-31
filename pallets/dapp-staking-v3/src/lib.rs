@@ -523,7 +523,7 @@ pub mod pallet {
                         next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
                     let build_and_earn_start_block =
                         now.saturating_add(T::StandardEraLength::get());
-                    protocol_state.next_period_type(ending_era, build_and_earn_start_block);
+                    protocol_state.into_next_period_type(ending_era, build_and_earn_start_block);
 
                     era_info.migrate_to_next_era(Some(protocol_state.period_type()));
 
@@ -575,7 +575,7 @@ pub mod pallet {
                         let voting_period_length = Self::blocks_per_voting_period();
                         let next_era_start_block = now.saturating_add(voting_period_length);
 
-                        protocol_state.next_period_type(ending_era, next_era_start_block);
+                        protocol_state.into_next_period_type(ending_era, next_era_start_block);
 
                         era_info.migrate_to_next_era(Some(protocol_state.period_type()));
 

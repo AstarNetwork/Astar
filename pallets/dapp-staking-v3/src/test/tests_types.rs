@@ -102,7 +102,7 @@ fn protocol_state_basic_checks() {
     // Toggle new period type check - 'Voting' to 'BuildAndEarn'
     let ending_era_1 = 23;
     let next_era_start_1 = 41;
-    protocol_state.next_period_type(ending_era_1, next_era_start_1);
+    protocol_state.into_next_period_type(ending_era_1, next_era_start_1);
     assert_eq!(protocol_state.period_type(), PeriodType::BuildAndEarn);
     assert_eq!(
         protocol_state.period_number(),
@@ -116,7 +116,7 @@ fn protocol_state_basic_checks() {
     // Toggle from 'BuildAndEarn' over to 'Voting'
     let ending_era_2 = 24;
     let next_era_start_2 = 91;
-    protocol_state.next_period_type(ending_era_2, next_era_start_2);
+    protocol_state.into_next_period_type(ending_era_2, next_era_start_2);
     assert_eq!(protocol_state.period_type(), PeriodType::Voting);
     assert_eq!(
         protocol_state.period_number(),
@@ -125,6 +125,26 @@ fn protocol_state_basic_checks() {
     );
     assert_eq!(protocol_state.period_end_era(), ending_era_2);
     assert!(protocol_state.is_new_era(next_era_start_2));
+}
+
+#[test]
+fn dapp_info_basic_checks() {
+    let owner = 1;
+    let beneficiary = 3;
+
+    let mut dapp_info = DAppInfo {
+        owner,
+        id: 7,
+        state: DAppState::Registered,
+        reward_destination: None,
+    };
+
+    // Owner receives reward in case no beneficiary is set
+    assert_eq!(*dapp_info.reward_beneficiary(), owner);
+
+    // Beneficiary receives rewards in case it is set
+    dapp_info.reward_destination = Some(beneficiary);
+    assert_eq!(*dapp_info.reward_beneficiary(), beneficiary);
 }
 
 #[test]
@@ -200,6 +220,11 @@ fn account_ledger_subtract_lock_amount_basic_usage_works() {
 fn account_ledger_add_unlocking_chunk_works() {
     get_u32_type!(UnlockingDummy, 5);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+
+    // Base sanity check
+    let default_unlocking_chunk = UnlockingChunk::<BlockNumber>::default();
+    assert!(default_unlocking_chunk.amount.is_zero());
+    assert!(default_unlocking_chunk.unlock_block.is_zero());
 
     // Sanity check scenario
     // Cannot reduce if there is nothing locked, should be a noop
@@ -336,7 +361,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
     assert!(acc_ledger.staked.is_empty());
     assert!(acc_ledger.staked_future.is_none());
 
-    // 1st scenario - stake some amount, and ensure values are as expected.
+    // 1st scenario - stake some amount in Voting period, and ensure values are as expected.
     let first_era = 1;
     let period_1 = 1;
     let period_info_1 = PeriodInfo::new(period_1, PeriodType::Voting, 100);
@@ -370,12 +395,21 @@ fn account_ledger_add_stake_amount_basic_example_works() {
         .staked_amount_for_type(PeriodType::BuildAndEarn, period_1)
         .is_zero());
 
-    // Second scenario - stake some more to the same era
+    // Second scenario - stake some more, but to the next period type
     let snapshot = acc_ledger.staked;
+    let period_info_2 = PeriodInfo::new(period_1, PeriodType::BuildAndEarn, 100);
     assert!(acc_ledger
-        .add_stake_amount(1, first_era, period_info_1)
+        .add_stake_amount(1, first_era, period_info_2)
         .is_ok());
     assert_eq!(acc_ledger.staked_amount(period_1), stake_amount + 1);
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(PeriodType::Voting, period_1),
+        stake_amount
+    );
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(PeriodType::BuildAndEarn, period_1),
+        1
+    );
     assert_eq!(acc_ledger.staked, snapshot);
 }
 
@@ -634,15 +668,15 @@ fn account_ledger_unstake_from_invalid_era_fails() {
         .add_stake_amount(amount_1, era_1, period_info_1)
         .is_ok());
 
-    // Try to add to the next era, it should fail.
+    // Try to unstake from the next era, it should fail.
     assert_eq!(
-        acc_ledger.add_stake_amount(1, era_1 + 1, period_info_1),
+        acc_ledger.unstake_amount(1, era_1 + 1, period_info_1),
         Err(AccountLedgerError::InvalidEra)
     );
 
-    // Try to add to the next period, it should fail.
+    // Try to unstake from the next period, it should fail.
     assert_eq!(
-        acc_ledger.add_stake_amount(
+        acc_ledger.unstake_amount(
             1,
             era_1,
             PeriodInfo::new(period_1 + 1, PeriodType::Voting, 100)
@@ -655,11 +689,11 @@ fn account_ledger_unstake_from_invalid_era_fails() {
     acc_ledger.staked_future = None;
 
     assert_eq!(
-        acc_ledger.add_stake_amount(1, era_1 + 1, period_info_1),
+        acc_ledger.unstake_amount(1, era_1 + 1, period_info_1),
         Err(AccountLedgerError::InvalidEra)
     );
     assert_eq!(
-        acc_ledger.add_stake_amount(
+        acc_ledger.unstake_amount(
             1,
             era_1,
             PeriodInfo::new(period_1 + 1, PeriodType::Voting, 100)

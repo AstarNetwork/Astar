@@ -207,9 +207,8 @@ where
         self.next_era_start <= now
     }
 
-    // TODO: rename this into something better?
     /// Triggers the next period type, updating appropriate parameters.
-    pub fn next_period_type(&mut self, ending_era: EraNumber, next_era_start: BlockNumber) {
+    pub fn into_next_period_type(&mut self, ending_era: EraNumber, next_era_start: BlockNumber) {
         let period_number = if self.period_type() == PeriodType::BuildAndEarn {
             self.period_number().saturating_add(1)
         } else {
@@ -480,6 +479,34 @@ where
         }
     }
 
+    /// Verify that current era and period info arguments are valid for `stake` and `unstake` operations.
+    fn verify_stake_unstake_args(
+        &self,
+        era: EraNumber,
+        current_period_info: &PeriodInfo,
+    ) -> Result<(), AccountLedgerError> {
+        if !self.staked.is_empty() {
+            // In case entry for the current era exists, it must match the era exactly.
+            if self.staked.era != era {
+                return Err(AccountLedgerError::InvalidEra);
+            }
+            if self.staked.period != current_period_info.number {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+            // In case it doesn't (i.e. first time staking), then the future era must match exactly
+            // one era after the one provided via argument.
+        } else if let Some(stake_amount) = self.staked_future {
+            if stake_amount.era != era + 1 {
+                return Err(AccountLedgerError::InvalidEra);
+            }
+            if stake_amount.period != current_period_info.number {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+        }
+
+        Ok(())
+    }
+
     /// Adds the specified amount to total staked amount, if possible.
     ///
     /// Staking can only be done for the ongoing period, and era.
@@ -501,24 +528,7 @@ where
             return Ok(());
         }
 
-        if !self.staked.is_empty() {
-            // In case entry for the current era exists, it must match the era exactly.
-            if self.staked.era != era {
-                return Err(AccountLedgerError::InvalidEra);
-            }
-            if self.staked.period != current_period_info.number {
-                return Err(AccountLedgerError::InvalidPeriod);
-            }
-            // In case it doesn't (i.e. first time staking), then the future era must match exactly
-            // one era after the one provided via argument.
-        } else if let Some(stake_amount) = self.staked_future {
-            if stake_amount.era != era + 1 {
-                return Err(AccountLedgerError::InvalidEra);
-            }
-            if stake_amount.period != current_period_info.number {
-                return Err(AccountLedgerError::InvalidPeriod);
-            }
-        }
+        self.verify_stake_unstake_args(era, &current_period_info)?;
 
         if self.stakeable_amount(current_period_info.number) < amount {
             return Err(AccountLedgerError::UnavailableStakeFunds);
@@ -556,25 +566,7 @@ where
             return Ok(());
         }
 
-        // TODO: this is a duplicated check, maybe I should extract it into a function?
-        if !self.staked.is_empty() {
-            // In case entry for the current era exists, it must match the era exactly.
-            if self.staked.era != era {
-                return Err(AccountLedgerError::InvalidEra);
-            }
-            if self.staked.period != current_period_info.number {
-                return Err(AccountLedgerError::InvalidPeriod);
-            }
-            // In case it doesn't (i.e. first time staking), then the future era must match exactly
-            // one era after the one provided via argument.
-        } else if let Some(stake_amount) = self.staked_future {
-            if stake_amount.era != era + 1 {
-                return Err(AccountLedgerError::InvalidEra);
-            }
-            if stake_amount.period != current_period_info.number {
-                return Err(AccountLedgerError::InvalidPeriod);
-            }
-        }
+        self.verify_stake_unstake_args(era, &current_period_info)?;
 
         // User must be precise with their unstake amount.
         if self.staked_amount(current_period_info.number) < amount {

@@ -1287,7 +1287,7 @@ fn claim_staker_rewards_after_expiry_fails() {
         advance_to_period(
             ActiveProtocolState::<Test>::get().period_number() + reward_retention_in_periods,
         );
-        advance_to_next_period_type();
+        advance_to_into_next_period_type();
         advance_to_era(ActiveProtocolState::<Test>::get().period_info.ending_era - 1);
         assert_claim_staker_rewards(account);
 
@@ -1412,7 +1412,7 @@ fn claim_bonus_reward_with_only_build_and_earn_stake_fails() {
         assert_lock(account, lock_amount);
 
         // Stake in Build&Earn period type, advance to next era and try to claim bonus reward
-        advance_to_next_period_type();
+        advance_to_into_next_period_type();
         assert_eq!(
             ActiveProtocolState::<Test>::get().period_type(),
             PeriodType::BuildAndEarn,
