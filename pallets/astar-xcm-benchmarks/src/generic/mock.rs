@@ -40,17 +40,17 @@ use xcm_builder::{
 };
 use xcm_executor::traits::ConvertOrigin;
 
-type Block = frame_system::mocking::MockBlock<TestRuntime>;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
+type Block = frame_system::mocking::MockBlock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 
 frame_support::construct_runtime!(
-    pub struct TestRuntime
+    pub struct Test
     where
         Block = Block,
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system,
+        System: frame_system = 10,
         XcmGenericBenchmarks: generic,
     }
 );
@@ -61,7 +61,7 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, u64::MAX));
 }
 
-impl frame_system::Config for TestRuntime {
+impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
@@ -143,7 +143,7 @@ impl xcm_executor::Config for XcmConfig {
     type SafeCallFilter = Everything;
 }
 
-impl crate::Config for TestRuntime {
+impl crate::Config for Test {
     type XcmConfig = XcmConfig;
     type AccountIdConverter = AccountIdConverter;
     fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
@@ -163,7 +163,7 @@ impl crate::Config for TestRuntime {
     }
 }
 
-impl generic::Config for TestRuntime {
+impl generic::Config for Test {
     type RuntimeCall = RuntimeCall;
 
     fn worst_case_response() -> (u64, Response) {
@@ -215,7 +215,7 @@ impl generic::Config for TestRuntime {
 #[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext() -> sp_io::TestExternalities {
     use sp_runtime::BuildStorage;
-    let t = RuntimeGenesisConfig {
+    let t = GenesisConfig {
         ..Default::default()
     }
     .build_storage()

@@ -22,13 +22,13 @@
 use crate::{fungible::assets as xcm_assets_benchmark, mock::*};
 use frame_benchmarking::BenchmarkError;
 use frame_support::{
-    parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32, Everything, Nothing},
+    assert_ok, parameter_types,
+    traits::{tokens::fungible::ItemOf, AsEnsureOriginWithArg, ConstU32, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::{EnsureRoot, EnsureSigned};
 use parity_scale_codec::Compact;
-use sp_core::H256;
+use sp_core::{ConstU64, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -53,6 +53,7 @@ frame_support::construct_runtime!(
         Balances: pallet_balances,
         XcmAssetsBenchmark: xcm_assets_benchmark,
         Assets: pallet_assets,
+        XcAssetConfig: pallet_xc_asset_config,
     }
 );
 
@@ -119,6 +120,13 @@ parameter_types! {
 
 }
 
+impl pallet_xc_asset_config::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type AssetId = u64;
+    type ManagerOrigin = EnsureRoot<u64>;
+    type WeightInfo = ();
+}
+
 impl pallet_assets::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Balance = u64;
@@ -139,7 +147,16 @@ impl pallet_assets::Config for Test {
     type AssetIdParameter = Compact<u64>;
     type CallbackHandle = ();
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
+    type BenchmarkHelper = AssetsBenchmarkHelper;
+}
+
+pub struct AssetsBenchmarkHelper;
+impl<AssetIdParameter: From<u64>> pallet_assets::BenchmarkHelper<AssetIdParameter>
+    for AssetsBenchmarkHelper
+{
+    fn create_asset_id_parameter(id: u32) -> AssetIdParameter {
+        u64::from(id).into()
+    }
 }
 
 parameter_types! {
@@ -223,7 +240,6 @@ impl crate::Config for Test {
         )
     }
 }
-
 pub type TrustedTeleporters = (xcm_builder::Case<TeleportConcreteFungible>,);
 
 parameter_types! {
@@ -237,29 +253,40 @@ parameter_types! {
         (Wild(AllOf { fun: WildFungible, id: Concrete(Here.into_location()) }), ChildTeleporter::get());
     pub const ReserveConcreteFungible: (MultiAssetFilter, MultiLocation) =
         (Wild(AllOf { fun: WildFungible, id: Concrete(Here.into_location()) }), ChildTeleporter::get());
+    pub const NoCheckingAccount: Option<(<Test as frame_system::Config>::AccountId, MintLocation)> = None;
+    pub const NoTeleporter: Option<(xcm::latest::MultiLocation, xcm::latest::MultiAsset)> = None;
 }
 
 impl xcm_assets_benchmark::Config for Test {
-    type TransactAsset = Balances;
-    type CheckedAccount = CheckingAccount;
-    type TrustedTeleporter = TrustedTeleporter;
+    type TransactAsset = ItemOf<Assets, ConstU64<1>, u64>;
+    type CheckedAccount = NoCheckingAccount;
+    type TrustedTeleporter = NoTeleporter;
 
     fn get_multi_asset() -> MultiAsset {
-        let amount =
-            <Balances as frame_support::traits::fungible::Inspect<u64>>::minimum_balance() as u128;
+        // create an asset and make it sufficient
+        assert_ok!(pallet_assets::Pallet::<Test>::force_create(
+            RuntimeOrigin::root(),
+            parity_scale_codec::Compact(1),
+            0_u64,
+            true,
+            1
+        ));
         let location = MultiLocation {
-            parents: 1,
-            interior: X2(
-                Parachain(1000),
-                AccountId32 {
-                    network: None,
-                    id: [152; 32],
-                },
-            ),
+            parents: 0,
+            interior: X1(GeneralIndex(1)),
         };
+        // convert mapping for asset id
+        assert_ok!(
+            pallet_xc_asset_config::Pallet::<Test>::register_asset_location(
+                RuntimeOrigin::root(),
+                Box::new(location.clone().into_versioned()),
+                1
+            )
+        );
+
         MultiAsset {
             id: Concrete(location),
-            fun: Fungible(amount),
+            fun: Fungible(100_000_000_000u128),
         }
     }
 }
@@ -267,7 +294,7 @@ impl xcm_assets_benchmark::Config for Test {
 #[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext() -> sp_io::TestExternalities {
     use sp_runtime::BuildStorage;
-    let t = RuntimeGenesisConfig {
+    let t = GenesisConfig {
         ..Default::default()
     }
     .build_storage()

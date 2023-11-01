@@ -19,33 +19,35 @@
 // Copyright (C) Parity Technologies (UK) Ltd.
 use super::*;
 use crate::{account_and_location, new_executor, AssetTransactorOf, XcmCallOf};
-use frame_benchmarking::{benchmarks_instance_pallet, BenchmarkError, BenchmarkResult};
+use frame_benchmarking::v2::*;
 use frame_support::traits::fungible::Inspect;
 use sp_runtime::traits::Zero;
 use sp_std::{prelude::*, vec};
 use xcm::latest::{prelude::*, Weight};
 use xcm_executor::traits::{Convert, TransactAsset};
 
-benchmarks_instance_pallet! {
-    where_clause { where
+#[benchmarks(
+    where
+    <
         <
-            <
-                T::TransactAsset
-                as
-                Inspect<T::AccountId>
-            >::Balance
+            <T as Config>::TransactAsset
             as
-            TryInto<u128>
-        >::Error: sp_std::fmt::Debug,
+            Inspect<T::AccountId>
+        >::Balance
+        as
+        TryInto<u128>
+    >::Error: sp_std::fmt::Debug,
 
-            <   T::TransactAsset
-                as
-                Inspect<T::AccountId>
-            >::Balance : Into<u128>
+        <   <T as Config>::TransactAsset
+            as
+            Inspect<T::AccountId>
+        >::Balance : Into<u128>
+)]
+mod benchmarks {
+    use super::*;
 
-    }
-
-    withdraw_asset {
+    #[benchmark]
+    fn withdraw_asset() -> Result<(), BenchmarkError> {
         let (sender_account, sender_location) = account_and_location::<T>(1);
         let worst_case_holding = T::worst_case_holding(0);
         let asset = T::get_multi_asset();
@@ -58,7 +60,8 @@ benchmarks_instance_pallet! {
                 message_hash: [0; 32],
                 topic: None,
             },
-        ).unwrap();
+        )
+        .unwrap();
         // check the assets of origin.
         assert!(!T::TransactAsset::balance(&sender_account).is_zero());
 
@@ -66,18 +69,23 @@ benchmarks_instance_pallet! {
         executor.set_holding(worst_case_holding.into());
         let instruction = Instruction::<XcmCallOf<T>>::WithdrawAsset(vec![asset.clone()].into());
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         // check one of the assets of origin.
         assert!(T::TransactAsset::balance(&sender_account).is_zero());
-        assert!(executor.holding().ensure_contains(&vec![asset].into()).is_ok());
+        assert!(executor
+            .holding()
+            .ensure_contains(&vec![asset].into())
+            .is_ok());
+        Ok(())
     }
 
-    transfer_asset {
+    #[benchmark]
+    fn transfer_asset() -> Result<(), BenchmarkError> {
         let (sender_account, sender_location) = account_and_location::<T>(1);
         let mut asset = T::get_multi_asset();
-        let assets: MultiAssets = vec![ asset.clone() ].into();
         // this xcm doesn't use holding
 
         let dest_location = T::valid_destination()?;
@@ -90,15 +98,16 @@ benchmarks_instance_pallet! {
                 message_hash: [0; 32],
                 topic: None,
             },
-        ).unwrap();
+        )
+        .unwrap();
         assert!(T::TransactAsset::balance(&dest_account).is_zero());
 
         // reducing some assets for Existential deposit
         if let Fungible(x) = asset.fun {
-            asset.fun = Fungible(x/10)
+            asset.fun = Fungible(x / 10)
         };
 
-        let assets: MultiAssets = vec![ asset.clone() ].into();
+        let assets: MultiAssets = vec![asset.clone()].into();
         log::trace!(
             target: "xcm::process",
             "assets is {:?}",assets.clone());
@@ -112,26 +121,35 @@ benchmarks_instance_pallet! {
                 message_hash: [0; 32],
                 topic: None,
             },
-        ).unwrap();
+        )
+        .unwrap();
         let mut executor = new_executor::<T>(sender_location);
-        let instruction = Instruction::TransferAsset { assets, beneficiary: dest_location };
+        let instruction = Instruction::TransferAsset {
+            assets,
+            beneficiary: dest_location,
+        };
         let xcm = Xcm(vec![instruction]);
         log::trace!(
             target: "xcm::process",
             "destination balance is {:?}, sender balance is {:?}",T::TransactAsset::balance(&dest_account),T::TransactAsset::balance(&sender_account));
         assert!(!T::TransactAsset::balance(&dest_account).is_zero());
         let previous_balance: u128 = T::TransactAsset::balance(&dest_account).into();
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+
         log::trace!(
-            target: "xcm::process",
-            "destination balance is {:?}, sender balance is {:?}",T::TransactAsset::balance(&dest_account),T::TransactAsset::balance(&sender_account));
+        target: "xcm::process",
+        "destination balance is {:?}, sender balance is {:?}",T::TransactAsset::balance(&dest_account),T::TransactAsset::balance(&sender_account));
         assert!(T::TransactAsset::balance(&dest_account).into() == 2 * previous_balance);
+        Ok(())
     }
 
-    transfer_reserve_asset {
-        let (sender_account, sender_location) = account_and_location::<T>(1);
+    #[benchmark]
+    fn transfer_reserve_asset() -> Result<(), BenchmarkError> {
+        let (_, sender_location) = account_and_location::<T>(1);
         let dest_location = T::valid_destination()?;
         let dest_account = T::AccountIdConverter::convert(dest_location.clone()).unwrap();
 
@@ -144,12 +162,13 @@ benchmarks_instance_pallet! {
                 message_hash: [0; 32],
                 topic: None,
             },
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(T::TransactAsset::balance(&dest_account).is_zero());
 
         if let Fungible(x) = asset.fun {
-            asset.fun = Fungible(x/10)
+            asset.fun = Fungible(x / 10)
         };
 
         <AssetTransactorOf<T>>::transfer_asset(
@@ -161,29 +180,40 @@ benchmarks_instance_pallet! {
                 message_hash: [0; 32],
                 topic: None,
             },
-        ).unwrap();
-        let assets: MultiAssets = vec![ asset ].into();
+        )
+        .unwrap();
+        let assets: MultiAssets = vec![asset].into();
         let mut executor = new_executor::<T>(sender_location);
         let instruction = Instruction::TransferReserveAsset {
             assets,
             dest: dest_location,
-            xcm: Xcm::new()
+            xcm: Xcm::new(),
         };
         let xcm = Xcm(vec![instruction]);
         assert!(!T::TransactAsset::balance(&dest_account).is_zero());
         let previous_balance: u128 = T::TransactAsset::balance(&dest_account).into();
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+
         assert!(T::TransactAsset::balance(&dest_account).into() == 2 * previous_balance);
+        Ok(())
     }
 
-    receive_teleported_asset {
-    } : {
-        Err(BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)))?;
+    #[benchmark]
+    fn receive_teleported_asset() -> Result<(), BenchmarkError> {
+        // need to add an empty block as it is necessary to have either #[block] or #[extrinsic_call]
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
     }
 
-    deposit_asset {
+    #[benchmark]
+    fn deposit_asset() -> Result<(), BenchmarkError> {
         let asset = T::get_multi_asset();
         let mut holding = T::worst_case_holding(1);
 
@@ -202,14 +232,18 @@ benchmarks_instance_pallet! {
             beneficiary: dest_location,
         };
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         // dest should have received some asset.
-        assert!(!T::TransactAsset::balance(&dest_account).is_zero())
+        assert!(!T::TransactAsset::balance(&dest_account).is_zero());
+        Ok(())
     }
 
-    deposit_reserve_asset {
+    #[benchmark]
+    fn deposit_reserve_asset() -> Result<(), BenchmarkError> {
         let asset = T::get_multi_asset();
         let mut holding = T::worst_case_holding(1);
 
@@ -229,21 +263,29 @@ benchmarks_instance_pallet! {
             xcm: Xcm::new(),
         };
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+
         // dest should have received some asset.
-        assert!(!T::TransactAsset::balance(&dest_account).is_zero())
+        assert!(!T::TransactAsset::balance(&dest_account).is_zero());
+        Ok(())
     }
 
-    initiate_teleport {
-    }: {
-        Err(BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)))?;
+    #[benchmark]
+    fn initiate_teleport() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
     }
 
     impl_benchmark_test_suite!(
         Pallet,
-        crate::fungible::mock::new_test_ext(),
-        crate::fungible::mock::Test
+        crate::fungible::assets::mock::new_test_ext(),
+        crate::fungible::assets::mock::Test
     );
 }

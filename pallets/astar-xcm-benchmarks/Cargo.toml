@@ -31,6 +31,7 @@ frame-benchmarking = { workspace = true }
 [dev-dependencies]
 pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
+pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 paste = { workspace = true }
 sp-core = { workspace = true }
@@ -55,6 +56,7 @@ std = [
 	"astar-primitives/std",
 	"pallet-balances/std",
 	"pallet-assets/std",
+	"pallet-xc-asset-config/std",
 ]
 
 runtime-benchmarks = [

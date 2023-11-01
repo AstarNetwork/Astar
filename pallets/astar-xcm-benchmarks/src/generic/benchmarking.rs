@@ -20,7 +20,7 @@
 
 use super::*;
 use crate::{new_executor, XcmCallOf};
-use frame_benchmarking::{benchmarks, BenchmarkError, BenchmarkResult};
+use frame_benchmarking::v2::*;
 use frame_support::dispatch::GetDispatchInfo;
 use parity_scale_codec::Encode;
 use sp_std::vec;
@@ -30,8 +30,12 @@ use xcm::{
 };
 use xcm_executor::{ExecutorError, FeesMode};
 
-benchmarks! {
-    report_holding {
+#[benchmarks]
+mod benchmarks {
+    use super::*;
+
+    #[benchmark]
+    fn report_holding() -> Result<(), BenchmarkError> {
         let holding = T::worst_case_holding(0);
 
         let mut executor = new_executor::<T>(Default::default());
@@ -46,18 +50,18 @@ benchmarks! {
             // Worst case is looking through all holdings for every asset explicitly.
             assets: Definite(holding),
         };
-
         let xcm = Xcm(vec![instruction]);
 
-    } : {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         // The completion of execution above is enough to validate this is completed.
+        Ok(())
     }
 
-    // This benchmark does not use any additional orders or instructions. This should be managed
-    // by the `deep` and `shallow` implementation.
-    buy_execution {
+    #[benchmark]
+    fn buy_execution() -> Result<(), BenchmarkError> {
         let holding = T::worst_case_holding(0).into();
 
         let mut executor = new_executor::<T>(Default::default());
@@ -67,33 +71,44 @@ benchmarks! {
 
         let instruction = Instruction::<XcmCallOf<T>>::BuyExecution {
             fees: (fee_asset, 100_000_000_000u128).into(), // should be something inside of holding
-            weight_limit: WeightLimit::Limited(Weight::from_parts(1u64, 64*1024)),
+            weight_limit: WeightLimit::Limited(Weight::from_parts(1u64, 64 * 1024)),
         };
 
         let xcm = Xcm(vec![instruction]);
-    } : {
-        executor.bench_process(xcm)?;
-    } verify {
 
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+        Ok(())
     }
 
-    query_response {
+    #[benchmark]
+    fn query_response() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         let (query_id, response) = T::worst_case_response();
         let max_weight = Weight::MAX;
         let querier: Option<MultiLocation> = Some(Here.into());
-        let instruction = Instruction::QueryResponse { query_id, response, max_weight, querier };
+        let instruction = Instruction::QueryResponse {
+            query_id,
+            response,
+            max_weight,
+            querier,
+        };
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
-        // The assert above is enough to show this XCM succeeded
+
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+        Ok(())
     }
 
     // We don't care about the call itself, since that is accounted for in the weight parameter
     // and included in the final weight calculation. So this is just the overhead of submitting
     // a noop call.
-    transact {
+    #[benchmark]
+    fn transact() -> Result<(), BenchmarkError> {
         let (origin, noop_call) = T::transact_origin_and_runtime_call()?;
         let mut executor = new_executor::<T>(origin);
         let double_encoded_noop_call: DoubleEncoded<_> = noop_call.encode().into();
@@ -104,13 +119,17 @@ benchmarks! {
             call: double_encoded_noop_call,
         };
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         // The assert above is enough to show this XCM succeeded
+        Ok(())
     }
 
-    refund_surplus {
+    #[benchmark]
+    fn refund_surplus() -> Result<(), BenchmarkError> {
         let holding = T::worst_case_holding(0).into();
         let mut executor = new_executor::<T>(Default::default());
         executor.set_holding(holding);
@@ -119,53 +138,69 @@ benchmarks! {
 
         let instruction = Instruction::<XcmCallOf<T>>::RefundSurplus;
         let xcm = Xcm(vec![instruction]);
-    } : {
-        let result = executor.bench_process(xcm)?;
-    } verify {
+
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+
         assert_eq!(executor.total_surplus(), &Weight::from_parts(1337, 1337));
         assert_eq!(executor.total_refunded(), &Weight::from_parts(1337, 1337));
+        Ok(())
     }
 
-    set_error_handler {
+    #[benchmark]
+    fn set_error_handler() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         let instruction = Instruction::<XcmCallOf<T>>::SetErrorHandler(Xcm(vec![]));
         let xcm = Xcm(vec![instruction]);
-    } : {
-        executor.bench_process(xcm)?;
-    } verify {
+
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert_eq!(executor.error_handler(), &Xcm(vec![]));
+        Ok(())
     }
 
-    set_appendix {
+    #[benchmark]
+    fn set_appendix() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         let appendix = Xcm(vec![]);
         let instruction = Instruction::<XcmCallOf<T>>::SetAppendix(appendix);
         let xcm = Xcm(vec![instruction]);
-    } : {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert_eq!(executor.appendix(), &Xcm(vec![]));
+        Ok(())
     }
 
-    clear_error {
+    #[benchmark]
+    fn clear_error() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         executor.set_error(Some((5u32, XcmError::Overflow)));
         let instruction = Instruction::<XcmCallOf<T>>::ClearError;
         let xcm = Xcm(vec![instruction]);
-    } : {
-        executor.bench_process(xcm)?;
-    } verify {
-        assert!(executor.error().is_none())
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+        assert!(executor.error().is_none());
+        Ok(())
     }
 
-    descend_origin {
+    #[benchmark]
+    fn descend_origin() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         let who = X2(OnlyChild, OnlyChild);
         let instruction = Instruction::DescendOrigin(who.clone());
         let xcm = Xcm(vec![instruction]);
-    } : {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert_eq!(
             executor.origin(),
             &Some(MultiLocation {
@@ -173,19 +208,24 @@ benchmarks! {
                 interior: who,
             }),
         );
+        Ok(())
     }
 
-    clear_origin {
+    #[benchmark]
+    fn clear_origin() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         let instruction = Instruction::ClearOrigin;
         let xcm = Xcm(vec![instruction]);
-    } : {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert_eq!(executor.origin(), &None);
+        Ok(())
     }
 
-    report_error {
+    #[benchmark]
+    fn report_error() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         executor.set_error(Some((0u32, XcmError::Unimplemented)));
         let query_id = Default::default();
@@ -193,16 +233,21 @@ benchmarks! {
         let max_weight = Default::default();
 
         let instruction = Instruction::ReportError(QueryResponseInfo {
-            query_id, destination, max_weight
+            query_id,
+            destination,
+            max_weight,
         });
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         // the execution succeeding is all we need to verify this xcm was successful
+        Ok(())
     }
 
-    claim_asset {
+    #[benchmark]
+    fn claim_asset() -> Result<(), BenchmarkError> {
         use xcm_executor::traits::DropAssets;
 
         let (origin, ticket, assets) = T::claimable_asset()?;
@@ -221,44 +266,65 @@ benchmarks! {
         // Assets should be in the trap now.
 
         let mut executor = new_executor::<T>(origin);
-        let instruction = Instruction::ClaimAsset { assets: assets.clone(), ticket };
+        let instruction = Instruction::ClaimAsset {
+            assets: assets.clone(),
+            ticket,
+        };
         let xcm = Xcm(vec![instruction]);
-    } :{
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert!(executor.holding().ensure_contains(&assets).is_ok());
+        Ok(())
     }
 
-    trap {
+    #[benchmark]
+    fn trap() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         let instruction = Instruction::Trap(10);
         let xcm = Xcm(vec![instruction]);
         // In order to access result in the verification below, it needs to be defined here.
         let mut _result = Ok(());
-    } : {
-        _result = executor.bench_process(xcm);
-    } verify {
-        assert!(matches!(_result, Err(ExecutorError {
-            xcm_error: XcmError::Trap(10),
-            ..
-        })));
+
+        #[block]
+        {
+            _result = executor.bench_process(xcm);
+        }
+        assert!(matches!(
+            _result,
+            Err(ExecutorError {
+                xcm_error: XcmError::Trap(10),
+                ..
+            })
+        ));
+        Ok(())
     }
 
-    subscribe_version {
+    #[benchmark]
+    fn subscribe_version() -> Result<(), BenchmarkError> {
         use xcm_executor::traits::VersionChangeNotifier;
         let origin = T::subscribe_origin()?;
         let query_id = Default::default();
         let max_response_weight = Default::default();
         let mut executor = new_executor::<T>(origin.clone());
-        let instruction = Instruction::SubscribeVersion { query_id, max_response_weight };
+        let instruction = Instruction::SubscribeVersion {
+            query_id,
+            max_response_weight,
+        };
         let xcm = Xcm(vec![instruction]);
-    } : {
-        executor.bench_process(xcm)?;
-    } verify {
-        assert!(<T::XcmConfig as xcm_executor::Config>::SubscriptionService::is_subscribed(&origin));
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+        assert!(
+            <T::XcmConfig as xcm_executor::Config>::SubscriptionService::is_subscribed(&origin)
+        );
+        Ok(())
     }
 
-    unsubscribe_version {
+    #[benchmark]
+    fn unsubscribe_version() -> Result<(), BenchmarkError> {
         use xcm_executor::traits::VersionChangeNotifier;
         // First we need to subscribe to notifications.
         let origin = T::subscribe_origin()?;
@@ -273,34 +339,48 @@ benchmarks! {
                 message_hash: [0; 32],
                 topic: None,
             },
-        ).map_err(|_| "Could not start subscription")?;
-        assert!(<T::XcmConfig as xcm_executor::Config>::SubscriptionService::is_subscribed(&origin));
+        )
+        .map_err(|_| "Could not start subscription")?;
+        assert!(
+            <T::XcmConfig as xcm_executor::Config>::SubscriptionService::is_subscribed(&origin)
+        );
 
         let mut executor = new_executor::<T>(origin.clone());
         let instruction = Instruction::UnsubscribeVersion;
         let xcm = Xcm(vec![instruction]);
-    } : {
-        executor.bench_process(xcm)?;
-    } verify {
-        assert!(!<T::XcmConfig as xcm_executor::Config>::SubscriptionService::is_subscribed(&origin));
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+        assert!(
+            !<T::XcmConfig as xcm_executor::Config>::SubscriptionService::is_subscribed(&origin)
+        );
+        Ok(())
     }
 
-    initiate_reserve_withdraw {
+    #[benchmark]
+    fn initiate_reserve_withdraw() -> Result<(), BenchmarkError> {
         let holding = T::worst_case_holding(1);
         let assets_filter = MultiAssetFilter::Definite(holding.clone());
         let reserve = T::valid_destination().map_err(|_| BenchmarkError::Skip)?;
         let mut executor = new_executor::<T>(Default::default());
         executor.set_holding(holding.into());
-        let instruction = Instruction::InitiateReserveWithdraw { assets: assets_filter, reserve, xcm: Xcm(vec![]) };
+        let instruction = Instruction::InitiateReserveWithdraw {
+            assets: assets_filter,
+            reserve,
+            xcm: Xcm(vec![]),
+        };
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         // The execute completing successfully is as good as we can check.
-        // TODO: Potentially add new trait to XcmSender to detect a queued outgoing message. #4426
+        Ok(())
     }
 
-    burn_asset {
+    #[benchmark]
+    fn burn_asset() -> Result<(), BenchmarkError> {
         let holding = T::worst_case_holding(0);
         let assets = holding.clone();
 
@@ -309,13 +389,16 @@ benchmarks! {
 
         let instruction = Instruction::BurnAsset(assets.into());
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert!(executor.holding().is_empty());
+        Ok(())
     }
 
-    expect_asset {
+    #[benchmark]
+    fn expect_asset() -> Result<(), BenchmarkError> {
         let holding = T::worst_case_holding(0);
         let assets = holding.clone();
 
@@ -324,61 +407,78 @@ benchmarks! {
 
         let instruction = Instruction::ExpectAsset(assets.into());
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         // `execute` completing successfully is as good as we can check.
+        Ok(())
     }
 
-    expect_origin {
+    #[benchmark]
+    fn expect_origin() -> Result<(), BenchmarkError> {
         let expected_origin = Parent.into();
         let mut executor = new_executor::<T>(Default::default());
 
         let instruction = Instruction::ExpectOrigin(Some(expected_origin));
         let xcm = Xcm(vec![instruction]);
         let mut _result = Ok(());
-    }: {
-        _result = executor.bench_process(xcm);
-    } verify {
-        assert!(matches!(_result, Err(ExecutorError {
-            xcm_error: XcmError::ExpectationFalse,
-            ..
-        })));
+        #[block]
+        {
+            _result = executor.bench_process(xcm);
+        }
+        assert!(matches!(
+            _result,
+            Err(ExecutorError {
+                xcm_error: XcmError::ExpectationFalse,
+                ..
+            })
+        ));
+        Ok(())
     }
 
-    expect_error {
+    #[benchmark]
+    fn expect_error() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         executor.set_error(Some((3u32, XcmError::Overflow)));
 
         let instruction = Instruction::ExpectError(None);
         let xcm = Xcm(vec![instruction]);
         let mut _result = Ok(());
-    }: {
-        _result = executor.bench_process(xcm);
-    } verify {
-        assert!(matches!(_result, Err(ExecutorError {
-            xcm_error: XcmError::ExpectationFalse,
-            ..
-        })));
+        #[block]
+        {
+            _result = executor.bench_process(xcm);
+        }
+        assert!(matches!(
+            _result,
+            Err(ExecutorError {
+                xcm_error: XcmError::ExpectationFalse,
+                ..
+            })
+        ));
+        Ok(())
     }
 
-    expect_transact_status {
+    #[benchmark]
+    fn expect_transact_status() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
-        let worst_error = || -> MaybeErrorCode {
-            vec![0; MaxDispatchErrorLen::get() as usize].into()
-        };
+        let worst_error =
+            || -> MaybeErrorCode { vec![0; MaxDispatchErrorLen::get() as usize].into() };
         executor.set_transact_status(worst_error());
 
         let instruction = Instruction::ExpectTransactStatus(worst_error());
         let xcm = Xcm(vec![instruction]);
         let mut _result = Ok(());
-    }: {
-        _result = executor.bench_process(xcm);
-    } verify {
+        #[block]
+        {
+            _result = executor.bench_process(xcm);
+        }
         assert!(matches!(_result, Ok(..)));
+        Ok(())
     }
 
-    query_pallet {
+    #[benchmark]
+    fn query_pallet() -> Result<(), BenchmarkError> {
         let query_id = Default::default();
         let destination = T::valid_destination().map_err(|_| BenchmarkError::Skip)?;
         let max_weight = Default::default();
@@ -386,16 +486,22 @@ benchmarks! {
 
         let instruction = Instruction::QueryPallet {
             module_name: b"frame_system".to_vec(),
-            response_info: QueryResponseInfo { destination, query_id, max_weight },
+            response_info: QueryResponseInfo {
+                destination,
+                query_id,
+                max_weight,
+            },
         };
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
-        // TODO: Potentially add new trait to XcmSender to detect a queued outgoing message. #4426
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+        Ok(())
     }
 
-    expect_pallet {
+    #[benchmark]
+    fn expect_pallet() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
 
         let instruction = Instruction::ExpectPallet {
@@ -406,13 +512,16 @@ benchmarks! {
             min_crate_minor: 0,
         };
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         // the execution succeeding is all we need to verify this xcm was successful
+        Ok(())
     }
 
-    report_transact_status {
+    #[benchmark]
+    fn report_transact_status() -> Result<(), BenchmarkError> {
         let query_id = Default::default();
         let destination = T::valid_destination().map_err(|_| BenchmarkError::Skip)?;
         let max_weight = Default::default();
@@ -426,60 +535,76 @@ benchmarks! {
             max_weight,
         });
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
-        // TODO: Potentially add new trait to XcmSender to detect a queued outgoing message. #4426
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+        Ok(())
     }
 
-    clear_transact_status {
+    #[benchmark]
+    fn clear_transact_status() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         executor.set_transact_status(b"MyError".to_vec().into());
 
         let instruction = Instruction::ClearTransactStatus;
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert_eq!(executor.transact_status(), &MaybeErrorCode::Success);
+        Ok(())
     }
 
-    set_topic {
+    #[benchmark]
+    fn set_topic() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
 
         let instruction = Instruction::SetTopic([1; 32]);
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert_eq!(executor.topic(), &Some([1; 32]));
+        Ok(())
     }
 
-    clear_topic {
+    #[benchmark]
+    fn clear_topic() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         executor.set_topic(Some([2; 32]));
 
         let instruction = Instruction::ClearTopic;
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert_eq!(executor.topic(), &None);
+        Ok(())
     }
 
-    set_fees_mode {
+    #[benchmark]
+    fn set_fees_mode() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
-        executor.set_fees_mode(FeesMode { jit_withdraw: false });
+        executor.set_fees_mode(FeesMode {
+            jit_withdraw: false,
+        });
 
         let instruction = Instruction::SetFeesMode { jit_withdraw: true };
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
-    } verify {
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
         assert_eq!(executor.fees_mode(), &FeesMode { jit_withdraw: true });
+        Ok(())
     }
 
-    unpaid_execution {
+    #[benchmark]
+    fn unpaid_execution() -> Result<(), BenchmarkError> {
         let mut executor = new_executor::<T>(Default::default());
         executor.set_origin(Some(Here.into()));
 
@@ -489,43 +614,74 @@ benchmarks! {
         };
 
         let xcm = Xcm(vec![instruction]);
-    }: {
-        executor.bench_process(xcm)?;
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+        Ok(())
     }
 
-    exchange_asset {
-    } : {
-        Err(BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)))?;
+    #[benchmark]
+    fn exchange_asset() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
     }
 
-    export_message {
-    } : {
-        Err(BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)))?;
+    #[benchmark]
+    fn export_message() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
     }
 
-    lock_asset {
-    } : {
-        Err(BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)))?;
+    #[benchmark]
+    fn lock_asset() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
     }
 
-    unlock_asset {
-    } : {
-        Err(BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)))?;
+    #[benchmark]
+    fn unlock_asset() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
     }
 
-    note_unlockable {
-    } : {
-        Err(BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)))?;
+    #[benchmark]
+    fn note_unlockable() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
     }
 
-    request_unlock {
-    } : {
-        Err(BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)))?;
+    #[benchmark]
+    fn request_unlock() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
     }
 
-    universal_origin {
-    } : {
-        Err(BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)))?;
+    #[benchmark]
+    fn universal_origin() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
     }
 
     impl_benchmark_test_suite!(

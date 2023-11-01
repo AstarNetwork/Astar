@@ -636,6 +636,7 @@ dependencies = [
  "log",
  "pallet-assets",
  "pallet-balances",
+ "pallet-xc-asset-config",
  "pallet-xcm",
  "parity-scale-codec",
  "paste",
