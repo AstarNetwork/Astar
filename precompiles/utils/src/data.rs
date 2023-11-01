@@ -26,6 +26,7 @@ use alloc::borrow::ToOwned;
 use core::{any::type_name, marker::PhantomData, ops::Range};
 use impl_trait_for_tuples::impl_for_tuples;
 use sp_core::{Get, H160, H256, U256};
+use sp_runtime::AccountId32;
 use sp_std::{convert::TryInto, vec, vec::Vec};
 
 /// The `address` type of Solidity.
@@ -80,6 +81,14 @@ impl From<&str> for Bytes {
 impl From<Bytes> for Vec<u8> {
     fn from(b: Bytes) -> Vec<u8> {
         b.0
+    }
+}
+
+impl From<AccountId32> for Bytes {
+    fn from(a: AccountId32) -> Self {
+        // TODO: use some better way to do this
+        let raw_bytes: &[u8; 32] = a.as_ref();
+        raw_bytes.as_ref().into()
     }
 }
 
