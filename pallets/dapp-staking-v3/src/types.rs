@@ -22,6 +22,11 @@
 //! The main purpose of this is to abstract complexity away from the extrinsic call implementation,
 //! and even more importantly to make the code more testable.
 //!
+//! # Overview
+//!
+//! ## Protocol State
+//!
+//! * `Subperiod` - an enum describing which subperiod is active in the current period.
 
 use frame_support::{pallet_prelude::*, BoundedVec};
 use frame_system::pallet_prelude::*;
@@ -1091,9 +1096,8 @@ impl ContractStakeAmount {
 
     /// Stake the specified `amount` on the contract, for the specified `subperiod` and `era`.
     pub fn stake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
+        // TODO: tests need to be re-writen for this after the refactoring
         let stake_era = current_era.saturating_add(1);
-        // TODO: maybe keep the check that period/era aren't historical?
-        // TODO2: tests need to be re-writen for this after the refactoring
 
         match self.staked_future.as_mut() {
             // Future entry matches the era, just updated it and return
@@ -1345,7 +1349,6 @@ impl<NT: Get<u32>> TierParameters<NT> {
         number_of_tiers == self.reward_portion.len()
             && number_of_tiers == self.slot_distribution.len()
             && number_of_tiers == self.tier_thresholds.len()
-
         // TODO: Make check more detailed, verify that entries sum up to 1 or 100%
     }
 }
@@ -1359,8 +1362,6 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
         }
     }
 }
-
-// TODO: refactor these structs so we only have 1 bounded vector, where each entry contains all the necessary info to describe the tier?
 
 /// Configuration of dApp tiers.
 #[derive(
