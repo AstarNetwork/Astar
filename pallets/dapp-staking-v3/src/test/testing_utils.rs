@@ -47,7 +47,7 @@ pub(crate) struct MemorySnapshot {
         ),
         SingularStakingInfo,
     >,
-    contract_stake: HashMap<<Test as Config>::SmartContract, ContractStakeAmountSeries>,
+    contract_stake: HashMap<<Test as Config>::SmartContract, ContractStakeAmount>,
     era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
     period_end: HashMap<PeriodNumber, PeriodEndInfo>,
     dapp_tiers: HashMap<EraNumber, DAppTierRewardsFor<Test>>,
@@ -432,7 +432,7 @@ pub(crate) fn assert_stake(
     let pre_contract_stake = pre_snapshot
         .contract_stake
         .get(&smart_contract)
-        .map_or(ContractStakeAmountSeries::default(), |series| {
+        .map_or(ContractStakeAmount::default(), |series| {
             series.clone()
         });
     let pre_era_info = pre_snapshot.current_era_info;

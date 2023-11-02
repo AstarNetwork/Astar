@@ -372,7 +372,7 @@ pub mod pallet {
     /// Information about how much has been staked on a smart contract in some era or period.
     #[pallet::storage]
     pub type ContractStake<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::SmartContract, ContractStakeAmountSeries, ValueQuery>;
+        StorageMap<_, Blake2_128Concat, T::SmartContract, ContractStakeAmount, ValueQuery>;
 
     /// General information about the current era.
     #[pallet::storage]

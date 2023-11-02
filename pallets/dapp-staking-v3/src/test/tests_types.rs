@@ -312,6 +312,67 @@ fn account_ledger_staked_amount_works() {
 }
 
 #[test]
+fn account_ledger_staked_amount_for_type_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+
+    // 1st scenario - 'current' entry is set, 'future' is None
+    let (voting_1, build_and_earn_1, period) = (31, 43, 2);
+    acc_ledger.staked = StakeAmount {
+        voting: voting_1,
+        build_and_earn: build_and_earn_1,
+        era: 10,
+        period,
+    };
+    acc_ledger.staked_future = None;
+
+    // Correct period should return staked amounts
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(PeriodType::Voting, period),
+        voting_1
+    );
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(PeriodType::BuildAndEarn, period),
+        build_and_earn_1
+    );
+
+    // Inocrrect period should simply return 0
+    assert!(acc_ledger
+        .staked_amount_for_type(PeriodType::Voting, period - 1)
+        .is_zero());
+    assert!(acc_ledger
+        .staked_amount_for_type(PeriodType::BuildAndEarn, period - 1)
+        .is_zero());
+
+    // 2nd scenario - both entries are set, but 'future' must be relevant one.
+    let (voting_2, build_and_earn_2, period) = (13, 19, 2);
+    acc_ledger.staked_future = Some(StakeAmount {
+        voting: voting_2,
+        build_and_earn: build_and_earn_2,
+        era: 20,
+        period,
+    });
+
+    // Correct period should return staked amounts
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(PeriodType::Voting, period),
+        voting_2
+    );
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(PeriodType::BuildAndEarn, period),
+        build_and_earn_2
+    );
+
+    // Inocrrect period should simply return 0
+    assert!(acc_ledger
+        .staked_amount_for_type(PeriodType::Voting, period - 1)
+        .is_zero());
+    assert!(acc_ledger
+        .staked_amount_for_type(PeriodType::BuildAndEarn, period - 1)
+        .is_zero());
+}
+
+#[test]
 fn account_ledger_stakeable_amount_works() {
     get_u32_type!(UnlockingDummy, 5);
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
@@ -346,6 +407,52 @@ fn account_ledger_stakeable_amount_works() {
         locked_amount,
         "Stakeable amount has to be equal to the locked amount since old period staking isn't valid anymore"
     );
+}
+
+#[test]
+fn account_ledger_staked_era_period_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+
+    let (era_1, period) = (10, 2);
+    let stake_amount_1 = StakeAmount {
+        voting: 13,
+        build_and_earn: 17,
+        era: era_1,
+        period,
+    };
+
+    // Sanity check, empty ledger
+    assert!(acc_ledger.staked_period().is_none());
+    assert!(acc_ledger.earliest_staked_era().is_none());
+
+    // 1st scenario - only 'current' entry is set
+    acc_ledger.staked = stake_amount_1;
+    acc_ledger.staked_future = None;
+
+    assert_eq!(acc_ledger.staked_period(), Some(period));
+    assert_eq!(acc_ledger.earliest_staked_era(), Some(era_1));
+
+    // 2nd scenario - only 'future' is set
+    let era_2 = era_1 + 7;
+    let stake_amount_2 = StakeAmount {
+        voting: 13,
+        build_and_earn: 17,
+        era: era_2,
+        period,
+    };
+    acc_ledger.staked = Default::default();
+    acc_ledger.staked_future = Some(stake_amount_2);
+
+    assert_eq!(acc_ledger.staked_period(), Some(period));
+    assert_eq!(acc_ledger.earliest_staked_era(), Some(era_2));
+
+    // 3rd scenario - both entries are set
+    acc_ledger.staked = stake_amount_1;
+    acc_ledger.staked_future = Some(stake_amount_2);
+
+    assert_eq!(acc_ledger.staked_period(), Some(period));
+    assert_eq!(acc_ledger.earliest_staked_era(), Some(era_1));
 }
 
 #[test]
@@ -1172,47 +1279,47 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 }
 
 #[test]
-fn contract_stake_amount_info_series_get_works() {
+fn contract_stake_info_get_works() {
     let info_1 = StakeAmount::new(0, 0, 4, 2);
     let info_2 = StakeAmount::new(11, 0, 7, 3);
 
-    let series = ContractStakeAmountSeries {
+    let contract_stake = ContractStakeAmount {
         staked: info_1,
         staked_future: Some(info_2),
     };
 
     // Sanity check
-    assert!(!series.is_empty());
+    assert!(!contract_stake.is_empty());
 
     // 1st scenario - get existing entries
-    assert_eq!(series.get(4, 2), Some(info_1));
-    assert_eq!(series.get(7, 3), Some(info_2));
+    assert_eq!(contract_stake.get(4, 2), Some(info_1));
+    assert_eq!(contract_stake.get(7, 3), Some(info_2));
 
     // 2nd scenario - get non-existing entries for covered eras
     {
         let era_1 = 6;
-        let entry_1 = series.get(era_1, 2).expect("Has to be Some");
+        let entry_1 = contract_stake.get(era_1, 2).expect("Has to be Some");
         assert!(entry_1.total().is_zero());
         assert_eq!(entry_1.era, era_1);
         assert_eq!(entry_1.period, 2);
 
         let era_2 = 8;
-        let entry_1 = series.get(era_2, 3).expect("Has to be Some");
+        let entry_1 = contract_stake.get(era_2, 3).expect("Has to be Some");
         assert_eq!(entry_1.total(), 11);
         assert_eq!(entry_1.era, era_2);
         assert_eq!(entry_1.period, 3);
     }
 
     // 3rd scenario - get non-existing entries for covered eras but mismatching period
-    assert!(series.get(8, 2).is_none());
+    assert!(contract_stake.get(8, 2).is_none());
 
     // 4th scenario - get non-existing entries for non-covered eras
-    assert!(series.get(3, 2).is_none());
+    assert!(contract_stake.get(3, 2).is_none());
 }
 
 #[test]
-fn contract_stake_amount_info_series_stake_is_ok() {
-    let mut series = ContractStakeAmountSeries::default();
+fn contract_stake_info_stake_is_ok() {
+    let mut contract_stake = ContractStakeAmount::default();
 
     // 1st scenario - stake some amount and verify state change
     let era_1 = 3;
@@ -1220,14 +1327,14 @@ fn contract_stake_amount_info_series_stake_is_ok() {
     let period_1 = 5;
     let period_info_1 = PeriodInfo::new(period_1, PeriodType::Voting, 20);
     let amount_1 = 31;
-    series.stake(amount_1, period_info_1, era_1);
-    assert!(!series.is_empty());
+    contract_stake.stake(amount_1, period_info_1, era_1);
+    assert!(!contract_stake.is_empty());
 
     assert!(
-        series.get(era_1, period_1).is_none(),
+        contract_stake.get(era_1, period_1).is_none(),
         "Entry for current era must not exist."
     );
-    let entry_1_1 = series.get(stake_era_1, period_1).unwrap();
+    let entry_1_1 = contract_stake.get(stake_era_1, period_1).unwrap();
     assert_eq!(
         entry_1_1.era, stake_era_1,
         "Stake is only valid from next era."
@@ -1236,8 +1343,8 @@ fn contract_stake_amount_info_series_stake_is_ok() {
 
     // 2nd scenario - stake some more to the same era but different period type, and verify state change.
     let period_info_1 = PeriodInfo::new(period_1, PeriodType::BuildAndEarn, 20);
-    series.stake(amount_1, period_info_1, era_1);
-    let entry_1_2 = series.get(stake_era_1, period_1).unwrap();
+    contract_stake.stake(amount_1, period_info_1, era_1);
+    let entry_1_2 = contract_stake.get(stake_era_1, period_1).unwrap();
     assert_eq!(entry_1_2.era, stake_era_1);
     assert_eq!(entry_1_2.total(), amount_1 * 2);
 
@@ -1245,9 +1352,9 @@ fn contract_stake_amount_info_series_stake_is_ok() {
     let era_2 = era_1 + 2;
     let stake_era_2 = era_2 + 1;
     let amount_2 = 37;
-    series.stake(amount_2, period_info_1, era_2);
-    let entry_2_1 = series.get(stake_era_1, period_1).unwrap();
-    let entry_2_2 = series.get(stake_era_2, period_1).unwrap();
+    contract_stake.stake(amount_2, period_info_1, era_2);
+    let entry_2_1 = contract_stake.get(stake_era_1, period_1).unwrap();
+    let entry_2_2 = contract_stake.get(stake_era_2, period_1).unwrap();
     assert_eq!(entry_2_1, entry_1_2, "Old entry must remain unchanged.");
     assert_eq!(entry_2_2.era, stake_era_2);
     assert_eq!(entry_2_2.period, period_1);
@@ -1264,16 +1371,16 @@ fn contract_stake_amount_info_series_stake_is_ok() {
     let period_info_2 = PeriodInfo::new(period_2, PeriodType::BuildAndEarn, 20);
     let amount_3 = 41;
 
-    series.stake(amount_3, period_info_2, era_3);
+    contract_stake.stake(amount_3, period_info_2, era_3);
     assert!(
-        series.get(stake_era_1, period_1).is_none(),
+        contract_stake.get(stake_era_1, period_1).is_none(),
         "Old period must be removed."
     );
     assert!(
-        series.get(stake_era_2, period_1).is_none(),
+        contract_stake.get(stake_era_2, period_1).is_none(),
         "Old period must be removed."
     );
-    let entry_3_1 = series.get(stake_era_3, period_2).unwrap();
+    let entry_3_1 = contract_stake.get(stake_era_3, period_2).unwrap();
     assert_eq!(entry_3_1.era, stake_era_3);
     assert_eq!(entry_3_1.period, period_2);
     assert_eq!(
@@ -1286,9 +1393,9 @@ fn contract_stake_amount_info_series_stake_is_ok() {
     let era_4 = era_3 + 1;
     let stake_era_4 = era_4 + 1;
     let amount_4 = 5;
-    series.stake(amount_4, period_info_2, era_4);
-    let entry_4_1 = series.get(stake_era_3, period_2).unwrap();
-    let entry_4_2 = series.get(stake_era_4, period_2).unwrap();
+    contract_stake.stake(amount_4, period_info_2, era_4);
+    let entry_4_1 = contract_stake.get(stake_era_3, period_2).unwrap();
+    let entry_4_2 = contract_stake.get(stake_era_4, period_2).unwrap();
     assert_eq!(entry_4_1, entry_3_1, "Old entry must remain unchanged.");
     assert_eq!(entry_4_2.era, stake_era_4);
     assert_eq!(entry_4_2.period, period_2);
@@ -1296,22 +1403,25 @@ fn contract_stake_amount_info_series_stake_is_ok() {
 }
 
 #[test]
-fn contract_stake_amount_info_series_unstake_is_ok() {
-    let mut series = ContractStakeAmountSeries::default();
+fn contract_stake_info_unstake_is_ok() {
+    let mut contract_stake = ContractStakeAmount::default();
 
     // Prep action - create a stake entry
     let era_1 = 2;
     let period = 3;
     let period_info = PeriodInfo::new(period, PeriodType::Voting, 20);
     let stake_amount = 100;
-    series.stake(stake_amount, period_info, era_1);
+    contract_stake.stake(stake_amount, period_info, era_1);
 
     // 1st scenario - unstake in the same era
     let amount_1 = 5;
-    series.unstake(amount_1, period_info, era_1);
-    assert_eq!(series.total_staked_amount(period), stake_amount - amount_1);
+    contract_stake.unstake(amount_1, period_info, era_1);
     assert_eq!(
-        series.staked_amount(period, PeriodType::Voting),
+        contract_stake.total_staked_amount(period),
+        stake_amount - amount_1
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, PeriodType::Voting),
         stake_amount - amount_1
     );
 
@@ -1319,13 +1429,13 @@ fn contract_stake_amount_info_series_unstake_is_ok() {
     let period_info = PeriodInfo::new(period, PeriodType::BuildAndEarn, 40);
     let era_2 = era_1 + 3;
     let amount_2 = 7;
-    series.unstake(amount_2, period_info, era_2);
+    contract_stake.unstake(amount_2, period_info, era_2);
     assert_eq!(
-        series.total_staked_amount(period),
+        contract_stake.total_staked_amount(period),
         stake_amount - amount_1 - amount_2
     );
     assert_eq!(
-        series.staked_amount(period, PeriodType::Voting),
+        contract_stake.staked_amount(period, PeriodType::Voting),
         stake_amount - amount_1 - amount_2
     );
 }

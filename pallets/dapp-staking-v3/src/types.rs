@@ -312,6 +312,10 @@ pub struct AccountLedger<
     /// Number of contract stake entries in storage.
     #[codec(compact)]
     pub contract_stake_count: u32,
+
+    // TODO: introduce a variable which keeps track of the latest era for which the rewards have been calculated.
+    // This is needed since in case we break up reward calculation into multiple blocks, we should prohibit staking until
+    // reward calculation has finished.
 }
 
 impl<BlockNumber, UnlockingLen> Default for AccountLedger<BlockNumber, UnlockingLen>
@@ -1005,13 +1009,22 @@ impl SingularStakingInfo {
     }
 }
 
-/// Composite type that holds information about how much was staked on a contract during some past eras & periods, including the current era & period.
+/// Composite type that holds information about how much was staked on a contract in up to two distinct eras.
+///
+/// This is needed since 'stake' operation only makes the staked amount valid from the next era.
+/// In a situation when `stake` is called in era `N`, the staked amount is valid from era `N+1`, hence the need for 'future' entry.
+///
+/// **NOTE:** The 'future' entry term is only valid in the era when `stake` is called. It's possible contract stake isn't changed in consecutive eras,
+/// so we might end up in a situation where era is `N + 10` but `staked` entry refers to era `N` and `staked_future` entry refers to era `N+1`.
+/// This is still valid since these values are expected to be updated lazily.
 #[derive(Encode, Decode, MaxEncodedLen, RuntimeDebug, PartialEq, Eq, Clone, TypeInfo, Default)]
-pub struct ContractStakeAmountSeries {
+pub struct ContractStakeAmount {
+    /// Staked amount in the 'current' era.
     pub staked: StakeAmount,
+    /// Staked amount in the next or 'future' era.
     pub staked_future: Option<StakeAmount>,
 }
-impl ContractStakeAmountSeries {
+impl ContractStakeAmount {
     /// `true` if series is empty, `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.staked.is_empty() && self.staked_future.is_none()
