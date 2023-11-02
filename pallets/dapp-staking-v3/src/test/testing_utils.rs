@@ -432,9 +432,7 @@ pub(crate) fn assert_stake(
     let pre_contract_stake = pre_snapshot
         .contract_stake
         .get(&smart_contract)
-        .map_or(ContractStakeAmount::default(), |series| {
-            series.clone()
-        });
+        .map_or(ContractStakeAmount::default(), |series| series.clone());
     let pre_era_info = pre_snapshot.current_era_info;
 
     let stake_era = pre_snapshot.active_protocol_state.era + 1;

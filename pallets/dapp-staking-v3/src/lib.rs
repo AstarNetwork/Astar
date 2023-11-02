@@ -1606,6 +1606,7 @@ pub mod pallet {
             // TODO - by breaking this into multiple steps, if they are too heavy for a single block, we can distribute them between multiple blocks.
             // Benchmarks will show this, but I don't believe it will be needed, especially with increased block capacity we'll get with async backing.
             // Even without async backing though, we should have enough capacity to handle this.
+            // UPDATE: might work with async backing, but right now we could handle up to 150 dApps before exceeding the PoV size.
 
             let tier_config = TierConfig::<T>::get();
             let mut dapp_stakes = Vec::with_capacity(IntegratedDApps::<T>::count() as usize);

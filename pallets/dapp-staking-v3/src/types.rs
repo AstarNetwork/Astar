@@ -312,7 +312,6 @@ pub struct AccountLedger<
     /// Number of contract stake entries in storage.
     #[codec(compact)]
     pub contract_stake_count: u32,
-
     // TODO: introduce a variable which keeps track of the latest era for which the rewards have been calculated.
     // This is needed since in case we break up reward calculation into multiple blocks, we should prohibit staking until
     // reward calculation has finished.
