@@ -34,7 +34,7 @@ fn default_reward_distribution_config_is_consitent() {
 fn reward_distribution_config_is_consistent() {
     // 1
     let reward_config = RewardDistributionConfig {
-        base_treasury_percent: Perbill::from_percent(100),
+        treasury_percent: Perbill::from_percent(100),
         base_staker_percent: Zero::zero(),
         dapps_percent: Zero::zero(),
         collators_percent: Zero::zero(),
@@ -45,7 +45,7 @@ fn reward_distribution_config_is_consistent() {
 
     // 2
     let reward_config = RewardDistributionConfig {
-        base_treasury_percent: Zero::zero(),
+        treasury_percent: Zero::zero(),
         base_staker_percent: Perbill::from_percent(100),
         dapps_percent: Zero::zero(),
         collators_percent: Zero::zero(),
@@ -56,7 +56,7 @@ fn reward_distribution_config_is_consistent() {
 
     // 3
     let reward_config = RewardDistributionConfig {
-        base_treasury_percent: Zero::zero(),
+        treasury_percent: Zero::zero(),
         base_staker_percent: Zero::zero(),
         dapps_percent: Zero::zero(),
         collators_percent: Zero::zero(),
@@ -68,7 +68,7 @@ fn reward_distribution_config_is_consistent() {
     // 4
     // 100%
     let reward_config = RewardDistributionConfig {
-        base_treasury_percent: Perbill::from_percent(3),
+        treasury_percent: Perbill::from_percent(3),
         base_staker_percent: Perbill::from_percent(14),
         dapps_percent: Perbill::from_percent(18),
         collators_percent: Perbill::from_percent(31),
@@ -82,7 +82,7 @@ fn reward_distribution_config_is_consistent() {
 fn reward_distribution_config_not_consistent() {
     // 1
     let reward_config = RewardDistributionConfig {
-        base_treasury_percent: Perbill::from_percent(100),
+        treasury_percent: Perbill::from_percent(100),
         ..Default::default()
     };
     assert!(!reward_config.is_consistent());
@@ -97,7 +97,7 @@ fn reward_distribution_config_not_consistent() {
     // 3
     // 99%
     let reward_config = RewardDistributionConfig {
-        base_treasury_percent: Perbill::from_percent(10),
+        treasury_percent: Perbill::from_percent(10),
         base_staker_percent: Perbill::from_percent(20),
         dapps_percent: Perbill::from_percent(20),
         collators_percent: Perbill::from_percent(30),
@@ -109,7 +109,7 @@ fn reward_distribution_config_not_consistent() {
     // 4
     // 101%
     let reward_config = RewardDistributionConfig {
-        base_treasury_percent: Perbill::from_percent(10),
+        treasury_percent: Perbill::from_percent(10),
         base_staker_percent: Perbill::from_percent(20),
         dapps_percent: Perbill::from_percent(20),
         collators_percent: Perbill::from_percent(31),
@@ -130,7 +130,7 @@ pub fn set_configuration_fails() {
 
         // 2
         let reward_config = RewardDistributionConfig {
-            base_treasury_percent: Perbill::from_percent(100),
+            treasury_percent: Perbill::from_percent(100),
             ..Default::default()
         };
         assert!(!reward_config.is_consistent());
@@ -146,7 +146,7 @@ pub fn set_configuration_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // custom config so it differs from the default one
         let reward_config = RewardDistributionConfig {
-            base_treasury_percent: Perbill::from_percent(3),
+            treasury_percent: Perbill::from_percent(3),
             base_staker_percent: Perbill::from_percent(14),
             dapps_percent: Perbill::from_percent(18),
             collators_percent: Perbill::from_percent(31),
@@ -198,7 +198,7 @@ pub fn reward_distribution_as_expected() {
 
         // Prepare a custom config (easily discernable percentages for visual verification)
         let reward_config = RewardDistributionConfig {
-            base_treasury_percent: Perbill::from_percent(10),
+            treasury_percent: Perbill::from_percent(10),
             base_staker_percent: Perbill::from_percent(20),
             dapps_percent: Perbill::from_percent(25),
             collators_percent: Perbill::from_percent(5),
@@ -215,14 +215,107 @@ pub fn reward_distribution_as_expected() {
         adjust_tvl_percentage(Perbill::from_percent(30));
 
         // Issue rewards a couple of times and verify distribution is as expected
+        // also ensure that the non distributed reward amount is burn
+        // (that the total issuance is only increased by the amount that has been rewarded)
         for _block in 1..=100 {
             let init_balance_state = FreeBalanceSnapshot::new();
-            let rewards = Rewards::calculate(&reward_config);
+            let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
+            let distributed_rewards = Rewards::calculate(&reward_config);
 
             BlockReward::on_timestamp_set(0);
 
             let final_balance_state = FreeBalanceSnapshot::new();
-            init_balance_state.assert_distribution(&final_balance_state, &rewards);
+            init_balance_state.assert_distribution(&final_balance_state, &distributed_rewards);
+
+            assert_eq!(
+                <TestRuntime as Config>::Currency::total_issuance(),
+                total_issuance_before + distributed_rewards.sum()
+            );
+        }
+    })
+}
+
+#[test]
+pub fn non_distributed_reward_amount_is_burned() {
+    ExternalityBuilder::build().execute_with(|| {
+        // Ensure that initially, all beneficiaries have no free balance
+        let init_balance_snapshot = FreeBalanceSnapshot::new();
+        assert!(init_balance_snapshot.is_zero());
+
+        // Prepare a custom config (easily discernible percentages for visual verification)
+        let reward_config = RewardDistributionConfig {
+            treasury_percent: Perbill::from_percent(10),
+            base_staker_percent: Perbill::from_percent(20),
+            dapps_percent: Perbill::from_percent(25),
+            collators_percent: Perbill::from_percent(5),
+            adjustable_percent: Perbill::from_percent(40),
+            ideal_dapps_staking_tvl: Perbill::from_percent(50),
+        };
+        assert!(reward_config.is_consistent());
+        assert_ok!(BlockReward::set_configuration(
+            RuntimeOrigin::root(),
+            reward_config.clone()
+        ));
+
+        // Initial adjustment of TVL
+        adjust_tvl_percentage(Perbill::from_percent(30));
+
+        for _block in 1..=100 {
+            let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
+            let distributed_rewards = Rewards::calculate(&reward_config);
+            let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
+
+            BlockReward::on_timestamp_set(0);
+
+            assert_eq!(
+                <TestRuntime as Config>::Currency::total_issuance(),
+                total_issuance_before + BLOCK_REWARD - burned_amount
+            );
+        }
+
+        adjust_tvl_percentage(Perbill::from_percent(50));
+
+        for _block in 1..=100 {
+            let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
+            let distributed_rewards = Rewards::calculate(&reward_config);
+            let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
+
+            BlockReward::on_timestamp_set(0);
+
+            assert_eq!(
+                <TestRuntime as Config>::Currency::total_issuance(),
+                total_issuance_before + BLOCK_REWARD - burned_amount
+            );
+        }
+
+        adjust_tvl_percentage(Perbill::from_percent(70));
+
+        for _block in 1..=100 {
+            let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
+            let distributed_rewards = Rewards::calculate(&reward_config);
+            let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
+
+            BlockReward::on_timestamp_set(0);
+
+            assert_eq!(
+                <TestRuntime as Config>::Currency::total_issuance(),
+                total_issuance_before + BLOCK_REWARD - burned_amount
+            );
+        }
+
+        adjust_tvl_percentage(Perbill::from_percent(100));
+
+        for _block in 1..=100 {
+            let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
+            let distributed_rewards = Rewards::calculate(&reward_config);
+            let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
+
+            BlockReward::on_timestamp_set(0);
+
+            assert_eq!(
+                <TestRuntime as Config>::Currency::total_issuance(),
+                total_issuance_before + BLOCK_REWARD - burned_amount
+            );
         }
     })
 }
@@ -231,7 +324,7 @@ pub fn reward_distribution_as_expected() {
 pub fn reward_distribution_no_adjustable_part() {
     ExternalityBuilder::build().execute_with(|| {
         let reward_config = RewardDistributionConfig {
-            base_treasury_percent: Perbill::from_percent(10),
+            treasury_percent: Perbill::from_percent(10),
             base_staker_percent: Perbill::from_percent(45),
             dapps_percent: Perbill::from_percent(40),
             collators_percent: Perbill::from_percent(5),
@@ -265,7 +358,7 @@ pub fn reward_distribution_no_adjustable_part() {
 pub fn reward_distribution_all_zero_except_one() {
     ExternalityBuilder::build().execute_with(|| {
         let reward_config = RewardDistributionConfig {
-            base_treasury_percent: Perbill::zero(),
+            treasury_percent: Perbill::zero(),
             base_staker_percent: Perbill::zero(),
             dapps_percent: Perbill::zero(),
             collators_percent: Perbill::zero(),
@@ -334,7 +427,7 @@ impl FreeBalanceSnapshot {
     ///
     fn assert_distribution(&self, post_reward_state: &Self, rewards: &Rewards) {
         assert_eq!(
-            self.treasury + rewards.base_treasury_reward + rewards.adjustable_treasury_reward,
+            self.treasury + rewards.treasury_reward,
             post_reward_state.treasury
         );
         assert_eq!(
@@ -352,11 +445,10 @@ impl FreeBalanceSnapshot {
 /// Represents reward distribution balances for a single distribution.
 #[derive(PartialEq, Eq, Clone, RuntimeDebug)]
 struct Rewards {
-    base_treasury_reward: Balance,
+    treasury_reward: Balance,
     base_staker_reward: Balance,
     dapps_reward: Balance,
     collators_reward: Balance,
-    adjustable_treasury_reward: Balance,
     adjustable_staker_reward: Balance,
 }
 
@@ -369,22 +461,19 @@ impl Rewards {
     ///
     fn calculate(reward_config: &RewardDistributionConfig) -> Self {
         // Calculate `tvl-independent` portions
-        let base_treasury_reward = reward_config.base_treasury_percent * BLOCK_REWARD;
+        let treasury_reward = reward_config.treasury_percent * BLOCK_REWARD;
         let base_staker_reward = reward_config.base_staker_percent * BLOCK_REWARD;
         let dapps_reward = reward_config.dapps_percent * BLOCK_REWARD;
         let collators_reward = reward_config.collators_percent * BLOCK_REWARD;
         let adjustable_reward = reward_config.adjustable_percent * BLOCK_REWARD;
 
         // Calculate `tvl-dependent` portions
-        let future_total_issuance =
-            <TestRuntime as Config>::Currency::total_issuance() + BLOCK_REWARD;
+        let total_issuance = <TestRuntime as Config>::Currency::total_issuance();
         let tvl = <TestRuntime as Config>::DappsStakingTvlProvider::get();
-        let tvl_percentage = Perbill::from_rational(tvl, future_total_issuance);
+        let tvl_percentage = Perbill::from_rational(tvl, total_issuance);
 
         // Calculate factor for adjusting staker reward portion
-        let factor = if reward_config.ideal_dapps_staking_tvl <= tvl_percentage
-            || reward_config.ideal_dapps_staking_tvl.is_zero()
-        {
+        let factor = if reward_config.ideal_dapps_staking_tvl.is_zero() {
             Perbill::one()
         } else {
             tvl_percentage / reward_config.ideal_dapps_staking_tvl
@@ -392,16 +481,22 @@ impl Rewards {
 
         // Adjustable reward portions
         let adjustable_staker_reward = factor * adjustable_reward;
-        let adjustable_treasury_reward = adjustable_reward - adjustable_staker_reward;
 
         Self {
-            base_treasury_reward,
+            treasury_reward,
             base_staker_reward,
             dapps_reward,
             collators_reward,
-            adjustable_treasury_reward,
             adjustable_staker_reward,
         }
+    }
+
+    fn sum(&self) -> Balance {
+        self.base_staker_reward
+            .saturating_add(self.adjustable_staker_reward)
+            .saturating_add(self.collators_reward)
+            .saturating_add(self.dapps_reward)
+            .saturating_add(self.treasury_reward)
     }
 }
 
@@ -413,13 +508,19 @@ fn adjust_tvl_percentage(desired_tvl_percentage: Perbill) {
 
     // Calculate how much more we need to issue in order to get the desired TVL percentage
     let init_total_issuance = <TestRuntime as Config>::Currency::total_issuance();
-    let to_issue = required_total_issuance.saturating_sub(init_total_issuance);
 
-    let dummy_acc = 1;
-    <TestRuntime as Config>::Currency::resolve_creating(
-        &dummy_acc,
-        <TestRuntime as Config>::Currency::issue(to_issue),
-    );
+    // issue to if issuance should be greater
+    // or burn if it should be lower
+    if required_total_issuance > init_total_issuance {
+        let to_issue = required_total_issuance.saturating_sub(init_total_issuance);
+        <TestRuntime as Config>::Currency::resolve_creating(
+            &1,
+            <TestRuntime as Config>::Currency::issue(to_issue),
+        );
+    } else {
+        let to_burn = init_total_issuance.saturating_sub(required_total_issuance);
+        _ = <TestRuntime as Config>::Currency::slash(&1, to_burn);
+    }
 
     // Sanity check
     assert_eq!(

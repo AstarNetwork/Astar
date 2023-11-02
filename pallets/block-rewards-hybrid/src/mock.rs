@@ -146,7 +146,7 @@ impl Get<Balance> for TvlProvider {
 // Type used as beneficiary payout handle
 pub struct BeneficiaryPayout();
 impl pallet_block_reward::BeneficiaryPayout<NegativeImbalanceOf<TestRuntime>>
-for BeneficiaryPayout
+    for BeneficiaryPayout
 {
     fn treasury(reward: NegativeImbalanceOf<TestRuntime>) {
         Balances::resolve_creating(&TREASURY_POT.into_account_truncating(), reward);
@@ -190,8 +190,8 @@ impl ExternalityBuilder {
         pallet_balances::GenesisConfig::<TestRuntime> {
             balances: vec![(1, 9000), (2, 800), (3, 10000)],
         }
-            .assimilate_storage(&mut storage)
-            .ok();
+        .assimilate_storage(&mut storage)
+        .ok();
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| System::set_block_number(1));

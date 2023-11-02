@@ -138,7 +138,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn reward_config)]
     pub type RewardDistributionConfigStorage<T: Config> =
-    StorageValue<_, RewardDistributionConfig, ValueQuery>;
+        StorageValue<_, RewardDistributionConfig, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
@@ -202,41 +202,58 @@ pub mod pallet {
 
     impl<Moment, T: Config> OnTimestampSet<Moment> for Pallet<T> {
         fn on_timestamp_set(_moment: Moment) {
-            let inflation = T::Currency::issue(T::RewardAmount::get());
-            Self::distribute_rewards(inflation);
+            let rewards = Self::calculate_rewards(T::RewardAmount::get());
+            let inflation = T::Currency::issue(rewards.sum());
+            Self::distribute_rewards(inflation, rewards);
         }
     }
 
     impl<T: Config> Pallet<T> {
-        /// Distribute reward between beneficiaries.
+        /// Calculates the amount of rewards for each beneficiary
         ///
         /// # Arguments
-        /// * `reward` - reward that will be split and distributed
+        /// * `block_reward` - the block reward amount
         ///
-        fn distribute_rewards(block_reward: NegativeImbalanceOf<T>) {
+        fn calculate_rewards(block_reward: Balance) -> Rewards {
             let distro_params = Self::reward_config();
 
             // Pre-calculate balance which will be deposited for each beneficiary
-            let base_staker_balance = distro_params.base_staker_percent * block_reward.peek();
-            let dapps_balance = distro_params.dapps_percent * block_reward.peek();
-            let collator_balance = distro_params.collators_percent * block_reward.peek();
+            let base_staker_balance = distro_params.base_staker_percent * block_reward;
+            let dapps_reward = distro_params.dapps_percent * block_reward;
+            let collators_reward = distro_params.collators_percent * block_reward;
+            let treasury_reward = distro_params.treasury_percent * block_reward;
 
-            // This is part that's distributed between stakers and treasury
-            let adjustable_balance = distro_params.adjustable_percent * block_reward.peek();
+            // This is part is the TVL dependant staker reward
+            let adjustable_balance = distro_params.adjustable_percent * block_reward;
 
-            // Calculate total staker and treasury reward balance
+            // Calculate total staker reward
             let adjustable_staker_part = if distro_params.ideal_dapps_staking_tvl.is_zero() {
                 adjustable_balance
             } else {
                 Self::tvl_percentage() / distro_params.ideal_dapps_staking_tvl * adjustable_balance
             };
 
-            let total_staker_balance = base_staker_balance + adjustable_staker_part;
+            let staker_reward = base_staker_balance + adjustable_staker_part;
 
+            Rewards {
+                treasury_reward,
+                staker_reward,
+                dapps_reward,
+                collators_reward,
+            }
+        }
+        /// Distribute reward between beneficiaries.
+        ///
+        /// # Arguments
+        /// * `inflation` - inflation issued for this block
+        /// * `rewards` - rewards that will be split and distributed
+        ///
+        fn distribute_rewards(inflation: NegativeImbalanceOf<T>, rewards: Rewards) {
             // Prepare imbalances
-            let (dapps_imbalance, remainder) = block_reward.split(dapps_balance);
-            let (stakers_imbalance, remainder) = remainder.split(total_staker_balance);
-            let (collator_imbalance, treasury_imbalance) = remainder.split(collator_balance);
+            let (dapps_imbalance, remainder) = inflation.split(rewards.dapps_reward);
+            let (stakers_imbalance, remainder) = remainder.split(rewards.staker_reward);
+            let (collator_imbalance, remainder) = remainder.split(rewards.collators_reward);
+            let (treasury_imbalance, _) = remainder.split(rewards.treasury_reward);
 
             // Payout beneficiaries
             T::BeneficiaryPayout::treasury(treasury_imbalance);
@@ -266,7 +283,7 @@ pub mod pallet {
 pub struct RewardDistributionConfig {
     /// Base percentage of reward that goes to treasury
     #[codec(compact)]
-    pub base_treasury_percent: Perbill,
+    pub treasury_percent: Perbill,
     /// Base percentage of reward that goes to stakers
     #[codec(compact)]
     pub base_staker_percent: Perbill,
@@ -289,7 +306,7 @@ impl Default for RewardDistributionConfig {
     /// Should be overriden by desired params.
     fn default() -> Self {
         RewardDistributionConfig {
-            base_treasury_percent: Perbill::from_percent(40),
+            treasury_percent: Perbill::from_percent(40),
             base_staker_percent: Perbill::from_percent(25),
             dapps_percent: Perbill::from_percent(25),
             collators_percent: Perbill::from_percent(10),
@@ -307,7 +324,7 @@ impl RewardDistributionConfig {
         // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_reduce
 
         let variables = vec![
-            &self.base_treasury_percent,
+            &self.treasury_percent,
             &self.base_staker_percent,
             &self.dapps_percent,
             &self.collators_percent,
@@ -325,6 +342,25 @@ impl RewardDistributionConfig {
         }
 
         Perbill::one() == accumulator
+    }
+}
+
+/// Represents rewards distribution balances for each beneficiary
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+struct Rewards {
+    treasury_reward: Balance,
+    staker_reward: Balance,
+    dapps_reward: Balance,
+    collators_reward: Balance,
+}
+
+impl Rewards {
+    fn sum(&self) -> Balance {
+        self.treasury_reward
+            .saturating_add(self.staker_reward)
+            .saturating_add(self.dapps_reward)
+            .saturating_add(self.collators_reward)
     }
 }
 
