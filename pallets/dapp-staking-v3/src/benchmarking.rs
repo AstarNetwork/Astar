@@ -74,9 +74,9 @@ pub(crate) fn advance_to_next_era<T: Config>() {
 // }
 
 // /// Advance blocks until next period type has been reached.
-// pub(crate) fn advance_to_next_period_type<T: Config>() {
-//     let period_type = ActiveProtocolState::<T>::get().period_type();
-//     while ActiveProtocolState::<T>::get().period_type() == period_type {
+// pub(crate) fn advance_to_next_subperiod<T: Config>() {
+//     let subperiod = ActiveProtocolState::<T>::get().subperiod();
+//     while ActiveProtocolState::<T>::get().subperiod() == subperiod {
 //         run_for_blocks::<T>(One::one());
 //     }
 // }
@@ -99,7 +99,7 @@ pub fn initial_config<T: Config>() {
         next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + One::one(),
         period_info: PeriodInfo {
             number: 1,
-            period_type: PeriodType::Voting,
+            subperiod: Subperiod::Voting,
             ending_era: 2,
         },
         maintenance: false,
@@ -214,6 +214,17 @@ mod benchmarks {
                 Pallet::<T>::get_dapp_tier_assignment(reward_era, reward_period, reward_pool);
             // TODO: how to move this outside of the 'block'? Cannot declare it outside, and then use it inside.
             assert_eq!(dapp_tiers.dapps.len(), x as usize);
+        }
+    }
+
+    #[benchmark]
+    fn experimental_read() {
+        // Prepare init config (protocol state, tier params & config, etc.)
+        initial_config::<T>();
+
+        #[block]
+        {
+            let _ = ExperimentalContractEntries::<T>::get(10);
         }
     }
 

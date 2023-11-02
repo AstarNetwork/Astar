@@ -204,7 +204,7 @@ impl ExtBuilder {
                 next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
                 period_info: PeriodInfo {
                     number: 1,
-                    period_type: PeriodType::Voting,
+                    subperiod: Subperiod::Voting,
                     ending_era: 2,
                 },
                 maintenance: false,
@@ -304,9 +304,9 @@ pub(crate) fn advance_to_next_period() {
 }
 
 /// Advance blocks until next period type has been reached.
-pub(crate) fn advance_to_into_next_period_type() {
-    let period_type = ActiveProtocolState::<Test>::get().period_type();
-    while ActiveProtocolState::<Test>::get().period_type() == period_type {
+pub(crate) fn advance_to_into_next_subperiod() {
+    let subperiod = ActiveProtocolState::<Test>::get().subperiod();
+    while ActiveProtocolState::<Test>::get().subperiod() == subperiod {
         run_for_blocks(1);
     }
 }

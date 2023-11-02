@@ -178,7 +178,7 @@ pub mod pallet {
         NewEra { era: EraNumber },
         /// New period has started.
         NewPeriod {
-            period_type: PeriodType,
+            subperiod: Subperiod,
             number: PeriodNumber,
         },
         /// A smart contract has been registered for dApp staking
@@ -416,6 +416,11 @@ pub mod pallet {
     pub type DAppTiers<T: Config> =
         StorageMap<_, Twox64Concat, EraNumber, DAppTierRewardsFor<T>, OptionQuery>;
 
+    // TODO: this is experimental, please don't review
+    #[pallet::storage]
+    pub type ExperimentalContractEntries<T: Config> =
+        StorageMap<_, Twox64Concat, EraNumber, ContractEntriesFor<T>, OptionQuery>;
+
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig {
@@ -473,7 +478,7 @@ pub mod pallet {
                 next_era_start: Pallet::<T>::blocks_per_voting_period() + 1_u32.into(),
                 period_info: PeriodInfo {
                     number: 1,
-                    period_type: PeriodType::Voting,
+                    subperiod: Subperiod::Voting,
                     ending_era: 2,
                 },
                 maintenance: false,
@@ -510,8 +515,8 @@ pub mod pallet {
 
             let current_era = protocol_state.era;
             let next_era = current_era.saturating_add(1);
-            let (maybe_period_event, era_reward) = match protocol_state.period_type() {
-                PeriodType::Voting => {
+            let (maybe_period_event, era_reward) = match protocol_state.subperiod() {
+                Subperiod::Voting => {
                     // For the sake of consistency, we put zero reward into storage
                     let era_reward = EraReward {
                         staker_reward_pool: Balance::zero(),
@@ -523,9 +528,9 @@ pub mod pallet {
                         next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
                     let build_and_earn_start_block =
                         now.saturating_add(T::StandardEraLength::get());
-                    protocol_state.into_next_period_type(ending_era, build_and_earn_start_block);
+                    protocol_state.into_next_subperiod(ending_era, build_and_earn_start_block);
 
-                    era_info.migrate_to_next_era(Some(protocol_state.period_type()));
+                    era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
                     // Update tier configuration to be used when calculating rewards for the upcoming eras
                     let next_tier_config = NextTierConfig::<T>::take();
@@ -533,13 +538,13 @@ pub mod pallet {
 
                     (
                         Some(Event::<T>::NewPeriod {
-                            period_type: protocol_state.period_type(),
+                            subperiod: protocol_state.subperiod(),
                             number: protocol_state.period_number(),
                         }),
                         era_reward,
                     )
                 }
-                PeriodType::BuildAndEarn => {
+                Subperiod::BuildAndEarn => {
                     let (staker_reward_pool, dapp_reward_pool) =
                         T::RewardPoolProvider::normal_reward_pools();
                     let era_reward = EraReward {
@@ -564,7 +569,7 @@ pub mod pallet {
                             &protocol_state.period_number(),
                             PeriodEndInfo {
                                 bonus_reward_pool,
-                                total_vp_stake: era_info.staked_amount(PeriodType::Voting),
+                                total_vp_stake: era_info.staked_amount(Subperiod::Voting),
                                 final_era: current_era,
                             },
                         );
@@ -575,9 +580,9 @@ pub mod pallet {
                         let voting_period_length = Self::blocks_per_voting_period();
                         let next_era_start_block = now.saturating_add(voting_period_length);
 
-                        protocol_state.into_next_period_type(ending_era, next_era_start_block);
+                        protocol_state.into_next_subperiod(ending_era, next_era_start_block);
 
-                        era_info.migrate_to_next_era(Some(protocol_state.period_type()));
+                        era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
                         // Re-calculate tier configuration for the upcoming new period
                         let tier_params = StaticTierParams::<T>::get();
@@ -588,7 +593,7 @@ pub mod pallet {
 
                         (
                             Some(Event::<T>::NewPeriod {
-                                period_type: protocol_state.period_type(),
+                                subperiod: protocol_state.subperiod(),
                                 number: protocol_state.period_number(),
                             }),
                             era_reward,
@@ -1045,12 +1050,12 @@ pub mod pallet {
                     None => (
                         SingularStakingInfo::new(
                             protocol_state.period_number(),
-                            protocol_state.period_type(),
+                            protocol_state.subperiod(),
                         ),
                         true,
                     ),
                 };
-            new_staking_info.stake(amount, protocol_state.period_type());
+            new_staking_info.stake(amount, protocol_state.subperiod());
             ensure!(
                 new_staking_info.total_staked_amount() >= T::MinimumStakeAmount::get(),
                 Error::<T>::InsufficientStakeAmount
@@ -1072,7 +1077,7 @@ pub mod pallet {
             // 4.
             // Update total staked amount for the next era.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.add_stake_amount(amount, protocol_state.period_type());
+                era_info.add_stake_amount(amount, protocol_state.subperiod());
             });
 
             // 5.
@@ -1139,7 +1144,7 @@ pub mod pallet {
                         amount
                     };
 
-                    staking_info.unstake(amount, protocol_state.period_type());
+                    staking_info.unstake(amount, protocol_state.subperiod());
                     (staking_info, amount)
                 }
                 None => {
@@ -1170,7 +1175,7 @@ pub mod pallet {
             // 4.
             // Update total staked amount for the next era.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unstake_amount(amount, protocol_state.period_type());
+                era_info.unstake_amount(amount, protocol_state.subperiod());
             });
 
             // 5.
@@ -1323,7 +1328,7 @@ pub mod pallet {
                 Error::<T>::InternalClaimBonusError
             );
 
-            let eligible_amount = staker_info.staked_amount(PeriodType::Voting);
+            let eligible_amount = staker_info.staked_amount(Subperiod::Voting);
             let bonus_reward =
                 Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
                     * period_end_info.bonus_reward_pool;
@@ -1380,7 +1385,6 @@ pub mod pallet {
                     })?;
 
             // Get reward destination, and deposit the reward.
-            // TODO: should we check reward is greater than zero, or even more precise, it's greater than the existential deposit? Seems redundant but still...
             let beneficiary = dapp_info.reward_beneficiary();
             T::Currency::deposit_creating(beneficiary, amount);
 
@@ -1447,7 +1451,7 @@ pub mod pallet {
             // Update total staked amount for the next era.
             // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unstake_amount(amount, protocol_state.period_type());
+                era_info.unstake_amount(amount, protocol_state.subperiod());
             });
 
             // Update remaining storage entries
@@ -1517,7 +1521,7 @@ pub mod pallet {
 
                 match force_type {
                     ForcingType::Era => (),
-                    ForcingType::PeriodType => {
+                    ForcingType::Subperiod => {
                         state.period_info.ending_era = state.era.saturating_add(1);
                     }
                 }
@@ -1608,6 +1612,13 @@ pub mod pallet {
             // Even without async backing though, we should have enough capacity to handle this.
             // UPDATE: might work with async backing, but right now we could handle up to 150 dApps before exceeding the PoV size.
 
+            // UPDATE2: instead of taking the approach of reading an ever increasing amount of entries from storage,  we can instead adopt an approach
+            // of eficiently storing composite information into `BTreeMap`. The approach is essentially the same as the one used below to store rewards.
+            // Each time `stake` or `unstake` are called, corresponding entries are updated. This way we can keep track of all the contract stake in a single DB entry.
+            // To make the solution more scalable, we could 'split' stake entries into spans, similar as rewards are handled now.
+            //
+            // Experiment with an 'experimental' entry shows PoV size of ~7kB induced for entry that can hold up to 100 entries.
+
             let tier_config = TierConfig::<T>::get();
             let mut dapp_stakes = Vec::with_capacity(IntegratedDApps::<T>::count() as usize);
 
@@ -1676,6 +1687,9 @@ pub mod pallet {
 
             // 4.
             // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is guaranteed due to lack of duplicated Ids).
+            // TODO & Idea: perhaps use BTreeMap instead? It will "sort" automatically based on dApp Id, and we can efficiently remove entries,
+            // reducing PoV size step by step.
+            // It's a trade-off between speed and PoV size. Although both are quite minor, so maybe it doesn't matter that much.
             dapp_tiers.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
 
             // 5. Calculate rewards.

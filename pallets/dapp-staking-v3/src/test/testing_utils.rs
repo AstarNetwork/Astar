@@ -437,7 +437,7 @@ pub(crate) fn assert_stake(
 
     let stake_era = pre_snapshot.active_protocol_state.era + 1;
     let stake_period = pre_snapshot.active_protocol_state.period_number();
-    let stake_period_type = pre_snapshot.active_protocol_state.period_type();
+    let stake_subperiod = pre_snapshot.active_protocol_state.subperiod();
 
     // Stake on smart contract & verify event
     assert_ok!(DappStaking::stake(
@@ -496,8 +496,8 @@ pub(crate) fn assert_stake(
                 "Total staked amount must increase by the 'amount'"
             );
             assert_eq!(
-                post_staker_info.staked_amount(stake_period_type),
-                pre_staker_info.staked_amount(stake_period_type) + amount,
+                post_staker_info.staked_amount(stake_subperiod),
+                pre_staker_info.staked_amount(stake_subperiod) + amount,
                 "Staked amount must increase by the 'amount'"
             );
             assert_eq!(post_staker_info.period_number(), stake_period);
@@ -516,14 +516,14 @@ pub(crate) fn assert_stake(
             );
             assert!(amount >= <Test as Config>::MinimumStakeAmount::get());
             assert_eq!(
-                post_staker_info.staked_amount(stake_period_type),
+                post_staker_info.staked_amount(stake_subperiod),
                 amount,
                 "Staked amount must be equal to exactly the 'amount'"
             );
             assert_eq!(post_staker_info.period_number(), stake_period);
             assert_eq!(
                 post_staker_info.is_loyal(),
-                stake_period_type == PeriodType::Voting
+                stake_subperiod == Subperiod::Voting
             );
         }
     }
@@ -537,8 +537,8 @@ pub(crate) fn assert_stake(
         "Staked amount must increase by the 'amount'"
     );
     assert_eq!(
-        post_contract_stake.staked_amount(stake_period, stake_period_type),
-        pre_contract_stake.staked_amount(stake_period, stake_period_type) + amount,
+        post_contract_stake.staked_amount(stake_period, stake_subperiod),
+        pre_contract_stake.staked_amount(stake_period, stake_subperiod) + amount,
         "Staked amount must increase by the 'amount'"
     );
 
@@ -561,8 +561,8 @@ pub(crate) fn assert_stake(
         pre_era_info.total_staked_amount_next_era() + amount
     );
     assert_eq!(
-        post_era_info.staked_amount_next_era(stake_period_type),
-        pre_era_info.staked_amount_next_era(stake_period_type) + amount
+        post_era_info.staked_amount_next_era(stake_subperiod),
+        pre_era_info.staked_amount_next_era(stake_subperiod) + amount
     );
 }
 
@@ -586,7 +586,7 @@ pub(crate) fn assert_unstake(
 
     let _unstake_era = pre_snapshot.active_protocol_state.era;
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
-    let unstake_period_type = pre_snapshot.active_protocol_state.period_type();
+    let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
 
     let minimum_stake_amount: Balance = <Test as Config>::MinimumStakeAmount::get();
     let is_full_unstake =
@@ -655,17 +655,17 @@ pub(crate) fn assert_unstake(
             "Total staked amount must decrease by the 'amount'"
         );
         assert_eq!(
-            post_staker_info.staked_amount(unstake_period_type),
+            post_staker_info.staked_amount(unstake_subperiod),
             pre_staker_info
-                .staked_amount(unstake_period_type)
+                .staked_amount(unstake_subperiod)
                 .saturating_sub(amount),
             "Staked amount must decrease by the 'amount'"
         );
 
         let is_loyal = pre_staker_info.is_loyal()
-            && !(unstake_period_type == PeriodType::BuildAndEarn
-                && post_staker_info.staked_amount(PeriodType::Voting)
-                    < pre_staker_info.staked_amount(PeriodType::Voting));
+            && !(unstake_subperiod == Subperiod::BuildAndEarn
+                && post_staker_info.staked_amount(Subperiod::Voting)
+                    < pre_staker_info.staked_amount(Subperiod::Voting));
         assert_eq!(
             post_staker_info.is_loyal(),
             is_loyal,
@@ -682,9 +682,9 @@ pub(crate) fn assert_unstake(
         "Staked amount must decreased by the 'amount'"
     );
     assert_eq!(
-        post_contract_stake.staked_amount(unstake_period, unstake_period_type),
+        post_contract_stake.staked_amount(unstake_period, unstake_subperiod),
         pre_contract_stake
-            .staked_amount(unstake_period, unstake_period_type)
+            .staked_amount(unstake_period, unstake_subperiod)
             .saturating_sub(amount),
         "Staked amount must decreased by the 'amount'"
     );
@@ -709,22 +709,22 @@ pub(crate) fn assert_unstake(
         "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
     );
 
-    if unstake_period_type == PeriodType::BuildAndEarn
-        && pre_era_info.staked_amount_next_era(PeriodType::BuildAndEarn) < amount
+    if unstake_subperiod == Subperiod::BuildAndEarn
+        && pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn) < amount
     {
-        let overflow = amount - pre_era_info.staked_amount_next_era(PeriodType::BuildAndEarn);
+        let overflow = amount - pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn);
 
         assert!(post_era_info
-            .staked_amount_next_era(PeriodType::BuildAndEarn)
+            .staked_amount_next_era(Subperiod::BuildAndEarn)
             .is_zero());
         assert_eq!(
-            post_era_info.staked_amount_next_era(PeriodType::Voting),
-            pre_era_info.staked_amount_next_era(PeriodType::Voting) - overflow
+            post_era_info.staked_amount_next_era(Subperiod::Voting),
+            pre_era_info.staked_amount_next_era(Subperiod::Voting) - overflow
         );
     } else {
         assert_eq!(
-            post_era_info.staked_amount_next_era(unstake_period_type),
-            pre_era_info.staked_amount_next_era(unstake_period_type) - amount
+            post_era_info.staked_amount_next_era(unstake_subperiod),
+            pre_era_info.staked_amount_next_era(unstake_subperiod) - amount
         );
     }
 }
@@ -866,7 +866,7 @@ pub(crate) fn assert_claim_bonus_reward(account: AccountId, smart_contract: &Moc
     let pre_free_balance = <Test as Config>::Currency::free_balance(&account);
 
     let staked_period = pre_staker_info.period_number();
-    let stake_amount = pre_staker_info.staked_amount(PeriodType::Voting);
+    let stake_amount = pre_staker_info.staked_amount(Subperiod::Voting);
 
     let period_end_info = pre_snapshot
         .period_end

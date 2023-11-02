@@ -20,7 +20,7 @@ use crate::test::mock::*;
 use crate::test::testing_utils::*;
 use crate::{
     pallet::Config, ActiveProtocolState, DAppId, EraNumber, EraRewards, Error, ForcingType,
-    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, PeriodType,
+    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Subperiod,
 };
 
 use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
@@ -34,8 +34,13 @@ fn print_test() {
     ExtBuilder::build().execute_with(|| {
         use crate::dsv3_weight::WeightInfo;
         println!(
-            ">>> {:?}",
-            crate::dsv3_weight::SubstrateWeight::<Test>::dapp_tier_assignment(200)
+            ">>> dApp tier assignment reading & calculation {:?}",
+            crate::dsv3_weight::SubstrateWeight::<Test>::dapp_tier_assignment(100)
+        );
+
+        println!(
+            ">>> Experimental storage entry read {:?}",
+            crate::dsv3_weight::SubstrateWeight::<Test>::experimental_read()
         );
     })
 }
@@ -156,7 +161,7 @@ fn on_initialize_state_change_works() {
         let protocol_state = ActiveProtocolState::<Test>::get();
         assert_eq!(protocol_state.era, 1);
         assert_eq!(protocol_state.period_number(), 1);
-        assert_eq!(protocol_state.period_type(), PeriodType::Voting);
+        assert_eq!(protocol_state.subperiod(), Subperiod::Voting);
         assert_eq!(System::block_number(), 1);
 
         let blocks_per_voting_period = DappStaking::blocks_per_voting_period();
@@ -170,15 +175,15 @@ fn on_initialize_state_change_works() {
         run_to_block(protocol_state.next_era_start - 1);
         let protocol_state = ActiveProtocolState::<Test>::get();
         assert_eq!(
-            protocol_state.period_type(),
-            PeriodType::Voting,
+            protocol_state.subperiod(),
+            Subperiod::Voting,
             "Period type should still be the same."
         );
         assert_eq!(protocol_state.era, 1);
 
         run_for_blocks(1);
         let protocol_state = ActiveProtocolState::<Test>::get();
-        assert_eq!(protocol_state.period_type(), PeriodType::BuildAndEarn);
+        assert_eq!(protocol_state.subperiod(), Subperiod::BuildAndEarn);
         assert_eq!(protocol_state.era, 2);
         assert_eq!(protocol_state.period_number(), 1);
 
@@ -191,7 +196,7 @@ fn on_initialize_state_change_works() {
             advance_to_next_era();
             assert_eq!(System::block_number(), pre_block + blocks_per_era);
             let protocol_state = ActiveProtocolState::<Test>::get();
-            assert_eq!(protocol_state.period_type(), PeriodType::BuildAndEarn);
+            assert_eq!(protocol_state.subperiod(), Subperiod::BuildAndEarn);
             assert_eq!(protocol_state.period_number(), 1);
             assert_eq!(protocol_state.era, era + 1);
         }
@@ -199,7 +204,7 @@ fn on_initialize_state_change_works() {
         // Finaly advance over to the next era and ensure we're back to voting period
         advance_to_next_era();
         let protocol_state = ActiveProtocolState::<Test>::get();
-        assert_eq!(protocol_state.period_type(), PeriodType::Voting);
+        assert_eq!(protocol_state.subperiod(), Subperiod::Voting);
         assert_eq!(protocol_state.era, 2 + eras_per_bep_period);
         assert_eq!(
             protocol_state.next_era_start,
@@ -864,7 +869,7 @@ fn stake_in_final_era_fails() {
 
         // Force Build&Earn period
         ActiveProtocolState::<Test>::mutate(|state| {
-            state.period_info.period_type = PeriodType::BuildAndEarn;
+            state.period_info.subperiod = Subperiod::BuildAndEarn;
             state.period_info.ending_era = state.era + 1;
         });
 
@@ -1287,7 +1292,7 @@ fn claim_staker_rewards_after_expiry_fails() {
         advance_to_period(
             ActiveProtocolState::<Test>::get().period_number() + reward_retention_in_periods,
         );
-        advance_to_into_next_period_type();
+        advance_to_into_next_subperiod();
         advance_to_era(ActiveProtocolState::<Test>::get().period_info.ending_era - 1);
         assert_claim_staker_rewards(account);
 
@@ -1412,10 +1417,10 @@ fn claim_bonus_reward_with_only_build_and_earn_stake_fails() {
         assert_lock(account, lock_amount);
 
         // Stake in Build&Earn period type, advance to next era and try to claim bonus reward
-        advance_to_into_next_period_type();
+        advance_to_into_next_subperiod();
         assert_eq!(
-            ActiveProtocolState::<Test>::get().period_type(),
-            PeriodType::BuildAndEarn,
+            ActiveProtocolState::<Test>::get().subperiod(),
+            Subperiod::BuildAndEarn,
             "Sanity check."
         );
         let stake_amount = 93;
