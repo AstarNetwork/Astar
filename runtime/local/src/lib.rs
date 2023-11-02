@@ -423,7 +423,7 @@ impl Get<Balance> for DappsStakingTvlProvider {
 }
 
 pub struct BeneficiaryPayout();
-impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
+impl block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
     fn treasury(reward: NegativeImbalance) {
         Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
@@ -441,13 +441,13 @@ parameter_types! {
     pub const RewardAmount: Balance = 2_664 * MILLIAST;
 }
 
-impl pallet_block_reward::Config for Runtime {
+impl block_rewards_hybrid::Config for Runtime {
     type Currency = Balances;
     type DappsStakingTvlProvider = DappsStakingTvlProvider;
     type BeneficiaryPayout = BeneficiaryPayout;
     type RewardAmount = RewardAmount;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_block_reward::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = block_rewards_hybrid::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1027,7 +1027,7 @@ construct_runtime!(
         Balances: pallet_balances,
         Vesting: pallet_vesting,
         DappsStaking: pallet_dapps_staking,
-        BlockReward: pallet_block_reward,
+        BlockReward: block_rewards_hybrid,
         TransactionPayment: pallet_transaction_payment,
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,
@@ -1157,7 +1157,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]
-        [pallet_block_reward, BlockReward]
+        [block_rewards_hybrid, BlockReward]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
     );

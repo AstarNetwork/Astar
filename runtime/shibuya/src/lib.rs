@@ -537,7 +537,7 @@ impl Get<Balance> for DappsStakingTvlProvider {
 }
 
 pub struct BeneficiaryPayout();
-impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
+impl block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
     fn treasury(reward: NegativeImbalance) {
         Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
@@ -555,13 +555,13 @@ parameter_types! {
     pub const RewardAmount: Balance = 2_530 * MILLISBY;
 }
 
-impl pallet_block_reward::Config for Runtime {
+impl block_rewards_hybrid::Config for Runtime {
     type Currency = Balances;
     type DappsStakingTvlProvider = DappsStakingTvlProvider;
     type BeneficiaryPayout = BeneficiaryPayout;
     type RewardAmount = RewardAmount;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_block_reward::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = block_rewards_hybrid::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1240,7 +1240,7 @@ construct_runtime!(
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
         DappsStaking: pallet_dapps_staking = 34,
-        BlockReward: pallet_block_reward = 35,
+        BlockReward: block_rewards_hybrid = 35,
         Assets: pallet_assets = 36,
 
         Authorship: pallet_authorship = 40,
@@ -1392,7 +1392,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]
-        [pallet_block_reward, BlockReward]
+        [block_rewards_hybrid, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]

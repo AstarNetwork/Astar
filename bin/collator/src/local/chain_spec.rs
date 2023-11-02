@@ -117,8 +117,8 @@ fn testnet_genesis(
         },
         block_reward: BlockRewardConfig {
             // Make sure sum is 100
-            reward_config: pallet_block_reward::RewardDistributionConfig {
-                base_treasury_percent: Perbill::from_percent(25),
+            reward_config: block_rewards_hybrid::RewardDistributionConfig {
+                treasury_percent: Perbill::from_percent(25),
                 base_staker_percent: Perbill::from_percent(30),
                 dapps_percent: Perbill::from_percent(20),
                 collators_percent: Perbill::zero(),

@@ -1,5 +1,5 @@
 [package]
-name = "block-reward-hybrid"
+name = "block-rewards-hybrid"
 version = "2.2.2"
 license = "Apache-2.0"
 description = "FRAME pallet for managing block reward issuance & distribution"

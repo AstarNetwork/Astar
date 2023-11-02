@@ -418,6 +418,7 @@ dependencies = [
  "astar-primitives",
  "astar-runtime",
  "async-trait",
+ "block-rewards-hybrid",
  "clap",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
@@ -998,7 +999,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
-name = "block-reward-hybrid"
+name = "block-rewards-hybrid"
 version = "2.2.2"
 dependencies = [
  "astar-primitives",
@@ -6007,6 +6008,7 @@ version = "5.22.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
+ "block-rewards-hybrid",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -6023,7 +6025,6 @@ dependencies = [
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
- "pallet-block-reward",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
@@ -13040,6 +13041,7 @@ version = "5.22.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
+ "block-rewards-hybrid",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -13068,7 +13070,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-reward",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
