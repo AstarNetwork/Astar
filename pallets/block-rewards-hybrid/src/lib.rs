@@ -126,7 +126,7 @@ pub mod pallet {
 
         /// The amount of issuance for each block.
         #[pallet::constant]
-        type RewardAmount: Get<Balance>;
+        type MaxBlockRewardAmount: Get<Balance>;
 
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -202,7 +202,7 @@ pub mod pallet {
 
     impl<Moment, T: Config> OnTimestampSet<Moment> for Pallet<T> {
         fn on_timestamp_set(_moment: Moment) {
-            let rewards = Self::calculate_rewards(T::RewardAmount::get());
+            let rewards = Self::calculate_rewards(T::MaxBlockRewardAmount::get());
             let inflation = T::Currency::issue(rewards.sum());
             Self::distribute_rewards(inflation, rewards);
         }

@@ -20,7 +20,7 @@
 
 use super::*;
 
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
+use frame_benchmarking::v2::*;
 use frame_system::{Pallet as System, RawOrigin};
 
 /// Assert that the last event equals the provided one.
@@ -28,15 +28,26 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     System::<T>::assert_last_event(generic_event.into());
 }
 
-benchmarks! {
+#[benchmarks(where T: Config)]
+mod benchmarks {
+    use super::*;
 
-    set_configuration {
+    #[benchmark]
+    fn set_configuration() {
         let reward_config = RewardDistributionConfig::default();
         assert!(reward_config.is_consistent());
-    }: _(RawOrigin::Root, reward_config.clone())
-    verify {
+
+        #[extrinsic_call]
+        _(RawOrigin::Root, reward_config.clone());
+
         assert_last_event::<T>(Event::<T>::DistributionConfigurationChanged(reward_config).into());
     }
+
+    impl_benchmark_test_suite!(
+        Pallet,
+        crate::benchmarking::tests::new_test_ext(),
+        crate::mock::TestRuntime,
+    );
 }
 
 #[cfg(test)]
@@ -48,9 +59,3 @@ mod tests {
         mock::ExternalityBuilder::build()
     }
 }
-
-impl_benchmark_test_suite!(
-    Pallet,
-    crate::benchmarking::tests::new_test_ext(),
-    crate::mock::TestRuntime,
-);

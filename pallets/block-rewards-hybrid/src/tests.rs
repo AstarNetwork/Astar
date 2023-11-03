@@ -212,7 +212,7 @@ pub fn reward_distribution_as_expected() {
         ));
 
         // Initial adjustment of TVL
-        adjust_tvl_percentage(Perbill::from_percent(30));
+        set_tvl(30);
 
         // Issue rewards a couple of times and verify distribution is as expected
         // also ensure that the non distributed reward amount is burn
@@ -257,65 +257,22 @@ pub fn non_distributed_reward_amount_is_burned() {
             reward_config.clone()
         ));
 
-        // Initial adjustment of TVL
-        adjust_tvl_percentage(Perbill::from_percent(30));
+        for tvl in [30, 50, 70, 100] {
+            // Initial adjustment of TVL
+            set_tvl(tvl);
 
-        for _block in 1..=100 {
-            let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
-            let distributed_rewards = Rewards::calculate(&reward_config);
-            let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
+            for _block in 1..=100 {
+                let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
+                let distributed_rewards = Rewards::calculate(&reward_config);
+                let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
 
-            BlockReward::on_timestamp_set(0);
+                BlockReward::on_timestamp_set(0);
 
-            assert_eq!(
-                <TestRuntime as Config>::Currency::total_issuance(),
-                total_issuance_before + BLOCK_REWARD - burned_amount
-            );
-        }
-
-        adjust_tvl_percentage(Perbill::from_percent(50));
-
-        for _block in 1..=100 {
-            let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
-            let distributed_rewards = Rewards::calculate(&reward_config);
-            let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
-
-            BlockReward::on_timestamp_set(0);
-
-            assert_eq!(
-                <TestRuntime as Config>::Currency::total_issuance(),
-                total_issuance_before + BLOCK_REWARD - burned_amount
-            );
-        }
-
-        adjust_tvl_percentage(Perbill::from_percent(70));
-
-        for _block in 1..=100 {
-            let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
-            let distributed_rewards = Rewards::calculate(&reward_config);
-            let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
-
-            BlockReward::on_timestamp_set(0);
-
-            assert_eq!(
-                <TestRuntime as Config>::Currency::total_issuance(),
-                total_issuance_before + BLOCK_REWARD - burned_amount
-            );
-        }
-
-        adjust_tvl_percentage(Perbill::from_percent(100));
-
-        for _block in 1..=100 {
-            let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
-            let distributed_rewards = Rewards::calculate(&reward_config);
-            let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
-
-            BlockReward::on_timestamp_set(0);
-
-            assert_eq!(
-                <TestRuntime as Config>::Currency::total_issuance(),
-                total_issuance_before + BLOCK_REWARD - burned_amount
-            );
+                assert_eq!(
+                    <TestRuntime as Config>::Currency::total_issuance(),
+                    total_issuance_before + BLOCK_REWARD - burned_amount
+                );
+            }
         }
     })
 }
@@ -493,38 +450,9 @@ impl Rewards {
 
     fn sum(&self) -> Balance {
         self.base_staker_reward
-            .saturating_add(self.adjustable_staker_reward)
-            .saturating_add(self.collators_reward)
-            .saturating_add(self.dapps_reward)
-            .saturating_add(self.treasury_reward)
+            + self.adjustable_staker_reward
+            + self.collators_reward
+            + self.dapps_reward
+            + self.treasury_reward
     }
-}
-
-/// Adjusts total_issuance  in order to try-and-match the requested TVL percentage
-fn adjust_tvl_percentage(desired_tvl_percentage: Perbill) {
-    // Calculate the required total issuance
-    let tvl = <TestRuntime as Config>::DappsStakingTvlProvider::get();
-    let required_total_issuance = desired_tvl_percentage.saturating_reciprocal_mul(tvl);
-
-    // Calculate how much more we need to issue in order to get the desired TVL percentage
-    let init_total_issuance = <TestRuntime as Config>::Currency::total_issuance();
-
-    // issue to if issuance should be greater
-    // or burn if it should be lower
-    if required_total_issuance > init_total_issuance {
-        let to_issue = required_total_issuance.saturating_sub(init_total_issuance);
-        <TestRuntime as Config>::Currency::resolve_creating(
-            &1,
-            <TestRuntime as Config>::Currency::issue(to_issue),
-        );
-    } else {
-        let to_burn = init_total_issuance.saturating_sub(required_total_issuance);
-        _ = <TestRuntime as Config>::Currency::slash(&1, to_burn);
-    }
-
-    // Sanity check
-    assert_eq!(
-        <TestRuntime as Config>::Currency::total_issuance(),
-        required_total_issuance
-    );
 }

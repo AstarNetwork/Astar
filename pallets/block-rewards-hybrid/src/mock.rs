@@ -32,6 +32,7 @@ use sp_runtime::{
     testing::Header,
     traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
+use sp_std::cell::RefCell;
 
 pub(crate) type AccountId = u64;
 pub(crate) type BlockNumber = u64;
@@ -126,21 +127,26 @@ impl pallet_timestamp::Config for TestRuntime {
 // due to TVL changes.
 pub(crate) const BLOCK_REWARD: Balance = 1_000_000;
 
-// This gives us enough flexibility to get valid percentages by controlling issuance.
-pub(crate) const TVL: Balance = 1_000_000_000;
-
 // Fake accounts used to simulate reward beneficiaries balances
 pub(crate) const TREASURY_POT: PalletId = PalletId(*b"moktrsry");
 pub(crate) const COLLATOR_POT: PalletId = PalletId(*b"mokcolat");
 pub(crate) const STAKERS_POT: PalletId = PalletId(*b"mokstakr");
 pub(crate) const DAPPS_POT: PalletId = PalletId(*b"mokdapps");
 
+thread_local! {
+    static TVL: RefCell<Balance> = RefCell::new(1_000_000_000);
+}
+
 // Type used as TVL provider
 pub struct TvlProvider();
 impl Get<Balance> for TvlProvider {
     fn get() -> Balance {
-        TVL
+        TVL.with(|t| t.borrow().clone())
     }
+}
+
+pub(crate) fn set_tvl(v: Balance) {
+    TVL.with(|t| *t.borrow_mut() = v)
 }
 
 // Type used as beneficiary payout handle
@@ -172,7 +178,7 @@ parameter_types! {
 impl pallet_block_reward::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type RewardAmount = RewardAmount;
+    type MaxBlockRewardAmount = RewardAmount;
     type DappsStakingTvlProvider = TvlProvider;
     type BeneficiaryPayout = BeneficiaryPayout;
     type WeightInfo = ();

@@ -438,14 +438,14 @@ impl block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryP
 }
 
 parameter_types! {
-    pub const RewardAmount: Balance = 2_664 * MILLIAST;
+    pub const MaxBlockRewardAmount: Balance = 2_664 * MILLIAST;
 }
 
 impl block_rewards_hybrid::Config for Runtime {
     type Currency = Balances;
     type DappsStakingTvlProvider = DappsStakingTvlProvider;
     type BeneficiaryPayout = BeneficiaryPayout;
-    type RewardAmount = RewardAmount;
+    type MaxBlockRewardAmount = MaxBlockRewardAmount;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = block_rewards_hybrid::weights::SubstrateWeight<Runtime>;
 }
