@@ -27,6 +27,8 @@ Each period consists of two subperiods:
 Each period is denoted by a number, which increments each time a new period begins.
 Period beginning is marked by the `voting` subperiod, after which follows the `build&earn` period.
 
+Stakes are **only** valid throughout a period. When new period starts, all stakes are reset to zero. This helps prevent projects remaining staked due to intertia.
+
 #### Voting
 
 When `Voting` starts, all _stakes_ are reset to **zero**.
@@ -83,7 +85,7 @@ This will be improved in the future when dApp data will be cleaned up after the 
 
 ### Stakers
 
-#### Locking Funds
+#### Locking Tokens
 
 In order for users to participate in dApp staking, the first step they need to take is lock some native currency. Reserved tokens cannot be locked, but tokens locked by another lock can be re-locked into dApp staking (double locked).
 
@@ -93,7 +95,7 @@ In order to participate, user must have a `MinimumLockedAmount` of native curren
 
 In case amount specified for locking is greater than what user has available, only what's available will be locked.
 
-#### Unlocking Funds
+#### Unlocking Tokens
 
 User can at any time decide to unlock their tokens. However, it's not possible to unlock tokens which are staked, so user has to unstake them first.
 
@@ -104,3 +106,62 @@ There is a limited number of `unlocking chunks` a user can have at any point in 
 In case calling unlocking some amount would take the user below the `MinimumLockedAmount`, **everything** will be unlocked.
 
 For users who decide they would rather re-lock their tokens then wait for the unlocking process to finish, there's an option to do so. All currently unlocking chunks are consumed, and added back into locked amount.
+
+#### Staking Tokens
+
+Locked tokens, which aren't being used for staking, can be used to stake on a dApp. This translates to _voting_ or _nominating_ a dApp to receive rewards derived from the inflation. User can stake on multiple dApps if they want to.
+
+The staked amount **must be precise**, no adjustment will be made by the pallet in case a too large amount is specified.
+
+The staked amount is only eligible for rewards from the next era - in other words, only the amount that has been staked for the entire era is eligible to receive rewards.
+
+It is not possible to stake if there are unclaimed rewards from past eras. User must ensure to first claim their pending rewards, before staking. This is also beneficial to the users since it allows them to lock & stake the earned rewards as well.
+
+User's stake on a contract must be equal or greater than the `MinimumStakeAmount`. This is similar to the minimum lock amount, but this limit is per contract.
+
+Although user can stake on multiple smart contracts, the amount is limited. To be more precise, amount of database entries that can exist per user is limited.
+
+The protocol keeps track of how much was staked by the user in `voting` and `build&earn` subperiod. This is important for the bonus reward calculation.
+
+It is not possible to stake on a dApp that has been unregistered.
+However, if dApp is unregistered after user has staked on it, user will keep earning
+rewards for the staked amount.
+
+#### Unstaking Tokens
+
+User can at any time decide to unstake staked tokens. There's no _unstaking_ process associated with this action.
+
+Unlike stake operation, which stakes from the _next_ era, unstake will reduce the staked amount for the current and next era if stake exists.
+
+Same as with stake operation, it's not possible to unstake anything until unclaimed rewards have been claimed. User must ensure to first claim all rewards, before attempting to unstake. Unstake amount must also be precise as no adjustment will be done to the amount.
+
+The amount unstaked will always first reduce the amount staked in the ongoing subperiod. E.g. if `voting` subperiod has stake of **100**, and `build&earn` subperiod has stake of **50**, calling unstake with amount **70** during `build&earn` subperiod will see `build&earn` stake amount reduced to **zero**, while `voting` stake will be reduced to **80**.
+
+If unstake would reduce the staked amount below `MinimumStakeAmount`, everything is unstaked.
+
+Once period finishes, all stakes are reset back to zero. This means that no unstake operation is needed after period ends to _unstake_ funds - it's done automatically.
+
+If dApp has been unregistered, a special operation to unstake from unregistered contract must be used.
+
+#### Claiming Staker Rewards
+
+Stakers can claim rewards for passed eras during which they were staking. Even if multiple contracts were staked, claim reward call will claim rewards for all of them.
+
+Only rewards for passed eras can be claimed. It is possible that a successful reward claim call will claim rewards for multiple eras. This can happen if staker hasn't claimed rewards in some time, and many eras have passed since then, accumulating pending rewards.
+
+To achieve this, the pallet's underyling storage organizes **era reward information** into **spans**. A single span covers multiple eras, e.g. from **1** to **16**. In case user has staked during era 1, and hasn't claimed rewards until era 17, they will be eligible to claim 15 rewards in total (from era 2 to 16). All of this will be done in a single claim reward call.
+
+In case unclaimed history has built up past one span, multiple reward claim calls will be needed to claim all of the rewards.
+
+Rewards don't remain available forever, and if not claimed within some time period, they will be treated as expired. This will be a longer period, but will still exist.
+
+Rewards are calculated using a simple formula: `staker_reward_pool * staker_staked_amount / total_staked_amount`.
+
+#### Claim Bonus Reward
+
+If staker staked on a dApp during the voting period, and didn't reduce their staked amount below what was staked at the end of the voting period, this makes them eligible for the bonus reward.
+
+Bonus rewards need to be claimed per contract, unlike staker rewards.
+
+Bonus reward is calculated using a simple formula: `bonus_reward_pool * staker_voting_period_stake / total_voting_period_stake`.
+
