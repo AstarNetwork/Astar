@@ -24,9 +24,46 @@
 //!
 //! # Overview
 //!
-//! ## Protocol State
+//! The following is a high level overview of the implemented structs, enums & types.
+//! For detailes, please refer to the documentation and code of each individual type.
 //!
+//! ## General Protocol Information
+//!
+//! * `EraNumber` - numeric Id of an era.
+//! * `PeriodNumber` - numeric Id of a period.
 //! * `Subperiod` - an enum describing which subperiod is active in the current period.
+//! * `PeriodInfo` - contains information about the ongoing period, like period number, current subperiod and when will the current subperiod end.
+//! * `PeriodEndInfo` - contains information about a finished past period, like the final era of the period, total amount staked & bonus reward pool.
+//! * `ProtocolState` - contains the most general protocol state info: current era number, block when the era ends, ongoing period info, and whether protocol is in maintenance mode.
+//!
+//! ## DApp Information
+//!
+//! * `DAppId` - a compact unique numeric Id of a dApp.
+//! * `DAppInfo` - contains general information about a dApp, like owner and reward beneficiary, Id and state.
+//! * `ContractStakeAmount` - contains information about how much is staked on a particular contract.
+//!
+//! ## Staker Information
+//!
+//! * `UnlockingChunk` - describes some amount undergoing the unlocking process.
+//! * `StakeAmount` - contains information about the staked amount in a particular era, and period.
+//! * `AccountLedger` - keeps track of total locked & staked balance, unlocking chunks and number of stake entries.
+//! * `SingularStakingInfo` - contains information about a particular stakers stake on a specific smart contract. Used to track loyalty.
+//!
+//! ## Era Information
+//!
+//! * `EraInfo` - contains information about the ongoing era, like how much is locked & staked.
+//! * `EraReward` - contains information about a finished era, like reward pools and total staked amount.
+//! * `EraRewardSpan` - a composite of multiple `EraReward` objects, used to describe a range of finished eras.
+//!
+//! ## Tier Information
+//!
+//! * `TierThreshold` - an enum describing tier entry thresholds.
+//! * `TierParameters` - contains static information about tiers, like init thresholds, reward & slot distribution.
+//! * `TiersConfiguration` - contains dynamic information about tiers, derived from `TierParameters` and onchain data.
+//! * `DAppTier` - a compact struct describing a dApp's tier.
+//! * `DAppTierREwards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
+//!
+//! TODO: some types are missing so double check before final merge that everything is covered and explained correctly
 
 use frame_support::{pallet_prelude::*, BoundedVec};
 use frame_system::pallet_prelude::*;
@@ -119,14 +156,14 @@ pub struct PeriodInfo {
     pub subperiod: Subperiod,
     /// Last ear of the subperiod, after this a new subperiod should start.
     #[codec(compact)]
-    pub ending_era: EraNumber,
+    pub subperiod_end_era: EraNumber,
 }
 
 impl PeriodInfo {
     /// `true` if the provided era belongs to the next period, `false` otherwise.
     /// It's only possible to provide this information for the `BuildAndEarn` subperiod.
     pub fn is_next_period(&self, era: EraNumber) -> bool {
-        self.subperiod == Subperiod::BuildAndEarn && self.ending_era <= era
+        self.subperiod == Subperiod::BuildAndEarn && self.subperiod_end_era <= era
     }
 }
 
@@ -179,7 +216,7 @@ where
             period_info: PeriodInfo {
                 number: 0,
                 subperiod: Subperiod::Voting,
-                ending_era: 2,
+                subperiod_end_era: 2,
             },
             maintenance: false,
         }
@@ -202,7 +239,7 @@ where
 
     /// Ending era of current period
     pub fn period_end_era(&self) -> EraNumber {
-        self.period_info.ending_era
+        self.period_info.subperiod_end_era
     }
 
     /// Checks whether a new era should be triggered, based on the provided `BlockNumber` argument
@@ -212,7 +249,11 @@ where
     }
 
     /// Triggers the next subperiod, updating appropriate parameters.
-    pub fn into_next_subperiod(&mut self, ending_era: EraNumber, next_era_start: BlockNumber) {
+    pub fn into_next_subperiod(
+        &mut self,
+        subperiod_end_era: EraNumber,
+        next_era_start: BlockNumber,
+    ) {
         let period_number = if self.subperiod() == Subperiod::BuildAndEarn {
             self.period_number().saturating_add(1)
         } else {
@@ -222,7 +263,7 @@ where
         self.period_info = PeriodInfo {
             number: period_number,
             subperiod: self.subperiod().next(),
-            ending_era,
+            subperiod_end_era,
         };
         self.next_era_start = next_era_start;
     }
@@ -681,7 +722,7 @@ where
 
         // Make sure to clean up the entries if all rewards for the period have been claimed.
         match period_end {
-            Some(ending_era) if era >= ending_era => {
+            Some(subperiod_end_era) if era >= subperiod_end_era => {
                 self.staked = Default::default();
                 self.staked_future = None;
             }

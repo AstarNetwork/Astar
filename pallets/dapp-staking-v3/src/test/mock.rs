@@ -205,7 +205,7 @@ impl ExtBuilder {
                 period_info: PeriodInfo {
                     number: 1,
                     subperiod: Subperiod::Voting,
-                    ending_era: 2,
+                    subperiod_end_era: 2,
                 },
                 maintenance: false,
             });

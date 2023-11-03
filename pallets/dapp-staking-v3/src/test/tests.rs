@@ -870,7 +870,7 @@ fn stake_in_final_era_fails() {
         // Force Build&Earn period
         ActiveProtocolState::<Test>::mutate(|state| {
             state.period_info.subperiod = Subperiod::BuildAndEarn;
-            state.period_info.ending_era = state.era + 1;
+            state.period_info.subperiod_end_era = state.era + 1;
         });
 
         // Try to stake in the final era of the period, which should fail.
@@ -1293,7 +1293,12 @@ fn claim_staker_rewards_after_expiry_fails() {
             ActiveProtocolState::<Test>::get().period_number() + reward_retention_in_periods,
         );
         advance_to_into_next_subperiod();
-        advance_to_era(ActiveProtocolState::<Test>::get().period_info.ending_era - 1);
+        advance_to_era(
+            ActiveProtocolState::<Test>::get()
+                .period_info
+                .subperiod_end_era
+                - 1,
+        );
         assert_claim_staker_rewards(account);
 
         // Ensure we're still in the first period for the sake of test validity

@@ -479,7 +479,7 @@ pub mod pallet {
                 period_info: PeriodInfo {
                     number: 1,
                     subperiod: Subperiod::Voting,
-                    ending_era: 2,
+                    subperiod_end_era: 2,
                 },
                 maintenance: false,
             };
@@ -524,11 +524,12 @@ pub mod pallet {
                         dapp_reward_pool: Balance::zero(),
                     };
 
-                    let ending_era =
+                    let subperiod_end_era =
                         next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
                     let build_and_earn_start_block =
                         now.saturating_add(T::StandardEraLength::get());
-                    protocol_state.into_next_subperiod(ending_era, build_and_earn_start_block);
+                    protocol_state
+                        .into_next_subperiod(subperiod_end_era, build_and_earn_start_block);
 
                     era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
@@ -576,11 +577,11 @@ pub mod pallet {
 
                         // For the sake of consistency we treat the whole `Voting` period as a single era.
                         // This means no special handling is required for this period, it only lasts potentially longer than a single standard era.
-                        let ending_era = next_era.saturating_add(1);
+                        let subperiod_end_era = next_era.saturating_add(1);
                         let voting_period_length = Self::blocks_per_voting_period();
                         let next_era_start_block = now.saturating_add(voting_period_length);
 
-                        protocol_state.into_next_subperiod(ending_era, next_era_start_block);
+                        protocol_state.into_next_subperiod(subperiod_end_era, next_era_start_block);
 
                         era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
@@ -1522,7 +1523,7 @@ pub mod pallet {
                 match force_type {
                     ForcingType::Era => (),
                     ForcingType::Subperiod => {
-                        state.period_info.ending_era = state.era.saturating_add(1);
+                        state.period_info.subperiod_end_era = state.era.saturating_add(1);
                     }
                 }
             });
