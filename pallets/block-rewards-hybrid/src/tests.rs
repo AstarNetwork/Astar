@@ -211,13 +211,13 @@ pub fn reward_distribution_as_expected() {
             reward_config.clone()
         ));
 
-        // Initial adjustment of TVL
-        set_tvl(30);
-
         // Issue rewards a couple of times and verify distribution is as expected
         // also ensure that the non distributed reward amount is burn
         // (that the total issuance is only increased by the amount that has been rewarded)
         for _block in 1..=100 {
+            // TVL amount is updated every block
+            // to ensure TVL ratio as expected
+            adjust_tvl(30);
             let init_balance_state = FreeBalanceSnapshot::new();
             let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
             let distributed_rewards = Rewards::calculate(&reward_config);
@@ -258,10 +258,10 @@ pub fn non_distributed_reward_amount_is_burned() {
         ));
 
         for tvl in [30, 50, 70, 100] {
-            // Initial adjustment of TVL
-            set_tvl(tvl);
-
             for _block in 1..=100 {
+                // TVL amount is updated every block
+                // to ensure TVL ratio as expected
+                adjust_tvl(tvl);
                 let total_issuance_before = <TestRuntime as Config>::Currency::total_issuance();
                 let distributed_rewards = Rewards::calculate(&reward_config);
                 let burned_amount = BLOCK_REWARD - distributed_rewards.sum();
@@ -455,4 +455,8 @@ impl Rewards {
             + self.dapps_reward
             + self.treasury_reward
     }
+}
+
+fn adjust_tvl(desired_percent: u128) {
+    set_tvl(<TestRuntime as Config>::Currency::total_issuance() / 100 * desired_percent);
 }
