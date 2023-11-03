@@ -819,9 +819,6 @@ pub mod pallet {
         ///
         /// In case caller account doesn't have sufficient balance to cover the specified amount, everything is locked.
         /// After adjustment, lock amount must be greater than zero and in total must be equal or greater than the minimum locked amount.
-        ///
-        /// It is possible for call to fail due to caller account already having too many locked balance chunks in storage. To solve this,
-        /// caller should claim pending rewards, before retrying to lock additional funds.
         #[pallet::call_index(5)]
         #[pallet::weight(Weight::zero())]
         pub fn lock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {

@@ -86,10 +86,6 @@ pub type AccountLedgerFor<T> = AccountLedger<BlockNumberFor<T>, <T as Config>::M
 pub type DAppTierRewardsFor<T> =
     DAppTierRewards<MaxNumberOfContractsU32<T>, <T as Config>::NumberOfTiers>;
 
-// TODO: temp experimental type, don't review
-pub type ContractEntriesFor<T> =
-    ExperimentalContractStakeEntries<MaxNumberOfContractsU32<T>, <T as Config>::NumberOfTiers>;
-
 // Helper struct for converting `u16` getter into `u32`
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MaxNumberOfContractsU32<T: Config>(PhantomData<T>);
@@ -357,10 +353,6 @@ pub struct AccountLedger<
     /// Number of contract stake entries in storage.
     #[codec(compact)]
     pub contract_stake_count: u32,
-    // TODO: introduce a variable which keeps track of the latest era for which the rewards have been calculated.
-    // This is needed since in case we break up reward calculation into multiple blocks, we should prohibit staking until
-    // reward calculation has finished.
-    // >>> Only if we decide to break calculation into multiple steps.
 }
 
 impl<BlockNumber, UnlockingLen> Default for AccountLedger<BlockNumber, UnlockingLen>
@@ -1695,7 +1687,7 @@ pub trait RewardPoolProvider {
     fn bonus_reward_pool() -> Balance;
 }
 
-// TODO: this is experimental, don't review
+// TODO: these are experimental, don't review
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
 pub struct ExperimentalContractStakeEntry {
     #[codec(compact)]
@@ -1706,7 +1698,6 @@ pub struct ExperimentalContractStakeEntry {
     pub build_and_earn: Balance,
 }
 
-// TODO: this is experimental, don't review
 #[derive(
     Encode,
     Decode,
@@ -1727,3 +1718,7 @@ pub struct ExperimentalContractStakeEntries<MD: Get<u32>, NT: Get<u32>> {
     #[codec(compact)]
     pub period: PeriodNumber,
 }
+
+// TODO: temp experimental type, don't review
+pub type ContractEntriesFor<T> =
+    ExperimentalContractStakeEntries<MaxNumberOfContractsU32<T>, <T as Config>::NumberOfTiers>;
