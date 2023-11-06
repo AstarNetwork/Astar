@@ -34,4 +34,4 @@ RUN ["astar-collator", "--version"]
 EXPOSE 30333 30334 9933 9944
 VOLUME ["/data"]
 
-CMD ["/usr/local/bin/astar-collator","-d","/data"]
+ENTRYPOINT ["/usr/local/bin/astar-collator","-d","/data"]
