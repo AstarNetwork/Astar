@@ -13,15 +13,10 @@ pragma solidity ^0.8.0;
 interface XCM {
 
     //TODO: change it to correct info
-    // Gets the evm address associated with given account id, if mapped else None.
-    function get_evm_address(bytes calldata account_id) external view returns (address,bool);
 
     // Gets the evm address associated with given account id. If no mapping exists, then return the default account id.
     function get_evm_address_or_default(bytes calldata account_id) external view returns (address,bool);
-
-    // Gets the account id associated with given evm address, if mapped else None.
-    function get_native_address(address evmAddress) external view returns (bytes,bool);
     
     //Gets the account id associated with given evm address. If no mapping exists, then return the default evm address.
-    function get_native_address_or_default(address evmAddress) external view returns (bytes,bool);
+    function get_native_address_or_default(address evmAddress) external view returns (bytes32,bool);
 }

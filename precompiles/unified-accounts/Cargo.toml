@@ -38,6 +38,8 @@ serde = { workspace = true }
 
 precompile-utils = { workspace = true, features = ["testing"] }
 
+ethers = { workspace = true }
+libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true }
 sp-runtime = { workspace = true }
@@ -46,6 +48,7 @@ sp-runtime = { workspace = true }
 default = ["std"]
 std = [
 	"parity-scale-codec/std",
+	"pallet-unified-accounts/std",
 	"fp-evm/std",
 	"frame-support/std",
 	"frame-system/std",

@@ -183,6 +183,7 @@ std = [
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-xcm/std",
 	"pallet-evm-precompile-xvm/std",
+	"pallet-evm-precompile-unified-accounts/std",
 	"pallet-dapps-staking/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",

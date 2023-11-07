@@ -150,8 +150,7 @@ fn account_claim_should_work() {
 
         // transfer some funds to alice_eth (H160)
         assert_ok!(Balances::transfer_allow_death(
-            RuntimeOrigin::signed(BOB),
-            alice_eth_old_account.clone().into(),
+            RuntimeOrigin::signed(BOB), alice_eth_old_account.clone().into(),
             1001
         ));
 

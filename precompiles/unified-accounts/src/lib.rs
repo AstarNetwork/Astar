@@ -30,6 +30,7 @@ use precompile_utils::{
     PrecompileHandleExt,
 };
 use sp_core::{crypto::AccountId32, H160, H256};
+use sp_std::prelude::*;
 
 #[cfg(test)]
 mod mock;
@@ -42,9 +43,7 @@ const DEFAULT_ADDRESS: H160 = H160::zero();
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
 pub enum Action {
-    GetEvmAddress = "get_evm_address(bytes)",
-    GetEvmAddressOrDefault = "get_evm_address_or_default(bytes)",
-    GetNativeAddress = "get_native_address(address)",
+    GetEvmAddressOrDefault = "get_evm_address_or_default(bytes32)",
     GetNativeAddressOrDefault = "get_native_address_or_default(address)",
 }
 
@@ -56,7 +55,7 @@ where
     R: pallet_evm::Config + pallet_unified_accounts::Config,
     <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
         From<Option<R::AccountId>>,
-    <R as frame_system::Config>::AccountId: From<AccountId32>,
+    <R as frame_system::Config>::AccountId: From<AccountId32> + Into<AccountId32>,
     UA: UnifiedAddressMapper<R::AccountId>,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
@@ -68,9 +67,7 @@ where
 
         match selector {
             // Dispatchables
-            Action::GetEvmAddress => Self::get_evm_address(handle),
             Action::GetEvmAddressOrDefault => Self::get_evm_address_or_default(handle),
-            Action::GetNativeAddress => Self::get_native_address(handle),
             Action::GetNativeAddressOrDefault => Self::get_native_address_or_default(handle),
         }
     }
@@ -81,71 +78,23 @@ where
     R: pallet_evm::Config + pallet_unified_accounts::Config,
     <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
         From<Option<R::AccountId>>,
-    <R as frame_system::Config>::AccountId: From<AccountId32>,
-    <R as frame_system::Config>::AccountId: Into<AccountId32>,
+    <R as frame_system::Config>::AccountId: From<AccountId32> + Into<AccountId32>,
     UA: UnifiedAddressMapper<R::AccountId>,
 {
-    fn get_evm_address(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        let mut input = handle.read_input()?;
-        input.expect_arguments(1)?;
-        let account_id = input.read::<H256>()?;
-        log::trace!(target: "au-precompile", "get_evm_address account_id (H256) : {:?}",account_id);
-        let res: (Address, bool) = {
-            if let Some(address) = UA::to_h160(&AccountId32::new(account_id.0).into()) {
-                (address.into(), true)
-            } else {
-                (DEFAULT_ADDRESS.into(), false)
-            }
-        };
-        log::trace!(target: "au-precompile", "get_evm_address accountId : {:?}, (Address,bool): {:?}",account_id, res);
-
-        Ok(succeed(EvmDataWriter::new().write(res).build()))
-    }
-
     fn get_evm_address_or_default(
         handle: &mut impl PrecompileHandle,
     ) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;
-        let account_as_bytes: Vec<u8> = input.read::<Bytes>()?.into();
-        log::trace!(target: "au-precompile", "get_evm_address_or_default account_id (Bytes) : {:?}",account_as_bytes);
-        let account_id: R::AccountId = match account_as_bytes.len() {
-            // public address of the ss58 account has 32 bytes
-            32 => {
-                let mut account_bytes = [0_u8; 32];
-                account_bytes[..].clone_from_slice(&account_as_bytes[0..32]);
-
-                AccountId32::new(account_bytes).into()
-            }
-            _ => {
-                // Return err if account length is wrong
-                return Err(revert("Error while parsing staker's address"));
-            }
-        };
-        let res: (Address, bool) = match UA::to_h160_or_default(&account_id) {
-            UnifiedAddress::Mapped(address) => (address.into(), true),
-            UnifiedAddress::Default(address) => (address.into(), false),
-        };
+        let account_id = input.read::<H256>()?;
+        log::trace!(target: "au-precompile", "get_evm_address_or_default account_id (Bytes) : {:?}",account_id);
+        let res: (Address, bool) =
+            match UA::to_h160_or_default(&AccountId32::new(account_id.0).into()) {
+                UnifiedAddress::Mapped(address) => (address.into(), true),
+                UnifiedAddress::Default(address) => (address.into(), false),
+            };
         log::trace!(target: "au-precompile", "accountId : {:?}, (Address,bool): {:?}",account_id, res);
 
-        Ok(succeed(EvmDataWriter::new().write(res).build()))
-    }
-
-    fn get_native_address(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        let mut input = handle.read_input()?;
-        input.expect_arguments(1)?;
-        let evm_address = input.read::<Address>()?;
-        log::trace!(target: "au-precompile", "get_native_address (evmAddress) : {:?}",evm_address);
-
-        let res: (Bytes, bool) = {
-            if let Some(account_id) = UA::to_account_id(&evm_address.into()) {
-                let converted_account_id: AccountId32 = account_id.into();
-                log::trace!(target: "au-precompile", "get_native_address (converted_account_id) : {:?}",converted_account_id);
-                (converted_account_id.into(), true)
-            } else {
-                ([0; 32].as_ref().into(), false)
-            }
-        };
         Ok(succeed(EvmDataWriter::new().write(res).build()))
     }
 
@@ -157,16 +106,18 @@ where
         let evm_address = input.read::<Address>()?;
         log::trace!(target: "au-precompile", "get_native_address_or_default (evmAddress) : {:?}",evm_address);
 
-        let res: (Bytes, bool) = match UA::to_account_id_or_default(&evm_address.into()) {
+        let res: (H256, bool) = match UA::to_account_id_or_default(&evm_address.into()) {
             UnifiedAddress::Mapped(account_id) => {
                 let converted_account_id: AccountId32 = account_id.into();
-                log::trace!(target: "au-precompile", "get_native_address_or_default (converted_account_id) : {:?}",converted_account_id);
-                (converted_account_id.into(), true)
+                log::trace!(target: "au-precompile", "get_native_address_or_default (Mapped : converted_account_id) : {:?}",converted_account_id);
+                let a: &[u8; 32] = converted_account_id.as_ref();
+                (a.into(), true)
             }
             UnifiedAddress::Default(account_id) => {
                 let converted_account_id: AccountId32 = account_id.into();
-                log::trace!(target: "au-precompile", "get_native_address_or_default (converted_account_id) : {:?}",converted_account_id);
-                (converted_account_id.into(), false)
+                log::trace!(target: "au-precompile", "get_native_address_or_default (Default : converted_account_id) : {:?}",converted_account_id);
+                let a: &[u8; 32] = converted_account_id.as_ref();
+                (a.into(), false)
             }
         };
         Ok(succeed(EvmDataWriter::new().write(res).build()))
