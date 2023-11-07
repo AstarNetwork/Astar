@@ -19,7 +19,7 @@
 //! Chain specifications.
 
 use local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BlockRewardConfig,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BlockRewardConfig, RewardDistributionConfig,
     CouncilConfig, DemocracyConfig, EVMConfig, GenesisConfig, GrandpaConfig, GrandpaId,
     Precompiles, Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig,
     VestingConfig,
@@ -117,7 +117,7 @@ fn testnet_genesis(
         },
         block_reward: BlockRewardConfig {
             // Make sure sum is 100
-            reward_config: block_rewards_hybrid::RewardDistributionConfig {
+            reward_config: RewardDistributionConfig {
                 treasury_percent: Perbill::from_percent(25),
                 base_staker_percent: Perbill::from_percent(30),
                 dapps_percent: Perbill::from_percent(20),

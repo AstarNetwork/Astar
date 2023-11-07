@@ -65,6 +65,7 @@ pub use astar_primitives::{
     evm::EvmRevertCodeHandler, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
     Index, Signature,
 };
+pub use block_rewards_hybrid::RewardDistributionConfig;
 
 pub use crate::precompiles::WhitelistedCalls;
 #[cfg(feature = "std")]

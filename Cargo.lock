@@ -418,7 +418,6 @@ dependencies = [
  "astar-primitives",
  "astar-runtime",
  "async-trait",
- "block-rewards-hybrid",
  "clap",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",

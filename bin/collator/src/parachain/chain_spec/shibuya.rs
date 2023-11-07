@@ -21,7 +21,7 @@
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shibuya_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BlockRewardConfig,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BlockRewardConfig, RewardDistributionConfig,
     CollatorSelectionConfig, CouncilConfig, DemocracyConfig, EVMChainIdConfig, EVMConfig,
     GenesisConfig, ParachainInfoConfig, Precompiles, SessionConfig, SessionKeys, Signature,
     SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, SBY,
@@ -115,7 +115,7 @@ fn make_genesis(
         balances: BalancesConfig { balances },
         block_reward: BlockRewardConfig {
             // Make sure sum is 100
-            reward_config: block_rewards_hybrid::RewardDistributionConfig {
+            reward_config: RewardDistributionConfig {
                 treasury_percent: Perbill::from_percent(10),
                 base_staker_percent: Perbill::from_percent(20),
                 dapps_percent: Perbill::from_percent(20),
