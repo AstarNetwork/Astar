@@ -19,7 +19,6 @@
 use crate::mock::*;
 use crate::*;
 
-use astar_primitives::ethereum_checked::AccountMapping;
 use frame_support::assert_ok;
 use precompile_utils::testing::*;
 use precompile_utils::EvmDataWriter;
@@ -33,8 +32,8 @@ fn test_get_evm_address() {
     // Case 1 : Address Not Mapped
     ExtBuilder::default().build().execute_with(|| {
         let alice_default_evm =
-            <TestRuntime as pallet_unified_accounts::Config>::DefaultNativeToEvm::into_h160(
-                ALICE.into(),
+            <TestRuntime as pallet_unified_accounts::Config>::DefaultMappings::to_default_h160(
+                &ALICE,
             );
 
         let res: (Address, bool) = (alice_default_evm.into(), false);
@@ -85,8 +84,8 @@ fn test_get_native_address() {
 
         // default ss58 account associated with eth address
         let alice_eth_old_account =
-            <TestRuntime as pallet_unified_accounts::Config>::DefaultEvmToNative::into_account_id(
-                alice_eth.clone(),
+            <TestRuntime as pallet_unified_accounts::Config>::DefaultMappings::to_default_account_id(
+                &alice_eth,
             );
 
         // for let binding

@@ -45,7 +45,7 @@ use ethers::{
 };
 
 extern crate alloc;
-use astar_primitives::ethereum_checked::HashedAccountMapping;
+use astar_primitives::evm::HashedDefaultMappings;
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 pub type BlockNumber = u64;
@@ -245,8 +245,7 @@ parameter_types! {
 impl pallet_unified_accounts::Config for TestRuntime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type DefaultEvmToNative = pallet_evm::HashedAddressMapping<BlakeTwo256>;
-    type DefaultNativeToEvm = HashedAccountMapping<BlakeTwo256>;
+    type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
     type ChainId = ChainId;
     type AccountMappingStorageFee = AccountMappingStorageFee;
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
