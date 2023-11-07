@@ -1617,7 +1617,6 @@ pub mod pallet {
             //
             // Experiment with an 'experimental' entry shows PoV size of ~7kB induced for entry that can hold up to 100 entries.
 
-            let tier_config = TierConfig::<T>::get();
             let mut dapp_stakes = Vec::with_capacity(IntegratedDApps::<T>::count() as usize);
 
             // 1.
@@ -1653,6 +1652,7 @@ pub mod pallet {
             // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
             // and tier capacity hasn't been filled yet.
             let mut dapp_tiers = Vec::with_capacity(dapp_stakes.len());
+            let tier_config = TierConfig::<T>::get();
 
             let mut global_idx = 0;
             let mut tier_id = 0;
