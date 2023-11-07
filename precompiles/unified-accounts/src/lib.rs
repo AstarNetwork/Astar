@@ -26,7 +26,7 @@ use frame_support::dispatch::Dispatchable;
 use precompile_utils::{
     succeed, Address, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
 };
-use sp_core::{crypto::AccountId32, H160, H256};
+use sp_core::{crypto::AccountId32, H256};
 use sp_std::prelude::*;
 
 #[cfg(test)]
