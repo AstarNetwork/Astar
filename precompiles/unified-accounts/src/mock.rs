@@ -55,8 +55,6 @@ pub type Block = frame_system::mocking::MockBlock<TestRuntime>;
 pub const PRECOMPILE_ADDRESS: H160 = H160::repeat_byte(0x7B);
 
 pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
-pub const BOB: AccountId32 = AccountId32::new([1u8; 32]);
-pub const CHARLIE: AccountId32 = AccountId32::new([2u8; 32]);
 
 pub fn alice_secret() -> libsecp256k1::SecretKey {
     libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()

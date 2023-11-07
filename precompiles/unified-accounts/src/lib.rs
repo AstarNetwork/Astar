@@ -104,14 +104,14 @@ where
             UnifiedAddress::Mapped(account_id) => {
                 let converted_account_id: AccountId32 = account_id.into();
                 log::trace!(target: "au-precompile", "get_native_address_or_default (Mapped : converted_account_id) : {:?}",converted_account_id);
-                let a: &[u8; 32] = converted_account_id.as_ref();
-                (a.into(), true)
+                let mapped_account: &[u8; 32] = converted_account_id.as_ref();
+                (mapped_account.into(), true)
             }
             UnifiedAddress::Default(account_id) => {
                 let converted_account_id: AccountId32 = account_id.into();
                 log::trace!(target: "au-precompile", "get_native_address_or_default (Default : converted_account_id) : {:?}",converted_account_id);
-                let a: &[u8; 32] = converted_account_id.as_ref();
-                (a.into(), false)
+                let mapped_account: &[u8; 32] = converted_account_id.as_ref();
+                (mapped_account.into(), false)
             }
         };
         Ok(succeed(EvmDataWriter::new().write(res).build()))
