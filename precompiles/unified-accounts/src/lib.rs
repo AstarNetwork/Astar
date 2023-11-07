@@ -20,14 +20,11 @@
 
 use astar_primitives::evm::{UnifiedAddress, UnifiedAddressMapper};
 use core::marker::PhantomData;
-use fp_evm::{ExitError, Precompile, PrecompileFailure};
+use fp_evm::Precompile;
 use fp_evm::{PrecompileHandle, PrecompileOutput};
 use frame_support::dispatch::Dispatchable;
-use frame_system::Account;
-use pallet_evm::ExitFatal;
 use precompile_utils::{
-    revert, succeed, Address, Bytes, EvmDataWriter, EvmResult, FunctionModifier,
-    PrecompileHandleExt,
+    succeed, Address, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
 };
 use sp_core::{crypto::AccountId32, H160, H256};
 use sp_std::prelude::*;
@@ -36,9 +33,6 @@ use sp_std::prelude::*;
 mod mock;
 #[cfg(test)]
 mod tests;
-
-/// Dummy H160 address representing no mapping
-const DEFAULT_ADDRESS: H160 = H160::zero();
 
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
