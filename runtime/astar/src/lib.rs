@@ -140,7 +140,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 68,
+    spec_version: 70,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1000,7 +1000,7 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm = 52,
         DmpQueue: cumulus_pallet_dmp_queue = 53,
         XcAssetConfig: pallet_xc_asset_config = 54,
-        Xtokens: orml_xtokens = 55,
+        XTokens: orml_xtokens = 55,
 
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,

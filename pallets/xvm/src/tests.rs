@@ -24,7 +24,6 @@ use mock::*;
 use frame_support::{assert_noop, assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
 use sp_core::H160;
-use sp_runtime::MultiAddress;
 
 #[test]
 fn calling_into_same_vm_is_not_allowed() {

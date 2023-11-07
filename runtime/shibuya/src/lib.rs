@@ -22,6 +22,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use astar_primitives::evm::HashedDefaultMappings;
 use cumulus_pallet_parachain_system::AnyRelayNumber;
 use frame_support::{
     construct_runtime,
@@ -67,10 +68,9 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    ethereum_checked::{CheckedEthereumTransact, HashedAccountMapping},
-    evm::EvmRevertCodeHandler,
-    xcm::AssetLocationIdConverter,
-    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+    ethereum_checked::CheckedEthereumTransact, evm::EvmRevertCodeHandler,
+    xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
+    Index, Signature,
 };
 
 pub use crate::precompiles::WhitelistedCalls;
@@ -166,7 +166,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 111,
+    spec_version: 113,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -681,7 +681,7 @@ impl pallet_contracts::Config for Runtime {
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
 parameter_types! {
     pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 SBY per byte
-    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 SBY per unit of ref time.
+    pub const WeightFeeFactor: Balance = 30_855_000_000_000_000; // Around 0.03 SBY per unit of base weight.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 666_667); // 0.000_015
@@ -718,17 +718,17 @@ pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
         if let Some(fees) = fees_then_tips.next() {
-            // Burn 80% of fees, rest goes to collators, including 100% of the tips.
-            let (to_burn, mut collators) = fees.ration(80, 20);
+            // Burn 80% of fees, rest goes to collator, including 100% of the tips.
+            let (to_burn, mut collator) = fees.ration(80, 20);
             if let Some(tips) = fees_then_tips.next() {
-                tips.merge_into(&mut collators);
+                tips.merge_into(&mut collator);
             }
 
-            // burn part of fees
+            // burn part of the fees
             drop(to_burn);
 
-            // pay fees to collators
-            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);
+            // pay fees to collator
+            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collator);
         }
     }
 }
@@ -784,14 +784,14 @@ impl pallet_ethereum_checked::Config for Runtime {
     type XvmTxWeightLimit = XvmTxWeightLimit;
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
-    type AccountMapping = UnifiedAccounts;
+    type AddressMapper = UnifiedAccounts;
     type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
     type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_xvm::Config for Runtime {
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
-    type AccountMapping = UnifiedAccounts;
+    type AddressMapper = UnifiedAccounts;
     type EthereumTransact = EthereumChecked;
     type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
 }
@@ -1212,8 +1212,7 @@ parameter_types! {
 impl pallet_unified_accounts::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type DefaultEvmToNative = pallet_evm::HashedAddressMapping<BlakeTwo256>;
-    type DefaultNativeToEvm = HashedAccountMapping<BlakeTwo256>;
+    type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
     type ChainId = EVMChainId;
     type AccountMappingStorageFee = AccountMappingStorageFee;
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
@@ -1255,7 +1254,7 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm = 52,
         DmpQueue: cumulus_pallet_dmp_queue = 53,
         XcAssetConfig: pallet_xc_asset_config = 54,
-        Xtokens: orml_xtokens = 55,
+        XTokens: orml_xtokens = 55,
 
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
@@ -1312,57 +1311,10 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-// Used to cleanup BaseFee storage - remove once cleanup is done.
-parameter_types! {
-    pub const BaseFeeStr: &'static str = "BaseFee";
-}
-
-/// Simple `OnRuntimeUpgrade` logic to prepare Shibuya runtime for `DynamicEvmBaseFee` pallet.
-pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
-pub struct DynamicEvmBaseFeeMigration;
-impl OnRuntimeUpgrade for DynamicEvmBaseFeeMigration {
-    fn on_runtime_upgrade() -> Weight {
-        // Safety check to ensure we don't execute this migration twice
-        if pallet_dynamic_evm_base_fee::BaseFeePerGas::<Runtime>::exists() {
-            return <Runtime as frame_system::Config>::DbWeight::get().reads(1);
-        }
-
-        // Set the init value to what was set before on the old `BaseFee` pallet.
-        pallet_dynamic_evm_base_fee::BaseFeePerGas::<Runtime>::put(U256::from(1_000_000_000_u128));
-
-        // Shibuya's multiplier is so low that we have to set it to minimum value directly.
-        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::put(MinimumMultiplier::get());
-
-        // Set init storage version for the pallet
-        StorageVersion::new(1).put::<pallet_dynamic_evm_base_fee::Pallet<Runtime>>();
-
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 3)
-    }
-}
-
-/// Simple `OnRuntimeUpgrade` logic to remove all corrupted mappings
-/// after the fixing the typo in mapping names in pallet.
-pub struct ClearCorruptedUnifiedMappings;
-impl OnRuntimeUpgrade for ClearCorruptedUnifiedMappings {
-    fn on_runtime_upgrade() -> Weight {
-        let maybe_limit = pallet_unified_accounts::EvmToNative::<Runtime>::iter().count();
-        let total_rw = maybe_limit as u64 * 2;
-        // remove all items
-        let _ = pallet_unified_accounts::EvmToNative::<Runtime>::clear(maybe_limit as u32, None);
-        let _ = pallet_unified_accounts::NativeToEvm::<Runtime>::clear(maybe_limit as u32, None);
-
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(total_rw, total_rw)
-    }
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    frame_support::migrations::RemovePallet<BaseFeeStr, RocksDbWeight>,
-    DynamicEvmBaseFeeMigration,
-    ClearCorruptedUnifiedMappings,
-);
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

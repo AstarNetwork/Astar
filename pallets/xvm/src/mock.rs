@@ -21,6 +21,7 @@
 use super::*;
 use crate as pallet_xvm;
 
+use astar_primitives::evm::HashedDefaultMappings;
 use fp_evm::{CallInfo as EvmCallInfo, ExitReason, ExitSucceed, UsedGas};
 use frame_support::{
     construct_runtime,
@@ -124,14 +125,6 @@ impl pallet_contracts::Config for TestRuntime {
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
-pub struct HashedAccountMapping;
-impl astar_primitives::ethereum_checked::AccountMapping<AccountId> for HashedAccountMapping {
-    fn into_h160(account_id: AccountId) -> H160 {
-        let data = (b"evm:", account_id);
-        return H160::from_slice(&data.using_encoded(sp_io::hashing::blake2_256)[0..20]);
-    }
-}
-
 thread_local! {
     static TRANSACTED: RefCell<Option<(H160, CheckedEthereumTx)>> = RefCell::new(None);
 }
@@ -180,7 +173,7 @@ impl GasWeightMapping for MockGasWeightMapping {
 
 impl pallet_xvm::Config for TestRuntime {
     type GasWeightMapping = MockGasWeightMapping;
-    type AccountMapping = HashedAccountMapping;
+    type AddressMapper = HashedDefaultMappings<BlakeTwo256>;
     type EthereumTransact = MockEthereumTransact;
     type WeightInfo = weights::SubstrateWeight<TestRuntime>;
 }

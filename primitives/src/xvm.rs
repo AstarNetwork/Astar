@@ -131,6 +131,8 @@ pub enum FailureError {
     ReentranceDenied,
     /// The call failed with error on EVM or WASM execution.
     VmError(Vec<u8>),
+    /// Out of gas.
+    OutOfGas,
 }
 
 /// XVM call result.
