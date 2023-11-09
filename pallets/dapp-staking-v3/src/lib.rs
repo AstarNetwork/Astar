@@ -529,7 +529,7 @@ pub mod pallet {
                     let build_and_earn_start_block =
                         now.saturating_add(T::StandardEraLength::get());
                     protocol_state
-                        .into_next_subperiod(subperiod_end_era, build_and_earn_start_block);
+                        .advance_to_next_subperiod(subperiod_end_era, build_and_earn_start_block);
 
                     era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
@@ -581,7 +581,8 @@ pub mod pallet {
                         let voting_period_length = Self::blocks_per_voting_period();
                         let next_era_start_block = now.saturating_add(voting_period_length);
 
-                        protocol_state.into_next_subperiod(subperiod_end_era, next_era_start_block);
+                        protocol_state
+                            .advance_to_next_subperiod(subperiod_end_era, next_era_start_block);
 
                         era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
@@ -775,7 +776,7 @@ pub mod pallet {
         /// Unregister dApp from dApp staking protocol, making it ineligible for future rewards.
         /// This doesn't remove the dApp completely from the system just yet, but it can no longer be used for staking.
         ///
-        /// Can be called by dApp owner or dApp staking manager origin.
+        /// Can be called by dApp staking manager origin.
         #[pallet::call_index(4)]
         #[pallet::weight(Weight::zero())]
         pub fn unregister(
@@ -1503,7 +1504,9 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Used to enable or disable maintenance mode.
+        /// Used to force a change of era or subperiod.
+        /// The effect isn't immediate but will happen on the next block.
+        ///
         /// Can only be called by manager origin.
         #[pallet::call_index(16)]
         #[pallet::weight(Weight::zero())]

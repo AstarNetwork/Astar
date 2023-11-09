@@ -25,7 +25,7 @@
 //! # Overview
 //!
 //! The following is a high level overview of the implemented structs, enums & types.
-//! For detailes, please refer to the documentation and code of each individual type.
+//! For details, please refer to the documentation and code of each individual type.
 //!
 //! ## General Protocol Information
 //!
@@ -47,7 +47,7 @@
 //! * `UnlockingChunk` - describes some amount undergoing the unlocking process.
 //! * `StakeAmount` - contains information about the staked amount in a particular era, and period.
 //! * `AccountLedger` - keeps track of total locked & staked balance, unlocking chunks and number of stake entries.
-//! * `SingularStakingInfo` - contains information about a particular stakers stake on a specific smart contract. Used to track loyalty.
+//! * `SingularStakingInfo` - contains information about a particular staker's stake on a specific smart contract. Used to track loyalty.
 //!
 //! ## Era Information
 //!
@@ -61,7 +61,7 @@
 //! * `TierParameters` - contains static information about tiers, like init thresholds, reward & slot distribution.
 //! * `TiersConfiguration` - contains dynamic information about tiers, derived from `TierParameters` and onchain data.
 //! * `DAppTier` - a compact struct describing a dApp's tier.
-//! * `DAppTierREwards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
+//! * `DAppTierRewards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
 //!
 //! TODO: some types are missing so double check before final merge that everything is covered and explained correctly
 
@@ -150,7 +150,7 @@ pub struct PeriodInfo {
     pub number: PeriodNumber,
     /// subperiod.
     pub subperiod: Subperiod,
-    /// Last ear of the subperiod, after this a new subperiod should start.
+    /// Last era of the subperiod, after this a new subperiod should start.
     #[codec(compact)]
     pub subperiod_end_era: EraNumber,
 }
@@ -245,7 +245,7 @@ where
     }
 
     /// Triggers the next subperiod, updating appropriate parameters.
-    pub fn into_next_subperiod(
+    pub fn advance_to_next_subperiod(
         &mut self,
         subperiod_end_era: EraNumber,
         next_era_start: BlockNumber,
@@ -535,7 +535,7 @@ where
             // In case it doesn't (i.e. first time staking), then the future era must match exactly
             // one era after the one provided via argument.
         } else if let Some(stake_amount) = self.staked_future {
-            if stake_amount.era != era + 1 {
+            if stake_amount.era != era.saturating_add(1) {
                 return Err(AccountLedgerError::InvalidEra);
             }
             if stake_amount.period != current_period_info.number {
@@ -552,11 +552,11 @@ where
     /// 1. The `period` requirement enforces staking in the ongoing period.
     /// 2. The `era` requirement enforces staking in the ongoing era.
     ///
-    /// The 2nd condition is needed to prevent stakers from building a significant histort of stakes,
+    /// The 2nd condition is needed to prevent stakers from building a significant history of stakes,
     /// without claiming the rewards. So if a historic era exists as an entry, stakers will first need to claim
     /// the pending rewards, before they can stake again.
     ///
-    /// Additonally, the staked amount must not exceed what's available for staking.
+    /// Additionally, the staked amount must not exceed what's available for staking.
     pub fn add_stake_amount(
         &mut self,
         amount: Balance,
@@ -580,7 +580,7 @@ where
             }
             None => {
                 let mut stake_amount = self.staked;
-                stake_amount.era = era + 1;
+                stake_amount.era = era.saturating_add(1);
                 stake_amount.period = current_period_info.number;
                 stake_amount.add(amount, current_period_info.subperiod);
                 self.staked_future = Some(stake_amount);
@@ -1614,15 +1614,10 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
     /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
     pub fn try_consume(&mut self, dapp_id: DAppId) -> Result<(Balance, TierId), DAppTierError> {
         // Check if dApp Id exists.
-        let dapp_idx = match self
+        let dapp_idx = self
             .dapps
             .binary_search_by(|entry| entry.dapp_id.cmp(&dapp_id))
-        {
-            Ok(idx) => idx,
-            _ => {
-                return Err(DAppTierError::NoDAppInTiers);
-            }
-        };
+            .map_err(|_| DAppTierError::NoDAppInTiers)?;
 
         match self.dapps.get_mut(dapp_idx) {
             Some(dapp_tier) => {

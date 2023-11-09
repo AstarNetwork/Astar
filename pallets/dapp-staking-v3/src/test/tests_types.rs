@@ -118,7 +118,7 @@ fn protocol_state_basic_checks() {
     // Toggle new period type check - 'Voting' to 'BuildAndEarn'
     let subperiod_end_era_1 = 23;
     let next_era_start_1 = 41;
-    protocol_state.into_next_subperiod(subperiod_end_era_1, next_era_start_1);
+    protocol_state.advance_to_next_subperiod(subperiod_end_era_1, next_era_start_1);
     assert_eq!(protocol_state.subperiod(), Subperiod::BuildAndEarn);
     assert_eq!(
         protocol_state.period_number(),
@@ -132,7 +132,7 @@ fn protocol_state_basic_checks() {
     // Toggle from 'BuildAndEarn' over to 'Voting'
     let subperiod_end_era_2 = 24;
     let next_era_start_2 = 91;
-    protocol_state.into_next_subperiod(subperiod_end_era_2, next_era_start_2);
+    protocol_state.advance_to_next_subperiod(subperiod_end_era_2, next_era_start_2);
     assert_eq!(protocol_state.subperiod(), Subperiod::Voting);
     assert_eq!(
         protocol_state.period_number(),
