@@ -19,7 +19,7 @@
 //! Astar chain specifications.
 
 use astar_runtime::{
-    wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, BlockRewardConfig, EVMConfig,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, BlockRewardConfig, EVMConfig,
     ParachainInfoConfig, Precompiles, Signature, SystemConfig, ASTR,
 };
 use cumulus_primitives_core::ParaId;
@@ -155,10 +155,6 @@ fn make_genesis(
                 })
                 .collect(),
         },
-        base_fee: BaseFeeConfig::new(
-            sp_core::U256::from(1_000_000_000),
-            sp_runtime::Permill::zero(),
-        ),
         ethereum: Default::default(),
         polkadot_xcm: Default::default(),
         assets: Default::default(),
