@@ -439,7 +439,7 @@ impl block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryP
 }
 
 parameter_types! {
-    pub const MaxBlockRewardAmount: Balance = 2_664 * MILLIAST;
+    pub const MaxBlockRewardAmount: Balance = 230_718 * MILLIAST;
 }
 
 impl block_rewards_hybrid::Config for Runtime {

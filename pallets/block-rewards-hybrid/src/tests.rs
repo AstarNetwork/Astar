@@ -68,12 +68,12 @@ fn reward_distribution_config_is_consistent() {
     // 4
     // 100%
     let reward_config = RewardDistributionConfig {
-        treasury_percent: Perbill::from_percent(3),
-        base_staker_percent: Perbill::from_percent(14),
-        dapps_percent: Perbill::from_percent(18),
-        collators_percent: Perbill::from_percent(31),
-        adjustable_percent: Perbill::from_percent(34),
-        ideal_dapps_staking_tvl: Zero::zero(),
+        treasury_percent: Perbill::from_rational(4663701u32, 100000000u32),
+        base_staker_percent: Perbill::from_rational(2309024u32, 10000000u32),
+        dapps_percent: Perbill::from_rational(173094531u32, 1000000000u32),
+        collators_percent: Perbill::from_rational(29863296u32, 1000000000u32),
+        adjustable_percent: Perbill::from_rational(519502763u32, 1000000000u32),
+        ideal_dapps_staking_tvl: Perbill::from_percent(60),
     };
     assert!(reward_config.is_consistent());
 }

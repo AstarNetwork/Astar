@@ -167,7 +167,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 114,
+    spec_version: 115,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -553,7 +553,7 @@ impl block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryP
 }
 
 parameter_types! {
-    pub const MaxBlockRewardAmount: Balance = 2_530 * MILLISBY;
+    pub const MaxBlockRewardAmount: Balance = 230_718 * MILLISBY;
 }
 
 impl block_rewards_hybrid::Config for Runtime {
@@ -1312,10 +1312,44 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
+pub struct HybridInflationModelMigration;
+impl OnRuntimeUpgrade for HybridInflationModelMigration {
+    fn on_runtime_upgrade() -> Weight {
+        let mut reward_config = block_rewards_hybrid::RewardDistributionConfig {
+            // 4.66%
+            treasury_percent: Perbill::from_rational(4663701u32, 100000000u32),
+            // 23.09%
+            base_staker_percent: Perbill::from_rational(2309024u32, 10000000u32),
+            // 17.31%
+            dapps_percent: Perbill::from_rational(173094531u32, 1000000000u32),
+            // 2.99%
+            collators_percent: Perbill::from_rational(29863296u32, 1000000000u32),
+            // 51.95%
+            adjustable_percent: Perbill::from_rational(519502763u32, 1000000000u32),
+            // 60.00%
+            ideal_dapps_staking_tvl: Perbill::from_percent(60),
+        };
+
+        // This HAS to be tested prior to update - we need to ensure that config is consistent
+        #[cfg(feature = "try-runtime")]
+        assert!(reward_config.is_consistent());
+
+        // This should never execute but we need to have code in place that ensures config is consistent
+        if !reward_config.is_consistent() {
+            reward_config = Default::default();
+        }
+
+        block_rewards_hybrid::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
+
+        <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(1)
+    }
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = ();
+pub type Migrations = HybridInflationModelMigration;
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
