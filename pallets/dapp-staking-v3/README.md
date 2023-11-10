@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Astar and Shiden networks provide a unique way for developers to earn rewards by developing products that native token holdes decide to support.
+Astar and Shiden networks provide a unique way for developers to earn rewards by developing products that native token holders decide to support.
 
 The principle is simple - stakers lock their tokens to _stake_ on a dApp, and if the dApp attracts enough support, it is rewarded in native currency, derived from the inflation.
 In turn stakers are rewarded for locking & staking their tokens.

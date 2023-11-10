@@ -454,10 +454,9 @@ pub mod pallet {
             );
 
             // Prepare tier configuration and verify its correctness
-            let number_of_slots = self
-                .slots_per_tier
-                .iter()
-                .fold(0, |acc, &slots| acc + slots);
+            let number_of_slots = self.slots_per_tier.iter().fold(0_u16, |acc, &slots| {
+                acc.checked_add(slots).expect("Overflow")
+            });
             let tier_config = TiersConfiguration::<T::NumberOfTiers> {
                 number_of_slots,
                 slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
@@ -1269,6 +1268,7 @@ pub mod pallet {
                 reward_sum.saturating_accrue(staker_reward);
             }
 
+            // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
             // Account exists since it has locked funds.
             T::Currency::deposit_into_existing(&account, reward_sum)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
@@ -1332,6 +1332,7 @@ pub mod pallet {
                 Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
                     * period_end_info.bonus_reward_pool;
 
+            // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
             // Account exists since it has locked funds.
             T::Currency::deposit_into_existing(&account, bonus_reward)
                 .map_err(|_| Error::<T>::InternalClaimStakerError)?;
@@ -1358,6 +1359,8 @@ pub mod pallet {
             #[pallet::compact] era: EraNumber,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
+
+            // TODO: Shall we make sure only dApp owner or beneficiary can trigger the claim?
             let _ = ensure_signed(origin)?;
 
             let dapp_info =
@@ -1385,6 +1388,7 @@ pub mod pallet {
 
             // Get reward destination, and deposit the reward.
             let beneficiary = dapp_info.reward_beneficiary();
+            // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
             T::Currency::deposit_creating(beneficiary, amount);
 
             // Write back updated struct to prevent double reward claims
@@ -1506,6 +1510,9 @@ pub mod pallet {
 
         /// Used to force a change of era or subperiod.
         /// The effect isn't immediate but will happen on the next block.
+        ///
+        /// Used for testing purposes, when we want to force an era change, or a subperiod change.
+        /// Not intended to be used in production, except in case of unforseen circumstances.
         ///
         /// Can only be called by manager origin.
         #[pallet::call_index(16)]
