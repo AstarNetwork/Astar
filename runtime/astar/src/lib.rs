@@ -62,7 +62,7 @@ use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
-        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Bounded, ConvertInto,
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Zero,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
@@ -535,7 +535,7 @@ impl AddressToAssetId<AssetId> for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 10 * INIT_SUPPLY_FACTOR * ASTR;
+    pub const AssetDeposit: Balance = 1000 * ASTR;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
@@ -707,7 +707,7 @@ parameter_types! {
     pub DefaultBaseFeePerGas: U256 = U256::from(1_470_000_000_000_u128);
     pub MinBaseFeePerGas: U256 = U256::from(800_000_000_000_u128);
     pub MaxBaseFeePerGas: U256 = U256::from(80_000_000_000_000_u128);
-    pub StepLimitRatio: Perquintill = Perquintill::from_rational(5_u128, 100_000);
+    pub StepLimitRatio: Perquintill = Perquintill::from_rational(93_u128, 1_000_000);
 }
 
 /// Simple wrapper for fetching current native transaction fee weight fee multiplier.
@@ -1004,7 +1004,7 @@ construct_runtime!(
 
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
-        DynamicEvmBaseFee: pallet_base_fee = 63,
+        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = 63,
 
         Contracts: pallet_contracts = 70,
 
