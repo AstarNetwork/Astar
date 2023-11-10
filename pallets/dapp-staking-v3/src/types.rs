@@ -988,6 +988,7 @@ impl SingularStakingInfo {
 
     /// Stake the specified amount on the contract, for the specified subperiod.
     pub fn stake(&mut self, amount: Balance, subperiod: Subperiod) {
+        // TODO: if we keep `StakeAmount` type here, consider including the era as well for consistency
         self.staked.add(amount, subperiod);
     }
 
