@@ -657,7 +657,6 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        // in Astar, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mASTR:
         let p = WeightFeeFactor::get();
         let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec::smallvec![WeightToFeeCoefficient {
@@ -1064,7 +1063,7 @@ impl OnRuntimeUpgrade for DynamicEvmBaseFeeMigration {
         // Set the init value to what was set before on the old `BaseFee` pallet.
         pallet_dynamic_evm_base_fee::BaseFeePerGas::<Runtime>::put(U256::from(1_000_000_000_u128));
 
-        // Shiden's multiplier is so low that we have to set it to minimum value directly.
+        // Astar's multiplier should be set to lowest value to keep native transaction price as close as possible to the legacy.
         pallet_transaction_payment::NextFeeMultiplier::<Runtime>::put(MinimumMultiplier::get());
 
         // Set init storage version for the pallet
