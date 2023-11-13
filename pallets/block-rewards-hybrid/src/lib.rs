@@ -242,6 +242,7 @@ pub mod pallet {
                 collators_reward,
             }
         }
+
         /// Distribute reward between beneficiaries.
         ///
         /// # Arguments
@@ -348,7 +349,7 @@ impl RewardDistributionConfig {
 /// Represents rewards distribution balances for each beneficiary
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-struct Rewards {
+pub struct Rewards {
     treasury_reward: Balance,
     staker_reward: Balance,
     dapps_reward: Balance,

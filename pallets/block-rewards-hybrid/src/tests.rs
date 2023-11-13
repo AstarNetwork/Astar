@@ -388,7 +388,7 @@ impl FreeBalanceSnapshot {
             post_reward_state.treasury
         );
         assert_eq!(
-            self.stakers + rewards.base_staker_reward + rewards.adjustable_staker_reward,
+            self.stakers + rewards.staker_reward,
             post_reward_state.stakers
         );
         assert_eq!(
@@ -397,16 +397,6 @@ impl FreeBalanceSnapshot {
         );
         assert_eq!(self.dapps + rewards.dapps_reward, post_reward_state.dapps);
     }
-}
-
-/// Represents reward distribution balances for a single distribution.
-#[derive(PartialEq, Eq, Clone, RuntimeDebug)]
-struct Rewards {
-    treasury_reward: Balance,
-    base_staker_reward: Balance,
-    dapps_reward: Balance,
-    collators_reward: Balance,
-    adjustable_staker_reward: Balance,
 }
 
 impl Rewards {
@@ -439,21 +429,14 @@ impl Rewards {
         // Adjustable reward portions
         let adjustable_staker_reward = factor * adjustable_reward;
 
+        let staker_reward = base_staker_reward + adjustable_staker_reward;
+
         Self {
             treasury_reward,
-            base_staker_reward,
+            staker_reward,
             dapps_reward,
             collators_reward,
-            adjustable_staker_reward,
         }
-    }
-
-    fn sum(&self) -> Balance {
-        self.base_staker_reward
-            + self.adjustable_staker_reward
-            + self.collators_reward
-            + self.dapps_reward
-            + self.treasury_reward
     }
 }
 
