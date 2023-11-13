@@ -192,31 +192,31 @@ ethereum = { version = "0.14.0", default-features = false }
 
 # Frontier
 # (wasm)
-fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-fp-self-contained = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false, features = ["forbid-evm-reentrancy"] }
-pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false, features = ["forbid-evm-reentrancy"] }
-pallet-evm-precompile-blake2 = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-pallet-evm-precompile-bn128 = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-pallet-evm-precompile-dispatch = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-pallet-evm-precompile-ed25519 = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-pallet-evm-precompile-modexp = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-pallet-evm-precompile-sha3fips = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-pallet-evm-precompile-simple = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-pallet-evm-chain-id = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-fp-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
-fp-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", default-features = false }
+fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+fp-self-contained = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false, features = ["forbid-evm-reentrancy"] }
+pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false, features = ["forbid-evm-reentrancy"] }
+pallet-evm-precompile-blake2 = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+pallet-evm-precompile-bn128 = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+pallet-evm-precompile-dispatch = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+pallet-evm-precompile-ed25519 = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+pallet-evm-precompile-modexp = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+pallet-evm-precompile-sha3fips = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+pallet-evm-chain-id = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+fp-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
+fp-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", default-features = false }
 
 # (native)
-fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43" }
-fc-db = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43" }
-fc-mapping-sync = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43" }
-fc-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43", features = ["rpc-binary-search-estimate"] }
-fc-rpc-core = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43" }
-fp-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43" }
-fp-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43" }
-fc-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.43" }
+fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue" }
+fc-db = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue" }
+fc-mapping-sync = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue" }
+fc-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue", features = ["rpc-binary-search-estimate"] }
+fc-rpc-core = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue" }
+fp-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue" }
+fp-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue" }
+fc-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "fix/shiden-issue" }
 
 # Cumulus
 # (wasm)
