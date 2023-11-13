@@ -153,6 +153,7 @@ fn dapp_info_basic_checks() {
         id: 7,
         state: DAppState::Registered,
         reward_destination: None,
+        tier_label: None,
     };
 
     // Owner receives reward in case no beneficiary is set
@@ -1374,6 +1375,7 @@ fn contract_stake_info_get_works() {
     let contract_stake = ContractStakeAmount {
         staked: info_1,
         staked_future: Some(info_2),
+        tier_label: None,
     };
 
     // Sanity check

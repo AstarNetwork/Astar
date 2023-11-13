@@ -372,7 +372,7 @@ pub mod pallet {
     /// Information about how much has been staked on a smart contract in some era or period.
     #[pallet::storage]
     pub type ContractStake<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::SmartContract, ContractStakeAmount, ValueQuery>;
+        StorageMap<_, Twox64Concat, DAppId, ContractStakeAmount, ValueQuery>;
 
     /// General information about the current era.
     #[pallet::storage]
@@ -415,11 +415,6 @@ pub mod pallet {
     #[pallet::storage]
     pub type DAppTiers<T: Config> =
         StorageMap<_, Twox64Concat, EraNumber, DAppTierRewardsFor<T>, OptionQuery>;
-
-    // TODO: this is experimental, please don't review
-    #[pallet::storage]
-    pub type ExperimentalContractEntries<T: Config> =
-        StorageMap<_, Twox64Concat, EraNumber, ContractEntriesFor<T>, OptionQuery>;
 
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
@@ -679,6 +674,7 @@ pub mod pallet {
                     id: dapp_id,
                     state: DAppState::Registered,
                     reward_destination: None,
+                    tier_label: None,
                 },
             );
 
@@ -787,25 +783,18 @@ pub mod pallet {
 
             let current_era = ActiveProtocolState::<T>::get().era;
 
-            IntegratedDApps::<T>::try_mutate(
-                &smart_contract,
-                |maybe_dapp_info| -> DispatchResult {
-                    let dapp_info = maybe_dapp_info
-                        .as_mut()
-                        .ok_or(Error::<T>::ContractNotFound)?;
+            let mut dapp_info =
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
-                    ensure!(
-                        dapp_info.state == DAppState::Registered,
-                        Error::<T>::NotOperatedDApp
-                    );
+            ensure!(
+                dapp_info.state == DAppState::Registered,
+                Error::<T>::NotOperatedDApp
+            );
 
-                    dapp_info.state = DAppState::Unregistered(current_era);
+            ContractStake::<T>::remove(&dapp_info.id);
 
-                    Ok(())
-                },
-            )?;
-
-            ContractStake::<T>::remove(&smart_contract);
+            dapp_info.state = DAppState::Unregistered(current_era);
+            IntegratedDApps::<T>::insert(&smart_contract, dapp_info);
 
             Self::deposit_event(Event::<T>::DAppUnregistered {
                 smart_contract,
@@ -990,10 +979,9 @@ pub mod pallet {
 
             ensure!(amount > 0, Error::<T>::ZeroAmount);
 
-            ensure!(
-                Self::is_active(&smart_contract),
-                Error::<T>::NotOperatedDApp
-            );
+            let dapp_info =
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
+            ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let stake_era = protocol_state.era;
@@ -1069,7 +1057,7 @@ pub mod pallet {
 
             // 3.
             // Update `ContractStake` storage with the new stake amount on the specified contract.
-            let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
+            let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
             contract_stake_info.stake(amount, protocol_state.period_info, stake_era);
 
             // 4.
@@ -1082,7 +1070,7 @@ pub mod pallet {
             // Update remaining storage entries
             Self::update_ledger(&account, ledger);
             StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
-            ContractStake::<T>::insert(&smart_contract, contract_stake_info);
+            ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
 
             Self::deposit_event(Event::<T>::Stake {
                 account,
@@ -1109,10 +1097,9 @@ pub mod pallet {
 
             ensure!(amount > 0, Error::<T>::ZeroAmount);
 
-            ensure!(
-                Self::is_active(&smart_contract),
-                Error::<T>::NotOperatedDApp
-            );
+            let dapp_info =
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
+            ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let unstake_era = protocol_state.era;
@@ -1167,7 +1154,7 @@ pub mod pallet {
 
             // 3.
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.
-            let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
+            let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
             contract_stake_info.unstake(amount, protocol_state.period_info, unstake_era);
 
             // 4.
@@ -1178,7 +1165,7 @@ pub mod pallet {
 
             // 5.
             // Update remaining storage entries
-            ContractStake::<T>::insert(&smart_contract, contract_stake_info);
+            ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
 
             if new_staking_info.is_empty() {
                 ledger.contract_stake_count.saturating_dec();
@@ -1615,31 +1602,14 @@ pub mod pallet {
             period: PeriodNumber,
             dapp_reward_pool: Balance,
         ) -> DAppTierRewardsFor<T> {
-            // TODO - by breaking this into multiple steps, if they are too heavy for a single block, we can distribute them between multiple blocks.
-            // Benchmarks will show this, but I don't believe it will be needed, especially with increased block capacity we'll get with async backing.
-            // Even without async backing though, we should have enough capacity to handle this.
-            // UPDATE: might work with async backing, but right now we could handle up to 150 dApps before exceeding the PoV size.
-
-            // UPDATE2: instead of taking the approach of reading an ever increasing amount of entries from storage,  we can instead adopt an approach
-            // of eficiently storing composite information into `BTreeMap`. The approach is essentially the same as the one used below to store rewards.
-            // Each time `stake` or `unstake` are called, corresponding entries are updated. This way we can keep track of all the contract stake in a single DB entry.
-            // To make the solution more scalable, we could 'split' stake entries into spans, similar as rewards are handled now.
-            //
-            // Experiment with an 'experimental' entry shows PoV size of ~7kB induced for entry that can hold up to 100 entries.
-
             let mut dapp_stakes = Vec::with_capacity(IntegratedDApps::<T>::count() as usize);
 
             // 1.
-            // Iterate over all registered dApps, and collect their stake amount.
+            // Iterate over all staked dApps.
             // This is bounded by max amount of dApps we allow to be registered.
-            for (smart_contract, dapp_info) in IntegratedDApps::<T>::iter() {
-                // Skip unregistered dApps
-                if dapp_info.state != DAppState::Registered {
-                    continue;
-                }
-
+            for (dapp_id, stake_amount) in ContractStake::<T>::iter() {
                 // Skip dApps which don't have ANY amount staked (TODO: potential improvement is to prune all dApps below minimum threshold)
-                let stake_amount = match ContractStake::<T>::get(&smart_contract).get(era, period) {
+                let stake_amount = match stake_amount.get(era, period) {
                     Some(stake_amount) if !stake_amount.total().is_zero() => stake_amount,
                     _ => continue,
                 };
@@ -1650,7 +1620,7 @@ pub mod pallet {
                 // In case of 'must', reduce appropriate tier size, and insert them at the end
                 // For good to have, we can insert them immediately, and then see if we need to adjust them later.
                 // Anyhow, labels bring complexity. For starters, we should only deliver the one for 'bootstraping' purposes.
-                dapp_stakes.push((dapp_info.id, stake_amount.total()));
+                dapp_stakes.push((dapp_id, stake_amount.total()));
             }
 
             // 2.

@@ -286,6 +286,8 @@ pub struct DAppInfo<AccountId> {
     pub state: DAppState,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
     pub reward_destination: Option<AccountId>,
+    /// If `Some(_)` dApp has a tier label which can influence the tier assignment.
+    pub tier_label: Option<TierLabel>,
 }
 
 impl<AccountId> DAppInfo<AccountId> {
@@ -295,6 +297,11 @@ impl<AccountId> DAppInfo<AccountId> {
             Some(account_id) => account_id,
             None => &self.owner,
         }
+    }
+
+    /// `true` if dApp is still active (registered), `false` otherwise.
+    pub fn is_active(&self) -> bool {
+        self.state == DAppState::Registered
     }
 }
 
@@ -1056,7 +1063,10 @@ pub struct ContractStakeAmount {
     pub staked: StakeAmount,
     /// Staked amount in the next or 'future' era.
     pub staked_future: Option<StakeAmount>,
+    /// Tier label for the contract, if any.
+    pub tier_label: Option<TierLabel>,
 }
+
 impl ContractStakeAmount {
     /// `true` if series is empty, `false` otherwise.
     pub fn is_empty(&self) -> bool {
@@ -1649,6 +1659,12 @@ pub enum DAppTierError {
     InternalError,
 }
 
+/// Tier labels can be assigned to dApps in order to provide them benefits (or drawbacks) when being assigned into a tier.
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+pub enum TierLabel {
+    // Empty for now, on purpose.
+}
+
 ///////////////////////////////////////////////////////////////////////
 ////////////   MOVE THIS TO SOME PRIMITIVES CRATE LATER    ////////////
 ///////////////////////////////////////////////////////////////////////
@@ -1682,39 +1698,3 @@ pub trait RewardPoolProvider {
     /// Get the bonus pool for stakers.
     fn bonus_reward_pool() -> Balance;
 }
-
-// TODO: these are experimental, don't review
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-pub struct ExperimentalContractStakeEntry {
-    #[codec(compact)]
-    pub dapp_id: DAppId,
-    #[codec(compact)]
-    pub voting: Balance,
-    #[codec(compact)]
-    pub build_and_earn: Balance,
-}
-
-#[derive(
-    Encode,
-    Decode,
-    MaxEncodedLen,
-    RuntimeDebugNoBound,
-    PartialEqNoBound,
-    EqNoBound,
-    CloneNoBound,
-    TypeInfo,
-)]
-#[scale_info(skip_type_params(MD, NT))]
-pub struct ExperimentalContractStakeEntries<MD: Get<u32>, NT: Get<u32>> {
-    /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-    pub dapps: BoundedVec<ExperimentalContractStakeEntry, MD>,
-    /// Rewards for each tier. First entry refers to the first tier, and so on.
-    pub rewards: BoundedVec<Balance, NT>,
-    /// Period during which this struct was created.
-    #[codec(compact)]
-    pub period: PeriodNumber,
-}
-
-// TODO: temp experimental type, don't review
-pub type ContractEntriesFor<T> =
-    ExperimentalContractStakeEntries<MaxNumberOfContractsU32<T>, <T as Config>::NumberOfTiers>;

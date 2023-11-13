@@ -47,7 +47,7 @@ pub(crate) struct MemorySnapshot {
         ),
         SingularStakingInfo,
     >,
-    contract_stake: HashMap<<Test as Config>::SmartContract, ContractStakeAmount>,
+    contract_stake: HashMap<DAppId, ContractStakeAmount>,
     era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
     period_end: HashMap<PeriodNumber, PeriodEndInfo>,
     dapp_tiers: HashMap<EraNumber, DAppTierRewardsFor<Test>>,
@@ -187,7 +187,9 @@ pub(crate) fn assert_unregister(smart_contract: &MockSmartContract) {
         IntegratedDApps::<Test>::get(&smart_contract).unwrap().state,
         DAppState::Unregistered(pre_snapshot.active_protocol_state.era),
     );
-    assert!(!ContractStake::<Test>::contains_key(&smart_contract));
+    assert!(!ContractStake::<Test>::contains_key(
+        &IntegratedDApps::<Test>::get(&smart_contract).unwrap().id
+    ));
 }
 
 /// Lock funds into dApp staking and assert success.
@@ -431,7 +433,7 @@ pub(crate) fn assert_stake(
         .get(&(account, smart_contract.clone()));
     let pre_contract_stake = pre_snapshot
         .contract_stake
-        .get(&smart_contract)
+        .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
         .map_or(ContractStakeAmount::default(), |series| series.clone());
     let pre_era_info = pre_snapshot.current_era_info;
 
@@ -460,7 +462,7 @@ pub(crate) fn assert_stake(
         .expect("Entry must exist since 'stake' operation was successfull.");
     let post_contract_stake = post_snapshot
         .contract_stake
-        .get(&smart_contract)
+        .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
         .expect("Entry must exist since 'stake' operation was successfull.");
     let post_era_info = post_snapshot.current_era_info;
 
@@ -580,7 +582,7 @@ pub(crate) fn assert_unstake(
         .expect("Entry must exist since 'unstake' is being called.");
     let pre_contract_stake = pre_snapshot
         .contract_stake
-        .get(&smart_contract)
+        .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
         .expect("Entry must exist since 'unstake' is being called.");
     let pre_era_info = pre_snapshot.current_era_info;
 
@@ -616,7 +618,7 @@ pub(crate) fn assert_unstake(
     let post_ledger = post_snapshot.ledger.get(&account).unwrap();
     let post_contract_stake = post_snapshot
         .contract_stake
-        .get(&smart_contract)
+        .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
         .expect("Entry must exist since 'stake' operation was successfull.");
     let post_era_info = post_snapshot.current_era_info;
 

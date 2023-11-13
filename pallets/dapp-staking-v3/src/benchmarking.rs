@@ -217,17 +217,6 @@ mod benchmarks {
         }
     }
 
-    #[benchmark]
-    fn experimental_read() {
-        // Prepare init config (protocol state, tier params & config, etc.)
-        initial_config::<T>();
-
-        #[block]
-        {
-            let _ = ExperimentalContractEntries::<T>::get(10);
-        }
-    }
-
     impl_benchmark_test_suite!(
         Pallet,
         crate::benchmarking::tests::new_test_ext(),

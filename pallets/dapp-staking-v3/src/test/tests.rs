@@ -59,11 +59,6 @@ fn print_test() {
             ">>> Max encoded size for dapp tier rewards: {:?}",
             crate::DAppTierRewards::<RewardSize, TierSize>::max_encoded_len()
         );
-
-        println!(
-            ">>> Experimental storage entry read {:?}",
-            crate::dsv3_weight::SubstrateWeight::<Test>::experimental_read()
-        );
     })
 }
 
