@@ -96,6 +96,7 @@ ethers = { version = "2.0.9", default_features = false }
 # Substrate
 # (wasm)
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43", default-features = false }
+sp-core-hashing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43", default-features = false }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43", default-features = false }
@@ -301,6 +302,7 @@ assets-chain-extension-types = { path = "./chain-extensions/types/assets", defau
 unified-accounts-chain-extension-types = { path = "./chain-extensions/types/unified-accounts", default-features = false }
 
 precompile-utils = { path = "./precompiles/utils", default-features = false }
+precompile-utils-v2 = { path = "./precompiles/utils_v2", default-features = false }
 
 local-runtime = { path = "./runtime/local", default-features = false }
 shibuya-runtime = { path = "./runtime/shibuya", default-features = false }
