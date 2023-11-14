@@ -112,6 +112,8 @@ pub enum AccountLedgerError {
     NothingToClaim,
     /// Rewards have already been claimed
     AlreadyClaimed,
+    /// Attempt to crate the iterator failed due to incorrect data.
+    InvalidIterator,
 }
 
 /// Distinct subperiods in dApp staking protocol.
@@ -676,22 +678,23 @@ where
         period_end: Option<EraNumber>,
     ) -> Result<EraStakePairIter, AccountLedgerError> {
         // Main entry exists, but era isn't 'in history'
-        if !self.staked.is_empty() && era < self.staked.era {
-            return Err(AccountLedgerError::NothingToClaim);
+        if !self.staked.is_empty() {
+            ensure!(era >= self.staked.era, AccountLedgerError::NothingToClaim);
         } else if let Some(stake_amount) = self.staked_future {
             // Future entry exists, but era isn't 'in history'
-            if era < stake_amount.era {
-                return Err(AccountLedgerError::NothingToClaim);
-            }
+            ensure!(era >= stake_amount.era, AccountLedgerError::NothingToClaim);
         }
 
         // There are multiple options:
         // 1. We only have future entry, no current entry
-        // 2. We have both current and future entry
-        // 3. We only have current entry, no future entry
+        // 2. We have both current and future entry, but are only claiming 1 era
+        // 3. We have both current and future entry, and are claiming multiple eras
+        // 4. We only have current entry, no future entry
         let (span, maybe_first) = if let Some(stake_amount) = self.staked_future {
             if self.staked.is_empty() {
                 ((stake_amount.era, era, stake_amount.total()), None)
+            } else if self.staked.era == era {
+                ((era, era, self.staked.total()), None)
             } else {
                 (
                     (stake_amount.era, era, stake_amount.total()),
@@ -702,7 +705,9 @@ where
             ((self.staked.era, era, self.staked.total()), None)
         };
 
-        let result = EraStakePairIter::new(span, maybe_first);
+        println!("span: {:?}, maybe_first: {:?}", span, maybe_first);
+        let result = EraStakePairIter::new(span, maybe_first)
+            .map_err(|_| AccountLedgerError::InvalidIterator)?;
 
         // Rollover future to 'current' stake amount
         if let Some(stake_amount) = self.staked_future.take() {
@@ -750,20 +755,25 @@ impl EraStakePairIter {
     pub fn new(
         span: (EraNumber, EraNumber, Balance),
         maybe_first: Option<(EraNumber, Balance)>,
-    ) -> Self {
-        if let Some((era, _amount)) = maybe_first {
-            debug_assert!(
-                span.0 == era + 1,
-                "The 'other', if it exists, must cover era preceding the span."
-            );
+    ) -> Result<Self, ()> {
+        // First era must be smaller or equal to the last era.
+        if span.0 > span.1 {
+            return Err(());
+        }
+        // If 'maybe_first' is defined, it must exactly match the `span.0 - 1` era value.
+        match maybe_first {
+            Some((era, _)) if span.0.saturating_sub(era) != 1 => {
+                return Err(());
+            }
+            _ => (),
         }
 
-        Self {
+        Ok(Self {
             maybe_first,
             start_era: span.0,
             end_era: span.1,
             amount: span.2,
-        }
+        })
     }
 }
 
@@ -872,12 +882,11 @@ impl StakeAmount {
 /// Info about current era, including the rewards, how much is locked, unlocking, etc.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct EraInfo {
+    // TODO: can some of these values be cleaned up? We no longer need to keep track of two separate lock values?
     /// How much balance is considered to be locked in the current era.
-    /// This value influences the reward distribution.
     #[codec(compact)]
     pub active_era_locked: Balance,
     /// How much balance is locked in dApp staking, in total.
-    /// For rewards, this amount isn't relevant for the current era, but only from the next one.
     #[codec(compact)]
     pub total_locked: Balance,
     /// How much balance is undergoing unlocking process.
@@ -953,6 +962,7 @@ impl EraInfo {
             }
             Some(Subperiod::BuildAndEarn) | None => {
                 self.current_stake_amount = self.next_stake_amount;
+                self.next_stake_amount.era.saturating_inc();
             }
         };
     }
