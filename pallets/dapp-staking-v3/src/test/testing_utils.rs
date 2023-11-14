@@ -19,12 +19,13 @@
 use crate::test::mock::*;
 use crate::types::*;
 use crate::{
-    pallet as pallet_dapp_staking, ActiveProtocolState, BlockNumberFor, ContractStake,
-    CurrentEraInfo, DAppId, Event, IntegratedDApps, Ledger, NextDAppId, StakerInfo,
+    pallet::Config, ActiveProtocolState, BlockNumberFor, ContractStake, CurrentEraInfo, DAppId,
+    DAppTiers, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, PeriodEnd, PeriodEndInfo,
+    StakerInfo,
 };
 
 use frame_support::{assert_ok, traits::Get};
-use sp_runtime::traits::Zero;
+use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
 
 /// Helper struct used to store the entire pallet state snapshot.
@@ -35,19 +36,21 @@ pub(crate) struct MemorySnapshot {
     next_dapp_id: DAppId,
     current_era_info: EraInfo,
     integrated_dapps: HashMap<
-        <Test as pallet_dapp_staking::Config>::SmartContract,
+        <Test as Config>::SmartContract,
         DAppInfo<<Test as frame_system::Config>::AccountId>,
     >,
     ledger: HashMap<<Test as frame_system::Config>::AccountId, AccountLedgerFor<Test>>,
     staker_info: HashMap<
         (
             <Test as frame_system::Config>::AccountId,
-            <Test as pallet_dapp_staking::Config>::SmartContract,
+            <Test as Config>::SmartContract,
         ),
         SingularStakingInfo,
     >,
-    contract_stake:
-        HashMap<<Test as pallet_dapp_staking::Config>::SmartContract, ContractStakingInfoSeries>,
+    contract_stake: HashMap<<Test as Config>::SmartContract, ContractStakeAmount>,
+    era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
+    period_end: HashMap<PeriodNumber, PeriodEndInfo>,
+    dapp_tiers: HashMap<EraNumber, DAppTierRewardsFor<Test>>,
 }
 
 impl MemorySnapshot {
@@ -63,6 +66,9 @@ impl MemorySnapshot {
                 .map(|(k1, k2, v)| ((k1, k2), v))
                 .collect(),
             contract_stake: ContractStake::<Test>::iter().collect(),
+            era_rewards: EraRewards::<Test>::iter().collect(),
+            period_end: PeriodEnd::<Test>::iter().collect(),
+            dapp_tiers: DAppTiers::<Test>::iter().collect(),
         }
     }
 
@@ -108,13 +114,13 @@ pub(crate) fn assert_register(owner: AccountId, smart_contract: &MockSmartContra
 }
 
 /// Update dApp reward destination and assert success
-pub(crate) fn assert_set_dapp_reward_destination(
+pub(crate) fn assert_set_dapp_reward_beneficiary(
     owner: AccountId,
     smart_contract: &MockSmartContract,
     beneficiary: Option<AccountId>,
 ) {
     // Change reward destination
-    assert_ok!(DappStaking::set_dapp_reward_destination(
+    assert_ok!(DappStaking::set_dapp_reward_beneficiary(
         RuntimeOrigin::signed(owner),
         smart_contract.clone(),
         beneficiary,
@@ -181,6 +187,7 @@ pub(crate) fn assert_unregister(smart_contract: &MockSmartContract) {
         IntegratedDApps::<Test>::get(&smart_contract).unwrap().state,
         DAppState::Unregistered(pre_snapshot.active_protocol_state.era),
     );
+    assert!(!ContractStake::<Test>::contains_key(&smart_contract));
 }
 
 /// Lock funds into dApp staking and assert success.
@@ -242,7 +249,7 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
 
         // When unlocking would take account below the minimum lock threshold, unlock everything
         let locked_amount = pre_ledger.active_locked_amount();
-        let min_locked_amount = <Test as pallet_dapp_staking::Config>::MinimumLockedAmount::get();
+        let min_locked_amount = <Test as Config>::MinimumLockedAmount::get();
         if locked_amount.saturating_sub(possible_unlock_amount) < min_locked_amount {
             locked_amount
         } else {
@@ -357,6 +364,17 @@ pub(crate) fn assert_claim_unlocked(account: AccountId) {
         post_snapshot.current_era_info.unlocking,
         pre_snapshot.current_era_info.unlocking - amount
     );
+
+    // In case of full withdrawal from the protocol
+    if post_ledger.is_empty() {
+        assert!(!Ledger::<Test>::contains_key(&account));
+        assert!(
+            StakerInfo::<Test>::iter_prefix_values(&account)
+                .count()
+                .is_zero(),
+            "All stake entries need to be cleaned up."
+        );
+    }
 }
 
 /// Claims the unlocked funds back into free balance of the user and assert success.
@@ -414,14 +432,12 @@ pub(crate) fn assert_stake(
     let pre_contract_stake = pre_snapshot
         .contract_stake
         .get(&smart_contract)
-        .map_or(ContractStakingInfoSeries::default(), |series| {
-            series.clone()
-        });
+        .map_or(ContractStakeAmount::default(), |series| series.clone());
     let pre_era_info = pre_snapshot.current_era_info;
 
     let stake_era = pre_snapshot.active_protocol_state.era + 1;
     let stake_period = pre_snapshot.active_protocol_state.period_number();
-    let stake_period_type = pre_snapshot.active_protocol_state.period_type();
+    let stake_subperiod = pre_snapshot.active_protocol_state.subperiod();
 
     // Stake on smart contract & verify event
     assert_ok!(DappStaking::stake(
@@ -451,7 +467,11 @@ pub(crate) fn assert_stake(
     // 1. verify ledger
     // =====================
     // =====================
-    assert_eq!(post_ledger.staked_period, Some(stake_period));
+    assert_eq!(
+        post_ledger.staked, pre_ledger.staked,
+        "Must remain exactly the same."
+    );
+    assert_eq!(post_ledger.staked_future.unwrap().period, stake_period);
     assert_eq!(
         post_ledger.staked_amount(stake_period),
         pre_ledger.staked_amount(stake_period) + amount,
@@ -462,22 +482,7 @@ pub(crate) fn assert_stake(
         pre_ledger.stakeable_amount(stake_period) - amount,
         "Stakeable amount must decrease by the 'amount'"
     );
-    match pre_ledger.last_stake_era() {
-        Some(last_stake_era) if last_stake_era == stake_era => {
-            assert_eq!(
-                post_ledger.staked.0.len(),
-                pre_ledger.staked.0.len(),
-                "Existing entry must be modified."
-            );
-        }
-        _ => {
-            assert_eq!(
-                post_ledger.staked.0.len(),
-                pre_ledger.staked.0.len() + 1,
-                "Additional entry must be added."
-            );
-        }
-    }
+    // TODO: expand with more detailed checks of staked and staked_future
 
     // 2. verify staker info
     // =====================
@@ -491,8 +496,8 @@ pub(crate) fn assert_stake(
                 "Total staked amount must increase by the 'amount'"
             );
             assert_eq!(
-                post_staker_info.staked_amount(stake_period_type),
-                pre_staker_info.staked_amount(stake_period_type) + amount,
+                post_staker_info.staked_amount(stake_subperiod),
+                pre_staker_info.staked_amount(stake_subperiod) + amount,
                 "Staked amount must increase by the 'amount'"
             );
             assert_eq!(post_staker_info.period_number(), stake_period);
@@ -509,16 +514,16 @@ pub(crate) fn assert_stake(
                 amount,
                 "Total staked amount must be equal to exactly the 'amount'"
             );
-            assert!(amount >= <Test as pallet_dapp_staking::Config>::MinimumStakeAmount::get());
+            assert!(amount >= <Test as Config>::MinimumStakeAmount::get());
             assert_eq!(
-                post_staker_info.staked_amount(stake_period_type),
+                post_staker_info.staked_amount(stake_subperiod),
                 amount,
                 "Staked amount must be equal to exactly the 'amount'"
             );
             assert_eq!(post_staker_info.period_number(), stake_period);
             assert_eq!(
                 post_staker_info.is_loyal(),
-                stake_period_type == PeriodType::Voting
+                stake_subperiod == Subperiod::Voting
             );
         }
     }
@@ -526,38 +531,22 @@ pub(crate) fn assert_stake(
     // 3. verify contract stake
     // =========================
     // =========================
-    // TODO: since default value is all zeros, maybe we can just skip the branching code and do it once?
-    match pre_contract_stake.last_stake_period() {
-        Some(last_stake_period) if last_stake_period == stake_period => {
-            assert_eq!(
-                post_contract_stake.total_staked_amount(stake_period),
-                pre_contract_stake.total_staked_amount(stake_period) + amount,
-                "Staked amount must increase by the 'amount'"
-            );
-            assert_eq!(
-                post_contract_stake.staked_amount(stake_period, stake_period_type),
-                pre_contract_stake.staked_amount(stake_period, stake_period_type) + amount,
-                "Staked amount must increase by the 'amount'"
-            );
-        }
-        _ => {
-            assert_eq!(post_contract_stake.len(), 1);
-            assert_eq!(
-                post_contract_stake.total_staked_amount(stake_period),
-                amount,
-                "Total staked amount must be equal to exactly the 'amount'"
-            );
-            assert_eq!(
-                post_contract_stake.staked_amount(stake_period, stake_period_type),
-                amount,
-                "Staked amount must be equal to exactly the 'amount'"
-            );
-        }
-    }
-    assert_eq!(post_contract_stake.last_stake_period(), Some(stake_period));
-    assert_eq!(post_contract_stake.last_stake_era(), Some(stake_era));
+    assert_eq!(
+        post_contract_stake.total_staked_amount(stake_period),
+        pre_contract_stake.total_staked_amount(stake_period) + amount,
+        "Staked amount must increase by the 'amount'"
+    );
+    assert_eq!(
+        post_contract_stake.staked_amount(stake_period, stake_subperiod),
+        pre_contract_stake.staked_amount(stake_period, stake_subperiod) + amount,
+        "Staked amount must increase by the 'amount'"
+    );
 
-    // TODO: expand this check to compare inner slices as well!
+    assert_eq!(
+        post_contract_stake.latest_stake_period(),
+        Some(stake_period)
+    );
+    assert_eq!(post_contract_stake.latest_stake_era(), Some(stake_era));
 
     // 4. verify era info
     // =========================
@@ -572,8 +561,8 @@ pub(crate) fn assert_stake(
         pre_era_info.total_staked_amount_next_era() + amount
     );
     assert_eq!(
-        post_era_info.staked_amount_next_era(stake_period_type),
-        pre_era_info.staked_amount_next_era(stake_period_type) + amount
+        post_era_info.staked_amount_next_era(stake_subperiod),
+        pre_era_info.staked_amount_next_era(stake_subperiod) + amount
     );
 }
 
@@ -597,10 +586,9 @@ pub(crate) fn assert_unstake(
 
     let _unstake_era = pre_snapshot.active_protocol_state.era;
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
-    let unstake_period_type = pre_snapshot.active_protocol_state.period_type();
+    let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
 
-    let minimum_stake_amount: Balance =
-        <Test as pallet_dapp_staking::Config>::MinimumStakeAmount::get();
+    let minimum_stake_amount: Balance = <Test as Config>::MinimumStakeAmount::get();
     let is_full_unstake =
         pre_staker_info.total_staked_amount().saturating_sub(amount) < minimum_stake_amount;
 
@@ -635,7 +623,6 @@ pub(crate) fn assert_unstake(
     // 1. verify ledger
     // =====================
     // =====================
-    assert_eq!(post_ledger.staked_period, Some(unstake_period));
     assert_eq!(
         post_ledger.staked_amount(unstake_period),
         pre_ledger.staked_amount(unstake_period) - amount,
@@ -646,7 +633,7 @@ pub(crate) fn assert_unstake(
         pre_ledger.stakeable_amount(unstake_period) + amount,
         "Stakeable amount must increase by the 'amount'"
     );
-    // TODO: maybe extend check with concrete value checks? E.g. if we modify past entry, we should check past & current entries are properly adjusted.
+    // TODO: expand with more detailed checks of staked and staked_future
 
     // 2. verify staker info
     // =====================
@@ -668,17 +655,17 @@ pub(crate) fn assert_unstake(
             "Total staked amount must decrease by the 'amount'"
         );
         assert_eq!(
-            post_staker_info.staked_amount(unstake_period_type),
+            post_staker_info.staked_amount(unstake_subperiod),
             pre_staker_info
-                .staked_amount(unstake_period_type)
+                .staked_amount(unstake_subperiod)
                 .saturating_sub(amount),
             "Staked amount must decrease by the 'amount'"
         );
 
         let is_loyal = pre_staker_info.is_loyal()
-            && !(unstake_period_type == PeriodType::BuildAndEarn
-                && post_staker_info.staked_amount(PeriodType::Voting)
-                    < pre_staker_info.staked_amount(PeriodType::Voting));
+            && !(unstake_subperiod == Subperiod::BuildAndEarn
+                && post_staker_info.staked_amount(Subperiod::Voting)
+                    < pre_staker_info.staked_amount(Subperiod::Voting));
         assert_eq!(
             post_staker_info.is_loyal(),
             is_loyal,
@@ -695,13 +682,12 @@ pub(crate) fn assert_unstake(
         "Staked amount must decreased by the 'amount'"
     );
     assert_eq!(
-        post_contract_stake.staked_amount(unstake_period, unstake_period_type),
+        post_contract_stake.staked_amount(unstake_period, unstake_subperiod),
         pre_contract_stake
-            .staked_amount(unstake_period, unstake_period_type)
+            .staked_amount(unstake_period, unstake_subperiod)
             .saturating_sub(amount),
         "Staked amount must decreased by the 'amount'"
     );
-    // TODO: extend with concrete value checks later
 
     // 4. verify era info
     // =========================
@@ -723,22 +709,315 @@ pub(crate) fn assert_unstake(
         "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
     );
 
-    if unstake_period_type == PeriodType::BuildAndEarn
-        && pre_era_info.staked_amount_next_era(PeriodType::BuildAndEarn) < amount
+    if unstake_subperiod == Subperiod::BuildAndEarn
+        && pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn) < amount
     {
-        let overflow = amount - pre_era_info.staked_amount_next_era(PeriodType::BuildAndEarn);
+        let overflow = amount - pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn);
 
         assert!(post_era_info
-            .staked_amount_next_era(PeriodType::BuildAndEarn)
+            .staked_amount_next_era(Subperiod::BuildAndEarn)
             .is_zero());
         assert_eq!(
-            post_era_info.staked_amount_next_era(PeriodType::Voting),
-            pre_era_info.staked_amount_next_era(PeriodType::Voting) - overflow
+            post_era_info.staked_amount_next_era(Subperiod::Voting),
+            pre_era_info.staked_amount_next_era(Subperiod::Voting) - overflow
         );
     } else {
         assert_eq!(
-            post_era_info.staked_amount_next_era(unstake_period_type),
-            pre_era_info.staked_amount_next_era(unstake_period_type) - amount
+            post_era_info.staked_amount_next_era(unstake_subperiod),
+            pre_era_info.staked_amount_next_era(unstake_subperiod) - amount
         );
     }
+}
+
+/// Claim staker rewards.
+pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
+    let pre_snapshot = MemorySnapshot::new();
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let pre_total_issuance = <Test as Config>::Currency::total_issuance();
+    let pre_free_balance = <Test as Config>::Currency::free_balance(&account);
+
+    // Get the first eligible era for claiming rewards
+    let first_claim_era = pre_ledger
+        .earliest_staked_era()
+        .expect("Entry must exist, otherwise 'claim' is invalid.");
+
+    // Get the apprropriate era rewards span for the 'first era'
+    let era_span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
+    let era_span_index = first_claim_era - (first_claim_era % era_span_length);
+    let era_rewards_span = pre_snapshot
+        .era_rewards
+        .get(&era_span_index)
+        .expect("Entry must exist, otherwise 'claim' is invalid.");
+
+    // Calculate the final era for claiming rewards. Also determine if this will fully claim all staked period rewards.
+    let claim_period_end = if pre_ledger.staked_period().unwrap()
+        == pre_snapshot.active_protocol_state.period_number()
+    {
+        None
+    } else {
+        Some(
+            pre_snapshot
+                .period_end
+                .get(&pre_ledger.staked_period().unwrap())
+                .expect("Entry must exist, since it's the current period.")
+                .final_era,
+        )
+    };
+
+    let (last_claim_era, is_full_claim) = if claim_period_end.is_none() {
+        (pre_snapshot.active_protocol_state.era - 1, false)
+    } else {
+        let claim_period = pre_ledger.staked_period().unwrap();
+        let period_end = pre_snapshot
+            .period_end
+            .get(&claim_period)
+            .expect("Entry must exist, since it's a past period.");
+
+        let last_claim_era = era_rewards_span.last_era().min(period_end.final_era);
+        let is_full_claim = last_claim_era == period_end.final_era;
+        (last_claim_era, is_full_claim)
+    };
+
+    assert!(
+        last_claim_era < pre_snapshot.active_protocol_state.era,
+        "Sanity check."
+    );
+
+    // Calculate the expected rewards
+    let mut rewards = Vec::new();
+    for (era, amount) in pre_ledger
+        .clone()
+        .claim_up_to_era(last_claim_era, claim_period_end)
+        .unwrap()
+    {
+        let era_reward_info = era_rewards_span
+            .get(era)
+            .expect("Entry must exist, otherwise 'claim' is invalid.");
+
+        let reward = Perbill::from_rational(amount, era_reward_info.staked)
+            * era_reward_info.staker_reward_pool;
+        if reward.is_zero() {
+            continue;
+        }
+
+        rewards.push((era, reward));
+    }
+    let total_reward = rewards
+        .iter()
+        .fold(Balance::zero(), |acc, (_, reward)| acc + reward);
+
+    //clean up possible leftover events
+    System::reset_events();
+
+    // Claim staker rewards & verify all events
+    assert_ok!(DappStaking::claim_staker_rewards(RuntimeOrigin::signed(
+        account
+    ),));
+
+    let events = dapp_staking_events();
+    assert_eq!(events.len(), rewards.len());
+    for (event, (era, reward)) in events.iter().zip(rewards.iter()) {
+        assert_eq!(
+            event,
+            &Event::<Test>::Reward {
+                account,
+                era: *era,
+                amount: *reward,
+            }
+        );
+    }
+
+    // Verify post state
+
+    let post_total_issuance = <Test as Config>::Currency::total_issuance();
+    assert_eq!(
+        post_total_issuance,
+        pre_total_issuance + total_reward,
+        "Total issuance must increase by the total reward amount."
+    );
+
+    let post_free_balance = <Test as Config>::Currency::free_balance(&account);
+    assert_eq!(
+        post_free_balance,
+        pre_free_balance + total_reward,
+        "Free balance must increase by the total reward amount."
+    );
+
+    let post_snapshot = MemorySnapshot::new();
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+
+    if is_full_claim {
+        assert_eq!(post_ledger.staked, StakeAmount::default());
+        assert!(post_ledger.staked_future.is_none());
+    } else {
+        assert_eq!(post_ledger.staked.era, last_claim_era + 1);
+        assert!(post_ledger.staked_future.is_none());
+    }
+}
+
+/// Claim staker rewards.
+pub(crate) fn assert_claim_bonus_reward(account: AccountId, smart_contract: &MockSmartContract) {
+    let pre_snapshot = MemorySnapshot::new();
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, *smart_contract))
+        .unwrap();
+    let pre_total_issuance = <Test as Config>::Currency::total_issuance();
+    let pre_free_balance = <Test as Config>::Currency::free_balance(&account);
+
+    let staked_period = pre_staker_info.period_number();
+    let stake_amount = pre_staker_info.staked_amount(Subperiod::Voting);
+
+    let period_end_info = pre_snapshot
+        .period_end
+        .get(&staked_period)
+        .expect("Entry must exist, since it's a past period.");
+
+    let reward = Perbill::from_rational(stake_amount, period_end_info.total_vp_stake)
+        * period_end_info.bonus_reward_pool;
+
+    // Claim bonus reward & verify event
+    assert_ok!(DappStaking::claim_bonus_reward(
+        RuntimeOrigin::signed(account),
+        smart_contract.clone(),
+    ));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::BonusReward {
+        account,
+        smart_contract: *smart_contract,
+        period: staked_period,
+        amount: reward,
+    }));
+
+    // Verify post state
+
+    let post_total_issuance = <Test as Config>::Currency::total_issuance();
+    assert_eq!(
+        post_total_issuance,
+        pre_total_issuance + reward,
+        "Total issuance must increase by the reward amount."
+    );
+
+    let post_free_balance = <Test as Config>::Currency::free_balance(&account);
+    assert_eq!(
+        post_free_balance,
+        pre_free_balance + reward,
+        "Free balance must increase by the reward amount."
+    );
+
+    assert!(
+        !StakerInfo::<Test>::contains_key(&account, smart_contract),
+        "Entry must be removed after successful reward claim."
+    );
+}
+
+/// Claim dapp reward for a particular era.
+pub(crate) fn assert_claim_dapp_reward(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+    era: EraNumber,
+) {
+    let pre_snapshot = MemorySnapshot::new();
+    let dapp_info = pre_snapshot.integrated_dapps.get(smart_contract).unwrap();
+    let beneficiary = dapp_info.reward_beneficiary();
+    let pre_total_issuance = <Test as Config>::Currency::total_issuance();
+    let pre_free_balance = <Test as Config>::Currency::free_balance(beneficiary);
+
+    let (expected_reward, expected_tier_id) = {
+        let mut info = pre_snapshot
+            .dapp_tiers
+            .get(&era)
+            .expect("Entry must exist.")
+            .clone();
+
+        info.try_consume(dapp_info.id).unwrap()
+    };
+
+    // Claim dApp reward & verify event
+    assert_ok!(DappStaking::claim_dapp_reward(
+        RuntimeOrigin::signed(account),
+        smart_contract.clone(),
+        era,
+    ));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppReward {
+        beneficiary: beneficiary.clone(),
+        smart_contract: smart_contract.clone(),
+        tier_id: expected_tier_id,
+        era,
+        amount: expected_reward,
+    }));
+
+    // Verify post-state
+
+    let post_total_issuance = <Test as Config>::Currency::total_issuance();
+    assert_eq!(
+        post_total_issuance,
+        pre_total_issuance + expected_reward,
+        "Total issuance must increase by the reward amount."
+    );
+
+    let post_free_balance = <Test as Config>::Currency::free_balance(beneficiary);
+    assert_eq!(
+        post_free_balance,
+        pre_free_balance + expected_reward,
+        "Free balance must increase by the reward amount."
+    );
+
+    let post_snapshot = MemorySnapshot::new();
+    let mut info = post_snapshot
+        .dapp_tiers
+        .get(&era)
+        .expect("Entry must exist.")
+        .clone();
+    assert_eq!(
+        info.try_consume(dapp_info.id),
+        Err(DAppTierError::RewardAlreadyClaimed),
+        "It must not be possible to claim the same reward twice!.",
+    );
+}
+
+/// Returns from which starting era to which ending era can rewards be claimed for the specified account.
+///
+/// If `None` is returned, there is nothing to claim.
+///
+/// **NOTE:** Doesn't consider reward expiration.
+pub(crate) fn claimable_reward_range(account: AccountId) -> Option<(EraNumber, EraNumber)> {
+    let ledger = Ledger::<Test>::get(&account);
+    let protocol_state = ActiveProtocolState::<Test>::get();
+
+    let earliest_stake_era = if let Some(era) = ledger.earliest_staked_era() {
+        era
+    } else {
+        return None;
+    };
+
+    let last_claim_era = if ledger.staked_period() == Some(protocol_state.period_number()) {
+        protocol_state.era - 1
+    } else {
+        // Period finished, we can claim up to its final era
+        let period_end = PeriodEnd::<Test>::get(ledger.staked_period().unwrap()).unwrap();
+        period_end.final_era
+    };
+
+    Some((earliest_stake_era, last_claim_era))
+}
+
+/// Number of times it's required to call `claim_staker_rewards` to claim all pending rewards.
+///
+/// In case no rewards are pending, return **zero**.
+pub(crate) fn required_number_of_reward_claims(account: AccountId) -> u32 {
+    let range = if let Some(range) = claimable_reward_range(account) {
+        range
+    } else {
+        return 0;
+    };
+
+    let era_span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
+    let first = DappStaking::era_reward_span_index(range.0)
+        .checked_div(era_span_length)
+        .unwrap();
+    let second = DappStaking::era_reward_span_index(range.1)
+        .checked_div(era_span_length)
+        .unwrap();
+
+    second - first + 1
 }

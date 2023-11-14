@@ -27,7 +27,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
+        AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, ConstU64, Currency, EitherOfDiverse,
         EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
@@ -46,6 +46,7 @@ use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{crypto::KeyTypeId, ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -437,6 +438,60 @@ impl<AccountId: From<[u8; 32]>> From<[u8; 32]> for SmartContract<AccountId> {
     fn from(input: [u8; 32]) -> Self {
         SmartContract::Wasm(input.into())
     }
+}
+
+pub struct DummyPriceProvider;
+impl pallet_dapp_staking_v3::PriceProvider for DummyPriceProvider {
+    fn average_price() -> FixedU64 {
+        FixedU64::from_rational(1, 10)
+    }
+}
+
+pub struct DummyRewardPoolProvider;
+impl pallet_dapp_staking_v3::RewardPoolProvider for DummyRewardPoolProvider {
+    fn normal_reward_pools() -> (Balance, Balance) {
+        (
+            Balance::from(1_000_000_000_000 * AST),
+            Balance::from(1_000_000_000 * AST),
+        )
+    }
+    fn bonus_reward_pool() -> Balance {
+        Balance::from(3_000_000 * AST)
+    }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkHelper<SC>(sp_std::marker::PhantomData<SC>);
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>>
+    for BenchmarkHelper<SmartContract<AccountId>>
+{
+    fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
+        SmartContract::Wasm(AccountId::from([id as u8; 32]))
+    }
+}
+
+impl pallet_dapp_staking_v3::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type SmartContract = SmartContract<AccountId>;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type NativePriceProvider = DummyPriceProvider;
+    type RewardPoolProvider = DummyRewardPoolProvider;
+    type StandardEraLength = ConstU32<30>; // should be 1 minute per standard era
+    type StandardErasPerVotingPeriod = ConstU32<2>;
+    type StandardErasPerBuildAndEarnPeriod = ConstU32<10>;
+    type EraRewardSpanLength = ConstU32<8>;
+    type RewardRetentionInPeriods = ConstU32<2>;
+    type MaxNumberOfContracts = ConstU16<100>;
+    type MaxUnlockingChunks = ConstU32<5>;
+    type MinimumLockedAmount = ConstU128<AST>;
+    type UnlockingPeriod = ConstU32<2>;
+    type MaxNumberOfStakedContracts = ConstU32<3>;
+    type MinimumStakeAmount = ConstU128<AST>;
+    type NumberOfTiers = ConstU32<4>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -1005,6 +1060,7 @@ construct_runtime!(
         Balances: pallet_balances,
         Vesting: pallet_vesting,
         DappsStaking: pallet_dapps_staking,
+        DappStaking: pallet_dapp_staking_v3,
         BlockReward: pallet_block_reward,
         TransactionPayment: pallet_transaction_payment,
         EVM: pallet_evm,
@@ -1137,6 +1193,7 @@ mod benches {
         [pallet_dapps_staking, DappsStaking]
         [pallet_block_reward, BlockReward]
         [pallet_ethereum_checked, EthereumChecked]
+        [pallet_dapp_staking_v3, DappStaking]
     );
 }
 

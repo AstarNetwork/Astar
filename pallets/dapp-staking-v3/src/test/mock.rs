@@ -24,10 +24,12 @@ use frame_support::{
     weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    Permill,
 };
 
 use sp_io::TestExternalities;
@@ -104,23 +106,26 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
 }
 
-impl pallet_dapp_staking::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type SmartContract = MockSmartContract;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type StandardEraLength = ConstU64<10>;
-    type StandardErasPerVotingPeriod = ConstU32<8>;
-    type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
-    type MaxNumberOfContracts = ConstU16<10>;
-    type MaxUnlockingChunks = ConstU32<5>;
-    type MaxStakingChunks = ConstU32<8>;
-    type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
-    type UnlockingPeriod = ConstU64<20>;
-    type MinimumStakeAmount = ConstU128<3>;
+pub struct DummyPriceProvider;
+impl PriceProvider for DummyPriceProvider {
+    fn average_price() -> FixedU64 {
+        FixedU64::from_rational(1, 10)
+    }
 }
 
-// TODO: why not just change this to e.g. u32 for test?
+pub struct DummyRewardPoolProvider;
+impl RewardPoolProvider for DummyRewardPoolProvider {
+    fn normal_reward_pools() -> (Balance, Balance) {
+        (
+            Balance::from(1_000_000_000_000_u128),
+            Balance::from(1_000_000_000_u128),
+        )
+    }
+    fn bonus_reward_pool() -> Balance {
+        Balance::from(3_000_000_u128)
+    }
+}
+
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Hash)]
 pub enum MockSmartContract {
     Wasm(AccountId),
@@ -131,6 +136,38 @@ impl Default for MockSmartContract {
     fn default() -> Self {
         MockSmartContract::Wasm(1)
     }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkHelper<SC>(sp_std::marker::PhantomData<SC>);
+#[cfg(feature = "runtime-benchmarks")]
+impl crate::BenchmarkHelper<MockSmartContract> for BenchmarkHelper<MockSmartContract> {
+    fn get_smart_contract(id: u32) -> MockSmartContract {
+        MockSmartContract::Wasm(id as AccountId)
+    }
+}
+
+impl pallet_dapp_staking::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type SmartContract = MockSmartContract;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type NativePriceProvider = DummyPriceProvider;
+    type RewardPoolProvider = DummyRewardPoolProvider;
+    type StandardEraLength = ConstU64<10>;
+    type StandardErasPerVotingPeriod = ConstU32<8>;
+    type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
+    type EraRewardSpanLength = ConstU32<8>;
+    type RewardRetentionInPeriods = ConstU32<2>;
+    type MaxNumberOfContracts = ConstU16<10>;
+    type MaxUnlockingChunks = ConstU32<5>;
+    type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
+    type UnlockingPeriod = ConstU32<2>;
+    type MaxNumberOfStakedContracts = ConstU32<3>;
+    type MinimumStakeAmount = ConstU128<3>;
+    type NumberOfTiers = ConstU32<4>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = BenchmarkHelper<MockSmartContract>;
 }
 
 pub struct ExtBuilder;
@@ -153,27 +190,67 @@ impl ExtBuilder {
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| {
             System::set_block_number(1);
-            DappStaking::on_initialize(System::block_number());
 
-            // TODO: not sure why the mess with type happens here, I can check it later
+            // Not sure why the mess with type happens here, but trait specification is needed to compile
             let era_length: BlockNumber =
                 <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
             let voting_period_length_in_eras: EraNumber =
                 <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingPeriod as sp_core::Get<_>>::get(
                 );
 
-            // TODO: handle this via GenesisConfig, and some helper functions to set the state
+            // Init protocol state
             pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
                 era: 1,
                 next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
                 period_info: PeriodInfo {
                     number: 1,
-                    period_type: PeriodType::Voting,
-                    ending_era: 2,
+                    subperiod: Subperiod::Voting,
+                    subperiod_end_era: 2,
                 },
                 maintenance: false,
             });
-        });
+
+            // Init tier params
+            let tier_params = TierParameters::<<Test as Config>::NumberOfTiers> {
+                reward_portion: BoundedVec::try_from(vec![
+                    Permill::from_percent(40),
+                    Permill::from_percent(30),
+                    Permill::from_percent(20),
+                    Permill::from_percent(10),
+                ])
+                .unwrap(),
+                slot_distribution: BoundedVec::try_from(vec![
+                    Permill::from_percent(10),
+                    Permill::from_percent(20),
+                    Permill::from_percent(30),
+                    Permill::from_percent(40),
+                ])
+                .unwrap(),
+                tier_thresholds: BoundedVec::try_from(vec![
+                    TierThreshold::DynamicTvlAmount { amount: 100, minimum_amount: 80 },
+                    TierThreshold::DynamicTvlAmount { amount: 50, minimum_amount: 40 },
+                    TierThreshold::DynamicTvlAmount { amount: 20, minimum_amount: 20 },
+                    TierThreshold::FixedTvlAmount { amount: 10 },
+                ])
+                .unwrap(),
+            };
+
+            // Init tier config, based on the initial params
+            let init_tier_config = TiersConfiguration::<<Test as Config>::NumberOfTiers> {
+                number_of_slots: 100,
+                slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
+                reward_portion: tier_params.reward_portion.clone(),
+                tier_thresholds: tier_params.tier_thresholds.clone(),
+            };
+
+            pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);
+            pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());
+            pallet_dapp_staking::NextTierConfig::<Test>::put(init_tier_config);
+
+            // TODO: include this into every test unless it explicitly doesn't need it.
+            // DappStaking::on_initialize(System::block_number());
+        }
+        );
 
         ext
     }
@@ -227,9 +304,24 @@ pub(crate) fn advance_to_next_period() {
 }
 
 /// Advance blocks until next period type has been reached.
-pub(crate) fn _advance_to_next_period_type() {
-    let period_type = ActiveProtocolState::<Test>::get().period_type();
-    while ActiveProtocolState::<Test>::get().period_type() == period_type {
+pub(crate) fn advance_to_advance_to_next_subperiod() {
+    let subperiod = ActiveProtocolState::<Test>::get().subperiod();
+    while ActiveProtocolState::<Test>::get().subperiod() == subperiod {
         run_for_blocks(1);
     }
+}
+
+// Return all dApp staking events from the event buffer.
+pub fn dapp_staking_events() -> Vec<crate::Event<Test>> {
+    System::events()
+        .into_iter()
+        .map(|r| r.event)
+        .filter_map(|e| {
+            if let RuntimeEvent::DappStaking(inner) = e {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+        .collect()
 }

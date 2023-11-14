@@ -20,16 +20,18 @@
 
 use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig,
-    BlockRewardConfig, CouncilConfig, DemocracyConfig, EVMConfig, GenesisConfig, GrandpaConfig,
-    GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
-    TreasuryConfig, VestingConfig,
+    BlockRewardConfig, CouncilConfig, DappStakingConfig, DemocracyConfig, EVMConfig, GenesisConfig,
+    GrandpaConfig, GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig,
+    TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
-    Perbill,
+    Perbill, Permill,
 };
+
+use pallet_dapp_staking_v3::TierThreshold;
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -112,7 +114,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 1_000_000_000_000_000_000_000_000_000))
+                .map(|k| (k, 1_000_000_000 * AST))
                 .collect(),
         },
         block_reward: BlockRewardConfig {
@@ -181,6 +183,36 @@ fn testnet_genesis(
         },
         democracy: DemocracyConfig::default(),
         treasury: TreasuryConfig::default(),
+        dapp_staking: DappStakingConfig {
+            reward_portion: vec![
+                Permill::from_percent(40),
+                Permill::from_percent(30),
+                Permill::from_percent(20),
+                Permill::from_percent(10),
+            ],
+            slot_distribution: vec![
+                Permill::from_percent(10),
+                Permill::from_percent(20),
+                Permill::from_percent(30),
+                Permill::from_percent(40),
+            ],
+            tier_thresholds: vec![
+                TierThreshold::DynamicTvlAmount {
+                    amount: 100 * AST,
+                    minimum_amount: 80 * AST,
+                },
+                TierThreshold::DynamicTvlAmount {
+                    amount: 50 * AST,
+                    minimum_amount: 40 * AST,
+                },
+                TierThreshold::DynamicTvlAmount {
+                    amount: 20 * AST,
+                    minimum_amount: 20 * AST,
+                },
+                TierThreshold::FixedTvlAmount { amount: 10 * AST },
+            ],
+            slots_per_tier: vec![10, 20, 30, 40],
+        },
     }
 }
 

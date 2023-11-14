@@ -48,6 +48,7 @@ pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 sp-api = { workspace = true }
+sp-arithmetic = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
@@ -70,6 +71,7 @@ pallet-block-reward = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-custom-signatures = { workspace = true }
+pallet-dapp-staking-v3 = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
@@ -117,6 +119,7 @@ std = [
 	"pallet-chain-extension-xvm/std",
 	"pallet-custom-signatures/std",
 	"pallet-dapps-staking/std",
+	"pallet-dapp-staking-v3/std",
 	"pallet-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
@@ -150,6 +153,7 @@ std = [
 	"sp-offchain/std",
 	"sp-runtime/std",
 	"sp-session/std",
+	"sp-arithmetic/std",
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
@@ -185,6 +189,7 @@ runtime-benchmarks = [
 	"pallet-ethereum-checked/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
+	"pallet-dapp-staking-v3/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -199,6 +204,7 @@ try-runtime = [
 	"pallet-contracts/try-runtime",
 	"pallet-custom-signatures/try-runtime",
 	"pallet-dapps-staking/try-runtime",
+	"pallet-dapp-staking-v3/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-sudo/try-runtime",
