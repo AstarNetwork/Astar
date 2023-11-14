@@ -19,11 +19,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use astar_primitives::evm::{UnifiedAddress, UnifiedAddressMapper};
-use frame_support::traits::IsType;
 use core::marker::PhantomData;
 use fp_evm::Precompile;
 use fp_evm::{PrecompileHandle, PrecompileOutput};
 use frame_support::dispatch::Dispatchable;
+use frame_support::traits::IsType;
 use precompile_utils::{
     succeed, Address, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
 };
@@ -81,7 +81,7 @@ where
     ) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;
-        let account_id = AccountId32::new(input.read::<H256>()?.into()).into() ;
+        let account_id = AccountId32::new(input.read::<H256>()?.into()).into();
         log::trace!(target: "au-precompile", "get_evm_address_or_default account_id (Bytes) : {:?}",account_id);
         let res: (Address, bool) = match UA::to_h160_or_default(&account_id) {
             UnifiedAddress::Mapped(address) => (address.into(), true),
