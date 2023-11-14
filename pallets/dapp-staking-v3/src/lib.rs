@@ -1492,6 +1492,7 @@ pub mod pallet {
                     }
                 })
                 .collect();
+            let entries_to_delete = to_be_deleted.len();
 
             // Remove all expired entries.
             for smart_contract in to_be_deleted {
@@ -1501,6 +1502,7 @@ pub mod pallet {
             // Remove expired ledger stake entries, if needed.
             let threshold_period = Self::oldest_claimable_period(current_period);
             let mut ledger = Ledger::<T>::get(&account);
+            ledger.contract_stake_count.saturating_reduce(entries_to_delete as u32);
             if ledger.maybe_cleanup_expired(threshold_period) {
                 Self::update_ledger(&account, ledger);
             }
