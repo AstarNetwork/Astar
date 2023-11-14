@@ -19,6 +19,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use astar_primitives::evm::{UnifiedAddress, UnifiedAddressMapper};
+use frame_support::traits::IsType;
 use core::marker::PhantomData;
 use fp_evm::Precompile;
 use fp_evm::{PrecompileHandle, PrecompileOutput};
@@ -49,7 +50,7 @@ where
     R: pallet_evm::Config + pallet_unified_accounts::Config,
     <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
         From<Option<R::AccountId>>,
-    <R as frame_system::Config>::AccountId: From<AccountId32> + Into<AccountId32>,
+    <R as frame_system::Config>::AccountId: IsType<AccountId32>,
     UA: UnifiedAddressMapper<R::AccountId>,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
@@ -72,7 +73,7 @@ where
     R: pallet_evm::Config + pallet_unified_accounts::Config,
     <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
         From<Option<R::AccountId>>,
-    <R as frame_system::Config>::AccountId: From<AccountId32> + Into<AccountId32>,
+    <R as frame_system::Config>::AccountId: IsType<AccountId32>,
     UA: UnifiedAddressMapper<R::AccountId>,
 {
     fn get_evm_address_or_default(
@@ -80,13 +81,12 @@ where
     ) -> EvmResult<PrecompileOutput> {
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;
-        let account_id = input.read::<H256>()?;
+        let account_id = AccountId32::new(input.read::<H256>()?.into()).into() ;
         log::trace!(target: "au-precompile", "get_evm_address_or_default account_id (Bytes) : {:?}",account_id);
-        let res: (Address, bool) =
-            match UA::to_h160_or_default(&AccountId32::new(account_id.0).into()) {
-                UnifiedAddress::Mapped(address) => (address.into(), true),
-                UnifiedAddress::Default(address) => (address.into(), false),
-            };
+        let res: (Address, bool) = match UA::to_h160_or_default(&account_id) {
+            UnifiedAddress::Mapped(address) => (address.into(), true),
+            UnifiedAddress::Default(address) => (address.into(), false),
+        };
         log::trace!(target: "au-precompile", "accountId : {:?}, (Address,bool): {:?}",account_id, res);
 
         Ok(succeed(EvmDataWriter::new().write(res).build()))

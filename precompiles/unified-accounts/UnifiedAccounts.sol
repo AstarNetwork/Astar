@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
 /// For better understanding check the source code:
 /// repo: https://github.com/AstarNetwork/astar
 /// code: pallets/unified-accounts/src/lib.rs
-interface XCM {
+interface UnifiedAccounts {
 
     /// Gets the evm address associated with given account id. If no mapping exists, then return the default account id.
     ///
