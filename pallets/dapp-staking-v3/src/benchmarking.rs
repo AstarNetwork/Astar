@@ -165,6 +165,7 @@ fn max_number_of_contracts<T: Config>() -> u32 {
 mod benchmarks {
     use super::*;
 
+    // TODO: investigate why the PoV size is so large here, evne after removing read of `IntegratedDApps` storage.
     #[benchmark]
     fn dapp_tier_assignment(x: Linear<0, { max_number_of_contracts::<T>() }>) {
         // Prepare init config (protocol state, tier params & config, etc.)

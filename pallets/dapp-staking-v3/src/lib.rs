@@ -1614,12 +1614,6 @@ pub mod pallet {
                     _ => continue,
                 };
 
-                // TODO: Need to handle labels!
-                // Proposition for label handling:
-                // Split them into 'musts' and 'good-to-have'
-                // In case of 'must', reduce appropriate tier size, and insert them at the end
-                // For good to have, we can insert them immediately, and then see if we need to adjust them later.
-                // Anyhow, labels bring complexity. For starters, we should only deliver the one for 'bootstraping' purposes.
                 dapp_stakes.push((dapp_id, stake_amount.total()));
             }
 

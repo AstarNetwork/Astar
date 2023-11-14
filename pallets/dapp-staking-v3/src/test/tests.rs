@@ -35,7 +35,7 @@ fn print_test() {
         use crate::dsv3_weight::WeightInfo;
         println!(
             ">>> dApp tier assignment reading & calculation {:?}",
-            crate::dsv3_weight::SubstrateWeight::<Test>::dapp_tier_assignment(200)
+            crate::dsv3_weight::SubstrateWeight::<Test>::dapp_tier_assignment(100)
         );
 
         use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -59,6 +59,8 @@ fn print_test() {
             ">>> Max encoded size for dapp tier rewards: {:?}",
             crate::DAppTierRewards::<RewardSize, TierSize>::max_encoded_len()
         );
+
+        println!(">>> Max encoded size of ContractStake: {:?}", crate::ContractStakeAmount::max_encoded_len());
     })
 }
 
