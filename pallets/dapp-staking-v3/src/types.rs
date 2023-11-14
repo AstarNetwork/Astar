@@ -84,16 +84,7 @@ pub type AccountLedgerFor<T> = AccountLedger<BlockNumberFor<T>, <T as Config>::M
 
 // Convenience type for `DAppTierRewards` usage.
 pub type DAppTierRewardsFor<T> =
-    DAppTierRewards<MaxNumberOfContractsU32<T>, <T as Config>::NumberOfTiers>;
-
-// Helper struct for converting `u16` getter into `u32`
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct MaxNumberOfContractsU32<T: Config>(PhantomData<T>);
-impl<T: Config> Get<u32> for MaxNumberOfContractsU32<T> {
-    fn get() -> u32 {
-        T::MaxNumberOfContracts::get() as u32
-    }
-}
+    DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
 
 /// Era number type
 pub type EraNumber = u32;

@@ -60,7 +60,10 @@ fn print_test() {
             crate::DAppTierRewards::<RewardSize, TierSize>::max_encoded_len()
         );
 
-        println!(">>> Max encoded size of ContractStake: {:?}", crate::ContractStakeAmount::max_encoded_len());
+        println!(
+            ">>> Max encoded size of ContractStake: {:?}",
+            crate::ContractStakeAmount::max_encoded_len()
+        );
     })
 }
 

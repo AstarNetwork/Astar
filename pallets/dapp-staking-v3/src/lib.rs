@@ -68,6 +68,7 @@ pub use types::{PriceProvider, RewardPoolProvider, TierThreshold};
 
 mod dsv3_weight;
 
+// Lock identifier for the dApp staking pallet
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
 // TODO: add tracing!
@@ -139,7 +140,7 @@ pub mod pallet {
 
         /// Maximum number of contracts that can be integrated into dApp staking at once.
         #[pallet::constant]
-        type MaxNumberOfContracts: Get<DAppId>;
+        type MaxNumberOfContracts: Get<u32>;
 
         /// Maximum number of unlocking chunks that can exist per account at a time.
         #[pallet::constant]
@@ -345,11 +346,11 @@ pub mod pallet {
     /// Map of all dApps integrated into dApp staking protocol.
     #[pallet::storage]
     pub type IntegratedDApps<T: Config> = CountedStorageMap<
-        _,
-        Blake2_128Concat,
-        T::SmartContract,
-        DAppInfo<T::AccountId>,
-        OptionQuery,
+        Hasher = Blake2_128Concat,
+        Key = T::SmartContract,
+        Value = DAppInfo<T::AccountId>,
+        QueryKind = OptionQuery,
+        MaxValues = ConstU32<{ DAppId::MAX as u32 }>,
     >;
 
     /// General locked/staked information for each account.
@@ -371,8 +372,13 @@ pub mod pallet {
 
     /// Information about how much has been staked on a smart contract in some era or period.
     #[pallet::storage]
-    pub type ContractStake<T: Config> =
-        StorageMap<_, Twox64Concat, DAppId, ContractStakeAmount, ValueQuery>;
+    pub type ContractStake<T: Config> = StorageMap<
+        Hasher = Twox64Concat,
+        Key = DAppId,
+        Value = ContractStakeAmount,
+        QueryKind = ValueQuery,
+        MaxValues = ConstU32<{ DAppId::MAX as u32 }>,
+    >;
 
     /// General information about the current era.
     #[pallet::storage]
@@ -1674,7 +1680,7 @@ pub mod pallet {
             // 6.
             // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
-            DAppTierRewards::<MaxNumberOfContractsU32<T>, T::NumberOfTiers>::new(
+            DAppTierRewards::<T::MaxNumberOfContracts, T::NumberOfTiers>::new(
                 dapp_tiers,
                 tier_rewards,
                 period,

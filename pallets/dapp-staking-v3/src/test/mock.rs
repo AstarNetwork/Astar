@@ -20,7 +20,7 @@ use crate::{self as pallet_dapp_staking, *};
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, ConstU64},
+    traits::{ConstU128, ConstU32, ConstU64},
     weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -159,7 +159,7 @@ impl pallet_dapp_staking::Config for Test {
     type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
-    type MaxNumberOfContracts = ConstU16<10>;
+    type MaxNumberOfContracts = ConstU32<10>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
     type UnlockingPeriod = ConstU32<2>;
