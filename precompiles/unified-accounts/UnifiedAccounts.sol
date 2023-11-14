@@ -20,7 +20,7 @@ interface UnifiedAccounts {
     /// (mapped address, true)
     /// If not mapped
     /// (default address, false)
-    function get_evm_address_or_default(bytes32 calldata accountId) external view returns (address,bool);
+    function get_evm_address_or_default(bytes32 accountId) external view returns (address,bool);
     
     /// Gets the account id associated with given evm address. If no mapping exists, then return the default evm address.
     /// @param evmAddress: The evm address for which you want the account id for.
