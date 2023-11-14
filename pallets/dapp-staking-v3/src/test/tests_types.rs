@@ -162,6 +162,20 @@ fn dapp_info_basic_checks() {
     // Beneficiary receives rewards in case it is set
     dapp_info.reward_destination = Some(beneficiary);
     assert_eq!(*dapp_info.reward_beneficiary(), beneficiary);
+
+    // Check if dApp is active
+    assert!(dapp_info.is_active());
+
+    dapp_info.state = DAppState::Unregistered(10);
+    assert!(!dapp_info.is_active());
+}
+
+#[test]
+fn unlocking_chunk_basic_check() {
+    // Sanity check
+    let unlocking_chunk = UnlockingChunk::<BlockNumber>::default();
+    assert!(unlocking_chunk.amount.is_zero());
+    assert!(unlocking_chunk.unlock_block.is_zero());
 }
 
 #[test]
@@ -1008,8 +1022,393 @@ fn account_ledger_consume_unlocking_chunks_works() {
 }
 
 #[test]
-fn account_ledger_claim_up_to_era_works() {
-    // TODO!!!
+fn account_ledger_expired_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+
+    // 1st scenario - nothing is expired
+    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    acc_ledger.staked = StakeAmount {
+        voting: 3,
+        build_and_earn: 7,
+        era: 100,
+        period: 5,
+    };
+    acc_ledger.staked_future = Some(StakeAmount {
+        voting: 3,
+        build_and_earn: 13,
+        era: 101,
+        period: 5,
+    });
+
+    let acc_ledger_snapshot = acc_ledger.clone();
+
+    assert!(!acc_ledger.maybe_cleanup_expired(acc_ledger.staked.period - 1));
+    assert_eq!(
+        acc_ledger, acc_ledger_snapshot,
+        "No change must happen since period hasn't expired."
+    );
+
+    assert!(!acc_ledger.maybe_cleanup_expired(acc_ledger.staked.period));
+    assert_eq!(
+        acc_ledger, acc_ledger_snapshot,
+        "No change must happen since period hasn't expired."
+    );
+
+    // 2nd scenario - stake has expired
+    assert!(acc_ledger.maybe_cleanup_expired(acc_ledger.staked.period + 1));
+    assert!(acc_ledger.staked.is_empty());
+    assert!(acc_ledger.staked_future.is_none());
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_only_staked_without_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era = 100;
+
+    let acc_ledger_snapshot = {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked = StakeAmount {
+            voting: 3,
+            build_and_earn: 7,
+            era: stake_era,
+            period: 5,
+        };
+        acc_ledger
+    };
+
+    // 1st scenario - claim one era, period hasn't ended yet
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, None)
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((stake_era, acc_ledger_snapshot.staked.total()))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked;
+        expected_stake_amount.era += 1;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Only era should be bumped by 1."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 2nd scenario - claim multiple eras (5), period hasn't ended yet
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era + 4, None) // staked era + 4 additional eras
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        for inc in 0..5 {
+            assert_eq!(
+                result_iter.next(),
+                Some((stake_era + inc, acc_ledger_snapshot.staked.total()))
+            );
+        }
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked;
+        expected_stake_amount.era += 5;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Only era should be bumped by 5."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_only_staked_with_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era = 100;
+
+    let acc_ledger_snapshot = {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked = StakeAmount {
+            voting: 3,
+            build_and_earn: 7,
+            era: stake_era,
+            period: 5,
+        };
+        acc_ledger
+    };
+
+    // 1st scenario - claim one era, period has ended
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, Some(stake_era))
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((stake_era, acc_ledger_snapshot.staked.total()))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are cleaned up
+        assert!(
+            acc_ledger.staked.is_empty(),
+            "Period has ended so stake entry should be cleaned up."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 2nd scenario - claim multiple eras (5), period has ended
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era + 4, Some(stake_era)) // staked era + 4 additional eras
+            .expect("Must provide iter with exactly one era.");
+
+        for inc in 0..5 {
+            assert_eq!(
+                result_iter.next(),
+                Some((stake_era + inc, acc_ledger_snapshot.staked.total()))
+            );
+        }
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are cleaned up
+        assert!(
+            acc_ledger.staked.is_empty(),
+            "Period has ended so stake entry should be cleaned up."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 3rd scenario - claim one era, period has ended in some future era
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, Some(stake_era + 1))
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((stake_era, acc_ledger_snapshot.staked.total()))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correctly updated
+        let mut expected_stake_amount = acc_ledger_snapshot.staked;
+        expected_stake_amount.era += 1;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Entry must exist since we still haven't reached the period end era."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_only_staked_future_without_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era = 50;
+
+    let acc_ledger_snapshot = {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked_future = Some(StakeAmount {
+            voting: 5,
+            build_and_earn: 11,
+            era: stake_era,
+            period: 4,
+        });
+        acc_ledger
+    };
+
+    // 1st scenario - claim one era, period hasn't ended yet
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, None)
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((
+                stake_era,
+                acc_ledger_snapshot.staked_future.unwrap().total()
+            ))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked_future.unwrap();
+        expected_stake_amount.era += 1;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Era must be bumped by 1, and entry must switch from staked_future over to staked."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "staked_future must be cleaned up after the claim."
+        );
+    }
+
+    // 2nd scenario - claim multiple eras (5), period hasn't ended yet
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era + 4, None) // staked era + 4 additional eras
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        for inc in 0..5 {
+            assert_eq!(
+                result_iter.next(),
+                Some((
+                    stake_era + inc,
+                    acc_ledger_snapshot.staked_future.unwrap().total()
+                ))
+            );
+        }
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked_future.unwrap();
+        expected_stake_amount.era += 5;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Era must be bumped by 5, and entry must switch from staked_future over to staked."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "staked_future must be cleaned up after the claim."
+        );
+    }
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_only_staked_future_with_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era = 50;
+
+    let acc_ledger_snapshot = {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked_future = Some(StakeAmount {
+            voting: 2,
+            build_and_earn: 17,
+            era: stake_era,
+            period: 3,
+        });
+        acc_ledger
+    };
+
+    // 1st scenario - claim one era, period has ended
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, Some(stake_era))
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((
+                stake_era,
+                acc_ledger_snapshot.staked_future.unwrap().total()
+            ))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are cleaned up
+        assert!(
+            acc_ledger.staked.is_empty(),
+            "Period has ended so stake entry should be cleaned up."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 2nd scenario - claim multiple eras (5), period has ended
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era + 4, Some(stake_era)) // staked era + 4 additional eras
+            .expect("Must provide iter with exactly one era.");
+
+        for inc in 0..5 {
+            assert_eq!(
+                result_iter.next(),
+                Some((
+                    stake_era + inc,
+                    acc_ledger_snapshot.staked_future.unwrap().total()
+                ))
+            );
+        }
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are cleaned up
+        assert!(
+            acc_ledger.staked.is_empty(),
+            "Period has ended so stake entry should be cleaned up."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 3rd scenario - claim one era, period has ended in some future era
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, Some(stake_era + 1))
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((
+                stake_era,
+                acc_ledger_snapshot.staked_future.unwrap().total()
+            ))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correctly updated
+        let mut expected_stake_amount = acc_ledger_snapshot.staked_future.unwrap();
+        expected_stake_amount.era += 1;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Entry must exist since we still haven't reached the period end era."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
 }
 
 #[test]

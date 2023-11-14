@@ -651,12 +651,12 @@ where
     /// Cleanup staking information if it has expired.
     ///
     /// # Args
-    /// `threshold_period` - last period for which entries can still be considered valid.
+    /// `valid_threshold_period` - last period for which entries can still be considered valid.
     ///
     /// `true` if any change was made, `false` otherwise.
-    pub fn maybe_cleanup_expired(&mut self, threshold_period: PeriodNumber) -> bool {
+    pub fn maybe_cleanup_expired(&mut self, valid_threshold_period: PeriodNumber) -> bool {
         match self.staked_period() {
-            Some(staked_period) if staked_period < threshold_period => {
+            Some(staked_period) if staked_period < valid_threshold_period => {
                 self.staked = Default::default();
                 self.staked_future = None;
                 true
@@ -676,7 +676,7 @@ where
         period_end: Option<EraNumber>,
     ) -> Result<EraStakePairIter, AccountLedgerError> {
         // Main entry exists, but era isn't 'in history'
-        if !self.staked.is_empty() && era <= self.staked.era {
+        if !self.staked.is_empty() && era < self.staked.era {
             return Err(AccountLedgerError::NothingToClaim);
         } else if let Some(stake_amount) = self.staked_future {
             // Future entry exists, but era isn't 'in history'
