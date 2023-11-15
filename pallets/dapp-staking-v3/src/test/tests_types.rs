@@ -2226,6 +2226,11 @@ fn contract_stake_amount_stake_is_ok() {
     let amount_1 = 31;
     contract_stake.stake(amount_1, period_info_1, era_1);
     assert!(!contract_stake.is_empty());
+    assert!(
+        contract_stake.staked.is_empty(),
+        "Only future entry should be modified."
+    );
+    assert!(contract_stake.staked_future.is_some());
 
     assert!(
         contract_stake.get(era_1, period_1).is_none(),
@@ -2237,6 +2242,8 @@ fn contract_stake_amount_stake_is_ok() {
         "Stake is only valid from next era."
     );
     assert_eq!(entry_1_1.total(), amount_1);
+    assert_eq!(entry_1_1.for_type(Subperiod::Voting), amount_1);
+    assert!(entry_1_1.for_type(Subperiod::BuildAndEarn).is_zero());
 
     // 2nd scenario - stake some more to the same era but different period type, and verify state change.
     let period_info_1 = PeriodInfo {
@@ -2248,6 +2255,13 @@ fn contract_stake_amount_stake_is_ok() {
     let entry_1_2 = contract_stake.get(stake_era_1, period_1).unwrap();
     assert_eq!(entry_1_2.era, stake_era_1);
     assert_eq!(entry_1_2.total(), amount_1 * 2);
+    assert_eq!(entry_1_2.for_type(Subperiod::Voting), amount_1);
+    assert_eq!(entry_1_2.for_type(Subperiod::BuildAndEarn), amount_1);
+    assert!(
+        contract_stake.staked.is_empty(),
+        "Only future entry should be modified."
+    );
+    assert!(contract_stake.staked_future.is_some());
 
     // 3rd scenario - stake more to the next era, while still in the same period.
     let era_2 = era_1 + 2;
@@ -2264,6 +2278,11 @@ fn contract_stake_amount_stake_is_ok() {
         entry_2_1.total() + amount_2,
         "Since it's the same period, stake amount must carry over from the previous entry."
     );
+    assert!(
+        !contract_stake.staked.is_empty(),
+        "staked should keep the old future entry"
+    );
+    assert!(contract_stake.staked_future.is_some());
 
     // 4th scenario - stake some more to the next era, but this time also bump the period.
     let era_3 = era_2 + 3;
@@ -2293,6 +2312,11 @@ fn contract_stake_amount_stake_is_ok() {
         amount_3,
         "No carry over from previous entry since period has changed."
     );
+    assert!(
+        contract_stake.staked.is_empty(),
+        "New period, all stakes should be reset so 'staked' should be empty."
+    );
+    assert!(contract_stake.staked_future.is_some());
 
     // 5th scenario - stake to the next era
     let era_4 = era_3 + 1;
@@ -2305,6 +2329,11 @@ fn contract_stake_amount_stake_is_ok() {
     assert_eq!(entry_4_2.era, stake_era_4);
     assert_eq!(entry_4_2.period, period_2);
     assert_eq!(entry_4_2.total(), amount_3 + amount_4);
+    assert!(
+        !contract_stake.staked.is_empty(),
+        "staked should keep the old future entry"
+    );
+    assert!(contract_stake.staked_future.is_some());
 }
 
 #[test]
@@ -2333,24 +2362,65 @@ fn contract_stake_amount_unstake_is_ok() {
         contract_stake.staked_amount(period, Subperiod::Voting),
         stake_amount - amount_1
     );
+    assert!(contract_stake.staked.is_empty());
+    assert!(contract_stake.staked_future.is_some());
 
-    // 2nd scenario - unstake in the future era, entries should be aligned to the current era
+    // 2nd scenario - unstake in the next era
     let period_info = PeriodInfo {
         number: period,
         subperiod: Subperiod::BuildAndEarn,
         subperiod_end_era: 40,
     };
-    let era_2 = era_1 + 3;
-    let amount_2 = 7;
-    contract_stake.unstake(amount_2, period_info, era_2);
+    let era_2 = era_1 + 1;
+
+    contract_stake.unstake(amount_1, period_info, era_2);
     assert_eq!(
         contract_stake.total_staked_amount(period),
-        stake_amount - amount_1 - amount_2
+        stake_amount - amount_1 * 2
     );
     assert_eq!(
         contract_stake.staked_amount(period, Subperiod::Voting),
-        stake_amount - amount_1 - amount_2
+        stake_amount - amount_1 * 2
     );
+    assert!(
+        !contract_stake.staked.is_empty(),
+        "future entry should be moved over to the current entry"
+    );
+    assert!(
+        contract_stake.staked_future.is_none(),
+        "future entry should be cleaned up since it refers to the current era"
+    );
+
+    // 3rd scenario - bump up unstake eras by more than 1, entries should be aligned to the current era
+    let era_3 = era_2 + 3;
+    let amount_2 = 7;
+    contract_stake.unstake(amount_2, period_info, era_3);
+    assert_eq!(
+        contract_stake.total_staked_amount(period),
+        stake_amount - amount_1 * 2 - amount_2
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::Voting),
+        stake_amount - amount_1 * 2 - amount_2
+    );
+    assert_eq!(
+        contract_stake.staked.era, era_3,
+        "Should be aligned to the current era."
+    );
+    assert!(
+        contract_stake.staked_future.is_none(),
+        "future enry should remain 'None'"
+    );
+
+    // 4th scenario - do a full unstake with existing future entry, expect a cleanup
+    contract_stake.stake(stake_amount, period_info, era_3);
+    contract_stake.unstake(
+        contract_stake.total_staked_amount(period),
+        period_info,
+        era_3,
+    );
+    assert!(contract_stake.staked.is_empty());
+    assert!(contract_stake.staked_future.is_none());
 }
 
 #[test]
@@ -2391,6 +2461,10 @@ fn era_reward_span_push_and_get_works() {
     // Get the values and verify they are as expected
     assert_eq!(era_reward_span.get(era_1), Some(&era_reward_1));
     assert_eq!(era_reward_span.get(era_2), Some(&era_reward_2));
+
+    // Try and get the values outside of the span
+    assert!(era_reward_span.get(era_reward_span.first_era() - 1).is_none());
+    assert!(era_reward_span.get(era_reward_span.last_era() + 1).is_none());
 }
 
 #[test]

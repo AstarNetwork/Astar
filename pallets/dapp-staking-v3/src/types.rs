@@ -1142,7 +1142,6 @@ impl ContractStakeAmount {
 
     /// Stake the specified `amount` on the contract, for the specified `subperiod` and `era`.
     pub fn stake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
-        // TODO: tests need to be re-writen for this after the refactoring
         let stake_era = current_era.saturating_add(1);
 
         match self.staked_future.as_mut() {
@@ -1180,8 +1179,6 @@ impl ContractStakeAmount {
 
     /// Unstake the specified `amount` from the contract, for the specified `subperiod` and `era`.
     pub fn unstake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
-        // TODO: tests need to be re-writen for this after the refactoring
-
         // First align entries - we only need to keep track of the current era, and the next one
         match self.staked_future {
             // Future entry exists, but it covers current or older era.
