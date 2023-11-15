@@ -71,6 +71,8 @@ mod dsv3_weight;
 // Lock identifier for the dApp staking pallet
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
+const LOG: &str = "dapp-staking";
+
 // TODO: add tracing!
 
 #[frame_support::pallet]
@@ -96,6 +98,8 @@ pub mod pallet {
 
         /// Currency used for staking.
         /// TODO: remove usage of deprecated LockableCurrency trait and use the new freeze approach. Might require some renaming of Lock to Freeze :)
+        // https://github.com/paritytech/substrate/pull/12951/
+        // Look at nomination pools implementation for reference!
         type Currency: LockableCurrency<
             Self::AccountId,
             Moment = Self::BlockNumber,
@@ -342,7 +346,6 @@ pub mod pallet {
     #[pallet::storage]
     pub type NextDAppId<T: Config> = StorageValue<_, DAppId, ValueQuery>;
 
-    // TODO: where to track TierLabels? E.g. a label to bootstrap a dApp into a specific tier.
     /// Map of all dApps integrated into dApp staking protocol.
     #[pallet::storage]
     pub type IntegratedDApps<T: Config> = CountedStorageMap<
@@ -620,8 +623,14 @@ pub mod pallet {
 
             let era_span_index = Self::era_reward_span_index(current_era);
             let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
-            // TODO: Error "cannot" happen here. Log an error if it does though.
-            let _ = span.push(current_era, era_reward);
+            if let Err(_) = span.push(current_era, era_reward) {
+                // This must never happen but we log the error just in case.
+                log::error!(
+                    target: LOG,
+                    "Failed to push era {} into the era reward span.",
+                    current_era
+                );
+            }
             EraRewards::<T>::insert(&era_span_index, span);
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
@@ -927,9 +936,6 @@ pub mod pallet {
                 0
             };
 
-            // TODO: discussion point - this will "kill" users ability to withdraw past rewards.
-            // This can be handled by the frontend though.
-
             Self::update_ledger(&account, ledger);
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unlocking_removed(amount);
@@ -1000,7 +1006,13 @@ pub mod pallet {
 
             let mut ledger = Ledger::<T>::get(&account);
 
-            // TODO: suggestion is to change this a bit so we clean up ledger if rewards have expired
+            // In case old stake rewards are unclaimed & have expired, clean them up.
+            let threshold_period = Self::oldest_claimable_period(current_period);
+            if ledger.maybe_cleanup_expired(threshold_period) {
+                Self::update_ledger(&account, ledger);
+            }
+            // TODO: add a test for this!
+
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
             ledger
@@ -1013,8 +1025,6 @@ pub mod pallet {
                     // Defensive check, should never happen
                     _ => Error::<T>::InternalStakeError,
                 })?;
-
-            // TODO: also change this to check if rewards have expired
 
             // 2.
             // Update `StakerInfo` storage with the new stake amount on the specified contract.
@@ -1463,7 +1473,6 @@ pub mod pallet {
             Ok(())
         }
 
-        // TODO: an alternative to this could would be to allow `unstake` call to cleanup old entries, however that means more complexity in that call
         /// Used to unstake funds from a contract that was unregistered after an account staked on it.
         #[pallet::call_index(15)]
         #[pallet::weight(Weight::zero())]
@@ -1612,13 +1621,13 @@ pub mod pallet {
             period: PeriodNumber,
             dapp_reward_pool: Balance,
         ) -> DAppTierRewardsFor<T> {
-            let mut dapp_stakes = Vec::with_capacity(IntegratedDApps::<T>::count() as usize);
+            let mut dapp_stakes = Vec::with_capacity(T::MaxNumberOfContracts as usize);
 
             // 1.
             // Iterate over all staked dApps.
             // This is bounded by max amount of dApps we allow to be registered.
             for (dapp_id, stake_amount) in ContractStake::<T>::iter() {
-                // Skip dApps which don't have ANY amount staked (TODO: potential improvement is to prune all dApps below minimum threshold)
+                // Skip dApps which don't have ANY amount staked
                 let stake_amount = match stake_amount.get(era, period) {
                     Some(stake_amount) if !stake_amount.total().is_zero() => stake_amount,
                     _ => continue,
