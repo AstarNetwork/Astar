@@ -500,8 +500,6 @@ pub mod pallet {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
             let mut protocol_state = ActiveProtocolState::<T>::get();
 
-            // TODO: maybe do lazy history cleanup in this function?
-
             // We should not modify pallet storage while in maintenance mode.
             // This is a safety measure, since maintenance mode is expected to be
             // enabled in case some misbehavior or corrupted storage is detected.
@@ -615,7 +613,6 @@ pub mod pallet {
             };
 
             // Update storage items
-
             protocol_state.era = next_era;
             ActiveProtocolState::<T>::put(protocol_state);
 
@@ -632,6 +629,19 @@ pub mod pallet {
                 );
             }
             EraRewards::<T>::insert(&era_span_index, span);
+
+            // TODO: maybe do lazy history cleanup in this function?
+            // if let Some(expired_period) = Self::oldest_claimable_period().checked_sub(1) {
+            //     if let Some(expired_period_info) = PeriodEnd::<T>::get(&expired_period) {
+            //         let final_era = expired_period_info.final_era;
+            //         let expired_era_span_index = Self::era_reward_span_index(final_era);
+
+            //         let era_reward_span = EraRewards::<T>::get(&expired_era_span_index)
+            //             .unwrap_or_default();
+            //         if era_reward_span.last_era()
+
+            //     }
+            // }
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
             if let Some(period_event) = maybe_period_event {
@@ -1007,10 +1017,8 @@ pub mod pallet {
             let mut ledger = Ledger::<T>::get(&account);
 
             // In case old stake rewards are unclaimed & have expired, clean them up.
-            let threshold_period = Self::oldest_claimable_period(current_period);
-            if ledger.maybe_cleanup_expired(threshold_period) {
-                Self::update_ledger(&account, ledger);
-            }
+            let threshold_period = Self::oldest_claimable_period(protocol_state.period_number());
+            let _ignore = ledger.maybe_cleanup_expired(threshold_period);
             // TODO: add a test for this!
 
             // 1.
@@ -1621,7 +1629,7 @@ pub mod pallet {
             period: PeriodNumber,
             dapp_reward_pool: Balance,
         ) -> DAppTierRewardsFor<T> {
-            let mut dapp_stakes = Vec::with_capacity(T::MaxNumberOfContracts as usize);
+            let mut dapp_stakes = Vec::with_capacity(T::MaxNumberOfContracts::get() as usize);
 
             // 1.
             // Iterate over all staked dApps.

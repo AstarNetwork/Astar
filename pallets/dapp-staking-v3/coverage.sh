@@ -9,3 +9,7 @@ for target in "${targets[@]}"
 do
   cargo tarpaulin -p pallet-dapp-staking-v3 -o=html --output-dir=./coverage/$target -- $target
 done
+
+# Also need to check the coverage when only running extrinsic tests (disable type tests)
+
+# Also need similar approach to extrinsic testing, as above
