@@ -331,7 +331,7 @@ fn account_ledger_staked_amount_works() {
         voting: amount_1,
         build_and_earn: 0,
         era: 1,
-        period: period,
+        period,
     };
     assert_eq!(acc_ledger.staked_amount(period), amount_1);
 
@@ -345,7 +345,7 @@ fn account_ledger_staked_amount_works() {
         voting: 0,
         build_and_earn: amount_2,
         era: 2,
-        period: period,
+        period,
     });
     assert_eq!(acc_ledger.staked_amount(period), amount_2);
     assert!(acc_ledger.staked_amount(period - 1).is_zero());
@@ -1740,7 +1740,7 @@ fn era_info_unstake_works() {
     era_info.current_stake_amount = StakeAmount {
         voting: vp_stake_amount,
         build_and_earn: bep_stake_amount_1,
-        era: era,
+        era,
         period: period_number,
     };
     era_info.next_stake_amount = StakeAmount {
@@ -2093,53 +2093,121 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 }
 
 #[test]
-fn contract_stake_amount_get_works() {
-    let info_1 = StakeAmount {
-        voting: 0,
-        build_and_earn: 0,
-        era: 4,
-        period: 2,
+fn contract_stake_amount_basic_get_checks_work() {
+    // Sanity checks for empty struct
+    let contract_stake = ContractStakeAmount {
+        staked: Default::default(),
+        staked_future: None,
+        tier_label: None,
     };
-    let info_2 = StakeAmount {
+    assert!(contract_stake.is_empty());
+    assert!(contract_stake.latest_stake_period().is_none());
+    assert!(contract_stake.latest_stake_era().is_none());
+    assert!(contract_stake.total_staked_amount(0).is_zero());
+    assert!(contract_stake.staked_amount(0, Subperiod::Voting).is_zero());
+    assert!(contract_stake
+        .staked_amount(0, Subperiod::BuildAndEarn)
+        .is_zero());
+
+    let era = 3;
+    let period = 2;
+    let amount = StakeAmount {
+        voting: 11,
+        build_and_earn: 17,
+        era,
+        period,
+    };
+    let contract_stake = ContractStakeAmount {
+        staked: amount,
+        staked_future: None,
+        tier_label: None,
+    };
+    assert!(!contract_stake.is_empty());
+
+    // Checks for illegal periods
+    for illegal_period in [period - 1, period + 1] {
+        assert!(contract_stake.total_staked_amount(illegal_period).is_zero());
+        assert!(contract_stake
+            .staked_amount(illegal_period, Subperiod::Voting)
+            .is_zero());
+        assert!(contract_stake
+            .staked_amount(illegal_period, Subperiod::BuildAndEarn)
+            .is_zero());
+    }
+
+    // Check for the valid period
+    assert_eq!(contract_stake.latest_stake_period(), Some(period));
+    assert_eq!(contract_stake.latest_stake_era(), Some(era));
+    assert_eq!(contract_stake.total_staked_amount(period), amount.total());
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::Voting),
+        amount.voting
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
+        amount.build_and_earn
+    );
+}
+
+#[test]
+fn contract_stake_amount_advanced_get_checks_work() {
+    let (era_1, era_2) = (4, 7);
+    let period = 2;
+    let amount_1 = StakeAmount {
         voting: 11,
         build_and_earn: 0,
-        era: 7,
-        period: 3,
+        era: era_1,
+        period,
+    };
+    let amount_2 = StakeAmount {
+        voting: 11,
+        build_and_earn: 13,
+        era: era_2,
+        period,
     };
 
     let contract_stake = ContractStakeAmount {
-        staked: info_1,
-        staked_future: Some(info_2),
+        staked: amount_1,
+        staked_future: Some(amount_2),
         tier_label: None,
     };
 
-    // Sanity check
+    // Sanity checks - all values from the 'future' entry should be relevant
     assert!(!contract_stake.is_empty());
+    assert_eq!(contract_stake.latest_stake_period(), Some(period));
+    assert_eq!(contract_stake.latest_stake_era(), Some(era_2));
+    assert_eq!(contract_stake.total_staked_amount(period), amount_2.total());
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::Voting),
+        amount_2.voting
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
+        amount_2.build_and_earn
+    );
 
     // 1st scenario - get existing entries
-    assert_eq!(contract_stake.get(4, 2), Some(info_1));
-    assert_eq!(contract_stake.get(7, 3), Some(info_2));
+    assert_eq!(contract_stake.get(era_1, period), Some(amount_1));
+    assert_eq!(contract_stake.get(era_2, period), Some(amount_2));
 
     // 2nd scenario - get non-existing entries for covered eras
-    {
-        let era_1 = 6;
-        let entry_1 = contract_stake.get(era_1, 2).expect("Has to be Some");
-        assert!(entry_1.total().is_zero());
-        assert_eq!(entry_1.era, era_1);
-        assert_eq!(entry_1.period, 2);
+    let era_3 = era_2 - 1;
+    let entry_1 = contract_stake.get(era_3, 2).expect("Has to be Some");
+    assert_eq!(entry_1.total(), amount_1.total());
+    assert_eq!(entry_1.era, era_3);
+    assert_eq!(entry_1.period, period);
 
-        let era_2 = 8;
-        let entry_1 = contract_stake.get(era_2, 3).expect("Has to be Some");
-        assert_eq!(entry_1.total(), 11);
-        assert_eq!(entry_1.era, era_2);
-        assert_eq!(entry_1.period, 3);
-    }
+    let era_4 = era_2 + 1;
+    let entry_1 = contract_stake.get(era_4, period).expect("Has to be Some");
+    assert_eq!(entry_1.total(), amount_2.total());
+    assert_eq!(entry_1.era, era_4);
+    assert_eq!(entry_1.period, period);
 
     // 3rd scenario - get non-existing entries for covered eras but mismatching period
-    assert!(contract_stake.get(8, 2).is_none());
+    assert!(contract_stake.get(8, period + 1).is_none());
 
     // 4th scenario - get non-existing entries for non-covered eras
-    assert!(contract_stake.get(3, 2).is_none());
+    assert!(contract_stake.get(3, period).is_none());
 }
 
 #[test]

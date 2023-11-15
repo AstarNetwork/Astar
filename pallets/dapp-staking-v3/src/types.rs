@@ -975,7 +975,7 @@ impl SingularStakingInfo {
                 voting: Balance::zero(),
                 build_and_earn: Balance::zero(),
                 era: 0,
-                period: period,
+                period,
             },
             // Loyalty staking is only possible if stake is first made during the voting period.
             loyal_staker: subperiod == Subperiod::Voting,
