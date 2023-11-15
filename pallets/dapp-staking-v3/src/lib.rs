@@ -1372,7 +1372,7 @@ pub mod pallet {
 
             let (amount, tier_id) =
                 dapp_tiers
-                    .try_consume(dapp_info.id)
+                    .try_claim(dapp_info.id)
                     .map_err(|error| match error {
                         DAppTierError::NoDAppInTiers => Error::<T>::NoClaimableRewards,
                         DAppTierError::RewardAlreadyClaimed => Error::<T>::DAppRewardAlreadyClaimed,
@@ -1668,7 +1668,7 @@ pub mod pallet {
             }
 
             // 4.
-            // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is guaranteed due to lack of duplicated Ids).
+            // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is "guaranteed" due to lack of duplicated Ids).
             // TODO & Idea: perhaps use BTreeMap instead? It will "sort" automatically based on dApp Id, and we can efficiently remove entries,
             // reducing PoV size step by step.
             // It's a trade-off between speed and PoV size. Although both are quite minor, so maybe it doesn't matter that much.

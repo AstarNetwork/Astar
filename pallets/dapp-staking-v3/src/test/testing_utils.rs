@@ -920,7 +920,7 @@ pub(crate) fn assert_claim_dapp_reward(
             .expect("Entry must exist.")
             .clone();
 
-        info.try_consume(dapp_info.id).unwrap()
+        info.try_claim(dapp_info.id).unwrap()
     };
 
     // Claim dApp reward & verify event
@@ -960,7 +960,7 @@ pub(crate) fn assert_claim_dapp_reward(
         .expect("Entry must exist.")
         .clone();
     assert_eq!(
-        info.try_consume(dapp_info.id),
+        info.try_claim(dapp_info.id),
         Err(DAppTierError::RewardAlreadyClaimed),
         "It must not be possible to claim the same reward twice!.",
     );

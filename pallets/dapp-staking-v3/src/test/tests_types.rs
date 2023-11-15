@@ -2463,8 +2463,12 @@ fn era_reward_span_push_and_get_works() {
     assert_eq!(era_reward_span.get(era_2), Some(&era_reward_2));
 
     // Try and get the values outside of the span
-    assert!(era_reward_span.get(era_reward_span.first_era() - 1).is_none());
-    assert!(era_reward_span.get(era_reward_span.last_era() + 1).is_none());
+    assert!(era_reward_span
+        .get(era_reward_span.first_era() - 1)
+        .is_none());
+    assert!(era_reward_span
+        .get(era_reward_span.last_era() + 1)
+        .is_none());
 }
 
 #[test]
@@ -2501,7 +2505,102 @@ fn era_reward_span_fails_when_expected() {
 }
 
 #[test]
-fn tier_slot_configuration_basic_tests() {
+fn tier_threshold_is_ok() {
+    let amount = 100;
+
+    // Fixed TVL
+    let fixed_threshold = TierThreshold::FixedTvlAmount { amount };
+    assert!(fixed_threshold.is_satisfied(amount));
+    assert!(fixed_threshold.is_satisfied(amount + 1));
+    assert!(!fixed_threshold.is_satisfied(amount - 1));
+
+    // Dynamic TVL
+    let dynamic_threshold = TierThreshold::DynamicTvlAmount {
+        amount,
+        minimum_amount: amount / 2, // not important
+    };
+    assert!(dynamic_threshold.is_satisfied(amount));
+    assert!(dynamic_threshold.is_satisfied(amount + 1));
+    assert!(!dynamic_threshold.is_satisfied(amount - 1));
+}
+
+#[test]
+fn tier_params_check_is_ok() {
+    // Prepare valid params
+    get_u32_type!(TiersNum, 3);
+    let params = TierParameters::<TiersNum> {
+        reward_portion: BoundedVec::try_from(vec![
+            Permill::from_percent(60),
+            Permill::from_percent(30),
+            Permill::from_percent(10),
+        ])
+        .unwrap(),
+        slot_distribution: BoundedVec::try_from(vec![
+            Permill::from_percent(10),
+            Permill::from_percent(20),
+            Permill::from_percent(70),
+        ])
+        .unwrap(),
+        tier_thresholds: BoundedVec::try_from(vec![
+            TierThreshold::DynamicTvlAmount {
+                amount: 1000,
+                minimum_amount: 100,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 100,
+                minimum_amount: 10,
+            },
+            TierThreshold::FixedTvlAmount { amount: 10 },
+        ])
+        .unwrap(),
+    };
+    assert!(params.is_valid());
+
+    // 1st scenario - sums are below 100%, and that is ok
+    let mut new_params = params.clone();
+    new_params.reward_portion = BoundedVec::try_from(vec![
+        Permill::from_percent(59),
+        Permill::from_percent(30),
+        Permill::from_percent(10),
+    ])
+    .unwrap();
+    new_params.slot_distribution = BoundedVec::try_from(vec![
+        Permill::from_percent(10),
+        Permill::from_percent(19),
+        Permill::from_percent(70),
+    ])
+    .unwrap();
+    assert!(params.is_valid());
+
+    // 2nd scenario - reward portion is too much
+    let mut new_params = params.clone();
+    new_params.reward_portion = BoundedVec::try_from(vec![
+        Permill::from_percent(61),
+        Permill::from_percent(30),
+        Permill::from_percent(10),
+    ])
+    .unwrap();
+    assert!(!new_params.is_valid());
+
+    // 3rd scenario - tier distribution is too much
+    let mut new_params = params.clone();
+    new_params.slot_distribution = BoundedVec::try_from(vec![
+        Permill::from_percent(10),
+        Permill::from_percent(20),
+        Permill::from_percent(71),
+    ])
+    .unwrap();
+    assert!(!new_params.is_valid());
+
+    // 4th scenario - incorrect vector length
+    let mut new_params = params.clone();
+    new_params.tier_thresholds =
+        BoundedVec::try_from(vec![TierThreshold::FixedTvlAmount { amount: 10 }]).unwrap();
+    assert!(!new_params.is_valid());
+}
+
+#[test]
+fn tier_configuration_basic_tests() {
     // TODO: this should be expanded & improved later
     get_u32_type!(TiersNum, 4);
     let params = TierParameters::<TiersNum> {
@@ -2553,4 +2652,70 @@ fn tier_slot_configuration_basic_tests() {
     assert!(new_config.is_valid());
 
     // TODO: expand tests, add more sanity checks (e.g. tier 3 requirement should never be lower than tier 4, etc.)
+}
+
+#[test]
+fn dapp_tier_rewards_basic_tests() {
+    get_u32_type!(NumberOfDApps, 8);
+    get_u32_type!(NumberOfTiers, 3);
+
+    // Example dApps & rewards
+    let dapps = vec![
+        DAppTier {
+            dapp_id: 1,
+            tier_id: Some(0),
+        },
+        DAppTier {
+            dapp_id: 2,
+            tier_id: Some(0),
+        },
+        DAppTier {
+            dapp_id: 3,
+            tier_id: Some(1),
+        },
+        DAppTier {
+            dapp_id: 5,
+            tier_id: Some(1),
+        },
+        DAppTier {
+            dapp_id: 6,
+            tier_id: Some(2),
+        },
+    ];
+    let tier_rewards = vec![300, 20, 1];
+    let period = 2;
+
+    let mut dapp_tier_rewards = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+        dapps.clone(),
+        tier_rewards.clone(),
+        period,
+    )
+    .expect("Bounds are respected.");
+
+    // 1st scenario - claim reward for a dApps
+    let tier_id = dapps[0].tier_id.unwrap();
+    assert_eq!(
+        dapp_tier_rewards.try_claim(dapps[0].dapp_id),
+        Ok((tier_rewards[tier_id as usize], tier_id))
+    );
+
+    let tier_id = dapps[3].tier_id.unwrap();
+    assert_eq!(
+        dapp_tier_rewards.try_claim(dapps[3].dapp_id),
+        Ok((tier_rewards[tier_id as usize], tier_id))
+    );
+
+    // 2nd scenario - try to claim already claimed reward
+    assert_eq!(
+        dapp_tier_rewards.try_claim(dapps[0].dapp_id),
+        Err(DAppTierError::RewardAlreadyClaimed),
+        "Cannot claim the same reward twice."
+    );
+
+    // 3rd scenario - claim for a dApp that is not in the list
+    assert_eq!(
+        dapp_tier_rewards.try_claim(4),
+        Err(DAppTierError::NoDAppInTiers),
+        "dApp doesn't exist in the list so no rewards can be claimed."
+    );
 }

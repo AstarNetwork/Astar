@@ -70,7 +70,7 @@ use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, UniqueSaturatedInto, Zero},
+    traits::{AtLeast32BitUnsigned, CheckedAdd, UniqueSaturatedInto, Zero},
     FixedPointNumber, Permill, Saturating,
 };
 pub use sp_std::{fmt::Debug, vec::Vec};
@@ -1356,6 +1356,9 @@ impl TierThreshold {
             Self::DynamicTvlAmount { amount, .. } => stake >= *amount,
         }
     }
+
+    // TODO: maybe add a check that compares `Self` to another threshold and ensures it has lower requirements?
+    // Could be useful to have this check as a sanity check when params are configured.
 }
 
 /// Top level description of tier slot parameters used to calculate tier configuration.
@@ -1373,11 +1376,13 @@ impl TierThreshold {
 pub struct TierParameters<NT: Get<u32>> {
     /// Reward distribution per tier, in percentage.
     /// First entry refers to the first tier, and so on.
-    /// The sum of all values must be exactly equal to 1.
+    /// The sum of all values must not exceed 100%.
+    /// In case it is less, portion of rewards will never be distributed.
     pub reward_portion: BoundedVec<Permill, NT>,
     /// Distribution of number of slots per tier, in percentage.
     /// First entry refers to the first tier, and so on.
-    /// The sum of all values must be exactly equal to 1.
+    /// The sum of all values must not exceed 100%.
+    /// In case it is less, slot capacity will never be fully filled.
     pub slot_distribution: BoundedVec<Permill, NT>,
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
@@ -1388,11 +1393,36 @@ impl<NT: Get<u32>> TierParameters<NT> {
     /// Check if configuration is valid.
     /// All vectors are expected to have exactly the amount of entries as `number_of_tiers`.
     pub fn is_valid(&self) -> bool {
+        // Reward portions sum should not exceed 100%.
+        if self
+            .reward_portion
+            .iter()
+            .fold(Some(Permill::zero()), |acc, permill| match acc {
+                Some(acc) => acc.checked_add(permill),
+                None => None,
+            })
+            .is_none()
+        {
+            return false;
+        }
+
+        // Slot distribution sum should not exceed 100%.
+        if self
+            .slot_distribution
+            .iter()
+            .fold(Some(Permill::zero()), |acc, permill| match acc {
+                Some(acc) => acc.checked_add(permill),
+                None => None,
+            })
+            .is_none()
+        {
+            return false;
+        }
+
         let number_of_tiers: usize = NT::get() as usize;
         number_of_tiers == self.reward_portion.len()
             && number_of_tiers == self.slot_distribution.len()
             && number_of_tiers == self.tier_thresholds.len()
-        // TODO: Make check more detailed, verify that entries sum up to 1 or 100%
     }
 }
 
@@ -1611,6 +1641,8 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
         rewards: Vec<Balance>,
         period: PeriodNumber,
     ) -> Result<Self, ()> {
+        // TODO: should this part of the code ensure that dapps are sorted by Id?
+
         let dapps = BoundedVec::try_from(dapps).map_err(|_| ())?;
         let rewards = BoundedVec::try_from(rewards).map_err(|_| ())?;
         Ok(Self {
@@ -1622,7 +1654,7 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
 
     /// Consume reward for the specified dapp id, returning its amount and tier Id.
     /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
-    pub fn try_consume(&mut self, dapp_id: DAppId) -> Result<(Balance, TierId), DAppTierError> {
+    pub fn try_claim(&mut self, dapp_id: DAppId) -> Result<(Balance, TierId), DAppTierError> {
         // Check if dApp Id exists.
         let dapp_idx = self
             .dapps
