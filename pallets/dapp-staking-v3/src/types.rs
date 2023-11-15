@@ -141,7 +141,7 @@ pub struct PeriodInfo {
     /// Period number.
     #[codec(compact)]
     pub number: PeriodNumber,
-    /// subperiod.
+    /// Subperiod ytpe.
     pub subperiod: Subperiod,
     /// Last era of the subperiod, after this a new subperiod should start.
     #[codec(compact)]
@@ -150,7 +150,7 @@ pub struct PeriodInfo {
 
 impl PeriodInfo {
     /// `true` if the provided era belongs to the next period, `false` otherwise.
-    /// It's only possible to provide this information for the `BuildAndEarn` subperiod.
+    /// It's only possible to provide this information correctly for the ongoing `BuildAndEarn` subperiod.
     pub fn is_next_period(&self, era: EraNumber) -> bool {
         self.subperiod == Subperiod::BuildAndEarn && self.subperiod_end_era <= era
     }
@@ -231,7 +231,7 @@ where
         self.period_info.subperiod_end_era
     }
 
-    /// Checks whether a new era should be triggered, based on the provided `BlockNumber` argument
+    /// Checks whether a new era should be triggered, based on the provided _current_ block number argument
     /// or possibly other protocol state parameters.
     pub fn is_new_era(&self, now: BlockNumber) -> bool {
         self.next_era_start <= now
@@ -337,10 +337,10 @@ pub struct AccountLedger<
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
     UnlockingLen: Get<u32>,
 > {
-    /// How much active locked amount an account has.
+    /// How much active locked amount an account has. This can be used for staking.
     #[codec(compact)]
     pub locked: Balance,
-    /// Vector of all the unlocking chunks.
+    /// Vector of all the unlocking chunks. This is also considered _locked_ but cannot be used for staking.
     pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
     /// Primary field used to store how much was staked in a particular era.
     pub staked: StakeAmount,
@@ -705,7 +705,6 @@ where
             ((self.staked.era, era, self.staked.total()), None)
         };
 
-        println!("span: {:?}, maybe_first: {:?}", span, maybe_first);
         let result = EraStakePairIter::new(span, maybe_first)
             .map_err(|_| AccountLedgerError::InvalidIterator)?;
 
@@ -717,7 +716,7 @@ where
 
         // Make sure to clean up the entries if all rewards for the period have been claimed.
         match period_end {
-            Some(subperiod_end_era) if era >= subperiod_end_era => {
+            Some(period_end_era) if era >= period_end_era => {
                 self.staked = Default::default();
                 self.staked_future = None;
             }
@@ -815,21 +814,6 @@ pub struct StakeAmount {
 }
 
 impl StakeAmount {
-    /// Create new instance of `StakeAmount` with specified `voting` and `build_and_earn` amounts.
-    pub fn new(
-        voting: Balance,
-        build_and_earn: Balance,
-        era: EraNumber,
-        period: PeriodNumber,
-    ) -> Self {
-        Self {
-            voting,
-            build_and_earn,
-            era,
-            period,
-        }
-    }
-
     /// `true` if nothing is staked, `false` otherwise
     pub fn is_empty(&self) -> bool {
         self.voting.is_zero() && self.build_and_earn.is_zero()
@@ -870,6 +854,10 @@ impl StakeAmount {
                     self.build_and_earn.saturating_reduce(amount);
                 } else {
                     // Rollover from build&earn to voting, is guaranteed to be larger than zero due to previous check
+                    // E.g. voting = 10, build&earn = 5, amount = 7
+                    // underflow = build&earn - amount = 5 - 7 = -2
+                    // voting = 10 - 2 = 8
+                    // build&earn = 0
                     let remainder = amount.saturating_sub(self.build_and_earn);
                     self.build_and_earn = Balance::zero();
                     self.voting.saturating_reduce(remainder);
@@ -882,11 +870,8 @@ impl StakeAmount {
 /// Info about current era, including the rewards, how much is locked, unlocking, etc.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct EraInfo {
-    // TODO: can some of these values be cleaned up? We no longer need to keep track of two separate lock values?
-    /// How much balance is considered to be locked in the current era.
-    #[codec(compact)]
-    pub active_era_locked: Balance,
-    /// How much balance is locked in dApp staking, in total.
+    /// How much balance is locked in dApp staking.
+    /// Does not include the amount that is undergoing the unlocking period.
     #[codec(compact)]
     pub total_locked: Balance,
     /// How much balance is undergoing unlocking process.
@@ -907,7 +892,6 @@ impl EraInfo {
 
     /// Update with the new amount that has just started undergoing the unlocking period.
     pub fn unlocking_started(&mut self, amount: Balance) {
-        self.active_era_locked.saturating_reduce(amount);
         self.total_locked.saturating_reduce(amount);
         self.unlocking.saturating_accrue(amount);
     }
@@ -953,7 +937,6 @@ impl EraInfo {
     ///  ## Args
     /// `next_subperiod` - `None` if no subperiod change, `Some(type)` if `type` is starting from the next era.
     pub fn migrate_to_next_era(&mut self, next_subperiod: Option<Subperiod>) {
-        self.active_era_locked = self.total_locked;
         match next_subperiod {
             // If next era marks start of new voting period period, it means we're entering a new period
             Some(Subperiod::Voting) => {
@@ -988,16 +971,22 @@ impl SingularStakingInfo {
     /// `subperiod` - subperiod during which this entry is created.
     pub fn new(period: PeriodNumber, subperiod: Subperiod) -> Self {
         Self {
-            staked: StakeAmount::new(Balance::zero(), Balance::zero(), 0, period),
+            staked: StakeAmount {
+                voting: Balance::zero(),
+                build_and_earn: Balance::zero(),
+                era: 0,
+                period: period,
+            },
             // Loyalty staking is only possible if stake is first made during the voting period.
             loyal_staker: subperiod == Subperiod::Voting,
         }
     }
 
     /// Stake the specified amount on the contract, for the specified subperiod.
-    pub fn stake(&mut self, amount: Balance, subperiod: Subperiod) {
-        // TODO: if we keep `StakeAmount` type here, consider including the era as well for consistency
+    pub fn stake(&mut self, amount: Balance, current_era: EraNumber, subperiod: Subperiod) {
         self.staked.add(amount, subperiod);
+        // Stake is only valid from the next era so we keep it consistent here
+        self.staked.era = current_era.saturating_add(1);
     }
 
     /// Unstakes some of the specified amount from the contract.
@@ -1006,10 +995,17 @@ impl SingularStakingInfo {
     /// and `voting period` has passed, this will remove the _loyalty_ flag from the staker.
     ///
     /// Returns the amount that was unstaked from the `voting period` stake, and from the `build&earn period` stake.
-    pub fn unstake(&mut self, amount: Balance, subperiod: Subperiod) -> (Balance, Balance) {
+    pub fn unstake(
+        &mut self,
+        amount: Balance,
+        current_era: EraNumber,
+        subperiod: Subperiod,
+    ) -> (Balance, Balance) {
         let snapshot = self.staked;
 
         self.staked.subtract(amount, subperiod);
+        // Keep the latest era for which the entry is valid
+        self.staked.era = self.staked.era.max(current_era);
 
         self.loyal_staker = self.loyal_staker
             && (subperiod == Subperiod::Voting
@@ -1042,6 +1038,11 @@ impl SingularStakingInfo {
     /// Period for which this entry is relevant.
     pub fn period_number(&self) -> PeriodNumber {
         self.staked.period
+    }
+
+    /// Era in which the entry was last time updated
+    pub fn era(&self) -> EraNumber {
+        self.staked.era
     }
 
     /// `true` if no stake exists, `false` otherwise.

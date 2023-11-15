@@ -327,7 +327,12 @@ fn account_ledger_staked_amount_works() {
     // Period matches
     let amount_1 = 29;
     let period = 5;
-    acc_ledger.staked = StakeAmount::new(amount_1, 0, 1, period);
+    acc_ledger.staked = StakeAmount {
+        voting: amount_1,
+        build_and_earn: 0,
+        era: 1,
+        period: period,
+    };
     assert_eq!(acc_ledger.staked_amount(period), amount_1);
 
     // Period doesn't match
@@ -336,7 +341,12 @@ fn account_ledger_staked_amount_works() {
 
     // Add future entry
     let amount_2 = 17;
-    acc_ledger.staked_future = Some(StakeAmount::new(0, amount_2, 2, period));
+    acc_ledger.staked_future = Some(StakeAmount {
+        voting: 0,
+        build_and_earn: amount_2,
+        era: 2,
+        period: period,
+    });
     assert_eq!(acc_ledger.staked_amount(period), amount_2);
     assert!(acc_ledger.staked_amount(period - 1).is_zero());
     assert!(acc_ledger.staked_amount(period + 1).is_zero());
@@ -424,7 +434,12 @@ fn account_ledger_stakeable_amount_works() {
     // Second scenario - some staked amount is introduced, period is still valid
     let first_era = 1;
     let staked_amount = 7;
-    acc_ledger.staked = StakeAmount::new(0, staked_amount, first_era, period_1);
+    acc_ledger.staked = StakeAmount {
+        voting: 0,
+        build_and_earn: staked_amount,
+        era: first_era,
+        period: period_1,
+    };
 
     assert_eq!(
         acc_ledger.stakeable_amount(period_1),
@@ -585,7 +600,12 @@ fn account_ledger_add_stake_amount_advanced_example_works() {
     acc_ledger.add_lock_amount(lock_amount);
 
     // We only have entry for the current era
-    acc_ledger.staked = StakeAmount::new(stake_amount_1, 0, first_era, period_1);
+    acc_ledger.staked = StakeAmount {
+        voting: stake_amount_1,
+        build_and_earn: 0,
+        era: first_era,
+        period: period_1,
+    };
 
     let stake_amount_2 = 2;
     let acc_ledger_snapshot = acc_ledger.clone();
@@ -655,7 +675,12 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     );
 
     // Alternative situation - no future entry, only current era
-    acc_ledger.staked = StakeAmount::new(0, stake_amount, first_era, period_1);
+    acc_ledger.staked = StakeAmount {
+        voting: 0,
+        build_and_earn: stake_amount,
+        era: first_era,
+        period: period_1,
+    };
     acc_ledger.staked_future = None;
 
     assert_eq!(
@@ -744,7 +769,12 @@ fn account_ledger_unstake_amount_basic_scenario_works() {
         .is_ok());
 
     // Only 'current' entry has some values, future is set to None.
-    acc_ledger_2.staked = StakeAmount::new(0, amount_1, era_1, period_1);
+    acc_ledger_2.staked = StakeAmount {
+        voting: 0,
+        build_and_earn: amount_1,
+        era: era_1,
+        period: period_1,
+    };
     acc_ledger_2.staked_future = None;
 
     for mut acc_ledger in vec![acc_ledger, acc_ledger_2] {
@@ -788,8 +818,18 @@ fn account_ledger_unstake_amount_advanced_scenario_works() {
     acc_ledger.add_lock_amount(amount_1);
 
     // We have two entries at once
-    acc_ledger.staked = StakeAmount::new(amount_1 - 1, 0, era_1, period_1);
-    acc_ledger.staked_future = Some(StakeAmount::new(amount_1 - 1, 1, era_1 + 1, period_1));
+    acc_ledger.staked = StakeAmount {
+        voting: amount_1 - 1,
+        build_and_earn: 0,
+        era: era_1,
+        period: period_1,
+    };
+    acc_ledger.staked_future = Some(StakeAmount {
+        voting: amount_1 - 1,
+        build_and_earn: 1,
+        era: era_1 + 1,
+        period: period_1,
+    });
 
     // 1st scenario - unstake some amount from the current era, both entries should be affected.
     let unstake_amount_1 = 3;
@@ -883,7 +923,12 @@ fn account_ledger_unstake_from_invalid_era_fails() {
     );
 
     // Alternative situation - no future entry, only current era
-    acc_ledger.staked = StakeAmount::new(0, 1, era_1, period_1);
+    acc_ledger.staked = StakeAmount {
+        voting: 0,
+        build_and_earn: 1,
+        era: era_1,
+        period: period_1,
+    };
     acc_ledger.staked_future = None;
 
     assert_eq!(
@@ -1608,7 +1653,6 @@ fn era_info_lock_unlock_works() {
 
     // Sanity check
     assert!(era_info.total_locked.is_zero());
-    assert!(era_info.active_era_locked.is_zero());
     assert!(era_info.unlocking.is_zero());
 
     // Basic add lock
@@ -1621,7 +1665,6 @@ fn era_info_lock_unlock_works() {
     // Basic unlocking started
     let unlock_amount = 2;
     era_info.total_locked = 17;
-    era_info.active_era_locked = 13;
     let era_info_snapshot = era_info;
 
     // First unlock & checks
@@ -1629,10 +1672,6 @@ fn era_info_lock_unlock_works() {
     assert_eq!(
         era_info.total_locked,
         era_info_snapshot.total_locked - unlock_amount
-    );
-    assert_eq!(
-        era_info.active_era_locked,
-        era_info_snapshot.active_era_locked - unlock_amount
     );
     assert_eq!(era_info.unlocking, unlock_amount);
 
@@ -1642,17 +1681,13 @@ fn era_info_lock_unlock_works() {
         era_info.total_locked,
         era_info_snapshot.total_locked - unlock_amount * 2
     );
-    assert_eq!(
-        era_info.active_era_locked,
-        era_info_snapshot.active_era_locked - unlock_amount * 2
-    );
     assert_eq!(era_info.unlocking, unlock_amount * 2);
 
     // Claim unlocked chunks
     let old_era_info = era_info.clone();
     era_info.unlocking_removed(1);
     assert_eq!(era_info.unlocking, old_era_info.unlocking - 1);
-    assert_eq!(era_info.active_era_locked, old_era_info.active_era_locked);
+    assert_eq!(era_info.total_locked, old_era_info.total_locked);
 }
 
 #[test]
@@ -1702,10 +1737,18 @@ fn era_info_unstake_works() {
     let bep_stake_amount_2 = bep_stake_amount_1 + 6;
     let period_number = 1;
     let era = 2;
-    era_info.current_stake_amount =
-        StakeAmount::new(vp_stake_amount, bep_stake_amount_1, era, period_number);
-    era_info.next_stake_amount =
-        StakeAmount::new(vp_stake_amount, bep_stake_amount_2, era + 1, period_number);
+    era_info.current_stake_amount = StakeAmount {
+        voting: vp_stake_amount,
+        build_and_earn: bep_stake_amount_1,
+        era: era,
+        period: period_number,
+    };
+    era_info.next_stake_amount = StakeAmount {
+        voting: vp_stake_amount,
+        build_and_earn: bep_stake_amount_2,
+        era: era + 1,
+        period: period_number,
+    };
     let total_staked = era_info.total_staked_amount();
     let total_staked_next_era = era_info.total_staked_amount_next_era();
 
@@ -1764,7 +1807,6 @@ fn era_info_unstake_works() {
 fn era_info_migrate_to_next_era_works() {
     // Make dummy era info with stake amounts
     let era_info_snapshot = EraInfo {
-        active_era_locked: 123,
         total_locked: 456,
         unlocking: 13,
         current_stake_amount: StakeAmount {
@@ -1786,7 +1828,6 @@ fn era_info_migrate_to_next_era_works() {
         let mut era_info = era_info_snapshot;
         era_info.migrate_to_next_era(None);
 
-        assert_eq!(era_info.active_era_locked, era_info_snapshot.total_locked);
         assert_eq!(era_info.total_locked, era_info_snapshot.total_locked);
         assert_eq!(era_info.unlocking, era_info_snapshot.unlocking);
         assert_eq!(
@@ -1804,7 +1845,6 @@ fn era_info_migrate_to_next_era_works() {
         let mut era_info = era_info_snapshot;
         era_info.migrate_to_next_era(Some(Subperiod::BuildAndEarn));
 
-        assert_eq!(era_info.active_era_locked, era_info_snapshot.total_locked);
         assert_eq!(era_info.total_locked, era_info_snapshot.total_locked);
         assert_eq!(era_info.unlocking, era_info_snapshot.unlocking);
         assert_eq!(
@@ -1822,7 +1862,6 @@ fn era_info_migrate_to_next_era_works() {
         let mut era_info = era_info_snapshot;
         era_info.migrate_to_next_era(Some(Subperiod::Voting));
 
-        assert_eq!(era_info.active_era_locked, era_info_snapshot.total_locked);
         assert_eq!(era_info.total_locked, era_info_snapshot.total_locked);
         assert_eq!(era_info.unlocking, era_info_snapshot.unlocking);
         assert!(era_info.current_stake_amount.is_empty());
@@ -1904,11 +1943,14 @@ fn singular_staking_info_basics_are_ok() {
     assert_eq!(staking_info.period_number(), period_number);
     assert!(staking_info.is_loyal());
     assert!(staking_info.total_staked_amount().is_zero());
+    assert!(staking_info.is_empty());
+    assert!(staking_info.era().is_zero());
     assert!(!SingularStakingInfo::new(period_number, Subperiod::BuildAndEarn).is_loyal());
 
     // Add some staked amount during `Voting` period
+    let era_1 = 7;
     let vote_stake_amount_1 = 11;
-    staking_info.stake(vote_stake_amount_1, Subperiod::Voting);
+    staking_info.stake(vote_stake_amount_1, era_1, Subperiod::Voting);
     assert_eq!(staking_info.total_staked_amount(), vote_stake_amount_1);
     assert_eq!(
         staking_info.staked_amount(Subperiod::Voting),
@@ -1917,10 +1959,16 @@ fn singular_staking_info_basics_are_ok() {
     assert!(staking_info
         .staked_amount(Subperiod::BuildAndEarn)
         .is_zero());
+    assert_eq!(
+        staking_info.era(),
+        era_1 + 1,
+        "Stake era should remain valid."
+    );
 
     // Add some staked amount during `BuildAndEarn` period
+    let era_2 = 9;
     let bep_stake_amount_1 = 23;
-    staking_info.stake(bep_stake_amount_1, Subperiod::BuildAndEarn);
+    staking_info.stake(bep_stake_amount_1, era_2, Subperiod::BuildAndEarn);
     assert_eq!(
         staking_info.total_staked_amount(),
         vote_stake_amount_1 + bep_stake_amount_1
@@ -1933,6 +1981,7 @@ fn singular_staking_info_basics_are_ok() {
         staking_info.staked_amount(Subperiod::BuildAndEarn),
         bep_stake_amount_1
     );
+    assert_eq!(staking_info.era(), era_2 + 1);
 }
 
 #[test]
@@ -1942,13 +1991,14 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
 
     // Prep actions
+    let era_1 = 2;
     let vote_stake_amount_1 = 11;
-    staking_info.stake(vote_stake_amount_1, Subperiod::Voting);
+    staking_info.stake(vote_stake_amount_1, era_1, Subperiod::Voting);
 
     // Unstake some amount during `Voting` period, loyalty should remain as expected.
     let unstake_amount_1 = 5;
     assert_eq!(
-        staking_info.unstake(unstake_amount_1, Subperiod::Voting),
+        staking_info.unstake(unstake_amount_1, era_1, Subperiod::Voting),
         (unstake_amount_1, Balance::zero())
     );
     assert_eq!(
@@ -1956,15 +2006,22 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         vote_stake_amount_1 - unstake_amount_1
     );
     assert!(staking_info.is_loyal());
+    assert_eq!(
+        staking_info.era(),
+        era_1 + 1,
+        "Stake era should remain valid."
+    );
 
     // Fully unstake, attempting to undersaturate, and ensure loyalty flag is still true.
+    let era_2 = era_1 + 2;
     let remaining_stake = staking_info.total_staked_amount();
     assert_eq!(
-        staking_info.unstake(remaining_stake + 1, Subperiod::Voting),
+        staking_info.unstake(remaining_stake + 1, era_2, Subperiod::Voting),
         (remaining_stake, Balance::zero())
     );
     assert!(staking_info.total_staked_amount().is_zero());
     assert!(staking_info.is_loyal());
+    assert_eq!(staking_info.era(), era_2);
 }
 
 #[test]
@@ -1974,15 +2031,16 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
 
     // Prep actions
+    let era_1 = 3;
     let vote_stake_amount_1 = 11;
-    staking_info.stake(vote_stake_amount_1, Subperiod::Voting);
+    staking_info.stake(vote_stake_amount_1, era_1 - 1, Subperiod::Voting);
     let bep_stake_amount_1 = 23;
-    staking_info.stake(bep_stake_amount_1, Subperiod::BuildAndEarn);
+    staking_info.stake(bep_stake_amount_1, era_1, Subperiod::BuildAndEarn);
 
     // 1st scenario - Unstake some of the amount staked during B&E period
     let unstake_1 = 5;
     assert_eq!(
-        staking_info.unstake(5, Subperiod::BuildAndEarn),
+        staking_info.unstake(5, era_1, Subperiod::BuildAndEarn),
         (Balance::zero(), unstake_1)
     );
     assert_eq!(
@@ -1998,6 +2056,11 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         bep_stake_amount_1 - unstake_1
     );
     assert!(staking_info.is_loyal());
+    assert_eq!(
+        staking_info.era(),
+        era_1 + 1,
+        "Stake era should remain valid."
+    );
 
     // 2nd scenario - unstake all of the amount staked during B&E period, and then some more.
     // The point is to take a chunk from the voting period stake too.
@@ -2005,9 +2068,10 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     let current_bep_stake = staking_info.staked_amount(Subperiod::BuildAndEarn);
     let voting_stake_overflow = 2;
     let unstake_2 = current_bep_stake + voting_stake_overflow;
+    let era_2 = era_1 + 3;
 
     assert_eq!(
-        staking_info.unstake(unstake_2, Subperiod::BuildAndEarn),
+        staking_info.unstake(unstake_2, era_2, Subperiod::BuildAndEarn),
         (voting_stake_overflow, current_bep_stake)
     );
     assert_eq!(
@@ -2025,12 +2089,23 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         !staking_info.is_loyal(),
         "Loyalty flag should have been removed due to non-zero voting period unstake"
     );
+    assert_eq!(staking_info.era(), era_2);
 }
 
 #[test]
-fn contract_stake_info_get_works() {
-    let info_1 = StakeAmount::new(0, 0, 4, 2);
-    let info_2 = StakeAmount::new(11, 0, 7, 3);
+fn contract_stake_amount_get_works() {
+    let info_1 = StakeAmount {
+        voting: 0,
+        build_and_earn: 0,
+        era: 4,
+        period: 2,
+    };
+    let info_2 = StakeAmount {
+        voting: 11,
+        build_and_earn: 0,
+        era: 7,
+        period: 3,
+    };
 
     let contract_stake = ContractStakeAmount {
         staked: info_1,
@@ -2068,7 +2143,7 @@ fn contract_stake_info_get_works() {
 }
 
 #[test]
-fn contract_stake_info_stake_is_ok() {
+fn contract_stake_amount_stake_is_ok() {
     let mut contract_stake = ContractStakeAmount::default();
 
     // 1st scenario - stake some amount and verify state change
@@ -2165,7 +2240,7 @@ fn contract_stake_info_stake_is_ok() {
 }
 
 #[test]
-fn contract_stake_info_unstake_is_ok() {
+fn contract_stake_amount_unstake_is_ok() {
     let mut contract_stake = ContractStakeAmount::default();
 
     // Prep action - create a stake entry

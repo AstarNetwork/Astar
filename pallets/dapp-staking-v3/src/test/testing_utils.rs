@@ -225,11 +225,6 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
         pre_snapshot.current_era_info.total_locked + expected_lock_amount,
         "Total locked balance should be increased by the amount locked."
     );
-    assert_eq!(
-        post_snapshot.current_era_info.active_era_locked,
-        pre_snapshot.current_era_info.active_era_locked,
-        "Active era locked amount should remain exactly the same."
-    );
 }
 
 /// Start the unlocking process for locked funds and assert success.
@@ -310,12 +305,6 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
             .total_locked
             .saturating_sub(expected_unlock_amount),
         post_era_info.total_locked
-    );
-    assert_eq!(
-        pre_era_info
-            .active_era_locked
-            .saturating_sub(expected_unlock_amount),
-        post_era_info.active_era_locked
     );
 }
 

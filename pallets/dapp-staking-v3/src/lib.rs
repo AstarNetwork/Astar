@@ -990,11 +990,11 @@ pub mod pallet {
             ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
-            let stake_era = protocol_state.era;
+            let current_era = protocol_state.era;
             ensure!(
                 !protocol_state
                     .period_info
-                    .is_next_period(stake_era.saturating_add(1)),
+                    .is_next_period(current_era.saturating_add(1)),
                 Error::<T>::PeriodEndsInNextEra
             );
 
@@ -1004,7 +1004,7 @@ pub mod pallet {
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
             ledger
-                .add_stake_amount(amount, stake_era, protocol_state.period_info)
+                .add_stake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
                         Error::<T>::UnclaimedRewardsFromPastPeriods
@@ -1047,7 +1047,7 @@ pub mod pallet {
                         true,
                     ),
                 };
-            new_staking_info.stake(amount, protocol_state.subperiod());
+            new_staking_info.stake(amount, current_era, protocol_state.subperiod());
             ensure!(
                 new_staking_info.total_staked_amount() >= T::MinimumStakeAmount::get(),
                 Error::<T>::InsufficientStakeAmount
@@ -1064,7 +1064,7 @@ pub mod pallet {
             // 3.
             // Update `ContractStake` storage with the new stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
-            contract_stake_info.stake(amount, protocol_state.period_info, stake_era);
+            contract_stake_info.stake(amount, protocol_state.period_info, current_era);
 
             // 4.
             // Update total staked amount for the next era.
@@ -1108,7 +1108,7 @@ pub mod pallet {
             ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
-            let unstake_era = protocol_state.era;
+            let current_era = protocol_state.era;
 
             let mut ledger = Ledger::<T>::get(&account);
 
@@ -1135,7 +1135,7 @@ pub mod pallet {
                         amount
                     };
 
-                    staking_info.unstake(amount, protocol_state.subperiod());
+                    staking_info.unstake(amount, current_era, protocol_state.subperiod());
                     (staking_info, amount)
                 }
                 None => {
@@ -1146,7 +1146,7 @@ pub mod pallet {
             // 2.
             // Reduce stake amount
             ledger
-                .unstake_amount(amount, unstake_era, protocol_state.period_info)
+                .unstake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
                     // These are all defensive checks, which should never happen since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
@@ -1161,7 +1161,7 @@ pub mod pallet {
             // 3.
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
-            contract_stake_info.unstake(amount, protocol_state.period_info, unstake_era);
+            contract_stake_info.unstake(amount, protocol_state.period_info, current_era);
 
             // 4.
             // Update total staked amount for the next era.
@@ -1415,7 +1415,7 @@ pub mod pallet {
             );
 
             let protocol_state = ActiveProtocolState::<T>::get();
-            let unstake_era = protocol_state.era;
+            let current_era = protocol_state.era;
 
             // Extract total staked amount on the specified unregistered contract
             let amount = match StakerInfo::<T>::get(&account, &smart_contract) {
@@ -1435,7 +1435,7 @@ pub mod pallet {
             // Reduce stake amount in ledger
             let mut ledger = Ledger::<T>::get(&account);
             ledger
-                .unstake_amount(amount, unstake_era, protocol_state.period_info)
+                .unstake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
                     // These are all defensive checks, which should never happen since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
