@@ -65,7 +65,7 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 
 # Astar pallets
 astar-primitives = { workspace = true }
-block-rewards-hybrid = { workspace = true }
+pallet-block-rewards-hybrid = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
@@ -111,7 +111,7 @@ std = [
 	"pallet-assets/std",
 	"pallet-aura/std",
 	"pallet-balances/std",
-	"block-rewards-hybrid/std",
+	"pallet-block-rewards-hybrid/std",
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
 	"pallet-chain-extension-dapps-staking/std",
@@ -177,7 +177,7 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-dapps-staking/runtime-benchmarks",
-	"block-rewards-hybrid/runtime-benchmarks",
+	"pallet-block-rewards-hybrid/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
@@ -198,7 +198,7 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
-	"block-rewards-hybrid/try-runtime",
+	"pallet-block-rewards-hybrid/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-dapps-staking/try-runtime",
 	"pallet-grandpa/try-runtime",

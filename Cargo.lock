@@ -1007,25 +1007,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
-name = "block-rewards-hybrid"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "bounded-collections"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6028,7 +6009,6 @@ version = "5.24.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
- "block-rewards-hybrid",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -6045,6 +6025,7 @@ dependencies = [
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
+ "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
@@ -7457,6 +7438,25 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "2.2.2"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-block-rewards-hybrid"
+version = "0.1.0"
 dependencies = [
  "astar-primitives",
  "frame-benchmarking",
@@ -13122,7 +13122,6 @@ version = "5.24.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
- "block-rewards-hybrid",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -13151,6 +13150,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",

@@ -72,7 +72,7 @@ pub use astar_primitives::{
     xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
     Index, Signature,
 };
-pub use block_rewards_hybrid::RewardDistributionConfig;
+pub use pallet_block_rewards_hybrid::RewardDistributionConfig;
 
 pub use crate::precompiles::WhitelistedCalls;
 
@@ -538,7 +538,7 @@ impl Get<Balance> for DappsStakingTvlProvider {
 }
 
 pub struct BeneficiaryPayout();
-impl block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
+impl pallet_block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
     fn treasury(reward: NegativeImbalance) {
         Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
@@ -556,13 +556,13 @@ parameter_types! {
     pub const MaxBlockRewardAmount: Balance = 230_718 * MILLISBY;
 }
 
-impl block_rewards_hybrid::Config for Runtime {
+impl pallet_block_rewards_hybrid::Config for Runtime {
     type Currency = Balances;
     type DappsStakingTvlProvider = DappsStakingTvlProvider;
     type BeneficiaryPayout = BeneficiaryPayout;
     type MaxBlockRewardAmount = MaxBlockRewardAmount;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = block_rewards_hybrid::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = pallet_block_rewards_hybrid::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1241,7 +1241,7 @@ construct_runtime!(
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
         DappsStaking: pallet_dapps_staking = 34,
-        BlockReward: block_rewards_hybrid = 35,
+        BlockReward: pallet_block_rewards_hybrid = 35,
         Assets: pallet_assets = 36,
 
         Authorship: pallet_authorship = 40,
@@ -1316,17 +1316,17 @@ pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
 pub struct HybridInflationModelMigration;
 impl OnRuntimeUpgrade for HybridInflationModelMigration {
     fn on_runtime_upgrade() -> Weight {
-        let mut reward_config = block_rewards_hybrid::RewardDistributionConfig {
+        let mut reward_config = pallet_block_rewards_hybrid::RewardDistributionConfig {
             // 4.66%
-            treasury_percent: Perbill::from_rational(4663701u32, 100000000u32),
+            treasury_percent: Perbill::from_rational(4_663_701u32, 100_000_000u32),
             // 23.09%
-            base_staker_percent: Perbill::from_rational(2309024u32, 10000000u32),
+            base_staker_percent: Perbill::from_rational(2_309_024u32, 10_000_000u32),
             // 17.31%
-            dapps_percent: Perbill::from_rational(173094531u32, 1000000000u32),
+            dapps_percent: Perbill::from_rational(173_094_531u32, 1_000_000_000u32),
             // 2.99%
-            collators_percent: Perbill::from_rational(29863296u32, 1000000000u32),
+            collators_percent: Perbill::from_rational(29_863_296u32, 1_000_000_000u32),
             // 51.95%
-            adjustable_percent: Perbill::from_rational(519502763u32, 1000000000u32),
+            adjustable_percent: Perbill::from_rational(519_502_763u32, 1_000_000_000u32),
             // 60.00%
             ideal_dapps_staking_tvl: Perbill::from_percent(60),
         };
@@ -1340,7 +1340,7 @@ impl OnRuntimeUpgrade for HybridInflationModelMigration {
             reward_config = Default::default();
         }
 
-        block_rewards_hybrid::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
+        pallet_block_rewards_hybrid::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
 
         <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(1)
     }

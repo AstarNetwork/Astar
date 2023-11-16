@@ -70,7 +70,8 @@
 //!     }
 //! }
 //! ```
-//! 4. Set `RewardAmount` to desired block reward value in native currency.
+//! 4. Set `MaxBlockRewardAmount` to the max reward amount distributed per block.
+//!    Max amount will be reached if `ideal_dapps_staking_tvl` is reached.
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
