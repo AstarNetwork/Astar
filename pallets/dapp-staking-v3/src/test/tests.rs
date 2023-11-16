@@ -1658,6 +1658,81 @@ fn claim_dapp_reward_twice_for_same_era_fails() {
     })
 }
 
+#[test]
+fn unstake_from_unregistered_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount);
+
+        // Unregister the smart contract, and unstake from it.
+        assert_unregister(&smart_contract);
+        assert_unstake_from_unregistered(account, &smart_contract);
+    })
+}
+
+#[test]
+fn unstake_from_unregistered_fails_for_active_contract() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount);
+
+        assert_noop!(
+            DappStaking::unstake_from_unregistered(RuntimeOrigin::signed(account), smart_contract),
+            Error::<Test>::ContractStillActive
+        );
+    })
+}
+
+#[test]
+fn unstake_from_unregistered_fails_for_not_staked_contract() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+        assert_unregister(&smart_contract);
+
+        assert_noop!(
+            DappStaking::unstake_from_unregistered(RuntimeOrigin::signed(2), smart_contract),
+            Error::<Test>::NoStakingInfo
+        );
+    })
+}
+
+#[test]
+fn unstake_from_unregistered_fails_for_past_period() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount);
+
+        // Unregister smart contract & advance to next period
+        assert_unregister(&smart_contract);
+        advance_to_next_period();
+
+        assert_noop!(
+            DappStaking::unstake_from_unregistered(RuntimeOrigin::signed(account), smart_contract),
+            Error::<Test>::UnstakeFromPastPeriod
+        );
+    })
+}
+
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////

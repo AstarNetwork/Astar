@@ -414,7 +414,6 @@ pub(crate) fn assert_stake(
     smart_contract: &MockSmartContract,
     amount: Balance,
 ) {
-    // TODO: this is a huge function - I could break it down, but I'm not sure it will help with readability.
     let pre_snapshot = MemorySnapshot::new();
     let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
     let pre_staker_info = pre_snapshot
@@ -473,7 +472,6 @@ pub(crate) fn assert_stake(
         pre_ledger.stakeable_amount(stake_period) - amount,
         "Stakeable amount must decrease by the 'amount'"
     );
-    // TODO: expand with more detailed checks of staked and staked_future
 
     // 2. verify staker info
     // =====================
@@ -575,7 +573,6 @@ pub(crate) fn assert_unstake(
         .expect("Entry must exist since 'unstake' is being called.");
     let pre_era_info = pre_snapshot.current_era_info;
 
-    let _unstake_era = pre_snapshot.active_protocol_state.era;
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
     let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
 
@@ -608,7 +605,7 @@ pub(crate) fn assert_unstake(
     let post_contract_stake = post_snapshot
         .contract_stake
         .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
-        .expect("Entry must exist since 'stake' operation was successfull.");
+        .expect("Entry must exist since 'unstake' operation was successfull.");
     let post_era_info = post_snapshot.current_era_info;
 
     // 1. verify ledger
@@ -624,7 +621,6 @@ pub(crate) fn assert_unstake(
         pre_ledger.stakeable_amount(unstake_period) + amount,
         "Stakeable amount must increase by the 'amount'"
     );
-    // TODO: expand with more detailed checks of staked and staked_future
 
     // 2. verify staker info
     // =====================
@@ -700,6 +696,7 @@ pub(crate) fn assert_unstake(
         "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
     );
 
+    // Check for unstake underflow.
     if unstake_subperiod == Subperiod::BuildAndEarn
         && pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn) < amount
     {
@@ -963,6 +960,159 @@ pub(crate) fn assert_claim_dapp_reward(
         info.try_claim(dapp_info.id),
         Err(DAppTierError::RewardAlreadyClaimed),
         "It must not be possible to claim the same reward twice!.",
+    );
+}
+
+/// Unstake some funds from the specified unregistered smart contract.
+pub(crate) fn assert_unstake_from_unregistered(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+) {
+    let pre_snapshot = MemorySnapshot::new();
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, smart_contract.clone()))
+        .expect("Entry must exist since 'unstake_from_unregistered' is being called.");
+    let pre_era_info = pre_snapshot.current_era_info;
+
+    let amount = pre_staker_info.total_staked_amount();
+
+    // Unstake from smart contract & verify event
+    assert_ok!(DappStaking::unstake_from_unregistered(
+        RuntimeOrigin::signed(account),
+        smart_contract.clone(),
+    ));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::UnstakeFromUnregistered {
+        account,
+        smart_contract: smart_contract.clone(),
+        amount,
+    }));
+
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+    let post_era_info = post_snapshot.current_era_info;
+    let period = pre_snapshot.active_protocol_state.period_number();
+    let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
+
+    // 1. verify ledger
+    // =====================
+    // =====================
+    assert_eq!(
+        post_ledger.staked_amount(period),
+        pre_ledger.staked_amount(period) - amount,
+        "Stake amount must decrease by the 'amount'"
+    );
+    assert_eq!(
+        post_ledger.stakeable_amount(period),
+        pre_ledger.stakeable_amount(period) + amount,
+        "Stakeable amount must increase by the 'amount'"
+    );
+
+    // 2. verify staker info
+    // =====================
+    // =====================
+    assert!(
+        !StakerInfo::<Test>::contains_key(&account, smart_contract),
+        "Entry must be deleted since contract is unregistered."
+    );
+
+    // 3. verify era info
+    // =========================
+    // =========================
+    // It's possible next era has staked more than the current era. This is because 'stake' will always stake for the NEXT era.
+    if pre_era_info.total_staked_amount() < amount {
+        assert!(post_era_info.total_staked_amount().is_zero());
+    } else {
+        assert_eq!(
+            post_era_info.total_staked_amount(),
+            pre_era_info.total_staked_amount() - amount,
+            "Total staked amount for the current era must decrease by 'amount'."
+        );
+    }
+    assert_eq!(
+        post_era_info.total_staked_amount_next_era(),
+        pre_era_info.total_staked_amount_next_era() - amount,
+        "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
+    );
+
+    // Check for unstake underflow.
+    if unstake_subperiod == Subperiod::BuildAndEarn
+        && pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn) < amount
+    {
+        let overflow = amount - pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn);
+
+        assert!(post_era_info
+            .staked_amount_next_era(Subperiod::BuildAndEarn)
+            .is_zero());
+        assert_eq!(
+            post_era_info.staked_amount_next_era(Subperiod::Voting),
+            pre_era_info.staked_amount_next_era(Subperiod::Voting) - overflow
+        );
+    } else {
+        assert_eq!(
+            post_era_info.staked_amount_next_era(unstake_subperiod),
+            pre_era_info.staked_amount_next_era(unstake_subperiod) - amount
+        );
+    }
+}
+
+/// Cleanup expired DB entries for the account and verify post state.
+pub(crate) fn assert_cleanup_expired_entries(account: AccountId) {
+    let pre_snapshot = MemorySnapshot::new();
+
+    let current_period = pre_snapshot.active_protocol_state.period_number();
+    let threshold_period = DappStaking::oldest_claimable_period(current_period);
+
+    // Find entries which should be kept, and which should be deleted
+    let mut to_be_deleted = Vec::new();
+    let mut to_be_kept = Vec::new();
+    pre_snapshot
+        .staker_info
+        .iter()
+        .for_each(|((inner_account, contract), entry)| {
+            if *inner_account == account {
+                if entry.period_number() < current_period && !entry.is_loyal()
+                    || entry.period_number() < threshold_period
+                {
+                    to_be_deleted.push(contract);
+                } else {
+                    to_be_kept.push(contract);
+                }
+            }
+        });
+
+    // Cleanup expired entries and verify event
+    assert_ok!(DappStaking::cleanup_expired_entries(RuntimeOrigin::signed(
+        account
+    )));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::ExpiredEntriesRemoved {
+        account,
+        count: to_be_deleted.len().try_into().unwrap(),
+    }));
+
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+
+    // Ensure that correct entries have been kept
+    assert_eq!(post_snapshot.staker_info.len(), to_be_kept.len());
+    to_be_kept.iter().for_each(|contract| {
+        assert!(post_snapshot
+            .staker_info
+            .contains_key(&(account, **contract)));
+    });
+
+    // Ensure that ledger has been correctly updated
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+    assert!(post_ledger.staked.is_empty());
+    assert!(post_ledger.staked_future.is_none());
+
+    let num_of_deleted_entries: u32 = to_be_deleted.len().try_into().unwrap();
+    assert_eq!(
+        pre_ledger.contract_stake_count - num_of_deleted_entries,
+        post_ledger.contract_stake_count
     );
 }
 

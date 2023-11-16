@@ -47,7 +47,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
-    traits::{BadOrigin, One, Saturating, Zero},
+    traits::{BadOrigin, One, Saturating, UniqueSaturatedInto, Zero},
     Perbill, Permill,
 };
 pub use sp_std::vec::Vec;
@@ -180,7 +180,9 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
         /// New era has started.
-        NewEra { era: EraNumber },
+        NewEra {
+            era: EraNumber,
+        },
         /// New period has started.
         NewPeriod {
             subperiod: Subperiod,
@@ -263,6 +265,10 @@ pub mod pallet {
             smart_contract: T::SmartContract,
             amount: Balance,
         },
+        ExpiredEntriesRemoved {
+            account: T::AccountId,
+            count: u16,
+        },
     }
 
     #[pallet::error]
@@ -335,6 +341,8 @@ pub mod pallet {
         ContractStillActive,
         /// There are too many contract stake entries for the account. This can be cleaned up by either unstaking or cleaning expired entries.
         TooManyStakedContracts,
+        /// There are no expired entries to cleanup for the account.
+        NoExpiredEntriesToCleanup,
     }
 
     /// General information about dApp staking protocol state.
@@ -1425,7 +1433,6 @@ pub mod pallet {
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
-            // TODO: tests are missing but will be added later.
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -1457,7 +1464,7 @@ pub mod pallet {
             ledger
                 .unstake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
-                    // These are all defensive checks, which should never happen since we already checked them above.
+                    // These are all defensive checks, which should never fail since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
                         Error::<T>::UnclaimedRewards
                     }
@@ -1466,9 +1473,13 @@ pub mod pallet {
 
             // Update total staked amount for the next era.
             // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
+            // Although strange, it's been requested to keep it like this from the team.
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unstake_amount(amount, protocol_state.subperiod());
             });
+
+            // TODO: HOWEVER, we should not pay out bonus rewards for such contracts.
+            // Seems wrong because it serves as discentive for unstaking & moving over to a new contract.
 
             // Update remaining storage entries
             Self::update_ledger(&account, ledger);
@@ -1483,21 +1494,28 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Used to unstake funds from a contract that was unregistered after an account staked on it.
+        /// Cleanup expired stake entries for the contract.
+        ///
+        /// Entry is considered to be expired if:
+        /// 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
+        /// 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
         #[pallet::call_index(15)]
         #[pallet::weight(Weight::zero())]
         pub fn cleanup_expired_entries(origin: OriginFor<T>) -> DispatchResult {
-            // TODO: tests are missing but will be added later.
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_period = protocol_state.period_number();
+            let threshold_period = Self::oldest_claimable_period(current_period);
 
-            // Find all entries which have expired. This is bounded by max allowed number of entries.
+            // Find all entries which are from past periods & don't have claimable bonus rewards.
+            // This is bounded by max allowed number of stake entries per account.
             let to_be_deleted: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(&account)
                 .filter_map(|(smart_contract, stake_info)| {
-                    if stake_info.period_number() < current_period {
+                    if stake_info.period_number() < current_period && !stake_info.is_loyal()
+                        || stake_info.period_number() < threshold_period
+                    {
                         Some(smart_contract)
                     } else {
                         None
@@ -1505,21 +1523,28 @@ pub mod pallet {
                 })
                 .collect();
             let entries_to_delete = to_be_deleted.len();
+            ensure!(
+                !entries_to_delete.is_zero(),
+                Error::<T>::NoExpiredEntriesToCleanup
+            );
 
             // Remove all expired entries.
             for smart_contract in to_be_deleted {
                 StakerInfo::<T>::remove(&account, &smart_contract);
             }
 
-            // Remove expired ledger stake entries, if needed.
-            let threshold_period = Self::oldest_claimable_period(current_period);
+            // Remove expired stake entries from the ledger.
             let mut ledger = Ledger::<T>::get(&account);
             ledger
                 .contract_stake_count
-                .saturating_reduce(entries_to_delete as u32);
-            if ledger.maybe_cleanup_expired(threshold_period) {
-                Self::update_ledger(&account, ledger);
-            }
+                .saturating_reduce(entries_to_delete.unique_saturated_into());
+            ledger.maybe_cleanup_expired(threshold_period); // Not necessary but we do it for the sake of consistency
+            Self::update_ledger(&account, ledger);
+
+            Self::deposit_event(Event::<T>::ExpiredEntriesRemoved {
+                account,
+                count: entries_to_delete.unique_saturated_into(),
+            });
 
             Ok(())
         }
