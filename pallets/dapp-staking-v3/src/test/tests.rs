@@ -20,7 +20,7 @@ use crate::test::mock::*;
 use crate::test::testing_utils::*;
 use crate::{
     pallet::Config, ActiveProtocolState, DAppId, EraNumber, EraRewards, Error, ForcingType,
-    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Subperiod,
+    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, StakerInfo, Subperiod,
 };
 
 use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
@@ -1729,6 +1729,97 @@ fn unstake_from_unregistered_fails_for_past_period() {
         assert_noop!(
             DappStaking::unstake_from_unregistered(RuntimeOrigin::signed(account), smart_contract),
             Error::<Test>::UnstakeFromPastPeriod
+        );
+    })
+}
+
+#[test]
+fn cleanup_expired_entries_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contracts
+        let contracts: Vec<_> = (1..=5).map(|id| MockSmartContract::Wasm(id)).collect();
+        contracts.iter().for_each(|smart_contract| {
+            assert_register(1, smart_contract);
+        });
+        let account = 2;
+        assert_lock(account, 1000);
+
+        // Scenario:
+        // - 1st contract will be staked in the period that expires due to exceeded reward retention
+        // - 2nd contract will be staked in the period on the edge of expiry, with loyalty flag
+        // - 3rd contract will be be staked in the period on the edge of expiry, without loyalty flag
+        // - 4th contract will be staked in the period right before the current one, with loyalty flag
+        // - 5th contract will be staked in the period right before the current one, without loyalty flag
+        //
+        // Expectation: 1, 3, 5 should be removed, 2 & 4 should remain
+
+        // 1st
+        assert_stake(account, &contracts[0], 13);
+
+        // 2nd & 3rd
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+        assert_stake(account, &contracts[1], 17);
+        advance_to_next_subperiod();
+
+        assert_stake(account, &contracts[2], 19);
+
+        // 4th & 5th
+        let reward_retention_in_periods: PeriodNumber =
+            <Test as Config>::RewardRetentionInPeriods::get();
+        assert!(
+            reward_retention_in_periods >= 2,
+            "Sanity check, otherwise the test doesn't make sense."
+        );
+        advance_to_period(reward_retention_in_periods + 1);
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+        assert_stake(account, &contracts[3], 23);
+        advance_to_next_subperiod();
+        assert_stake(account, &contracts[4], 29);
+
+        // Finally do the test
+        advance_to_next_period();
+        assert_cleanup_expired_entries(account);
+
+        // Additional sanity check according to the described scenario
+        assert!(!StakerInfo::<Test>::contains_key(account, &contracts[0]));
+        assert!(!StakerInfo::<Test>::contains_key(account, &contracts[2]));
+        assert!(!StakerInfo::<Test>::contains_key(account, &contracts[4]));
+
+        assert!(StakerInfo::<Test>::contains_key(account, &contracts[1]));
+        assert!(StakerInfo::<Test>::contains_key(account, &contracts[3]));
+    })
+}
+
+#[test]
+fn cleanup_expired_entries_fails_with_no_entries() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contracts
+        let (contract_1, contract_2) = (MockSmartContract::Wasm(1), MockSmartContract::Wasm(2));
+        assert_register(1, &contract_1);
+        assert_register(1, &contract_2);
+
+        let account = 2;
+        assert_lock(account, 1000);
+        assert_stake(account, &contract_1, 13);
+        assert_stake(account, &contract_2, 17);
+
+        // Advance only one period, rewards should still be valid.
+        let reward_retention_in_periods: PeriodNumber =
+            <Test as Config>::RewardRetentionInPeriods::get();
+        assert!(
+            reward_retention_in_periods >= 1,
+            "Sanity check, otherwise the test doesn't make sense."
+        );
+        advance_to_next_period();
+
+        assert_noop!(
+            DappStaking::cleanup_expired_entries(RuntimeOrigin::signed(account)),
+            Error::<Test>::NoExpiredEntries
         );
     })
 }

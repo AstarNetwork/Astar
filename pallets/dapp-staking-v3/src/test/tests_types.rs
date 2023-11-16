@@ -219,31 +219,31 @@ fn account_ledger_subtract_lock_amount_basic_usage_works() {
 
     // First basic scenario
     // Add some lock amount, then reduce it
-    let first_lock_amount = 19;
+    let lock_amount_1 = 19;
     let unlock_amount = 7;
-    acc_ledger.add_lock_amount(first_lock_amount);
+    acc_ledger.add_lock_amount(lock_amount_1);
     acc_ledger.subtract_lock_amount(unlock_amount);
     assert_eq!(
         acc_ledger.total_locked_amount(),
-        first_lock_amount - unlock_amount
+        lock_amount_1 - unlock_amount
     );
     assert_eq!(
         acc_ledger.active_locked_amount(),
-        first_lock_amount - unlock_amount
+        lock_amount_1 - unlock_amount
     );
     assert_eq!(acc_ledger.unlocking_amount(), 0);
 
     // Second basic scenario
-    let first_lock_amount = first_lock_amount - unlock_amount;
-    let second_lock_amount = 31;
-    acc_ledger.add_lock_amount(second_lock_amount - first_lock_amount);
-    assert_eq!(acc_ledger.active_locked_amount(), second_lock_amount);
+    let lock_amount_1 = lock_amount_1 - unlock_amount;
+    let lock_amount_2 = 31;
+    acc_ledger.add_lock_amount(lock_amount_2 - lock_amount_1);
+    assert_eq!(acc_ledger.active_locked_amount(), lock_amount_2);
 
     // Subtract from the first era and verify state is as expected
     acc_ledger.subtract_lock_amount(unlock_amount);
     assert_eq!(
         acc_ledger.active_locked_amount(),
-        second_lock_amount - unlock_amount
+        lock_amount_2 - unlock_amount
     );
 }
 
@@ -432,12 +432,12 @@ fn account_ledger_stakeable_amount_works() {
     );
 
     // Second scenario - some staked amount is introduced, period is still valid
-    let first_era = 1;
+    let era_1 = 1;
     let staked_amount = 7;
     acc_ledger.staked = StakeAmount {
         voting: 0,
         build_and_earn: staked_amount,
-        era: first_era,
+        era: era_1,
         period: period_1,
     };
 
@@ -523,7 +523,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
     assert!(acc_ledger.staked_future.is_none());
 
     // 1st scenario - stake some amount in Voting period, and ensure values are as expected.
-    let first_era = 1;
+    let era_1 = 1;
     let period_1 = 1;
     let period_info_1 = PeriodInfo {
         number: period_1,
@@ -535,7 +535,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
     acc_ledger.add_lock_amount(lock_amount);
 
     assert!(acc_ledger
-        .add_stake_amount(stake_amount, first_era, period_info_1)
+        .add_stake_amount(stake_amount, era_1, period_info_1)
         .is_ok());
 
     assert!(
@@ -567,9 +567,8 @@ fn account_ledger_add_stake_amount_basic_example_works() {
         subperiod: Subperiod::BuildAndEarn,
         subperiod_end_era: 100,
     };
-    assert!(acc_ledger
-        .add_stake_amount(1, first_era, period_info_2)
-        .is_ok());
+    let era_2 = era_1 + 1;
+    assert!(acc_ledger.add_stake_amount(1, era_2, period_info_2).is_ok());
     assert_eq!(acc_ledger.staked_amount(period_1), stake_amount + 1);
     assert_eq!(
         acc_ledger.staked_amount_for_type(Subperiod::Voting, period_1),
@@ -588,7 +587,7 @@ fn account_ledger_add_stake_amount_advanced_example_works() {
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
 
     // 1st scenario - stake some amount, and ensure values are as expected.
-    let first_era = 1;
+    let era_1 = 1;
     let period_1 = 1;
     let period_info_1 = PeriodInfo {
         number: period_1,
@@ -603,14 +602,14 @@ fn account_ledger_add_stake_amount_advanced_example_works() {
     acc_ledger.staked = StakeAmount {
         voting: stake_amount_1,
         build_and_earn: 0,
-        era: first_era,
+        era: era_1,
         period: period_1,
     };
 
     let stake_amount_2 = 2;
     let acc_ledger_snapshot = acc_ledger.clone();
     assert!(acc_ledger
-        .add_stake_amount(stake_amount_2, first_era, period_info_1)
+        .add_stake_amount(stake_amount_2, era_1, period_info_1)
         .is_ok());
     assert_eq!(
         acc_ledger.staked_amount(period_1),
@@ -631,7 +630,7 @@ fn account_ledger_add_stake_amount_advanced_example_works() {
             .for_type(Subperiod::Voting),
         stake_amount_1 + stake_amount_2
     );
-    assert_eq!(acc_ledger.staked_future.unwrap().era, first_era + 1);
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_1 + 1);
 }
 
 #[test]
@@ -640,7 +639,7 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
 
     // Prep actions
-    let first_era = 5;
+    let era_1 = 5;
     let period_1 = 2;
     let period_info_1 = PeriodInfo {
         number: period_1,
@@ -651,12 +650,12 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     let stake_amount = 7;
     acc_ledger.add_lock_amount(lock_amount);
     assert!(acc_ledger
-        .add_stake_amount(stake_amount, first_era, period_info_1)
+        .add_stake_amount(stake_amount, era_1, period_info_1)
         .is_ok());
 
-    // Try to add to the next era, it should fail.
+    // Try to add to era after next, it should fail.
     assert_eq!(
-        acc_ledger.add_stake_amount(1, first_era + 1, period_info_1),
+        acc_ledger.add_stake_amount(1, era_1 + 2, period_info_1),
         Err(AccountLedgerError::InvalidEra)
     );
 
@@ -664,7 +663,7 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     assert_eq!(
         acc_ledger.add_stake_amount(
             1,
-            first_era,
+            era_1,
             PeriodInfo {
                 number: period_1 + 1,
                 subperiod: Subperiod::Voting,
@@ -678,19 +677,19 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     acc_ledger.staked = StakeAmount {
         voting: 0,
         build_and_earn: stake_amount,
-        era: first_era,
+        era: era_1,
         period: period_1,
     };
     acc_ledger.staked_future = None;
 
     assert_eq!(
-        acc_ledger.add_stake_amount(1, first_era + 1, period_info_1),
+        acc_ledger.add_stake_amount(1, era_1 + 1, period_info_1),
         Err(AccountLedgerError::InvalidEra)
     );
     assert_eq!(
         acc_ledger.add_stake_amount(
             1,
-            first_era,
+            era_1,
             PeriodInfo {
                 number: period_1 + 1,
                 subperiod: Subperiod::Voting,
@@ -721,7 +720,7 @@ fn account_ledger_add_stake_amount_too_large_amount_fails() {
     );
 
     // Lock some amount, and try to stake more than that
-    let first_era = 5;
+    let era_1 = 5;
     let period_1 = 2;
     let period_info_1 = PeriodInfo {
         number: period_1,
@@ -731,16 +730,16 @@ fn account_ledger_add_stake_amount_too_large_amount_fails() {
     let lock_amount = 13;
     acc_ledger.add_lock_amount(lock_amount);
     assert_eq!(
-        acc_ledger.add_stake_amount(lock_amount + 1, first_era, period_info_1),
+        acc_ledger.add_stake_amount(lock_amount + 1, era_1, period_info_1),
         Err(AccountLedgerError::UnavailableStakeFunds)
     );
 
     // Additional check - have some active stake, and then try to overstake
     assert!(acc_ledger
-        .add_stake_amount(lock_amount - 2, first_era, period_info_1)
+        .add_stake_amount(lock_amount - 2, era_1, period_info_1)
         .is_ok());
     assert_eq!(
-        acc_ledger.add_stake_amount(3, first_era, period_info_1),
+        acc_ledger.add_stake_amount(3, era_1, period_info_1),
         Err(AccountLedgerError::UnavailableStakeFunds)
     );
 }
@@ -1615,20 +1614,20 @@ fn account_ledger_claim_up_to_era_fails_for_historic_eras() {
 #[test]
 fn era_stake_pair_iter_works() {
     // 1st scenario - only span is given
-    let (first_era, last_era, amount) = (2, 5, 11);
-    let mut iter_1 = EraStakePairIter::new((first_era, last_era, amount), None).unwrap();
-    for era in first_era..=last_era {
+    let (era_1, last_era, amount) = (2, 5, 11);
+    let mut iter_1 = EraStakePairIter::new((era_1, last_era, amount), None).unwrap();
+    for era in era_1..=last_era {
         assert_eq!(iter_1.next(), Some((era, amount)));
     }
     assert!(iter_1.next().is_none());
 
     // 2nd scenario - first value & span are given
-    let (maybe_first_era, maybe_first_amount) = (1, 7);
-    let maybe_first = Some((maybe_first_era, maybe_first_amount));
-    let mut iter_2 = EraStakePairIter::new((first_era, last_era, amount), maybe_first).unwrap();
+    let (maybe_era_1, maybe_first_amount) = (1, 7);
+    let maybe_first = Some((maybe_era_1, maybe_first_amount));
+    let mut iter_2 = EraStakePairIter::new((era_1, last_era, amount), maybe_first).unwrap();
 
-    assert_eq!(iter_2.next(), Some((maybe_first_era, maybe_first_amount)));
-    for era in first_era..=last_era {
+    assert_eq!(iter_2.next(), Some((maybe_era_1, maybe_first_amount)));
+    for era in era_1..=last_era {
         assert_eq!(iter_2.next(), Some((era, amount)));
     }
 }
@@ -1636,19 +1635,17 @@ fn era_stake_pair_iter_works() {
 #[test]
 fn era_stake_pair_iter_returns_error_for_illegal_data() {
     // 1st scenario - spans are reversed; first era comes AFTER the last era
-    let (first_era, last_era, amount) = (2, 5, 11);
-    assert!(EraStakePairIter::new((last_era, first_era, amount), None).is_err());
+    let (era_1, last_era, amount) = (2, 5, 11);
+    assert!(EraStakePairIter::new((last_era, era_1, amount), None).is_err());
 
     // 2nd scenario - maybe_first covers the same era as the span
-    assert!(EraStakePairIter::new((first_era, last_era, amount), Some((first_era, 10))).is_err());
+    assert!(EraStakePairIter::new((era_1, last_era, amount), Some((era_1, 10))).is_err());
 
     // 3rd scenario - maybe_first is before the span, but not exactly 1 era before the first era in the span
-    assert!(
-        EraStakePairIter::new((first_era, last_era, amount), Some((first_era - 2, 10))).is_err()
-    );
+    assert!(EraStakePairIter::new((era_1, last_era, amount), Some((era_1 - 2, 10))).is_err());
 
     assert!(
-        EraStakePairIter::new((first_era, last_era, amount), Some((first_era - 1, 10))).is_ok(),
+        EraStakePairIter::new((era_1, last_era, amount), Some((era_1 - 1, 10))).is_ok(),
         "Sanity check."
     );
 }

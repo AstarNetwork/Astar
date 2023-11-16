@@ -1106,8 +1106,6 @@ pub(crate) fn assert_cleanup_expired_entries(account: AccountId) {
     // Ensure that ledger has been correctly updated
     let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
     let post_ledger = post_snapshot.ledger.get(&account).unwrap();
-    assert!(post_ledger.staked.is_empty());
-    assert!(post_ledger.staked_future.is_none());
 
     let num_of_deleted_entries: u32 = to_be_deleted.len().try_into().unwrap();
     assert_eq!(

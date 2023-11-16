@@ -342,7 +342,7 @@ pub mod pallet {
         /// There are too many contract stake entries for the account. This can be cleaned up by either unstaking or cleaning expired entries.
         TooManyStakedContracts,
         /// There are no expired entries to cleanup for the account.
-        NoExpiredEntriesToCleanup,
+        NoExpiredEntries,
     }
 
     /// General information about dApp staking protocol state.
@@ -1523,10 +1523,8 @@ pub mod pallet {
                 })
                 .collect();
             let entries_to_delete = to_be_deleted.len();
-            ensure!(
-                !entries_to_delete.is_zero(),
-                Error::<T>::NoExpiredEntriesToCleanup
-            );
+
+            ensure!(!entries_to_delete.is_zero(), Error::<T>::NoExpiredEntries);
 
             // Remove all expired entries.
             for smart_contract in to_be_deleted {

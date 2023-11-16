@@ -518,6 +518,34 @@ where
         }
     }
 
+    /// Check for stake/unstake operation era & period arguments.
+    ///
+    /// Ensures that the provided era & period are valid according to the current ledger state.
+    fn stake_unstake_argument_check(
+        &self,
+        era: EraNumber,
+        current_period_info: &PeriodInfo,
+    ) -> Result<(), AccountLedgerError> {
+        if !self.staked.is_empty() {
+            // In case entry for the current era exists, it must match the era exactly.
+            if self.staked.era != era {
+                return Err(AccountLedgerError::InvalidEra);
+            }
+            if self.staked.period != current_period_info.number {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+            // In case it doesn't (i.e. first time staking), then the future era must either be the current or the next era.
+        } else if let Some(stake_amount) = self.staked_future {
+            if stake_amount.era != era.saturating_add(1) && stake_amount.era != era {
+                return Err(AccountLedgerError::InvalidEra);
+            }
+            if stake_amount.period != current_period_info.number {
+                return Err(AccountLedgerError::InvalidPeriod);
+            }
+        }
+        Ok(())
+    }
+
     /// Adds the specified amount to total staked amount, if possible.
     ///
     /// Staking can only be done for the ongoing period, and era.
@@ -539,24 +567,7 @@ where
             return Ok(());
         }
 
-        if !self.staked.is_empty() {
-            // In case entry for the current era exists, it must match the era exactly.
-            if self.staked.era != era {
-                return Err(AccountLedgerError::InvalidEra);
-            }
-            if self.staked.period != current_period_info.number {
-                return Err(AccountLedgerError::InvalidPeriod);
-            }
-            // In case it doesn't (i.e. first time staking), then the future era must match exactly
-            // one era after the one provided via argument.
-        } else if let Some(stake_amount) = self.staked_future {
-            if stake_amount.era != era.saturating_add(1) {
-                return Err(AccountLedgerError::InvalidEra);
-            }
-            if stake_amount.period != current_period_info.number {
-                return Err(AccountLedgerError::InvalidPeriod);
-            }
-        }
+        self.stake_unstake_argument_check(era, &current_period_info)?;
 
         if self.stakeable_amount(current_period_info.number) < amount {
             return Err(AccountLedgerError::UnavailableStakeFunds);
@@ -594,23 +605,7 @@ where
             return Ok(());
         }
 
-        if !self.staked.is_empty() {
-            // In case entry for the current era exists, it must match the era exactly.
-            if self.staked.era != era {
-                return Err(AccountLedgerError::InvalidEra);
-            }
-            if self.staked.period != current_period_info.number {
-                return Err(AccountLedgerError::InvalidPeriod);
-            }
-            // In case it doesn't (i.e. first time staking), then the future era must either be the current or the next era.
-        } else if let Some(stake_amount) = self.staked_future {
-            if stake_amount.era != era.saturating_add(1) && stake_amount.era != era {
-                return Err(AccountLedgerError::InvalidEra);
-            }
-            if stake_amount.period != current_period_info.number {
-                return Err(AccountLedgerError::InvalidPeriod);
-            }
-        }
+        self.stake_unstake_argument_check(era, &current_period_info)?;
 
         // User must be precise with their unstake amount.
         if self.staked_amount(current_period_info.number) < amount {
