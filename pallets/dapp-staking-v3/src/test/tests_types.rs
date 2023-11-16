@@ -902,9 +902,15 @@ fn account_ledger_unstake_from_invalid_era_fails() {
         .add_stake_amount(amount_1, era_1, period_info_1)
         .is_ok());
 
-    // Try to unstake from the next era, it should fail.
+    // Try to unstake from the current & next era, it should work.
+    assert!(acc_ledger.unstake_amount(1, era_1, period_info_1).is_ok());
+    assert!(acc_ledger
+        .unstake_amount(1, era_1 + 1, period_info_1)
+        .is_ok());
+
+    // Try to unstake from the stake era + 2, it should fail since it would mean we have unclaimed rewards.
     assert_eq!(
-        acc_ledger.unstake_amount(1, era_1 + 1, period_info_1),
+        acc_ledger.unstake_amount(1, era_1 + 2, period_info_1),
         Err(AccountLedgerError::InvalidEra)
     );
 

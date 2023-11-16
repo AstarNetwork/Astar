@@ -304,7 +304,7 @@ pub(crate) fn advance_to_next_period() {
 }
 
 /// Advance blocks until next period type has been reached.
-pub(crate) fn advance_to_advance_to_next_subperiod() {
+pub(crate) fn advance_to_next_subperiod() {
     let subperiod = ActiveProtocolState::<Test>::get().subperiod();
     while ActiveProtocolState::<Test>::get().subperiod() == subperiod {
         run_for_blocks(1);

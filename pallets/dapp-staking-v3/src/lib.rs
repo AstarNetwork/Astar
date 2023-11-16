@@ -296,8 +296,8 @@ pub mod pallet {
         NoUnlockingChunks,
         /// The amount being staked is too large compared to what's available for staking.
         UnavailableStakeFunds,
-        /// There are unclaimed rewards remaining from past periods. They should be claimed before staking again.
-        UnclaimedRewardsFromPastPeriods,
+        /// There are unclaimed rewards remaining from past eras or periods. They should be claimed before attempting any stake modification again.
+        UnclaimedRewards,
         /// An unexpected error occured while trying to stake.
         InternalStakeError,
         /// Total staked amount on contract is below the minimum required value.
@@ -1019,7 +1019,6 @@ pub mod pallet {
             // In case old stake rewards are unclaimed & have expired, clean them up.
             let threshold_period = Self::oldest_claimable_period(protocol_state.period_number());
             let _ignore = ledger.maybe_cleanup_expired(threshold_period);
-            // TODO: add a test for this!
 
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
@@ -1027,7 +1026,7 @@ pub mod pallet {
                 .add_stake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                        Error::<T>::UnclaimedRewards
                     }
                     AccountLedgerError::UnavailableStakeFunds => Error::<T>::UnavailableStakeFunds,
                     // Defensive check, should never happen
@@ -1052,12 +1051,15 @@ pub mod pallet {
                     {
                         (staking_info, false)
                     }
-                    // Entry exists but period doesn't match. Either reward should be claimed or cleaned up.
-                    Some(_) => {
-                        return Err(Error::<T>::UnclaimedRewardsFromPastPeriods.into());
+                    // Entry exists but period doesn't match. Bonus reward might still be claimable.
+                    Some(staking_info)
+                        if staking_info.period_number() >= threshold_period
+                            && staking_info.is_loyal() =>
+                    {
+                        return Err(Error::<T>::UnclaimedRewards.into());
                     }
-                    // No entry exists
-                    None => (
+                    // No valid entry exists
+                    _ => (
                         SingularStakingInfo::new(
                             protocol_state.period_number(),
                             protocol_state.subperiod(),
@@ -1168,7 +1170,7 @@ pub mod pallet {
                 .map_err(|err| match err {
                     // These are all defensive checks, which should never happen since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                        Error::<T>::UnclaimedRewards
                     }
                     AccountLedgerError::UnstakeAmountLargerThanStake => {
                         Error::<T>::UnstakeAmountTooLarge
@@ -1457,7 +1459,7 @@ pub mod pallet {
                 .map_err(|err| match err {
                     // These are all defensive checks, which should never happen since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                        Error::<T>::UnclaimedRewards
                     }
                     _ => Error::<T>::InternalUnstakeError,
                 })?;
