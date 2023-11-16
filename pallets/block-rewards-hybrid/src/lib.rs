@@ -234,7 +234,7 @@ pub mod pallet {
                 Self::tvl_percentage() / distro_params.ideal_dapps_staking_tvl * adjustable_balance
             };
 
-            let staker_reward = base_staker_balance + adjustable_staker_part;
+            let staker_reward = base_staker_balance.saturating_add(adjustable_staker_part);
 
             Rewards {
                 treasury_reward,

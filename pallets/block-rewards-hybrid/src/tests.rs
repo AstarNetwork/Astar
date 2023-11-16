@@ -120,7 +120,7 @@ fn reward_distribution_config_not_consistent() {
 }
 
 #[test]
-pub fn set_configuration_fails() {
+fn set_configuration_fails() {
     ExternalityBuilder::build().execute_with(|| {
         // 1
         assert_noop!(
@@ -142,7 +142,7 @@ pub fn set_configuration_fails() {
 }
 
 #[test]
-pub fn set_configuration_is_ok() {
+fn set_configuration_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // custom config so it differs from the default one
         let reward_config = RewardDistributionConfig {
@@ -171,7 +171,7 @@ pub fn set_configuration_is_ok() {
 }
 
 #[test]
-pub fn inflation_and_total_issuance_as_expected() {
+fn inflation_and_total_issuance_as_expected() {
     ExternalityBuilder::build().execute_with(|| {
         let init_issuance = <TestRuntime as Config>::Currency::total_issuance();
 
@@ -190,7 +190,7 @@ pub fn inflation_and_total_issuance_as_expected() {
 }
 
 #[test]
-pub fn reward_distribution_as_expected() {
+fn reward_distribution_as_expected() {
     ExternalityBuilder::build().execute_with(|| {
         // Ensure that initially, all beneficiaries have no free balance
         let init_balance_snapshot = FreeBalanceSnapshot::new();
@@ -236,7 +236,7 @@ pub fn reward_distribution_as_expected() {
 }
 
 #[test]
-pub fn non_distributed_reward_amount_is_burned() {
+fn non_distributed_reward_amount_is_burned() {
     ExternalityBuilder::build().execute_with(|| {
         // Ensure that initially, all beneficiaries have no free balance
         let init_balance_snapshot = FreeBalanceSnapshot::new();
@@ -278,7 +278,7 @@ pub fn non_distributed_reward_amount_is_burned() {
 }
 
 #[test]
-pub fn reward_distribution_no_adjustable_part() {
+fn reward_distribution_no_adjustable_part() {
     ExternalityBuilder::build().execute_with(|| {
         let reward_config = RewardDistributionConfig {
             treasury_percent: Perbill::from_percent(10),
@@ -312,7 +312,7 @@ pub fn reward_distribution_no_adjustable_part() {
 }
 
 #[test]
-pub fn reward_distribution_all_zero_except_one() {
+fn reward_distribution_all_zero_except_one() {
     ExternalityBuilder::build().execute_with(|| {
         let reward_config = RewardDistributionConfig {
             treasury_percent: Perbill::zero(),
