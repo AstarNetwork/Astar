@@ -1722,3 +1722,36 @@ fn unstake_from_a_contract_staked_in_past_period_fails() {
         );
     })
 }
+
+#[test]
+fn stake_and_unstake_after_reward_claim_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::default();
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let amount = 400;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount - 100);
+
+        // Advance 2 eras so we have claimable rewards. Both stake & unstake should fail.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+        assert_noop!(
+            DappStaking::stake(RuntimeOrigin::signed(account), smart_contract, 1),
+            Error::<Test>::UnclaimedRewards
+        );
+        assert_noop!(
+            DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, 1),
+            Error::<Test>::UnclaimedRewards
+        );
+
+        // Claim rewards, unstake should work now.
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+        assert_stake(account, &smart_contract, 1);
+        assert_unstake(account, &smart_contract, 1);
+    })
+}
