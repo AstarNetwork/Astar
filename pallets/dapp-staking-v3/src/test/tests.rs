@@ -20,10 +20,14 @@ use crate::test::mock::*;
 use crate::test::testing_utils::*;
 use crate::{
     pallet::Config, ActiveProtocolState, DAppId, EraNumber, EraRewards, Error, ForcingType,
-    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, StakerInfo, Subperiod,
+    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, StakerInfo, Subperiod, TierConfig,
 };
 
-use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Get};
+use frame_support::{
+    assert_noop, assert_ok,
+    error::BadOrigin,
+    traits::{Currency, Get},
+};
 use sp_runtime::traits::Zero;
 
 #[test]
@@ -1978,6 +1982,102 @@ fn force_with_incorrect_origin_fails() {
         assert_noop!(
             DappStaking::force(RuntimeOrigin::signed(1), ForcingType::Era),
             BadOrigin
+        );
+    })
+}
+
+#[test]
+fn get_dapp_tier_assignment_basic_example_works() {
+    ExtBuilder::build().execute_with(|| {
+        // This test will rely on the configuration inside the mock file.
+        // If that changes, this test will have to be updated as well.
+
+        // Scenario:
+        // - 1st tier is filled up, with one dApp satisfying the threshold but not making it due to lack of tier capacity
+        // - 2nd tier has 2 dApps - 1 that could make it into the 1st tier and one that's supposed to be in the 2nd tier
+        // - 3rd tier has no dApps
+        // - 4th tier has 2 dApps
+        // - 1 dApp doesn't make it into any tier
+
+        // Register smart contracts
+        let tier_config = TierConfig::<Test>::get();
+        let number_of_smart_contracts = tier_config.slots_per_tier[0] + 1 + 1 + 0 + 2 + 1;
+        let smart_contracts: Vec<_> = (1..=number_of_smart_contracts)
+            .map(|x| {
+                let smart_contract = MockSmartContract::Wasm(x.into());
+                assert_register(x.into(), &smart_contract);
+                smart_contract
+            })
+            .collect();
+        let mut dapp_index: usize = 0;
+
+        fn lock_and_stake(account: usize, smart_contract: &MockSmartContract, amount: Balance) {
+            let account = account.try_into().unwrap();
+            Balances::make_free_balance_be(&account, amount);
+            assert_lock(account, amount);
+            assert_stake(account, smart_contract, amount);
+        }
+
+        // 1st tier is completely filled up, with 1 more dApp not making it inside
+        for x in 0..tier_config.slots_per_tier[0] as Balance {
+            lock_and_stake(
+                dapp_index,
+                &smart_contracts[dapp_index],
+                tier_config.tier_thresholds[0].threshold() + x + 1,
+            );
+            dapp_index += 1;
+        }
+        // One that won't make it into the 1st tier.
+        lock_and_stake(
+            dapp_index,
+            &smart_contracts[dapp_index],
+            tier_config.tier_thresholds[0].threshold(),
+        );
+        dapp_index += 1;
+
+        // 2nd tier - 1 dedicated dApp
+        lock_and_stake(
+            dapp_index,
+            &smart_contracts[dapp_index],
+            tier_config.tier_thresholds[0].threshold() - 1,
+        );
+        dapp_index += 1;
+
+        // 3rd tier is empty
+        // 4th tier has 2 dApps
+        for x in 0..2 {
+            lock_and_stake(
+                dapp_index,
+                &smart_contracts[dapp_index],
+                tier_config.tier_thresholds[3].threshold() + x,
+            );
+            dapp_index += 1;
+        }
+
+        // One dApp doesn't make it into any tier
+        lock_and_stake(
+            dapp_index,
+            &smart_contracts[dapp_index],
+            tier_config.tier_thresholds[3].threshold() - 1,
+        );
+
+        // Finally, the actual test
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        let dapp_reward_pool = 1000000;
+        let tier_assignment = DappStaking::get_dapp_tier_assignment(
+            protocol_state.era,
+            protocol_state.period_number(),
+            dapp_reward_pool,
+        );
+
+        // Basic checks
+        let number_of_tiers: u32 = <Test as Config>::NumberOfTiers::get();
+        assert_eq!(tier_assignment.period, protocol_state.period_number());
+        assert_eq!(tier_assignment.rewards.len(), number_of_tiers as usize);
+        assert_eq!(
+            tier_assignment.dapps.len(),
+            number_of_smart_contracts as usize - 1,
+            "One contract doesn't make it into any tier."
         );
     })
 }

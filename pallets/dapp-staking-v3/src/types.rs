@@ -1357,6 +1357,14 @@ impl TierThreshold {
         }
     }
 
+    /// Return threshold for the tier.
+    pub fn threshold(&self) -> Balance {
+        match self {
+            Self::FixedTvlAmount { amount } => *amount,
+            Self::DynamicTvlAmount { amount, .. } => *amount,
+        }
+    }
+
     // TODO: maybe add a check that compares `Self` to another threshold and ensures it has lower requirements?
     // Could be useful to have this check as a sanity check when params are configured.
 }

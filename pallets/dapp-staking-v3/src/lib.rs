@@ -1706,6 +1706,8 @@ pub mod pallet {
                 tier_id.saturating_inc();
             }
 
+            // TODO: what if multiple dApps satisfy the tier entry threshold but there's not enough slots to accomodate them all?
+
             // 4.
             // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is "guaranteed" due to lack of duplicated Ids).
             dapp_tiers.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
