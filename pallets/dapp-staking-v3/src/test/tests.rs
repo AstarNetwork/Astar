@@ -663,7 +663,7 @@ fn unlock_with_exceeding_unlocking_chunks_storage_limits_fails() {
             assert_unlock(account, unlock_amount);
         }
 
-        // We can still unlock in the current erblocka, theoretically
+        // We can still unlock in the current era, theoretically
         for _ in 0..5 {
             assert_unlock(account, unlock_amount);
         }
@@ -1820,6 +1820,164 @@ fn cleanup_expired_entries_fails_with_no_entries() {
         assert_noop!(
             DappStaking::cleanup_expired_entries(RuntimeOrigin::signed(account)),
             Error::<Test>::NoExpiredEntries
+        );
+    })
+}
+
+#[test]
+fn force_era_works() {
+    ExtBuilder::build().execute_with(|| {
+        // 1. Force new era in the voting subperiod
+        let init_state = ActiveProtocolState::<Test>::get();
+        assert!(
+            init_state.next_era_start > System::block_number() + 1,
+            "Sanity check, new era cannot start in next block, otherwise the test doesn't guarantee it tests what's expected."
+        );
+        assert_eq!(
+            init_state.subperiod(),
+            Subperiod::Voting,
+            "Sanity check."
+        );
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+
+        // Verify state change
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().next_era_start,
+            System::block_number() + 1,
+        );
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().period_end_era(),
+            init_state.period_end_era(),
+        );
+
+        // Go to the next block, and ensure new era is started
+        run_for_blocks(1);
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().era,
+            init_state.era + 1,
+            "New era must be started."
+        );
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().subperiod(),
+            Subperiod::BuildAndEarn,
+        );
+
+        // 2. Force new era in the build&earn subperiod
+        let init_state = ActiveProtocolState::<Test>::get();
+        assert!(
+            init_state.next_era_start > System::block_number() + 1,
+            "Sanity check, new era cannot start in next block, otherwise the test doesn't guarantee it tests what's expected."
+        );
+        assert!(init_state.period_end_era() > init_state.era + 1, "Sanity check, otherwise the test doesn't guarantee it tests what's expected.");
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+
+        // Verify state change
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().next_era_start,
+            System::block_number() + 1,
+        );
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().period_end_era(),
+            init_state.period_end_era(),
+            "Only era is bumped, but we don't expect to switch over to the next subperiod."
+        );
+
+        run_for_blocks(1);
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().era,
+            init_state.era + 1,
+            "New era must be started."
+        );
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().subperiod(),
+            Subperiod::BuildAndEarn,
+            "We're expected to remain in the same subperiod."
+        );
+    })
+}
+
+#[test]
+fn force_subperiod_works() {
+    ExtBuilder::build().execute_with(|| {
+        // 1. Force new subperiod in the voting subperiod
+        let init_state = ActiveProtocolState::<Test>::get();
+        assert!(
+            init_state.next_era_start > System::block_number() + 1,
+            "Sanity check, new era cannot start in next block, otherwise the test doesn't guarantee it tests what's expected."
+        );
+        assert_eq!(
+            init_state.subperiod(),
+            Subperiod::Voting,
+            "Sanity check."
+        );
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Subperiod));
+
+        // Verify state change
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().next_era_start,
+            System::block_number() + 1,
+        );
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().period_end_era(),
+            init_state.era + 1,
+            "The switch to the next subperiod must happen in the next era."
+        );
+
+        // Go to the next block, and ensure new era is started
+        run_for_blocks(1);
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().era,
+            init_state.era + 1,
+            "New era must be started."
+        );
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().subperiod(),
+            Subperiod::BuildAndEarn,
+            "New subperiod must be started."
+        );
+        assert_eq!(ActiveProtocolState::<Test>::get().period_number(), init_state.period_number(), "Period must remain the same.");
+
+        // 2. Force new era in the build&earn subperiod
+        let init_state = ActiveProtocolState::<Test>::get();
+        assert!(
+            init_state.next_era_start > System::block_number() + 1,
+            "Sanity check, new era cannot start in next block, otherwise the test doesn't guarantee it tests what's expected."
+        );
+        assert!(init_state.period_end_era() > init_state.era + 1, "Sanity check, otherwise the test doesn't guarantee it tests what's expected.");
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Subperiod));
+
+        // Verify state change
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().next_era_start,
+            System::block_number() + 1,
+        );
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().period_end_era(),
+            init_state.era + 1,
+            "The switch to the next subperiod must happen in the next era."
+        );
+
+        run_for_blocks(1);
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().era,
+            init_state.era + 1,
+            "New era must be started."
+        );
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().subperiod(),
+            Subperiod::Voting,
+            "New subperiod must be started."
+        );
+        assert_eq!(ActiveProtocolState::<Test>::get().period_number(), init_state.period_number() + 1, "New period must be started.");
+    })
+}
+
+#[test]
+fn force_with_incorrect_origin_fails() {
+    ExtBuilder::build().execute_with(|| {
+        assert_noop!(
+            DappStaking::force(RuntimeOrigin::signed(1), ForcingType::Era),
+            BadOrigin
         );
     })
 }
