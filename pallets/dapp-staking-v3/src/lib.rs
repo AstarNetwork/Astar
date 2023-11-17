@@ -71,9 +71,7 @@ mod dsv3_weight;
 // Lock identifier for the dApp staking pallet
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
-const LOG: &str = "dapp-staking";
-
-// TODO: add tracing!
+const LOG_TARGET: &str = "dapp-staking";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -631,7 +629,7 @@ pub mod pallet {
             if let Err(_) = span.push(current_era, era_reward) {
                 // This must never happen but we log the error just in case.
                 log::error!(
-                    target: LOG,
+                    target: LOG_TARGET,
                     "Failed to push era {} into the era reward span.",
                     current_era
                 );
@@ -1557,7 +1555,6 @@ pub mod pallet {
         #[pallet::call_index(16)]
         #[pallet::weight(Weight::zero())]
         pub fn force(origin: OriginFor<T>, force_type: ForcingType) -> DispatchResult {
-            // TODO: tests are missing but will be added later.
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
 
@@ -1627,7 +1624,7 @@ pub mod pallet {
         /// `true` if smart contract is active, `false` if it has been unregistered.
         pub(crate) fn is_active(smart_contract: &T::SmartContract) -> bool {
             IntegratedDApps::<T>::get(smart_contract)
-                .map_or(false, |dapp_info| dapp_info.state == DAppState::Registered)
+                .map_or(false, |dapp_info| dapp_info.is_active())
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.
@@ -1711,9 +1708,6 @@ pub mod pallet {
 
             // 4.
             // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is "guaranteed" due to lack of duplicated Ids).
-            // TODO & Idea: perhaps use BTreeMap instead? It will "sort" automatically based on dApp Id, and we can efficiently remove entries,
-            // reducing PoV size step by step.
-            // It's a trade-off between speed and PoV size. Although both are quite minor, so maybe it doesn't matter that much.
             dapp_tiers.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
 
             // 5. Calculate rewards.
