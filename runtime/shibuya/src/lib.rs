@@ -72,6 +72,7 @@ pub use astar_primitives::{
     xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
     Index, Signature,
 };
+pub use pallet_block_rewards_hybrid::RewardDistributionConfig;
 
 pub use crate::precompiles::WhitelistedCalls;
 
@@ -537,7 +538,7 @@ impl Get<Balance> for DappsStakingTvlProvider {
 }
 
 pub struct BeneficiaryPayout();
-impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
+impl pallet_block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
     fn treasury(reward: NegativeImbalance) {
         Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
@@ -552,16 +553,16 @@ impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPa
 }
 
 parameter_types! {
-    pub const RewardAmount: Balance = 2_530 * MILLISBY;
+    pub const MaxBlockRewardAmount: Balance = 230_718 * MILLISBY;
 }
 
-impl pallet_block_reward::Config for Runtime {
+impl pallet_block_rewards_hybrid::Config for Runtime {
     type Currency = Balances;
     type DappsStakingTvlProvider = DappsStakingTvlProvider;
     type BeneficiaryPayout = BeneficiaryPayout;
-    type RewardAmount = RewardAmount;
+    type MaxBlockRewardAmount = MaxBlockRewardAmount;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_block_reward::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = pallet_block_rewards_hybrid::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1240,7 +1241,7 @@ construct_runtime!(
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
         DappsStaking: pallet_dapps_staking = 34,
-        BlockReward: pallet_block_reward = 35,
+        BlockReward: pallet_block_rewards_hybrid = 35,
         Assets: pallet_assets = 36,
 
         Authorship: pallet_authorship = 40,
@@ -1311,10 +1312,44 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
+pub struct HybridInflationModelMigration;
+impl OnRuntimeUpgrade for HybridInflationModelMigration {
+    fn on_runtime_upgrade() -> Weight {
+        let mut reward_config = pallet_block_rewards_hybrid::RewardDistributionConfig {
+            // 4.66%
+            treasury_percent: Perbill::from_rational(4_663_701u32, 100_000_000u32),
+            // 23.09%
+            base_staker_percent: Perbill::from_rational(2_309_024u32, 10_000_000u32),
+            // 17.31%
+            dapps_percent: Perbill::from_rational(173_094_531u32, 1_000_000_000u32),
+            // 2.99%
+            collators_percent: Perbill::from_rational(29_863_296u32, 1_000_000_000u32),
+            // 51.95%
+            adjustable_percent: Perbill::from_rational(519_502_763u32, 1_000_000_000u32),
+            // 60.00%
+            ideal_dapps_staking_tvl: Perbill::from_percent(60),
+        };
+
+        // This HAS to be tested prior to update - we need to ensure that config is consistent
+        #[cfg(feature = "try-runtime")]
+        assert!(reward_config.is_consistent());
+
+        // This should never execute but we need to have code in place that ensures config is consistent
+        if !reward_config.is_consistent() {
+            reward_config = Default::default();
+        }
+
+        pallet_block_rewards_hybrid::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
+
+        <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(1)
+    }
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = ();
+pub type Migrations = HybridInflationModelMigration;
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1392,7 +1427,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]
-        [pallet_block_reward, BlockReward]
+        [block_rewards_hybrid, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
