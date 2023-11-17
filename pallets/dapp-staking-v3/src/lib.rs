@@ -1716,7 +1716,10 @@ pub mod pallet {
             let tier_rewards = tier_config
                 .reward_portion
                 .iter()
-                .map(|percent| *percent * dapp_reward_pool)
+                .zip(tier_config.slots_per_tier.iter())
+                .map(|(percent, slots)| {
+                    *percent * dapp_reward_pool / <u16 as Into<Balance>>::into(*slots)
+                })
                 .collect::<Vec<_>>();
 
             // 6.

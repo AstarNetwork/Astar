@@ -2065,7 +2065,7 @@ fn get_dapp_tier_assignment_basic_example_works() {
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
         let tier_assignment = DappStaking::get_dapp_tier_assignment(
-            protocol_state.era,
+            protocol_state.era + 1,
             protocol_state.period_number(),
             dapp_reward_pool,
         );
@@ -2079,6 +2079,49 @@ fn get_dapp_tier_assignment_basic_example_works() {
             number_of_smart_contracts as usize - 1,
             "One contract doesn't make it into any tier."
         );
+
+        // 1st tier checks
+        let (entry_1, entry_2) = (tier_assignment.dapps[0], tier_assignment.dapps[1]);
+        assert_eq!(entry_1.dapp_id, 0);
+        assert_eq!(entry_1.tier_id, Some(0));
+
+        assert_eq!(entry_2.dapp_id, 1);
+        assert_eq!(entry_2.tier_id, Some(0));
+
+        // 2nd tier checks
+        let (entry_3, entry_4) = (tier_assignment.dapps[2], tier_assignment.dapps[3]);
+        assert_eq!(entry_3.dapp_id, 2);
+        assert_eq!(entry_3.tier_id, Some(1));
+
+        assert_eq!(entry_4.dapp_id, 3);
+        assert_eq!(entry_4.tier_id, Some(1));
+
+        // 4th tier checks
+        let (entry_5, entry_6) = (tier_assignment.dapps[4], tier_assignment.dapps[5]);
+        assert_eq!(entry_5.dapp_id, 4);
+        assert_eq!(entry_5.tier_id, Some(3));
+
+        assert_eq!(entry_6.dapp_id, 5);
+        assert_eq!(entry_6.tier_id, Some(3));
+
+        // Sanity check - last dapp should not exists in the tier assignment
+        assert!(tier_assignment
+            .dapps
+            .binary_search_by(|x| x.dapp_id.cmp(&(dapp_index.try_into().unwrap())))
+            .is_err());
+
+        // Check that rewards are calculated correctly
+        tier_config
+            .reward_portion
+            .iter()
+            .zip(tier_config.slots_per_tier.iter())
+            .enumerate()
+            .for_each(|(idx, (reward_portion, slots))| {
+                let total_tier_allocation = *reward_portion * dapp_reward_pool;
+                let tier_reward: Balance = total_tier_allocation / (*slots as Balance);
+
+                assert_eq!(tier_assignment.rewards[idx], tier_reward,);
+            });
     })
 }
 
