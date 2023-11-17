@@ -23,8 +23,9 @@ use sc_service::ChainType;
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BlockRewardConfig,
     CollatorSelectionConfig, CouncilConfig, DemocracyConfig, EVMChainIdConfig, EVMConfig,
-    GenesisConfig, ParachainInfoConfig, Precompiles, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, SBY,
+    GenesisConfig, ParachainInfoConfig, Precompiles, RewardDistributionConfig, SessionConfig,
+    SessionKeys, Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig,
+    VestingConfig, SBY,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -115,8 +116,8 @@ fn make_genesis(
         balances: BalancesConfig { balances },
         block_reward: BlockRewardConfig {
             // Make sure sum is 100
-            reward_config: pallet_block_reward::RewardDistributionConfig {
-                base_treasury_percent: Perbill::from_percent(10),
+            reward_config: RewardDistributionConfig {
+                treasury_percent: Perbill::from_percent(10),
                 base_staker_percent: Perbill::from_percent(20),
                 dapps_percent: Perbill::from_percent(20),
                 collators_percent: Perbill::from_percent(5),

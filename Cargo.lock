@@ -6005,7 +6005,7 @@ checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 
 [[package]]
 name = "local-runtime"
-version = "5.23.0"
+version = "5.24.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -6025,7 +6025,7 @@ dependencies = [
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
- "pallet-block-reward",
+ "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
@@ -7438,6 +7438,25 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "2.2.2"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-block-rewards-hybrid"
+version = "0.1.0"
 dependencies = [
  "astar-primitives",
  "frame-benchmarking",
@@ -13131,7 +13150,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-reward",
+ "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
