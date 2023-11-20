@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.24.0"
+version = "5.25.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
