@@ -940,8 +940,12 @@ impl EraInfo {
         match next_subperiod {
             // If next era marks start of new voting period period, it means we're entering a new period
             Some(Subperiod::Voting) => {
-                self.current_stake_amount = Default::default();
-                self.next_stake_amount = Default::default();
+                for stake_amount in [&mut self.current_stake_amount, &mut self.next_stake_amount] {
+                    stake_amount.voting = Zero::zero();
+                    stake_amount.build_and_earn = Zero::zero();
+                    stake_amount.era.saturating_inc();
+                    stake_amount.period.saturating_inc();
+                }
             }
             Some(Subperiod::BuildAndEarn) | None => {
                 self.current_stake_amount = self.next_stake_amount;

@@ -1207,8 +1207,24 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
 
     // New period has started
     if is_new_subperiod && pre_protoc_state.subperiod() == Subperiod::BuildAndEarn {
-        assert!(post_era_info.current_stake_amount.is_empty());
-        assert!(post_era_info.next_stake_amount.is_empty());
+        assert_eq!(
+            post_era_info.current_stake_amount,
+            StakeAmount {
+                voting: Zero::zero(),
+                build_and_earn: Zero::zero(),
+                era: pre_protoc_state.era + 1,
+                period: pre_protoc_state.period_number() + 1,
+            }
+        );
+        assert_eq!(
+            post_era_info.next_stake_amount,
+            StakeAmount {
+                voting: Zero::zero(),
+                build_and_earn: Zero::zero(),
+                era: pre_protoc_state.era + 2,
+                period: pre_protoc_state.period_number() + 1,
+            }
+        );
     } else {
         assert_eq!(
             post_era_info.current_stake_amount,
@@ -1218,18 +1234,17 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
             post_era_info.next_stake_amount.total(),
             post_era_info.current_stake_amount.total()
         );
-        println!("PostEraInfo next {:?}", post_era_info);
-        println!("PostProtocState: {:?}", post_protoc_state);
-        println!("====================");
-        // assert_eq!(
-        //     post_era_info.next_stake_amount.era,
-        //     post_protoc_state.era + 1,
-        // );
-        // continue here - need to add logic to update to correct era
+        assert_eq!(
+            post_era_info.next_stake_amount.era,
+            post_protoc_state.era + 1,
+        );
+        assert_eq!(
+            post_era_info.next_stake_amount.period,
+            pre_era_info.period_number(),
+        );
     }
 
     // TODO
-    // - check current era info
     // - check tier config
     // - check era reward
     // - check events

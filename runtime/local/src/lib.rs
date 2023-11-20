@@ -479,8 +479,8 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = DummyPriceProvider;
     type RewardPoolProvider = DummyRewardPoolProvider;
     type StandardEraLength = ConstU32<30>; // should be 1 minute per standard era
-    type StandardErasPerVotingPeriod = ConstU32<2>;
-    type StandardErasPerBuildAndEarnPeriod = ConstU32<10>;
+    type StandardErasPerVotingSubperiod = ConstU32<2>;
+    type StandardErasPerBuildAndEarnSubperiod = ConstU32<10>;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<100>;

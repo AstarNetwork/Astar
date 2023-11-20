@@ -1867,8 +1867,24 @@ fn era_info_migrate_to_next_era_works() {
 
         assert_eq!(era_info.total_locked, era_info_snapshot.total_locked);
         assert_eq!(era_info.unlocking, era_info_snapshot.unlocking);
-        assert!(era_info.current_stake_amount.is_empty());
-        assert!(era_info.next_stake_amount.is_empty());
+        assert_eq!(
+            era_info.current_stake_amount,
+            StakeAmount {
+                voting: Zero::zero(),
+                build_and_earn: Zero::zero(),
+                era: era_info_snapshot.current_stake_amount.era + 1,
+                period: era_info_snapshot.current_stake_amount.period + 1,
+            }
+        );
+        assert_eq!(
+            era_info.next_stake_amount,
+            StakeAmount {
+                voting: Zero::zero(),
+                build_and_earn: Zero::zero(),
+                era: era_info_snapshot.current_stake_amount.era + 2,
+                period: era_info_snapshot.current_stake_amount.period + 1,
+            }
+        );
     }
 }
 
