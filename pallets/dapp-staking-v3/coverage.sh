@@ -13,3 +13,6 @@ done
 # Also need to check the coverage when only running extrinsic tests (disable type tests)
 
 # Also need similar approach to extrinsic testing, as above
+
+
+# NOTE: this script will be deleted before the final release!

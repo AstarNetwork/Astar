@@ -1114,6 +1114,127 @@ pub(crate) fn assert_cleanup_expired_entries(account: AccountId) {
     );
 }
 
+/// Asserts correct transitions of the protocol after a block has been produced.
+pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
+    let current_block_number = System::block_number();
+
+    // No checks if era didn't change.
+    if pre_snapshot.active_protocol_state.next_era_start > current_block_number {
+        return;
+    }
+
+    // Verify post state
+    let post_snapshot = MemorySnapshot::new();
+
+    let is_new_subperiod = pre_snapshot
+        .active_protocol_state
+        .period_info
+        .subperiod_end_era
+        <= post_snapshot.active_protocol_state.era;
+
+    // 1. Verify protocol state
+    let pre_protoc_state = pre_snapshot.active_protocol_state;
+    let post_protoc_state = post_snapshot.active_protocol_state;
+    assert_eq!(post_protoc_state.era, pre_protoc_state.era + 1);
+
+    match pre_protoc_state.subperiod() {
+        Subperiod::Voting => {
+            assert_eq!(
+                post_protoc_state.subperiod(),
+                Subperiod::BuildAndEarn,
+                "Voting subperiod only lasts for a single era."
+            );
+
+            let eras_per_bep: EraNumber =
+                <Test as Config>::StandardErasPerBuildAndEarnSubperiod::get();
+            assert_eq!(
+                post_protoc_state.period_info.subperiod_end_era,
+                post_protoc_state.era + eras_per_bep,
+                "Build&earn must last for the predefined amount of standard eras."
+            );
+
+            let standard_era_length: BlockNumber = <Test as Config>::StandardEraLength::get();
+            assert_eq!(
+                post_protoc_state.next_era_start,
+                current_block_number + standard_era_length,
+                "Era in build&earn period must last for the predefined amount of blocks."
+            );
+        }
+        Subperiod::BuildAndEarn => {
+            if is_new_subperiod {
+                assert_eq!(
+                    post_protoc_state.subperiod(),
+                    Subperiod::Voting,
+                    "Since we expect a new subperiod, it must be 'Voting'."
+                );
+                assert_eq!(
+                    post_protoc_state.period_number(),
+                    pre_protoc_state.period_number() + 1,
+                    "Ending 'Build&Earn' triggers a new period."
+                );
+                assert_eq!(
+                    post_protoc_state.period_info.subperiod_end_era,
+                    post_protoc_state.era + 1,
+                    "Voting era must last for a single era."
+                );
+
+                let blocks_per_standard_era: BlockNumber =
+                    <Test as Config>::StandardEraLength::get();
+                let eras_per_voting_subperiod: EraNumber =
+                    <Test as Config>::StandardErasPerVotingSubperiod::get();
+                let eras_per_voting_subperiod: BlockNumber = eras_per_voting_subperiod.into();
+                let era_length: BlockNumber = blocks_per_standard_era * eras_per_voting_subperiod;
+                assert_eq!(
+                    post_protoc_state.next_era_start,
+                    current_block_number + era_length,
+                    "The upcoming 'Voting' subperiod must last for the 'standard eras per voting subperiod x standard era length' amount of blocks."
+                );
+            } else {
+                assert_eq!(
+                    post_protoc_state.period_info, pre_protoc_state.period_info,
+                    "New subperiod hasn't started, hence it should remain 'Build&Earn'."
+                );
+            }
+        }
+    }
+
+    // 2. Verify current era info
+    let pre_era_info = pre_snapshot.current_era_info;
+    let post_era_info = post_snapshot.current_era_info;
+
+    assert_eq!(post_era_info.total_locked, pre_era_info.total_locked);
+    assert_eq!(post_era_info.unlocking, pre_era_info.unlocking);
+
+    // New period has started
+    if is_new_subperiod && pre_protoc_state.subperiod() == Subperiod::BuildAndEarn {
+        assert!(post_era_info.current_stake_amount.is_empty());
+        assert!(post_era_info.next_stake_amount.is_empty());
+    } else {
+        assert_eq!(
+            post_era_info.current_stake_amount,
+            pre_era_info.next_stake_amount
+        );
+        assert_eq!(
+            post_era_info.next_stake_amount.total(),
+            post_era_info.current_stake_amount.total()
+        );
+        println!("PostEraInfo next {:?}", post_era_info);
+        println!("PostProtocState: {:?}", post_protoc_state);
+        println!("====================");
+        // assert_eq!(
+        //     post_era_info.next_stake_amount.era,
+        //     post_protoc_state.era + 1,
+        // );
+        // continue here - need to add logic to update to correct era
+    }
+
+    // TODO
+    // - check current era info
+    // - check tier config
+    // - check era reward
+    // - check events
+}
+
 /// Returns from which starting era to which ending era can rewards be claimed for the specified account.
 ///
 /// If `None` is returned, there is nothing to claim.

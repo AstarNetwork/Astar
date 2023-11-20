@@ -120,16 +120,16 @@ pub mod pallet {
         #[pallet::constant]
         type StandardEraLength: Get<Self::BlockNumber>;
 
-        /// Length of the `Voting` period in standard eras.
-        /// Although `Voting` period only consumes one 'era', we still measure its length in standard eras
+        /// Length of the `Voting` subperiod in standard eras.
+        /// Although `Voting` subperiod only consumes one 'era', we still measure its length in standard eras
         /// for the sake of simplicity & consistency.
         #[pallet::constant]
-        type StandardErasPerVotingPeriod: Get<EraNumber>;
+        type StandardErasPerVotingSubperiod: Get<EraNumber>;
 
-        /// Length of the `Build&Earn` period in standard eras.
-        /// Each `Build&Earn` period consists of one or more distinct standard eras.
+        /// Length of the `Build&Earn` subperiod in standard eras.
+        /// Each `Build&Earn` subperiod consists of one or more distinct standard eras.
         #[pallet::constant]
-        type StandardErasPerBuildAndEarnPeriod: Get<EraNumber>;
+        type StandardErasPerBuildAndEarnSubperiod: Get<EraNumber>;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -518,13 +518,15 @@ pub mod pallet {
                 return T::DbWeight::get().reads(1);
             }
 
+            // At this point it's clear that an era change will happen
             let mut era_info = CurrentEraInfo::<T>::get();
 
             let current_era = protocol_state.era;
             let next_era = current_era.saturating_add(1);
             let (maybe_period_event, era_reward) = match protocol_state.subperiod() {
+                // Voting subperiod only lasts for one 'prolonged' era
                 Subperiod::Voting => {
-                    // For the sake of consistency, we put zero reward into storage
+                    // For the sake of consistency, we put zero reward into storage. There are no rewards for the voting subperiod.
                     let era_reward = EraReward {
                         staker_reward_pool: Balance::zero(),
                         staked: era_info.total_staked_amount(),
@@ -532,7 +534,7 @@ pub mod pallet {
                     };
 
                     let subperiod_end_era =
-                        next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
+                        next_era.saturating_add(T::StandardErasPerBuildAndEarnSubperiod::get());
                     let build_and_earn_start_block =
                         now.saturating_add(T::StandardEraLength::get());
                     protocol_state
@@ -635,19 +637,6 @@ pub mod pallet {
                 );
             }
             EraRewards::<T>::insert(&era_span_index, span);
-
-            // TODO: maybe do lazy history cleanup in this function?
-            // if let Some(expired_period) = Self::oldest_claimable_period().checked_sub(1) {
-            //     if let Some(expired_period_info) = PeriodEnd::<T>::get(&expired_period) {
-            //         let final_era = expired_period_info.final_era;
-            //         let expired_era_span_index = Self::era_reward_span_index(final_era);
-
-            //         let era_reward_span = EraRewards::<T>::get(&expired_era_span_index)
-            //             .unwrap_or_default();
-            //         if era_reward_span.last_era()
-
-            //     }
-            // }
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
             if let Some(period_event) = maybe_period_event {
@@ -1618,7 +1607,8 @@ pub mod pallet {
 
         /// Returns the number of blocks per voting period.
         pub(crate) fn blocks_per_voting_period() -> BlockNumberFor<T> {
-            T::StandardEraLength::get().saturating_mul(T::StandardErasPerVotingPeriod::get().into())
+            T::StandardEraLength::get()
+                .saturating_mul(T::StandardErasPerVotingSubperiod::get().into())
         }
 
         /// `true` if smart contract is active, `false` if it has been unregistered.

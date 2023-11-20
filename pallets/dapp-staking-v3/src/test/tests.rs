@@ -176,6 +176,13 @@ fn maintenace_mode_call_filtering_works() {
 }
 
 #[test]
+fn on_initialize_is_noop_if_no_era_change() {
+    ExtBuilder::build().execute_with(|| {
+        // TODO
+    })
+}
+
+#[test]
 fn on_initialize_state_change_works() {
     ExtBuilder::build().execute_with(|| {
         // TODO: test `EraInfo` change and verify events. This would be good to do each time we call the helper functions to go to next era or period.
@@ -212,7 +219,7 @@ fn on_initialize_state_change_works() {
 
         // Advance eras just until we reach the next voting period
         let eras_per_bep_period: EraNumber =
-            <Test as Config>::StandardErasPerBuildAndEarnPeriod::get();
+            <Test as Config>::StandardErasPerBuildAndEarnSubperiod::get();
         let blocks_per_era: BlockNumber = <Test as Config>::StandardEraLength::get();
         for era in 2..(2 + eras_per_bep_period - 1) {
             let pre_block = System::block_number();

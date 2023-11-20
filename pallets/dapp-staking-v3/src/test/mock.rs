@@ -16,7 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{self as pallet_dapp_staking, *};
+use crate::{
+    self as pallet_dapp_staking,
+    test::testing_utils::{assert_block_bump, MemorySnapshot},
+    *,
+};
 
 use frame_support::{
     construct_runtime, parameter_types,
@@ -26,13 +30,12 @@ use frame_support::{
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
+use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     Permill,
 };
-
-use sp_io::TestExternalities;
 
 pub(crate) type AccountId = u64;
 pub(crate) type BlockNumber = u64;
@@ -155,8 +158,8 @@ impl pallet_dapp_staking::Config for Test {
     type NativePriceProvider = DummyPriceProvider;
     type RewardPoolProvider = DummyRewardPoolProvider;
     type StandardEraLength = ConstU64<10>;
-    type StandardErasPerVotingPeriod = ConstU32<8>;
-    type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
+    type StandardErasPerVotingSubperiod = ConstU32<8>;
+    type StandardErasPerBuildAndEarnSubperiod = ConstU32<16>;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -195,7 +198,7 @@ impl ExtBuilder {
             let era_length: BlockNumber =
                 <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
             let voting_period_length_in_eras: EraNumber =
-                <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingPeriod as sp_core::Get<_>>::get(
+                <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingSubperiod as sp_core::Get<_>>::get(
                 );
 
             // Init protocol state
@@ -208,6 +211,23 @@ impl ExtBuilder {
                     subperiod_end_era: 2,
                 },
                 maintenance: false,
+            });
+            pallet_dapp_staking::CurrentEraInfo::<Test>::put(EraInfo {
+                total_locked: 0,
+                unlocking: 0,
+                current_stake_amount: StakeAmount {
+                    voting: 0,
+                    build_and_earn: 0,
+                    era: 1,
+                    period: 1,
+                },
+                next_stake_amount: StakeAmount {
+                    voting: 0,
+                    build_and_earn: 0,
+                    era: 2,
+                    period: 1,
+                },
+
             });
 
             // Init tier params
@@ -263,7 +283,10 @@ pub(crate) fn run_to_block(n: u64) {
         DappStaking::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
         // This is performed outside of dapps staking but we expect it before on_initialize
+
+        let pre_snapshot = MemorySnapshot::new();
         DappStaking::on_initialize(System::block_number());
+        assert_block_bump(&pre_snapshot);
     }
 }
 

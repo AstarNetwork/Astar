@@ -91,7 +91,7 @@ const NUMBER_OF_SLOTS: u32 = 100;
 
 pub fn initial_config<T: Config>() {
     let era_length = T::StandardEraLength::get();
-    let voting_period_length_in_eras = T::StandardErasPerVotingPeriod::get();
+    let voting_period_length_in_eras = T::StandardErasPerVotingSubperiod::get();
 
     // Init protocol state
     ActiveProtocolState::<T>::put(ProtocolState {
