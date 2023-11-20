@@ -630,7 +630,7 @@ parameter_types! {
     pub const WeightFeeFactor: Balance = 308_550_000_000_000; // Around 0.000_300 SDN per unit of base weight.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
-    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 666_667); // 0.000_015
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(000_015, 1_000_000); // 0.000_015
     pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 10); // 0.1
     pub MaximumMultiplier: Multiplier = Multiplier::saturating_from_integer(10); // 10
 }
