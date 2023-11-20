@@ -20,8 +20,8 @@ use crate::test::mock::*;
 use crate::types::*;
 use crate::{
     pallet::Config, ActiveProtocolState, BlockNumberFor, ContractStake, CurrentEraInfo, DAppId,
-    DAppTiers, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, PeriodEnd, PeriodEndInfo,
-    StakerInfo,
+    DAppTiers, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, NextTierConfig, PeriodEnd,
+    PeriodEndInfo, StakerInfo, TierConfig,
 };
 
 use frame_support::{assert_ok, traits::Get};
@@ -51,6 +51,8 @@ pub(crate) struct MemorySnapshot {
     era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
     period_end: HashMap<PeriodNumber, PeriodEndInfo>,
     dapp_tiers: HashMap<EraNumber, DAppTierRewardsFor<Test>>,
+    tier_config: TiersConfiguration<<Test as Config>::NumberOfTiers>,
+    next_tier_config: TiersConfiguration<<Test as Config>::NumberOfTiers>,
 }
 
 impl MemorySnapshot {
@@ -69,6 +71,8 @@ impl MemorySnapshot {
             era_rewards: EraRewards::<Test>::iter().collect(),
             period_end: PeriodEnd::<Test>::iter().collect(),
             dapp_tiers: DAppTiers::<Test>::iter().collect(),
+            tier_config: TierConfig::<Test>::get(),
+            next_tier_config: NextTierConfig::<Test>::get(),
         }
     }
 
@@ -1240,12 +1244,26 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
         );
         assert_eq!(
             post_era_info.next_stake_amount.period,
-            pre_era_info.period_number(),
+            pre_protoc_state.period_number(),
         );
     }
 
+    // 3. Verify tier config
+    match pre_protoc_state.subperiod() {
+        Subperiod::Voting => {
+            assert!(!NextTierConfig::<Test>::exists());
+            assert_eq!(post_snapshot.tier_config, pre_snapshot.next_tier_config);
+        }
+        Subperiod::BuildAndEarn if is_new_subperiod => {
+            assert!(NextTierConfig::<Test>::exists());
+            assert_eq!(post_snapshot.tier_config, pre_snapshot.tier_config);
+        }
+        _ => {
+            assert_eq!(post_snapshot.tier_config, pre_snapshot.tier_config);
+        }
+    }
+
     // TODO
-    // - check tier config
     // - check era reward
     // - check events
 }
