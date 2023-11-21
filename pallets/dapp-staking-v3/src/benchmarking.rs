@@ -24,6 +24,8 @@ use frame_benchmarking::v2::*;
 use frame_support::assert_ok;
 use frame_system::{Pallet as System, RawOrigin};
 
+use ::assert_matches::assert_matches;
+
 // TODO: copy/paste from mock, make it more generic later
 
 /// Run to the specified block number.
@@ -94,6 +96,15 @@ const SEED: u32 = 9000;
 /// Assert that the last event equals the provided one.
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
+
+// Return all dApp staking events from the event buffer.
+fn dapp_staking_events<T: Config>() -> Vec<crate::Event<T>> {
+    System::<T>::events()
+        .into_iter()
+        .map(|r| r.event)
+        .filter_map(|e| <T as Config>::RuntimeEvent::from(e).try_into().ok())
+        .collect::<Vec<_>>()
 }
 
 pub fn initial_config<T: Config>() {
@@ -383,7 +394,7 @@ mod benchmarks {
         let staker: T::AccountId = whitelisted_caller();
         let amount = (T::MinimumStakeAmount::get() + 1)
             * Into::<Balance>::into(max_number_of_contracts::<T>())
-            + 1;
+            + Into::<Balance>::into(T::MaxUnlockingChunks::get());
         T::Currency::make_free_balance_be(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
@@ -401,9 +412,9 @@ mod benchmarks {
 
         // Register required number of contracts and have staker stake on them.
         // This is needed to achieve the cleanup functionality.
-        for x in 0..x {
-            let smart_contract = T::BenchmarkHelper::get_smart_contract(x as u32);
-            let owner: T::AccountId = account("dapp_owner", x.into(), SEED);
+        for idx in 0..x {
+            let smart_contract = T::BenchmarkHelper::get_smart_contract(idx as u32);
+            let owner: T::AccountId = account("dapp_owner", idx.into(), SEED);
 
             assert_ok!(DappStaking::<T>::register(
                 RawOrigin::Root.into(),
@@ -418,18 +429,30 @@ mod benchmarks {
             ));
         }
 
-        // Finally, unlock some amount.
+        // Unlock some amount - but we want to fill up the whole vector with chunks.
         let unlock_amount = 1;
-        assert_ok!(DappStaking::<T>::unlock(
-            RawOrigin::Signed(staker.clone()).into(),
-            unlock_amount,
-        ));
+        for _ in 0..T::MaxUnlockingChunks::get() {
+            assert_ok!(DappStaking::<T>::unlock(
+                RawOrigin::Signed(staker.clone()).into(),
+                unlock_amount,
+            ));
+            run_for_blocks::<T>(One::one());
+        }
+        assert_eq!(
+            Ledger::<T>::get(&staker).unlocking.len(),
+            T::MaxUnlockingChunks::get() as usize
+        );
+        let unlock_amount = unlock_amount * Into::<Balance>::into(T::MaxUnlockingChunks::get());
 
         // Advance to next period to ensure the old stake entries are cleaned up.
         advance_to_next_period::<T>();
 
         // Additionally, ensure enough blocks have passed so that the unlocking chunk can be claimed.
-        let unlock_block = Ledger::<T>::get(&staker).unlocking[0].unlock_block;
+        let unlock_block = Ledger::<T>::get(&staker)
+            .unlocking
+            .last()
+            .expect("At least one entry must exist.")
+            .unlock_block;
         run_to_block::<T>(unlock_block);
 
         #[extrinsic_call]
@@ -457,18 +480,24 @@ mod benchmarks {
             smart_contract.clone(),
         ));
 
-        let amount = T::MinimumLockedAmount::get() * 2;
+        let amount =
+            T::MinimumLockedAmount::get() * 2 + Into::<Balance>::into(T::MaxUnlockingChunks::get());
         T::Currency::make_free_balance_be(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
         ));
 
+        // Unlock some amount - but we want to fill up the whole vector with chunks.
         let unlock_amount = 1;
-        assert_ok!(DappStaking::<T>::unlock(
-            RawOrigin::Signed(staker.clone()).into(),
-            unlock_amount,
-        ));
+        for _ in 0..T::MaxUnlockingChunks::get() {
+            assert_ok!(DappStaking::<T>::unlock(
+                RawOrigin::Signed(staker.clone()).into(),
+                unlock_amount,
+            ));
+            run_for_blocks::<T>(One::one());
+        }
+        let unlock_amount = unlock_amount * Into::<Balance>::into(T::MaxUnlockingChunks::get());
 
         #[extrinsic_call]
         _(RawOrigin::Signed(staker.clone()));
@@ -480,6 +509,198 @@ mod benchmarks {
             }
             .into(),
         );
+    }
+
+    #[benchmark]
+    fn stake() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get();
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        #[extrinsic_call]
+        _(
+            RawOrigin::Signed(staker.clone()),
+            smart_contract.clone(),
+            amount,
+        );
+
+        assert_last_event::<T>(
+            Event::<T>::Stake {
+                account: staker,
+                smart_contract,
+                amount,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn unstake() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get() + 1;
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            smart_contract.clone(),
+            amount
+        ));
+
+        let unstake_amount = 1;
+
+        #[extrinsic_call]
+        _(
+            RawOrigin::Signed(staker.clone()),
+            smart_contract.clone(),
+            unstake_amount,
+        );
+
+        assert_last_event::<T>(
+            Event::<T>::Unstake {
+                account: staker,
+                smart_contract,
+                amount: unstake_amount,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn claim_staker_rewards_past_period(x: Linear<1, { T::EraRewardSpanLength::get() }>) {
+        initial_config::<T>();
+
+        // Prepare staker & register smart contract
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        // Lock some amount by the staker
+        let amount = T::MinimumLockedAmount::get();
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        // Advance to the era just before a new span entry is created.
+        // This ensures that when rewards are claimed, we'll be claiming from the new span.
+        //
+        // This is convenient because it allows us to control how many rewards are claimed.
+        advance_to_era::<T>(T::EraRewardSpanLength::get() - 1);
+
+        // Now ensure the expected amount of rewards are claimable.
+        advance_to_era::<T>(
+            ActiveProtocolState::<T>::get().era + T::EraRewardSpanLength::get() - x,
+        );
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            smart_contract.clone(),
+            amount
+        ));
+
+        // This ensures we claim from the past period.
+        advance_to_next_period::<T>();
+
+        // For testing purposes
+        System::<T>::reset_events();
+
+        #[extrinsic_call]
+        claim_staker_rewards(RawOrigin::Signed(staker.clone()));
+
+        // No need to do precise check of values, but predetermiend amount of 'Reward' events is expected.
+        let dapp_staking_events = dapp_staking_events::<T>();
+        assert_eq!(dapp_staking_events.len(), x as usize);
+        dapp_staking_events.iter().for_each(|e| {
+            assert_matches!(e, Event::Reward { .. });
+        });
+    }
+
+    #[benchmark]
+    fn claim_staker_rewards_ongoing_period(x: Linear<1, { T::EraRewardSpanLength::get() }>) {
+        initial_config::<T>();
+
+        // Prepare staker & register smart contract
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        // Lock & stake some amount by the staker
+        let amount = T::MinimumLockedAmount::get();
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        // Advance to the era just before a new span entry is created.
+        // This ensures that when rewards are claimed, we'll be claiming from the new span.
+        //
+        // This is convenient because it allows us to control how many rewards are claimed.
+        advance_to_era::<T>(T::EraRewardSpanLength::get() - 1);
+
+        // Now ensure the expected amount of rewards are claimable.
+        advance_to_era::<T>(
+            ActiveProtocolState::<T>::get().era + T::EraRewardSpanLength::get() - x,
+        );
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            smart_contract.clone(),
+            amount
+        ));
+
+        // This ensures we move over the entire span.
+        advance_to_era::<T>(T::EraRewardSpanLength::get() * 2);
+
+        // For testing purposes
+        System::<T>::reset_events();
+
+        #[extrinsic_call]
+        claim_staker_rewards(RawOrigin::Signed(staker.clone()));
+
+        // No need to do precise check of values, but predetermiend amount of 'Reward' events is expected.
+        let dapp_staking_events = dapp_staking_events::<T>();
+        assert_eq!(dapp_staking_events.len(), x as usize);
+        dapp_staking_events.iter().for_each(|e| {
+            assert_matches!(e, Event::Reward { .. });
+        });
     }
 
     // TODO: investigate why the PoV size is so large here, evne after removing read of `IntegratedDApps` storage.

@@ -24,6 +24,7 @@ sp-std = { workspace = true }
 
 astar-primitives = { workspace = true }
 
+assert_matches = { workspace = true, optional = true }
 frame-benchmarking = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -54,5 +55,6 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
+	"assert_matches",
 ]
 try-runtime = ["frame-support/try-runtime"]

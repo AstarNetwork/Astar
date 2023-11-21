@@ -339,12 +339,6 @@ pub fn dapp_staking_events() -> Vec<crate::Event<Test>> {
     System::events()
         .into_iter()
         .map(|r| r.event)
-        .filter_map(|e| {
-            if let RuntimeEvent::DappStaking(inner) = e {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-        .collect()
+        .filter_map(|e| <Test as Config>::RuntimeEvent::from(e).try_into().ok())
+        .collect::<Vec<_>>()
 }
