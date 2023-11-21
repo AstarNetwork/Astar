@@ -16,10 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::test::mock::*;
-use crate::test::testing_utils::*;
+use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, DAppId, EraNumber, EraRewards, Error, ForcingType,
+    pallet::Config, ActiveProtocolState, DAppId, EraNumber, EraRewards, Error, Event, ForcingType,
     IntegratedDApps, Ledger, NextDAppId, PeriodNumber, StakerInfo, Subperiod, TierConfig,
 };
 
@@ -77,11 +76,17 @@ fn maintenace_mode_works() {
 
         // Enable maintenance mode & check post-state
         assert_ok!(DappStaking::maintenance_mode(RuntimeOrigin::root(), true));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::MaintenanceMode {
+            enabled: true,
+        }));
         assert!(ActiveProtocolState::<Test>::get().maintenance);
 
         // Call still works, even in maintenance mode
-        assert_ok!(DappStaking::maintenance_mode(RuntimeOrigin::root(), true));
-        assert!(ActiveProtocolState::<Test>::get().maintenance);
+        assert_ok!(DappStaking::maintenance_mode(RuntimeOrigin::root(), false));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::MaintenanceMode {
+            enabled: false,
+        }));
+        assert!(!ActiveProtocolState::<Test>::get().maintenance);
 
         // Incorrect origin doesn't work
         assert_noop!(
@@ -1861,6 +1866,9 @@ fn force_era_works() {
             "Sanity check."
         );
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::Force {
+            forcing_type: ForcingType::Era,
+        }));
 
         // Verify state change
         assert_eq!(
@@ -1892,6 +1900,9 @@ fn force_era_works() {
         );
         assert!(init_state.period_end_era() > init_state.era + 1, "Sanity check, otherwise the test doesn't guarantee it tests what's expected.");
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::Force {
+            forcing_type: ForcingType::Era,
+        }));
 
         // Verify state change
         assert_eq!(
@@ -1933,6 +1944,9 @@ fn force_subperiod_works() {
             "Sanity check."
         );
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Subperiod));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::Force {
+            forcing_type: ForcingType::Subperiod,
+        }));
 
         // Verify state change
         assert_eq!(
@@ -1967,6 +1981,9 @@ fn force_subperiod_works() {
         );
         assert!(init_state.period_end_era() > init_state.era + 1, "Sanity check, otherwise the test doesn't guarantee it tests what's expected.");
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Subperiod));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::Force {
+            forcing_type: ForcingType::Subperiod,
+        }));
 
         // Verify state change
         assert_eq!(
