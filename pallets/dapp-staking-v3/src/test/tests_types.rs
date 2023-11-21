@@ -2666,8 +2666,12 @@ fn tier_configuration_basic_tests() {
     assert!(init_config.is_valid(), "Init config must be valid!");
 
     // Create a new config, based on a new price
-    let new_price = FixedU64::from_rational(20, 100); // in production will be expressed in USD
-    let new_config = init_config.calculate_new(new_price, &params);
+    let high_price = FixedU64::from_rational(20, 100); // in production will be expressed in USD
+    let new_config = init_config.calculate_new(high_price, &params);
+    assert!(new_config.is_valid());
+
+    let low_price = FixedU64::from_rational(1, 100); // in production will be expressed in USD
+    let new_config = init_config.calculate_new(low_price, &params);
     assert!(new_config.is_valid());
 
     // TODO: expand tests, add more sanity checks (e.g. tier 3 requirement should never be lower than tier 4, etc.)

@@ -63,7 +63,6 @@
 //! * `DAppTier` - a compact struct describing a dApp's tier.
 //! * `DAppTierRewards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
 //!
-//! TODO: some types are missing so double check before final merge that everything is covered and explained correctly
 
 use frame_support::{pallet_prelude::*, BoundedVec};
 use frame_system::pallet_prelude::*;

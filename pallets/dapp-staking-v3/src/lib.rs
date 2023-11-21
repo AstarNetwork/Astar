@@ -177,10 +177,10 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// Maintenance mode has been either enabled or disabled.
+        MaintenanceMode { enabled: bool },
         /// New era has started.
-        NewEra {
-            era: EraNumber,
-        },
+        NewEra { era: EraNumber },
         /// New subperiod has started.
         NewSubperiod {
             subperiod: Subperiod,
@@ -245,12 +245,14 @@ pub mod pallet {
             era: EraNumber,
             amount: Balance,
         },
+        /// Bonus reward has been paid out to a loyal staker.
         BonusReward {
             account: T::AccountId,
             smart_contract: T::SmartContract,
             period: PeriodNumber,
             amount: Balance,
         },
+        /// dApp reward has been paid out to a beneficiary.
         DAppReward {
             beneficiary: T::AccountId,
             smart_contract: T::SmartContract,
@@ -258,15 +260,14 @@ pub mod pallet {
             era: EraNumber,
             amount: Balance,
         },
+        /// Account has unstaked funds from an unregistered smart contract
         UnstakeFromUnregistered {
             account: T::AccountId,
             smart_contract: T::SmartContract,
             amount: Balance,
         },
-        ExpiredEntriesRemoved {
-            account: T::AccountId,
-            count: u16,
-        },
+        /// Some expired stake entries have been removed from storage.
+        ExpiredEntriesRemoved { account: T::AccountId, count: u16 },
     }
 
     #[pallet::error]
@@ -657,12 +658,15 @@ pub mod pallet {
         pub fn maintenance_mode(origin: OriginFor<T>, enabled: bool) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
             ActiveProtocolState::<T>::mutate(|state| state.maintenance = enabled);
+
+            Self::deposit_event(Event::<T>::MaintenanceMode { enabled });
             Ok(())
         }
 
         /// Used to register a new contract for dApp staking.
         ///
         /// If successful, smart contract will be assigned a simple, unique numerical identifier.
+        /// Owner is set to be initial beneficiary & manager of the dApp.
         #[pallet::call_index(1)]
         #[pallet::weight(Weight::zero())]
         pub fn register(
@@ -713,6 +717,7 @@ pub mod pallet {
         ///
         /// Caller has to be dApp owner.
         /// If set to `None`, rewards will be deposited to the dApp owner.
+        /// After this call, all existing & future rewards will be paid out to the beneficiary.
         #[pallet::call_index(2)]
         #[pallet::weight(Weight::zero())]
         pub fn set_dapp_reward_beneficiary(
@@ -828,6 +833,8 @@ pub mod pallet {
         ///
         /// In case caller account doesn't have sufficient balance to cover the specified amount, everything is locked.
         /// After adjustment, lock amount must be greater than zero and in total must be equal or greater than the minimum locked amount.
+        ///
+        /// Locked amount can immediately be used for staking.
         #[pallet::call_index(5)]
         #[pallet::weight(Weight::zero())]
         pub fn lock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
@@ -981,9 +988,13 @@ pub mod pallet {
         }
 
         /// Stake the specified amount on a smart contract.
-        /// The `amount` specified **must** be available for staking and meet the required minimum, otherwise the call will fail.
+        /// The precise `amount` specified **must** be available for staking.
+        /// The total amount staked on a dApp must be greater than the minimum required value.
         ///
-        /// Depending on the period type, appropriate stake amount will be updated.
+        /// Depending on the period type, appropriate stake amount will be updated. During `Voting` subperiod, `voting` stake amount is updated,
+        /// and same for `Build&Earn` subperiod.
+        ///
+        /// Staked amount is only eligible for rewards from the next era onwards.
         #[pallet::call_index(9)]
         #[pallet::weight(Weight::zero())]
         pub fn stake(
@@ -1105,7 +1116,12 @@ pub mod pallet {
         /// Unstake the specified amount from a smart contract.
         /// The `amount` specified **must** not exceed what's staked, otherwise the call will fail.
         ///
+        /// If unstaking the specified `amount` would take staker below the minimum stake threshold, everything is unstaked.
+        ///
         /// Depending on the period type, appropriate stake amount will be updated.
+        /// In case amount is unstaked during `Voting` subperiod, the `voting` amount is reduced.
+        /// In case amount is unstaked during `Build&Earn` subperiod, first the `build_and_earn` is reduced,
+        /// and any spillover is subtracted from the `voting` amount.
         #[pallet::call_index(10)]
         #[pallet::weight(Weight::zero())]
         pub fn unstake(
@@ -1207,8 +1223,7 @@ pub mod pallet {
         }
 
         /// Claims some staker rewards, if user has any.
-        /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening
-        /// if appropriate entries exist in account's ledger.
+        /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening.
         #[pallet::call_index(11)]
         #[pallet::weight(Weight::zero())]
         pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResult {
@@ -1414,6 +1429,7 @@ pub mod pallet {
         }
 
         /// Used to unstake funds from a contract that was unregistered after an account staked on it.
+        /// This is required if staker wants to re-stake these funds on another active contract during the ongoing period.
         #[pallet::call_index(14)]
         #[pallet::weight(Weight::zero())]
         pub fn unstake_from_unregistered(

@@ -89,6 +89,13 @@ const MIN_TIER_THRESHOLD: Balance = 10 * UNIT;
 
 const NUMBER_OF_SLOTS: u32 = 100;
 
+const SEED: u32 = 9000;
+
+/// Assert that the last event equals the provided one.
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+    frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
+
 pub fn initial_config<T: Config>() {
     let era_length = T::StandardEraLength::get();
     let voting_period_length_in_eras = T::StandardErasPerVotingSubperiod::get();
@@ -164,6 +171,118 @@ fn max_number_of_contracts<T: Config>() -> u32 {
 #[benchmarks]
 mod benchmarks {
     use super::*;
+
+    #[benchmark]
+    fn maintenance_mode() {
+        initial_config::<T>();
+
+        #[extrinsic_call]
+        _(RawOrigin::Root, true);
+
+        assert_last_event::<T>(Event::<T>::MaintenanceMode { enabled: true }.into());
+    }
+
+    #[benchmark]
+    fn register() {
+        initial_config::<T>();
+
+        let account: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+
+        #[extrinsic_call]
+        _(RawOrigin::Root, account.clone(), smart_contract.clone());
+
+        assert_last_event::<T>(
+            Event::<T>::DAppRegistered {
+                owner: account,
+                smart_contract,
+                dapp_id: 0,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn set_dapp_reward_beneficiary() {
+        initial_config::<T>();
+
+        let owner: T::AccountId = whitelisted_caller();
+        let beneficiary: Option<T::AccountId> = Some(account("beneficiary", 0, SEED));
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        #[extrinsic_call]
+        _(
+            RawOrigin::Signed(owner),
+            smart_contract.clone(),
+            beneficiary.clone(),
+        );
+
+        assert_last_event::<T>(
+            Event::<T>::DAppRewardDestinationUpdated {
+                smart_contract,
+                beneficiary,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn set_dapp_owner() {
+        initial_config::<T>();
+
+        let init_owner: T::AccountId = whitelisted_caller();
+        let new_owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            init_owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        #[extrinsic_call]
+        _(
+            RawOrigin::Signed(init_owner),
+            smart_contract.clone(),
+            new_owner.clone(),
+        );
+
+        assert_last_event::<T>(
+            Event::<T>::DAppOwnerChanged {
+                smart_contract,
+                new_owner,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn unregister() {
+        initial_config::<T>();
+
+        let owner: T::AccountId = whitelisted_caller();
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        #[extrinsic_call]
+        _(RawOrigin::Root, smart_contract.clone());
+
+        assert_last_event::<T>(
+            Event::<T>::DAppUnregistered {
+                smart_contract,
+                era: ActiveProtocolState::<T>::get().era,
+            }
+            .into(),
+        );
+    }
 
     // TODO: investigate why the PoV size is so large here, evne after removing read of `IntegratedDApps` storage.
     // Relevant file: polkadot-sdk/substrate/utils/frame/benchmarking-cli/src/pallet/writer.rs
