@@ -26,7 +26,9 @@ use frame_system::{Pallet as System, RawOrigin};
 
 use ::assert_matches::assert_matches;
 
-// TODO: make benchmar utils file and move all these helper methods there to keep this file clean(er)
+// TODO: make benchmark utils file and move all these helper methods there to keep this file clean(er)
+
+// TODO2: non-extrinsic calls still need to be benchmarked.
 
 /// Run to the specified block number.
 /// Function assumes first block has been initialized.
