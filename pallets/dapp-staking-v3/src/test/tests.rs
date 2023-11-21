@@ -24,12 +24,13 @@ use crate::{
 };
 
 use frame_support::{
-    assert_noop, assert_ok,
+    assert_noop, assert_ok, assert_storage_noop,
     error::BadOrigin,
-    traits::{Currency, Get},
+    traits::{Currency, Get, OnFinalize, OnInitialize},
 };
 use sp_runtime::traits::Zero;
 
+// TODO: remove this prior to the merge
 #[test]
 fn print_test() {
     ExtBuilder::build().execute_with(|| {
@@ -178,15 +179,25 @@ fn maintenace_mode_call_filtering_works() {
 #[test]
 fn on_initialize_is_noop_if_no_era_change() {
     ExtBuilder::build().execute_with(|| {
-        // TODO
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        let current_block_number = System::block_number();
+
+        assert!(
+            current_block_number < protocol_state.next_era_start,
+            "Sanity check, otherwise test doesn't make sense."
+        );
+
+        // Sanity check
+        assert_storage_noop!(DappStaking::on_finalize(current_block_number));
+
+        // If no era change, on_initialize should be a noop
+        assert_storage_noop!(DappStaking::on_initialize(current_block_number + 1));
     })
 }
 
 #[test]
-fn on_initialize_state_change_works() {
+fn on_initialize_base_state_change_works() {
     ExtBuilder::build().execute_with(|| {
-        // TODO: test `EraInfo` change and verify events. This would be good to do each time we call the helper functions to go to next era or period.
-
         // Sanity check
         let protocol_state = ActiveProtocolState::<Test>::get();
         assert_eq!(protocol_state.era, 1);

@@ -181,8 +181,8 @@ pub mod pallet {
         NewEra {
             era: EraNumber,
         },
-        /// New period has started.
-        NewPeriod {
+        /// New subperiod has started.
+        NewSubperiod {
             subperiod: Subperiod,
             number: PeriodNumber,
         },
@@ -547,7 +547,7 @@ pub mod pallet {
                     TierConfig::<T>::put(next_tier_config);
 
                     (
-                        Some(Event::<T>::NewPeriod {
+                        Some(Event::<T>::NewSubperiod {
                             subperiod: protocol_state.subperiod(),
                             number: protocol_state.period_number(),
                         }),
@@ -603,7 +603,7 @@ pub mod pallet {
                         NextTierConfig::<T>::put(new_tier_config);
 
                         (
-                            Some(Event::<T>::NewPeriod {
+                            Some(Event::<T>::NewSubperiod {
                                 subperiod: protocol_state.subperiod(),
                                 number: protocol_state.period_number(),
                             }),

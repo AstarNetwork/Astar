@@ -1263,9 +1263,73 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
         }
     }
 
-    // TODO
-    // - check era reward
-    // - check events
+    // 4. Verify era reward
+    let era_span_index = DappStaking::era_reward_span_index(pre_protoc_state.era);
+    let maybe_pre_era_reward_span = pre_snapshot.era_rewards.get(&era_span_index);
+    let post_era_reward_span = post_snapshot
+        .era_rewards
+        .get(&era_span_index)
+        .expect("Era reward info must exist after era has finished.");
+
+    // Sanity check
+    if let Some(pre_era_reward_span) = maybe_pre_era_reward_span {
+        assert_eq!(
+            pre_era_reward_span.last_era(),
+            pre_protoc_state.era - 1,
+            "If entry exists, it should cover eras up to the previous one, exactly."
+        );
+    }
+
+    assert_eq!(
+        post_era_reward_span.last_era(),
+        pre_protoc_state.era,
+        "Entry must cover the current era."
+    );
+    assert_eq!(
+        post_era_reward_span
+            .get(pre_protoc_state.era)
+            .expect("Above check proved it must exist.")
+            .staked,
+        pre_snapshot.current_era_info.total_staked_amount(),
+        "Total staked amount must be equal to total amount staked at the end of the era."
+    );
+
+    // 5. Verify period end
+    if is_new_subperiod && pre_protoc_state.subperiod() == Subperiod::BuildAndEarn {
+        let period_end_info = post_snapshot.period_end[&pre_protoc_state.period_number()];
+        assert_eq!(
+            period_end_info.total_vp_stake,
+            pre_snapshot
+                .current_era_info
+                .staked_amount(Subperiod::Voting),
+        );
+    }
+
+    // 6. Verify event(s)
+    if is_new_subperiod {
+        let events = dapp_staking_events();
+        assert!(
+            events.len() >= 2,
+            "At least 2 events should exist from era & subperiod change."
+        );
+        assert_eq!(
+            events[events.len() - 2],
+            Event::NewEra {
+                era: post_protoc_state.era,
+            }
+        );
+        assert_eq!(
+            events[events.len() - 1],
+            Event::NewSubperiod {
+                subperiod: pre_protoc_state.subperiod().next(),
+                number: post_protoc_state.period_number(),
+            }
+        )
+    } else {
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::NewEra {
+            era: post_protoc_state.era,
+        }));
+    }
 }
 
 /// Returns from which starting era to which ending era can rewards be claimed for the specified account.
