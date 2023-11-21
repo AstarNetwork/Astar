@@ -107,6 +107,7 @@ fn dapp_staking_events<T: Config>() -> Vec<crate::Event<T>> {
         .collect::<Vec<_>>()
 }
 
+// TODO: make it more generic per runtime?
 pub fn initial_config<T: Config>() {
     let era_length = T::StandardEraLength::get();
     let voting_period_length_in_eras = T::StandardErasPerVotingSubperiod::get();
@@ -701,6 +702,132 @@ mod benchmarks {
         dapp_staking_events.iter().for_each(|e| {
             assert_matches!(e, Event::Reward { .. });
         });
+    }
+
+    #[benchmark]
+    fn claim_bonus_reward() {
+        initial_config::<T>();
+
+        // Prepare staker & register smart contract
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        // Lock & stake some amount by the staker
+        let amount = T::MinimumLockedAmount::get();
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            smart_contract.clone(),
+            amount
+        ));
+
+        // Advance to the next period so we can claim the bonus reward.
+        advance_to_next_period::<T>();
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(staker.clone()), smart_contract.clone());
+
+        // No need to do precise check of values, but last event must be 'BonusReward'.
+        assert_matches!(
+            dapp_staking_events::<T>().last(),
+            Some(Event::BonusReward { .. })
+        );
+    }
+
+    #[benchmark]
+    fn claim_dapp_reward() {
+        initial_config::<T>();
+
+        // Register a dApp & stake on it.
+        // This is the dApp for which we'll claim rewards for.
+        let owner: T::AccountId = whitelisted_caller();
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(0);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get() * 1000 * UNIT;
+        T::Currency::make_free_balance_be(&owner, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(owner.clone()).into(),
+            amount,
+        ));
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(owner.clone()).into(),
+            smart_contract.clone(),
+            amount
+        ));
+
+        // Register & stake up to max number of contracts.
+        // The reason is we want to have reward vector filled up to the capacity.
+        for idx in 1..T::MaxNumberOfContracts::get() {
+            let owner: T::AccountId = account("dapp_owner", idx.into(), SEED);
+            let smart_contract = T::BenchmarkHelper::get_smart_contract(idx as u32);
+            assert_ok!(DappStaking::<T>::register(
+                RawOrigin::Root.into(),
+                owner.clone().into(),
+                smart_contract.clone(),
+            ));
+
+            let staker: T::AccountId = account("staker", idx.into(), SEED);
+            T::Currency::make_free_balance_be(&staker, amount);
+            assert_ok!(DappStaking::<T>::lock(
+                RawOrigin::Signed(staker.clone()).into(),
+                amount,
+            ));
+            assert_ok!(DappStaking::<T>::stake(
+                RawOrigin::Signed(staker.clone()).into(),
+                smart_contract.clone(),
+                amount
+            ));
+        }
+
+        // This is a hacky part to ensure we accomodate max number of contracts.
+        TierConfig::<T>::mutate(|config| {
+            let max_number_of_contracts: u16 = T::MaxNumberOfContracts::get().try_into().unwrap();
+            config.number_of_slots = max_number_of_contracts;
+            config.slots_per_tier[0] = max_number_of_contracts;
+            config.slots_per_tier[1..].iter_mut().for_each(|x| *x = 0);
+        });
+
+        // Advance enough eras so dApp reward can be claimed.
+        advance_to_next_subperiod::<T>();
+        advance_to_next_era::<T>();
+        let claim_era = ActiveProtocolState::<T>::get().era - 1;
+
+        assert_eq!(
+            DAppTiers::<T>::get(claim_era)
+                .expect("Must exist since it's from past build&earn era.")
+                .dapps
+                .len(),
+            T::MaxNumberOfContracts::get() as usize,
+            "Sanity check to ensure we have filled up the vector completely."
+        );
+
+        #[extrinsic_call]
+        _(
+            RawOrigin::Signed(owner.clone()),
+            smart_contract.clone(),
+            claim_era,
+        );
+
+        // No need to do precise check of values, but last event must be 'DAppReward'.
+        assert_matches!(
+            dapp_staking_events::<T>().last(),
+            Some(Event::DAppReward { .. })
+        );
     }
 
     // TODO: investigate why the PoV size is so large here, evne after removing read of `IntegratedDApps` storage.
