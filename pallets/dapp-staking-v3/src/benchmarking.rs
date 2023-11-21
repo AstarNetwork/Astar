@@ -58,28 +58,28 @@ pub(crate) fn advance_to_next_era<T: Config>() {
     advance_to_era::<T>(ActiveProtocolState::<T>::get().era + 1);
 }
 
-// /// Advance blocks until the specified period has been reached.
-// ///
-// /// Function has no effect if period is already passed.
-// pub(crate) fn advance_to_period<T: Config>(period: PeriodNumber) {
-//     assert!(period >= ActiveProtocolState::<T>::get().period_number());
-//     while ActiveProtocolState::<T>::get().period_number() < period {
-//         run_for_blocks::<T>(One::one());
-//     }
-// }
+/// Advance blocks until the specified period has been reached.
+///
+/// Function has no effect if period is already passed.
+pub(crate) fn advance_to_period<T: Config>(period: PeriodNumber) {
+    assert!(period >= ActiveProtocolState::<T>::get().period_number());
+    while ActiveProtocolState::<T>::get().period_number() < period {
+        run_for_blocks::<T>(One::one());
+    }
+}
 
-// /// Advance blocks until next period has been reached.
-// pub(crate) fn advance_to_next_period<T: Config>() {
-//     advance_to_period::<T>(ActiveProtocolState::<T>::get().period_number() + 1);
-// }
+/// Advance blocks until next period has been reached.
+pub(crate) fn advance_to_next_period<T: Config>() {
+    advance_to_period::<T>(ActiveProtocolState::<T>::get().period_number() + 1);
+}
 
-// /// Advance blocks until next period type has been reached.
-// pub(crate) fn advance_to_next_subperiod<T: Config>() {
-//     let subperiod = ActiveProtocolState::<T>::get().subperiod();
-//     while ActiveProtocolState::<T>::get().subperiod() == subperiod {
-//         run_for_blocks::<T>(One::one());
-//     }
-// }
+/// Advance blocks until next period type has been reached.
+pub(crate) fn advance_to_next_subperiod<T: Config>() {
+    let subperiod = ActiveProtocolState::<T>::get().subperiod();
+    while ActiveProtocolState::<T>::get().subperiod() == subperiod {
+        run_for_blocks::<T>(One::one());
+    }
+}
 
 // All our networks use 18 decimals for native currency so this should be fine.
 const UNIT: Balance = 1_000_000_000_000_000_000;
@@ -284,8 +284,209 @@ mod benchmarks {
         );
     }
 
+    #[benchmark]
+    fn lock() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get();
+        T::Currency::make_free_balance_be(&staker, amount);
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(staker.clone()), amount);
+
+        assert_last_event::<T>(
+            Event::<T>::Locked {
+                account: staker,
+                amount,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn unlock() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get() * 2;
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(staker.clone()), 1);
+
+        assert_last_event::<T>(
+            Event::<T>::Unlocking {
+                account: staker,
+                amount: 1,
+            }
+            .into(),
+        );
+    }
+
+    // TODO: maybe this is not needed. Compare it after running benchmarks to the 'not-full' unlock
+    #[benchmark]
+    fn full_unlock() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get() * 2;
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        #[extrinsic_call]
+        unlock(RawOrigin::Signed(staker.clone()), amount);
+
+        assert_last_event::<T>(
+            Event::<T>::Unlocking {
+                account: staker,
+                amount,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn claim_unlocked(x: Linear<0, { T::MaxNumberOfStakedContracts::get() }>) {
+        // Prepare staker account and lock some amount
+        let staker: T::AccountId = whitelisted_caller();
+        let amount = (T::MinimumStakeAmount::get() + 1)
+            * Into::<Balance>::into(max_number_of_contracts::<T>())
+            + 1;
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        // Move over to the build&earn subperiod to ensure 'non-loyal' staking.
+        // This is needed so we can achieve staker entry cleanup after claiming unlocked tokens.
+        advance_to_next_subperiod::<T>();
+        assert_eq!(
+          ActiveProtocolState::<T>::get().subperiod(),
+          Subperiod::BuildAndEarn,
+          "Sanity check - we need to stake during build&earn for entries to be cleaned up in the next era."
+        );
+
+        // Register required number of contracts and have staker stake on them.
+        // This is needed to achieve the cleanup functionality.
+        for x in 0..x {
+            let smart_contract = T::BenchmarkHelper::get_smart_contract(x as u32);
+            let owner: T::AccountId = account("dapp_owner", x.into(), SEED);
+
+            assert_ok!(DappStaking::<T>::register(
+                RawOrigin::Root.into(),
+                owner.clone().into(),
+                smart_contract.clone(),
+            ));
+
+            assert_ok!(DappStaking::<T>::stake(
+                RawOrigin::Signed(staker.clone()).into(),
+                smart_contract,
+                T::MinimumStakeAmount::get() + 1,
+            ));
+        }
+
+        // Finally, unlock some amount.
+        let unlock_amount = 1;
+        assert_ok!(DappStaking::<T>::unlock(
+            RawOrigin::Signed(staker.clone()).into(),
+            unlock_amount,
+        ));
+
+        // Advance to next period to ensure the old stake entries are cleaned up.
+        advance_to_next_period::<T>();
+
+        // Additionally, ensure enough blocks have passed so that the unlocking chunk can be claimed.
+        let unlock_block = Ledger::<T>::get(&staker).unlocking[0].unlock_block;
+        run_to_block::<T>(unlock_block);
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(staker.clone()));
+
+        assert_last_event::<T>(
+            Event::<T>::ClaimedUnlocked {
+                account: staker,
+                amount: unlock_amount,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn relock_unlocking() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get() * 2;
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        let unlock_amount = 1;
+        assert_ok!(DappStaking::<T>::unlock(
+            RawOrigin::Signed(staker.clone()).into(),
+            unlock_amount,
+        ));
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(staker.clone()));
+
+        assert_last_event::<T>(
+            Event::<T>::Relock {
+                account: staker,
+                amount: unlock_amount,
+            }
+            .into(),
+        );
+    }
+
     // TODO: investigate why the PoV size is so large here, evne after removing read of `IntegratedDApps` storage.
     // Relevant file: polkadot-sdk/substrate/utils/frame/benchmarking-cli/src/pallet/writer.rs
+    // UPDATE: after some investigation, it seems that PoV size benchmarks are very unprecise
+    // - the worst case measured is usually very far off the actual value that is consumed on chain.
+    // There's an ongoing item to improve it (mentioned on roundtable meeting).
     #[benchmark]
     fn dapp_tier_assignment(x: Linear<0, { max_number_of_contracts::<T>() }>) {
         // Prepare init config (protocol state, tier params & config, etc.)
