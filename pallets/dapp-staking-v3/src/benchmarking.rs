@@ -26,7 +26,7 @@ use frame_system::{Pallet as System, RawOrigin};
 
 use ::assert_matches::assert_matches;
 
-// TODO: copy/paste from mock, make it more generic later
+// TODO: make benchmar utils file and move all these helper methods there to keep this file clean(er)
 
 /// Run to the specified block number.
 /// Function assumes first block has been initialized.
@@ -828,6 +828,111 @@ mod benchmarks {
             dapp_staking_events::<T>().last(),
             Some(Event::DAppReward { .. })
         );
+    }
+
+    #[benchmark]
+    fn unstake_from_unregistered() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount = T::MinimumLockedAmount::get();
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            smart_contract.clone(),
+            amount
+        ));
+
+        assert_ok!(DappStaking::<T>::unregister(
+            RawOrigin::Root.into(),
+            smart_contract.clone(),
+        ));
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(staker.clone()), smart_contract.clone());
+
+        assert_last_event::<T>(
+            Event::<T>::UnstakeFromUnregistered {
+                account: staker,
+                smart_contract,
+                amount,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn cleanup_expired_entries(x: Linear<1, { T::MaxNumberOfStakedContracts::get() }>) {
+        initial_config::<T>();
+
+        // Move over to the build&earn subperiod to ensure 'non-loyal' staking.
+        advance_to_next_subperiod::<T>();
+
+        // Prepare staker & lock some amount
+        let staker: T::AccountId = whitelisted_caller();
+        let amount = T::MinimumLockedAmount::get()
+            * Into::<Balance>::into(T::MaxNumberOfStakedContracts::get());
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        // Register dApps up the the limit
+        for idx in 0..x {
+            let owner: T::AccountId = account("dapp_owner", idx.into(), SEED);
+            let smart_contract = T::BenchmarkHelper::get_smart_contract(idx as u32);
+            assert_ok!(DappStaking::<T>::register(
+                RawOrigin::Root.into(),
+                owner.clone().into(),
+                smart_contract.clone(),
+            ));
+
+            assert_ok!(DappStaking::<T>::stake(
+                RawOrigin::Signed(staker.clone()).into(),
+                smart_contract.clone(),
+                T::MinimumStakeAmount::get(),
+            ));
+        }
+
+        // Move over to the next period, marking the entries as expired since they don't have the loyalty flag.
+        advance_to_next_period::<T>();
+
+        #[extrinsic_call]
+        _(RawOrigin::Signed(staker.clone()));
+
+        assert_last_event::<T>(
+            Event::<T>::ExpiredEntriesRemoved {
+                account: staker,
+                count: x.try_into().unwrap(),
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn force() {
+        initial_config::<T>();
+
+        let forcing_type = ForcingType::Subperiod;
+
+        #[extrinsic_call]
+        _(RawOrigin::Root, forcing_type);
+
+        assert_last_event::<T>(Event::<T>::Force { forcing_type }.into());
     }
 
     // TODO: investigate why the PoV size is so large here, evne after removing read of `IntegratedDApps` storage.

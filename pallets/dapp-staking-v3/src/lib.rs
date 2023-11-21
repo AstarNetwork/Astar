@@ -270,6 +270,8 @@ pub mod pallet {
         },
         /// Some expired stake entries have been removed from storage.
         ExpiredEntriesRemoved { account: T::AccountId, count: u16 },
+        /// Privileged origin has forced a new era and possibly a subperiod to start from next block.
+        Force { forcing_type: ForcingType },
     }
 
     #[pallet::error]
@@ -1561,7 +1563,7 @@ pub mod pallet {
         /// Can only be called by manager origin.
         #[pallet::call_index(16)]
         #[pallet::weight(Weight::zero())]
-        pub fn force(origin: OriginFor<T>, force_type: ForcingType) -> DispatchResult {
+        pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
 
@@ -1570,13 +1572,15 @@ pub mod pallet {
                 let current_block = frame_system::Pallet::<T>::block_number();
                 state.next_era_start = current_block.saturating_add(One::one());
 
-                match force_type {
+                match forcing_type {
                     ForcingType::Era => (),
                     ForcingType::Subperiod => {
                         state.period_info.subperiod_end_era = state.era.saturating_add(1);
                     }
                 }
             });
+
+            Self::deposit_event(Event::<T>::Force { forcing_type });
 
             Ok(())
         }
