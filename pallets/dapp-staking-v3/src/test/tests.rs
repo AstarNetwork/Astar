@@ -1051,6 +1051,54 @@ fn stake_fails_due_to_too_small_staking_amount() {
 }
 
 #[test]
+fn stake_fails_due_to_too_many_staked_contracts() {
+    ExtBuilder::build().execute_with(|| {
+        let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
+
+        // Lock amount by staker
+        let account = 1;
+        assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
+
+        // Advance to build&earn subperiod so we ensure non-loyal staking
+        advance_to_next_subperiod();
+
+        // Register smart contracts up the the max allowed number
+        for id in 1..=max_number_of_contracts {
+            let smart_contract = MockSmartContract::Wasm(id.into());
+            assert_register(2, &MockSmartContract::Wasm(id.into()));
+            assert_stake(account, &smart_contract, 10);
+        }
+
+        let excess_smart_contract = MockSmartContract::Wasm((max_number_of_contracts + 1).into());
+        assert_register(2, &excess_smart_contract);
+
+        // Max number of staked contract entries has been exceeded.
+        assert_noop!(
+            DappStaking::stake(
+                RuntimeOrigin::signed(account),
+                excess_smart_contract.clone(),
+                10
+            ),
+            Error::<Test>::TooManyStakedContracts
+        );
+
+        // Advance into next period, error should still happen
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+        assert_noop!(
+            DappStaking::stake(
+                RuntimeOrigin::signed(account),
+                excess_smart_contract.clone(),
+                10
+            ),
+            Error::<Test>::TooManyStakedContracts
+        );
+    })
+}
+
+#[test]
 fn unstake_basic_example_is_ok() {
     ExtBuilder::build().execute_with(|| {
         // Register smart contract & lock some amount
