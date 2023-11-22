@@ -1,6 +1,6 @@
 # RPC tests
 
-This project aims to create a tesitng framework for the astar RPC node. It achieves this by spawning a local network with `zombienet`, a Simple CLI tool to launch a local Polkadot test network. [zombienet](https://github.com/paritytech/zombienet) takes configuration for the test network in a `rpc-tests.toml` file, which describes the config of relaychains and parachains that the test network needs in order to start.
+This project aims to create a testing framework for the astar RPC node. It achieves this by spawning a local network with `zombienet`, a Simple CLI tool to launch a local Polkadot test network. [zombienet](https://github.com/paritytech/zombienet) takes configuration for the test network in a `rpc-tests.toml` file, which describes the config of relaychains and parachains that the test network needs in order to start.
 
 After the test network is started, tests can be performed by connecting to it using `polkadot.js` or `web3.js`.
 
