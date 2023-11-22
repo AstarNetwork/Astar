@@ -140,7 +140,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 110,
+    spec_version: 112,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -630,7 +630,7 @@ parameter_types! {
     pub const WeightFeeFactor: Balance = 308_550_000_000_000; // Around 0.000_300 SDN per unit of base weight.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
-    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 666_667); // 0.000_015
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(000_015, 1_000_000); // 0.000_015
     pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 10); // 0.1
     pub MaximumMultiplier: Multiplier = Multiplier::saturating_from_integer(10); // 10
 }
@@ -1038,41 +1038,10 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-// Used to cleanup BaseFee storage - remove once cleanup is done.
-parameter_types! {
-    pub const BaseFeeStr: &'static str = "BaseFee";
-}
-
-/// Simple `OnRuntimeUpgrade` logic to prepare Shiden runtime for `DynamicEvmBaseFee` pallet.
-pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
-pub struct DynamicEvmBaseFeeMigration;
-impl OnRuntimeUpgrade for DynamicEvmBaseFeeMigration {
-    fn on_runtime_upgrade() -> Weight {
-        // Safety check to ensure we don't execute this migration twice
-        if pallet_dynamic_evm_base_fee::BaseFeePerGas::<Runtime>::exists() {
-            return <Runtime as frame_system::Config>::DbWeight::get().reads(1);
-        }
-
-        // Set the init value to what was set before on the old `BaseFee` pallet.
-        pallet_dynamic_evm_base_fee::BaseFeePerGas::<Runtime>::put(U256::from(1_000_000_000_u128));
-
-        // Shiden's multiplier is so low that we have to set it to minimum value directly.
-        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::put(MinimumMultiplier::get());
-
-        // Set init storage version for the pallet
-        StorageVersion::new(1).put::<pallet_dynamic_evm_base_fee::Pallet<Runtime>>();
-
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 3)
-    }
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    frame_support::migrations::RemovePallet<BaseFeeStr, RocksDbWeight>,
-    DynamicEvmBaseFeeMigration,
-);
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
