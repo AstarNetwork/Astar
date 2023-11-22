@@ -19,12 +19,7 @@
 use super::*;
 
 use fp_evm::IsPrecompileResult;
-use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{ConstU64, Currency, OnFinalize, OnInitialize},
-    weights::{RuntimeDbWeight, Weight},
-    PalletId,
-};
+use frame_support::{construct_runtime, parameter_types, traits::ConstU64, weights::Weight};
 pub use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
@@ -32,7 +27,6 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{keccak_256, H160, H256};
-use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, ConstU32, IdentityLookup},
@@ -44,7 +38,6 @@ use ethers::{
     core::types::transaction::eip712::Eip712,
 };
 
-extern crate alloc;
 use astar_primitives::evm::HashedDefaultMappings;
 pub type AccountId = AccountId32;
 pub type Balance = u128;

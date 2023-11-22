@@ -150,6 +150,7 @@ where
             a if a == hash(20485) => {
                 Some(XvmPrecompile::<R, pallet_xvm::Pallet<R>>::execute(handle))
             }
+            // UnifiedAccounts 0x5006
             a if a == hash(20486) => Some(UnifiedAccountsPrecompile::<
                 R,
                 pallet_unified_accounts::Pallet<R>,

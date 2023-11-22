@@ -82,14 +82,12 @@ where
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;
         let account_id = AccountId32::new(input.read::<H256>()?.into()).into();
-        log::trace!(target: "au-precompile", "get_evm_address_or_default account_id (Bytes) : {:?}",account_id);
-        let res: (Address, bool) = match UA::to_h160_or_default(&account_id) {
+
+        let output: (Address, bool) = match UA::to_h160_or_default(&account_id) {
             UnifiedAddress::Mapped(address) => (address.into(), true),
             UnifiedAddress::Default(address) => (address.into(), false),
         };
-        log::trace!(target: "au-precompile", "accountId : {:?}, (Address,bool): {:?}",account_id, res);
-
-        Ok(succeed(EvmDataWriter::new().write(res).build()))
+        Ok(succeed(EvmDataWriter::new().write(output).build()))
     }
 
     fn get_native_address_or_default(
@@ -98,22 +96,11 @@ where
         let mut input = handle.read_input()?;
         input.expect_arguments(1)?;
         let evm_address = input.read::<Address>()?;
-        log::trace!(target: "au-precompile", "get_native_address_or_default (evmAddress) : {:?}",evm_address);
 
-        let res: (H256, bool) = match UA::to_account_id_or_default(&evm_address.into()) {
-            UnifiedAddress::Mapped(account_id) => {
-                let converted_account_id: AccountId32 = account_id.into();
-                log::trace!(target: "au-precompile", "get_native_address_or_default (Mapped : converted_account_id) : {:?}",converted_account_id);
-                let mapped_account: &[u8; 32] = converted_account_id.as_ref();
-                (mapped_account.into(), true)
-            }
-            UnifiedAddress::Default(account_id) => {
-                let converted_account_id: AccountId32 = account_id.into();
-                log::trace!(target: "au-precompile", "get_native_address_or_default (Default : converted_account_id) : {:?}",converted_account_id);
-                let mapped_account: &[u8; 32] = converted_account_id.as_ref();
-                (mapped_account.into(), false)
-            }
+        let output: (H256, bool) = match UA::to_account_id_or_default(&evm_address.into()) {
+            UnifiedAddress::Mapped(account_id) => (H256::from(account_id.into().as_ref()), true),
+            UnifiedAddress::Default(account_id) => (H256::from(account_id.into().as_ref()), false),
         };
-        Ok(succeed(EvmDataWriter::new().write(res).build()))
+        Ok(succeed(EvmDataWriter::new().write(output).build()))
     }
 }
