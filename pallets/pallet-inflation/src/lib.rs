@@ -77,6 +77,21 @@ pub mod pallet {
     #[pallet::storage]
     pub type InflationParams<T: Config> = StorageValue<_, InflationParameters, ValueQuery>;
 
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
+            let recalculation_block: BlockNumberFor<T> =
+                InflationConfig::<T>::get().recalculation_block.into();
+
+            if recalculation_block <= now {
+                Self::recalculate_inflation();
+                Weight::from_parts(0, 0)
+            } else {
+                Weight::from_parts(0, 0)
+            }
+        }
+    }
+
     impl<Moment, T: Config> OnTimestampSet<Moment> for Pallet<T> {
         fn on_timestamp_set(_moment: Moment) {
             Self::payout_block_rewards();
@@ -93,9 +108,10 @@ pub mod pallet {
 
             T::PayoutPerBlock::collators(collator_amount);
             T::PayoutPerBlock::treasury(treasury_amount);
-
             // TODO: benchmark this and include it into on_initialize weight cost
         }
+
+        pub(crate) fn recalculate_inflation() {}
     }
 }
 
@@ -160,6 +176,31 @@ pub struct InflationParameters {
     /// Used to derive exact amount of adjustable staker rewards.
     #[codec(compact)]
     pub ideal_staking_rate: Perquintill,
+}
+
+impl InflationParameters {
+    /// `true` if sum of all percentages is `one whole`, `false` otherwise.
+    pub fn is_valid(&self) -> bool {
+        let variables = [
+            &self.treasury_part,
+            &self.collators_part,
+            &self.dapps_part,
+            &self.base_stakers_part,
+            &self.adjustable_stakers_part,
+            &self.bonus_part,
+        ];
+
+        variables
+            .iter()
+            .fold(Some(Perquintill::zero()), |acc, part| {
+                if let Some(acc) = acc {
+                    acc.checked_add(*part)
+                } else {
+                    None
+                }
+            })
+            == Some(Perquintill::one())
+    }
 }
 
 /// Defines functions used to payout the beneficiaries of block rewards
