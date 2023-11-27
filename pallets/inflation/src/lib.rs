@@ -30,7 +30,8 @@ use frame_support::{
 use frame_system::{ensure_root, pallet_prelude::*};
 use sp_runtime::{traits::CheckedAdd, Perquintill, Saturating};
 
-// TODO: genesis config!
+pub mod weights;
+pub use weights::WeightInfo;
 
 #[cfg(any(feature = "runtime-benchmarks"))]
 pub mod benchmarking;
@@ -68,6 +69,9 @@ pub mod pallet {
 
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::event]
@@ -130,12 +134,23 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
         fn on_initialize(now: BlockNumber) -> Weight {
-            // Need to account for weight consumed in `on_timestamp` & `on_finalize`.
-            if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
-                Weight::from_parts(0, 0)
-            } else {
-                Weight::from_parts(0, 0)
-            }
+            let recaulcation_weight =
+                if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
+                    T::WeightInfo::hook_with_recalculation()
+                } else {
+                    T::WeightInfo::hook_without_recalculation()
+                };
+
+            // Benchmarks won't acount for whitelisted storage access so this needs to be added manually.
+            //
+            // SafetyInflationTracker - 1 DB read & write
+            // ActiveInflationConfig - 1 DB read
+            let whitelisted_weight =
+                <T as frame_system::Config>::DbWeight::get().reads_writes(2, 1);
+
+            recaulcation_weight
+                .saturating_add(T::WeightInfo::on_timestamp_set())
+                .saturating_add(whitelisted_weight)
         }
 
         fn on_finalize(now: BlockNumber) {
@@ -187,7 +202,7 @@ pub mod pallet {
         ///
         /// Purpose of the call is testing & handling unforseen circumstances.
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::from_parts(0, 0))]
+        #[pallet::weight(T::WeightInfo::force_set_inflation_params())]
         pub fn force_set_inflation_params(
             origin: OriginFor<T>,
             params: InflationParameters,
@@ -209,7 +224,7 @@ pub mod pallet {
         ///
         /// Purpose of the call is testing & handling unforseen circumstances.
         #[pallet::call_index(1)]
-        #[pallet::weight(Weight::from_parts(0, 0))]
+        #[pallet::weight(T::WeightInfo::force_set_inflation_config())]
         pub fn force_set_inflation_config(
             origin: OriginFor<T>,
             config: InflationConfiguration,
@@ -230,7 +245,7 @@ pub mod pallet {
         ///
         /// Purpose of the call is testing & handling unforseen circumstances.
         #[pallet::call_index(2)]
-        #[pallet::weight(Weight::from_parts(0, 0))]
+        #[pallet::weight(T::WeightInfo::force_inflation_recalculation())]
         pub fn force_inflation_recalculation(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
 
@@ -485,7 +500,6 @@ impl InflationParameters {
     }
 }
 
-// TODO: add test for this
 // Default inflation parameters, just to make sure genesis builder is happy
 impl Default for InflationParameters {
     fn default() -> Self {

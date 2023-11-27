@@ -169,6 +169,7 @@ impl pallet_inflation::Config for Test {
     type PayoutPerBlock = DummyPayoutPerBlock;
     type CycleConfiguration = DummyCycleConfiguration;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
 }
 
 construct_runtime!(

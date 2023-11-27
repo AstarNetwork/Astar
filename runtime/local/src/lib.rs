@@ -536,6 +536,7 @@ impl pallet_inflation::Config for Runtime {
     type PayoutPerBlock = InflationPayoutPerBlock;
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_inflation::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
