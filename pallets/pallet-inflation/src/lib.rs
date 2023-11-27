@@ -259,27 +259,42 @@ pub mod pallet {
             let adjustable_stakers_emission = params.adjustable_stakers_part * max_emission;
             let bonus_emission = params.bonus_part * max_emission;
 
-            // 3. Calculate concrete rewards per blocl, era or period
+            // 3. Calculate concrete rewards per block, era or period
+
+            // 3.0 Convert all 'per cycle' values to the correct type (Balance).
+            // Also include a safety check that none of the values is zero since this would cause a division by zero.
+            // The configuration & integration tests must ensure this never happens, so the following code is just an additional safety measure.
+            let blocks_per_cycle = match T::CycleConfiguration::blocks_per_cycle() {
+                0 => Balance::MAX,
+                blocks_per_cycle => Balance::from(blocks_per_cycle),
+            };
+
+            let build_and_earn_eras_per_cycle =
+                match T::CycleConfiguration::build_and_earn_eras_per_cycle() {
+                    0 => Balance::MAX,
+                    build_and_earn_eras_per_cycle => Balance::from(build_and_earn_eras_per_cycle),
+                };
+
+            let periods_per_cycle = match T::CycleConfiguration::periods_per_cycle() {
+                0 => Balance::MAX,
+                periods_per_cycle => Balance::from(periods_per_cycle),
+            };
 
             // 3.1. Collator & Treausry rewards per block
-            let collator_reward_per_block =
-                collators_emission / Balance::from(T::CycleConfiguration::blocks_per_cycle());
-            let treasury_reward_per_block =
-                treasury_emission / Balance::from(T::CycleConfiguration::blocks_per_cycle());
+            let collator_reward_per_block = collators_emission / blocks_per_cycle;
+            let treasury_reward_per_block = treasury_emission / blocks_per_cycle;
 
             // 3.2. dApp reward pool per era
-            let dapp_reward_pool_per_era = dapps_emission
-                / Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle());
+            let dapp_reward_pool_per_era = dapps_emission / build_and_earn_eras_per_cycle;
 
             // 3.3. Staking reward pools per era
-            let base_staker_reward_pool_per_era = base_stakers_emission
-                / Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle());
-            let adjustable_staker_reward_pool_per_era = adjustable_stakers_emission
-                / Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle());
+            let base_staker_reward_pool_per_era =
+                base_stakers_emission / build_and_earn_eras_per_cycle;
+            let adjustable_staker_reward_pool_per_era =
+                adjustable_stakers_emission / build_and_earn_eras_per_cycle;
 
             // 3.4. Bonus reward pool per period
-            let bonus_reward_pool_per_period =
-                bonus_emission / Balance::from(T::CycleConfiguration::periods_per_cycle());
+            let bonus_reward_pool_per_period = bonus_emission / periods_per_cycle;
 
             // 4. Block at which the inflation must be recalculated.
             let recalculation_block = now.saturating_add(T::CycleConfiguration::blocks_per_cycle());
@@ -464,15 +479,23 @@ pub trait PayoutPerBlock<Imbalance> {
 //        Both the dApp staking & inflation pallet should use the same source.
 pub trait CycleConfiguration {
     /// How many different periods are there in a cycle (a 'year').
+    ///
+    /// This value has to be at least 1.
     fn periods_per_cycle() -> u32;
 
     /// For how many standard era lengths does the voting subperiod last.
+    ///
+    /// This value has to be at least 1.
     fn eras_per_voting_subperiod() -> u32;
 
     /// How many standard eras are there in the build&earn subperiod.
+    ///
+    /// This value has to be at least 1.
     fn eras_per_build_and_earn_subperiod() -> u32;
 
     /// How many blocks are there per standard era.
+    ///
+    /// This value has to be at least 1.
     fn blocks_per_era() -> u32;
 
     /// For how many standard era lengths does the period last.
