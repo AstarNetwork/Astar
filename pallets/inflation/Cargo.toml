@@ -16,9 +16,7 @@ astar-primitives = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 scale-info = { workspace = true }
-sp-arithmetic = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 frame-benchmarking = { workspace = true, optional = true }
 
@@ -33,7 +31,6 @@ std = [
 	"parity-scale-codec/std",
 	"sp-core/std",
 	"scale-info/std",
-	"sp-std/std",
 	"serde/std",
 	"frame-support/std",
 	"frame-system/std",
