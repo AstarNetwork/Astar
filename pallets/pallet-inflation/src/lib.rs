@@ -35,6 +35,8 @@ pub mod benchmarking;
 
 #[cfg(test)]
 mod mock;
+#[cfg(test)]
+mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -117,7 +119,7 @@ pub mod pallet {
             //
             // If this was done in `on_initialize`, collator & treasury would receive incorrect rewards for that one block.
             // That's not a big problem, but it would be wrong!
-            if InflationConfig::<T>::get().recalculation_block <= now {
+            if Self::is_recalculation_in_next_block(now, &InflationConfig::<T>::get()) {
                 let config = Self::recalculate_inflation(now);
                 InflationConfig::<T>::put(config.clone());
                 Self::deposit_event(Event::<T>::NewInflationConfiguration { config });
@@ -210,7 +212,7 @@ pub mod pallet {
             now: BlockNumber,
             config: &InflationConfiguration,
         ) -> bool {
-            now.saturating_sub(config.recalculation_block) >= 1
+            config.recalculation_block.saturating_sub(now) <= 1
         }
 
         /// Payout block rewards to the beneficiaries.

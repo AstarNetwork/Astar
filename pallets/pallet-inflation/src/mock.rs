@@ -16,13 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{self as pallet_inflation, CycleConfiguration, NegativeImbalanceOf, PayoutPerBlock};
+use crate::{
+    self as pallet_inflation, CycleConfiguration, InflationConfig, InflationConfiguration,
+    InflationParameters, InflationParams, InflationTracker, NegativeImbalanceOf, PayoutPerBlock,
+    SafetyInflationTracker,
+};
 
 use frame_support::{
     construct_runtime, parameter_types,
     sp_io::TestExternalities,
     traits::Currency,
-    traits::{ConstU128, ConstU32, ConstU64},
+    traits::{ConstU128, ConstU32, ConstU64, Hooks},
     weights::Weight,
     PalletId,
 };
@@ -31,27 +35,44 @@ use sp_core::H256;
 use sp_runtime::{
     generic::Header, // TODO: create testing primitives & move it there?
     traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
+    Perquintill,
 };
 
 use astar_primitives::{Balance, BlockNumber};
 pub(crate) type AccountId = u64; // TODO: might also be nice to have this under testing primitives?
 
+/// Initial inflation params set by the mock.
+pub const INIT_PARAMS: InflationParameters = InflationParameters {
+    max_inflation_rate: Perquintill::from_percent(7),
+    treasury_part: Perquintill::from_percent(5),
+    collators_part: Perquintill::from_percent(3),
+    dapps_part: Perquintill::from_percent(20),
+    base_stakers_part: Perquintill::from_percent(25),
+    adjustable_stakers_part: Perquintill::from_percent(35),
+    bonus_part: Perquintill::from_percent(12),
+    ideal_staking_rate: Perquintill::from_percent(50),
+};
+
+/// Initial inflation config set by the mock.
+pub const INIT_CONFIG: InflationConfiguration = InflationConfiguration {
+    recalculation_block: 100,
+    collator_reward_per_block: 1000,
+    treasury_reward_per_block: 1500,
+    dapp_reward_pool_per_era: 3000,
+    base_staker_reward_pool_per_era: 5000,
+    adjustable_staker_reward_pool_per_era: 7000,
+    bonus_reward_pool_per_period: 4000,
+    ideal_staking_rate: Perquintill::from_percent(50),
+};
+
+/// Initial inflation tracker set by the mock.
+pub const INIT_TRACKER: InflationTracker = InflationTracker {
+    cap: 1000000,
+    issued: 30000,
+};
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-
-construct_runtime!(
-    pub struct Test
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system,
-        Balances: pallet_balances,
-        Timestamp: pallet_timestamp,
-        Inflation: pallet_inflation,
-    }
-);
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
@@ -150,15 +171,26 @@ impl pallet_inflation::Config for Test {
     type RuntimeEvent = RuntimeEvent;
 }
 
-pub struct ExternalityBuilder;
+construct_runtime!(
+    pub struct Test
+    where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
+        System: frame_system,
+        Balances: pallet_balances,
+        Timestamp: pallet_timestamp,
+        Inflation: pallet_inflation,
+    }
+);
 
+pub struct ExternalityBuilder;
 impl ExternalityBuilder {
     pub fn build() -> TestExternalities {
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
-
-        // TODO: set some dummy param & init config values.
 
         // This will cause some initial issuance
         pallet_balances::GenesisConfig::<Test> {
@@ -168,7 +200,30 @@ impl ExternalityBuilder {
         .ok();
 
         let mut ext = TestExternalities::from(storage);
-        ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(|| {
+            // Set initial pallet inflation values
+            InflationConfig::<Test>::put(INIT_CONFIG);
+            InflationParams::<Test>::put(INIT_PARAMS);
+            SafetyInflationTracker::<Test>::put(INIT_TRACKER);
+
+            System::set_block_number(1)
+        });
         ext
     }
+}
+
+/// Advance to the specified block number.
+/// Function assumes first block has been initialized.
+pub(crate) fn advance_to_block(n: BlockNumber) {
+    while System::block_number() < n {
+        Inflation::on_finalize(System::block_number());
+        System::set_block_number(System::block_number() + 1);
+        Inflation::on_initialize(System::block_number());
+    }
+}
+
+/// Advance for the specified number of blocks.
+/// Function assumes first block has been initialized.
+pub(crate) fn advance_for_blocks(n: BlockNumber) {
+    advance_to_block(System::block_number() + n);
 }

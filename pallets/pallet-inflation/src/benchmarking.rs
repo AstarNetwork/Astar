@@ -70,7 +70,7 @@ fn initial_config<T: Config>() {
     T::Currency::make_free_balance_be(&dummy_account, 1_000_000_000_000_000_000_000);
 }
 
-#[benchmarks(where T: Config)]
+#[benchmarks]
 mod benchmarks {
     use super::*;
 
@@ -137,7 +137,8 @@ mod benchmarks {
         });
         let init_config = InflationConfig::<T>::get();
 
-        let block = 1;
+        // Has to be at least 2 blocks less than the recaulcation block.
+        let block = 0;
         #[block]
         {
             Pallet::<T>::on_initialize(block);

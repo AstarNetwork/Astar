@@ -1,7 +1,7 @@
 [package]
 name = "pallet-inflation"
 version = "0.1.0"
-license = "GPL-3.0"
+license = "GPL-3.0-or-later"
 description = "Manages inflation rate & inflation distribution"
 authors.workspace = true
 edition.workspace = true
