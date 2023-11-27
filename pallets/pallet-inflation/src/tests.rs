@@ -142,12 +142,150 @@ fn inflation_recalculation_occurs_when_exepcted() {
 
         // One block before recalculation, on_finalize should calculate new inflation config
         let init_config = InflationConfig::<Test>::get();
+        let init_tracker = SafetyInflationTracker::<Test>::get();
+        let init_total_issuance = Balances::total_issuance();
+
+        // Finally trigger inflation recalculation.
         Inflation::on_finalize(init_config.recalculation_block - 1);
+
+        let new_config = InflationConfig::<Test>::get();
         assert!(
-            InflationConfig::<Test>::get() != init_config,
-            "Recalculation should have happened."
+            new_config != init_config,
+            "Recalculation must happen at this point."
+        );
+        System::assert_last_event(Event::NewInflationConfiguration { config: new_config }.into());
+
+        assert_eq!(
+            Balances::total_issuance(),
+            init_total_issuance,
+            "Total issuance must not change when inflation is recalculated - nothing is minted until it's needed."
         );
 
-        // TODO: should there be an event to mark this?
+        let new_tracker = SafetyInflationTracker::<Test>::get();
+        assert_eq!(new_tracker.issued, init_tracker.issued);
+        assert_eq!(new_tracker.cap, init_tracker.cap + InflationParams::<Test>::get().max_inflation_rate * init_total_issuance);
+    })
+}
+
+#[test]
+fn on_timestamp_set_payout_works() {
+    ExternalityBuilder::build().execute_with(|| {
+        // Save initial state, before the payout
+        let config = InflationConfig::<Test>::get();
+        let init_tracker = SafetyInflationTracker::<Test>::get();
+
+        let init_issuance = Balances::total_issuance();
+        let init_collator_pot = Balances::free_balance(&COLLATOR_POT.into_account_truncating());
+        let init_treasury_pot = Balances::free_balance(&TREASURY_POT.into_account_truncating());
+
+        // Execute payout
+        Inflation::on_timestamp_set(1);
+
+        // Verify state post payout
+        let expected_reward = config.collator_reward_per_block + config.treasury_reward_per_block;
+
+        // Balance changes are as expected
+        assert_eq!(Balances::total_issuance(), init_issuance + expected_reward);
+        assert_eq!(
+            Balances::free_balance(&COLLATOR_POT.into_account_truncating()),
+            init_collator_pot + config.collator_reward_per_block
+        );
+        assert_eq!(
+            Balances::free_balance(&TREASURY_POT.into_account_truncating()),
+            init_treasury_pot + config.treasury_reward_per_block
+        );
+
+        // Safety tracker has been properly updated
+        let post_tracker = SafetyInflationTracker::<Test>::get();
+        assert_eq!(post_tracker.cap, init_tracker.cap);
+        assert_eq!(post_tracker.issued, init_tracker.issued + expected_reward);
+    })
+}
+
+#[test]
+fn inflation_parameters_validity_check_works() {
+    // Params to be used as anchor for the tests
+    let base_params = INIT_PARAMS;
+    assert!(base_params.is_valid(), "Sanity check.");
+
+    // Reduction of some param, it should invalidate the whole config
+    let mut params = base_params;
+    params.base_stakers_part = params.base_stakers_part - Perquintill::from_percent(1);
+    assert!(!params.is_valid(), "Sum is below 100%, must fail.");
+
+    // Increase of some param, it should invalidate the whole config
+    let mut params = base_params;
+    params.base_stakers_part = params.base_stakers_part + Perquintill::from_percent(1);
+    assert!(!params.is_valid(), "Sum is above 100%, must fail.");
+
+    // Some param can be zero, as long as sum remains 100%
+    let mut params = base_params;
+    params.base_stakers_part = params.base_stakers_part + params.adjustable_stakers_part;
+    params.adjustable_stakers_part = Zero::zero();
+    assert!(params.is_valid());
+}
+
+#[test]
+fn inflation_recalucation_works() {
+    ExternalityBuilder::build().execute_with(|| {
+        let total_issuance = Balances::total_issuance();
+        let params = InflationParams::<Test>::get();
+        let now = System::block_number();
+
+        // Calculate new config
+        let (max_emission, new_config) = Inflation::recalculate_inflation(now);
+
+        // Verify basics are ok
+        assert_eq!(max_emission, params.max_inflation_rate * total_issuance);
+        assert_eq!(
+            new_config.recalculation_block,
+            now + <Test as Config>::CycleConfiguration::blocks_per_cycle()
+        );
+
+        // Verify collator rewards are as expected
+        assert_eq!(
+            new_config.collator_reward_per_block,
+            params.collators_part * max_emission
+                / Balance::from(<Test as Config>::CycleConfiguration::blocks_per_cycle()),
+        );
+
+        // Verify treasury rewards are as expected
+        assert_eq!(
+            new_config.treasury_reward_per_block,
+            params.treasury_part * max_emission
+                / Balance::from(<Test as Config>::CycleConfiguration::blocks_per_cycle()),
+        );
+
+        // Verify dApp rewards are as expected
+        assert_eq!(
+            new_config.dapp_reward_pool_per_era,
+            params.dapps_part * max_emission
+                / Balance::from(
+                    <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle()
+                ),
+        );
+
+        // Verify base & adjustable staker rewards are as expected
+        assert_eq!(
+            new_config.base_staker_reward_pool_per_era,
+            params.base_stakers_part * max_emission
+                / Balance::from(
+                    <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle()
+                ),
+        );
+        assert_eq!(
+            new_config.adjustable_staker_reward_pool_per_era,
+            params.adjustable_stakers_part * max_emission
+                / Balance::from(
+                    <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle()
+                ),
+        );
+
+        // Verify bonus rewards are as expected
+        assert_eq!(
+            new_config.bonus_reward_pool_per_period,
+            params.bonus_part * max_emission
+                / Balance::from(<Test as Config>::CycleConfiguration::periods_per_cycle()),
+        );
     })
 }

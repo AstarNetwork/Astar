@@ -221,9 +221,3 @@ pub(crate) fn advance_to_block(n: BlockNumber) {
         Inflation::on_initialize(System::block_number());
     }
 }
-
-/// Advance for the specified number of blocks.
-/// Function assumes first block has been initialized.
-pub(crate) fn advance_for_blocks(n: BlockNumber) {
-    advance_to_block(System::block_number() + n);
-}

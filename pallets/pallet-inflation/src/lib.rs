@@ -120,8 +120,13 @@ pub mod pallet {
             // If this was done in `on_initialize`, collator & treasury would receive incorrect rewards for that one block.
             // That's not a big problem, but it would be wrong!
             if Self::is_recalculation_in_next_block(now, &InflationConfig::<T>::get()) {
-                let config = Self::recalculate_inflation(now);
+                let (max_emission, config) = Self::recalculate_inflation(now);
                 InflationConfig::<T>::put(config.clone());
+
+                SafetyInflationTracker::<T>::mutate(|tracker| {
+                    tracker.cap.saturating_accrue(max_emission);
+                });
+
                 Self::deposit_event(Event::<T>::NewInflationConfiguration { config });
             }
         }
@@ -131,7 +136,7 @@ pub mod pallet {
         fn on_timestamp_set(_moment: Moment) {
             let amount = Self::payout_block_rewards();
 
-            // Update the trakcer, but no check whether an overflow has happened.
+            // Update the tracker, but no check whether an overflow has happened.
             // This can modified if needed, but these amounts are supposed to be small &
             // collators need to be paid for producing the block.
             // TODO: potential discussion topic for the review!
@@ -197,8 +202,14 @@ pub mod pallet {
         pub fn force_inflation_recalculation(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
 
-            let config = Self::recalculate_inflation(frame_system::Pallet::<T>::block_number());
+            let (max_emission, config) =
+                Self::recalculate_inflation(frame_system::Pallet::<T>::block_number());
+
             InflationConfig::<T>::put(config.clone());
+
+            SafetyInflationTracker::<T>::mutate(|tracker| {
+                tracker.cap.saturating_accrue(max_emission);
+            });
 
             Self::deposit_event(Event::<T>::ForcedInflationRecalculation { config });
 
@@ -218,7 +229,7 @@ pub mod pallet {
         /// Payout block rewards to the beneficiaries.
         ///
         /// Return the total amount issued.
-        pub(crate) fn payout_block_rewards() -> Balance {
+        fn payout_block_rewards() -> Balance {
             let config = InflationConfig::<T>::get();
 
             let collator_amount = T::Currency::issue(config.collator_reward_per_block);
@@ -230,8 +241,10 @@ pub mod pallet {
             config.collator_reward_per_block + config.treasury_reward_per_block
         }
 
-        // Recalculates the inflation based on the total issuance & inflation parameters.
-        pub(crate) fn recalculate_inflation(now: BlockNumber) -> InflationConfiguration {
+        /// Recalculates the inflation based on the total issuance & inflation parameters.
+        ///
+        /// Returns the maximum total emission for the cycle, and the new inflation configuration.
+        pub(crate) fn recalculate_inflation(now: BlockNumber) -> (Balance, InflationConfiguration) {
             let params = InflationParams::<T>::get();
             let total_issuance = T::Currency::total_issuance();
 
@@ -271,17 +284,20 @@ pub mod pallet {
             // 4. Block at which the inflation must be recalculated.
             let recalculation_block = now.saturating_add(T::CycleConfiguration::blocks_per_cycle());
 
-            // 5. Update the active inflation configuration.
-            InflationConfiguration {
-                recalculation_block,
-                collator_reward_per_block,
-                treasury_reward_per_block,
-                dapp_reward_pool_per_era,
-                base_staker_reward_pool_per_era,
-                adjustable_staker_reward_pool_per_era,
-                bonus_reward_pool_per_period,
-                ideal_staking_rate: params.ideal_staking_rate,
-            }
+            // 5. Return calculated values
+            (
+                max_emission,
+                InflationConfiguration {
+                    recalculation_block,
+                    collator_reward_per_block,
+                    treasury_reward_per_block,
+                    dapp_reward_pool_per_era,
+                    base_staker_reward_pool_per_era,
+                    adjustable_staker_reward_pool_per_era,
+                    bonus_reward_pool_per_period,
+                    ideal_staking_rate: params.ideal_staking_rate,
+                },
+            )
         }
     }
 
