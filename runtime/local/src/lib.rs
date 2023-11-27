@@ -471,6 +471,12 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>>
     }
 }
 
+parameter_types! {
+    pub const StandardEraLength: BlockNumber = 30; // should be 1 minute per standard era
+    pub const StandardErasPerVotingPeriod: u32 = 2;
+    pub const StandardErasPerBuildAndEarnPeriod: u32 = 10;
+}
+
 impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -478,9 +484,9 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
     type RewardPoolProvider = DummyRewardPoolProvider;
-    type StandardEraLength = ConstU32<30>; // should be 1 minute per standard era
-    type StandardErasPerVotingPeriod = ConstU32<2>;
-    type StandardErasPerBuildAndEarnPeriod = ConstU32<10>;
+    type StandardEraLength = StandardEraLength;
+    type StandardErasPerVotingPeriod = StandardErasPerVotingPeriod;
+    type StandardErasPerBuildAndEarnPeriod = StandardErasPerBuildAndEarnPeriod;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU16<100>;
@@ -492,6 +498,43 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NumberOfTiers = ConstU32<4>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>>;
+}
+
+pub struct InflationPayoutPerBlock;
+impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerBlock {
+    fn treasury(reward: NegativeImbalance) {
+        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
+    }
+
+    fn collators(_reward: NegativeImbalance) {
+        // no collators for local dev node
+    }
+}
+
+pub struct InflationCycleConfig;
+impl pallet_inflation::CycleConfiguration for InflationCycleConfig {
+    fn periods_per_cycle() -> u32 {
+        4
+    }
+
+    fn eras_per_voting_subperiod() -> u32 {
+        StandardErasPerVotingPeriod::get()
+    }
+
+    fn eras_per_build_and_earn_subperiod() -> u32 {
+        StandardErasPerBuildAndEarnPeriod::get()
+    }
+
+    fn blocks_per_era() -> u32 {
+        StandardEraLength::get()
+    }
+}
+
+impl pallet_inflation::Config for Runtime {
+    type Currency = Balances;
+    type PayoutPerBlock = InflationPayoutPerBlock;
+    type CycleConfiguration = InflationCycleConfig;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -1062,6 +1105,7 @@ construct_runtime!(
         DappsStaking: pallet_dapps_staking,
         DappStaking: pallet_dapp_staking_v3,
         BlockReward: pallet_block_reward,
+        Inflation: pallet_inflation,
         TransactionPayment: pallet_transaction_payment,
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,

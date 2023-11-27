@@ -30,6 +30,8 @@ use frame_support::{
 use frame_system::{ensure_root, pallet_prelude::*};
 use sp_runtime::{traits::CheckedAdd, Perquintill, Saturating};
 
+// TODO: genesis config!
+
 #[cfg(any(feature = "runtime-benchmarks"))]
 pub mod benchmarking;
 
@@ -129,6 +131,13 @@ pub mod pallet {
 
                 Self::deposit_event(Event::<T>::NewInflationConfiguration { config });
             }
+        }
+
+        fn integrity_test() {
+            assert!(T::CycleConfiguration::periods_per_cycle() > 0);
+            assert!(T::CycleConfiguration::eras_per_voting_subperiod() > 0);
+            assert!(T::CycleConfiguration::eras_per_build_and_earn_subperiod() > 0);
+            assert!(T::CycleConfiguration::blocks_per_era() > 0);
         }
     }
 

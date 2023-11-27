@@ -5545,6 +5545,7 @@ dependencies = [
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-evm-precompile-xvm",
  "pallet-grandpa",
+ "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
  "pallet-preimage",
  "pallet-proxy",

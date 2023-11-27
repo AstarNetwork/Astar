@@ -279,6 +279,7 @@ pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features 
 pallet-xvm = { path = "./pallets/xvm", default-features = false }
 pallet-xcm = { path = "./pallets/pallet-xcm", default-features = false }
 pallet-ethereum-checked = { path = "./pallets/ethereum-checked", default-features = false }
+pallet-inflation = { path = "./pallets/inflation", default-features = false }
 
 astar-primitives = { path = "./primitives", default-features = false }
 
