@@ -28,6 +28,11 @@ use sp_runtime::{
 };
 
 #[test]
+fn default_params_are_valid() {
+    assert!(InflationParameters::default().is_valid());
+}
+
+#[test]
 fn force_set_inflation_params_work() {
     ExternalityBuilder::build().execute_with(|| {
         let mut new_params = InflationParams::<Test>::get();
@@ -72,7 +77,7 @@ fn force_set_inflation_params_fails() {
 #[test]
 fn force_set_inflation_config_work() {
     ExternalityBuilder::build().execute_with(|| {
-        let mut new_config = InflationConfig::<Test>::get();
+        let mut new_config = ActiveInflationConfig::<Test>::get();
         new_config.recalculation_block = new_config.recalculation_block + 50;
 
         // Execute call, ensure it works
@@ -84,14 +89,14 @@ fn force_set_inflation_config_work() {
             Event::InflationConfigurationForceChanged { config: new_config }.into(),
         );
 
-        assert_eq!(InflationConfig::<Test>::get(), new_config);
+        assert_eq!(ActiveInflationConfig::<Test>::get(), new_config);
     })
 }
 
 #[test]
 fn force_set_inflation_config_fails() {
     ExternalityBuilder::build().execute_with(|| {
-        let mut new_config = InflationConfig::<Test>::get();
+        let mut new_config = ActiveInflationConfig::<Test>::get();
         new_config.recalculation_block = new_config.recalculation_block + 50;
 
         // Make sure action is privileged
@@ -105,14 +110,14 @@ fn force_set_inflation_config_fails() {
 #[test]
 fn force_inflation_recalculation_work() {
     ExternalityBuilder::build().execute_with(|| {
-        let old_config = InflationConfig::<Test>::get();
+        let old_config = ActiveInflationConfig::<Test>::get();
 
         // Execute call, ensure it works
         assert_ok!(Inflation::force_inflation_recalculation(
             RuntimeOrigin::root(),
         ));
 
-        let new_config = InflationConfig::<Test>::get();
+        let new_config = ActiveInflationConfig::<Test>::get();
         assert!(
             old_config != new_config,
             "Config should change, otherwise test doesn't make sense."
@@ -127,7 +132,7 @@ fn force_inflation_recalculation_work() {
 #[test]
 fn inflation_recalculation_occurs_when_exepcted() {
     ExternalityBuilder::build().execute_with(|| {
-        let init_config = InflationConfig::<Test>::get();
+        let init_config = ActiveInflationConfig::<Test>::get();
 
         // Make sure calls before the expected change are storage noops
         advance_to_block(init_config.recalculation_block - 3);
@@ -141,14 +146,14 @@ fn inflation_recalculation_occurs_when_exepcted() {
         ));
 
         // One block before recalculation, on_finalize should calculate new inflation config
-        let init_config = InflationConfig::<Test>::get();
+        let init_config = ActiveInflationConfig::<Test>::get();
         let init_tracker = SafetyInflationTracker::<Test>::get();
         let init_total_issuance = Balances::total_issuance();
 
         // Finally trigger inflation recalculation.
         Inflation::on_finalize(init_config.recalculation_block - 1);
 
-        let new_config = InflationConfig::<Test>::get();
+        let new_config = ActiveInflationConfig::<Test>::get();
         assert!(
             new_config != init_config,
             "Recalculation must happen at this point."
@@ -171,7 +176,7 @@ fn inflation_recalculation_occurs_when_exepcted() {
 fn on_timestamp_set_payout_works() {
     ExternalityBuilder::build().execute_with(|| {
         // Save initial state, before the payout
-        let config = InflationConfig::<Test>::get();
+        let config = ActiveInflationConfig::<Test>::get();
         let init_tracker = SafetyInflationTracker::<Test>::get();
 
         let init_issuance = Balances::total_issuance();
@@ -294,7 +299,7 @@ fn inflation_recalucation_works() {
 fn stakers_and_dapp_reward_pool_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         let total_issuance = Balances::total_issuance();
-        let config = InflationConfig::<Test>::get();
+        let config = ActiveInflationConfig::<Test>::get();
 
         // 1st scenario - no staked value
         let (staker_pool, dapp_pool) = Inflation::staker_and_dapp_reward_pools(Zero::zero());
@@ -340,7 +345,7 @@ fn stakers_and_dapp_reward_pool_is_ok() {
 #[test]
 fn bonus_reward_pool_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        let config = InflationConfig::<Test>::get();
+        let config = ActiveInflationConfig::<Test>::get();
 
         let bonus_pool = Inflation::bonus_reward_pool();
         assert_eq!(bonus_pool, config.bonus_reward_pool_per_period);

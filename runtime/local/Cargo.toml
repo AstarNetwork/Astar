@@ -72,13 +72,13 @@ pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-custom-signatures = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
-pallet-inflation = {workspace = true}
 pallet-dapps-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
+pallet-inflation = { workspace = true }
 pallet-xvm = { workspace = true }
 
 # Moonbeam tracing

@@ -93,7 +93,7 @@ pub mod pallet {
     /// They describe current rewards, when inflation needs to be recalculated, etc.
     #[pallet::storage]
     #[pallet::whitelist_storage]
-    pub type InflationConfig<T: Config> = StorageValue<_, InflationConfiguration, ValueQuery>;
+    pub type ActiveInflationConfig<T: Config> = StorageValue<_, InflationConfiguration, ValueQuery>;
 
     /// Static inflation parameters - used to calculate active inflation configuration at certain points in time.
     #[pallet::storage]
@@ -104,11 +104,34 @@ pub mod pallet {
     #[pallet::whitelist_storage]
     pub type SafetyInflationTracker<T: Config> = StorageValue<_, InflationTracker, ValueQuery>;
 
+    #[pallet::genesis_config]
+    #[cfg_attr(feature = "std", derive(Default))]
+    pub struct GenesisConfig {
+        pub params: InflationParameters,
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+        fn build(&self) {
+            assert!(self.params.is_valid());
+
+            let now = frame_system::Pallet::<T>::block_number();
+            let (max_emission, config) = Pallet::<T>::recalculate_inflation(now);
+
+            ActiveInflationConfig::<T>::put(config);
+            SafetyInflationTracker::<T>::put(InflationTracker {
+                cap: max_emission,
+                issued: 0,
+            });
+            InflationParams::<T>::put(self.params);
+        }
+    }
+
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
         fn on_initialize(now: BlockNumber) -> Weight {
             // Need to account for weight consumed in `on_timestamp` & `on_finalize`.
-            if Self::is_recalculation_in_next_block(now, &InflationConfig::<T>::get()) {
+            if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
                 Weight::from_parts(0, 0)
             } else {
                 Weight::from_parts(0, 0)
@@ -121,9 +144,9 @@ pub mod pallet {
             //
             // If this was done in `on_initialize`, collator & treasury would receive incorrect rewards for that one block.
             // That's not a big problem, but it would be wrong!
-            if Self::is_recalculation_in_next_block(now, &InflationConfig::<T>::get()) {
+            if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
                 let (max_emission, config) = Self::recalculate_inflation(now);
-                InflationConfig::<T>::put(config.clone());
+                ActiveInflationConfig::<T>::put(config.clone());
 
                 SafetyInflationTracker::<T>::mutate(|tracker| {
                     tracker.cap.saturating_accrue(max_emission);
@@ -193,7 +216,7 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            InflationConfig::<T>::put(config.clone());
+            ActiveInflationConfig::<T>::put(config.clone());
 
             Self::deposit_event(Event::<T>::InflationConfigurationForceChanged { config });
 
@@ -214,7 +237,7 @@ pub mod pallet {
             let (max_emission, config) =
                 Self::recalculate_inflation(frame_system::Pallet::<T>::block_number());
 
-            InflationConfig::<T>::put(config.clone());
+            ActiveInflationConfig::<T>::put(config.clone());
 
             SafetyInflationTracker::<T>::mutate(|tracker| {
                 tracker.cap.saturating_accrue(max_emission);
@@ -239,7 +262,7 @@ pub mod pallet {
         ///
         /// Return the total amount issued.
         fn payout_block_rewards() -> Balance {
-            let config = InflationConfig::<T>::get();
+            let config = ActiveInflationConfig::<T>::get();
 
             let collator_amount = T::Currency::issue(config.collator_reward_per_block);
             let treasury_amount = T::Currency::issue(config.treasury_reward_per_block);
@@ -327,7 +350,7 @@ pub mod pallet {
 
     impl<T: Config> StakingRewardHandler<T::AccountId> for Pallet<T> {
         fn staker_and_dapp_reward_pools(total_value_staked: Balance) -> (Balance, Balance) {
-            let config = InflationConfig::<T>::get();
+            let config = ActiveInflationConfig::<T>::get();
 
             // First calculate the adjustable part of the staker reward pool, according to formula:
             // adjustable_part = max_adjustable_part * min(1, total_staked_percent / ideal_staked_percent)
@@ -346,7 +369,7 @@ pub mod pallet {
         }
 
         fn bonus_reward_pool() -> Balance {
-            InflationConfig::<T>::get().bonus_reward_pool_per_period
+            ActiveInflationConfig::<T>::get().bonus_reward_pool_per_period
         }
 
         fn payout_reward(account: &T::AccountId, reward: Balance) -> Result<(), ()> {
@@ -405,7 +428,7 @@ pub struct InflationConfiguration {
 /// Inflation parameters.
 ///
 /// The parts of the inflation that go towards different purposes must add up to exactly 100%.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Default, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct InflationParameters {
     /// Maximum possible inflation rate, based on the total issuance at some point in time.
@@ -459,6 +482,23 @@ impl InflationParameters {
                 }
             })
             == Some(Perquintill::one())
+    }
+}
+
+// TODO: add test for this
+// Default inflation parameters, just to make sure genesis builder is happy
+impl Default for InflationParameters {
+    fn default() -> Self {
+        Self {
+            max_inflation_rate: Perquintill::from_percent(7),
+            treasury_part: Perquintill::from_percent(5),
+            collators_part: Perquintill::from_percent(3),
+            dapps_part: Perquintill::from_percent(20),
+            base_stakers_part: Perquintill::from_percent(25),
+            adjustable_stakers_part: Perquintill::from_percent(35),
+            bonus_part: Perquintill::from_percent(12),
+            ideal_staking_rate: Perquintill::from_percent(50),
+        }
     }
 }
 

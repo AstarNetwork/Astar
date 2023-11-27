@@ -20,7 +20,6 @@ use super::*;
 
 use frame_benchmarking::v2::*;
 use frame_system::{Pallet as System, RawOrigin};
-use sp_runtime::traits::One;
 
 /// Assert that the last event equals the provided one.
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
@@ -62,7 +61,7 @@ fn initial_config<T: Config>() {
     assert!(tracker.issued <= tracker.cap);
 
     InflationParams::<T>::put(params);
-    InflationConfig::<T>::put(config);
+    ActiveInflationConfig::<T>::put(config);
     SafetyInflationTracker::<T>::put(tracker);
 
     // Create some issuance so it's not zero
@@ -78,8 +77,7 @@ mod benchmarks {
     fn force_set_inflation_params() {
         initial_config::<T>();
 
-        let mut params = InflationParameters::default();
-        params.treasury_part = One::one();
+        let params = InflationParameters::default();
         assert!(params.is_valid());
 
         #[extrinsic_call]
@@ -106,7 +104,7 @@ mod benchmarks {
         #[extrinsic_call]
         _(RawOrigin::Root);
 
-        let config = InflationConfig::<T>::get();
+        let config = ActiveInflationConfig::<T>::get();
         assert_last_event::<T>(Event::<T>::ForcedInflationRecalculation { config }.into());
     }
 
@@ -114,7 +112,7 @@ mod benchmarks {
     fn hook_with_recalculation() {
         initial_config::<T>();
 
-        InflationConfig::<T>::mutate(|config| {
+        ActiveInflationConfig::<T>::mutate(|config| {
             config.recalculation_block = 0;
         });
 
@@ -125,17 +123,17 @@ mod benchmarks {
             Pallet::<T>::on_finalize(block);
         }
 
-        assert!(InflationConfig::<T>::get().recalculation_block > 0);
+        assert!(ActiveInflationConfig::<T>::get().recalculation_block > 0);
     }
 
     #[benchmark]
     fn hook_without_recalculation() {
         initial_config::<T>();
 
-        InflationConfig::<T>::mutate(|config| {
+        ActiveInflationConfig::<T>::mutate(|config| {
             config.recalculation_block = 2;
         });
-        let init_config = InflationConfig::<T>::get();
+        let init_config = ActiveInflationConfig::<T>::get();
 
         // Has to be at least 2 blocks less than the recaulcation block.
         let block = 0;
@@ -145,7 +143,7 @@ mod benchmarks {
             Pallet::<T>::on_finalize(block);
         }
 
-        assert_eq!(InflationConfig::<T>::get(), init_config);
+        assert_eq!(ActiveInflationConfig::<T>::get(), init_config);
     }
 
     #[benchmark]

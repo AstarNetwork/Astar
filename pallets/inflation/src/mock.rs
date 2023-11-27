@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    self as pallet_inflation, CycleConfiguration, InflationConfig, InflationConfiguration,
+    self as pallet_inflation, ActiveInflationConfig, CycleConfiguration, InflationConfiguration,
     InflationParameters, InflationParams, InflationTracker, NegativeImbalanceOf, PayoutPerBlock,
     SafetyInflationTracker,
 };
@@ -202,7 +202,7 @@ impl ExternalityBuilder {
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| {
             // Set initial pallet inflation values
-            InflationConfig::<Test>::put(INIT_CONFIG);
+            ActiveInflationConfig::<Test>::put(INIT_CONFIG);
             InflationParams::<Test>::put(INIT_PARAMS);
             SafetyInflationTracker::<Test>::put(INIT_TRACKER);
 
