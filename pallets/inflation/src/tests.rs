@@ -339,6 +339,20 @@ fn stakers_and_dapp_reward_pool_is_ok() {
             config.base_staker_reward_pool_per_era + config.adjustable_staker_reward_pool_per_era
         );
         assert_eq!(dapp_pool, config.dapp_reward_pool_per_era);
+
+        // 5th scenario - ideal staking rate is zero, entire adjustable amount is always used.
+        ActiveInflationConfig::<Test>::mutate(|config| {
+            config.ideal_staking_rate = Zero::zero();
+        });
+
+        let (staker_pool, dapp_pool) =
+            Inflation::staker_and_dapp_reward_pools(Perquintill::from_percent(5) * total_issuance);
+
+        assert_eq!(
+            staker_pool,
+            config.base_staker_reward_pool_per_era + config.adjustable_staker_reward_pool_per_era
+        );
+        assert_eq!(dapp_pool, config.dapp_reward_pool_per_era);
     })
 }
 
