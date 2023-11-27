@@ -340,7 +340,7 @@ pub mod pallet {
             InflationConfig::<T>::get().bonus_reward_pool_per_period
         }
 
-        fn payout_reward(reward: Balance, account: &T::AccountId) -> Result<(), ()> {
+        fn payout_reward(account: &T::AccountId, reward: Balance) -> Result<(), ()> {
             let mut tracker = SafetyInflationTracker::<T>::get();
 
             // This is a safety measure to prevent excessive minting.
@@ -534,5 +534,5 @@ pub trait StakingRewardHandler<AccountId> {
     fn bonus_reward_pool() -> Balance;
 
     /// Attempts to pay out the rewards to the beneficiary.
-    fn payout_reward(reward: Balance, beneficiary: &AccountId) -> Result<(), ()>;
+    fn payout_reward(beneficiary: &AccountId, reward: Balance) -> Result<(), ()>;
 }

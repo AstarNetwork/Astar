@@ -289,3 +289,124 @@ fn inflation_recalucation_works() {
         );
     })
 }
+
+#[test]
+fn stakers_and_dapp_reward_pool_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let total_issuance = Balances::total_issuance();
+        let config = InflationConfig::<Test>::get();
+
+        // 1st scenario - no staked value
+        let (staker_pool, dapp_pool) = Inflation::staker_and_dapp_reward_pools(Zero::zero());
+        assert_eq!(staker_pool, config.base_staker_reward_pool_per_era);
+        assert_eq!(dapp_pool, config.dapp_reward_pool_per_era);
+
+        // 2nd scenario - there is some staked value, larger than zero, but less than ideal
+        let test_rate = config.ideal_staking_rate - Perquintill::from_percent(11);
+        let (staker_pool, dapp_pool) =
+            Inflation::staker_and_dapp_reward_pools(test_rate * total_issuance);
+
+        assert_eq!(
+            staker_pool,
+            config.base_staker_reward_pool_per_era
+                + test_rate / config.ideal_staking_rate
+                    * config.adjustable_staker_reward_pool_per_era
+        );
+        assert_eq!(dapp_pool, config.dapp_reward_pool_per_era);
+
+        // 3rd scenario - we're exactly at the ideal staking rate
+        let (staker_pool, dapp_pool) =
+            Inflation::staker_and_dapp_reward_pools(config.ideal_staking_rate * total_issuance);
+
+        assert_eq!(
+            staker_pool,
+            config.base_staker_reward_pool_per_era + config.adjustable_staker_reward_pool_per_era
+        );
+        assert_eq!(dapp_pool, config.dapp_reward_pool_per_era);
+
+        // 4th scenario - we're above ideal staking rate, should be the same as at the ideal staking rate regarding the pools
+        let test_rate = config.ideal_staking_rate + Perquintill::from_percent(13);
+        let (staker_pool, dapp_pool) =
+            Inflation::staker_and_dapp_reward_pools(test_rate * total_issuance);
+
+        assert_eq!(
+            staker_pool,
+            config.base_staker_reward_pool_per_era + config.adjustable_staker_reward_pool_per_era
+        );
+        assert_eq!(dapp_pool, config.dapp_reward_pool_per_era);
+    })
+}
+
+#[test]
+fn bonus_reward_pool_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let config = InflationConfig::<Test>::get();
+
+        let bonus_pool = Inflation::bonus_reward_pool();
+        assert_eq!(bonus_pool, config.bonus_reward_pool_per_period);
+    })
+}
+
+#[test]
+fn payout_reward_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let init_safety_tracker = SafetyInflationTracker::<Test>::get();
+
+        // Prepare reward payout params
+        let account = 1;
+        let reward = init_safety_tracker.cap - init_safety_tracker.issued;
+        let init_balance = Balances::free_balance(&account);
+        let init_issuance = Balances::total_issuance();
+
+        // Payout reward and verify balances are as expected
+        assert_ok!(Inflation::payout_reward(&account, reward));
+
+        assert_eq!(Balances::free_balance(&account), init_balance + reward);
+        assert_eq!(Balances::total_issuance(), init_issuance + reward);
+
+        let post_safety_tracker = SafetyInflationTracker::<Test>::get();
+        assert_eq!(post_safety_tracker.cap, init_safety_tracker.cap);
+        assert_eq!(
+            post_safety_tracker.issued,
+            init_safety_tracker.issued + reward
+        );
+    })
+}
+
+#[test]
+fn payout_reward_fails_when_cap_is_exceeded() {
+    ExternalityBuilder::build().execute_with(|| {
+        let safety_tracker = SafetyInflationTracker::<Test>::get();
+
+        // Prepare reward payout params. Reward must exceed the cap.
+        let account = 1;
+        let reward = safety_tracker.cap - safety_tracker.issued + 1;
+
+        // Payout should be a failure, with storage noop.
+        assert_noop!(Inflation::payout_reward(&account, reward), ());
+    })
+}
+
+#[test]
+fn cylcle_configuration_works() {
+    ExternalityBuilder::build().execute_with(|| {
+        type CycleConfig = <Test as Config>::CycleConfiguration;
+
+        let eras_per_period = CycleConfig::eras_per_voting_subperiod()
+            + CycleConfig::eras_per_build_and_earn_subperiod();
+        assert_eq!(CycleConfig::eras_per_period(), eras_per_period);
+
+        let eras_per_cycle = eras_per_period * CycleConfig::periods_per_cycle();
+        assert_eq!(CycleConfig::eras_per_cycle(), eras_per_cycle);
+
+        let blocks_per_cycle = eras_per_cycle * CycleConfig::blocks_per_era();
+        assert_eq!(CycleConfig::blocks_per_cycle(), blocks_per_cycle);
+
+        let build_and_earn_eras_per_cycle =
+            CycleConfig::eras_per_build_and_earn_subperiod() * CycleConfig::periods_per_cycle();
+        assert_eq!(
+            CycleConfig::build_and_earn_eras_per_cycle(),
+            build_and_earn_eras_per_cycle
+        );
+    })
+}

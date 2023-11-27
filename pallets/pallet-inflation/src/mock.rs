@@ -148,7 +148,7 @@ impl PayoutPerBlock<NegativeImbalanceOf<Test>> for DummyPayoutPerBlock {
 pub struct DummyCycleConfiguration;
 impl CycleConfiguration for DummyCycleConfiguration {
     fn periods_per_cycle() -> u32 {
-        4
+        5
     }
 
     fn eras_per_voting_subperiod() -> u32 {
@@ -156,11 +156,11 @@ impl CycleConfiguration for DummyCycleConfiguration {
     }
 
     fn eras_per_build_and_earn_subperiod() -> u32 {
-        14
+        17
     }
 
     fn blocks_per_era() -> u32 {
-        10
+        11
     }
 }
 
