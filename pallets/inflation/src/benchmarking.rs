@@ -135,7 +135,7 @@ mod benchmarks {
         });
         let init_config = ActiveInflationConfig::<T>::get();
 
-        // Has to be at least 2 blocks less than the recaulcation block.
+        // Has to be at least 2 blocks less than the recalculation block.
         let block = 0;
         #[block]
         {

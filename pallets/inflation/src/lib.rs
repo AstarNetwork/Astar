@@ -134,7 +134,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
         fn on_initialize(now: BlockNumber) -> Weight {
-            let recaulcation_weight =
+            let recalculation_weight =
                 if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
                     T::WeightInfo::hook_with_recalculation()
                 } else {
@@ -148,7 +148,7 @@ pub mod pallet {
             let whitelisted_weight =
                 <T as frame_system::Config>::DbWeight::get().reads_writes(2, 1);
 
-            recaulcation_weight
+            recalculation_weight
                 .saturating_add(T::WeightInfo::on_timestamp_set())
                 .saturating_add(whitelisted_weight)
         }
@@ -158,7 +158,6 @@ pub mod pallet {
             // This is to ensure all the rewards are paid out according to the new inflation configuration from next block.
             //
             // If this was done in `on_initialize`, collator & treasury would receive incorrect rewards for that one block.
-            // That's not a big problem, but it would be wrong!
             if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
                 let (max_emission, config) = Self::recalculate_inflation(now);
                 ActiveInflationConfig::<T>::put(config.clone());
@@ -183,7 +182,7 @@ pub mod pallet {
         fn on_timestamp_set(_moment: Moment) {
             let amount = Self::payout_block_rewards();
 
-            // Update the tracker, but no check whether an overflow has happened.
+            // Update the tracker, but no check whether an `issued` has exceeded `cap`.
             // This can modified if needed, but these amounts are supposed to be small &
             // collators need to be paid for producing the block.
             // TODO: potential discussion topic for the review!
@@ -450,23 +449,23 @@ pub struct InflationParameters {
     /// From this value, all the other inflation parameters are derived.
     #[codec(compact)]
     pub max_inflation_rate: Perquintill,
-    /// How much of the inflation in total goes towards the treasury.
+    /// Portion of the inflation that goes towards the treasury.
     #[codec(compact)]
     pub treasury_part: Perquintill,
-    /// How much of the inflation in total goes towards collators.
+    /// Portion of the inflation that goes towards collators.
     #[codec(compact)]
     pub collators_part: Perquintill,
-    /// How much of the inflation in total goes towards dApp rewards (tier rewards).
+    /// Portion of the inflation that goes towards dApp rewards (tier rewards).
     #[codec(compact)]
     pub dapps_part: Perquintill,
-    /// How much of the inflation in total goes towards base staker rewards.
+    /// Portion of the inflation that goes towards base staker rewards.
     #[codec(compact)]
     pub base_stakers_part: Perquintill,
     /// How much of the inflation in total can go towards adjustable staker rewards.
     /// These rewards are adjusted based on the total value staked.
     #[codec(compact)]
     pub adjustable_stakers_part: Perquintill,
-    /// How much of the inflation in total goes towards bonus staker rewards (loyalty rewards).
+    /// Portion of the inflation that goes towards bonus staker rewards (loyalty rewards).
     #[codec(compact)]
     pub bonus_part: Perquintill,
     /// The ideal staking rate, in respect to total issuance.
