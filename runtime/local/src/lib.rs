@@ -271,7 +271,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = (Aura, BlockReward);
+    type OnTimestampSet = (Aura, BlockReward, Inflation);
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
