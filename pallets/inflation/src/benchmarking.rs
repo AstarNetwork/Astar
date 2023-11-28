@@ -149,7 +149,7 @@ mod benchmarks {
     #[benchmark]
     fn on_timestamp_set() {
         initial_config::<T>();
-        let tracker = SafetyInflationTracker::<T>::get();
+        let init_tracker = SafetyInflationTracker::<T>::get();
 
         #[block]
         {
@@ -157,7 +157,7 @@ mod benchmarks {
         }
 
         // The 'sane' assumption is that at least something will be issued for treasury & collators
-        assert!(SafetyInflationTracker::<T>::get().issued > tracker.issued);
+        assert!(SafetyInflationTracker::<T>::get().issued > init_tracker.issued);
     }
 
     impl_benchmark_test_suite!(

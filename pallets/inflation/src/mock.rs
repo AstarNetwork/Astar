@@ -207,7 +207,8 @@ impl ExternalityBuilder {
             InflationParams::<Test>::put(INIT_PARAMS);
             SafetyInflationTracker::<Test>::put(INIT_TRACKER);
 
-            System::set_block_number(1)
+            System::set_block_number(1);
+            Inflation::on_initialize(1);
         });
         ext
     }

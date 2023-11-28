@@ -58,7 +58,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config<BlockNumber = BlockNumber> {
         /// The currency trait.
         /// This has been soft-deprecated but it still needs to be used here in order to access `NegativeImbalance`
-        // which is defined in the currency trait.
+        /// which is defined in the currency trait.
         type Currency: Currency<Self::AccountId, Balance = Balance>;
 
         /// Handler for 'per-block' payouts.
@@ -114,6 +114,7 @@ pub mod pallet {
         pub params: InflationParameters,
     }
 
+    /// This should be executed **AFTER** other pallets that cause issuance to increase have been initialized.
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig {
         fn build(&self) {
@@ -158,6 +159,8 @@ pub mod pallet {
             // This is to ensure all the rewards are paid out according to the new inflation configuration from next block.
             //
             // If this was done in `on_initialize`, collator & treasury would receive incorrect rewards for that one block.
+            //
+            // This should be done as late as possible, to ensure all operations that modify issuance are done.
             if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
                 let (max_emission, config) = Self::recalculate_inflation(now);
                 ActiveInflationConfig::<T>::put(config.clone());
@@ -265,6 +268,8 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         /// Used to check if inflation recalculation is supposed to happen on the next block.
+        ///
+        /// This will be true even if recalculation is overdue, e.g. it should have happened in the current or older block.
         fn is_recalculation_in_next_block(
             now: BlockNumber,
             config: &InflationConfiguration,
@@ -365,12 +370,11 @@ pub mod pallet {
     impl<T: Config> StakingRewardHandler<T::AccountId> for Pallet<T> {
         fn staker_and_dapp_reward_pools(total_value_staked: Balance) -> (Balance, Balance) {
             let config = ActiveInflationConfig::<T>::get();
+            let total_issuance = T::Currency::total_issuance();
 
             // First calculate the adjustable part of the staker reward pool, according to formula:
             // adjustable_part = max_adjustable_part * min(1, total_staked_percent / ideal_staked_percent)
-            let total_issuance = T::Currency::total_issuance();
-
-            // These operations are overflow & zero-division safe.
+            // (These operations are overflow & zero-division safe)
             let staked_ratio = Perquintill::from_rational(total_value_staked, total_issuance);
             let adjustment_factor = staked_ratio / config.ideal_staking_rate;
 
@@ -461,7 +465,7 @@ pub struct InflationParameters {
     /// Portion of the inflation that goes towards base staker rewards.
     #[codec(compact)]
     pub base_stakers_part: Perquintill,
-    /// How much of the inflation in total can go towards adjustable staker rewards.
+    /// Portion of the inflation that can go towards the adjustable staker rewards.
     /// These rewards are adjusted based on the total value staked.
     #[codec(compact)]
     pub adjustable_stakers_part: Perquintill,
