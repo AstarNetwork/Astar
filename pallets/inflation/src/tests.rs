@@ -19,7 +19,7 @@
 use super::{pallet::Error, Event, *};
 use frame_support::{
     assert_noop, assert_ok, assert_storage_noop,
-    traits::{Hooks, OnTimestampSet},
+    traits::{GenesisBuild, Hooks, OnTimestampSet},
 };
 use mock::*;
 use sp_runtime::{
@@ -128,6 +128,16 @@ fn force_inflation_recalculation_work() {
         );
     })
 }
+#[test]
+fn force_inflation_fails_due_to_unprivileged_origin() {
+    ExternalityBuilder::build().execute_with(|| {
+        // Make sure action is privileged
+        assert_noop!(
+            Inflation::force_inflation_recalculation(RuntimeOrigin::signed(1)),
+            BadOrigin
+        );
+    })
+}
 
 #[test]
 fn inflation_recalculation_occurs_when_exepcted() {
@@ -221,6 +231,11 @@ fn inflation_parameters_validity_check_works() {
     // Increase of some param, it should invalidate the whole config
     let mut params = base_params;
     params.base_stakers_part = params.base_stakers_part + Perquintill::from_percent(1);
+    assert!(!params.is_valid(), "Sum is above 100%, must fail.");
+
+    // Excessive increase of some param, it should invalidate the whole config
+    let mut params = base_params;
+    params.treasury_part = Perquintill::from_percent(100);
     assert!(!params.is_valid(), "Sum is above 100%, must fail.");
 
     // Some param can be zero, as long as sum remains 100%
@@ -427,5 +442,26 @@ fn cylcle_configuration_works() {
             CycleConfig::build_and_earn_eras_per_cycle(),
             build_and_earn_eras_per_cycle
         );
+    })
+}
+
+#[test]
+fn test_genesis_build() {
+    ExternalityBuilder::build().execute_with(|| {
+        let genesis_config = InflationConfig::default();
+        assert!(genesis_config.params.is_valid());
+
+        // Prep actions
+        ActiveInflationConfig::<Test>::kill();
+        InflationParams::<Test>::kill();
+        SafetyInflationTracker::<Test>::kill();
+
+        // Execute genesis build
+        <pallet::GenesisConfig as GenesisBuild<Test>>::build(&genesis_config);
+
+        // Verify state is as expected
+        assert_eq!(InflationParams::<Test>::get(), genesis_config.params);
+        assert!(SafetyInflationTracker::<Test>::get().cap > 0);
+        assert!(ActiveInflationConfig::<Test>::get().recalculation_block > 0);
     })
 }
