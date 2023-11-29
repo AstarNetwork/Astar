@@ -5,5 +5,4 @@
 - [ ] added or updated unit tests
 - [ ] updated Astar official documentation
 - [ ] added OnRuntimeUpgrade hook for precompile revert code registration
-- [ ] updated spec version
-- [ ] updated semver
+- [ ] added benchmarks & weights for any modified runtime logics.
