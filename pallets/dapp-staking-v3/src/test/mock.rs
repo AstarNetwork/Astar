@@ -169,6 +169,7 @@ impl pallet_dapp_staking::Config for Test {
     type MaxNumberOfStakedContracts = ConstU32<5>;
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
+    type WeightInfo = weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract>;
 }
@@ -267,7 +268,6 @@ impl ExtBuilder {
             pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());
             pallet_dapp_staking::NextTierConfig::<Test>::put(init_tier_config);
 
-            // TODO: include this into every test unless it explicitly doesn't need it.
             DappStaking::on_initialize(System::block_number());
         }
         );

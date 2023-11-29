@@ -29,45 +29,6 @@ use frame_support::{
 };
 use sp_runtime::traits::Zero;
 
-// TODO: remove this prior to the merge
-#[test]
-fn print_test() {
-    ExtBuilder::build().execute_with(|| {
-        use crate::dsv3_weight::WeightInfo;
-        println!(
-            ">>> dApp tier assignment reading & calculation {:?}",
-            crate::dsv3_weight::SubstrateWeight::<Test>::dapp_tier_assignment(100)
-        );
-
-        use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-        use scale_info::TypeInfo;
-
-        #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-        struct RewardSize;
-        impl Get<u32> for RewardSize {
-            fn get() -> u32 {
-                1_00_u32
-            }
-        }
-        #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-        struct TierSize;
-        impl Get<u32> for TierSize {
-            fn get() -> u32 {
-                4_u32
-            }
-        }
-        println!(
-            ">>> Max encoded size for dapp tier rewards: {:?}",
-            crate::DAppTierRewards::<RewardSize, TierSize>::max_encoded_len()
-        );
-
-        println!(
-            ">>> Max encoded size of ContractStake: {:?}",
-            crate::ContractStakeAmount::max_encoded_len()
-        );
-    })
-}
-
 #[test]
 fn maintenace_mode_works() {
     ExtBuilder::build().execute_with(|| {

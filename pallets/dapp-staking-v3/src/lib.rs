@@ -66,7 +66,8 @@ mod types;
 use types::*;
 pub use types::{PriceProvider, RewardPoolProvider, TierThreshold};
 
-mod dsv3_weight;
+mod weights;
+pub use weights::WeightInfo;
 
 // Lock identifier for the dApp staking pallet
 const STAKING_ID: LockIdentifier = *b"dapstake";
@@ -159,7 +160,7 @@ pub mod pallet {
         #[pallet::constant]
         type UnlockingPeriod: Get<EraNumber>;
 
-        /// Maximum amount of stake entries contract is allowed to have at once.
+        /// Maximum amount of stake contract entries acount is allowed to have at once.
         #[pallet::constant]
         type MaxNumberOfStakedContracts: Get<u32>;
 
@@ -170,6 +171,9 @@ pub mod pallet {
         /// Number of different tiers.
         #[pallet::constant]
         type NumberOfTiers: Get<u32>;
+
+        /// Weight info for various calls & operations in the pallet.
+        type WeightInfo: WeightInfo;
 
         /// Helper trait for benchmarks.
         #[cfg(feature = "runtime-benchmarks")]
@@ -350,6 +354,7 @@ pub mod pallet {
 
     /// General information about dApp staking protocol state.
     #[pallet::storage]
+    #[pallet::whitelist_storage]
     pub type ActiveProtocolState<T: Config> =
         StorageValue<_, ProtocolState<BlockNumberFor<T>>, ValueQuery>;
 
@@ -658,7 +663,7 @@ pub mod pallet {
         /// Used to enable or disable maintenance mode.
         /// Can only be called by manager origin.
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::maintenance_mode())]
         pub fn maintenance_mode(origin: OriginFor<T>, enabled: bool) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
             ActiveProtocolState::<T>::mutate(|state| state.maintenance = enabled);
@@ -672,7 +677,7 @@ pub mod pallet {
         /// If successful, smart contract will be assigned a simple, unique numerical identifier.
         /// Owner is set to be initial beneficiary & manager of the dApp.
         #[pallet::call_index(1)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::register())]
         pub fn register(
             origin: OriginFor<T>,
             owner: T::AccountId,
@@ -723,7 +728,7 @@ pub mod pallet {
         /// If set to `None`, rewards will be deposited to the dApp owner.
         /// After this call, all existing & future rewards will be paid out to the beneficiary.
         #[pallet::call_index(2)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::set_dapp_reward_beneficiary())]
         pub fn set_dapp_reward_beneficiary(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -762,7 +767,7 @@ pub mod pallet {
         /// 1. when the dApp owner account is compromised, manager can change the owner to a new account
         /// 2. if project wants to transfer ownership to a new account (DAO, multisig, etc.).
         #[pallet::call_index(3)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::set_dapp_owner())]
         pub fn set_dapp_owner(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -802,7 +807,7 @@ pub mod pallet {
         ///
         /// Can be called by dApp staking manager origin.
         #[pallet::call_index(4)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::unregister())]
         pub fn unregister(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -840,7 +845,7 @@ pub mod pallet {
         ///
         /// Locked amount can immediately be used for staking.
         #[pallet::call_index(5)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::lock())]
         pub fn lock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
@@ -879,7 +884,7 @@ pub mod pallet {
         /// If the amount is greater than the available amount for unlocking, everything is unlocked.
         /// If the remaining locked amount would take the account below the minimum locked amount, everything is unlocked.
         #[pallet::call_index(6)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::unlock())]
         pub fn unlock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
@@ -932,8 +937,8 @@ pub mod pallet {
 
         /// Claims all of fully unlocked chunks, removing the lock from them.
         #[pallet::call_index(7)]
-        #[pallet::weight(Weight::zero())]
-        pub fn claim_unlocked(origin: OriginFor<T>) -> DispatchResult {
+        #[pallet::weight(T::WeightInfo::claim_unlocked(T::MaxNumberOfStakedContracts::get()))]
+        pub fn claim_unlocked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -944,8 +949,7 @@ pub mod pallet {
             ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
 
             // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
-            // TODO: will be used after benchmarks
-            let _removed_entries = if ledger.is_empty() {
+            let removed_entries = if ledger.is_empty() {
                 let _ = StakerInfo::<T>::clear_prefix(&account, ledger.contract_stake_count, None);
                 ledger.contract_stake_count
             } else {
@@ -959,11 +963,11 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
 
-            Ok(())
+            Ok(Some(T::WeightInfo::claim_unlocked(removed_entries)).into())
         }
 
         #[pallet::call_index(8)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::relock_unlocking())]
         pub fn relock_unlocking(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
@@ -1000,7 +1004,7 @@ pub mod pallet {
         ///
         /// Staked amount is only eligible for rewards from the next era onwards.
         #[pallet::call_index(9)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::stake())]
         pub fn stake(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1127,7 +1131,7 @@ pub mod pallet {
         /// In case amount is unstaked during `Build&Earn` subperiod, first the `build_and_earn` is reduced,
         /// and any spillover is subtracted from the `voting` amount.
         #[pallet::call_index(10)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::unstake())]
         pub fn unstake(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1229,8 +1233,12 @@ pub mod pallet {
         /// Claims some staker rewards, if user has any.
         /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening.
         #[pallet::call_index(11)]
-        #[pallet::weight(Weight::zero())]
-        pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResult {
+        #[pallet::weight({
+            let max_span_length = T::EraRewardSpanLength::get();
+            T::WeightInfo::claim_staker_rewards_ongoing_period(max_span_length)
+                .max(T::WeightInfo::claim_staker_rewards_past_period(max_span_length))
+        })]
+        pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -1294,6 +1302,7 @@ pub mod pallet {
                 rewards.push((era, staker_reward));
                 reward_sum.saturating_accrue(staker_reward);
             }
+            let rewards_len: u32 = rewards.len().unique_saturated_into();
 
             // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
             // Account exists since it has locked funds.
@@ -1310,12 +1319,17 @@ pub mod pallet {
                 });
             });
 
-            Ok(())
+            Ok(Some(if period_end.is_some() {
+                T::WeightInfo::claim_staker_rewards_past_period(rewards_len)
+            } else {
+                T::WeightInfo::claim_staker_rewards_ongoing_period(rewards_len)
+            })
+            .into())
         }
 
         /// Used to claim bonus reward for a smart contract, if eligible.
         #[pallet::call_index(12)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::claim_bonus_reward())]
         pub fn claim_bonus_reward(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1379,7 +1393,7 @@ pub mod pallet {
 
         /// Used to claim dApp reward for the specified era.
         #[pallet::call_index(13)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::claim_dapp_reward())]
         pub fn claim_dapp_reward(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1435,7 +1449,7 @@ pub mod pallet {
         /// Used to unstake funds from a contract that was unregistered after an account staked on it.
         /// This is required if staker wants to re-stake these funds on another active contract during the ongoing period.
         #[pallet::call_index(14)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::unstake_from_unregistered())]
         pub fn unstake_from_unregistered(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1507,8 +1521,10 @@ pub mod pallet {
         /// 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
         /// 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
         #[pallet::call_index(15)]
-        #[pallet::weight(Weight::zero())]
-        pub fn cleanup_expired_entries(origin: OriginFor<T>) -> DispatchResult {
+        #[pallet::weight(T::WeightInfo::cleanup_expired_entries(
+            T::MaxNumberOfStakedContracts::get()
+        ))]
+        pub fn cleanup_expired_entries(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -1551,7 +1567,10 @@ pub mod pallet {
                 count: entries_to_delete.unique_saturated_into(),
             });
 
-            Ok(())
+            Ok(Some(T::WeightInfo::cleanup_expired_entries(
+                entries_to_delete.unique_saturated_into(),
+            ))
+            .into())
         }
 
         /// Used to force a change of era or subperiod.
@@ -1562,7 +1581,7 @@ pub mod pallet {
         ///
         /// Can only be called by manager origin.
         #[pallet::call_index(16)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::force())]
         pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
