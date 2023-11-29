@@ -1657,6 +1657,32 @@ pub mod pallet {
 
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
         ///
+        /// ### Algorithm
+        ///
+        /// 1. Read in over all contract stake entries. In case staked amount is zero for the current era, ignore it.
+        ///    This information is used to calculate 'score' per dApp, which is used to determine the tier.
+        ///
+        /// 2. Sort the entries by the score, in descending order - the top score dApp comes first.
+        ///
+        /// 3. Read in tier configuration. This contains information about how many slots per tier there are,
+        ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
+        ///    Iterate over tier thresholds & capacities, starting from the top tier, and assign dApps to them.
+        ///    
+        ///    ```ignore
+        ////   for each tier:
+        ///        for each unassigned dApp:
+        ///            if tier has capacity && dApp satisfies the tier threshold:
+        ///                add dapp to the tier
+        ///            else:
+        ///               exit loop since no more dApps will satisfy the threshold since they are sorted by score
+        ///    ```
+        ///
+        /// 4. Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.
+        ///
+        /// 5. Calculate rewards for each tier.
+        ///    This is done by dividing the total reward pool into tier reward pools,
+        ///    after which the tier reward pool is divided by the number of available slots in the tier.
+        ///
         /// The returned object contains information about each dApp that made it into a tier.
         pub(crate) fn get_dapp_tier_assignment(
             era: EraNumber,
@@ -1730,7 +1756,11 @@ pub mod pallet {
                 .iter()
                 .zip(tier_config.slots_per_tier.iter())
                 .map(|(percent, slots)| {
-                    *percent * dapp_reward_pool / <u16 as Into<Balance>>::into(*slots)
+                    if slots.is_zero() {
+                        Zero::zero()
+                    } else {
+                        *percent * dapp_reward_pool / <u16 as Into<Balance>>::into(*slots)
+                    }
                 })
                 .collect::<Vec<_>>();
 

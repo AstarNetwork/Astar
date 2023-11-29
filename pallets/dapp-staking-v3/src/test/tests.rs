@@ -2208,6 +2208,44 @@ fn get_dapp_tier_assignment_basic_example_works() {
     })
 }
 
+#[test]
+fn get_dapp_tier_assignment_zero_slots_per_tier_works() {
+    ExtBuilder::build().execute_with(|| {
+        // This test will rely on the configuration inside the mock file.
+        // If that changes, this test might have to be updated as well.
+
+        // Ensure that first tier has 0 slots.
+        TierConfig::<Test>::mutate(|config| {
+            let slots_in_first_tier = config.slots_per_tier[0];
+            config.number_of_slots = config.number_of_slots - slots_in_first_tier;
+            config.slots_per_tier[0] = 0;
+        });
+
+        // Calculate tier assignment (we don't need dApps for this test)
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        let dapp_reward_pool = 1000000;
+        let tier_assignment = DappStaking::get_dapp_tier_assignment(
+            protocol_state.era,
+            protocol_state.period_number(),
+            dapp_reward_pool,
+        );
+
+        // Basic checks
+        let number_of_tiers: u32 = <Test as Config>::NumberOfTiers::get();
+        assert_eq!(tier_assignment.period, protocol_state.period_number());
+        assert_eq!(tier_assignment.rewards.len(), number_of_tiers as usize);
+        assert!(tier_assignment.dapps.is_empty());
+
+        assert!(
+            tier_assignment.rewards[0].is_zero(),
+            "1st tier has no slots so no rewards should be assigned to it."
+        );
+
+        // Regardless of that, other tiers shouldn't benefit from this
+        assert!(tier_assignment.rewards.iter().sum::<Balance>() < dapp_reward_pool);
+    })
+}
+
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////

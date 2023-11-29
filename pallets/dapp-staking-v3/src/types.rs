@@ -140,7 +140,7 @@ pub struct PeriodInfo {
     /// Period number.
     #[codec(compact)]
     pub number: PeriodNumber,
-    /// Subperiod ytpe.
+    /// Subperiod type.
     pub subperiod: Subperiod,
     /// Last era of the subperiod, after this a new subperiod should start.
     #[codec(compact)]
