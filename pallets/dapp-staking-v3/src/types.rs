@@ -63,14 +63,13 @@
 //! * `DAppTier` - a compact struct describing a dApp's tier.
 //! * `DAppTierRewards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
 //!
-//! TODO: some types are missing so double check before final merge that everything is covered and explained correctly
 
 use frame_support::{pallet_prelude::*, BoundedVec};
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, UniqueSaturatedInto, Zero},
+    traits::{AtLeast32BitUnsigned, CheckedAdd, UniqueSaturatedInto, Zero},
     FixedPointNumber, Permill, Saturating,
 };
 pub use sp_std::{fmt::Debug, vec::Vec};
@@ -84,16 +83,7 @@ pub type AccountLedgerFor<T> = AccountLedger<BlockNumberFor<T>, <T as Config>::M
 
 // Convenience type for `DAppTierRewards` usage.
 pub type DAppTierRewardsFor<T> =
-    DAppTierRewards<MaxNumberOfContractsU32<T>, <T as Config>::NumberOfTiers>;
-
-// Helper struct for converting `u16` getter into `u32`
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct MaxNumberOfContractsU32<T: Config>(PhantomData<T>);
-impl<T: Config> Get<u32> for MaxNumberOfContractsU32<T> {
-    fn get() -> u32 {
-        T::MaxNumberOfContracts::get() as u32
-    }
-}
+    DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
 
 /// Era number type
 pub type EraNumber = u32;
@@ -121,6 +111,8 @@ pub enum AccountLedgerError {
     NothingToClaim,
     /// Rewards have already been claimed
     AlreadyClaimed,
+    /// Attempt to crate the iterator failed due to incorrect data.
+    InvalidIterator,
 }
 
 /// Distinct subperiods in dApp staking protocol.
@@ -148,7 +140,7 @@ pub struct PeriodInfo {
     /// Period number.
     #[codec(compact)]
     pub number: PeriodNumber,
-    /// subperiod.
+    /// Subperiod type.
     pub subperiod: Subperiod,
     /// Last era of the subperiod, after this a new subperiod should start.
     #[codec(compact)]
@@ -157,7 +149,7 @@ pub struct PeriodInfo {
 
 impl PeriodInfo {
     /// `true` if the provided era belongs to the next period, `false` otherwise.
-    /// It's only possible to provide this information for the `BuildAndEarn` subperiod.
+    /// It's only possible to provide this information correctly for the ongoing `BuildAndEarn` subperiod.
     pub fn is_next_period(&self, era: EraNumber) -> bool {
         self.subperiod == Subperiod::BuildAndEarn && self.subperiod_end_era <= era
     }
@@ -238,7 +230,7 @@ where
         self.period_info.subperiod_end_era
     }
 
-    /// Checks whether a new era should be triggered, based on the provided `BlockNumber` argument
+    /// Checks whether a new era should be triggered, based on the provided _current_ block number argument
     /// or possibly other protocol state parameters.
     pub fn is_new_era(&self, now: BlockNumber) -> bool {
         self.next_era_start <= now
@@ -286,6 +278,8 @@ pub struct DAppInfo<AccountId> {
     pub state: DAppState,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
     pub reward_destination: Option<AccountId>,
+    /// If `Some(_)` dApp has a tier label which can influence the tier assignment.
+    pub tier_label: Option<TierLabel>,
 }
 
 impl<AccountId> DAppInfo<AccountId> {
@@ -295,6 +289,11 @@ impl<AccountId> DAppInfo<AccountId> {
             Some(account_id) => account_id,
             None => &self.owner,
         }
+    }
+
+    /// `true` if dApp is still active (registered), `false` otherwise.
+    pub fn is_active(&self) -> bool {
+        self.state == DAppState::Registered
     }
 }
 
@@ -337,10 +336,10 @@ pub struct AccountLedger<
     BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
     UnlockingLen: Get<u32>,
 > {
-    /// How much active locked amount an account has.
+    /// How much active locked amount an account has. This can be used for staking.
     #[codec(compact)]
     pub locked: Balance,
-    /// Vector of all the unlocking chunks.
+    /// Vector of all the unlocking chunks. This is also considered _locked_ but cannot be used for staking.
     pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
     /// Primary field used to store how much was staked in a particular era.
     pub staked: StakeAmount,
@@ -518,8 +517,10 @@ where
         }
     }
 
-    /// Verify that current era and period info arguments are valid for `stake` and `unstake` operations.
-    fn verify_stake_unstake_args(
+    /// Check for stake/unstake operation era & period arguments.
+    ///
+    /// Ensures that the provided era & period are valid according to the current ledger state.
+    fn stake_unstake_argument_check(
         &self,
         era: EraNumber,
         current_period_info: &PeriodInfo,
@@ -532,17 +533,15 @@ where
             if self.staked.period != current_period_info.number {
                 return Err(AccountLedgerError::InvalidPeriod);
             }
-            // In case it doesn't (i.e. first time staking), then the future era must match exactly
-            // one era after the one provided via argument.
+            // In case it doesn't (i.e. first time staking), then the future era must either be the current or the next era.
         } else if let Some(stake_amount) = self.staked_future {
-            if stake_amount.era != era.saturating_add(1) {
+            if stake_amount.era != era.saturating_add(1) && stake_amount.era != era {
                 return Err(AccountLedgerError::InvalidEra);
             }
             if stake_amount.period != current_period_info.number {
                 return Err(AccountLedgerError::InvalidPeriod);
             }
         }
-
         Ok(())
     }
 
@@ -567,7 +566,7 @@ where
             return Ok(());
         }
 
-        self.verify_stake_unstake_args(era, &current_period_info)?;
+        self.stake_unstake_argument_check(era, &current_period_info)?;
 
         if self.stakeable_amount(current_period_info.number) < amount {
             return Err(AccountLedgerError::UnavailableStakeFunds);
@@ -605,7 +604,7 @@ where
             return Ok(());
         }
 
-        self.verify_stake_unstake_args(era, &current_period_info)?;
+        self.stake_unstake_argument_check(era, &current_period_info)?;
 
         // User must be precise with their unstake amount.
         if self.staked_amount(current_period_info.number) < amount {
@@ -653,12 +652,12 @@ where
     /// Cleanup staking information if it has expired.
     ///
     /// # Args
-    /// `threshold_period` - last period for which entries can still be considered valid.
+    /// `valid_threshold_period` - last period for which entries can still be considered valid.
     ///
     /// `true` if any change was made, `false` otherwise.
-    pub fn maybe_cleanup_expired(&mut self, threshold_period: PeriodNumber) -> bool {
+    pub fn maybe_cleanup_expired(&mut self, valid_threshold_period: PeriodNumber) -> bool {
         match self.staked_period() {
-            Some(staked_period) if staked_period < threshold_period => {
+            Some(staked_period) if staked_period < valid_threshold_period => {
                 self.staked = Default::default();
                 self.staked_future = None;
                 true
@@ -678,22 +677,23 @@ where
         period_end: Option<EraNumber>,
     ) -> Result<EraStakePairIter, AccountLedgerError> {
         // Main entry exists, but era isn't 'in history'
-        if !self.staked.is_empty() && era <= self.staked.era {
-            return Err(AccountLedgerError::NothingToClaim);
+        if !self.staked.is_empty() {
+            ensure!(era >= self.staked.era, AccountLedgerError::NothingToClaim);
         } else if let Some(stake_amount) = self.staked_future {
             // Future entry exists, but era isn't 'in history'
-            if era < stake_amount.era {
-                return Err(AccountLedgerError::NothingToClaim);
-            }
+            ensure!(era >= stake_amount.era, AccountLedgerError::NothingToClaim);
         }
 
         // There are multiple options:
         // 1. We only have future entry, no current entry
-        // 2. We have both current and future entry
-        // 3. We only have current entry, no future entry
+        // 2. We have both current and future entry, but are only claiming 1 era
+        // 3. We have both current and future entry, and are claiming multiple eras
+        // 4. We only have current entry, no future entry
         let (span, maybe_first) = if let Some(stake_amount) = self.staked_future {
             if self.staked.is_empty() {
                 ((stake_amount.era, era, stake_amount.total()), None)
+            } else if self.staked.era == era {
+                ((era, era, self.staked.total()), None)
             } else {
                 (
                     (stake_amount.era, era, stake_amount.total()),
@@ -704,7 +704,8 @@ where
             ((self.staked.era, era, self.staked.total()), None)
         };
 
-        let result = EraStakePairIter::new(span, maybe_first);
+        let result = EraStakePairIter::new(span, maybe_first)
+            .map_err(|_| AccountLedgerError::InvalidIterator)?;
 
         // Rollover future to 'current' stake amount
         if let Some(stake_amount) = self.staked_future.take() {
@@ -714,7 +715,7 @@ where
 
         // Make sure to clean up the entries if all rewards for the period have been claimed.
         match period_end {
-            Some(subperiod_end_era) if era >= subperiod_end_era => {
+            Some(period_end_era) if era >= period_end_era => {
                 self.staked = Default::default();
                 self.staked_future = None;
             }
@@ -752,20 +753,25 @@ impl EraStakePairIter {
     pub fn new(
         span: (EraNumber, EraNumber, Balance),
         maybe_first: Option<(EraNumber, Balance)>,
-    ) -> Self {
-        if let Some((era, _amount)) = maybe_first {
-            debug_assert!(
-                span.0 == era + 1,
-                "The 'other', if it exists, must cover era preceding the span."
-            );
+    ) -> Result<Self, ()> {
+        // First era must be smaller or equal to the last era.
+        if span.0 > span.1 {
+            return Err(());
+        }
+        // If 'maybe_first' is defined, it must exactly match the `span.0 - 1` era value.
+        match maybe_first {
+            Some((era, _)) if span.0.saturating_sub(era) != 1 => {
+                return Err(());
+            }
+            _ => (),
         }
 
-        Self {
+        Ok(Self {
             maybe_first,
             start_era: span.0,
             end_era: span.1,
             amount: span.2,
-        }
+        })
     }
 }
 
@@ -807,21 +813,6 @@ pub struct StakeAmount {
 }
 
 impl StakeAmount {
-    /// Create new instance of `StakeAmount` with specified `voting` and `build_and_earn` amounts.
-    pub fn new(
-        voting: Balance,
-        build_and_earn: Balance,
-        era: EraNumber,
-        period: PeriodNumber,
-    ) -> Self {
-        Self {
-            voting,
-            build_and_earn,
-            era,
-            period,
-        }
-    }
-
     /// `true` if nothing is staked, `false` otherwise
     pub fn is_empty(&self) -> bool {
         self.voting.is_zero() && self.build_and_earn.is_zero()
@@ -862,6 +853,10 @@ impl StakeAmount {
                     self.build_and_earn.saturating_reduce(amount);
                 } else {
                     // Rollover from build&earn to voting, is guaranteed to be larger than zero due to previous check
+                    // E.g. voting = 10, build&earn = 5, amount = 7
+                    // underflow = build&earn - amount = 5 - 7 = -2
+                    // voting = 10 - 2 = 8
+                    // build&earn = 0
                     let remainder = amount.saturating_sub(self.build_and_earn);
                     self.build_and_earn = Balance::zero();
                     self.voting.saturating_reduce(remainder);
@@ -874,12 +869,8 @@ impl StakeAmount {
 /// Info about current era, including the rewards, how much is locked, unlocking, etc.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct EraInfo {
-    /// How much balance is considered to be locked in the current era.
-    /// This value influences the reward distribution.
-    #[codec(compact)]
-    pub active_era_locked: Balance,
-    /// How much balance is locked in dApp staking, in total.
-    /// For rewards, this amount isn't relevant for the current era, but only from the next one.
+    /// How much balance is locked in dApp staking.
+    /// Does not include the amount that is undergoing the unlocking period.
     #[codec(compact)]
     pub total_locked: Balance,
     /// How much balance is undergoing unlocking process.
@@ -900,7 +891,6 @@ impl EraInfo {
 
     /// Update with the new amount that has just started undergoing the unlocking period.
     pub fn unlocking_started(&mut self, amount: Balance) {
-        self.active_era_locked.saturating_reduce(amount);
         self.total_locked.saturating_reduce(amount);
         self.unlocking.saturating_accrue(amount);
     }
@@ -946,15 +936,19 @@ impl EraInfo {
     ///  ## Args
     /// `next_subperiod` - `None` if no subperiod change, `Some(type)` if `type` is starting from the next era.
     pub fn migrate_to_next_era(&mut self, next_subperiod: Option<Subperiod>) {
-        self.active_era_locked = self.total_locked;
         match next_subperiod {
             // If next era marks start of new voting period period, it means we're entering a new period
             Some(Subperiod::Voting) => {
-                self.current_stake_amount = Default::default();
-                self.next_stake_amount = Default::default();
+                for stake_amount in [&mut self.current_stake_amount, &mut self.next_stake_amount] {
+                    stake_amount.voting = Zero::zero();
+                    stake_amount.build_and_earn = Zero::zero();
+                    stake_amount.era.saturating_inc();
+                    stake_amount.period.saturating_inc();
+                }
             }
             Some(Subperiod::BuildAndEarn) | None => {
                 self.current_stake_amount = self.next_stake_amount;
+                self.next_stake_amount.era.saturating_inc();
             }
         };
     }
@@ -980,16 +974,22 @@ impl SingularStakingInfo {
     /// `subperiod` - subperiod during which this entry is created.
     pub fn new(period: PeriodNumber, subperiod: Subperiod) -> Self {
         Self {
-            staked: StakeAmount::new(Balance::zero(), Balance::zero(), 0, period),
+            staked: StakeAmount {
+                voting: Balance::zero(),
+                build_and_earn: Balance::zero(),
+                era: 0,
+                period,
+            },
             // Loyalty staking is only possible if stake is first made during the voting period.
             loyal_staker: subperiod == Subperiod::Voting,
         }
     }
 
     /// Stake the specified amount on the contract, for the specified subperiod.
-    pub fn stake(&mut self, amount: Balance, subperiod: Subperiod) {
-        // TODO: if we keep `StakeAmount` type here, consider including the era as well for consistency
+    pub fn stake(&mut self, amount: Balance, current_era: EraNumber, subperiod: Subperiod) {
         self.staked.add(amount, subperiod);
+        // Stake is only valid from the next era so we keep it consistent here
+        self.staked.era = current_era.saturating_add(1);
     }
 
     /// Unstakes some of the specified amount from the contract.
@@ -998,10 +998,17 @@ impl SingularStakingInfo {
     /// and `voting period` has passed, this will remove the _loyalty_ flag from the staker.
     ///
     /// Returns the amount that was unstaked from the `voting period` stake, and from the `build&earn period` stake.
-    pub fn unstake(&mut self, amount: Balance, subperiod: Subperiod) -> (Balance, Balance) {
+    pub fn unstake(
+        &mut self,
+        amount: Balance,
+        current_era: EraNumber,
+        subperiod: Subperiod,
+    ) -> (Balance, Balance) {
         let snapshot = self.staked;
 
         self.staked.subtract(amount, subperiod);
+        // Keep the latest era for which the entry is valid
+        self.staked.era = self.staked.era.max(current_era);
 
         self.loyal_staker = self.loyal_staker
             && (subperiod == Subperiod::Voting
@@ -1036,6 +1043,11 @@ impl SingularStakingInfo {
         self.staked.period
     }
 
+    /// Era in which the entry was last time updated
+    pub fn era(&self) -> EraNumber {
+        self.staked.era
+    }
+
     /// `true` if no stake exists, `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.staked.is_empty()
@@ -1056,7 +1068,10 @@ pub struct ContractStakeAmount {
     pub staked: StakeAmount,
     /// Staked amount in the next or 'future' era.
     pub staked_future: Option<StakeAmount>,
+    /// Tier label for the contract, if any.
+    pub tier_label: Option<TierLabel>,
 }
+
 impl ContractStakeAmount {
     /// `true` if series is empty, `false` otherwise.
     pub fn is_empty(&self) -> bool {
@@ -1130,7 +1145,6 @@ impl ContractStakeAmount {
 
     /// Stake the specified `amount` on the contract, for the specified `subperiod` and `era`.
     pub fn stake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
-        // TODO: tests need to be re-writen for this after the refactoring
         let stake_era = current_era.saturating_add(1);
 
         match self.staked_future.as_mut() {
@@ -1168,8 +1182,6 @@ impl ContractStakeAmount {
 
     /// Unstake the specified `amount` from the contract, for the specified `subperiod` and `era`.
     pub fn unstake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
-        // TODO: tests need to be re-writen for this after the refactoring
-
         // First align entries - we only need to keep track of the current era, and the next one
         match self.staked_future {
             // Future entry exists, but it covers current or older era.
@@ -1347,6 +1359,17 @@ impl TierThreshold {
             Self::DynamicTvlAmount { amount, .. } => stake >= *amount,
         }
     }
+
+    /// Return threshold for the tier.
+    pub fn threshold(&self) -> Balance {
+        match self {
+            Self::FixedTvlAmount { amount } => *amount,
+            Self::DynamicTvlAmount { amount, .. } => *amount,
+        }
+    }
+
+    // TODO: maybe add a check that compares `Self` to another threshold and ensures it has lower requirements?
+    // Could be useful to have this check as a sanity check when params are configured.
 }
 
 /// Top level description of tier slot parameters used to calculate tier configuration.
@@ -1364,11 +1387,13 @@ impl TierThreshold {
 pub struct TierParameters<NT: Get<u32>> {
     /// Reward distribution per tier, in percentage.
     /// First entry refers to the first tier, and so on.
-    /// The sum of all values must be exactly equal to 1.
+    /// The sum of all values must not exceed 100%.
+    /// In case it is less, portion of rewards will never be distributed.
     pub reward_portion: BoundedVec<Permill, NT>,
     /// Distribution of number of slots per tier, in percentage.
     /// First entry refers to the first tier, and so on.
-    /// The sum of all values must be exactly equal to 1.
+    /// The sum of all values must not exceed 100%.
+    /// In case it is less, slot capacity will never be fully filled.
     pub slot_distribution: BoundedVec<Permill, NT>,
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
@@ -1379,11 +1404,36 @@ impl<NT: Get<u32>> TierParameters<NT> {
     /// Check if configuration is valid.
     /// All vectors are expected to have exactly the amount of entries as `number_of_tiers`.
     pub fn is_valid(&self) -> bool {
+        // Reward portions sum should not exceed 100%.
+        if self
+            .reward_portion
+            .iter()
+            .fold(Some(Permill::zero()), |acc, permill| match acc {
+                Some(acc) => acc.checked_add(permill),
+                None => None,
+            })
+            .is_none()
+        {
+            return false;
+        }
+
+        // Slot distribution sum should not exceed 100%.
+        if self
+            .slot_distribution
+            .iter()
+            .fold(Some(Permill::zero()), |acc, permill| match acc {
+                Some(acc) => acc.checked_add(permill),
+                None => None,
+            })
+            .is_none()
+        {
+            return false;
+        }
+
         let number_of_tiers: usize = NT::get() as usize;
         number_of_tiers == self.reward_portion.len()
             && number_of_tiers == self.slot_distribution.len()
             && number_of_tiers == self.tier_thresholds.len()
-        // TODO: Make check more detailed, verify that entries sum up to 1 or 100%
     }
 }
 
@@ -1602,6 +1652,8 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
         rewards: Vec<Balance>,
         period: PeriodNumber,
     ) -> Result<Self, ()> {
+        // TODO: should this part of the code ensure that dapps are sorted by Id?
+
         let dapps = BoundedVec::try_from(dapps).map_err(|_| ())?;
         let rewards = BoundedVec::try_from(rewards).map_err(|_| ())?;
         Ok(Self {
@@ -1613,7 +1665,7 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
 
     /// Consume reward for the specified dapp id, returning its amount and tier Id.
     /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
-    pub fn try_consume(&mut self, dapp_id: DAppId) -> Result<(Balance, TierId), DAppTierError> {
+    pub fn try_claim(&mut self, dapp_id: DAppId) -> Result<(Balance, TierId), DAppTierError> {
         // Check if dApp Id exists.
         let dapp_idx = self
             .dapps
@@ -1649,6 +1701,12 @@ pub enum DAppTierError {
     InternalError,
 }
 
+/// Tier labels can be assigned to dApps in order to provide them benefits (or drawbacks) when being assigned into a tier.
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+pub enum TierLabel {
+    // Empty for now, on purpose.
+}
+
 ///////////////////////////////////////////////////////////////////////
 ////////////   MOVE THIS TO SOME PRIMITIVES CRATE LATER    ////////////
 ///////////////////////////////////////////////////////////////////////
@@ -1682,39 +1740,3 @@ pub trait RewardPoolProvider {
     /// Get the bonus pool for stakers.
     fn bonus_reward_pool() -> Balance;
 }
-
-// TODO: these are experimental, don't review
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-pub struct ExperimentalContractStakeEntry {
-    #[codec(compact)]
-    pub dapp_id: DAppId,
-    #[codec(compact)]
-    pub voting: Balance,
-    #[codec(compact)]
-    pub build_and_earn: Balance,
-}
-
-#[derive(
-    Encode,
-    Decode,
-    MaxEncodedLen,
-    RuntimeDebugNoBound,
-    PartialEqNoBound,
-    EqNoBound,
-    CloneNoBound,
-    TypeInfo,
-)]
-#[scale_info(skip_type_params(MD, NT))]
-pub struct ExperimentalContractStakeEntries<MD: Get<u32>, NT: Get<u32>> {
-    /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-    pub dapps: BoundedVec<ExperimentalContractStakeEntry, MD>,
-    /// Rewards for each tier. First entry refers to the first tier, and so on.
-    pub rewards: BoundedVec<Balance, NT>,
-    /// Period during which this struct was created.
-    #[codec(compact)]
-    pub period: PeriodNumber,
-}
-
-// TODO: temp experimental type, don't review
-pub type ContractEntriesFor<T> =
-    ExperimentalContractStakeEntries<MaxNumberOfContractsU32<T>, <T as Config>::NumberOfTiers>;

@@ -27,7 +27,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, ConstU64, Currency, EitherOfDiverse,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
         EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
@@ -474,8 +474,8 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>>
 
 parameter_types! {
     pub const StandardEraLength: BlockNumber = 30; // should be 1 minute per standard era
-    pub const StandardErasPerVotingPeriod: u32 = 2;
-    pub const StandardErasPerBuildAndEarnPeriod: u32 = 10;
+    pub const StandardErasPerVotingSubperiod: u32 = 2;
+    pub const StandardErasPerBuildAndEarnSubperiod: u32 = 10;
 }
 
 impl pallet_dapp_staking_v3::Config for Runtime {
@@ -486,11 +486,11 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = DummyPriceProvider;
     type RewardPoolProvider = DummyRewardPoolProvider;
     type StandardEraLength = StandardEraLength;
-    type StandardErasPerVotingPeriod = StandardErasPerVotingPeriod;
-    type StandardErasPerBuildAndEarnPeriod = StandardErasPerBuildAndEarnPeriod;
+    type StandardErasPerVotingSubperiod = StandardErasPerVotingSubperiod;
+    type StandardErasPerBuildAndEarnSubperiod = StandardErasPerBuildAndEarnSubperiod;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
-    type MaxNumberOfContracts = ConstU16<100>;
+    type MaxNumberOfContracts = ConstU32<100>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<AST>;
     type UnlockingPeriod = ConstU32<2>;
@@ -519,11 +519,11 @@ impl pallet_inflation::CycleConfiguration for InflationCycleConfig {
     }
 
     fn eras_per_voting_subperiod() -> u32 {
-        StandardErasPerVotingPeriod::get()
+        StandardErasPerVotingSubperiod::get()
     }
 
     fn eras_per_build_and_earn_subperiod() -> u32 {
-        StandardErasPerBuildAndEarnPeriod::get()
+        StandardErasPerBuildAndEarnSubperiod::get()
     }
 
     fn blocks_per_era() -> u32 {
