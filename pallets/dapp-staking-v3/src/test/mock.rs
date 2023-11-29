@@ -268,7 +268,7 @@ impl ExtBuilder {
             pallet_dapp_staking::NextTierConfig::<Test>::put(init_tier_config);
 
             // TODO: include this into every test unless it explicitly doesn't need it.
-            // DappStaking::on_initialize(System::block_number());
+            DappStaking::on_initialize(System::block_number());
         }
         );
 
