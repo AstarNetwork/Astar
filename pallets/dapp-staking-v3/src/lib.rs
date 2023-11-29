@@ -47,7 +47,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
-    traits::{BadOrigin, One, Saturating, Zero},
+    traits::{BadOrigin, One, Saturating, UniqueSaturatedInto, Zero},
     Perbill, Permill,
 };
 pub use sp_std::vec::Vec;
@@ -68,9 +68,10 @@ pub use types::{PriceProvider, RewardPoolProvider, TierThreshold};
 
 mod dsv3_weight;
 
+// Lock identifier for the dApp staking pallet
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
-// TODO: add tracing!
+const LOG_TARGET: &str = "dapp-staking";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -91,10 +92,14 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        type RuntimeEvent: From<Event<Self>>
+            + IsType<<Self as frame_system::Config>::RuntimeEvent>
+            + TryInto<Event<Self>>;
 
         /// Currency used for staking.
         /// TODO: remove usage of deprecated LockableCurrency trait and use the new freeze approach. Might require some renaming of Lock to Freeze :)
+        // https://github.com/paritytech/substrate/pull/12951/
+        // Look at nomination pools implementation for reference!
         type Currency: LockableCurrency<
             Self::AccountId,
             Moment = Self::BlockNumber,
@@ -117,16 +122,16 @@ pub mod pallet {
         #[pallet::constant]
         type StandardEraLength: Get<Self::BlockNumber>;
 
-        /// Length of the `Voting` period in standard eras.
-        /// Although `Voting` period only consumes one 'era', we still measure its length in standard eras
+        /// Length of the `Voting` subperiod in standard eras.
+        /// Although `Voting` subperiod only consumes one 'era', we still measure its length in standard eras
         /// for the sake of simplicity & consistency.
         #[pallet::constant]
-        type StandardErasPerVotingPeriod: Get<EraNumber>;
+        type StandardErasPerVotingSubperiod: Get<EraNumber>;
 
-        /// Length of the `Build&Earn` period in standard eras.
-        /// Each `Build&Earn` period consists of one or more distinct standard eras.
+        /// Length of the `Build&Earn` subperiod in standard eras.
+        /// Each `Build&Earn` subperiod consists of one or more distinct standard eras.
         #[pallet::constant]
-        type StandardErasPerBuildAndEarnPeriod: Get<EraNumber>;
+        type StandardErasPerBuildAndEarnSubperiod: Get<EraNumber>;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -139,7 +144,7 @@ pub mod pallet {
 
         /// Maximum number of contracts that can be integrated into dApp staking at once.
         #[pallet::constant]
-        type MaxNumberOfContracts: Get<DAppId>;
+        type MaxNumberOfContracts: Get<u32>;
 
         /// Maximum number of unlocking chunks that can exist per account at a time.
         #[pallet::constant]
@@ -174,10 +179,12 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// Maintenance mode has been either enabled or disabled.
+        MaintenanceMode { enabled: bool },
         /// New era has started.
         NewEra { era: EraNumber },
-        /// New period has started.
-        NewPeriod {
+        /// New subperiod has started.
+        NewSubperiod {
             subperiod: Subperiod,
             number: PeriodNumber,
         },
@@ -240,12 +247,14 @@ pub mod pallet {
             era: EraNumber,
             amount: Balance,
         },
+        /// Bonus reward has been paid out to a loyal staker.
         BonusReward {
             account: T::AccountId,
             smart_contract: T::SmartContract,
             period: PeriodNumber,
             amount: Balance,
         },
+        /// dApp reward has been paid out to a beneficiary.
         DAppReward {
             beneficiary: T::AccountId,
             smart_contract: T::SmartContract,
@@ -253,11 +262,16 @@ pub mod pallet {
             era: EraNumber,
             amount: Balance,
         },
+        /// Account has unstaked funds from an unregistered smart contract
         UnstakeFromUnregistered {
             account: T::AccountId,
             smart_contract: T::SmartContract,
             amount: Balance,
         },
+        /// Some expired stake entries have been removed from storage.
+        ExpiredEntriesRemoved { account: T::AccountId, count: u16 },
+        /// Privileged origin has forced a new era and possibly a subperiod to start from next block.
+        Force { forcing_type: ForcingType },
     }
 
     #[pallet::error]
@@ -291,8 +305,8 @@ pub mod pallet {
         NoUnlockingChunks,
         /// The amount being staked is too large compared to what's available for staking.
         UnavailableStakeFunds,
-        /// There are unclaimed rewards remaining from past periods. They should be claimed before staking again.
-        UnclaimedRewardsFromPastPeriods,
+        /// There are unclaimed rewards remaining from past eras or periods. They should be claimed before attempting any stake modification again.
+        UnclaimedRewards,
         /// An unexpected error occured while trying to stake.
         InternalStakeError,
         /// Total staked amount on contract is below the minimum required value.
@@ -330,6 +344,8 @@ pub mod pallet {
         ContractStillActive,
         /// There are too many contract stake entries for the account. This can be cleaned up by either unstaking or cleaning expired entries.
         TooManyStakedContracts,
+        /// There are no expired entries to cleanup for the account.
+        NoExpiredEntries,
     }
 
     /// General information about dApp staking protocol state.
@@ -341,15 +357,14 @@ pub mod pallet {
     #[pallet::storage]
     pub type NextDAppId<T: Config> = StorageValue<_, DAppId, ValueQuery>;
 
-    // TODO: where to track TierLabels? E.g. a label to bootstrap a dApp into a specific tier.
     /// Map of all dApps integrated into dApp staking protocol.
     #[pallet::storage]
     pub type IntegratedDApps<T: Config> = CountedStorageMap<
-        _,
-        Blake2_128Concat,
-        T::SmartContract,
-        DAppInfo<T::AccountId>,
-        OptionQuery,
+        Hasher = Blake2_128Concat,
+        Key = T::SmartContract,
+        Value = DAppInfo<T::AccountId>,
+        QueryKind = OptionQuery,
+        MaxValues = ConstU32<{ DAppId::MAX as u32 }>,
     >;
 
     /// General locked/staked information for each account.
@@ -371,8 +386,13 @@ pub mod pallet {
 
     /// Information about how much has been staked on a smart contract in some era or period.
     #[pallet::storage]
-    pub type ContractStake<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::SmartContract, ContractStakeAmount, ValueQuery>;
+    pub type ContractStake<T: Config> = StorageMap<
+        Hasher = Twox64Concat,
+        Key = DAppId,
+        Value = ContractStakeAmount,
+        QueryKind = ValueQuery,
+        MaxValues = ConstU32<{ DAppId::MAX as u32 }>,
+    >;
 
     /// General information about the current era.
     #[pallet::storage]
@@ -415,11 +435,6 @@ pub mod pallet {
     #[pallet::storage]
     pub type DAppTiers<T: Config> =
         StorageMap<_, Twox64Concat, EraNumber, DAppTierRewardsFor<T>, OptionQuery>;
-
-    // TODO: this is experimental, please don't review
-    #[pallet::storage]
-    pub type ExperimentalContractEntries<T: Config> =
-        StorageMap<_, Twox64Concat, EraNumber, ContractEntriesFor<T>, OptionQuery>;
 
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
@@ -496,8 +511,6 @@ pub mod pallet {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
             let mut protocol_state = ActiveProtocolState::<T>::get();
 
-            // TODO: maybe do lazy history cleanup in this function?
-
             // We should not modify pallet storage while in maintenance mode.
             // This is a safety measure, since maintenance mode is expected to be
             // enabled in case some misbehavior or corrupted storage is detected.
@@ -510,13 +523,15 @@ pub mod pallet {
                 return T::DbWeight::get().reads(1);
             }
 
+            // At this point it's clear that an era change will happen
             let mut era_info = CurrentEraInfo::<T>::get();
 
             let current_era = protocol_state.era;
             let next_era = current_era.saturating_add(1);
             let (maybe_period_event, era_reward) = match protocol_state.subperiod() {
+                // Voting subperiod only lasts for one 'prolonged' era
                 Subperiod::Voting => {
-                    // For the sake of consistency, we put zero reward into storage
+                    // For the sake of consistency, we put zero reward into storage. There are no rewards for the voting subperiod.
                     let era_reward = EraReward {
                         staker_reward_pool: Balance::zero(),
                         staked: era_info.total_staked_amount(),
@@ -524,7 +539,7 @@ pub mod pallet {
                     };
 
                     let subperiod_end_era =
-                        next_era.saturating_add(T::StandardErasPerBuildAndEarnPeriod::get());
+                        next_era.saturating_add(T::StandardErasPerBuildAndEarnSubperiod::get());
                     let build_and_earn_start_block =
                         now.saturating_add(T::StandardEraLength::get());
                     protocol_state
@@ -537,7 +552,7 @@ pub mod pallet {
                     TierConfig::<T>::put(next_tier_config);
 
                     (
-                        Some(Event::<T>::NewPeriod {
+                        Some(Event::<T>::NewSubperiod {
                             subperiod: protocol_state.subperiod(),
                             number: protocol_state.period_number(),
                         }),
@@ -593,7 +608,7 @@ pub mod pallet {
                         NextTierConfig::<T>::put(new_tier_config);
 
                         (
-                            Some(Event::<T>::NewPeriod {
+                            Some(Event::<T>::NewSubperiod {
                                 subperiod: protocol_state.subperiod(),
                                 number: protocol_state.period_number(),
                             }),
@@ -611,7 +626,6 @@ pub mod pallet {
             };
 
             // Update storage items
-
             protocol_state.era = next_era;
             ActiveProtocolState::<T>::put(protocol_state);
 
@@ -619,8 +633,14 @@ pub mod pallet {
 
             let era_span_index = Self::era_reward_span_index(current_era);
             let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
-            // TODO: Error "cannot" happen here. Log an error if it does though.
-            let _ = span.push(current_era, era_reward);
+            if let Err(_) = span.push(current_era, era_reward) {
+                // This must never happen but we log the error just in case.
+                log::error!(
+                    target: LOG_TARGET,
+                    "Failed to push era {} into the era reward span.",
+                    current_era
+                );
+            }
             EraRewards::<T>::insert(&era_span_index, span);
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
@@ -642,12 +662,15 @@ pub mod pallet {
         pub fn maintenance_mode(origin: OriginFor<T>, enabled: bool) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
             ActiveProtocolState::<T>::mutate(|state| state.maintenance = enabled);
+
+            Self::deposit_event(Event::<T>::MaintenanceMode { enabled });
             Ok(())
         }
 
         /// Used to register a new contract for dApp staking.
         ///
         /// If successful, smart contract will be assigned a simple, unique numerical identifier.
+        /// Owner is set to be initial beneficiary & manager of the dApp.
         #[pallet::call_index(1)]
         #[pallet::weight(Weight::zero())]
         pub fn register(
@@ -679,6 +702,7 @@ pub mod pallet {
                     id: dapp_id,
                     state: DAppState::Registered,
                     reward_destination: None,
+                    tier_label: None,
                 },
             );
 
@@ -697,6 +721,7 @@ pub mod pallet {
         ///
         /// Caller has to be dApp owner.
         /// If set to `None`, rewards will be deposited to the dApp owner.
+        /// After this call, all existing & future rewards will be paid out to the beneficiary.
         #[pallet::call_index(2)]
         #[pallet::weight(Weight::zero())]
         pub fn set_dapp_reward_beneficiary(
@@ -787,25 +812,18 @@ pub mod pallet {
 
             let current_era = ActiveProtocolState::<T>::get().era;
 
-            IntegratedDApps::<T>::try_mutate(
-                &smart_contract,
-                |maybe_dapp_info| -> DispatchResult {
-                    let dapp_info = maybe_dapp_info
-                        .as_mut()
-                        .ok_or(Error::<T>::ContractNotFound)?;
+            let mut dapp_info =
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
-                    ensure!(
-                        dapp_info.state == DAppState::Registered,
-                        Error::<T>::NotOperatedDApp
-                    );
+            ensure!(
+                dapp_info.state == DAppState::Registered,
+                Error::<T>::NotOperatedDApp
+            );
 
-                    dapp_info.state = DAppState::Unregistered(current_era);
+            ContractStake::<T>::remove(&dapp_info.id);
 
-                    Ok(())
-                },
-            )?;
-
-            ContractStake::<T>::remove(&smart_contract);
+            dapp_info.state = DAppState::Unregistered(current_era);
+            IntegratedDApps::<T>::insert(&smart_contract, dapp_info);
 
             Self::deposit_event(Event::<T>::DAppUnregistered {
                 smart_contract,
@@ -819,6 +837,8 @@ pub mod pallet {
         ///
         /// In case caller account doesn't have sufficient balance to cover the specified amount, everything is locked.
         /// After adjustment, lock amount must be greater than zero and in total must be equal or greater than the minimum locked amount.
+        ///
+        /// Locked amount can immediately be used for staking.
         #[pallet::call_index(5)]
         #[pallet::weight(Weight::zero())]
         pub fn lock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
@@ -932,9 +952,6 @@ pub mod pallet {
                 0
             };
 
-            // TODO: discussion point - this will "kill" users ability to withdraw past rewards.
-            // This can be handled by the frontend though.
-
             Self::update_ledger(&account, ledger);
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unlocking_removed(amount);
@@ -975,9 +992,13 @@ pub mod pallet {
         }
 
         /// Stake the specified amount on a smart contract.
-        /// The `amount` specified **must** be available for staking and meet the required minimum, otherwise the call will fail.
+        /// The precise `amount` specified **must** be available for staking.
+        /// The total amount staked on a dApp must be greater than the minimum required value.
         ///
-        /// Depending on the period type, appropriate stake amount will be updated.
+        /// Depending on the period type, appropriate stake amount will be updated. During `Voting` subperiod, `voting` stake amount is updated,
+        /// and same for `Build&Earn` subperiod.
+        ///
+        /// Staked amount is only eligible for rewards from the next era onwards.
         #[pallet::call_index(9)]
         #[pallet::weight(Weight::zero())]
         pub fn stake(
@@ -990,37 +1011,37 @@ pub mod pallet {
 
             ensure!(amount > 0, Error::<T>::ZeroAmount);
 
-            ensure!(
-                Self::is_active(&smart_contract),
-                Error::<T>::NotOperatedDApp
-            );
+            let dapp_info =
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
+            ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
-            let stake_era = protocol_state.era;
+            let current_era = protocol_state.era;
             ensure!(
                 !protocol_state
                     .period_info
-                    .is_next_period(stake_era.saturating_add(1)),
+                    .is_next_period(current_era.saturating_add(1)),
                 Error::<T>::PeriodEndsInNextEra
             );
 
             let mut ledger = Ledger::<T>::get(&account);
 
-            // TODO: suggestion is to change this a bit so we clean up ledger if rewards have expired
+            // In case old stake rewards are unclaimed & have expired, clean them up.
+            let threshold_period = Self::oldest_claimable_period(protocol_state.period_number());
+            let _ignore = ledger.maybe_cleanup_expired(threshold_period);
+
             // 1.
             // Increase stake amount for the next era & current period in staker's ledger
             ledger
-                .add_stake_amount(amount, stake_era, protocol_state.period_info)
+                .add_stake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                        Error::<T>::UnclaimedRewards
                     }
                     AccountLedgerError::UnavailableStakeFunds => Error::<T>::UnavailableStakeFunds,
                     // Defensive check, should never happen
                     _ => Error::<T>::InternalStakeError,
                 })?;
-
-            // TODO: also change this to check if rewards have expired
 
             // 2.
             // Update `StakerInfo` storage with the new stake amount on the specified contract.
@@ -1040,12 +1061,15 @@ pub mod pallet {
                     {
                         (staking_info, false)
                     }
-                    // Entry exists but period doesn't match. Either reward should be claimed or cleaned up.
-                    Some(_) => {
-                        return Err(Error::<T>::UnclaimedRewardsFromPastPeriods.into());
+                    // Entry exists but period doesn't match. Bonus reward might still be claimable.
+                    Some(staking_info)
+                        if staking_info.period_number() >= threshold_period
+                            && staking_info.is_loyal() =>
+                    {
+                        return Err(Error::<T>::UnclaimedRewards.into());
                     }
-                    // No entry exists
-                    None => (
+                    // No valid entry exists
+                    _ => (
                         SingularStakingInfo::new(
                             protocol_state.period_number(),
                             protocol_state.subperiod(),
@@ -1053,7 +1077,7 @@ pub mod pallet {
                         true,
                     ),
                 };
-            new_staking_info.stake(amount, protocol_state.subperiod());
+            new_staking_info.stake(amount, current_era, protocol_state.subperiod());
             ensure!(
                 new_staking_info.total_staked_amount() >= T::MinimumStakeAmount::get(),
                 Error::<T>::InsufficientStakeAmount
@@ -1069,8 +1093,8 @@ pub mod pallet {
 
             // 3.
             // Update `ContractStake` storage with the new stake amount on the specified contract.
-            let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
-            contract_stake_info.stake(amount, protocol_state.period_info, stake_era);
+            let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
+            contract_stake_info.stake(amount, protocol_state.period_info, current_era);
 
             // 4.
             // Update total staked amount for the next era.
@@ -1082,7 +1106,7 @@ pub mod pallet {
             // Update remaining storage entries
             Self::update_ledger(&account, ledger);
             StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
-            ContractStake::<T>::insert(&smart_contract, contract_stake_info);
+            ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
 
             Self::deposit_event(Event::<T>::Stake {
                 account,
@@ -1096,7 +1120,12 @@ pub mod pallet {
         /// Unstake the specified amount from a smart contract.
         /// The `amount` specified **must** not exceed what's staked, otherwise the call will fail.
         ///
+        /// If unstaking the specified `amount` would take staker below the minimum stake threshold, everything is unstaked.
+        ///
         /// Depending on the period type, appropriate stake amount will be updated.
+        /// In case amount is unstaked during `Voting` subperiod, the `voting` amount is reduced.
+        /// In case amount is unstaked during `Build&Earn` subperiod, first the `build_and_earn` is reduced,
+        /// and any spillover is subtracted from the `voting` amount.
         #[pallet::call_index(10)]
         #[pallet::weight(Weight::zero())]
         pub fn unstake(
@@ -1109,13 +1138,12 @@ pub mod pallet {
 
             ensure!(amount > 0, Error::<T>::ZeroAmount);
 
-            ensure!(
-                Self::is_active(&smart_contract),
-                Error::<T>::NotOperatedDApp
-            );
+            let dapp_info =
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
+            ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
-            let unstake_era = protocol_state.era;
+            let current_era = protocol_state.era;
 
             let mut ledger = Ledger::<T>::get(&account);
 
@@ -1142,7 +1170,7 @@ pub mod pallet {
                         amount
                     };
 
-                    staking_info.unstake(amount, protocol_state.subperiod());
+                    staking_info.unstake(amount, current_era, protocol_state.subperiod());
                     (staking_info, amount)
                 }
                 None => {
@@ -1153,11 +1181,11 @@ pub mod pallet {
             // 2.
             // Reduce stake amount
             ledger
-                .unstake_amount(amount, unstake_era, protocol_state.period_info)
+                .unstake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
                     // These are all defensive checks, which should never happen since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                        Error::<T>::UnclaimedRewards
                     }
                     AccountLedgerError::UnstakeAmountLargerThanStake => {
                         Error::<T>::UnstakeAmountTooLarge
@@ -1167,8 +1195,8 @@ pub mod pallet {
 
             // 3.
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.
-            let mut contract_stake_info = ContractStake::<T>::get(&smart_contract);
-            contract_stake_info.unstake(amount, protocol_state.period_info, unstake_era);
+            let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
+            contract_stake_info.unstake(amount, protocol_state.period_info, current_era);
 
             // 4.
             // Update total staked amount for the next era.
@@ -1178,7 +1206,7 @@ pub mod pallet {
 
             // 5.
             // Update remaining storage entries
-            ContractStake::<T>::insert(&smart_contract, contract_stake_info);
+            ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
 
             if new_staking_info.is_empty() {
                 ledger.contract_stake_count.saturating_dec();
@@ -1199,8 +1227,7 @@ pub mod pallet {
         }
 
         /// Claims some staker rewards, if user has any.
-        /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening
-        /// if appropriate entries exist in account's ledger.
+        /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening.
         #[pallet::call_index(11)]
         #[pallet::weight(Weight::zero())]
         pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResult {
@@ -1379,7 +1406,7 @@ pub mod pallet {
 
             let (amount, tier_id) =
                 dapp_tiers
-                    .try_consume(dapp_info.id)
+                    .try_claim(dapp_info.id)
                     .map_err(|error| match error {
                         DAppTierError::NoDAppInTiers => Error::<T>::NoClaimableRewards,
                         DAppTierError::RewardAlreadyClaimed => Error::<T>::DAppRewardAlreadyClaimed,
@@ -1406,13 +1433,13 @@ pub mod pallet {
         }
 
         /// Used to unstake funds from a contract that was unregistered after an account staked on it.
+        /// This is required if staker wants to re-stake these funds on another active contract during the ongoing period.
         #[pallet::call_index(14)]
         #[pallet::weight(Weight::zero())]
         pub fn unstake_from_unregistered(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
-            // TODO: tests are missing but will be added later.
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -1422,7 +1449,7 @@ pub mod pallet {
             );
 
             let protocol_state = ActiveProtocolState::<T>::get();
-            let unstake_era = protocol_state.era;
+            let current_era = protocol_state.era;
 
             // Extract total staked amount on the specified unregistered contract
             let amount = match StakerInfo::<T>::get(&account, &smart_contract) {
@@ -1442,20 +1469,24 @@ pub mod pallet {
             // Reduce stake amount in ledger
             let mut ledger = Ledger::<T>::get(&account);
             ledger
-                .unstake_amount(amount, unstake_era, protocol_state.period_info)
+                .unstake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
-                    // These are all defensive checks, which should never happen since we already checked them above.
+                    // These are all defensive checks, which should never fail since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
-                        Error::<T>::UnclaimedRewardsFromPastPeriods
+                        Error::<T>::UnclaimedRewards
                     }
                     _ => Error::<T>::InternalUnstakeError,
                 })?;
 
             // Update total staked amount for the next era.
             // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
+            // Although strange, it's been requested to keep it like this from the team.
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unstake_amount(amount, protocol_state.subperiod());
             });
+
+            // TODO: HOWEVER, we should not pay out bonus rewards for such contracts.
+            // Seems wrong because it serves as discentive for unstaking & moving over to a new contract.
 
             // Update remaining storage entries
             Self::update_ledger(&account, ledger);
@@ -1470,22 +1501,28 @@ pub mod pallet {
             Ok(())
         }
 
-        // TODO: an alternative to this could would be to allow `unstake` call to cleanup old entries, however that means more complexity in that call
-        /// Used to unstake funds from a contract that was unregistered after an account staked on it.
+        /// Cleanup expired stake entries for the contract.
+        ///
+        /// Entry is considered to be expired if:
+        /// 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
+        /// 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
         #[pallet::call_index(15)]
         #[pallet::weight(Weight::zero())]
         pub fn cleanup_expired_entries(origin: OriginFor<T>) -> DispatchResult {
-            // TODO: tests are missing but will be added later.
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_period = protocol_state.period_number();
+            let threshold_period = Self::oldest_claimable_period(current_period);
 
-            // Find all entries which have expired. This is bounded by max allowed number of entries.
+            // Find all entries which are from past periods & don't have claimable bonus rewards.
+            // This is bounded by max allowed number of stake entries per account.
             let to_be_deleted: Vec<T::SmartContract> = StakerInfo::<T>::iter_prefix(&account)
                 .filter_map(|(smart_contract, stake_info)| {
-                    if stake_info.period_number() < current_period {
+                    if stake_info.period_number() < current_period && !stake_info.is_loyal()
+                        || stake_info.period_number() < threshold_period
+                    {
                         Some(smart_contract)
                     } else {
                         None
@@ -1494,18 +1531,25 @@ pub mod pallet {
                 .collect();
             let entries_to_delete = to_be_deleted.len();
 
+            ensure!(!entries_to_delete.is_zero(), Error::<T>::NoExpiredEntries);
+
             // Remove all expired entries.
             for smart_contract in to_be_deleted {
                 StakerInfo::<T>::remove(&account, &smart_contract);
             }
 
-            // Remove expired ledger stake entries, if needed.
-            let threshold_period = Self::oldest_claimable_period(current_period);
+            // Remove expired stake entries from the ledger.
             let mut ledger = Ledger::<T>::get(&account);
-            ledger.contract_stake_count.saturating_reduce(entries_to_delete as u32);
-            if ledger.maybe_cleanup_expired(threshold_period) {
-                Self::update_ledger(&account, ledger);
-            }
+            ledger
+                .contract_stake_count
+                .saturating_reduce(entries_to_delete.unique_saturated_into());
+            ledger.maybe_cleanup_expired(threshold_period); // Not necessary but we do it for the sake of consistency
+            Self::update_ledger(&account, ledger);
+
+            Self::deposit_event(Event::<T>::ExpiredEntriesRemoved {
+                account,
+                count: entries_to_delete.unique_saturated_into(),
+            });
 
             Ok(())
         }
@@ -1519,8 +1563,7 @@ pub mod pallet {
         /// Can only be called by manager origin.
         #[pallet::call_index(16)]
         #[pallet::weight(Weight::zero())]
-        pub fn force(origin: OriginFor<T>, force_type: ForcingType) -> DispatchResult {
-            // TODO: tests are missing but will be added later.
+        pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
 
@@ -1529,13 +1572,15 @@ pub mod pallet {
                 let current_block = frame_system::Pallet::<T>::block_number();
                 state.next_era_start = current_block.saturating_add(One::one());
 
-                match force_type {
+                match forcing_type {
                     ForcingType::Era => (),
                     ForcingType::Subperiod => {
                         state.period_info.subperiod_end_era = state.era.saturating_add(1);
                     }
                 }
             });
+
+            Self::deposit_event(Event::<T>::Force { forcing_type });
 
             Ok(())
         }
@@ -1584,13 +1629,14 @@ pub mod pallet {
 
         /// Returns the number of blocks per voting period.
         pub(crate) fn blocks_per_voting_period() -> BlockNumberFor<T> {
-            T::StandardEraLength::get().saturating_mul(T::StandardErasPerVotingPeriod::get().into())
+            T::StandardEraLength::get()
+                .saturating_mul(T::StandardErasPerVotingSubperiod::get().into())
         }
 
         /// `true` if smart contract is active, `false` if it has been unregistered.
         pub(crate) fn is_active(smart_contract: &T::SmartContract) -> bool {
             IntegratedDApps::<T>::get(smart_contract)
-                .map_or(false, |dapp_info| dapp_info.state == DAppState::Registered)
+                .map_or(false, |dapp_info| dapp_info.is_active())
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.
@@ -1611,48 +1657,51 @@ pub mod pallet {
 
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
         ///
+        /// ### Algorithm
+        ///
+        /// 1. Read in over all contract stake entries. In case staked amount is zero for the current era, ignore it.
+        ///    This information is used to calculate 'score' per dApp, which is used to determine the tier.
+        ///
+        /// 2. Sort the entries by the score, in descending order - the top score dApp comes first.
+        ///
+        /// 3. Read in tier configuration. This contains information about how many slots per tier there are,
+        ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
+        ///    Iterate over tier thresholds & capacities, starting from the top tier, and assign dApps to them.
+        ///    
+        ///    ```ignore
+        ////   for each tier:
+        ///        for each unassigned dApp:
+        ///            if tier has capacity && dApp satisfies the tier threshold:
+        ///                add dapp to the tier
+        ///            else:
+        ///               exit loop since no more dApps will satisfy the threshold since they are sorted by score
+        ///    ```
+        ///
+        /// 4. Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.
+        ///
+        /// 5. Calculate rewards for each tier.
+        ///    This is done by dividing the total reward pool into tier reward pools,
+        ///    after which the tier reward pool is divided by the number of available slots in the tier.
+        ///
         /// The returned object contains information about each dApp that made it into a tier.
         pub(crate) fn get_dapp_tier_assignment(
             era: EraNumber,
             period: PeriodNumber,
             dapp_reward_pool: Balance,
         ) -> DAppTierRewardsFor<T> {
-            // TODO - by breaking this into multiple steps, if they are too heavy for a single block, we can distribute them between multiple blocks.
-            // Benchmarks will show this, but I don't believe it will be needed, especially with increased block capacity we'll get with async backing.
-            // Even without async backing though, we should have enough capacity to handle this.
-            // UPDATE: might work with async backing, but right now we could handle up to 150 dApps before exceeding the PoV size.
-
-            // UPDATE2: instead of taking the approach of reading an ever increasing amount of entries from storage,  we can instead adopt an approach
-            // of eficiently storing composite information into `BTreeMap`. The approach is essentially the same as the one used below to store rewards.
-            // Each time `stake` or `unstake` are called, corresponding entries are updated. This way we can keep track of all the contract stake in a single DB entry.
-            // To make the solution more scalable, we could 'split' stake entries into spans, similar as rewards are handled now.
-            //
-            // Experiment with an 'experimental' entry shows PoV size of ~7kB induced for entry that can hold up to 100 entries.
-
-            let mut dapp_stakes = Vec::with_capacity(IntegratedDApps::<T>::count() as usize);
+            let mut dapp_stakes = Vec::with_capacity(T::MaxNumberOfContracts::get() as usize);
 
             // 1.
-            // Iterate over all registered dApps, and collect their stake amount.
+            // Iterate over all staked dApps.
             // This is bounded by max amount of dApps we allow to be registered.
-            for (smart_contract, dapp_info) in IntegratedDApps::<T>::iter() {
-                // Skip unregistered dApps
-                if dapp_info.state != DAppState::Registered {
-                    continue;
-                }
-
-                // Skip dApps which don't have ANY amount staked (TODO: potential improvement is to prune all dApps below minimum threshold)
-                let stake_amount = match ContractStake::<T>::get(&smart_contract).get(era, period) {
+            for (dapp_id, stake_amount) in ContractStake::<T>::iter() {
+                // Skip dApps which don't have ANY amount staked
+                let stake_amount = match stake_amount.get(era, period) {
                     Some(stake_amount) if !stake_amount.total().is_zero() => stake_amount,
                     _ => continue,
                 };
 
-                // TODO: Need to handle labels!
-                // Proposition for label handling:
-                // Split them into 'musts' and 'good-to-have'
-                // In case of 'must', reduce appropriate tier size, and insert them at the end
-                // For good to have, we can insert them immediately, and then see if we need to adjust them later.
-                // Anyhow, labels bring complexity. For starters, we should only deliver the one for 'bootstraping' purposes.
-                dapp_stakes.push((dapp_info.id, stake_amount.total()));
+                dapp_stakes.push((dapp_id, stake_amount.total()));
             }
 
             // 2.
@@ -1695,24 +1744,30 @@ pub mod pallet {
                 tier_id.saturating_inc();
             }
 
+            // TODO: what if multiple dApps satisfy the tier entry threshold but there's not enough slots to accomodate them all?
+
             // 4.
-            // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is guaranteed due to lack of duplicated Ids).
-            // TODO & Idea: perhaps use BTreeMap instead? It will "sort" automatically based on dApp Id, and we can efficiently remove entries,
-            // reducing PoV size step by step.
-            // It's a trade-off between speed and PoV size. Although both are quite minor, so maybe it doesn't matter that much.
+            // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is "guaranteed" due to lack of duplicated Ids).
             dapp_tiers.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
 
             // 5. Calculate rewards.
             let tier_rewards = tier_config
                 .reward_portion
                 .iter()
-                .map(|percent| *percent * dapp_reward_pool)
+                .zip(tier_config.slots_per_tier.iter())
+                .map(|(percent, slots)| {
+                    if slots.is_zero() {
+                        Zero::zero()
+                    } else {
+                        *percent * dapp_reward_pool / <u16 as Into<Balance>>::into(*slots)
+                    }
+                })
                 .collect::<Vec<_>>();
 
             // 6.
             // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
-            DAppTierRewards::<MaxNumberOfContractsU32<T>, T::NumberOfTiers>::new(
+            DAppTierRewards::<T::MaxNumberOfContracts, T::NumberOfTiers>::new(
                 dapp_tiers,
                 tier_rewards,
                 period,

@@ -27,7 +27,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, ConstU64, Currency, EitherOfDiverse,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
         EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
@@ -479,11 +479,11 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = DummyPriceProvider;
     type RewardPoolProvider = DummyRewardPoolProvider;
     type StandardEraLength = ConstU32<30>; // should be 1 minute per standard era
-    type StandardErasPerVotingPeriod = ConstU32<2>;
-    type StandardErasPerBuildAndEarnPeriod = ConstU32<10>;
+    type StandardErasPerVotingSubperiod = ConstU32<2>;
+    type StandardErasPerBuildAndEarnSubperiod = ConstU32<10>;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
-    type MaxNumberOfContracts = ConstU16<100>;
+    type MaxNumberOfContracts = ConstU32<100>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<AST>;
     type UnlockingPeriod = ConstU32<2>;

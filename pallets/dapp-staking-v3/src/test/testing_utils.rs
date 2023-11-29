@@ -20,8 +20,8 @@ use crate::test::mock::*;
 use crate::types::*;
 use crate::{
     pallet::Config, ActiveProtocolState, BlockNumberFor, ContractStake, CurrentEraInfo, DAppId,
-    DAppTiers, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, PeriodEnd, PeriodEndInfo,
-    StakerInfo,
+    DAppTiers, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, NextTierConfig, PeriodEnd,
+    PeriodEndInfo, StakerInfo, TierConfig,
 };
 
 use frame_support::{assert_ok, traits::Get};
@@ -47,10 +47,12 @@ pub(crate) struct MemorySnapshot {
         ),
         SingularStakingInfo,
     >,
-    contract_stake: HashMap<<Test as Config>::SmartContract, ContractStakeAmount>,
+    contract_stake: HashMap<DAppId, ContractStakeAmount>,
     era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
     period_end: HashMap<PeriodNumber, PeriodEndInfo>,
     dapp_tiers: HashMap<EraNumber, DAppTierRewardsFor<Test>>,
+    tier_config: TiersConfiguration<<Test as Config>::NumberOfTiers>,
+    next_tier_config: TiersConfiguration<<Test as Config>::NumberOfTiers>,
 }
 
 impl MemorySnapshot {
@@ -69,6 +71,8 @@ impl MemorySnapshot {
             era_rewards: EraRewards::<Test>::iter().collect(),
             period_end: PeriodEnd::<Test>::iter().collect(),
             dapp_tiers: DAppTiers::<Test>::iter().collect(),
+            tier_config: TierConfig::<Test>::get(),
+            next_tier_config: NextTierConfig::<Test>::get(),
         }
     }
 
@@ -187,7 +191,9 @@ pub(crate) fn assert_unregister(smart_contract: &MockSmartContract) {
         IntegratedDApps::<Test>::get(&smart_contract).unwrap().state,
         DAppState::Unregistered(pre_snapshot.active_protocol_state.era),
     );
-    assert!(!ContractStake::<Test>::contains_key(&smart_contract));
+    assert!(!ContractStake::<Test>::contains_key(
+        &IntegratedDApps::<Test>::get(&smart_contract).unwrap().id
+    ));
 }
 
 /// Lock funds into dApp staking and assert success.
@@ -222,11 +228,6 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
         post_snapshot.current_era_info.total_locked,
         pre_snapshot.current_era_info.total_locked + expected_lock_amount,
         "Total locked balance should be increased by the amount locked."
-    );
-    assert_eq!(
-        post_snapshot.current_era_info.active_era_locked,
-        pre_snapshot.current_era_info.active_era_locked,
-        "Active era locked amount should remain exactly the same."
     );
 }
 
@@ -308,12 +309,6 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
             .total_locked
             .saturating_sub(expected_unlock_amount),
         post_era_info.total_locked
-    );
-    assert_eq!(
-        pre_era_info
-            .active_era_locked
-            .saturating_sub(expected_unlock_amount),
-        post_era_info.active_era_locked
     );
 }
 
@@ -423,7 +418,6 @@ pub(crate) fn assert_stake(
     smart_contract: &MockSmartContract,
     amount: Balance,
 ) {
-    // TODO: this is a huge function - I could break it down, but I'm not sure it will help with readability.
     let pre_snapshot = MemorySnapshot::new();
     let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
     let pre_staker_info = pre_snapshot
@@ -431,7 +425,7 @@ pub(crate) fn assert_stake(
         .get(&(account, smart_contract.clone()));
     let pre_contract_stake = pre_snapshot
         .contract_stake
-        .get(&smart_contract)
+        .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
         .map_or(ContractStakeAmount::default(), |series| series.clone());
     let pre_era_info = pre_snapshot.current_era_info;
 
@@ -460,7 +454,7 @@ pub(crate) fn assert_stake(
         .expect("Entry must exist since 'stake' operation was successfull.");
     let post_contract_stake = post_snapshot
         .contract_stake
-        .get(&smart_contract)
+        .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
         .expect("Entry must exist since 'stake' operation was successfull.");
     let post_era_info = post_snapshot.current_era_info;
 
@@ -482,7 +476,6 @@ pub(crate) fn assert_stake(
         pre_ledger.stakeable_amount(stake_period) - amount,
         "Stakeable amount must decrease by the 'amount'"
     );
-    // TODO: expand with more detailed checks of staked and staked_future
 
     // 2. verify staker info
     // =====================
@@ -580,11 +573,10 @@ pub(crate) fn assert_unstake(
         .expect("Entry must exist since 'unstake' is being called.");
     let pre_contract_stake = pre_snapshot
         .contract_stake
-        .get(&smart_contract)
+        .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
         .expect("Entry must exist since 'unstake' is being called.");
     let pre_era_info = pre_snapshot.current_era_info;
 
-    let _unstake_era = pre_snapshot.active_protocol_state.era;
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
     let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
 
@@ -616,8 +608,8 @@ pub(crate) fn assert_unstake(
     let post_ledger = post_snapshot.ledger.get(&account).unwrap();
     let post_contract_stake = post_snapshot
         .contract_stake
-        .get(&smart_contract)
-        .expect("Entry must exist since 'stake' operation was successfull.");
+        .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
+        .expect("Entry must exist since 'unstake' operation was successfull.");
     let post_era_info = post_snapshot.current_era_info;
 
     // 1. verify ledger
@@ -633,7 +625,6 @@ pub(crate) fn assert_unstake(
         pre_ledger.stakeable_amount(unstake_period) + amount,
         "Stakeable amount must increase by the 'amount'"
     );
-    // TODO: expand with more detailed checks of staked and staked_future
 
     // 2. verify staker info
     // =====================
@@ -709,6 +700,7 @@ pub(crate) fn assert_unstake(
         "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
     );
 
+    // Check for unstake underflow.
     if unstake_subperiod == Subperiod::BuildAndEarn
         && pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn) < amount
     {
@@ -929,7 +921,7 @@ pub(crate) fn assert_claim_dapp_reward(
             .expect("Entry must exist.")
             .clone();
 
-        info.try_consume(dapp_info.id).unwrap()
+        info.try_claim(dapp_info.id).unwrap()
     };
 
     // Claim dApp reward & verify event
@@ -969,10 +961,375 @@ pub(crate) fn assert_claim_dapp_reward(
         .expect("Entry must exist.")
         .clone();
     assert_eq!(
-        info.try_consume(dapp_info.id),
+        info.try_claim(dapp_info.id),
         Err(DAppTierError::RewardAlreadyClaimed),
         "It must not be possible to claim the same reward twice!.",
     );
+}
+
+/// Unstake some funds from the specified unregistered smart contract.
+pub(crate) fn assert_unstake_from_unregistered(
+    account: AccountId,
+    smart_contract: &MockSmartContract,
+) {
+    let pre_snapshot = MemorySnapshot::new();
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let pre_staker_info = pre_snapshot
+        .staker_info
+        .get(&(account, smart_contract.clone()))
+        .expect("Entry must exist since 'unstake_from_unregistered' is being called.");
+    let pre_era_info = pre_snapshot.current_era_info;
+
+    let amount = pre_staker_info.total_staked_amount();
+
+    // Unstake from smart contract & verify event
+    assert_ok!(DappStaking::unstake_from_unregistered(
+        RuntimeOrigin::signed(account),
+        smart_contract.clone(),
+    ));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::UnstakeFromUnregistered {
+        account,
+        smart_contract: smart_contract.clone(),
+        amount,
+    }));
+
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+    let post_era_info = post_snapshot.current_era_info;
+    let period = pre_snapshot.active_protocol_state.period_number();
+    let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
+
+    // 1. verify ledger
+    // =====================
+    // =====================
+    assert_eq!(
+        post_ledger.staked_amount(period),
+        pre_ledger.staked_amount(period) - amount,
+        "Stake amount must decrease by the 'amount'"
+    );
+    assert_eq!(
+        post_ledger.stakeable_amount(period),
+        pre_ledger.stakeable_amount(period) + amount,
+        "Stakeable amount must increase by the 'amount'"
+    );
+
+    // 2. verify staker info
+    // =====================
+    // =====================
+    assert!(
+        !StakerInfo::<Test>::contains_key(&account, smart_contract),
+        "Entry must be deleted since contract is unregistered."
+    );
+
+    // 3. verify era info
+    // =========================
+    // =========================
+    // It's possible next era has staked more than the current era. This is because 'stake' will always stake for the NEXT era.
+    if pre_era_info.total_staked_amount() < amount {
+        assert!(post_era_info.total_staked_amount().is_zero());
+    } else {
+        assert_eq!(
+            post_era_info.total_staked_amount(),
+            pre_era_info.total_staked_amount() - amount,
+            "Total staked amount for the current era must decrease by 'amount'."
+        );
+    }
+    assert_eq!(
+        post_era_info.total_staked_amount_next_era(),
+        pre_era_info.total_staked_amount_next_era() - amount,
+        "Total staked amount for the next era must decrease by 'amount'. No overflow is allowed."
+    );
+
+    // Check for unstake underflow.
+    if unstake_subperiod == Subperiod::BuildAndEarn
+        && pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn) < amount
+    {
+        let overflow = amount - pre_era_info.staked_amount_next_era(Subperiod::BuildAndEarn);
+
+        assert!(post_era_info
+            .staked_amount_next_era(Subperiod::BuildAndEarn)
+            .is_zero());
+        assert_eq!(
+            post_era_info.staked_amount_next_era(Subperiod::Voting),
+            pre_era_info.staked_amount_next_era(Subperiod::Voting) - overflow
+        );
+    } else {
+        assert_eq!(
+            post_era_info.staked_amount_next_era(unstake_subperiod),
+            pre_era_info.staked_amount_next_era(unstake_subperiod) - amount
+        );
+    }
+}
+
+/// Cleanup expired DB entries for the account and verify post state.
+pub(crate) fn assert_cleanup_expired_entries(account: AccountId) {
+    let pre_snapshot = MemorySnapshot::new();
+
+    let current_period = pre_snapshot.active_protocol_state.period_number();
+    let threshold_period = DappStaking::oldest_claimable_period(current_period);
+
+    // Find entries which should be kept, and which should be deleted
+    let mut to_be_deleted = Vec::new();
+    let mut to_be_kept = Vec::new();
+    pre_snapshot
+        .staker_info
+        .iter()
+        .for_each(|((inner_account, contract), entry)| {
+            if *inner_account == account {
+                if entry.period_number() < current_period && !entry.is_loyal()
+                    || entry.period_number() < threshold_period
+                {
+                    to_be_deleted.push(contract);
+                } else {
+                    to_be_kept.push(contract);
+                }
+            }
+        });
+
+    // Cleanup expired entries and verify event
+    assert_ok!(DappStaking::cleanup_expired_entries(RuntimeOrigin::signed(
+        account
+    )));
+    System::assert_last_event(RuntimeEvent::DappStaking(Event::ExpiredEntriesRemoved {
+        account,
+        count: to_be_deleted.len().try_into().unwrap(),
+    }));
+
+    // Verify post-state
+    let post_snapshot = MemorySnapshot::new();
+
+    // Ensure that correct entries have been kept
+    assert_eq!(post_snapshot.staker_info.len(), to_be_kept.len());
+    to_be_kept.iter().for_each(|contract| {
+        assert!(post_snapshot
+            .staker_info
+            .contains_key(&(account, **contract)));
+    });
+
+    // Ensure that ledger has been correctly updated
+    let pre_ledger = pre_snapshot.ledger.get(&account).unwrap();
+    let post_ledger = post_snapshot.ledger.get(&account).unwrap();
+
+    let num_of_deleted_entries: u32 = to_be_deleted.len().try_into().unwrap();
+    assert_eq!(
+        pre_ledger.contract_stake_count - num_of_deleted_entries,
+        post_ledger.contract_stake_count
+    );
+}
+
+/// Asserts correct transitions of the protocol after a block has been produced.
+pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
+    let current_block_number = System::block_number();
+
+    // No checks if era didn't change.
+    if pre_snapshot.active_protocol_state.next_era_start > current_block_number {
+        return;
+    }
+
+    // Verify post state
+    let post_snapshot = MemorySnapshot::new();
+
+    let is_new_subperiod = pre_snapshot
+        .active_protocol_state
+        .period_info
+        .subperiod_end_era
+        <= post_snapshot.active_protocol_state.era;
+
+    // 1. Verify protocol state
+    let pre_protoc_state = pre_snapshot.active_protocol_state;
+    let post_protoc_state = post_snapshot.active_protocol_state;
+    assert_eq!(post_protoc_state.era, pre_protoc_state.era + 1);
+
+    match pre_protoc_state.subperiod() {
+        Subperiod::Voting => {
+            assert_eq!(
+                post_protoc_state.subperiod(),
+                Subperiod::BuildAndEarn,
+                "Voting subperiod only lasts for a single era."
+            );
+
+            let eras_per_bep: EraNumber =
+                <Test as Config>::StandardErasPerBuildAndEarnSubperiod::get();
+            assert_eq!(
+                post_protoc_state.period_info.subperiod_end_era,
+                post_protoc_state.era + eras_per_bep,
+                "Build&earn must last for the predefined amount of standard eras."
+            );
+
+            let standard_era_length: BlockNumber = <Test as Config>::StandardEraLength::get();
+            assert_eq!(
+                post_protoc_state.next_era_start,
+                current_block_number + standard_era_length,
+                "Era in build&earn period must last for the predefined amount of blocks."
+            );
+        }
+        Subperiod::BuildAndEarn => {
+            if is_new_subperiod {
+                assert_eq!(
+                    post_protoc_state.subperiod(),
+                    Subperiod::Voting,
+                    "Since we expect a new subperiod, it must be 'Voting'."
+                );
+                assert_eq!(
+                    post_protoc_state.period_number(),
+                    pre_protoc_state.period_number() + 1,
+                    "Ending 'Build&Earn' triggers a new period."
+                );
+                assert_eq!(
+                    post_protoc_state.period_info.subperiod_end_era,
+                    post_protoc_state.era + 1,
+                    "Voting era must last for a single era."
+                );
+
+                let blocks_per_standard_era: BlockNumber =
+                    <Test as Config>::StandardEraLength::get();
+                let eras_per_voting_subperiod: EraNumber =
+                    <Test as Config>::StandardErasPerVotingSubperiod::get();
+                let eras_per_voting_subperiod: BlockNumber = eras_per_voting_subperiod.into();
+                let era_length: BlockNumber = blocks_per_standard_era * eras_per_voting_subperiod;
+                assert_eq!(
+                    post_protoc_state.next_era_start,
+                    current_block_number + era_length,
+                    "The upcoming 'Voting' subperiod must last for the 'standard eras per voting subperiod x standard era length' amount of blocks."
+                );
+            } else {
+                assert_eq!(
+                    post_protoc_state.period_info, pre_protoc_state.period_info,
+                    "New subperiod hasn't started, hence it should remain 'Build&Earn'."
+                );
+            }
+        }
+    }
+
+    // 2. Verify current era info
+    let pre_era_info = pre_snapshot.current_era_info;
+    let post_era_info = post_snapshot.current_era_info;
+
+    assert_eq!(post_era_info.total_locked, pre_era_info.total_locked);
+    assert_eq!(post_era_info.unlocking, pre_era_info.unlocking);
+
+    // New period has started
+    if is_new_subperiod && pre_protoc_state.subperiod() == Subperiod::BuildAndEarn {
+        assert_eq!(
+            post_era_info.current_stake_amount,
+            StakeAmount {
+                voting: Zero::zero(),
+                build_and_earn: Zero::zero(),
+                era: pre_protoc_state.era + 1,
+                period: pre_protoc_state.period_number() + 1,
+            }
+        );
+        assert_eq!(
+            post_era_info.next_stake_amount,
+            StakeAmount {
+                voting: Zero::zero(),
+                build_and_earn: Zero::zero(),
+                era: pre_protoc_state.era + 2,
+                period: pre_protoc_state.period_number() + 1,
+            }
+        );
+    } else {
+        assert_eq!(
+            post_era_info.current_stake_amount,
+            pre_era_info.next_stake_amount
+        );
+        assert_eq!(
+            post_era_info.next_stake_amount.total(),
+            post_era_info.current_stake_amount.total()
+        );
+        assert_eq!(
+            post_era_info.next_stake_amount.era,
+            post_protoc_state.era + 1,
+        );
+        assert_eq!(
+            post_era_info.next_stake_amount.period,
+            pre_protoc_state.period_number(),
+        );
+    }
+
+    // 3. Verify tier config
+    match pre_protoc_state.subperiod() {
+        Subperiod::Voting => {
+            assert!(!NextTierConfig::<Test>::exists());
+            assert_eq!(post_snapshot.tier_config, pre_snapshot.next_tier_config);
+        }
+        Subperiod::BuildAndEarn if is_new_subperiod => {
+            assert!(NextTierConfig::<Test>::exists());
+            assert_eq!(post_snapshot.tier_config, pre_snapshot.tier_config);
+        }
+        _ => {
+            assert_eq!(post_snapshot.tier_config, pre_snapshot.tier_config);
+        }
+    }
+
+    // 4. Verify era reward
+    let era_span_index = DappStaking::era_reward_span_index(pre_protoc_state.era);
+    let maybe_pre_era_reward_span = pre_snapshot.era_rewards.get(&era_span_index);
+    let post_era_reward_span = post_snapshot
+        .era_rewards
+        .get(&era_span_index)
+        .expect("Era reward info must exist after era has finished.");
+
+    // Sanity check
+    if let Some(pre_era_reward_span) = maybe_pre_era_reward_span {
+        assert_eq!(
+            pre_era_reward_span.last_era(),
+            pre_protoc_state.era - 1,
+            "If entry exists, it should cover eras up to the previous one, exactly."
+        );
+    }
+
+    assert_eq!(
+        post_era_reward_span.last_era(),
+        pre_protoc_state.era,
+        "Entry must cover the current era."
+    );
+    assert_eq!(
+        post_era_reward_span
+            .get(pre_protoc_state.era)
+            .expect("Above check proved it must exist.")
+            .staked,
+        pre_snapshot.current_era_info.total_staked_amount(),
+        "Total staked amount must be equal to total amount staked at the end of the era."
+    );
+
+    // 5. Verify period end
+    if is_new_subperiod && pre_protoc_state.subperiod() == Subperiod::BuildAndEarn {
+        let period_end_info = post_snapshot.period_end[&pre_protoc_state.period_number()];
+        assert_eq!(
+            period_end_info.total_vp_stake,
+            pre_snapshot
+                .current_era_info
+                .staked_amount(Subperiod::Voting),
+        );
+    }
+
+    // 6. Verify event(s)
+    if is_new_subperiod {
+        let events = dapp_staking_events();
+        assert!(
+            events.len() >= 2,
+            "At least 2 events should exist from era & subperiod change."
+        );
+        assert_eq!(
+            events[events.len() - 2],
+            Event::NewEra {
+                era: post_protoc_state.era,
+            }
+        );
+        assert_eq!(
+            events[events.len() - 1],
+            Event::NewSubperiod {
+                subperiod: pre_protoc_state.subperiod().next(),
+                number: post_protoc_state.period_number(),
+            }
+        )
+    } else {
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::NewEra {
+            era: post_protoc_state.era,
+        }));
+    }
 }
 
 /// Returns from which starting era to which ending era can rewards be claimed for the specified account.

@@ -16,23 +16,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{self as pallet_dapp_staking, *};
+use crate::{
+    self as pallet_dapp_staking,
+    test::testing_utils::{assert_block_bump, MemorySnapshot},
+    *,
+};
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, ConstU64},
+    traits::{ConstU128, ConstU32, ConstU64},
     weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
+use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     Permill,
 };
-
-use sp_io::TestExternalities;
 
 pub(crate) type AccountId = u64;
 pub(crate) type BlockNumber = u64;
@@ -155,15 +158,15 @@ impl pallet_dapp_staking::Config for Test {
     type NativePriceProvider = DummyPriceProvider;
     type RewardPoolProvider = DummyRewardPoolProvider;
     type StandardEraLength = ConstU64<10>;
-    type StandardErasPerVotingPeriod = ConstU32<8>;
-    type StandardErasPerBuildAndEarnPeriod = ConstU32<16>;
+    type StandardErasPerVotingSubperiod = ConstU32<8>;
+    type StandardErasPerBuildAndEarnSubperiod = ConstU32<16>;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
-    type MaxNumberOfContracts = ConstU16<10>;
+    type MaxNumberOfContracts = ConstU32<10>;
     type MaxUnlockingChunks = ConstU32<5>;
     type MinimumLockedAmount = ConstU128<MINIMUM_LOCK_AMOUNT>;
     type UnlockingPeriod = ConstU32<2>;
-    type MaxNumberOfStakedContracts = ConstU32<3>;
+    type MaxNumberOfStakedContracts = ConstU32<5>;
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
     #[cfg(feature = "runtime-benchmarks")]
@@ -195,7 +198,7 @@ impl ExtBuilder {
             let era_length: BlockNumber =
                 <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
             let voting_period_length_in_eras: EraNumber =
-                <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingPeriod as sp_core::Get<_>>::get(
+                <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingSubperiod as sp_core::Get<_>>::get(
                 );
 
             // Init protocol state
@@ -208,6 +211,23 @@ impl ExtBuilder {
                     subperiod_end_era: 2,
                 },
                 maintenance: false,
+            });
+            pallet_dapp_staking::CurrentEraInfo::<Test>::put(EraInfo {
+                total_locked: 0,
+                unlocking: 0,
+                current_stake_amount: StakeAmount {
+                    voting: 0,
+                    build_and_earn: 0,
+                    era: 1,
+                    period: 1,
+                },
+                next_stake_amount: StakeAmount {
+                    voting: 0,
+                    build_and_earn: 0,
+                    era: 2,
+                    period: 1,
+                },
+
             });
 
             // Init tier params
@@ -230,15 +250,15 @@ impl ExtBuilder {
                     TierThreshold::DynamicTvlAmount { amount: 100, minimum_amount: 80 },
                     TierThreshold::DynamicTvlAmount { amount: 50, minimum_amount: 40 },
                     TierThreshold::DynamicTvlAmount { amount: 20, minimum_amount: 20 },
-                    TierThreshold::FixedTvlAmount { amount: 10 },
+                    TierThreshold::FixedTvlAmount { amount: 15 },
                 ])
                 .unwrap(),
             };
 
             // Init tier config, based on the initial params
             let init_tier_config = TiersConfiguration::<<Test as Config>::NumberOfTiers> {
-                number_of_slots: 100,
-                slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
+                number_of_slots: 40,
+                slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_thresholds: tier_params.tier_thresholds.clone(),
             };
@@ -263,7 +283,10 @@ pub(crate) fn run_to_block(n: u64) {
         DappStaking::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
         // This is performed outside of dapps staking but we expect it before on_initialize
+
+        let pre_snapshot = MemorySnapshot::new();
         DappStaking::on_initialize(System::block_number());
+        assert_block_bump(&pre_snapshot);
     }
 }
 
@@ -304,7 +327,7 @@ pub(crate) fn advance_to_next_period() {
 }
 
 /// Advance blocks until next period type has been reached.
-pub(crate) fn advance_to_advance_to_next_subperiod() {
+pub(crate) fn advance_to_next_subperiod() {
     let subperiod = ActiveProtocolState::<Test>::get().subperiod();
     while ActiveProtocolState::<Test>::get().subperiod() == subperiod {
         run_for_blocks(1);
@@ -316,12 +339,6 @@ pub fn dapp_staking_events() -> Vec<crate::Event<Test>> {
     System::events()
         .into_iter()
         .map(|r| r.event)
-        .filter_map(|e| {
-            if let RuntimeEvent::DappStaking(inner) = e {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-        .collect()
+        .filter_map(|e| <Test as Config>::RuntimeEvent::from(e).try_into().ok())
+        .collect::<Vec<_>>()
 }

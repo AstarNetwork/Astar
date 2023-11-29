@@ -153,6 +153,7 @@ fn dapp_info_basic_checks() {
         id: 7,
         state: DAppState::Registered,
         reward_destination: None,
+        tier_label: None,
     };
 
     // Owner receives reward in case no beneficiary is set
@@ -161,6 +162,20 @@ fn dapp_info_basic_checks() {
     // Beneficiary receives rewards in case it is set
     dapp_info.reward_destination = Some(beneficiary);
     assert_eq!(*dapp_info.reward_beneficiary(), beneficiary);
+
+    // Check if dApp is active
+    assert!(dapp_info.is_active());
+
+    dapp_info.state = DAppState::Unregistered(10);
+    assert!(!dapp_info.is_active());
+}
+
+#[test]
+fn unlocking_chunk_basic_check() {
+    // Sanity check
+    let unlocking_chunk = UnlockingChunk::<BlockNumber>::default();
+    assert!(unlocking_chunk.amount.is_zero());
+    assert!(unlocking_chunk.unlock_block.is_zero());
 }
 
 #[test]
@@ -204,31 +219,31 @@ fn account_ledger_subtract_lock_amount_basic_usage_works() {
 
     // First basic scenario
     // Add some lock amount, then reduce it
-    let first_lock_amount = 19;
+    let lock_amount_1 = 19;
     let unlock_amount = 7;
-    acc_ledger.add_lock_amount(first_lock_amount);
+    acc_ledger.add_lock_amount(lock_amount_1);
     acc_ledger.subtract_lock_amount(unlock_amount);
     assert_eq!(
         acc_ledger.total_locked_amount(),
-        first_lock_amount - unlock_amount
+        lock_amount_1 - unlock_amount
     );
     assert_eq!(
         acc_ledger.active_locked_amount(),
-        first_lock_amount - unlock_amount
+        lock_amount_1 - unlock_amount
     );
     assert_eq!(acc_ledger.unlocking_amount(), 0);
 
     // Second basic scenario
-    let first_lock_amount = first_lock_amount - unlock_amount;
-    let second_lock_amount = 31;
-    acc_ledger.add_lock_amount(second_lock_amount - first_lock_amount);
-    assert_eq!(acc_ledger.active_locked_amount(), second_lock_amount);
+    let lock_amount_1 = lock_amount_1 - unlock_amount;
+    let lock_amount_2 = 31;
+    acc_ledger.add_lock_amount(lock_amount_2 - lock_amount_1);
+    assert_eq!(acc_ledger.active_locked_amount(), lock_amount_2);
 
     // Subtract from the first era and verify state is as expected
     acc_ledger.subtract_lock_amount(unlock_amount);
     assert_eq!(
         acc_ledger.active_locked_amount(),
-        second_lock_amount - unlock_amount
+        lock_amount_2 - unlock_amount
     );
 }
 
@@ -312,7 +327,12 @@ fn account_ledger_staked_amount_works() {
     // Period matches
     let amount_1 = 29;
     let period = 5;
-    acc_ledger.staked = StakeAmount::new(amount_1, 0, 1, period);
+    acc_ledger.staked = StakeAmount {
+        voting: amount_1,
+        build_and_earn: 0,
+        era: 1,
+        period,
+    };
     assert_eq!(acc_ledger.staked_amount(period), amount_1);
 
     // Period doesn't match
@@ -321,7 +341,12 @@ fn account_ledger_staked_amount_works() {
 
     // Add future entry
     let amount_2 = 17;
-    acc_ledger.staked_future = Some(StakeAmount::new(0, amount_2, 2, period));
+    acc_ledger.staked_future = Some(StakeAmount {
+        voting: 0,
+        build_and_earn: amount_2,
+        era: 2,
+        period,
+    });
     assert_eq!(acc_ledger.staked_amount(period), amount_2);
     assert!(acc_ledger.staked_amount(period - 1).is_zero());
     assert!(acc_ledger.staked_amount(period + 1).is_zero());
@@ -407,9 +432,14 @@ fn account_ledger_stakeable_amount_works() {
     );
 
     // Second scenario - some staked amount is introduced, period is still valid
-    let first_era = 1;
+    let era_1 = 1;
     let staked_amount = 7;
-    acc_ledger.staked = StakeAmount::new(0, staked_amount, first_era, period_1);
+    acc_ledger.staked = StakeAmount {
+        voting: 0,
+        build_and_earn: staked_amount,
+        era: era_1,
+        period: period_1,
+    };
 
     assert_eq!(
         acc_ledger.stakeable_amount(period_1),
@@ -493,7 +523,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
     assert!(acc_ledger.staked_future.is_none());
 
     // 1st scenario - stake some amount in Voting period, and ensure values are as expected.
-    let first_era = 1;
+    let era_1 = 1;
     let period_1 = 1;
     let period_info_1 = PeriodInfo {
         number: period_1,
@@ -505,7 +535,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
     acc_ledger.add_lock_amount(lock_amount);
 
     assert!(acc_ledger
-        .add_stake_amount(stake_amount, first_era, period_info_1)
+        .add_stake_amount(stake_amount, era_1, period_info_1)
         .is_ok());
 
     assert!(
@@ -537,9 +567,8 @@ fn account_ledger_add_stake_amount_basic_example_works() {
         subperiod: Subperiod::BuildAndEarn,
         subperiod_end_era: 100,
     };
-    assert!(acc_ledger
-        .add_stake_amount(1, first_era, period_info_2)
-        .is_ok());
+    let era_2 = era_1 + 1;
+    assert!(acc_ledger.add_stake_amount(1, era_2, period_info_2).is_ok());
     assert_eq!(acc_ledger.staked_amount(period_1), stake_amount + 1);
     assert_eq!(
         acc_ledger.staked_amount_for_type(Subperiod::Voting, period_1),
@@ -558,7 +587,7 @@ fn account_ledger_add_stake_amount_advanced_example_works() {
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
 
     // 1st scenario - stake some amount, and ensure values are as expected.
-    let first_era = 1;
+    let era_1 = 1;
     let period_1 = 1;
     let period_info_1 = PeriodInfo {
         number: period_1,
@@ -570,12 +599,17 @@ fn account_ledger_add_stake_amount_advanced_example_works() {
     acc_ledger.add_lock_amount(lock_amount);
 
     // We only have entry for the current era
-    acc_ledger.staked = StakeAmount::new(stake_amount_1, 0, first_era, period_1);
+    acc_ledger.staked = StakeAmount {
+        voting: stake_amount_1,
+        build_and_earn: 0,
+        era: era_1,
+        period: period_1,
+    };
 
     let stake_amount_2 = 2;
     let acc_ledger_snapshot = acc_ledger.clone();
     assert!(acc_ledger
-        .add_stake_amount(stake_amount_2, first_era, period_info_1)
+        .add_stake_amount(stake_amount_2, era_1, period_info_1)
         .is_ok());
     assert_eq!(
         acc_ledger.staked_amount(period_1),
@@ -596,7 +630,7 @@ fn account_ledger_add_stake_amount_advanced_example_works() {
             .for_type(Subperiod::Voting),
         stake_amount_1 + stake_amount_2
     );
-    assert_eq!(acc_ledger.staked_future.unwrap().era, first_era + 1);
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_1 + 1);
 }
 
 #[test]
@@ -605,7 +639,7 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
 
     // Prep actions
-    let first_era = 5;
+    let era_1 = 5;
     let period_1 = 2;
     let period_info_1 = PeriodInfo {
         number: period_1,
@@ -616,12 +650,12 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     let stake_amount = 7;
     acc_ledger.add_lock_amount(lock_amount);
     assert!(acc_ledger
-        .add_stake_amount(stake_amount, first_era, period_info_1)
+        .add_stake_amount(stake_amount, era_1, period_info_1)
         .is_ok());
 
-    // Try to add to the next era, it should fail.
+    // Try to add to era after next, it should fail.
     assert_eq!(
-        acc_ledger.add_stake_amount(1, first_era + 1, period_info_1),
+        acc_ledger.add_stake_amount(1, era_1 + 2, period_info_1),
         Err(AccountLedgerError::InvalidEra)
     );
 
@@ -629,7 +663,7 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     assert_eq!(
         acc_ledger.add_stake_amount(
             1,
-            first_era,
+            era_1,
             PeriodInfo {
                 number: period_1 + 1,
                 subperiod: Subperiod::Voting,
@@ -640,17 +674,22 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     );
 
     // Alternative situation - no future entry, only current era
-    acc_ledger.staked = StakeAmount::new(0, stake_amount, first_era, period_1);
+    acc_ledger.staked = StakeAmount {
+        voting: 0,
+        build_and_earn: stake_amount,
+        era: era_1,
+        period: period_1,
+    };
     acc_ledger.staked_future = None;
 
     assert_eq!(
-        acc_ledger.add_stake_amount(1, first_era + 1, period_info_1),
+        acc_ledger.add_stake_amount(1, era_1 + 1, period_info_1),
         Err(AccountLedgerError::InvalidEra)
     );
     assert_eq!(
         acc_ledger.add_stake_amount(
             1,
-            first_era,
+            era_1,
             PeriodInfo {
                 number: period_1 + 1,
                 subperiod: Subperiod::Voting,
@@ -681,7 +720,7 @@ fn account_ledger_add_stake_amount_too_large_amount_fails() {
     );
 
     // Lock some amount, and try to stake more than that
-    let first_era = 5;
+    let era_1 = 5;
     let period_1 = 2;
     let period_info_1 = PeriodInfo {
         number: period_1,
@@ -691,16 +730,16 @@ fn account_ledger_add_stake_amount_too_large_amount_fails() {
     let lock_amount = 13;
     acc_ledger.add_lock_amount(lock_amount);
     assert_eq!(
-        acc_ledger.add_stake_amount(lock_amount + 1, first_era, period_info_1),
+        acc_ledger.add_stake_amount(lock_amount + 1, era_1, period_info_1),
         Err(AccountLedgerError::UnavailableStakeFunds)
     );
 
     // Additional check - have some active stake, and then try to overstake
     assert!(acc_ledger
-        .add_stake_amount(lock_amount - 2, first_era, period_info_1)
+        .add_stake_amount(lock_amount - 2, era_1, period_info_1)
         .is_ok());
     assert_eq!(
-        acc_ledger.add_stake_amount(3, first_era, period_info_1),
+        acc_ledger.add_stake_amount(3, era_1, period_info_1),
         Err(AccountLedgerError::UnavailableStakeFunds)
     );
 }
@@ -729,7 +768,12 @@ fn account_ledger_unstake_amount_basic_scenario_works() {
         .is_ok());
 
     // Only 'current' entry has some values, future is set to None.
-    acc_ledger_2.staked = StakeAmount::new(0, amount_1, era_1, period_1);
+    acc_ledger_2.staked = StakeAmount {
+        voting: 0,
+        build_and_earn: amount_1,
+        era: era_1,
+        period: period_1,
+    };
     acc_ledger_2.staked_future = None;
 
     for mut acc_ledger in vec![acc_ledger, acc_ledger_2] {
@@ -773,8 +817,18 @@ fn account_ledger_unstake_amount_advanced_scenario_works() {
     acc_ledger.add_lock_amount(amount_1);
 
     // We have two entries at once
-    acc_ledger.staked = StakeAmount::new(amount_1 - 1, 0, era_1, period_1);
-    acc_ledger.staked_future = Some(StakeAmount::new(amount_1 - 1, 1, era_1 + 1, period_1));
+    acc_ledger.staked = StakeAmount {
+        voting: amount_1 - 1,
+        build_and_earn: 0,
+        era: era_1,
+        period: period_1,
+    };
+    acc_ledger.staked_future = Some(StakeAmount {
+        voting: amount_1 - 1,
+        build_and_earn: 1,
+        era: era_1 + 1,
+        period: period_1,
+    });
 
     // 1st scenario - unstake some amount from the current era, both entries should be affected.
     let unstake_amount_1 = 3;
@@ -847,9 +901,15 @@ fn account_ledger_unstake_from_invalid_era_fails() {
         .add_stake_amount(amount_1, era_1, period_info_1)
         .is_ok());
 
-    // Try to unstake from the next era, it should fail.
+    // Try to unstake from the current & next era, it should work.
+    assert!(acc_ledger.unstake_amount(1, era_1, period_info_1).is_ok());
+    assert!(acc_ledger
+        .unstake_amount(1, era_1 + 1, period_info_1)
+        .is_ok());
+
+    // Try to unstake from the stake era + 2, it should fail since it would mean we have unclaimed rewards.
     assert_eq!(
-        acc_ledger.unstake_amount(1, era_1 + 1, period_info_1),
+        acc_ledger.unstake_amount(1, era_1 + 2, period_info_1),
         Err(AccountLedgerError::InvalidEra)
     );
 
@@ -868,7 +928,12 @@ fn account_ledger_unstake_from_invalid_era_fails() {
     );
 
     // Alternative situation - no future entry, only current era
-    acc_ledger.staked = StakeAmount::new(0, 1, era_1, period_1);
+    acc_ledger.staked = StakeAmount {
+        voting: 0,
+        build_and_earn: 1,
+        era: era_1,
+        period: period_1,
+    };
     acc_ledger.staked_future = None;
 
     assert_eq!(
@@ -1007,8 +1072,582 @@ fn account_ledger_consume_unlocking_chunks_works() {
 }
 
 #[test]
-fn account_ledger_claim_up_to_era_works() {
-    // TODO!!!
+fn account_ledger_expired_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+
+    // 1st scenario - nothing is expired
+    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    acc_ledger.staked = StakeAmount {
+        voting: 3,
+        build_and_earn: 7,
+        era: 100,
+        period: 5,
+    };
+    acc_ledger.staked_future = Some(StakeAmount {
+        voting: 3,
+        build_and_earn: 13,
+        era: 101,
+        period: 5,
+    });
+
+    let acc_ledger_snapshot = acc_ledger.clone();
+
+    assert!(!acc_ledger.maybe_cleanup_expired(acc_ledger.staked.period - 1));
+    assert_eq!(
+        acc_ledger, acc_ledger_snapshot,
+        "No change must happen since period hasn't expired."
+    );
+
+    assert!(!acc_ledger.maybe_cleanup_expired(acc_ledger.staked.period));
+    assert_eq!(
+        acc_ledger, acc_ledger_snapshot,
+        "No change must happen since period hasn't expired."
+    );
+
+    // 2nd scenario - stake has expired
+    assert!(acc_ledger.maybe_cleanup_expired(acc_ledger.staked.period + 1));
+    assert!(acc_ledger.staked.is_empty());
+    assert!(acc_ledger.staked_future.is_none());
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_only_staked_without_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era = 100;
+
+    let acc_ledger_snapshot = {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked = StakeAmount {
+            voting: 3,
+            build_and_earn: 7,
+            era: stake_era,
+            period: 5,
+        };
+        acc_ledger
+    };
+
+    // 1st scenario - claim one era, period hasn't ended yet
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, None)
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((stake_era, acc_ledger_snapshot.staked.total()))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked;
+        expected_stake_amount.era += 1;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Only era should be bumped by 1."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 2nd scenario - claim multiple eras (5), period hasn't ended yet
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era + 4, None) // staked era + 4 additional eras
+            .expect("Must provide iter with 5 values.");
+
+        // Iter values are correct
+        for inc in 0..5 {
+            assert_eq!(
+                result_iter.next(),
+                Some((stake_era + inc, acc_ledger_snapshot.staked.total()))
+            );
+        }
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked;
+        expected_stake_amount.era += 5;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Only era should be bumped by 5."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_only_staked_with_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era = 100;
+
+    let acc_ledger_snapshot = {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked = StakeAmount {
+            voting: 3,
+            build_and_earn: 7,
+            era: stake_era,
+            period: 5,
+        };
+        acc_ledger
+    };
+
+    // 1st scenario - claim one era, period has ended
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, Some(stake_era))
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((stake_era, acc_ledger_snapshot.staked.total()))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are cleaned up
+        assert!(
+            acc_ledger.staked.is_empty(),
+            "Period has ended so stake entry should be cleaned up."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 2nd scenario - claim multiple eras (5), period has ended
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era + 4, Some(stake_era)) // staked era + 4 additional eras
+            .expect("Must provide iter with 5 values.");
+
+        for inc in 0..5 {
+            assert_eq!(
+                result_iter.next(),
+                Some((stake_era + inc, acc_ledger_snapshot.staked.total()))
+            );
+        }
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are cleaned up
+        assert!(
+            acc_ledger.staked.is_empty(),
+            "Period has ended so stake entry should be cleaned up."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 3rd scenario - claim one era, period has ended in some future era
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, Some(stake_era + 1))
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((stake_era, acc_ledger_snapshot.staked.total()))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correctly updated
+        let mut expected_stake_amount = acc_ledger_snapshot.staked;
+        expected_stake_amount.era += 1;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Entry must exist since we still haven't reached the period end era."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_only_staked_future_without_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era = 50;
+
+    let acc_ledger_snapshot = {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked_future = Some(StakeAmount {
+            voting: 5,
+            build_and_earn: 11,
+            era: stake_era,
+            period: 4,
+        });
+        acc_ledger
+    };
+
+    // 1st scenario - claim one era, period hasn't ended yet
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, None)
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((
+                stake_era,
+                acc_ledger_snapshot.staked_future.unwrap().total()
+            ))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked_future.unwrap();
+        expected_stake_amount.era += 1;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Era must be bumped by 1, and entry must switch from staked_future over to staked."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "staked_future must be cleaned up after the claim."
+        );
+    }
+
+    // 2nd scenario - claim multiple eras (5), period hasn't ended yet
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era + 4, None) // staked era + 4 additional eras
+            .expect("Must provide iter with 5 entries.");
+
+        // Iter values are correct
+        for inc in 0..5 {
+            assert_eq!(
+                result_iter.next(),
+                Some((
+                    stake_era + inc,
+                    acc_ledger_snapshot.staked_future.unwrap().total()
+                ))
+            );
+        }
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked_future.unwrap();
+        expected_stake_amount.era += 5;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Era must be bumped by 5, and entry must switch from staked_future over to staked."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "staked_future must be cleaned up after the claim."
+        );
+    }
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_only_staked_future_with_cleanup_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era = 50;
+
+    let acc_ledger_snapshot = {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked_future = Some(StakeAmount {
+            voting: 2,
+            build_and_earn: 17,
+            era: stake_era,
+            period: 3,
+        });
+        acc_ledger
+    };
+
+    // 1st scenario - claim one era, period has ended
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, Some(stake_era))
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((
+                stake_era,
+                acc_ledger_snapshot.staked_future.unwrap().total()
+            ))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are cleaned up
+        assert!(
+            acc_ledger.staked.is_empty(),
+            "Period has ended so stake entry should be cleaned up."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 2nd scenario - claim multiple eras (5), period has ended
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era + 4, Some(stake_era)) // staked era + 4 additional eras
+            .expect("Must provide iter with 5 entries.");
+
+        for inc in 0..5 {
+            assert_eq!(
+                result_iter.next(),
+                Some((
+                    stake_era + inc,
+                    acc_ledger_snapshot.staked_future.unwrap().total()
+                ))
+            );
+        }
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are cleaned up
+        assert!(
+            acc_ledger.staked.is_empty(),
+            "Period has ended so stake entry should be cleaned up."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+
+    // 3rd scenario - claim one era, period has ended in some future era
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era, Some(stake_era + 1))
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((
+                stake_era,
+                acc_ledger_snapshot.staked_future.unwrap().total()
+            ))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correctly updated
+        let mut expected_stake_amount = acc_ledger_snapshot.staked_future.unwrap();
+        expected_stake_amount.era += 1;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "Entry must exist since we still haven't reached the period end era."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "Was and should remain None."
+        );
+    }
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_staked_and_staked_future_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era_1 = 100;
+    let stake_era_2 = stake_era_1 + 1;
+
+    let acc_ledger_snapshot = {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked = StakeAmount {
+            voting: 3,
+            build_and_earn: 7,
+            era: stake_era_1,
+            period: 5,
+        };
+        acc_ledger.staked_future = Some(StakeAmount {
+            voting: 3,
+            build_and_earn: 11,
+            era: stake_era_2,
+            period: 5,
+        });
+        acc_ledger
+    };
+
+    // 1st scenario - claim only one era
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era_1, None)
+            .expect("Must provide iter with exactly one era.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((stake_era_1, acc_ledger_snapshot.staked.total()))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked;
+        expected_stake_amount.era += 1;
+        assert_eq!(
+            acc_ledger.staked,
+            acc_ledger_snapshot.staked_future.unwrap(),
+            "staked_future entry must be moved over to staked."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "staked_future is cleaned up since it's been moved over to staked entry."
+        );
+    }
+
+    // 2nd scenario - claim multiple eras (3), period hasn't ended yet, do the cleanup
+    {
+        let mut acc_ledger = acc_ledger_snapshot.clone();
+        let mut result_iter = acc_ledger
+            .claim_up_to_era(stake_era_2 + 1, None) // staked era + 2 additional eras
+            .expect("Must provide iter with exactly two entries.");
+
+        // Iter values are correct
+        assert_eq!(
+            result_iter.next(),
+            Some((stake_era_1, acc_ledger_snapshot.staked.total()))
+        );
+        assert_eq!(
+            result_iter.next(),
+            Some((
+                stake_era_2,
+                acc_ledger_snapshot.staked_future.unwrap().total()
+            ))
+        );
+        assert_eq!(
+            result_iter.next(),
+            Some((
+                stake_era_2 + 1,
+                acc_ledger_snapshot.staked_future.unwrap().total()
+            ))
+        );
+        assert!(result_iter.next().is_none());
+
+        // Ledger values are correct
+        let mut expected_stake_amount = acc_ledger_snapshot.staked_future.unwrap();
+        expected_stake_amount.era += 2;
+        assert_eq!(
+            acc_ledger.staked, expected_stake_amount,
+            "staked_future must move over to staked, and era must be incremented by 2."
+        );
+        assert!(
+            acc_ledger.staked_future.is_none(),
+            "staked_future is cleaned up since it's been moved over to staked entry."
+        );
+    }
+}
+
+#[test]
+fn account_ledger_claim_up_to_era_fails_for_historic_eras() {
+    get_u32_type!(UnlockingDummy, 5);
+    let stake_era = 50;
+
+    // Only staked entry
+    {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked = StakeAmount {
+            voting: 2,
+            build_and_earn: 17,
+            era: stake_era,
+            period: 3,
+        };
+        assert_eq!(
+            acc_ledger.claim_up_to_era(stake_era - 1, None),
+            Err(AccountLedgerError::NothingToClaim)
+        );
+    }
+
+    // Only staked-future entry
+    {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked_future = Some(StakeAmount {
+            voting: 2,
+            build_and_earn: 17,
+            era: stake_era,
+            period: 3,
+        });
+        assert_eq!(
+            acc_ledger.claim_up_to_era(stake_era - 1, None),
+            Err(AccountLedgerError::NothingToClaim)
+        );
+    }
+
+    // Both staked and staked-future entries
+    {
+        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        acc_ledger.staked = StakeAmount {
+            voting: 2,
+            build_and_earn: 17,
+            era: stake_era,
+            period: 3,
+        };
+        acc_ledger.staked_future = Some(StakeAmount {
+            voting: 2,
+            build_and_earn: 19,
+            era: stake_era + 1,
+            period: 3,
+        });
+        assert_eq!(
+            acc_ledger.claim_up_to_era(stake_era - 1, None),
+            Err(AccountLedgerError::NothingToClaim)
+        );
+    }
+}
+
+#[test]
+fn era_stake_pair_iter_works() {
+    // 1st scenario - only span is given
+    let (era_1, last_era, amount) = (2, 5, 11);
+    let mut iter_1 = EraStakePairIter::new((era_1, last_era, amount), None).unwrap();
+    for era in era_1..=last_era {
+        assert_eq!(iter_1.next(), Some((era, amount)));
+    }
+    assert!(iter_1.next().is_none());
+
+    // 2nd scenario - first value & span are given
+    let (maybe_era_1, maybe_first_amount) = (1, 7);
+    let maybe_first = Some((maybe_era_1, maybe_first_amount));
+    let mut iter_2 = EraStakePairIter::new((era_1, last_era, amount), maybe_first).unwrap();
+
+    assert_eq!(iter_2.next(), Some((maybe_era_1, maybe_first_amount)));
+    for era in era_1..=last_era {
+        assert_eq!(iter_2.next(), Some((era, amount)));
+    }
+}
+
+#[test]
+fn era_stake_pair_iter_returns_error_for_illegal_data() {
+    // 1st scenario - spans are reversed; first era comes AFTER the last era
+    let (era_1, last_era, amount) = (2, 5, 11);
+    assert!(EraStakePairIter::new((last_era, era_1, amount), None).is_err());
+
+    // 2nd scenario - maybe_first covers the same era as the span
+    assert!(EraStakePairIter::new((era_1, last_era, amount), Some((era_1, 10))).is_err());
+
+    // 3rd scenario - maybe_first is before the span, but not exactly 1 era before the first era in the span
+    assert!(EraStakePairIter::new((era_1, last_era, amount), Some((era_1 - 2, 10))).is_err());
+
+    assert!(
+        EraStakePairIter::new((era_1, last_era, amount), Some((era_1 - 1, 10))).is_ok(),
+        "Sanity check."
+    );
 }
 
 #[test]
@@ -1017,7 +1656,6 @@ fn era_info_lock_unlock_works() {
 
     // Sanity check
     assert!(era_info.total_locked.is_zero());
-    assert!(era_info.active_era_locked.is_zero());
     assert!(era_info.unlocking.is_zero());
 
     // Basic add lock
@@ -1030,7 +1668,6 @@ fn era_info_lock_unlock_works() {
     // Basic unlocking started
     let unlock_amount = 2;
     era_info.total_locked = 17;
-    era_info.active_era_locked = 13;
     let era_info_snapshot = era_info;
 
     // First unlock & checks
@@ -1038,10 +1675,6 @@ fn era_info_lock_unlock_works() {
     assert_eq!(
         era_info.total_locked,
         era_info_snapshot.total_locked - unlock_amount
-    );
-    assert_eq!(
-        era_info.active_era_locked,
-        era_info_snapshot.active_era_locked - unlock_amount
     );
     assert_eq!(era_info.unlocking, unlock_amount);
 
@@ -1051,17 +1684,13 @@ fn era_info_lock_unlock_works() {
         era_info.total_locked,
         era_info_snapshot.total_locked - unlock_amount * 2
     );
-    assert_eq!(
-        era_info.active_era_locked,
-        era_info_snapshot.active_era_locked - unlock_amount * 2
-    );
     assert_eq!(era_info.unlocking, unlock_amount * 2);
 
     // Claim unlocked chunks
     let old_era_info = era_info.clone();
     era_info.unlocking_removed(1);
     assert_eq!(era_info.unlocking, old_era_info.unlocking - 1);
-    assert_eq!(era_info.active_era_locked, old_era_info.active_era_locked);
+    assert_eq!(era_info.total_locked, old_era_info.total_locked);
 }
 
 #[test]
@@ -1111,10 +1740,18 @@ fn era_info_unstake_works() {
     let bep_stake_amount_2 = bep_stake_amount_1 + 6;
     let period_number = 1;
     let era = 2;
-    era_info.current_stake_amount =
-        StakeAmount::new(vp_stake_amount, bep_stake_amount_1, era, period_number);
-    era_info.next_stake_amount =
-        StakeAmount::new(vp_stake_amount, bep_stake_amount_2, era + 1, period_number);
+    era_info.current_stake_amount = StakeAmount {
+        voting: vp_stake_amount,
+        build_and_earn: bep_stake_amount_1,
+        era,
+        period: period_number,
+    };
+    era_info.next_stake_amount = StakeAmount {
+        voting: vp_stake_amount,
+        build_and_earn: bep_stake_amount_2,
+        era: era + 1,
+        period: period_number,
+    };
     let total_staked = era_info.total_staked_amount();
     let total_staked_next_era = era_info.total_staked_amount_next_era();
 
@@ -1167,6 +1804,88 @@ fn era_info_unstake_works() {
     assert!(era_info
         .staked_amount_next_era(Subperiod::BuildAndEarn)
         .is_zero());
+}
+
+#[test]
+fn era_info_migrate_to_next_era_works() {
+    // Make dummy era info with stake amounts
+    let era_info_snapshot = EraInfo {
+        total_locked: 456,
+        unlocking: 13,
+        current_stake_amount: StakeAmount {
+            voting: 13,
+            build_and_earn: 29,
+            era: 2,
+            period: 1,
+        },
+        next_stake_amount: StakeAmount {
+            voting: 13,
+            build_and_earn: 41,
+            era: 3,
+            period: 1,
+        },
+    };
+
+    // 1st scenario - rollover to next era, no subperiod change
+    {
+        let mut era_info = era_info_snapshot;
+        era_info.migrate_to_next_era(None);
+
+        assert_eq!(era_info.total_locked, era_info_snapshot.total_locked);
+        assert_eq!(era_info.unlocking, era_info_snapshot.unlocking);
+        assert_eq!(
+            era_info.current_stake_amount,
+            era_info_snapshot.next_stake_amount
+        );
+
+        let mut new_next_stake_amount = era_info_snapshot.next_stake_amount;
+        new_next_stake_amount.era += 1;
+        assert_eq!(era_info.next_stake_amount, new_next_stake_amount);
+    }
+
+    // 2nd scenario - rollover to next era, change from Voting into Build&Earn subperiod
+    {
+        let mut era_info = era_info_snapshot;
+        era_info.migrate_to_next_era(Some(Subperiod::BuildAndEarn));
+
+        assert_eq!(era_info.total_locked, era_info_snapshot.total_locked);
+        assert_eq!(era_info.unlocking, era_info_snapshot.unlocking);
+        assert_eq!(
+            era_info.current_stake_amount,
+            era_info_snapshot.next_stake_amount
+        );
+
+        let mut new_next_stake_amount = era_info_snapshot.next_stake_amount;
+        new_next_stake_amount.era += 1;
+        assert_eq!(era_info.next_stake_amount, new_next_stake_amount);
+    }
+
+    // 3rd scenario - rollover to next era, change from Build&Earn to Voting subperiod
+    {
+        let mut era_info = era_info_snapshot;
+        era_info.migrate_to_next_era(Some(Subperiod::Voting));
+
+        assert_eq!(era_info.total_locked, era_info_snapshot.total_locked);
+        assert_eq!(era_info.unlocking, era_info_snapshot.unlocking);
+        assert_eq!(
+            era_info.current_stake_amount,
+            StakeAmount {
+                voting: Zero::zero(),
+                build_and_earn: Zero::zero(),
+                era: era_info_snapshot.current_stake_amount.era + 1,
+                period: era_info_snapshot.current_stake_amount.period + 1,
+            }
+        );
+        assert_eq!(
+            era_info.next_stake_amount,
+            StakeAmount {
+                voting: Zero::zero(),
+                build_and_earn: Zero::zero(),
+                era: era_info_snapshot.current_stake_amount.era + 2,
+                period: era_info_snapshot.current_stake_amount.period + 1,
+            }
+        );
+    }
 }
 
 #[test]
@@ -1243,11 +1962,14 @@ fn singular_staking_info_basics_are_ok() {
     assert_eq!(staking_info.period_number(), period_number);
     assert!(staking_info.is_loyal());
     assert!(staking_info.total_staked_amount().is_zero());
+    assert!(staking_info.is_empty());
+    assert!(staking_info.era().is_zero());
     assert!(!SingularStakingInfo::new(period_number, Subperiod::BuildAndEarn).is_loyal());
 
     // Add some staked amount during `Voting` period
+    let era_1 = 7;
     let vote_stake_amount_1 = 11;
-    staking_info.stake(vote_stake_amount_1, Subperiod::Voting);
+    staking_info.stake(vote_stake_amount_1, era_1, Subperiod::Voting);
     assert_eq!(staking_info.total_staked_amount(), vote_stake_amount_1);
     assert_eq!(
         staking_info.staked_amount(Subperiod::Voting),
@@ -1256,10 +1978,16 @@ fn singular_staking_info_basics_are_ok() {
     assert!(staking_info
         .staked_amount(Subperiod::BuildAndEarn)
         .is_zero());
+    assert_eq!(
+        staking_info.era(),
+        era_1 + 1,
+        "Stake era should remain valid."
+    );
 
     // Add some staked amount during `BuildAndEarn` period
+    let era_2 = 9;
     let bep_stake_amount_1 = 23;
-    staking_info.stake(bep_stake_amount_1, Subperiod::BuildAndEarn);
+    staking_info.stake(bep_stake_amount_1, era_2, Subperiod::BuildAndEarn);
     assert_eq!(
         staking_info.total_staked_amount(),
         vote_stake_amount_1 + bep_stake_amount_1
@@ -1272,6 +2000,7 @@ fn singular_staking_info_basics_are_ok() {
         staking_info.staked_amount(Subperiod::BuildAndEarn),
         bep_stake_amount_1
     );
+    assert_eq!(staking_info.era(), era_2 + 1);
 }
 
 #[test]
@@ -1281,13 +2010,14 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
 
     // Prep actions
+    let era_1 = 2;
     let vote_stake_amount_1 = 11;
-    staking_info.stake(vote_stake_amount_1, Subperiod::Voting);
+    staking_info.stake(vote_stake_amount_1, era_1, Subperiod::Voting);
 
     // Unstake some amount during `Voting` period, loyalty should remain as expected.
     let unstake_amount_1 = 5;
     assert_eq!(
-        staking_info.unstake(unstake_amount_1, Subperiod::Voting),
+        staking_info.unstake(unstake_amount_1, era_1, Subperiod::Voting),
         (unstake_amount_1, Balance::zero())
     );
     assert_eq!(
@@ -1295,15 +2025,22 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         vote_stake_amount_1 - unstake_amount_1
     );
     assert!(staking_info.is_loyal());
+    assert_eq!(
+        staking_info.era(),
+        era_1 + 1,
+        "Stake era should remain valid."
+    );
 
     // Fully unstake, attempting to undersaturate, and ensure loyalty flag is still true.
+    let era_2 = era_1 + 2;
     let remaining_stake = staking_info.total_staked_amount();
     assert_eq!(
-        staking_info.unstake(remaining_stake + 1, Subperiod::Voting),
+        staking_info.unstake(remaining_stake + 1, era_2, Subperiod::Voting),
         (remaining_stake, Balance::zero())
     );
     assert!(staking_info.total_staked_amount().is_zero());
     assert!(staking_info.is_loyal());
+    assert_eq!(staking_info.era(), era_2);
 }
 
 #[test]
@@ -1313,15 +2050,16 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
 
     // Prep actions
+    let era_1 = 3;
     let vote_stake_amount_1 = 11;
-    staking_info.stake(vote_stake_amount_1, Subperiod::Voting);
+    staking_info.stake(vote_stake_amount_1, era_1 - 1, Subperiod::Voting);
     let bep_stake_amount_1 = 23;
-    staking_info.stake(bep_stake_amount_1, Subperiod::BuildAndEarn);
+    staking_info.stake(bep_stake_amount_1, era_1, Subperiod::BuildAndEarn);
 
     // 1st scenario - Unstake some of the amount staked during B&E period
     let unstake_1 = 5;
     assert_eq!(
-        staking_info.unstake(5, Subperiod::BuildAndEarn),
+        staking_info.unstake(5, era_1, Subperiod::BuildAndEarn),
         (Balance::zero(), unstake_1)
     );
     assert_eq!(
@@ -1337,6 +2075,11 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         bep_stake_amount_1 - unstake_1
     );
     assert!(staking_info.is_loyal());
+    assert_eq!(
+        staking_info.era(),
+        era_1 + 1,
+        "Stake era should remain valid."
+    );
 
     // 2nd scenario - unstake all of the amount staked during B&E period, and then some more.
     // The point is to take a chunk from the voting period stake too.
@@ -1344,9 +2087,10 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     let current_bep_stake = staking_info.staked_amount(Subperiod::BuildAndEarn);
     let voting_stake_overflow = 2;
     let unstake_2 = current_bep_stake + voting_stake_overflow;
+    let era_2 = era_1 + 3;
 
     assert_eq!(
-        staking_info.unstake(unstake_2, Subperiod::BuildAndEarn),
+        staking_info.unstake(unstake_2, era_2, Subperiod::BuildAndEarn),
         (voting_stake_overflow, current_bep_stake)
     );
     assert_eq!(
@@ -1364,49 +2108,129 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         !staking_info.is_loyal(),
         "Loyalty flag should have been removed due to non-zero voting period unstake"
     );
+    assert_eq!(staking_info.era(), era_2);
 }
 
 #[test]
-fn contract_stake_info_get_works() {
-    let info_1 = StakeAmount::new(0, 0, 4, 2);
-    let info_2 = StakeAmount::new(11, 0, 7, 3);
-
+fn contract_stake_amount_basic_get_checks_work() {
+    // Sanity checks for empty struct
     let contract_stake = ContractStakeAmount {
-        staked: info_1,
-        staked_future: Some(info_2),
+        staked: Default::default(),
+        staked_future: None,
+        tier_label: None,
     };
+    assert!(contract_stake.is_empty());
+    assert!(contract_stake.latest_stake_period().is_none());
+    assert!(contract_stake.latest_stake_era().is_none());
+    assert!(contract_stake.total_staked_amount(0).is_zero());
+    assert!(contract_stake.staked_amount(0, Subperiod::Voting).is_zero());
+    assert!(contract_stake
+        .staked_amount(0, Subperiod::BuildAndEarn)
+        .is_zero());
 
-    // Sanity check
+    let era = 3;
+    let period = 2;
+    let amount = StakeAmount {
+        voting: 11,
+        build_and_earn: 17,
+        era,
+        period,
+    };
+    let contract_stake = ContractStakeAmount {
+        staked: amount,
+        staked_future: None,
+        tier_label: None,
+    };
     assert!(!contract_stake.is_empty());
 
-    // 1st scenario - get existing entries
-    assert_eq!(contract_stake.get(4, 2), Some(info_1));
-    assert_eq!(contract_stake.get(7, 3), Some(info_2));
-
-    // 2nd scenario - get non-existing entries for covered eras
-    {
-        let era_1 = 6;
-        let entry_1 = contract_stake.get(era_1, 2).expect("Has to be Some");
-        assert!(entry_1.total().is_zero());
-        assert_eq!(entry_1.era, era_1);
-        assert_eq!(entry_1.period, 2);
-
-        let era_2 = 8;
-        let entry_1 = contract_stake.get(era_2, 3).expect("Has to be Some");
-        assert_eq!(entry_1.total(), 11);
-        assert_eq!(entry_1.era, era_2);
-        assert_eq!(entry_1.period, 3);
+    // Checks for illegal periods
+    for illegal_period in [period - 1, period + 1] {
+        assert!(contract_stake.total_staked_amount(illegal_period).is_zero());
+        assert!(contract_stake
+            .staked_amount(illegal_period, Subperiod::Voting)
+            .is_zero());
+        assert!(contract_stake
+            .staked_amount(illegal_period, Subperiod::BuildAndEarn)
+            .is_zero());
     }
 
-    // 3rd scenario - get non-existing entries for covered eras but mismatching period
-    assert!(contract_stake.get(8, 2).is_none());
-
-    // 4th scenario - get non-existing entries for non-covered eras
-    assert!(contract_stake.get(3, 2).is_none());
+    // Check for the valid period
+    assert_eq!(contract_stake.latest_stake_period(), Some(period));
+    assert_eq!(contract_stake.latest_stake_era(), Some(era));
+    assert_eq!(contract_stake.total_staked_amount(period), amount.total());
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::Voting),
+        amount.voting
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
+        amount.build_and_earn
+    );
 }
 
 #[test]
-fn contract_stake_info_stake_is_ok() {
+fn contract_stake_amount_advanced_get_checks_work() {
+    let (era_1, era_2) = (4, 7);
+    let period = 2;
+    let amount_1 = StakeAmount {
+        voting: 11,
+        build_and_earn: 0,
+        era: era_1,
+        period,
+    };
+    let amount_2 = StakeAmount {
+        voting: 11,
+        build_and_earn: 13,
+        era: era_2,
+        period,
+    };
+
+    let contract_stake = ContractStakeAmount {
+        staked: amount_1,
+        staked_future: Some(amount_2),
+        tier_label: None,
+    };
+
+    // Sanity checks - all values from the 'future' entry should be relevant
+    assert!(!contract_stake.is_empty());
+    assert_eq!(contract_stake.latest_stake_period(), Some(period));
+    assert_eq!(contract_stake.latest_stake_era(), Some(era_2));
+    assert_eq!(contract_stake.total_staked_amount(period), amount_2.total());
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::Voting),
+        amount_2.voting
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
+        amount_2.build_and_earn
+    );
+
+    // 1st scenario - get existing entries
+    assert_eq!(contract_stake.get(era_1, period), Some(amount_1));
+    assert_eq!(contract_stake.get(era_2, period), Some(amount_2));
+
+    // 2nd scenario - get non-existing entries for covered eras
+    let era_3 = era_2 - 1;
+    let entry_1 = contract_stake.get(era_3, 2).expect("Has to be Some");
+    assert_eq!(entry_1.total(), amount_1.total());
+    assert_eq!(entry_1.era, era_3);
+    assert_eq!(entry_1.period, period);
+
+    let era_4 = era_2 + 1;
+    let entry_1 = contract_stake.get(era_4, period).expect("Has to be Some");
+    assert_eq!(entry_1.total(), amount_2.total());
+    assert_eq!(entry_1.era, era_4);
+    assert_eq!(entry_1.period, period);
+
+    // 3rd scenario - get non-existing entries for covered eras but mismatching period
+    assert!(contract_stake.get(8, period + 1).is_none());
+
+    // 4th scenario - get non-existing entries for non-covered eras
+    assert!(contract_stake.get(3, period).is_none());
+}
+
+#[test]
+fn contract_stake_amount_stake_is_ok() {
     let mut contract_stake = ContractStakeAmount::default();
 
     // 1st scenario - stake some amount and verify state change
@@ -1421,6 +2245,11 @@ fn contract_stake_info_stake_is_ok() {
     let amount_1 = 31;
     contract_stake.stake(amount_1, period_info_1, era_1);
     assert!(!contract_stake.is_empty());
+    assert!(
+        contract_stake.staked.is_empty(),
+        "Only future entry should be modified."
+    );
+    assert!(contract_stake.staked_future.is_some());
 
     assert!(
         contract_stake.get(era_1, period_1).is_none(),
@@ -1432,6 +2261,8 @@ fn contract_stake_info_stake_is_ok() {
         "Stake is only valid from next era."
     );
     assert_eq!(entry_1_1.total(), amount_1);
+    assert_eq!(entry_1_1.for_type(Subperiod::Voting), amount_1);
+    assert!(entry_1_1.for_type(Subperiod::BuildAndEarn).is_zero());
 
     // 2nd scenario - stake some more to the same era but different period type, and verify state change.
     let period_info_1 = PeriodInfo {
@@ -1443,6 +2274,13 @@ fn contract_stake_info_stake_is_ok() {
     let entry_1_2 = contract_stake.get(stake_era_1, period_1).unwrap();
     assert_eq!(entry_1_2.era, stake_era_1);
     assert_eq!(entry_1_2.total(), amount_1 * 2);
+    assert_eq!(entry_1_2.for_type(Subperiod::Voting), amount_1);
+    assert_eq!(entry_1_2.for_type(Subperiod::BuildAndEarn), amount_1);
+    assert!(
+        contract_stake.staked.is_empty(),
+        "Only future entry should be modified."
+    );
+    assert!(contract_stake.staked_future.is_some());
 
     // 3rd scenario - stake more to the next era, while still in the same period.
     let era_2 = era_1 + 2;
@@ -1459,6 +2297,11 @@ fn contract_stake_info_stake_is_ok() {
         entry_2_1.total() + amount_2,
         "Since it's the same period, stake amount must carry over from the previous entry."
     );
+    assert!(
+        !contract_stake.staked.is_empty(),
+        "staked should keep the old future entry"
+    );
+    assert!(contract_stake.staked_future.is_some());
 
     // 4th scenario - stake some more to the next era, but this time also bump the period.
     let era_3 = era_2 + 3;
@@ -1488,6 +2331,11 @@ fn contract_stake_info_stake_is_ok() {
         amount_3,
         "No carry over from previous entry since period has changed."
     );
+    assert!(
+        contract_stake.staked.is_empty(),
+        "New period, all stakes should be reset so 'staked' should be empty."
+    );
+    assert!(contract_stake.staked_future.is_some());
 
     // 5th scenario - stake to the next era
     let era_4 = era_3 + 1;
@@ -1500,10 +2348,15 @@ fn contract_stake_info_stake_is_ok() {
     assert_eq!(entry_4_2.era, stake_era_4);
     assert_eq!(entry_4_2.period, period_2);
     assert_eq!(entry_4_2.total(), amount_3 + amount_4);
+    assert!(
+        !contract_stake.staked.is_empty(),
+        "staked should keep the old future entry"
+    );
+    assert!(contract_stake.staked_future.is_some());
 }
 
 #[test]
-fn contract_stake_info_unstake_is_ok() {
+fn contract_stake_amount_unstake_is_ok() {
     let mut contract_stake = ContractStakeAmount::default();
 
     // Prep action - create a stake entry
@@ -1528,24 +2381,65 @@ fn contract_stake_info_unstake_is_ok() {
         contract_stake.staked_amount(period, Subperiod::Voting),
         stake_amount - amount_1
     );
+    assert!(contract_stake.staked.is_empty());
+    assert!(contract_stake.staked_future.is_some());
 
-    // 2nd scenario - unstake in the future era, entries should be aligned to the current era
+    // 2nd scenario - unstake in the next era
     let period_info = PeriodInfo {
         number: period,
         subperiod: Subperiod::BuildAndEarn,
         subperiod_end_era: 40,
     };
-    let era_2 = era_1 + 3;
-    let amount_2 = 7;
-    contract_stake.unstake(amount_2, period_info, era_2);
+    let era_2 = era_1 + 1;
+
+    contract_stake.unstake(amount_1, period_info, era_2);
     assert_eq!(
         contract_stake.total_staked_amount(period),
-        stake_amount - amount_1 - amount_2
+        stake_amount - amount_1 * 2
     );
     assert_eq!(
         contract_stake.staked_amount(period, Subperiod::Voting),
-        stake_amount - amount_1 - amount_2
+        stake_amount - amount_1 * 2
     );
+    assert!(
+        !contract_stake.staked.is_empty(),
+        "future entry should be moved over to the current entry"
+    );
+    assert!(
+        contract_stake.staked_future.is_none(),
+        "future entry should be cleaned up since it refers to the current era"
+    );
+
+    // 3rd scenario - bump up unstake eras by more than 1, entries should be aligned to the current era
+    let era_3 = era_2 + 3;
+    let amount_2 = 7;
+    contract_stake.unstake(amount_2, period_info, era_3);
+    assert_eq!(
+        contract_stake.total_staked_amount(period),
+        stake_amount - amount_1 * 2 - amount_2
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::Voting),
+        stake_amount - amount_1 * 2 - amount_2
+    );
+    assert_eq!(
+        contract_stake.staked.era, era_3,
+        "Should be aligned to the current era."
+    );
+    assert!(
+        contract_stake.staked_future.is_none(),
+        "future enry should remain 'None'"
+    );
+
+    // 4th scenario - do a full unstake with existing future entry, expect a cleanup
+    contract_stake.stake(stake_amount, period_info, era_3);
+    contract_stake.unstake(
+        contract_stake.total_staked_amount(period),
+        period_info,
+        era_3,
+    );
+    assert!(contract_stake.staked.is_empty());
+    assert!(contract_stake.staked_future.is_none());
 }
 
 #[test]
@@ -1586,6 +2480,14 @@ fn era_reward_span_push_and_get_works() {
     // Get the values and verify they are as expected
     assert_eq!(era_reward_span.get(era_1), Some(&era_reward_1));
     assert_eq!(era_reward_span.get(era_2), Some(&era_reward_2));
+
+    // Try and get the values outside of the span
+    assert!(era_reward_span
+        .get(era_reward_span.first_era() - 1)
+        .is_none());
+    assert!(era_reward_span
+        .get(era_reward_span.last_era() + 1)
+        .is_none());
 }
 
 #[test]
@@ -1622,7 +2524,102 @@ fn era_reward_span_fails_when_expected() {
 }
 
 #[test]
-fn tier_slot_configuration_basic_tests() {
+fn tier_threshold_is_ok() {
+    let amount = 100;
+
+    // Fixed TVL
+    let fixed_threshold = TierThreshold::FixedTvlAmount { amount };
+    assert!(fixed_threshold.is_satisfied(amount));
+    assert!(fixed_threshold.is_satisfied(amount + 1));
+    assert!(!fixed_threshold.is_satisfied(amount - 1));
+
+    // Dynamic TVL
+    let dynamic_threshold = TierThreshold::DynamicTvlAmount {
+        amount,
+        minimum_amount: amount / 2, // not important
+    };
+    assert!(dynamic_threshold.is_satisfied(amount));
+    assert!(dynamic_threshold.is_satisfied(amount + 1));
+    assert!(!dynamic_threshold.is_satisfied(amount - 1));
+}
+
+#[test]
+fn tier_params_check_is_ok() {
+    // Prepare valid params
+    get_u32_type!(TiersNum, 3);
+    let params = TierParameters::<TiersNum> {
+        reward_portion: BoundedVec::try_from(vec![
+            Permill::from_percent(60),
+            Permill::from_percent(30),
+            Permill::from_percent(10),
+        ])
+        .unwrap(),
+        slot_distribution: BoundedVec::try_from(vec![
+            Permill::from_percent(10),
+            Permill::from_percent(20),
+            Permill::from_percent(70),
+        ])
+        .unwrap(),
+        tier_thresholds: BoundedVec::try_from(vec![
+            TierThreshold::DynamicTvlAmount {
+                amount: 1000,
+                minimum_amount: 100,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 100,
+                minimum_amount: 10,
+            },
+            TierThreshold::FixedTvlAmount { amount: 10 },
+        ])
+        .unwrap(),
+    };
+    assert!(params.is_valid());
+
+    // 1st scenario - sums are below 100%, and that is ok
+    let mut new_params = params.clone();
+    new_params.reward_portion = BoundedVec::try_from(vec![
+        Permill::from_percent(59),
+        Permill::from_percent(30),
+        Permill::from_percent(10),
+    ])
+    .unwrap();
+    new_params.slot_distribution = BoundedVec::try_from(vec![
+        Permill::from_percent(10),
+        Permill::from_percent(19),
+        Permill::from_percent(70),
+    ])
+    .unwrap();
+    assert!(params.is_valid());
+
+    // 2nd scenario - reward portion is too much
+    let mut new_params = params.clone();
+    new_params.reward_portion = BoundedVec::try_from(vec![
+        Permill::from_percent(61),
+        Permill::from_percent(30),
+        Permill::from_percent(10),
+    ])
+    .unwrap();
+    assert!(!new_params.is_valid());
+
+    // 3rd scenario - tier distribution is too much
+    let mut new_params = params.clone();
+    new_params.slot_distribution = BoundedVec::try_from(vec![
+        Permill::from_percent(10),
+        Permill::from_percent(20),
+        Permill::from_percent(71),
+    ])
+    .unwrap();
+    assert!(!new_params.is_valid());
+
+    // 4th scenario - incorrect vector length
+    let mut new_params = params.clone();
+    new_params.tier_thresholds =
+        BoundedVec::try_from(vec![TierThreshold::FixedTvlAmount { amount: 10 }]).unwrap();
+    assert!(!new_params.is_valid());
+}
+
+#[test]
+fn tier_configuration_basic_tests() {
     // TODO: this should be expanded & improved later
     get_u32_type!(TiersNum, 4);
     let params = TierParameters::<TiersNum> {
@@ -1669,9 +2666,79 @@ fn tier_slot_configuration_basic_tests() {
     assert!(init_config.is_valid(), "Init config must be valid!");
 
     // Create a new config, based on a new price
-    let new_price = FixedU64::from_rational(20, 100); // in production will be expressed in USD
-    let new_config = init_config.calculate_new(new_price, &params);
+    let high_price = FixedU64::from_rational(20, 100); // in production will be expressed in USD
+    let new_config = init_config.calculate_new(high_price, &params);
+    assert!(new_config.is_valid());
+
+    let low_price = FixedU64::from_rational(1, 100); // in production will be expressed in USD
+    let new_config = init_config.calculate_new(low_price, &params);
     assert!(new_config.is_valid());
 
     // TODO: expand tests, add more sanity checks (e.g. tier 3 requirement should never be lower than tier 4, etc.)
+}
+
+#[test]
+fn dapp_tier_rewards_basic_tests() {
+    get_u32_type!(NumberOfDApps, 8);
+    get_u32_type!(NumberOfTiers, 3);
+
+    // Example dApps & rewards
+    let dapps = vec![
+        DAppTier {
+            dapp_id: 1,
+            tier_id: Some(0),
+        },
+        DAppTier {
+            dapp_id: 2,
+            tier_id: Some(0),
+        },
+        DAppTier {
+            dapp_id: 3,
+            tier_id: Some(1),
+        },
+        DAppTier {
+            dapp_id: 5,
+            tier_id: Some(1),
+        },
+        DAppTier {
+            dapp_id: 6,
+            tier_id: Some(2),
+        },
+    ];
+    let tier_rewards = vec![300, 20, 1];
+    let period = 2;
+
+    let mut dapp_tier_rewards = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+        dapps.clone(),
+        tier_rewards.clone(),
+        period,
+    )
+    .expect("Bounds are respected.");
+
+    // 1st scenario - claim reward for a dApps
+    let tier_id = dapps[0].tier_id.unwrap();
+    assert_eq!(
+        dapp_tier_rewards.try_claim(dapps[0].dapp_id),
+        Ok((tier_rewards[tier_id as usize], tier_id))
+    );
+
+    let tier_id = dapps[3].tier_id.unwrap();
+    assert_eq!(
+        dapp_tier_rewards.try_claim(dapps[3].dapp_id),
+        Ok((tier_rewards[tier_id as usize], tier_id))
+    );
+
+    // 2nd scenario - try to claim already claimed reward
+    assert_eq!(
+        dapp_tier_rewards.try_claim(dapps[0].dapp_id),
+        Err(DAppTierError::RewardAlreadyClaimed),
+        "Cannot claim the same reward twice."
+    );
+
+    // 3rd scenario - claim for a dApp that is not in the list
+    assert_eq!(
+        dapp_tier_rewards.try_claim(4),
+        Err(DAppTierError::NoDAppInTiers),
+        "dApp doesn't exist in the list so no rewards can be claimed."
+    );
 }
