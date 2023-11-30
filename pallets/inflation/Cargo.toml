@@ -9,9 +9,9 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+log = { workspace = true }
 parity-scale-codec = { workspace = true }
 serde = { workspace = true }
-log = { workspace = true }
 
 astar-primitives = { workspace = true }
 frame-support = { workspace = true }
