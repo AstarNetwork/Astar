@@ -21,8 +21,8 @@
 use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig,
     BlockRewardConfig, CouncilConfig, DappStakingConfig, DemocracyConfig, EVMConfig, GenesisConfig,
-    GrandpaConfig, GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig,
-    TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, AST,
+    GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles, Signature,
+    SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -212,6 +212,9 @@ fn testnet_genesis(
                 TierThreshold::FixedTvlAmount { amount: 10 * AST },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
+        },
+        inflation: InflationConfig {
+            params: InflationParameters::default(),
         },
     }
 }

@@ -5545,6 +5545,7 @@ dependencies = [
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-evm-precompile-xvm",
  "pallet-grandpa",
+ "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
  "pallet-preimage",
  "pallet-proxy",
@@ -7650,6 +7651,23 @@ dependencies = [
  "sp-keyring",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-inflation"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
