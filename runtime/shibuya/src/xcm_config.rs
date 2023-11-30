@@ -20,8 +20,8 @@ use super::{
     AccountId, AllPalletsWithSystem, AssetId, Assets, Balance, Balances, DealWithFees,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
     ShibuyaAssetLocationIdConverter, TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
 };
+use crate::weights;
 use frame_support::{
     match_types, parameter_types,
     traits::{ConstU32, Everything, Nothing},
@@ -138,8 +138,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    // For the PoV size, we estimate 64 kB per instruction - which will is once again very conservative.
-    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
+    // For the PoV size, we estimate 4 kB per instruction. This will be changed when we benchmark the instructions.
+    pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 4 * 1024);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -204,10 +204,6 @@ impl xcm_executor::Config for XcmConfig {
     type SafeCallFilter = Everything;
 }
 
-parameter_types! {
-    pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(10);
-}
-
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
 
@@ -246,7 +242,9 @@ impl pallet_xcm::Config for Runtime {
     type TrustedLockers = ();
     type SovereignAccountOf = LocationToAccountId;
     type MaxLockers = ConstU32<0>;
-    type WeightInfo = pallet_xcm::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_xcm::SubstrateWeight<Runtime>;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type RemoteLockConsumerIdentifier = ();
     #[cfg(feature = "runtime-benchmarks")]
     type ReachableDest = ReachableDest;
     type AdminOrigin = EnsureRoot<AccountId>;

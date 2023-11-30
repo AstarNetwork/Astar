@@ -39,6 +39,7 @@ pallet-evm = { workspace = true }
 
 # Astar pallets & dependencies
 pallet-evm-precompile-assets-erc20 = { workspace = true }
+pallet-evm-precompile-dispatch = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 
 [features]
@@ -64,5 +65,6 @@ std = [
 	"pallet-assets/std",
 	"pallet-evm/std",
 	"pallet-evm-precompile-assets-erc20/std",
+	"pallet-evm-precompile-dispatch/std",
 ]
 runtime-benchmarks = ["xcm-builder/runtime-benchmarks", "pallet-assets/runtime-benchmarks"]

@@ -18,12 +18,14 @@
 
 //! The Shiden Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
+use crate::RuntimeCall;
+use astar_primitives::precompiles::DispatchFilterValidate;
+use frame_support::traits::Contains;
 use pallet_evm::{
     ExitRevert, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle,
     PrecompileResult, PrecompileSet,
 };
 use pallet_evm_precompile_assets_erc20::{AddressToAssetId, Erc20AssetsPrecompileSet};
-use pallet_evm_precompile_batch::BatchPrecompile;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dapps_staking::DappsStakingWrapper;
@@ -45,6 +47,23 @@ use xcm::latest::prelude::MultiLocation;
 /// to Erc20AssetsPrecompileSet
 pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
 
+/// Filter that only allows whitelisted runtime call to pass through dispatch precompile
+pub struct WhitelistedCalls;
+
+impl Contains<RuntimeCall> for WhitelistedCalls {
+    fn contains(t: &RuntimeCall) -> bool {
+        match t {
+            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
+                calls.iter().all(|call| WhitelistedCalls::contains(call))
+            }
+            RuntimeCall::DappsStaking(_) => true,
+            RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
+            _ => false,
+        }
+    }
+}
+
 /// The PrecompileSet installed in the Shiden runtime.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct ShidenNetworkPrecompiles<R, C>(PhantomData<(R, C)>);
@@ -57,11 +76,16 @@ impl<R, C> ShidenNetworkPrecompiles<R, C> {
     /// Return all addresses that contain precompiles. This can be used to populate dummy code
     /// under the precompile.
     pub fn used_addresses() -> impl Iterator<Item = H160> {
-        sp_std::vec![
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484, 20486
-        ]
-        .into_iter()
-        .map(hash)
+        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484,]
+            .into_iter()
+            .map(hash)
+    }
+
+    /// Returns all addresses which are blacklisted for dummy code deployment.
+    /// This is in order to keep the local testnets consistent with the live network.
+    pub fn is_blacklisted(address: &H160) -> bool {
+        // `dispatch` precompile is not allowed to be called by smart contracts, hence the ommision of this address.
+        hash(1025) == *address
     }
 }
 
@@ -72,9 +96,8 @@ impl<R, C> PrecompileSet for ShidenNetworkPrecompiles<R, C>
 where
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
     DappsStakingWrapper<R>: Precompile,
-    BatchPrecompile<R>: Precompile,
     XcmPrecompile<R, C>: Precompile,
-    Dispatch<R>: Precompile,
+    Dispatch<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config
         + pallet_xcm::Config
@@ -106,7 +129,10 @@ where
             a if a == hash(9) => Some(Blake2F::execute(handle)),
             // nor Ethereum precompiles :
             a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
-            a if a == hash(1025) => Some(Dispatch::<R>::execute(handle)),
+            a if a == hash(1025) => Some(Dispatch::<
+                R,
+                DispatchFilterValidate<RuntimeCall, WhitelistedCalls>,
+            >::execute(handle)),
             a if a == hash(1026) => Some(ECRecoverPublicKey::execute(handle)),
             a if a == hash(1027) => Some(Ed25519Verify::execute(handle)),
             // Astar precompiles (starts from 0x5000):
@@ -118,8 +144,6 @@ where
             a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
             // Xcm 0x5004
             a if a == hash(20484) => Some(XcmPrecompile::<R, C>::execute(handle)),
-            // Batch 0x5006
-            a if a == hash(20486) => Some(BatchPrecompile::<R>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)

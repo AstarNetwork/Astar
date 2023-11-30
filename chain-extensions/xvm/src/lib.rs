@@ -21,11 +21,16 @@
 extern crate alloc;
 use alloc::format;
 
-use astar_primitives::xvm::{Context, VmId, XvmCall};
-use frame_support::dispatch::Encode;
+use astar_primitives::{
+    evm::UnifiedAddressMapper,
+    xvm::{CallFailure, Context, FailureError, VmId, XvmCall},
+};
+use frame_support::{dispatch::Encode, weights::Weight};
+use frame_system::RawOrigin;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, ReturnFlags,
 };
+use pallet_unified_accounts::WeightInfo;
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
 use xvm_chain_extension_types::{XvmCallArgs, XvmExecutionResult};
@@ -48,18 +53,19 @@ impl TryFrom<u16> for XvmFuncId {
 }
 
 /// XVM chain extension.
-pub struct XvmExtension<T, XC>(PhantomData<(T, XC)>);
+pub struct XvmExtension<T, XC, UA>(PhantomData<(T, XC, UA)>);
 
-impl<T, XC> Default for XvmExtension<T, XC> {
+impl<T, XC, UA> Default for XvmExtension<T, XC, UA> {
     fn default() -> Self {
         XvmExtension(PhantomData)
     }
 }
 
-impl<T, XC> ChainExtension<T> for XvmExtension<T, XC>
+impl<T, XC, UA> ChainExtension<T> for XvmExtension<T, XC, UA>
 where
-    T: pallet_contracts::Config,
+    T: pallet_contracts::Config + pallet_unified_accounts::Config,
     XC: XvmCall<T::AccountId>,
+    UA: UnifiedAddressMapper<T::AccountId>,
 {
     fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
     where
@@ -72,10 +78,7 @@ where
             XvmFuncId::Call => {
                 // We need to immediately charge for the worst case scenario. Gas equals Weight in pallet-contracts context.
                 let weight_limit = env.ext().gas_meter().gas_left();
-                // TODO: track proof size in align fees ticket
-                // We don't track used proof size, so we can't refund after.
-                // So we will charge a 32KB dummy value as a temporary replacement.
-                let charged_weight = env.charge_weight(weight_limit.set_proof_size(32 * 1024))?;
+                let charged_weight = env.charge_weight(weight_limit)?;
 
                 let XvmCallArgs {
                     vm_id,
@@ -87,11 +90,44 @@ where
                 // Similar to EVM behavior, the `source` should be (limited to) the
                 // contract address. Otherwise contracts would be able to do arbitrary
                 // things on behalf of the caller via XVM.
-                let source = env.ext().address();
+                let source = env.ext().address().clone();
+
+                // Claim the default evm address if needed.
+                let mut actual_weight = Weight::zero();
+                if value > 0 {
+                    // `UA::to_h160`.
+                    actual_weight.saturating_accrue(
+                        <T as pallet_unified_accounts::Config>::WeightInfo::to_h160(),
+                    );
+
+                    if actual_weight.any_gt(weight_limit) {
+                        return out_of_gas_err(actual_weight);
+                    }
+
+                    if UA::to_h160(&source).is_none() {
+                        let weight_of_claim = <T as pallet_unified_accounts::Config>::WeightInfo::claim_default_evm_address();
+                        actual_weight.saturating_accrue(weight_of_claim);
+                        if actual_weight.any_gt(weight_limit) {
+                            return out_of_gas_err(actual_weight);
+                        }
+
+                        let claim_result =
+                            pallet_unified_accounts::Pallet::<T>::claim_default_evm_address(
+                                RawOrigin::Signed(source.clone()).into(),
+                            );
+                        if claim_result.is_err() {
+                            return Ok(RetVal::Diverging {
+                                flags: ReturnFlags::REVERT,
+                                data: format!("{:?}", claim_result.err()).into(),
+                            });
+                        }
+                    }
+                }
 
                 let xvm_context = Context {
                     source_vm_id: VmId::Wasm,
-                    weight_limit,
+                    // Weight limit left for XVM call.
+                    weight_limit: weight_limit.saturating_sub(actual_weight),
                 };
                 let vm_id = {
                     match TryInto::<VmId>::try_into(vm_id) {
@@ -104,12 +140,13 @@ where
                         }
                     }
                 };
-                let call_result = XC::call(xvm_context, vm_id, source.clone(), to, input, value);
+                let call_result = XC::call(xvm_context, vm_id, source, to, input, value, None);
 
-                let actual_weight = match call_result {
+                let used_weight = match call_result {
                     Ok(ref info) => info.used_weight,
                     Err(ref err) => err.used_weight,
                 };
+                actual_weight.saturating_accrue(used_weight);
                 env.adjust_weight(charged_weight, actual_weight);
 
                 match call_result {
@@ -141,4 +178,15 @@ where
             }
         }
     }
+}
+
+fn out_of_gas_err(actual_weight: Weight) -> Result<RetVal, DispatchError> {
+    Ok(RetVal::Diverging {
+        flags: ReturnFlags::REVERT,
+        data: format!(
+            "{:?}",
+            CallFailure::error(FailureError::OutOfGas, actual_weight)
+        )
+        .into(),
+    })
 }

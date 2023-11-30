@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
  * @title XCM interface.
  */
 interface XCM {
+
     /**
-     * @dev Withdraw assets using PalletXCM call.
      * @param asset_id - list of XC20 asset addresses
      * @param asset_amount - list of transfer amounts (must match with asset addresses above)
      * @param recipient_account_id - SS58 public key of the destination account
@@ -28,7 +28,6 @@ interface XCM {
     ) external returns (bool);
 
     /**
-     * @dev Withdraw assets using PalletXCM call.
      * @param asset_id - list of XC20 asset addresses
      * @param asset_amount - list of transfer amounts (must match with asset addresses above)
      * @param recipient_account_id - ETH address of the destination account
@@ -51,7 +50,6 @@ interface XCM {
     ) external returns (bool);
 
     /**
-     * @dev Execute a transaction on a remote chain.
      * @param parachain_id - destination parachain Id (ignored if is_relay is true)
      * @param is_relay - if true, destination is relay_chain, if false it is parachain (see previous argument)
      * @param payment_asset_id - ETH address of the local asset derivate used to pay for execution in the destination chain
@@ -70,7 +68,6 @@ interface XCM {
     ) external returns (bool);
 
     /**
-     * @dev Reserve transfer assets using PalletXCM call.
      * @param asset_id - list of XC20 asset addresses
      * @param asset_amount - list of transfer amounts (must match with asset addresses above)
      * @param recipient_account_id - SS58 public key of the destination account
@@ -93,7 +90,6 @@ interface XCM {
     ) external returns (bool);
 
     /**
-     * @dev Reserve transfer using PalletXCM call.
      * @param asset_id - list of XC20 asset addresses
      * @param asset_amount - list of transfer amounts (must match with asset addresses above)
      * @param recipient_account_id - ETH address of the destination account
@@ -114,4 +110,5 @@ interface XCM {
         uint256   parachain_id,
         uint256   fee_index
     ) external returns (bool);
+    
 }

@@ -28,8 +28,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, InstanceFilter,
-        Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -57,16 +57,15 @@ use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
-        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Bounded, ConvertInto,
-        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
+        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
-    transaction_validity::{
-        TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
-    },
+    transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
+pub use crate::precompiles::WhitelistedCalls;
 pub use astar_primitives::{
     evm::EvmRevertCodeHandler, xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance,
     BlockNumber, Hash, Header, Index, Signature,
@@ -94,27 +93,24 @@ pub use precompiles::{ShidenNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX}
 pub type Precompiles = ShidenNetworkPrecompiles<Runtime, ShidenAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
-pub const MICROSDN: Balance = 1_000_000_000_000;
+pub const NANOSDN: Balance = 1_000_000_000;
+pub const MICROSDN: Balance = 1_000 * NANOSDN;
 pub const MILLISDN: Balance = 1_000 * MICROSDN;
 pub const SDN: Balance = 1_000 * MILLISDN;
 
-pub const INIT_SUPPLY_FACTOR: Balance = 1;
-
-pub const STORAGE_BYTE_FEE: Balance = 20 * MICROSDN * INIT_SUPPLY_FACTOR;
+pub const STORAGE_BYTE_FEE: Balance = 200 * NANOSDN;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    items as Balance * 100 * MILLISDN * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
+    items as Balance * MILLISDN + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Charge fee for stored bytes and items as part of `pallet-contracts`.
 ///
 /// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
 /// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
-///
-/// TODO: using this requires some storage migration since we're using some old, legacy values ATM
 pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
-    items as Balance * 4 * MILLISDN * INIT_SUPPLY_FACTOR + (bytes as Balance) * STORAGE_BYTE_FEE
+    items as Balance * 40 * MICROSDN + (bytes as Balance) * STORAGE_BYTE_FEE
 }
 
 /// Change this to adjust the block time.
@@ -144,7 +140,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 106,
+    spec_version: 112,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -315,24 +311,6 @@ impl pallet_multisig::Config for Runtime {
     type DepositFactor = DepositFactor;
     type MaxSignatories = ConstU32<100>;
     type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
-    pub const CallFee: Balance = SDN / 10;
-    pub const CallMagicNumber: u16 = 0x0150;
-}
-
-impl pallet_custom_signatures::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
-    type Signer = <Signature as Verify>::Signer;
-    type CallMagicNumber = CallMagicNumber;
-    type Currency = Balances;
-    type CallFee = CallFee;
-    type OnChargeTransaction = ToStakingPot;
-    type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
 parameter_types! {
@@ -560,7 +538,7 @@ impl AddressToAssetId<AssetId> for Runtime {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 10 * INIT_SUPPLY_FACTOR * SDN;
+    pub const AssetDeposit: Balance = 10 * SDN;
     pub const AssetsStringLimit: u32 = 50;
     /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
@@ -612,8 +590,8 @@ impl pallet_vesting::Config for Runtime {
 
 // TODO: changing depost per item and per byte to `deposit` function will require storage migration it seems
 parameter_types! {
-    pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
-    pub const DepositPerByte: Balance = MILLISDN / 1_000_000;
+    pub const DepositPerItem: Balance = contracts_deposit(1, 0);
+    pub const DepositPerByte: Balance = contracts_deposit(0, 1);
     // Fallback value if storage deposit limit not set by the user
     pub const DefaultDepositLimit: Balance = contracts_deposit(16, 16 * 1024);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
@@ -648,12 +626,13 @@ impl pallet_contracts::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionByteFee: Balance = MILLISDN / 100;
+    pub const TransactionLengthFeeFactor: Balance = 235_000_000_000; // 0.000_000_235_000_000_000 SDN per byte
+    pub const WeightFeeFactor: Balance = 308_550_000_000_000; // Around 0.000_300 SDN per unit of base weight.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
-    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
-    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
-    pub MaximumMultiplier: Multiplier = Bounded::max_value();
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(000_015, 1_000_000); // 0.000_015
+    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 10); // 0.1
+    pub MaximumMultiplier: Multiplier = Multiplier::saturating_from_integer(10); // 10
 }
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -670,9 +649,8 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        // in Shiden, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mSDN:
-        let p = MILLISDN;
-        let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
+        let p = WeightFeeFactor::get();
+        let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,
@@ -686,13 +664,18 @@ pub struct BurnFees;
 impl OnUnbalanced<NegativeImbalance> for BurnFees {
     /// Payout tips but burn all the fees
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
-        if let Some(fees_to_burn) = fees_then_tips.next() {
+        if let Some(fees) = fees_then_tips.next() {
+            // Burn 80% of fees, rest goes to the collator, including 100% of the tips.
+            let (to_burn, mut collator) = fees.ration(80, 20);
             if let Some(tips) = fees_then_tips.next() {
-                <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(tips);
+                tips.merge_into(&mut collator);
             }
 
-            // burn fees
-            drop(fees_to_burn);
+            // burn part of the fees
+            drop(to_burn);
+
+            // pay fees to collator
+            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collator);
         }
     }
 }
@@ -709,33 +692,33 @@ impl pallet_transaction_payment::Config for Runtime {
         MinimumMultiplier,
         MaximumMultiplier,
     >;
-    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionLengthFeeFactor>;
 }
 
 parameter_types! {
-    pub DefaultBaseFeePerGas: U256 = (MILLISDN / 1_000_000).into();
-    // At the moment, we don't use dynamic fee calculation for Shiden by default
-    pub DefaultElasticity: Permill = Permill::zero();
+    pub DefaultBaseFeePerGas: U256 = U256::from(14_700_000_000_u128);
+    pub MinBaseFeePerGas: U256 = U256::from(8_000_000_000_u128);
+    pub MaxBaseFeePerGas: U256 = U256::from(800_000_000_000_u128);
+    pub StepLimitRatio: Perquintill = Perquintill::from_rational(5_u128, 100_000);
 }
 
-pub struct BaseFeeThreshold;
-impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
-    fn lower() -> Permill {
-        Permill::zero()
-    }
-    fn ideal() -> Permill {
-        Permill::from_parts(500_000)
-    }
-    fn upper() -> Permill {
-        Permill::from_parts(1_000_000)
+/// Simple wrapper for fetching current native transaction fee weight fee multiplier.
+pub struct AdjustmentFactorGetter;
+impl Get<Multiplier> for AdjustmentFactorGetter {
+    fn get() -> Multiplier {
+        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::get()
     }
 }
 
-impl pallet_base_fee::Config for Runtime {
+impl pallet_dynamic_evm_base_fee::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type Threshold = BaseFeeThreshold;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
-    type DefaultElasticity = DefaultElasticity;
+    type MinBaseFeePerGas = MinBaseFeePerGas;
+    type MaxBaseFeePerGas = MaxBaseFeePerGas;
+    type AdjustmentFactor = AdjustmentFactorGetter;
+    type WeightFactor = WeightFeeFactor;
+    type StepLimitRatio = StepLimitRatio;
+    type WeightInfo = pallet_dynamic_evm_base_fee::weights::SubstrateWeight<Runtime>;
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -785,7 +768,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-    type FeeCalculator = BaseFee;
+    type FeeCalculator = DynamicEvmBaseFee;
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
@@ -904,8 +887,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::XcAssetConfig(..)
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
-                        // Skip entire EthCall pallet
-                        | RuntimeCall::BaseFee(..) // Skip entire Contracts pallet
+                        | RuntimeCall::DynamicEvmBaseFee(..) // Skip entire Contracts pallet
                 )
             }
             ProxyType::Balances => {
@@ -1009,12 +991,11 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm = 52,
         DmpQueue: cumulus_pallet_dmp_queue = 53,
         XcAssetConfig: pallet_xc_asset_config = 54,
-        Xtokens: orml_xtokens = 55,
+        XTokens: orml_xtokens = 55,
 
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
-        EthCall: pallet_custom_signatures = 62,
-        BaseFee: pallet_base_fee = 63,
+        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = 63,
 
         Contracts: pallet_contracts = 70,
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 71,
@@ -1057,18 +1038,10 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-// Used to cleanup StateTrieMigration storage - remove once cleanup is done.
-parameter_types! {
-    pub const StateTrieMigrationStr: &'static str = "StateTrieMigration";
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    frame_support::migrations::RemovePallet<StateTrieMigrationStr, RocksDbWeight>,
-    pallet_contracts::Migration<Runtime>,
-);
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1150,6 +1123,7 @@ mod benches {
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
+        [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
     );
 }
 
@@ -1512,7 +1486,7 @@ impl_runtime_apis! {
         }
 
         fn elasticity() -> Option<Permill> {
-            Some(pallet_base_fee::Elasticity::<Runtime>::get())
+            Some(Permill::zero())
         }
 
         fn gas_limit_multiplier_support() {}

@@ -92,8 +92,6 @@ const WASM_PAYABLE_NAME: &'static str = "payable";
 
 /* Call WASM payable:
 
-// SPDX-License-Identifier: GPL-3.0
-
 pragma solidity >=0.8.2 <0.9.0;
 
 interface XVM {
@@ -101,18 +99,20 @@ interface XVM {
         uint8 vm_id,
         bytes calldata to,
         bytes calldata input,
-        uint256 value
+        uint256 value,
+        uint256 storage_deposit_limit
     ) external payable returns (bool success, bytes memory data);
 }
 
 contract CallXVMPayble {
     function call_xvm_payable(bytes calldata to, bytes calldata input, uint256 value) external payable returns (bool success, bytes memory data)  {
-        return XVM(0x0000000000000000000000000000000000005005).xvm_call(0x1F, to, input, value);
+        // Call with unlimited storage deposit limit.
+        return XVM(0x0000000000000000000000000000000000005005).xvm_call(0x1F, to, input, value, 0);
     }
 }
 
  */
-const CALL_WASM_PAYBLE: &str = "608060405234801561001057600080fd5b506105e6806100206000396000f3fe60806040526004361061001e5760003560e01c80634012b91414610023575b600080fd5b61003d600480360381019061003891906101a3565b610054565b60405161004b9291906102e3565b60405180910390f35b6000606061500573ffffffffffffffffffffffffffffffffffffffff1663e5d9bac0601f89898989896040518763ffffffff1660e01b815260040161009e969594939291906103b0565b6000604051808303816000875af11580156100bd573d6000803e3d6000fd5b505050506040513d6000823e3d601f19601f820116820180604052508101906100e69190610554565b915091509550959350505050565b6000604051905090565b600080fd5b600080fd5b600080fd5b600080fd5b600080fd5b60008083601f84011261012d5761012c610108565b5b8235905067ffffffffffffffff81111561014a5761014961010d565b5b60208301915083600182028301111561016657610165610112565b5b9250929050565b6000819050919050565b6101808161016d565b811461018b57600080fd5b50565b60008135905061019d81610177565b92915050565b6000806000806000606086880312156101bf576101be6100fe565b5b600086013567ffffffffffffffff8111156101dd576101dc610103565b5b6101e988828901610117565b9550955050602086013567ffffffffffffffff81111561020c5761020b610103565b5b61021888828901610117565b9350935050604061022b8882890161018e565b9150509295509295909350565b60008115159050919050565b61024d81610238565b82525050565b600081519050919050565b600082825260208201905092915050565b60005b8381101561028d578082015181840152602081019050610272565b60008484015250505050565b6000601f19601f8301169050919050565b60006102b582610253565b6102bf818561025e565b93506102cf81856020860161026f565b6102d881610299565b840191505092915050565b60006040820190506102f86000830185610244565b818103602083015261030a81846102aa565b90509392505050565b6000819050919050565b600060ff82169050919050565b6000819050919050565b600061034f61034a61034584610313565b61032a565b61031d565b9050919050565b61035f81610334565b82525050565b82818337600083830152505050565b6000610380838561025e565b935061038d838584610365565b61039683610299565b840190509392505050565b6103aa8161016d565b82525050565b60006080820190506103c56000830189610356565b81810360208301526103d8818789610374565b905081810360408301526103ed818587610374565b90506103fc60608301846103a1565b979650505050505050565b61041081610238565b811461041b57600080fd5b50565b60008151905061042d81610407565b92915050565b600080fd5b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b61047082610299565b810181811067ffffffffffffffff8211171561048f5761048e610438565b5b80604052505050565b60006104a26100f4565b90506104ae8282610467565b919050565b600067ffffffffffffffff8211156104ce576104cd610438565b5b6104d782610299565b9050602081019050919050565b60006104f76104f2846104b3565b610498565b90508281526020810184848401111561051357610512610433565b5b61051e84828561026f565b509392505050565b600082601f83011261053b5761053a610108565b5b815161054b8482602086016104e4565b91505092915050565b6000806040838503121561056b5761056a6100fe565b5b60006105798582860161041e565b925050602083015167ffffffffffffffff81111561059a57610599610103565b5b6105a685828601610526565b915050925092905056fea264697066735822122047908cecfa9ace275a4ba96e787bb0d1541ec599c370983693c6cd9c1f5b7dbe64736f6c63430008120033";
+const CALL_WASM_PAYBLE: &str = "608060405234801561001057600080fd5b50610632806100206000396000f3fe60806040526004361061001e5760003560e01c80634012b91414610023575b600080fd5b61003d600480360381019061003891906101a6565b610054565b60405161004b9291906102e6565b60405180910390f35b6000606061500573ffffffffffffffffffffffffffffffffffffffff1663acc57c7e601f898989898960006040518863ffffffff1660e01b81526004016100a197969594939291906103ee565b6000604051808303816000875af11580156100c0573d6000803e3d6000fd5b505050506040513d6000823e3d601f19601f820116820180604052508101906100e991906105a0565b915091509550959350505050565b6000604051905090565b600080fd5b600080fd5b600080fd5b600080fd5b600080fd5b60008083601f8401126101305761012f61010b565b5b8235905067ffffffffffffffff81111561014d5761014c610110565b5b60208301915083600182028301111561016957610168610115565b5b9250929050565b6000819050919050565b61018381610170565b811461018e57600080fd5b50565b6000813590506101a08161017a565b92915050565b6000806000806000606086880312156101c2576101c1610101565b5b600086013567ffffffffffffffff8111156101e0576101df610106565b5b6101ec8882890161011a565b9550955050602086013567ffffffffffffffff81111561020f5761020e610106565b5b61021b8882890161011a565b9350935050604061022e88828901610191565b9150509295509295909350565b60008115159050919050565b6102508161023b565b82525050565b600081519050919050565b600082825260208201905092915050565b60005b83811015610290578082015181840152602081019050610275565b60008484015250505050565b6000601f19601f8301169050919050565b60006102b882610256565b6102c28185610261565b93506102d2818560208601610272565b6102db8161029c565b840191505092915050565b60006040820190506102fb6000830185610247565b818103602083015261030d81846102ad565b90509392505050565b6000819050919050565b600060ff82169050919050565b6000819050919050565b600061035261034d61034884610316565b61032d565b610320565b9050919050565b61036281610337565b82525050565b82818337600083830152505050565b60006103838385610261565b9350610390838584610368565b6103998361029c565b840190509392505050565b6103ad81610170565b82525050565b6000819050919050565b60006103d86103d36103ce846103b3565b61032d565b610170565b9050919050565b6103e8816103bd565b82525050565b600060a082019050610403600083018a610359565b818103602083015261041681888a610377565b9050818103604083015261042b818688610377565b905061043a60608301856103a4565b61044760808301846103df565b98975050505050505050565b61045c8161023b565b811461046757600080fd5b50565b60008151905061047981610453565b92915050565b600080fd5b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6104bc8261029c565b810181811067ffffffffffffffff821117156104db576104da610484565b5b80604052505050565b60006104ee6100f7565b90506104fa82826104b3565b919050565b600067ffffffffffffffff82111561051a57610519610484565b5b6105238261029c565b9050602081019050919050565b600061054361053e846104ff565b6104e4565b90508281526020810184848401111561055f5761055e61047f565b5b61056a848285610272565b509392505050565b600082601f8301126105875761058661010b565b5b8151610597848260208601610530565b91505092915050565b600080604083850312156105b7576105b6610101565b5b60006105c58582860161046a565b925050602083015167ffffffffffffffff8111156105e6576105e5610106565b5b6105f285828601610572565b915050925092905056fea2646970667358221220f15cb6d78fafea8cb36c2871d64ba6fab808db64581058721f11e89d77c0af3064736f6c63430008120033";
 
 /* Call EVM Payable:
 
@@ -176,6 +176,9 @@ const CALL_EVM_PAYBLE_NAME: &'static str = "call_xvm_payable";
 #[test]
 fn evm_payable_call_via_xvm_works() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let evm_payable_addr = deploy_evm_contract(EVM_PAYABLE);
 
         let value = UNIT;
@@ -190,6 +193,7 @@ fn evm_payable_call_via_xvm_works() {
             // Calling `deposit`
             hex::decode("d0e30db0").expect("invalid selector hex"),
             value,
+            None,
         ));
         assert_eq!(
             Balances::free_balance(account_id_from(evm_payable_addr)),
@@ -207,6 +211,7 @@ fn evm_payable_call_via_xvm_works() {
             // `Calling withdraw`
             hex::decode("3ccfd60b").expect("invalid selector hex"),
             0,
+            None,
         ));
         assert_eq!(
             Balances::free_balance(account_id_from(evm_payable_addr)),
@@ -229,10 +234,11 @@ fn wasm_payable_call_via_xvm_works() {
             },
             VmId::Wasm,
             ALICE,
-            MultiAddress::<AccountId32, ()>::Id(wasm_payable_addr.clone()).encode(),
+            wasm_payable_addr.clone().encode(),
             // Calling `deposit`
             hex::decode("0000002a").expect("invalid selector hex"),
-            value
+            value,
+            None,
         ));
         assert_eq!(
             Balances::free_balance(wasm_payable_addr.clone()),
@@ -244,6 +250,9 @@ fn wasm_payable_call_via_xvm_works() {
 #[test]
 fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let _ = deploy_wasm_contract(WASM_PAYABLE_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
@@ -252,10 +261,10 @@ fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
             RuntimeOrigin::root(),
             alith(),
             evm_caller_addr.clone(),
-            // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
+            // to: 0xa8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
             // input: 0x0000002a (deposit)
             // value: 1000000000
-            hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000000002100a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
+            hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000020a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c00000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
             U256::from(value),
             1_000_000,
             U256::from(DefaultBaseFeePerGas::get()),
@@ -281,6 +290,9 @@ fn calling_wasm_payable_from_evm_fails_if_caller_contract_balance_below_ed() {
 #[test]
 fn calling_wasm_payable_from_evm_works() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let wasm_payable_callee_addr = deploy_wasm_contract(WASM_PAYABLE_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
@@ -292,10 +304,10 @@ fn calling_wasm_payable_from_evm_works() {
             RuntimeOrigin::root(),
             alith(),
             evm_caller_addr.clone(),
-            // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
+            // to: 0xa8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
             // input: 0x0000002a (deposit)
             // value: 1000000000
-            hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000000002100a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
+            hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000020a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c00000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
             U256::from(value),
             1_000_000,
             U256::from(DefaultBaseFeePerGas::get()),
@@ -311,16 +323,21 @@ fn calling_wasm_payable_from_evm_works() {
 #[test]
 fn calling_evm_payable_from_wasm_works() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let evm_payable_callee_addr = deploy_evm_contract(EVM_PAYABLE);
         let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
 
         let value = UNIT;
 
-        // TODO: after Account Unification finished, remove this mock account.
-        // It is needed now because currently the `AccountMapping` and `AddressMapping` are
-        // both one way mapping.
-        let mock_unified_wasm_account = account_id_from(h160_from(wasm_caller_addr.clone()));
-        let _ = Balances::deposit_creating(&mock_unified_wasm_account, value);
+        // fund the wasm contract address for paying storage fees for
+        // AU mappings.
+        assert_ok!(Balances::transfer_allow_death(
+            RuntimeOrigin::signed(ALICE),
+            wasm_caller_addr.clone().into(),
+            AccountMappingStorageFee::get()
+        ));
 
         let evm_payable = evm_payable_callee_addr.as_ref().to_vec();
         let deposit_func = hex::decode("d0e30db0").expect("invalid deposit function hex");
@@ -345,25 +362,28 @@ fn calling_evm_payable_from_wasm_works() {
             value
         );
 
-        // TODO: after Account Unification finished, enable the wasm address balance check
-        // and remove the mock account balance check.
-        // assert_eq!(Balances::free_balance(&wasm_address), ExistentialDeposit::get());
-        assert_eq!(Balances::free_balance(&mock_unified_wasm_account), 0);
+        assert_eq!(
+            Balances::free_balance(&wasm_caller_addr),
+            ExistentialDeposit::get()
+        );
     });
 }
 
 #[test]
 fn reentrance_not_allowed() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         // Call path: WASM -> EVM -> WASM
         let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
         let _ = deploy_wasm_contract(WASM_PAYABLE_NAME);
 
-        // to: 0x00a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
+        // to: 0xa8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c
         // input: 0x0000002a (deposit)
         // value: 1000000000
-        let call_wasm_payable_input = hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000000002100a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex");
+        let call_wasm_payable_input = hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000020a8f69d59df362b69a8d4acdb9001eb3e1b8d067b8fdaa70081aed945bde5c48c00000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex");
         let input = hex::decode("0000002a")
             .expect("invalid selector hex")
             .iter()
@@ -419,6 +439,9 @@ const EVM_DUMMY_ERROR: &'static str = "608060405234801561001057600080fd5b5061023
 #[test]
 fn evm_call_via_xvm_fails_if_revert() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let evm_callee_addr = deploy_evm_contract(EVM_DUMMY_ERROR);
 
         let result = Xvm::call(
@@ -432,6 +455,7 @@ fn evm_call_via_xvm_fails_if_revert() {
             // Calling `revert_with_err_msg`
             hex::decode("28fd58ae").expect("invalid selector hex"),
             0,
+            None,
         );
         match result {
             Err(CallFailure {
@@ -454,6 +478,7 @@ fn evm_call_via_xvm_fails_if_revert() {
             // Calling `revert_with_err_type`
             hex::decode("cb1c03b2").expect("invalid selector hex"),
             0,
+            None,
         );
         match result1 {
             Err(CallFailure {
@@ -472,11 +497,45 @@ fn evm_call_via_xvm_fails_if_revert() {
     });
 }
 
+/* Dummy Error:
+
+#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod dummy_error {
+
+    #[ink(storage)]
+    pub struct DummyError {}
+
+    #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    pub enum Error {
+        #[codec(index = 7)]
+        DummyError,
+    }
+
+    impl DummyError {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            Self {}
+        }
+
+        #[ink(message, selector = 42)]
+        pub fn do_revert(&self) -> Result<(), Error> {
+            Err(Error::DummyError)
+        }
+    }
+}
+
+ */
 const WASM_DUMMY_ERROR_NAME: &'static str = "dummy_error";
 
 #[test]
 fn wasm_call_via_xvm_fails_if_revert() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let wasm_callee_addr = deploy_wasm_contract(WASM_DUMMY_ERROR_NAME);
         let input = hex::decode("0000002a").expect("invalid selector hex");
         let result = Xvm::call(
@@ -486,9 +545,10 @@ fn wasm_call_via_xvm_fails_if_revert() {
             },
             VmId::Wasm,
             ALICE,
-            MultiAddress::<AccountId32, ()>::Id(wasm_callee_addr.clone()).encode(),
+            wasm_callee_addr.clone().encode(),
             input,
             0,
+            None,
         );
         match result {
             Err(CallFailure {
@@ -506,13 +566,16 @@ fn wasm_call_via_xvm_fails_if_revert() {
 #[test]
 fn evm_caller_reverts_if_wasm_callee_reverted() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let _ = deploy_wasm_contract(WASM_DUMMY_ERROR_NAME);
         let evm_caller_addr = deploy_evm_contract(CALL_WASM_PAYBLE);
 
-        // to: 0x00a0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a23
+        // to: 0xa0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a23
         // input: 0x0000002a (do_revert)
         // value: 0
-        let input = hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002100a0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a230000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex");
+        let input = hex::decode("4012b914000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020a0565d335eb7545deeb25563471219e6f0c9b9bb504a112a5f26fe61237c5a2300000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex");
         let tx = CheckedEthereumTx {
             target: evm_caller_addr.clone(),
             input: EthereumTxInput::try_from(input).expect("input too large"),
@@ -539,6 +602,9 @@ fn evm_caller_reverts_if_wasm_callee_reverted() {
 #[test]
 fn wasm_caller_reverts_if_evm_callee_reverted() {
     new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
         let evm_callee_addr = deploy_evm_contract(EVM_DUMMY_ERROR);
         let wasm_caller_addr = deploy_wasm_contract(CALL_EVM_PAYBLE_NAME);
 
@@ -574,6 +640,177 @@ fn wasm_caller_reverts_if_evm_callee_reverted() {
                 let error_string = String::from_utf8(data).expect("invalid utf8");
                 assert!(error_string.contains(&format!("{:?}", revert_failure)));
             }
+            _ => panic!("unexpected wasm call result"),
+        }
+    });
+}
+
+/*
+
+#![cfg_attr(not(feature = "std"), no_std, no_main)]
+
+#[ink::contract]
+mod simple_storage {
+    use ink::storage::Mapping;
+
+    #[ink(storage)]
+    pub struct SimpleStorage {
+        storages: Mapping<AccountId, u32>,
+    }
+
+    impl SimpleStorage {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            let storages = Mapping::default();
+            Self { storages }
+        }
+
+        #[ink(message, selector = 42)]
+        pub fn store(&mut self) {
+            let caller = self.env().caller();
+            self.storages.insert(caller, &42);
+        }
+
+        #[ink(message, selector = 43)]
+        pub fn get(&self) -> u32 {
+            let caller = self.env().caller();
+            self.storages.get(caller).unwrap_or(0)
+        }
+    }
+}
+
+ */
+const WASM_SIMPLE_STORAGE_NAME: &'static str = "simple_storage";
+
+#[test]
+fn wasm_call_via_xvm_fails_if_storage_deposit_limit_exhausted() {
+    new_test_ext().execute_with(|| {
+        let wasm_callee_addr = deploy_wasm_contract(WASM_SIMPLE_STORAGE_NAME);
+        let input = hex::decode("0000002a")
+            .expect("invalid selector hex");
+        let result = Xvm::call(
+            Context {
+                source_vm_id: VmId::Evm,
+                weight_limit: Weight::from_parts(10_000_000_000, 1024 * 1024),
+            },
+            VmId::Wasm,
+            ALICE,
+            wasm_callee_addr.clone().encode(),
+            input,
+            0,
+            Some(0)
+        );
+        match result {
+            Err(CallFailure {
+                reason: FailureReason::Error(FailureError::VmError(data)),
+                ..
+            }) => {
+                let error_string = "WASM call error: Module(ModuleError { index: 70, error: [22, 0, 0, 0], message: Some(\"StorageDepositLimitExhausted\") })";
+                assert_eq!(data, error_string.as_bytes());
+            },
+            _ => panic!("unexpected wasm call result"),
+        }
+    });
+}
+
+#[test]
+fn wasm_call_via_xvm_call_works_if_sufficient_storage_deposit_limit() {
+    new_test_ext().execute_with(|| {
+        let wasm_callee_addr = deploy_wasm_contract(WASM_SIMPLE_STORAGE_NAME);
+        let input = hex::decode("0000002a").expect("invalid selector hex");
+        assert_ok!(Xvm::call(
+            Context {
+                source_vm_id: VmId::Evm,
+                weight_limit: Weight::from_parts(10_000_000_000, 1024 * 1024),
+            },
+            VmId::Wasm,
+            ALICE,
+            wasm_callee_addr.clone().encode(),
+            input,
+            0,
+            Some(UNIT)
+        ));
+    });
+}
+
+/*
+
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.8.2 <0.9.0;
+
+interface XVM {
+    function xvm_call(
+        uint8 vm_id,
+        bytes calldata to,
+        bytes calldata input,
+        uint256 value,
+        uint256 storage_deposit_limit
+    ) external payable returns (bool success, bytes memory data);
+}
+
+contract CallXVMPayble {
+    function call_xvm_payable(bytes calldata to, bytes calldata input, uint256 value, uint256 storage_deposit_limit) external payable returns (bool success, bytes memory data)  {
+        return XVM(0x0000000000000000000000000000000000005005).xvm_call(0x1F, to, input, value, storage_deposit_limit);
+    }
+}
+
+ */
+const CALL_XVM_PAYABLE_WITH_SDL: &'static str = "608060405234801561001057600080fd5b50610609806100206000396000f3fe60806040526004361061001e5760003560e01c80632d9338da14610023575b600080fd5b61003d600480360381019061003891906101a6565b610054565b60405161004b9291906102f8565b60405180910390f35b6000606061500573ffffffffffffffffffffffffffffffffffffffff1663acc57c7e601f8a8a8a8a8a8a6040518863ffffffff1660e01b81526004016100a097969594939291906103c5565b6000604051808303816000875af11580156100bf573d6000803e3d6000fd5b505050506040513d6000823e3d601f19601f820116820180604052508101906100e89190610577565b91509150965096945050505050565b6000604051905090565b600080fd5b600080fd5b600080fd5b600080fd5b600080fd5b60008083601f8401126101305761012f61010b565b5b8235905067ffffffffffffffff81111561014d5761014c610110565b5b60208301915083600182028301111561016957610168610115565b5b9250929050565b6000819050919050565b61018381610170565b811461018e57600080fd5b50565b6000813590506101a08161017a565b92915050565b600080600080600080608087890312156101c3576101c2610101565b5b600087013567ffffffffffffffff8111156101e1576101e0610106565b5b6101ed89828a0161011a565b9650965050602087013567ffffffffffffffff8111156102105761020f610106565b5b61021c89828a0161011a565b9450945050604061022f89828a01610191565b925050606061024089828a01610191565b9150509295509295509295565b60008115159050919050565b6102628161024d565b82525050565b600081519050919050565b600082825260208201905092915050565b60005b838110156102a2578082015181840152602081019050610287565b60008484015250505050565b6000601f19601f8301169050919050565b60006102ca82610268565b6102d48185610273565b93506102e4818560208601610284565b6102ed816102ae565b840191505092915050565b600060408201905061030d6000830185610259565b818103602083015261031f81846102bf565b90509392505050565b6000819050919050565b600060ff82169050919050565b6000819050919050565b600061036461035f61035a84610328565b61033f565b610332565b9050919050565b61037481610349565b82525050565b82818337600083830152505050565b60006103958385610273565b93506103a283858461037a565b6103ab836102ae565b840190509392505050565b6103bf81610170565b82525050565b600060a0820190506103da600083018a61036b565b81810360208301526103ed81888a610389565b90508181036040830152610402818688610389565b905061041160608301856103b6565b61041e60808301846103b6565b98975050505050505050565b6104338161024d565b811461043e57600080fd5b50565b6000815190506104508161042a565b92915050565b600080fd5b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b610493826102ae565b810181811067ffffffffffffffff821117156104b2576104b161045b565b5b80604052505050565b60006104c56100f7565b90506104d1828261048a565b919050565b600067ffffffffffffffff8211156104f1576104f061045b565b5b6104fa826102ae565b9050602081019050919050565b600061051a610515846104d6565b6104bb565b90508281526020810184848401111561053657610535610456565b5b610541848285610284565b509392505050565b600082601f83011261055e5761055d61010b565b5b815161056e848260208601610507565b91505092915050565b6000806040838503121561058e5761058d610101565b5b600061059c85828601610441565b925050602083015167ffffffffffffffff8111156105bd576105bc610106565b5b6105c985828601610549565b915050925092905056fea2646970667358221220e44af7386feb3ae682c95df11f7b3de851b515869a073d6fabe05758e94e351f64736f6c63430008120033";
+
+#[test]
+fn calling_wasm_from_evm_works_if_sufficient_storage_deposit_limit() {
+    new_test_ext().execute_with(|| {
+        // create account mappings
+        connect_accounts(&ALICE, &alith_secret_key());
+
+        let wasm_callee_addr = deploy_wasm_contract(WASM_SIMPLE_STORAGE_NAME);
+        let evm_caller_addr = deploy_evm_contract(CALL_XVM_PAYABLE_WITH_SDL);
+
+        // Fund the EVM contract to pay for storage deposit.
+        let _ = Balances::deposit_creating(&account_id_from(evm_caller_addr.clone()), UNIT);
+
+        assert_ok!(EVM::call(
+            RuntimeOrigin::root(),
+            alith(),
+            evm_caller_addr.clone(),
+            // to: 0x0e0ddb5a5f0b99d7be468a3051a94073ec6b1900178316401a52b93415026999
+            // input: 0x0000002a (store)
+            // value: 0
+            // storage_deposit_limit: 1_000_000_000_000_000
+            hex::decode("2d9338da000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000038d7ea4c6800000000000000000000000000000000000000000000000000000000000000000200e0ddb5a5f0b99d7be468a3051a94073ec6b1900178316401a52b9341502699900000000000000000000000000000000000000000000000000000000000000040000002a00000000000000000000000000000000000000000000000000000000").expect("invalid call input hex"),
+            U256::zero(),
+            1_000_000,
+            U256::from(DefaultBaseFeePerGas::get()),
+            None,
+            None,
+            vec![],
+        ));
+        assert_eq!(
+            System::events().iter().last().expect("no event found").event,
+            RuntimeEvent::EVM(
+                pallet_evm::Event::Executed { address: evm_caller_addr },
+            ),
+        );
+
+        let result = Contracts::bare_call(
+            account_id_from(evm_caller_addr),
+            wasm_callee_addr,
+            0,
+            Weight::from_parts(10_000_000_000, 1024 * 1024),
+            None,
+            // `get` selector
+            hex::decode("0000002b").expect("invalid selector hex"),
+            DebugInfo::Skip,
+            CollectEvents::Skip,
+            Determinism::Enforced,
+        );
+        match result.result {
+            Ok(ExecReturnValue { flags, data }) => {
+                assert!(!flags.contains(ReturnFlags::REVERT));
+                // Retrive stored value `42`.
+                assert_eq!(data[1], 42);
+            },
             _ => panic!("unexpected wasm call result"),
         }
     });

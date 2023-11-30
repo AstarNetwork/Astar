@@ -47,13 +47,11 @@ use pallet_contracts_primitives::ReturnFlags;
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
 use sp_core::{H160, U256};
-use sp_runtime::traits::StaticLookup;
 use sp_std::{marker::PhantomData, prelude::*};
 
 use astar_primitives::{
-    ethereum_checked::{
-        AccountMapping, CheckedEthereumTransact, CheckedEthereumTx, EthereumTxInput,
-    },
+    ethereum_checked::{CheckedEthereumTransact, CheckedEthereumTx, EthereumTxInput},
+    evm::UnifiedAddressMapper,
     xvm::{
         CallFailure, CallOutput, CallResult, Context, FailureError::*, FailureRevert::*, VmId,
         XvmCall,
@@ -86,7 +84,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_contracts::Config {
         /// Mapping from `Account` to `H160`.
-        type AccountMapping: AccountMapping<Self::AccountId>;
+        type AddressMapper: UnifiedAddressMapper<Self::AccountId>;
 
         /// Mapping from Ethereum gas to Substrate weight.
         type GasWeightMapping: GasWeightMapping;
@@ -111,8 +109,18 @@ where
         target: Vec<u8>,
         input: Vec<u8>,
         value: Balance,
+        storage_deposit_limit: Option<Balance>,
     ) -> CallResult {
-        Pallet::<T>::do_call(context, vm_id, source, target, input, value, false)
+        Pallet::<T>::do_call(
+            context,
+            vm_id,
+            source,
+            target,
+            input,
+            value,
+            storage_deposit_limit,
+            false,
+        )
     }
 }
 
@@ -128,6 +136,7 @@ where
         target: Vec<u8>,
         input: Vec<u8>,
         value: Balance,
+        storage_deposit_limit: Option<Balance>,
         skip_execution: bool,
     ) -> CallResult {
         let overheads = match vm_id {
@@ -162,6 +171,7 @@ where
                 input,
                 value,
                 overheads,
+                storage_deposit_limit,
                 skip_execution,
             ),
         };
@@ -202,7 +212,7 @@ where
         let weight_limit = context.weight_limit.saturating_sub(overheads);
         let gas_limit = U256::from(T::GasWeightMapping::weight_to_gas(weight_limit));
 
-        let source = T::AccountMapping::into_h160(source);
+        let source = T::AddressMapper::to_h160_or_default(&source).into_address();
         let tx = CheckedEthereumTx {
             gas_limit,
             target: target_decoded,
@@ -267,18 +277,18 @@ where
         input: Vec<u8>,
         value: Balance,
         overheads: Weight,
+        storage_deposit_limit: Option<Balance>,
         skip_execution: bool,
     ) -> CallResult {
         log::trace!(
             target: "xvm::wasm_call",
-            "Calling WASM: {:?} {:?}, {:?}, {:?}, {:?}",
-            context, source, target, input, value,
+            "Calling WASM: {:?} {:?}, {:?}, {:?}, {:?}, {:?}",
+            context, source, target, input, value, storage_deposit_limit,
         );
 
         let dest = {
             let error = CallFailure::revert(InvalidTarget, overheads);
-            let decoded = Decode::decode(&mut target.as_ref()).map_err(|_| error.clone())?;
-            T::Lookup::lookup(decoded).map_err(|_| error)
+            Decode::decode(&mut target.as_ref()).map_err(|_| error.clone())
         }?;
 
         // With overheads, less weight is available.
@@ -295,7 +305,7 @@ where
             dest,
             value,
             weight_limit,
-            None,
+            storage_deposit_limit,
             input,
             DebugInfo::Skip,
             CollectEvents::Skip,
@@ -327,7 +337,17 @@ where
         target: Vec<u8>,
         input: Vec<u8>,
         value: Balance,
+        storage_deposit_limit: Option<Balance>,
     ) -> CallResult {
-        Self::do_call(context, vm_id, source, target, input, value, true)
+        Self::do_call(
+            context,
+            vm_id,
+            source,
+            target,
+            input,
+            value,
+            storage_deposit_limit,
+            true,
+        )
     }
 }

@@ -1,0 +1,33 @@
+[package]
+name = "precompile-utils-macro-v2"
+authors = { workspace = true }
+description = ""
+edition = "2021"
+version = "0.1.0"
+
+[lib]
+proc-macro = true
+
+[[test]]
+name = "tests"
+path = "tests/tests.rs"
+
+[dependencies]
+case = "1.0"
+num_enum = { workspace = true }
+prettyplease = "0.2.12"
+proc-macro2 = "1.0"
+quote = "1.0"
+sp-core-hashing = { workspace = true }
+syn = { version = "1.0", features = ["extra-traits", "fold", "full", "visit"] }
+
+[dev-dependencies]
+macrotest = "1.0.9"
+trybuild = "1.0"
+
+precompile-utils-v2 = { path = "../", features = ["testing"] }
+
+fp-evm = { workspace = true }
+frame-support = { workspace = true }
+sp-core-hashing = { workspace = true }
+sp-std = { workspace = true }
