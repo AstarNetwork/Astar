@@ -78,6 +78,7 @@ pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
+pallet-inflation = { workspace = true }
 pallet-xvm = { workspace = true }
 
 # Moonbeam tracing
@@ -120,6 +121,7 @@ std = [
 	"pallet-custom-signatures/std",
 	"pallet-dapps-staking/std",
 	"pallet-dapp-staking-v3/std",
+	"pallet-inflation/std",
 	"pallet-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
@@ -190,6 +192,7 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-inflation/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -205,6 +208,7 @@ try-runtime = [
 	"pallet-custom-signatures/try-runtime",
 	"pallet-dapps-staking/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
+	"pallet-inflation/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-sudo/try-runtime",
