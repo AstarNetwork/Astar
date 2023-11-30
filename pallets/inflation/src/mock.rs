@@ -26,7 +26,7 @@ use frame_support::{
     construct_runtime, parameter_types,
     sp_io::TestExternalities,
     traits::Currency,
-    traits::{ConstU128, ConstU32, ConstU64, Hooks},
+    traits::{ConstU128, ConstU32, Hooks},
     weights::Weight,
     PalletId,
 };
@@ -122,14 +122,6 @@ impl pallet_balances::Config for Test {
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
 }
-
-impl pallet_timestamp::Config for Test {
-    type Moment = u64;
-    type OnTimestampSet = ();
-    type MinimumPeriod = ConstU64<3>;
-    type WeightInfo = ();
-}
-
 // Dummy accounts used to simulate reward beneficiaries balances
 pub(crate) const TREASURY_POT: PalletId = PalletId(*b"moktrsry");
 pub(crate) const COLLATOR_POT: PalletId = PalletId(*b"mokcolat");
@@ -181,7 +173,6 @@ construct_runtime!(
     {
         System: frame_system,
         Balances: pallet_balances,
-        Timestamp: pallet_timestamp,
         Inflation: pallet_inflation,
     }
 );

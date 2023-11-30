@@ -54,7 +54,6 @@ pub trait WeightInfo {
 	fn force_inflation_recalculation() -> Weight;
 	fn hook_with_recalculation() -> Weight;
 	fn hook_without_recalculation() -> Weight;
-	fn on_timestamp_set() -> Weight;
 }
 
 /// Weights for pallet_inflation using the Substrate node and recommended hardware.
@@ -104,17 +103,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Minimum execution time: 2_000_000 picoseconds.
 		Weight::from_parts(3_000_000, 0)
 	}
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	fn on_timestamp_set() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `174`
-		//  Estimated: `3593`
-		// Minimum execution time: 22_000_000 picoseconds.
-		Weight::from_parts(23_000_000, 3593)
-			.saturating_add(T::DbWeight::get().reads(1_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
 }
 
 // For backwards compatibility and tests
@@ -162,16 +150,5 @@ impl WeightInfo for () {
 		//  Estimated: `0`
 		// Minimum execution time: 2_000_000 picoseconds.
 		Weight::from_parts(3_000_000, 0)
-	}
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	fn on_timestamp_set() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `174`
-		//  Estimated: `3593`
-		// Minimum execution time: 22_000_000 picoseconds.
-		Weight::from_parts(23_000_000, 3593)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

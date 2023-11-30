@@ -22,7 +22,6 @@ frame-benchmarking = { workspace = true, optional = true }
 
 [dev-dependencies]
 pallet-balances = { workspace = true }
-pallet-timestamp = { workspace = true }
 sp-core = { workspace = true }
 
 [features]
@@ -34,7 +33,6 @@ std = [
 	"serde/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-timestamp/std",
 	"pallet-balances/std",
 	"astar-primitives/std",
 ]

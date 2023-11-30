@@ -19,7 +19,7 @@
 use super::{pallet::Error, Event, *};
 use frame_support::{
     assert_noop, assert_ok, assert_storage_noop,
-    traits::{GenesisBuild, Hooks, OnTimestampSet},
+    traits::{GenesisBuild, Hooks},
 };
 use mock::*;
 use sp_runtime::{
@@ -144,16 +144,16 @@ fn inflation_recalculation_occurs_when_exepcted() {
     ExternalityBuilder::build().execute_with(|| {
         let init_config = ActiveInflationConfig::<Test>::get();
 
-        // Make sure calls before the expected change are storage noops
+        // Make sure `on_finalize` calls before the expected change are storage noops
         advance_to_block(init_config.recalculation_block - 3);
         assert_storage_noop!(Inflation::on_finalize(init_config.recalculation_block - 3));
-        assert_storage_noop!(Inflation::on_initialize(
+       Inflation::on_initialize(
             init_config.recalculation_block - 2
-        ));
+        );
         assert_storage_noop!(Inflation::on_finalize(init_config.recalculation_block - 2));
-        assert_storage_noop!(Inflation::on_initialize(
+        Inflation::on_initialize(
             init_config.recalculation_block - 1
-        ));
+        );
 
         // One block before recalculation, on_finalize should calculate new inflation config
         let init_config = ActiveInflationConfig::<Test>::get();
@@ -183,7 +183,7 @@ fn inflation_recalculation_occurs_when_exepcted() {
 }
 
 #[test]
-fn on_timestamp_set_payout_works() {
+fn on_initialize_reward_payout_works() {
     ExternalityBuilder::build().execute_with(|| {
         // Save initial state, before the payout
         let config = ActiveInflationConfig::<Test>::get();
@@ -194,7 +194,7 @@ fn on_timestamp_set_payout_works() {
         let init_treasury_pot = Balances::free_balance(&TREASURY_POT.into_account_truncating());
 
         // Execute payout
-        Inflation::on_timestamp_set(1);
+        Inflation::on_initialize(1);
 
         // Verify state post payout
         let expected_reward = config.collator_reward_per_block + config.treasury_reward_per_block;

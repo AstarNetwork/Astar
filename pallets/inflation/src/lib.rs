@@ -23,10 +23,7 @@
 pub use pallet::*;
 
 use astar_primitives::{Balance, BlockNumber};
-use frame_support::{
-    pallet_prelude::*,
-    traits::{Currency, OnTimestampSet},
-};
+use frame_support::{pallet_prelude::*, traits::Currency};
 use frame_system::{ensure_root, pallet_prelude::*};
 use sp_runtime::{traits::CheckedAdd, Perquintill, Saturating};
 
@@ -135,6 +132,16 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
         fn on_initialize(now: BlockNumber) -> Weight {
+            let amount = Self::payout_block_rewards();
+
+            // Update the tracker, but no check whether an `issued` has exceeded `cap`.
+            // This can modified if needed, but these amounts are supposed to be small &
+            // collators need to be paid for producing the block.
+            // TODO: potential discussion topic for the review!
+            SafetyInflationTracker::<T>::mutate(|tracker| {
+                tracker.issued.saturating_accrue(amount);
+            });
+
             let recalculation_weight =
                 if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
                     T::WeightInfo::hook_with_recalculation()
@@ -149,9 +156,7 @@ pub mod pallet {
             let whitelisted_weight =
                 <T as frame_system::Config>::DbWeight::get().reads_writes(2, 1);
 
-            recalculation_weight
-                .saturating_add(T::WeightInfo::on_timestamp_set())
-                .saturating_add(whitelisted_weight)
+            recalculation_weight.saturating_add(whitelisted_weight)
         }
 
         fn on_finalize(now: BlockNumber) {
@@ -178,20 +183,6 @@ pub mod pallet {
             assert!(T::CycleConfiguration::eras_per_voting_subperiod() > 0);
             assert!(T::CycleConfiguration::eras_per_build_and_earn_subperiod() > 0);
             assert!(T::CycleConfiguration::blocks_per_era() > 0);
-        }
-    }
-
-    impl<Moment, T: Config> OnTimestampSet<Moment> for Pallet<T> {
-        fn on_timestamp_set(_moment: Moment) {
-            let amount = Self::payout_block_rewards();
-
-            // Update the tracker, but no check whether an `issued` has exceeded `cap`.
-            // This can modified if needed, but these amounts are supposed to be small &
-            // collators need to be paid for producing the block.
-            // TODO: potential discussion topic for the review!
-            SafetyInflationTracker::<T>::mutate(|tracker| {
-                tracker.issued.saturating_accrue(amount);
-            });
         }
     }
 

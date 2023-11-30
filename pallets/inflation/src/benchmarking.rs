@@ -115,6 +115,7 @@ mod benchmarks {
         ActiveInflationConfig::<T>::mutate(|config| {
             config.recalculation_block = 0;
         });
+        let init_tracker = SafetyInflationTracker::<T>::get();
 
         let block = 1;
         #[block]
@@ -124,6 +125,9 @@ mod benchmarks {
         }
 
         assert!(ActiveInflationConfig::<T>::get().recalculation_block > 0);
+
+        // The 'sane' assumption is that at least something will be issued for treasury & collators
+        assert!(SafetyInflationTracker::<T>::get().issued > init_tracker.issued);
     }
 
     #[benchmark]
@@ -134,6 +138,7 @@ mod benchmarks {
             config.recalculation_block = 2;
         });
         let init_config = ActiveInflationConfig::<T>::get();
+        let init_tracker = SafetyInflationTracker::<T>::get();
 
         // Has to be at least 2 blocks less than the recalculation block.
         let block = 0;
@@ -144,17 +149,6 @@ mod benchmarks {
         }
 
         assert_eq!(ActiveInflationConfig::<T>::get(), init_config);
-    }
-
-    #[benchmark]
-    fn on_timestamp_set() {
-        initial_config::<T>();
-        let init_tracker = SafetyInflationTracker::<T>::get();
-
-        #[block]
-        {
-            Pallet::<T>::on_timestamp_set(1);
-        }
 
         // The 'sane' assumption is that at least something will be issued for treasury & collators
         assert!(SafetyInflationTracker::<T>::get().issued > init_tracker.issued);
