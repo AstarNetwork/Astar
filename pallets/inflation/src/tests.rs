@@ -147,7 +147,7 @@ fn inflation_recalculation_occurs_when_exepcted() {
         // Make sure `on_finalize` calls before the expected change are storage noops
         advance_to_block(init_config.recalculation_block - 3);
         assert_storage_noop!(Inflation::on_finalize(init_config.recalculation_block - 3));
-       Inflation::on_initialize(
+        Inflation::on_initialize(
             init_config.recalculation_block - 2
         );
         assert_storage_noop!(Inflation::on_finalize(init_config.recalculation_block - 2));
@@ -157,7 +157,6 @@ fn inflation_recalculation_occurs_when_exepcted() {
 
         // One block before recalculation, on_finalize should calculate new inflation config
         let init_config = ActiveInflationConfig::<Test>::get();
-        let init_tracker = SafetyInflationTracker::<Test>::get();
         let init_total_issuance = Balances::total_issuance();
 
         // Finally trigger inflation recalculation.
@@ -176,9 +175,7 @@ fn inflation_recalculation_occurs_when_exepcted() {
             "Total issuance must not change when inflation is recalculated - nothing is minted until it's needed."
         );
 
-        let new_tracker = SafetyInflationTracker::<Test>::get();
-        assert_eq!(new_tracker.issued, init_tracker.issued);
-        assert_eq!(new_tracker.cap, init_tracker.cap + InflationParams::<Test>::get().max_inflation_rate * init_total_issuance);
+        assert_eq!(new_config.issuance_safety_cap, init_total_issuance + InflationParams::<Test>::get().max_inflation_rate * init_total_issuance);
     })
 }
 
@@ -187,7 +184,6 @@ fn on_initialize_reward_payout_works() {
     ExternalityBuilder::build().execute_with(|| {
         // Save initial state, before the payout
         let config = ActiveInflationConfig::<Test>::get();
-        let init_tracker = SafetyInflationTracker::<Test>::get();
 
         let init_issuance = Balances::total_issuance();
         let init_collator_pot = Balances::free_balance(&COLLATOR_POT.into_account_truncating());
@@ -209,11 +205,6 @@ fn on_initialize_reward_payout_works() {
             Balances::free_balance(&TREASURY_POT.into_account_truncating()),
             init_treasury_pot + config.treasury_reward_per_block
         );
-
-        // Safety tracker has been properly updated
-        let post_tracker = SafetyInflationTracker::<Test>::get();
-        assert_eq!(post_tracker.cap, init_tracker.cap);
-        assert_eq!(post_tracker.issued, init_tracker.issued + expected_reward);
     })
 }
 
@@ -253,13 +244,17 @@ fn inflation_recalucation_works() {
         let now = System::block_number();
 
         // Calculate new config
-        let (max_emission, new_config) = Inflation::recalculate_inflation(now);
+        let new_config = Inflation::recalculate_inflation(now);
+        let max_emission = params.max_inflation_rate * total_issuance;
 
         // Verify basics are ok
-        assert_eq!(max_emission, params.max_inflation_rate * total_issuance);
         assert_eq!(
             new_config.recalculation_block,
             now + <Test as Config>::CycleConfiguration::blocks_per_cycle()
+        );
+        assert_eq!(
+            new_config.issuance_safety_cap,
+            total_issuance + max_emission,
         );
 
         // Verify collator rewards are as expected
@@ -382,13 +377,12 @@ fn bonus_reward_pool_is_ok() {
 }
 
 #[test]
-fn payout_reward_is_ok() {
+fn basic_payout_reward_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        let init_safety_tracker = SafetyInflationTracker::<Test>::get();
-
         // Prepare reward payout params
+        let config = ActiveInflationConfig::<Test>::get();
         let account = 1;
-        let reward = init_safety_tracker.cap - init_safety_tracker.issued;
+        let reward = config.issuance_safety_cap - Balances::total_issuance();
         let init_balance = Balances::free_balance(&account);
         let init_issuance = Balances::total_issuance();
 
@@ -397,24 +391,38 @@ fn payout_reward_is_ok() {
 
         assert_eq!(Balances::free_balance(&account), init_balance + reward);
         assert_eq!(Balances::total_issuance(), init_issuance + reward);
-
-        let post_safety_tracker = SafetyInflationTracker::<Test>::get();
-        assert_eq!(post_safety_tracker.cap, init_safety_tracker.cap);
-        assert_eq!(
-            post_safety_tracker.issued,
-            init_safety_tracker.issued + reward
-        );
     })
 }
 
 #[test]
-fn payout_reward_fails_when_cap_is_exceeded() {
+fn payout_reward_with_exceeded_cap_but_not_exceeded_relaxed_cap_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        let safety_tracker = SafetyInflationTracker::<Test>::get();
-
-        // Prepare reward payout params. Reward must exceed the cap.
+        // Prepare reward payout params
+        let config = ActiveInflationConfig::<Test>::get();
         let account = 1;
-        let reward = safety_tracker.cap - safety_tracker.issued + 1;
+
+        let relaxed_cap = config.issuance_safety_cap * 101 / 100;
+        let reward = relaxed_cap - Balances::total_issuance();
+        let init_balance = Balances::free_balance(&account);
+        let init_issuance = Balances::total_issuance();
+
+        // Payout reward and verify balances are as expected
+        assert_ok!(Inflation::payout_reward(&account, reward));
+
+        assert_eq!(Balances::free_balance(&account), init_balance + reward);
+        assert_eq!(Balances::total_issuance(), init_issuance + reward);
+    })
+}
+
+#[test]
+fn payout_reward_fails_when_relaxed_cap_is_exceeded() {
+    ExternalityBuilder::build().execute_with(|| {
+        // Prepare reward payout params
+        let config = ActiveInflationConfig::<Test>::get();
+        let account = 1;
+
+        let relaxed_cap = config.issuance_safety_cap * 101 / 100;
+        let reward = relaxed_cap - Balances::total_issuance() + 1;
 
         // Payout should be a failure, with storage noop.
         assert_noop!(Inflation::payout_reward(&account, reward), ());
@@ -454,14 +462,12 @@ fn test_genesis_build() {
         // Prep actions
         ActiveInflationConfig::<Test>::kill();
         InflationParams::<Test>::kill();
-        SafetyInflationTracker::<Test>::kill();
 
         // Execute genesis build
         <pallet::GenesisConfig as GenesisBuild<Test>>::build(&genesis_config);
 
         // Verify state is as expected
         assert_eq!(InflationParams::<Test>::get(), genesis_config.params);
-        assert!(SafetyInflationTracker::<Test>::get().cap > 0);
         assert!(ActiveInflationConfig::<Test>::get().recalculation_block > 0);
     })
 }

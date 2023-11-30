@@ -25,7 +25,7 @@ pub use pallet::*;
 use astar_primitives::{Balance, BlockNumber};
 use frame_support::{pallet_prelude::*, traits::Currency};
 use frame_system::{ensure_root, pallet_prelude::*};
-use sp_runtime::{traits::CheckedAdd, Perquintill, Saturating};
+use sp_runtime::{traits::CheckedAdd, Perquintill};
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -100,11 +100,6 @@ pub mod pallet {
     #[pallet::storage]
     pub type InflationParams<T: Config> = StorageValue<_, InflationParameters, ValueQuery>;
 
-    /// Used to keep track of the approved & issued issuance.
-    #[pallet::storage]
-    #[pallet::whitelist_storage]
-    pub type SafetyInflationTracker<T: Config> = StorageValue<_, InflationTracker, ValueQuery>;
-
     #[pallet::genesis_config]
     #[cfg_attr(feature = "std", derive(Default))]
     pub struct GenesisConfig {
@@ -118,13 +113,9 @@ pub mod pallet {
             assert!(self.params.is_valid());
 
             let now = frame_system::Pallet::<T>::block_number();
-            let (max_emission, config) = Pallet::<T>::recalculate_inflation(now);
+            let config = Pallet::<T>::recalculate_inflation(now);
 
             ActiveInflationConfig::<T>::put(config);
-            SafetyInflationTracker::<T>::put(InflationTracker {
-                cap: max_emission,
-                issued: 0,
-            });
             InflationParams::<T>::put(self.params);
         }
     }
@@ -132,15 +123,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
         fn on_initialize(now: BlockNumber) -> Weight {
-            let amount = Self::payout_block_rewards();
-
-            // Update the tracker, but no check whether an `issued` has exceeded `cap`.
-            // This can modified if needed, but these amounts are supposed to be small &
-            // collators need to be paid for producing the block.
-            // TODO: potential discussion topic for the review!
-            SafetyInflationTracker::<T>::mutate(|tracker| {
-                tracker.issued.saturating_accrue(amount);
-            });
+            Self::payout_block_rewards();
 
             let recalculation_weight =
                 if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
@@ -151,10 +134,8 @@ pub mod pallet {
 
             // Benchmarks won't acount for whitelisted storage access so this needs to be added manually.
             //
-            // SafetyInflationTracker - 1 DB read & write
             // ActiveInflationConfig - 1 DB read
-            let whitelisted_weight =
-                <T as frame_system::Config>::DbWeight::get().reads_writes(2, 1);
+            let whitelisted_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
 
             recalculation_weight.saturating_add(whitelisted_weight)
         }
@@ -167,12 +148,8 @@ pub mod pallet {
             //
             // This should be done as late as possible, to ensure all operations that modify issuance are done.
             if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
-                let (max_emission, config) = Self::recalculate_inflation(now);
+                let config = Self::recalculate_inflation(now);
                 ActiveInflationConfig::<T>::put(config.clone());
-
-                SafetyInflationTracker::<T>::mutate(|tracker| {
-                    tracker.cap.saturating_accrue(max_emission);
-                });
 
                 Self::deposit_event(Event::<T>::NewInflationConfiguration { config });
             }
@@ -210,13 +187,35 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Used to force inflation recalculation.
+        /// This is done in the same way as it would be done in an appropriate block, but this call forces it.
+        ///
+        /// Must be called by `root` origin.
+        ///
+        /// Purpose of the call is testing & handling unforseen circumstances.
+        #[pallet::call_index(1)]
+        #[pallet::weight(T::WeightInfo::force_inflation_recalculation())]
+        pub fn force_inflation_recalculation(origin: OriginFor<T>) -> DispatchResult {
+            ensure_root(origin)?;
+
+            let config = Self::recalculate_inflation(frame_system::Pallet::<T>::block_number());
+
+            ActiveInflationConfig::<T>::put(config.clone());
+
+            Self::deposit_event(Event::<T>::ForcedInflationRecalculation { config });
+
+            Ok(().into())
+        }
+
         /// Used to force-set the inflation configuration.
         /// The parameters aren't checked for validity, since essentially anything can be valid.
         ///
         /// Must be called by `root` origin.
         ///
         /// Purpose of the call is testing & handling unforseen circumstances.
-        #[pallet::call_index(1)]
+        ///
+        /// **NOTE:** and a TODO, remove this before deploying on mainnet.
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::force_set_inflation_config())]
         pub fn force_set_inflation_config(
             origin: OriginFor<T>,
@@ -227,31 +226,6 @@ pub mod pallet {
             ActiveInflationConfig::<T>::put(config.clone());
 
             Self::deposit_event(Event::<T>::InflationConfigurationForceChanged { config });
-
-            Ok(().into())
-        }
-
-        /// Used to force inflation recalculation.
-        /// This is done in the same way as it would be done in an appropriate block, but this call forces it.
-        ///
-        /// Must be called by `root` origin.
-        ///
-        /// Purpose of the call is testing & handling unforseen circumstances.
-        #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::force_inflation_recalculation())]
-        pub fn force_inflation_recalculation(origin: OriginFor<T>) -> DispatchResult {
-            ensure_root(origin)?;
-
-            let (max_emission, config) =
-                Self::recalculate_inflation(frame_system::Pallet::<T>::block_number());
-
-            ActiveInflationConfig::<T>::put(config.clone());
-
-            SafetyInflationTracker::<T>::mutate(|tracker| {
-                tracker.cap.saturating_accrue(max_emission);
-            });
-
-            Self::deposit_event(Event::<T>::ForcedInflationRecalculation { config });
 
             Ok(().into())
         }
@@ -285,13 +259,14 @@ pub mod pallet {
 
         /// Recalculates the inflation based on the total issuance & inflation parameters.
         ///
-        /// Returns the maximum total emission for the cycle, and the new inflation configuration.
-        pub(crate) fn recalculate_inflation(now: BlockNumber) -> (Balance, InflationConfiguration) {
+        /// Returns the new inflation configuration.
+        pub(crate) fn recalculate_inflation(now: BlockNumber) -> InflationConfiguration {
             let params = InflationParams::<T>::get();
             let total_issuance = T::Currency::total_issuance();
 
             // 1. Calculate maximum emission over the period before the next recalculation.
             let max_emission = params.max_inflation_rate * total_issuance;
+            let issuance_safety_cap = total_issuance.saturating_add(max_emission);
 
             // 2. Calculate distribution of max emission between different purposes.
             let treasury_emission = params.treasury_part * max_emission;
@@ -342,19 +317,38 @@ pub mod pallet {
             let recalculation_block = now.saturating_add(T::CycleConfiguration::blocks_per_cycle());
 
             // 5. Return calculated values
-            (
-                max_emission,
-                InflationConfiguration {
-                    recalculation_block,
-                    collator_reward_per_block,
-                    treasury_reward_per_block,
-                    dapp_reward_pool_per_era,
-                    base_staker_reward_pool_per_era,
-                    adjustable_staker_reward_pool_per_era,
-                    bonus_reward_pool_per_period,
-                    ideal_staking_rate: params.ideal_staking_rate,
-                },
-            )
+            InflationConfiguration {
+                recalculation_block,
+                issuance_safety_cap,
+                collator_reward_per_block,
+                treasury_reward_per_block,
+                dapp_reward_pool_per_era,
+                base_staker_reward_pool_per_era,
+                adjustable_staker_reward_pool_per_era,
+                bonus_reward_pool_per_period,
+                ideal_staking_rate: params.ideal_staking_rate,
+            }
+        }
+
+        /// Check if payout cap limit would be reached after payout.
+        fn is_payout_cap_limit_exceeded(payout: Balance) -> bool {
+            let config = ActiveInflationConfig::<T>::get();
+            let total_issuance = T::Currency::total_issuance();
+
+            let new_issuance = total_issuance.saturating_add(payout);
+
+            if new_issuance > config.issuance_safety_cap {
+                log::error!("Issuance cap has been exceeded. Please report this issue ASAP!");
+            }
+
+            // Allow for 1% safety cap overflow, to prevent bad UX for users in case of rounding errors.
+            // This will be removed in the future once we know everything is working as expected.
+            let relaxed_issuance_safety_cap = config
+                .issuance_safety_cap
+                .saturating_mul(101)
+                .saturating_div(100);
+
+            new_issuance > relaxed_issuance_safety_cap
         }
     }
 
@@ -382,13 +376,8 @@ pub mod pallet {
         }
 
         fn payout_reward(account: &T::AccountId, reward: Balance) -> Result<(), ()> {
-            let mut tracker = SafetyInflationTracker::<T>::get();
-
             // This is a safety measure to prevent excessive minting.
-            // TODO: discuss this in review with the team. Is it strict enough? Should we use a different approach?
-            tracker.issued.saturating_accrue(reward);
-            ensure!(tracker.issued <= tracker.cap, ());
-            SafetyInflationTracker::<T>::put(tracker);
+            ensure!(!Self::is_payout_cap_limit_exceeded(reward), ());
 
             // This can fail only if the amount is below existential deposit & the account doesn't exist,
             // or if the account has no provider references.
@@ -408,6 +397,9 @@ pub struct InflationConfiguration {
     /// Block number at which the inflation must be recalculated, based on the total issuance at that block.
     #[codec(compact)]
     pub recalculation_block: BlockNumber,
+    /// Maximum amount of issuance we can have during this cycle.
+    #[codec(compact)]
+    pub issuance_safety_cap: Balance,
     /// Reward for collator who produced the block. Always deposited the collator in full.
     #[codec(compact)]
     pub collator_reward_per_block: Balance,
@@ -508,18 +500,6 @@ impl Default for InflationParameters {
             ideal_staking_rate: Perquintill::from_percent(50),
         }
     }
-}
-
-/// A safety-measure to ensure we never issue more inflation than we are supposed to.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Default, Debug, PartialEq, Eq, TypeInfo)]
-pub struct InflationTracker {
-    /// The amount of inflation 'approved' for issuance so far.
-    #[codec(compact)]
-    cap: Balance,
-    /// The amount of inflation issued so far.
-    /// Must never exceed the `cap`.
-    #[codec(compact)]
-    issued: Balance,
 }
 
 /// Defines functions used to payout the beneficiaries of block rewards

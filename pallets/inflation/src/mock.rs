@@ -18,8 +18,7 @@
 
 use crate::{
     self as pallet_inflation, ActiveInflationConfig, CycleConfiguration, InflationConfiguration,
-    InflationParameters, InflationParams, InflationTracker, NegativeImbalanceOf, PayoutPerBlock,
-    SafetyInflationTracker,
+    InflationParameters, InflationParams, NegativeImbalanceOf, PayoutPerBlock,
 };
 
 use frame_support::{
@@ -56,6 +55,7 @@ pub const INIT_PARAMS: InflationParameters = InflationParameters {
 /// Initial inflation config set by the mock.
 pub const INIT_CONFIG: InflationConfiguration = InflationConfiguration {
     recalculation_block: 100,
+    issuance_safety_cap: 1_000_000,
     collator_reward_per_block: 1000,
     treasury_reward_per_block: 1500,
     dapp_reward_pool_per_era: 3000,
@@ -63,12 +63,6 @@ pub const INIT_CONFIG: InflationConfiguration = InflationConfiguration {
     adjustable_staker_reward_pool_per_era: 7000,
     bonus_reward_pool_per_period: 4000,
     ideal_staking_rate: Perquintill::from_percent(50),
-};
-
-/// Initial inflation tracker set by the mock.
-pub const INIT_TRACKER: InflationTracker = InflationTracker {
-    cap: 1000000,
-    issued: 30000,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -196,7 +190,6 @@ impl ExternalityBuilder {
             // Set initial pallet inflation values
             ActiveInflationConfig::<Test>::put(INIT_CONFIG);
             InflationParams::<Test>::put(INIT_PARAMS);
-            SafetyInflationTracker::<Test>::put(INIT_TRACKER);
 
             System::set_block_number(1);
             Inflation::on_initialize(1);

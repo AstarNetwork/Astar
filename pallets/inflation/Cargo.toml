@@ -11,6 +11,7 @@ repository.workspace = true
 [dependencies]
 parity-scale-codec = { workspace = true }
 serde = { workspace = true }
+log = { workspace = true }
 
 astar-primitives = { workspace = true }
 frame-support = { workspace = true }
@@ -28,6 +29,7 @@ sp-core = { workspace = true }
 default = ["std"]
 std = [
 	"parity-scale-codec/std",
+	"log/std",
 	"sp-core/std",
 	"scale-info/std",
 	"serde/std",

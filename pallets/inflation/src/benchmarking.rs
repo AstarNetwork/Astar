@@ -42,8 +42,12 @@ fn initial_config<T: Config>() {
     assert!(params.is_valid());
 
     // Some dummy inflation config
+    let total_issuance = T::Currency::total_issuance();
+    let issuance_safety_cap =
+        total_issuance.saturating_add(params.max_inflation_rate * total_issuance);
     let config = InflationConfiguration {
         recalculation_block: 123,
+        issuance_safety_cap,
         collator_reward_per_block: 11111,
         treasury_reward_per_block: 33333,
         dapp_reward_pool_per_era: 55555,
@@ -53,16 +57,8 @@ fn initial_config<T: Config>() {
         ideal_staking_rate: Perquintill::from_percent(50),
     };
 
-    // Some dummy inflation tracker
-    let tracker = InflationTracker {
-        cap: 1000000,
-        issued: 30000,
-    };
-    assert!(tracker.issued <= tracker.cap);
-
     InflationParams::<T>::put(params);
     ActiveInflationConfig::<T>::put(config);
-    SafetyInflationTracker::<T>::put(tracker);
 
     // Create some issuance so it's not zero
     let dummy_account = whitelisted_caller();
@@ -115,7 +111,7 @@ mod benchmarks {
         ActiveInflationConfig::<T>::mutate(|config| {
             config.recalculation_block = 0;
         });
-        let init_tracker = SafetyInflationTracker::<T>::get();
+        let init_issuance = T::Currency::total_issuance();
 
         let block = 1;
         #[block]
@@ -127,7 +123,7 @@ mod benchmarks {
         assert!(ActiveInflationConfig::<T>::get().recalculation_block > 0);
 
         // The 'sane' assumption is that at least something will be issued for treasury & collators
-        assert!(SafetyInflationTracker::<T>::get().issued > init_tracker.issued);
+        assert!(T::Currency::total_issuance() > init_issuance);
     }
 
     #[benchmark]
@@ -138,7 +134,7 @@ mod benchmarks {
             config.recalculation_block = 2;
         });
         let init_config = ActiveInflationConfig::<T>::get();
-        let init_tracker = SafetyInflationTracker::<T>::get();
+        let init_issuance = T::Currency::total_issuance();
 
         // Has to be at least 2 blocks less than the recalculation block.
         let block = 0;
@@ -151,7 +147,7 @@ mod benchmarks {
         assert_eq!(ActiveInflationConfig::<T>::get(), init_config);
 
         // The 'sane' assumption is that at least something will be issued for treasury & collators
-        assert!(SafetyInflationTracker::<T>::get().issued > init_tracker.issued);
+        assert!(T::Currency::total_issuance() > init_issuance);
     }
 
     impl_benchmark_test_suite!(
