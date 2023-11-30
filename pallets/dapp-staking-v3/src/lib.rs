@@ -66,7 +66,7 @@ mod types;
 use types::*;
 pub use types::{PriceProvider, RewardPoolProvider, TierThreshold};
 
-mod weights;
+pub mod weights;
 pub use weights::WeightInfo;
 
 // Lock identifier for the dApp staking pallet
