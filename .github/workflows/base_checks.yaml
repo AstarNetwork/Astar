@@ -6,34 +6,25 @@ on:
     tags-ignore:
     - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
-jobs:
-  clean-up-actions:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cancel Previous Runs
-        # Only cancel non-master branch runs
-        if: ${{ github.ref != 'refs/heads/master' }}
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ github.token }}
-          
-  compile-and-check:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Free disk space
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /opt/ghc
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-        df -h
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
+jobs:
+  compile-and-check:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
     - name: Checkout the source code
       uses: actions/checkout@v3
 
     - name: Install deps
-      run: sudo apt -y install protobuf-compiler
+      run: |
+        sudo apt -y install protobuf-compiler pkg-config
+        if ! command -v sccache; then
+            cargo install sccache --locked
+        fi
+        echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+        echo "SCCACHE_CACHE_SIZE=100G" >> $GITHUB_ENV
 
     - name: Install & display rust toolchain
       run: rustup show

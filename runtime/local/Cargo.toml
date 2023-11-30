@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.18.0"
+version = "5.25.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -11,6 +11,7 @@ repository.workspace = true
 log = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
+smallvec = { workspace = true }
 
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
@@ -20,7 +21,6 @@ frame-system = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
-pallet-base-fee = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
@@ -28,7 +28,6 @@ pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm = { workspace = true }
-pallet-evm-precompile-batch = { workspace = true }
 pallet-evm-precompile-blake2 = { workspace = true }
 pallet-evm-precompile-bn128 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
@@ -67,18 +66,20 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 
 # Astar pallets
 astar-primitives = { workspace = true }
-pallet-block-reward = { workspace = true }
+pallet-block-rewards-hybrid = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
+pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
-pallet-custom-signatures = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-dapps-staking = { workspace = true }
+pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-inflation = { workspace = true }
+pallet-unified-accounts = { workspace = true }
 pallet-xvm = { workspace = true }
 
 # Moonbeam tracing
@@ -113,16 +114,16 @@ std = [
 	"pallet-assets/std",
 	"pallet-aura/std",
 	"pallet-balances/std",
-	"pallet-block-reward/std",
+	"pallet-block-rewards-hybrid/std",
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
 	"pallet-chain-extension-dapps-staking/std",
 	"pallet-chain-extension-xvm/std",
-	"pallet-custom-signatures/std",
+	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dapps-staking/std",
 	"pallet-dapp-staking-v3/std",
 	"pallet-inflation/std",
-	"pallet-base-fee/std",
+	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
 	"pallet-evm-precompile-blake2/std",
@@ -133,7 +134,6 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-dapps-staking/std",
-	"pallet-evm-precompile-batch/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-xvm/std",
@@ -167,6 +167,7 @@ std = [
 	"pallet-scheduler/std",
 	"pallet-treasury/std",
 	"pallet-xvm/std",
+	"pallet-unified-accounts/std",
 	"pallet-ethereum-checked/std",
 	"moonbeam-evm-tracer/std",
 	"moonbeam-rpc-primitives-debug/std",
@@ -182,17 +183,19 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-dapps-staking/runtime-benchmarks",
-	"pallet-block-reward/runtime-benchmarks",
+	"pallet-block-rewards-hybrid/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-ethereum-checked/runtime-benchmarks",
+	"pallet-unified-accounts/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dapp-staking-v3/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
+	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -203,9 +206,8 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
-	"pallet-block-reward/try-runtime",
+	"pallet-block-rewards-hybrid/try-runtime",
 	"pallet-contracts/try-runtime",
-	"pallet-custom-signatures/try-runtime",
 	"pallet-dapps-staking/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
 	"pallet-inflation/try-runtime",
@@ -217,6 +219,7 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
 	"pallet-xvm/try-runtime",
+	"pallet-unified-accounts/try-runtime",
 	"pallet-ethereum/try-runtime",
 	"pallet-assets/try-runtime",
 	"pallet-scheduler/try-runtime",
@@ -225,7 +228,7 @@ try-runtime = [
 	"pallet-proxy/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-preimage/try-runtime",
-	"pallet-base-fee/try-runtime",
+	"pallet-dynamic-evm-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
 ]

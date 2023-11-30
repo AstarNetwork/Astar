@@ -96,8 +96,3 @@ pub trait CheckedEthereumTransact {
         checked_tx: CheckedEthereumTx,
     ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo>;
 }
-
-/// Mapping from `Account` to `H160`.
-pub trait AccountMapping<AccountId> {
-    fn into_h160(account: AccountId) -> H160;
-}

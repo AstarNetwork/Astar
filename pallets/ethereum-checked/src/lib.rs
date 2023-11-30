@@ -64,8 +64,9 @@ use sp_runtime::traits::TrailingZeroInput;
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{marker::PhantomData, result::Result};
 
-use astar_primitives::ethereum_checked::{
-    AccountMapping, CheckedEthereumTransact, CheckedEthereumTx,
+use astar_primitives::{
+    ethereum_checked::{CheckedEthereumTransact, CheckedEthereumTx},
+    evm::UnifiedAddressMapper,
 };
 
 pub use pallet::*;
@@ -141,7 +142,7 @@ pub mod pallet {
         type ValidatedTransaction: ValidatedTransaction;
 
         /// Account mapping.
-        type AccountMapping: AccountMapping<Self::AccountId>;
+        type AddressMapper: UnifiedAddressMapper<Self::AccountId>;
 
         /// Origin for `transact` call.
         type XcmTransactOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
@@ -170,7 +171,7 @@ pub mod pallet {
         pub fn transact(origin: OriginFor<T>, tx: CheckedEthereumTx) -> DispatchResultWithPostInfo {
             let source = T::XcmTransactOrigin::ensure_origin(origin)?;
             Self::do_transact(
-                T::AccountMapping::into_h160(source),
+                T::AddressMapper::to_h160_or_default(&source).into_address(),
                 tx.into(),
                 CheckedEthereumTxKind::Xcm,
                 false,
@@ -283,7 +284,7 @@ impl<T: Config> Pallet<T> {
     ) -> DispatchResultWithPostInfo {
         let source = T::XcmTransactOrigin::ensure_origin(origin)?;
         Self::do_transact(
-            T::AccountMapping::into_h160(source),
+            T::AddressMapper::to_h160_or_default(&source).into_address(),
             tx.into(),
             CheckedEthereumTxKind::Xcm,
             true,

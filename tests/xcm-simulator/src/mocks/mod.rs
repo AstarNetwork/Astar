@@ -21,18 +21,11 @@ pub(crate) mod parachain;
 pub(crate) mod relay_chain;
 
 use frame_support::traits::{Currency, IsType, OnFinalize, OnInitialize};
-use frame_support::weights::Weight;
-use pallet_contracts_primitives::{Code, ReturnFlags};
-use parity_scale_codec::Decode;
-use sp_runtime::traits::{Bounded, Hash, StaticLookup};
+use sp_runtime::traits::{Bounded, StaticLookup};
 use sp_runtime::DispatchResult;
 use xcm::latest::prelude::*;
 use xcm_executor::traits::Convert;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain, TestExt};
-
-type ContractBalanceOf<T> = <<T as pallet_contracts::Config>::Currency as Currency<
-    <T as frame_system::Config>::AccountId,
->>::Balance;
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFAu8; 32]);
 pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFBu8; 32]);
@@ -258,96 +251,5 @@ where
         origin,
         Box::new(asset_location.into().into_versioned()),
         units_per_second.unwrap_or(1_000_000_000_000),
-    )
-}
-
-/// Load a given wasm module from wasm binary contents along
-/// with it's hash.
-///
-/// The fixture files are located under the `fixtures/` directory.
-pub fn load_module<T>(
-    fixture_name: &str,
-) -> std::io::Result<(Vec<u8>, <T::Hashing as Hash>::Output)>
-where
-    T: frame_system::Config,
-{
-    let fixture_path = ["fixtures/", fixture_name, ".wasm"].concat();
-    let wasm_binary = std::fs::read(fixture_path)?;
-    let code_hash = T::Hashing::hash(&wasm_binary);
-    Ok((wasm_binary, code_hash))
-}
-
-/// Load and deploy the contract from wasm binary
-/// and check for successful deploy
-pub fn deploy_contract<T: pallet_contracts::Config>(
-    contract_name: &str,
-    origin: T::AccountId,
-    value: ContractBalanceOf<T>,
-    gas_limit: Weight,
-    storage_deposit_limit: Option<ContractBalanceOf<T>>,
-    data: Vec<u8>,
-) -> (T::AccountId, <T::Hashing as Hash>::Output) {
-    let (code, hash) = load_module::<T>(contract_name).unwrap();
-    let outcome = pallet_contracts::Pallet::<T>::bare_instantiate(
-        origin,
-        value,
-        gas_limit,
-        storage_deposit_limit,
-        Code::Upload(code),
-        data,
-        vec![],
-        pallet_contracts::DebugInfo::Skip,
-        pallet_contracts::CollectEvents::Skip,
-    );
-
-    // make sure it does not revert
-    let result = outcome.result.unwrap();
-    assert!(
-        !result.result.did_revert(),
-        "deploy_contract: reverted - {:?}",
-        result
-    );
-    (result.account_id, hash)
-}
-
-/// Call the wasm contract method and returns the decoded return
-/// values along with return flags and consumed weight
-pub fn call_contract_method<T: pallet_contracts::Config, V: Decode>(
-    origin: T::AccountId,
-    dest: T::AccountId,
-    value: ContractBalanceOf<T>,
-    gas_limit: Weight,
-    storage_deposit_limit: Option<ContractBalanceOf<T>>,
-    data: Vec<u8>,
-    debug: bool,
-) -> (V, ReturnFlags, Weight) {
-    let outcome = pallet_contracts::Pallet::<T>::bare_call(
-        origin,
-        dest,
-        value,
-        gas_limit,
-        storage_deposit_limit,
-        data,
-        pallet_contracts::DebugInfo::Skip,
-        pallet_contracts::CollectEvents::Skip,
-        pallet_contracts::Determinism::Enforced,
-    );
-
-    if debug {
-        println!(
-            "Contract debug buffer - {:?}",
-            String::from_utf8(outcome.debug_message.clone())
-        );
-        println!("Contract outcome - {outcome:?}");
-    }
-
-    let res = outcome.result.unwrap();
-    // check for revert
-    assert!(!res.did_revert(), "Contract reverted!");
-
-    (
-        V::decode(&mut res.data.as_ref()).unwrap(),
-        res.flags,
-        outcome.gas_consumed,
     )
 }

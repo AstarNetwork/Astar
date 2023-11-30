@@ -24,7 +24,6 @@ use mock::*;
 use frame_support::{assert_noop, assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
 use sp_core::H160;
-use sp_runtime::MultiAddress;
 
 #[test]
 fn calling_into_same_vm_is_not_allowed() {
@@ -46,7 +45,8 @@ fn calling_into_same_vm_is_not_allowed() {
                 ALICE,
                 evm_target,
                 input.clone(),
-                value
+                value,
+                None
             ),
             CallFailure::error(SameVmCallDenied, evm_used_weight,),
         );
@@ -57,11 +57,19 @@ fn calling_into_same_vm_is_not_allowed() {
             weight_limit: Weight::from_parts(1_000_000, 1_000_000),
         };
         let wasm_vm_id = VmId::Wasm;
-        let wasm_target = MultiAddress::<AccountId, ()>::Id(ALICE).encode();
+        let wasm_target = ALICE.encode();
         let wasm_used_weight: Weight =
             weights::SubstrateWeight::<TestRuntime>::wasm_call_overheads();
         assert_noop!(
-            Xvm::call(wasm_context, wasm_vm_id, ALICE, wasm_target, input, value),
+            Xvm::call(
+                wasm_context,
+                wasm_vm_id,
+                ALICE,
+                wasm_target,
+                input,
+                value,
+                None
+            ),
             CallFailure::error(SameVmCallDenied, wasm_used_weight,),
         );
     });
@@ -86,13 +94,14 @@ fn evm_call_fails_if_target_not_h160() {
                 ALICE,
                 ALICE.encode(),
                 input.clone(),
-                value
+                value,
+                None
             ),
             CallFailure::revert(InvalidTarget, used_weight,),
         );
 
         assert_noop!(
-            Xvm::call(context, vm_id, ALICE, vec![1, 2, 3], input, value),
+            Xvm::call(context, vm_id, ALICE, vec![1, 2, 3], input, value, None),
             CallFailure::revert(InvalidTarget, used_weight,),
         );
     });
@@ -117,7 +126,8 @@ fn evm_call_fails_if_input_too_large() {
                 ALICE,
                 target.encode(),
                 vec![1; 65_537],
-                value
+                value,
+                None
             ),
             CallFailure::revert(InputTooLarge, used_weight,),
         );
@@ -142,7 +152,8 @@ fn evm_call_works() {
             ALICE,
             target.encode(),
             input.clone(),
-            value
+            value,
+            None
         ));
         let source = Decode::decode(
             &mut hex::decode("f0bd9ffde7f9f4394d8cc1d86bf24d87e5d5a9a9")
@@ -177,7 +188,7 @@ fn wasm_call_fails_if_invalid_target() {
         let used_weight: Weight = weights::SubstrateWeight::<TestRuntime>::wasm_call_overheads();
 
         assert_noop!(
-            Xvm::call(context, vm_id, ALICE, target.encode(), input, value),
+            Xvm::call(context, vm_id, ALICE, target.encode(), input, value, None),
             CallFailure::revert(InvalidTarget, used_weight,),
         );
     });

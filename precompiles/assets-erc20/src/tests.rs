@@ -205,6 +205,172 @@ fn get_balances_unknown_user() {
 }
 
 #[test]
+fn mint_is_ok() {
+    ExtBuilder::default().build().execute_with(|| {
+        let asset_id = 0;
+        assert_ok!(Assets::force_create(
+            RuntimeOrigin::root(),
+            asset_id,
+            Account::Alice.into(),
+            true,
+            1,
+        ));
+
+        // Sanity check, Bob should be without assets
+        assert!(Assets::balance(asset_id, &Account::Bob.into()).is_zero());
+
+        // Mint some assets for Bob
+        let mint_amount = 7 * 11 * 19;
+        precompiles()
+            .prepare_test(
+                Account::Alice,
+                Account::AssetId(asset_id),
+                EvmDataWriter::new_with_selector(Action::Mint)
+                    .write(Address(Account::Bob.into()))
+                    .write(U256::from(mint_amount))
+                    .build(),
+            )
+            .expect_no_logs()
+            .execute_returns(EvmDataWriter::new().write(true).build());
+
+        // Ensure Bob's asset balance was increased
+        assert_eq!(Assets::balance(asset_id, &Account::Bob.into()), mint_amount);
+    });
+}
+
+#[test]
+fn mint_non_admin_is_not_ok() {
+    ExtBuilder::default().build().execute_with(|| {
+        let asset_id = 0;
+        assert_ok!(Assets::force_create(
+            RuntimeOrigin::root(),
+            asset_id,
+            Account::Alice.into(),
+            true,
+            1,
+        ));
+
+        precompiles()
+            .prepare_test(
+                Account::Bob,
+                Account::AssetId(asset_id),
+                EvmDataWriter::new_with_selector(Action::Mint)
+                    .write(Address(Account::Bob.into()))
+                    .write(U256::from(42))
+                    .build(),
+            )
+            .expect_no_logs()
+            .execute_reverts(|output| from_utf8(&output).unwrap().contains("NoPermission"));
+
+        precompiles()
+            .prepare_test(
+                Account::Alice,
+                Account::AssetId(0u128),
+                EvmDataWriter::new_with_selector(Action::Mint)
+                    .write(Address(Account::Alice.into()))
+                    .write(U256::from(1) << 128)
+                    .build(),
+            )
+            .execute_reverts(|output| {
+                from_utf8(&output)
+                    .unwrap()
+                    .contains("Error processing amount")
+            });
+    });
+}
+
+#[test]
+fn burn_is_ok() {
+    ExtBuilder::default().build().execute_with(|| {
+        let asset_id = 0;
+        assert_ok!(Assets::force_create(
+            RuntimeOrigin::root(),
+            asset_id,
+            Account::Alice.into(),
+            true,
+            1,
+        ));
+
+        // Issue some initial assets for Bob
+        let init_amount = 123;
+        assert_ok!(Assets::mint(
+            RuntimeOrigin::signed(Account::Alice),
+            asset_id,
+            Account::Bob.into(),
+            init_amount,
+        ));
+        assert_eq!(Assets::balance(asset_id, &Account::Bob.into()), init_amount);
+
+        // Burn some assets from Bob
+        let burn_amount = 19;
+        precompiles()
+            .prepare_test(
+                Account::Alice,
+                Account::AssetId(asset_id),
+                EvmDataWriter::new_with_selector(Action::Burn)
+                    .write(Address(Account::Bob.into()))
+                    .write(U256::from(burn_amount))
+                    .build(),
+            )
+            .expect_no_logs()
+            .execute_returns(EvmDataWriter::new().write(true).build());
+
+        // Ensure Bob's asset balance was decreased
+        assert_eq!(
+            Assets::balance(asset_id, &Account::Bob.into()),
+            init_amount - burn_amount
+        );
+    });
+}
+
+#[test]
+fn burn_non_admin_is_not_ok() {
+    ExtBuilder::default().build().execute_with(|| {
+        let asset_id = 0;
+        assert_ok!(Assets::force_create(
+            RuntimeOrigin::root(),
+            asset_id,
+            Account::Alice.into(),
+            true,
+            1,
+        ));
+        assert_ok!(Assets::mint(
+            RuntimeOrigin::signed(Account::Alice),
+            asset_id,
+            Account::Bob.into(),
+            1000000,
+        ));
+
+        precompiles()
+            .prepare_test(
+                Account::Bob,
+                Account::AssetId(asset_id),
+                EvmDataWriter::new_with_selector(Action::Burn)
+                    .write(Address(Account::Bob.into()))
+                    .write(U256::from(42))
+                    .build(),
+            )
+            .expect_no_logs()
+            .execute_reverts(|output| from_utf8(&output).unwrap().contains("NoPermission"));
+
+        precompiles()
+            .prepare_test(
+                Account::Alice,
+                Account::AssetId(0u128),
+                EvmDataWriter::new_with_selector(Action::Burn)
+                    .write(Address(Account::Alice.into()))
+                    .write(U256::from(1) << 128)
+                    .build(),
+            )
+            .execute_reverts(|output| {
+                from_utf8(&output)
+                    .unwrap()
+                    .contains("Error processing amount")
+            });
+    });
+}
+
+#[test]
 fn approve() {
     ExtBuilder::default()
         .with_balances(vec![(Account::Alice, 1000)])
@@ -468,6 +634,21 @@ fn transfer_not_enough_founds() {
                         .contains("Dispatched call failed with error: DispatchErrorWithPostInfo")
                         && from_utf8(&output).unwrap().contains("BalanceLow")
                 });
+
+            precompiles()
+                .prepare_test(
+                    Account::Alice,
+                    Account::AssetId(0u128),
+                    EvmDataWriter::new_with_selector(Action::Transfer)
+                        .write(Address(Account::Charlie.into()))
+                        .write(U256::from(1) << 128)
+                        .build(),
+                )
+                .execute_reverts(|output| {
+                    from_utf8(&output)
+                        .unwrap()
+                        .contains("Error processing amount")
+                });
         });
 }
 
@@ -697,6 +878,22 @@ fn transfer_from_above_allowance() {
 					error: Module(ModuleError { index: 2, error: [10, 0, 0, 0], \
 					message: Some(\"Unapproved\") }) }"
                 });
+
+            precompiles()
+                .prepare_test(
+                    Account::Alice,
+                    Account::AssetId(0u128),
+                    EvmDataWriter::new_with_selector(Action::TransferFrom)
+                        .write(Address(Account::Alice.into()))
+                        .write(Address(Account::Bob.into()))
+                        .write(U256::from(1) << 128)
+                        .build(),
+                )
+                .execute_reverts(|output| {
+                    from_utf8(&output)
+                        .unwrap()
+                        .contains("Error processing amount")
+                });
         });
 }
 
@@ -843,141 +1040,5 @@ fn minimum_balance_is_right() {
             .expect_cost(0) // TODO: Test db read/write costs
             .expect_no_logs()
             .execute_returns(EvmDataWriter::new().write(expected_min_balance).build());
-    });
-}
-
-#[test]
-fn mint_is_ok() {
-    ExtBuilder::default().build().execute_with(|| {
-        let asset_id = 0;
-        assert_ok!(Assets::force_create(
-            RuntimeOrigin::root(),
-            asset_id,
-            Account::Alice.into(),
-            true,
-            1,
-        ));
-
-        // Sanity check, Bob should be without assets
-        assert!(Assets::balance(asset_id, &Account::Bob.into()).is_zero());
-
-        // Mint some assets for Bob
-        let mint_amount = 7 * 11 * 19;
-        precompiles()
-            .prepare_test(
-                Account::Alice,
-                Account::AssetId(asset_id),
-                EvmDataWriter::new_with_selector(Action::Mint)
-                    .write(Address(Account::Bob.into()))
-                    .write(U256::from(mint_amount))
-                    .build(),
-            )
-            .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(true).build());
-
-        // Ensure Bob's asset balance was increased
-        assert_eq!(Assets::balance(asset_id, &Account::Bob.into()), mint_amount);
-    });
-}
-
-#[test]
-fn mint_non_admin_is_not_ok() {
-    ExtBuilder::default().build().execute_with(|| {
-        let asset_id = 0;
-        assert_ok!(Assets::force_create(
-            RuntimeOrigin::root(),
-            asset_id,
-            Account::Alice.into(),
-            true,
-            1,
-        ));
-
-        precompiles()
-            .prepare_test(
-                Account::Bob,
-                Account::AssetId(asset_id),
-                EvmDataWriter::new_with_selector(Action::Mint)
-                    .write(Address(Account::Bob.into()))
-                    .write(U256::from(42))
-                    .build(),
-            )
-            .expect_no_logs()
-            .execute_reverts(|output| from_utf8(&output).unwrap().contains("NoPermission"));
-    });
-}
-
-#[test]
-fn burn_is_ok() {
-    ExtBuilder::default().build().execute_with(|| {
-        let asset_id = 0;
-        assert_ok!(Assets::force_create(
-            RuntimeOrigin::root(),
-            asset_id,
-            Account::Alice.into(),
-            true,
-            1,
-        ));
-
-        // Issue some initial assets for Bob
-        let init_amount = 123;
-        assert_ok!(Assets::mint(
-            RuntimeOrigin::signed(Account::Alice),
-            asset_id,
-            Account::Bob.into(),
-            init_amount,
-        ));
-        assert_eq!(Assets::balance(asset_id, &Account::Bob.into()), init_amount);
-
-        // Burn some assets from Bob
-        let burn_amount = 19;
-        precompiles()
-            .prepare_test(
-                Account::Alice,
-                Account::AssetId(asset_id),
-                EvmDataWriter::new_with_selector(Action::Burn)
-                    .write(Address(Account::Bob.into()))
-                    .write(U256::from(burn_amount))
-                    .build(),
-            )
-            .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(true).build());
-
-        // Ensure Bob's asset balance was decreased
-        assert_eq!(
-            Assets::balance(asset_id, &Account::Bob.into()),
-            init_amount - burn_amount
-        );
-    });
-}
-
-#[test]
-fn burn_non_admin_is_not_ok() {
-    ExtBuilder::default().build().execute_with(|| {
-        let asset_id = 0;
-        assert_ok!(Assets::force_create(
-            RuntimeOrigin::root(),
-            asset_id,
-            Account::Alice.into(),
-            true,
-            1,
-        ));
-        assert_ok!(Assets::mint(
-            RuntimeOrigin::signed(Account::Alice),
-            asset_id,
-            Account::Bob.into(),
-            1000000,
-        ));
-
-        precompiles()
-            .prepare_test(
-                Account::Bob,
-                Account::AssetId(asset_id),
-                EvmDataWriter::new_with_selector(Action::Burn)
-                    .write(Address(Account::Bob.into()))
-                    .write(U256::from(42))
-                    .build(),
-            )
-            .expect_no_logs()
-            .execute_reverts(|output| from_utf8(&output).unwrap().contains("NoPermission"));
     });
 }

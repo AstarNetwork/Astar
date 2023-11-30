@@ -19,10 +19,11 @@
 //! Chain specifications.
 
 use local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig,
-    BlockRewardConfig, CouncilConfig, DappStakingConfig, DemocracyConfig, EVMConfig, GenesisConfig,
-    GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles, Signature,
-    SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, AST,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BlockRewardConfig,
+    CouncilConfig, DappStakingConfig, DemocracyConfig, EVMConfig, GenesisConfig, GrandpaConfig,
+    GrandpaId, InflationConfig, InflationParameters, Precompiles, RewardDistributionConfig,
+    Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig,
+    AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -119,8 +120,8 @@ fn testnet_genesis(
         },
         block_reward: BlockRewardConfig {
             // Make sure sum is 100
-            reward_config: pallet_block_reward::RewardDistributionConfig {
-                base_treasury_percent: Perbill::from_percent(25),
+            reward_config: RewardDistributionConfig {
+                treasury_percent: Perbill::from_percent(25),
                 base_staker_percent: Perbill::from_percent(30),
                 dapps_percent: Perbill::from_percent(20),
                 collators_percent: Perbill::zero(),
@@ -156,10 +157,6 @@ fn testnet_genesis(
                 .collect(),
         },
         ethereum: Default::default(),
-        base_fee: BaseFeeConfig::new(
-            sp_core::U256::from(1_000_000_000u64),
-            sp_runtime::Permill::zero(),
-        ),
         sudo: SudoConfig {
             key: Some(root_key),
         },

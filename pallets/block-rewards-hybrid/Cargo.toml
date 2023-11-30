@@ -1,0 +1,51 @@
+[package]
+name = "pallet-block-rewards-hybrid"
+version = "0.1.0"
+license = "Apache-2.0"
+description = "FRAME pallet for managing block reward issuance & distribution"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+parity-scale-codec = { workspace = true }
+serde = { workspace = true }
+
+astar-primitives = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+scale-info = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+frame-benchmarking = { workspace = true, optional = true }
+
+[dev-dependencies]
+pallet-balances = { workspace = true }
+pallet-timestamp = { workspace = true }
+sp-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"sp-core/std",
+	"scale-info/std",
+	"sp-std/std",
+	"serde/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-timestamp/std",
+	"pallet-balances/std",
+	"astar-primitives/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime"]

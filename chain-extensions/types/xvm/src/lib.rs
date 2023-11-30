@@ -48,6 +48,7 @@ impl From<FailureReason> for XvmExecutionResult {
             FailureReason::Error(FailureError::SameVmCallDenied) => 129,
             FailureReason::Error(FailureError::ReentranceDenied) => 130,
             FailureReason::Error(FailureError::VmError(_)) => 131,
+            FailureReason::Error(FailureError::OutOfGas) => 132,
         };
         Self::Err(error_code)
     }

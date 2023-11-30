@@ -7,6 +7,7 @@
             "pallets/collator-selection/**",
             "pallets/custom-signatures/**",
             "precompiles/utils/**",
+            "precompiles/utils_v2/**",
             "vendor/**"
         ],
         "license": "./.github/license-check/headers/HEADER-GNUv3"

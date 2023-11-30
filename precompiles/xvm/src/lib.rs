@@ -45,7 +45,7 @@ const EVM_ERROR_MSG_SELECTOR: [u8; 4] = [8, 195, 121, 160];
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
 pub enum Action {
-    XvmCall = "xvm_call(uint8,bytes,bytes,uint256)",
+    XvmCall = "xvm_call(uint8,bytes,bytes,uint256,uint256)",
 }
 
 /// A precompile that expose XVM related functions.
@@ -102,9 +102,25 @@ where
         let call_to = input.read::<Bytes>()?.0;
         let call_input = input.read::<Bytes>()?.0;
         let value = input.read::<Balance>()?;
+        let storage_deposit_limit = {
+            let limit = input.read::<Balance>()?;
+            if limit == 0 {
+                None
+            } else {
+                Some(limit)
+            }
+        };
         let from = R::AddressMapping::into_account_id(handle.context().caller);
 
-        let call_result = XC::call(xvm_context, vm_id, from, call_to, call_input, value);
+        let call_result = XC::call(
+            xvm_context,
+            vm_id,
+            from,
+            call_to,
+            call_input,
+            value,
+            storage_deposit_limit,
+        );
 
         let used_weight = match &call_result {
             Ok(s) => s.used_weight,

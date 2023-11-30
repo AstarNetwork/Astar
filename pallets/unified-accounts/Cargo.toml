@@ -1,0 +1,76 @@
+[package]
+name = "pallet-unified-accounts"
+version = "0.1.0"
+description = "Pallet for mapping VM accounts with native accounts"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+libsecp256k1 = { workspace = true, optional = true, features = ["hmac", "static-context"] }
+log = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# Benchmarks
+frame-benchmarking = { workspace = true, optional = true }
+
+precompile-utils = { workspace = true }
+
+# frontier
+pallet-evm = { workspace = true }
+
+# Astar
+astar-primitives = { workspace = true }
+
+[dev-dependencies]
+ethers = { workspace = true }
+hex = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-ethereum = { workspace = true }
+pallet-evm = { workspace = true }
+pallet-timestamp = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"hex/std",
+	"log/std",
+	"libsecp256k1",
+	"libsecp256k1/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-std/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+	"astar-primitives/std",
+	"precompile-utils/std",
+	"pallet-evm/std",
+	"pallet-balances/std",
+	"pallet-timestamp/std",
+	"pallet-ethereum/std",
+]
+runtime-benchmarks = [
+	"libsecp256k1/hmac",
+	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
+	"pallet-ethereum/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime", "pallet-evm/try-runtime"]
