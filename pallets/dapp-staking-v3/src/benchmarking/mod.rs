@@ -881,9 +881,6 @@ mod benchmarks {
     // UPDATE: after some investigation, it seems that PoV size benchmarks are very unprecise
     // - the worst case measured is usually very far off the actual value that is consumed on chain.
     // There's an ongoing item to improve it (mentioned on roundtable meeting).
-    //
-    /// This benchmark isn't used directly in the runtime code, but it's convenient to do manual analysis of the benchmarked values.
-    /// Tier assignment is a PoV heavy operation, and it has to be properly analyzed, independently from other weight items.
     #[benchmark]
     fn dapp_tier_assignment(x: Linear<0, { max_number_of_contracts::<T>() }>) {
         // Prepare init config (protocol state, tier params & config, etc.)
@@ -899,7 +896,7 @@ mod benchmarks {
 
         #[block]
         {
-            let dapp_tiers =
+            let (dapp_tiers, _) =
                 Pallet::<T>::get_dapp_tier_assignment(reward_era, reward_period, reward_pool);
             // TODO: how to move this outside of the 'block'? Cannot declare it outside, and then use it inside.
             assert_eq!(dapp_tiers.dapps.len(), x as usize);

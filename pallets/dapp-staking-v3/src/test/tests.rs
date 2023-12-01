@@ -2110,7 +2110,7 @@ fn get_dapp_tier_assignment_basic_example_works() {
         // Finally, the actual test
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
-        let tier_assignment = DappStaking::get_dapp_tier_assignment(
+        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment(
             protocol_state.era + 1,
             protocol_state.period_number(),
             dapp_reward_pool,
@@ -2125,6 +2125,7 @@ fn get_dapp_tier_assignment_basic_example_works() {
             number_of_smart_contracts as usize - 1,
             "One contract doesn't make it into any tier."
         );
+        assert_eq!(counter, number_of_smart_contracts);
 
         // 1st tier checks
         let (entry_1, entry_2) = (tier_assignment.dapps[0], tier_assignment.dapps[1]);
@@ -2187,7 +2188,7 @@ fn get_dapp_tier_assignment_zero_slots_per_tier_works() {
         // Calculate tier assignment (we don't need dApps for this test)
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
-        let tier_assignment = DappStaking::get_dapp_tier_assignment(
+        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment(
             protocol_state.era,
             protocol_state.period_number(),
             dapp_reward_pool,
@@ -2198,6 +2199,7 @@ fn get_dapp_tier_assignment_zero_slots_per_tier_works() {
         assert_eq!(tier_assignment.period, protocol_state.period_number());
         assert_eq!(tier_assignment.rewards.len(), number_of_tiers as usize);
         assert!(tier_assignment.dapps.is_empty());
+        assert!(counter.is_zero());
 
         assert!(
             tier_assignment.rewards[0].is_zero(),

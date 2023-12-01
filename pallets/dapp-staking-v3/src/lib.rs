@@ -1572,17 +1572,21 @@ pub mod pallet {
         ///    after which the tier reward pool is divided by the number of available slots in the tier.
         ///
         /// The returned object contains information about each dApp that made it into a tier.
+        /// Alongside tier assignment info, number of read DB contract stake entries is returned.
         pub(crate) fn get_dapp_tier_assignment(
             era: EraNumber,
             period: PeriodNumber,
             dapp_reward_pool: Balance,
-        ) -> DAppTierRewardsFor<T> {
+        ) -> (DAppTierRewardsFor<T>, DAppId) {
             let mut dapp_stakes = Vec::with_capacity(T::MaxNumberOfContracts::get() as usize);
 
             // 1.
             // Iterate over all staked dApps.
             // This is bounded by max amount of dApps we allow to be registered.
+            let mut counter = 0;
             for (dapp_id, stake_amount) in ContractStake::<T>::iter() {
+                counter.saturating_inc();
+
                 // Skip dApps which don't have ANY amount staked
                 let stake_amount = match stake_amount.get(era, period) {
                     Some(stake_amount) if !stake_amount.total().is_zero() => stake_amount,
@@ -1655,12 +1659,15 @@ pub mod pallet {
             // 6.
             // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
-            DAppTierRewards::<T::MaxNumberOfContracts, T::NumberOfTiers>::new(
-                dapp_tiers,
-                tier_rewards,
-                period,
+            (
+                DAppTierRewards::<T::MaxNumberOfContracts, T::NumberOfTiers>::new(
+                    dapp_tiers,
+                    tier_rewards,
+                    period,
+                )
+                .unwrap_or_default(),
+                counter,
             )
-            .unwrap_or_default()
         }
 
         /// Used to handle era & period transitions.
@@ -1670,16 +1677,19 @@ pub mod pallet {
         ) -> Weight {
             let mut protocol_state = ActiveProtocolState::<T>::get();
 
+            // `ActiveProtocolState` is whitelisted, so we need to account for its read.
+            let mut consumed_weight = T::DbWeight::get().reads(1);
+
             // We should not modify pallet storage while in maintenance mode.
             // This is a safety measure, since maintenance mode is expected to be
             // enabled in case some misbehavior or corrupted storage is detected.
             if protocol_state.maintenance {
-                return T::DbWeight::get().reads(1);
+                return consumed_weight;
             }
 
             // Nothing to do if it's not new era
             if !protocol_state.is_new_era(now) {
-                return T::DbWeight::get().reads(1);
+                return consumed_weight;
             }
 
             // At this point it's clear that an era change will happen
@@ -1712,6 +1722,9 @@ pub mod pallet {
                     let next_tier_config = NextTierConfig::<T>::take();
                     TierConfig::<T>::put(next_tier_config);
 
+                    consumed_weight
+                        .saturating_accrue(T::WeightInfo::on_initialize_voting_to_build_and_earn());
+
                     (
                         Some(Event::<T>::NewSubperiod {
                             subperiod: protocol_state.subperiod(),
@@ -1733,16 +1746,19 @@ pub mod pallet {
                     //
                     // To help with benchmarking, it's possible to omit real tier calculation use `Dummy` approach instead.
                     // This must never be used in production code, obviously.
-                    let dapp_tier_rewards = match tier_assignment {
+                    let (dapp_tier_rewards, counter) = match tier_assignment {
                         TierAssignment::Real => Self::get_dapp_tier_assignment(
                             current_era,
                             protocol_state.period_number(),
                             dapp_reward_pool,
                         ),
                         #[cfg(feature = "runtime-benchmarks")]
-                        TierAssignment::Dummy => DAppTierRewardsFor::<T>::default(),
+                        TierAssignment::Dummy => (DAppTierRewardsFor::<T>::default(), 0),
                     };
                     DAppTiers::<T>::insert(&current_era, dapp_tier_rewards);
+
+                    consumed_weight
+                        .saturating_accrue(T::WeightInfo::dapp_tier_assignment(counter.into()));
 
                     // Switch to `Voting` period if conditions are met.
                     if protocol_state.period_info.is_next_period(next_era) {
@@ -1777,6 +1793,10 @@ pub mod pallet {
                             TierConfig::<T>::get().calculate_new(average_price, &tier_params);
                         NextTierConfig::<T>::put(new_tier_config);
 
+                        consumed_weight.saturating_accrue(
+                            T::WeightInfo::on_initialize_build_and_earn_to_voting(),
+                        );
+
                         (
                             Some(Event::<T>::NewSubperiod {
                                 subperiod: protocol_state.subperiod(),
@@ -1789,6 +1809,10 @@ pub mod pallet {
                         protocol_state.next_era_start = next_era_start_block;
 
                         era_info.migrate_to_next_era(None);
+
+                        consumed_weight.saturating_accrue(
+                            T::WeightInfo::on_initialize_build_and_earn_to_build_and_earn(),
+                        );
 
                         (None, era_reward)
                     }
@@ -1818,8 +1842,7 @@ pub mod pallet {
                 Self::deposit_event(period_event);
             }
 
-            // TODO: benchmark later
-            T::DbWeight::get().reads_writes(3, 3)
+            consumed_weight
         }
     }
 }
