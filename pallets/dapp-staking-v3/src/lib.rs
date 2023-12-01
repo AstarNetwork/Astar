@@ -74,9 +74,12 @@ const STAKING_ID: LockIdentifier = *b"dapstake";
 
 const LOG_TARGET: &str = "dapp-staking";
 
-/// TODO
+/// Helper enum for benchmarking.
 pub(crate) enum TierAssignment {
+    /// Real tier assignment calculation should be done.
     Real,
+    /// Dummy tier assignment calculation should be done, e.g. default value should be returned.
+    #[cfg(feature = "runtime-benchmarks")]
     Dummy,
 }
 
@@ -1268,7 +1271,6 @@ pub mod pallet {
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
 
-            // TODO: Shall we make sure only dApp owner or beneficiary can trigger the claim?
             let _ = ensure_signed(origin)?;
 
             let dapp_info =
@@ -1661,7 +1663,7 @@ pub mod pallet {
             .unwrap_or_default()
         }
 
-        /// TODO
+        /// Used to handle era & period transitions.
         pub(crate) fn era_and_period_handler(
             now: BlockNumber,
             tier_assignment: TierAssignment,
@@ -1727,14 +1729,17 @@ pub mod pallet {
                         dapp_reward_pool,
                     };
 
-                    // TODO: docs!
                     // Distribute dapps into tiers, write it into storage
+                    //
+                    // To help with benchmarking, it's possible to omit real tier calculation use `Dummy` approach instead.
+                    // This must never be used in production code, obviously.
                     let dapp_tier_rewards = match tier_assignment {
                         TierAssignment::Real => Self::get_dapp_tier_assignment(
                             current_era,
                             protocol_state.period_number(),
                             dapp_reward_pool,
                         ),
+                        #[cfg(feature = "runtime-benchmarks")]
                         TierAssignment::Dummy => DAppTierRewardsFor::<T>::default(),
                     };
                     DAppTiers::<T>::insert(&current_era, dapp_tier_rewards);

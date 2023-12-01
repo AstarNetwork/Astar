@@ -205,39 +205,6 @@ mod benchmarks {
         );
     }
 
-    // TODO: maybe this is not needed. Compare it after running benchmarks to the 'not-full' unlock
-    #[benchmark]
-    fn full_unlock() {
-        initial_config::<T>();
-
-        let staker: T::AccountId = whitelisted_caller();
-        let owner: T::AccountId = account("dapp_owner", 0, SEED);
-        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
-        assert_ok!(DappStaking::<T>::register(
-            RawOrigin::Root.into(),
-            owner.clone().into(),
-            smart_contract.clone(),
-        ));
-
-        let amount = T::MinimumLockedAmount::get() * 2;
-        T::Currency::make_free_balance_be(&staker, amount);
-        assert_ok!(DappStaking::<T>::lock(
-            RawOrigin::Signed(staker.clone()).into(),
-            amount,
-        ));
-
-        #[extrinsic_call]
-        unlock(RawOrigin::Signed(staker.clone()), amount);
-
-        assert_last_event::<T>(
-            Event::<T>::Unlocking {
-                account: staker,
-                amount,
-            }
-            .into(),
-        );
-    }
-
     #[benchmark]
     fn claim_unlocked(x: Linear<0, { T::MaxNumberOfStakedContracts::get() }>) {
         // Prepare staker account and lock some amount
@@ -791,6 +758,9 @@ mod benchmarks {
         let state = ActiveProtocolState::<T>::get();
         assert_eq!(state.subperiod(), Subperiod::Voting, "Sanity check.");
 
+        // Register & stake contracts, just so we don't have empty stakes.
+        prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
+
         run_to_block::<T>(state.next_era_start - 1);
         DappStaking::<T>::on_finalize(state.next_era_start - 1);
         System::<T>::set_block_number(state.next_era_start);
@@ -816,6 +786,9 @@ mod benchmarks {
             Subperiod::Voting,
             "Sanity check."
         );
+
+        // Register & stake contracts, just so we don't have empty stakes.
+        prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
 
         // Advance to build&earn subperiod
         advance_to_next_subperiod::<T>();
@@ -859,12 +832,56 @@ mod benchmarks {
         );
     }
 
+    #[benchmark]
+    fn on_initialize_build_and_earn_to_build_and_earn() {
+        initial_config::<T>();
+
+        // Register & stake contracts, just so we don't have empty stakes.
+        prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
+
+        // Advance to build&earn subperiod
+        advance_to_next_subperiod::<T>();
+        let snapshot_state = ActiveProtocolState::<T>::get();
+
+        // Advance over to the next era, and then again to the last block of that era.
+        advance_to_next_era::<T>();
+        run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
+
+        // Some sanity checks, we should still be in the build&earn subperiod, and in the first period.
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::BuildAndEarn
+        );
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            snapshot_state.period_number(),
+        );
+
+        let new_era_start_block = ActiveProtocolState::<T>::get().next_era_start;
+        DappStaking::<T>::on_finalize(new_era_start_block - 1);
+        System::<T>::set_block_number(new_era_start_block);
+
+        #[block]
+        {
+            DappStaking::<T>::era_and_period_handler(new_era_start_block, TierAssignment::Dummy);
+        }
+
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::BuildAndEarn
+        );
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            snapshot_state.period_number(),
+        );
+    }
+
     // TODO: investigate why the PoV size is so large here, even after removing read of `IntegratedDApps` storage.
     // Relevant file: polkadot-sdk/substrate/utils/frame/benchmarking-cli/src/pallet/writer.rs
     // UPDATE: after some investigation, it seems that PoV size benchmarks are very unprecise
     // - the worst case measured is usually very far off the actual value that is consumed on chain.
     // There's an ongoing item to improve it (mentioned on roundtable meeting).
-
+    //
     /// This benchmark isn't used directly in the runtime code, but it's convenient to do manual analysis of the benchmarked values.
     /// Tier assignment is a PoV heavy operation, and it has to be properly analyzed, independently from other weight items.
     #[benchmark]

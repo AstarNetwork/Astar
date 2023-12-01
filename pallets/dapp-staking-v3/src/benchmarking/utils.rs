@@ -180,7 +180,10 @@ pub(super) fn max_number_of_contracts<T: Config>() -> u32 {
     T::MaxNumberOfContracts::get().min(NUMBER_OF_SLOTS).into()
 }
 
-/// TODO
+/// Registers & staked on the specified number of smart contracts
+///
+/// Stake amounts are decided in such a way to maximize tier filling rate.
+/// This means that all of the contracts should end up in some tier.
 pub(super) fn prepare_contracts_for_tier_assignment<T: Config>(x: u32) {
     let developer: T::AccountId = whitelisted_caller();
     for id in 0..x {
