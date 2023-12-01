@@ -169,7 +169,7 @@ pub mod pallet {
         #[pallet::constant]
         type UnlockingPeriod: Get<EraNumber>;
 
-        /// Maximum amount of stake contract entries acount is allowed to have at once.
+        /// Maximum amount of stake contract entries an account is allowed to have at once.
         #[pallet::constant]
         type MaxNumberOfStakedContracts: Get<u32>;
 

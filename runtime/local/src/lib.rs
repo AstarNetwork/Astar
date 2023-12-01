@@ -63,8 +63,9 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    evm::EvmRevertCodeHandler, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
-    Index, Signature,
+    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    evm::EvmRevertCodeHandler,
+    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 pub use pallet_block_rewards_hybrid::RewardDistributionConfig;
 
@@ -577,7 +578,7 @@ impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerB
 }
 
 pub struct InflationCycleConfig;
-impl pallet_inflation::CycleConfiguration for InflationCycleConfig {
+impl CycleConfiguration for InflationCycleConfig {
     fn periods_per_cycle() -> u32 {
         4
     }
