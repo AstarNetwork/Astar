@@ -512,19 +512,6 @@ impl pallet_dapp_staking_v3::PriceProvider for DummyPriceProvider {
     }
 }
 
-pub struct DummyRewardPoolProvider;
-impl pallet_dapp_staking_v3::RewardPoolProvider for DummyRewardPoolProvider {
-    fn normal_reward_pools() -> (Balance, Balance) {
-        (
-            Balance::from(1_000_000_000_000 * AST),
-            Balance::from(1_000_000_000 * AST),
-        )
-    }
-    fn bonus_reward_pool() -> Balance {
-        Balance::from(3_000_000 * AST)
-    }
-}
-
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC>(sp_std::marker::PhantomData<SC>);
 #[cfg(feature = "runtime-benchmarks")]
@@ -548,7 +535,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type SmartContract = SmartContract<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
-    type RewardPoolProvider = DummyRewardPoolProvider;
+    type StakingRewardHandler = Inflation;
     type StandardEraLength = StandardEraLength;
     type StandardErasPerVotingSubperiod = StandardErasPerVotingSubperiod;
     type StandardErasPerBuildAndEarnSubperiod = StandardErasPerBuildAndEarnSubperiod;

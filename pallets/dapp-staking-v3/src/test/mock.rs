@@ -115,16 +115,23 @@ impl PriceProvider for DummyPriceProvider {
     }
 }
 
-pub struct DummyRewardPoolProvider;
-impl RewardPoolProvider for DummyRewardPoolProvider {
-    fn normal_reward_pools() -> (Balance, Balance) {
+pub struct DummyStakingRewardHandler;
+impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
+    fn staker_and_dapp_reward_pools(_total_staked_value: Balance) -> (Balance, Balance) {
         (
             Balance::from(1_000_000_000_000_u128),
             Balance::from(1_000_000_000_u128),
         )
     }
+
     fn bonus_reward_pool() -> Balance {
         Balance::from(3_000_000_u128)
+    }
+
+    fn payout_reward(beneficiary: &AccountId, reward: Balance) -> Result<(), ()> {
+        // TODO: add an option for this to fail, so we can test it
+        let _ = Balances::deposit_creating(beneficiary, reward);
+        Ok(())
     }
 }
 
@@ -155,7 +162,7 @@ impl pallet_dapp_staking::Config for Test {
     type SmartContract = MockSmartContract;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
-    type RewardPoolProvider = DummyRewardPoolProvider;
+    type StakingRewardHandler = DummyStakingRewardHandler;
     type StandardEraLength = ConstU32<10>;
     type StandardErasPerVotingSubperiod = ConstU32<8>;
     type StandardErasPerBuildAndEarnSubperiod = ConstU32<16>;

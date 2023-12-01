@@ -1707,21 +1707,3 @@ pub trait PriceProvider {
     /// Get the price of the native token.
     fn average_price() -> FixedU64;
 }
-
-// TODO: however the implementation ends up looking,
-// it should consider total staked amount when filling up the bonus pool.
-// This is to ensure bonus rewards aren't too large in case there is little amount of staked funds.
-pub trait RewardPoolProvider {
-    /// Get the reward pools for stakers and dApps.
-    ///
-    /// TODO: discussion about below
-    /// The assumption is that the underlying implementation keeps track of how often this is called.
-    /// E.g. let's assume it's supposed to be called at the end of each era.
-    /// In case era is forced, it will last shorter. If pallet is put into maintenance mode, era might last longer.
-    /// Reward should adjust to that accordingly.
-    /// Alternative is to provide number of blocks for which era lasted.
-    fn normal_reward_pools() -> (Balance, Balance);
-
-    /// Get the bonus pool for stakers.
-    fn bonus_reward_pool() -> Balance;
-}

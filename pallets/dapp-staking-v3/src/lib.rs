@@ -52,7 +52,10 @@ use sp_runtime::{
 };
 pub use sp_std::vec::Vec;
 
-use astar_primitives::{Balance, BlockNumber};
+use astar_primitives::{
+    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    Balance, BlockNumber,
+};
 
 pub use pallet::*;
 
@@ -64,7 +67,7 @@ mod benchmarking;
 
 mod types;
 use types::*;
-pub use types::{PriceProvider, RewardPoolProvider, TierThreshold};
+pub use types::{PriceProvider, TierThreshold};
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -125,8 +128,8 @@ pub mod pallet {
         /// Used to provide price information about the native token.
         type NativePriceProvider: PriceProvider;
 
-        /// Used to provide reward pools amount.
-        type RewardPoolProvider: RewardPoolProvider;
+        /// Used to handle reward payouts & reward pool amount fetching.
+        type StakingRewardHandler: StakingRewardHandler<Self::AccountId>;
 
         /// Length of a standard era in block numbers.
         #[pallet::constant]
@@ -1734,11 +1737,12 @@ pub mod pallet {
                     )
                 }
                 Subperiod::BuildAndEarn => {
+                    let staked = era_info.total_staked_amount();
                     let (staker_reward_pool, dapp_reward_pool) =
-                        T::RewardPoolProvider::normal_reward_pools();
+                        T::StakingRewardHandler::staker_and_dapp_reward_pools(staked);
                     let era_reward = EraReward {
                         staker_reward_pool,
-                        staked: era_info.total_staked_amount(),
+                        staked,
                         dapp_reward_pool,
                     };
 
@@ -1763,7 +1767,7 @@ pub mod pallet {
                     // Switch to `Voting` period if conditions are met.
                     if protocol_state.period_info.is_next_period(next_era) {
                         // Store info about period end
-                        let bonus_reward_pool = T::RewardPoolProvider::bonus_reward_pool();
+                        let bonus_reward_pool = T::StakingRewardHandler::bonus_reward_pool();
                         PeriodEnd::<T>::insert(
                             &protocol_state.period_number(),
                             PeriodEndInfo {
