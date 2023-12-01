@@ -22,7 +22,10 @@
 
 pub use pallet::*;
 
-use astar_primitives::{Balance, BlockNumber};
+use astar_primitives::{
+    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    Balance, BlockNumber,
+};
 use frame_support::{pallet_prelude::*, traits::Currency};
 use frame_system::{ensure_root, pallet_prelude::*};
 use sp_runtime::{traits::CheckedAdd, Perquintill};
@@ -509,67 +512,4 @@ pub trait PayoutPerBlock<Imbalance> {
 
     /// Payout reward to the collator responsible for producing the block.
     fn collators(reward: Imbalance);
-}
-
-// TODO: This should be moved to primitives.
-// TODO2: However this ends up looking in the end, we should not duplicate these parameters in the runtime.
-//        Both the dApp staking & inflation pallet should use the same source.
-pub trait CycleConfiguration {
-    /// How many different periods are there in a cycle (a 'year').
-    ///
-    /// This value has to be at least 1.
-    fn periods_per_cycle() -> u32;
-
-    /// For how many standard era lengths does the voting subperiod last.
-    ///
-    /// This value has to be at least 1.
-    fn eras_per_voting_subperiod() -> u32;
-
-    /// How many standard eras are there in the build&earn subperiod.
-    ///
-    /// This value has to be at least 1.
-    fn eras_per_build_and_earn_subperiod() -> u32;
-
-    /// How many blocks are there per standard era.
-    ///
-    /// This value has to be at least 1.
-    fn blocks_per_era() -> u32;
-
-    /// For how many standard era lengths does the period last.
-    fn eras_per_period() -> u32 {
-        Self::eras_per_voting_subperiod().saturating_add(Self::eras_per_build_and_earn_subperiod())
-    }
-
-    /// For how many standard era lengths does the cylce (a 'year') last.
-    fn eras_per_cycle() -> u32 {
-        Self::eras_per_period().saturating_mul(Self::periods_per_cycle())
-    }
-
-    /// How many blocks are there per cycle (a 'year').
-    fn blocks_per_cycle() -> u32 {
-        Self::blocks_per_era().saturating_mul(Self::eras_per_cycle())
-    }
-
-    /// For how many standard era lengths do all the build&earn subperiods in a cycle last.    
-    fn build_and_earn_eras_per_cycle() -> u32 {
-        Self::eras_per_build_and_earn_subperiod().saturating_mul(Self::periods_per_cycle())
-    }
-}
-
-// TODO: This should be moved to primitives.
-/// Interface for staking reward handler.
-///
-/// Provides reward pool values for stakers - normal & bonus rewards, as well as dApp reward pool.
-/// Also provides a safe function for paying out rewards.
-pub trait StakingRewardHandler<AccountId> {
-    /// Returns the staker reward pool & dApp reward pool for an era.
-    ///
-    /// The total staker reward pool is dynamic and depends on the total value staked.
-    fn staker_and_dapp_reward_pools(total_value_staked: Balance) -> (Balance, Balance);
-
-    /// Returns the bonus reward pool for a period.
-    fn bonus_reward_pool() -> Balance;
-
-    /// Attempts to pay out the rewards to the beneficiary.
-    fn payout_reward(beneficiary: &AccountId, reward: Balance) -> Result<(), ()>;
 }
