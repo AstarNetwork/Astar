@@ -797,12 +797,64 @@ mod benchmarks {
 
         #[block]
         {
-            DappStaking::<T>::on_initialize(state.next_era_start);
+            DappStaking::<T>::era_and_period_handler(state.next_era_start, TierAssignment::Dummy);
         }
 
         assert_eq!(
             ActiveProtocolState::<T>::get().subperiod(),
             Subperiod::BuildAndEarn
+        );
+    }
+
+    #[benchmark]
+    fn on_initialize_build_and_earn_to_voting() {
+        initial_config::<T>();
+
+        // Get started
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::Voting,
+            "Sanity check."
+        );
+
+        // Advance to build&earn subperiod
+        advance_to_next_subperiod::<T>();
+        let snapshot_state = ActiveProtocolState::<T>::get();
+
+        // Advance over to the last era of the subperiod, and then again to the last block of that era.
+        advance_to_era::<T>(
+            ActiveProtocolState::<T>::get()
+                .period_info
+                .subperiod_end_era - 1,
+        );
+        run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
+
+        // Some sanity checks, we should still be in the build&earn subperiod, and in the first period.
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::BuildAndEarn
+        );
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            snapshot_state.period_number(),
+        );
+
+        let new_era_start_block = ActiveProtocolState::<T>::get().next_era_start;
+        DappStaking::<T>::on_finalize(new_era_start_block - 1);
+        System::<T>::set_block_number(new_era_start_block);
+
+        #[block]
+        {
+            DappStaking::<T>::era_and_period_handler(new_era_start_block, TierAssignment::Dummy);
+        }
+
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::Voting
+        );
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            snapshot_state.period_number() + 1,
         );
     }
 

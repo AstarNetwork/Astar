@@ -74,6 +74,12 @@ const STAKING_ID: LockIdentifier = *b"dapstake";
 
 const LOG_TARGET: &str = "dapp-staking";
 
+/// TODO
+pub(crate) enum TierAssignment {
+    Real,
+    Dummy,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -515,147 +521,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
         fn on_initialize(now: BlockNumber) -> Weight {
-            let mut protocol_state = ActiveProtocolState::<T>::get();
-
-            // We should not modify pallet storage while in maintenance mode.
-            // This is a safety measure, since maintenance mode is expected to be
-            // enabled in case some misbehavior or corrupted storage is detected.
-            if protocol_state.maintenance {
-                return T::DbWeight::get().reads(1);
-            }
-
-            // Nothing to do if it's not new era
-            if !protocol_state.is_new_era(now) {
-                return T::DbWeight::get().reads(1);
-            }
-
-            // At this point it's clear that an era change will happen
-            let mut era_info = CurrentEraInfo::<T>::get();
-
-            let current_era = protocol_state.era;
-            let next_era = current_era.saturating_add(1);
-            let (maybe_period_event, era_reward) = match protocol_state.subperiod() {
-                // Voting subperiod only lasts for one 'prolonged' era
-                Subperiod::Voting => {
-                    // For the sake of consistency, we put zero reward into storage. There are no rewards for the voting subperiod.
-                    let era_reward = EraReward {
-                        staker_reward_pool: Balance::zero(),
-                        staked: era_info.total_staked_amount(),
-                        dapp_reward_pool: Balance::zero(),
-                    };
-
-                    let subperiod_end_era =
-                        next_era.saturating_add(T::StandardErasPerBuildAndEarnSubperiod::get());
-                    let build_and_earn_start_block =
-                        now.saturating_add(T::StandardEraLength::get());
-                    protocol_state
-                        .advance_to_next_subperiod(subperiod_end_era, build_and_earn_start_block);
-
-                    era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
-
-                    // Update tier configuration to be used when calculating rewards for the upcoming eras
-                    let next_tier_config = NextTierConfig::<T>::take();
-                    TierConfig::<T>::put(next_tier_config);
-
-                    (
-                        Some(Event::<T>::NewSubperiod {
-                            subperiod: protocol_state.subperiod(),
-                            number: protocol_state.period_number(),
-                        }),
-                        era_reward,
-                    )
-                }
-                Subperiod::BuildAndEarn => {
-                    let (staker_reward_pool, dapp_reward_pool) =
-                        T::RewardPoolProvider::normal_reward_pools();
-                    let era_reward = EraReward {
-                        staker_reward_pool,
-                        staked: era_info.total_staked_amount(),
-                        dapp_reward_pool,
-                    };
-
-                    // Distribute dapps into tiers, write it into storage
-                    let dapp_tier_rewards = Self::get_dapp_tier_assignment(
-                        current_era,
-                        protocol_state.period_number(),
-                        dapp_reward_pool,
-                    );
-                    DAppTiers::<T>::insert(&current_era, dapp_tier_rewards);
-
-                    // Switch to `Voting` period if conditions are met.
-                    if protocol_state.period_info.is_next_period(next_era) {
-                        // Store info about period end
-                        let bonus_reward_pool = T::RewardPoolProvider::bonus_reward_pool();
-                        PeriodEnd::<T>::insert(
-                            &protocol_state.period_number(),
-                            PeriodEndInfo {
-                                bonus_reward_pool,
-                                total_vp_stake: era_info.staked_amount(Subperiod::Voting),
-                                final_era: current_era,
-                            },
-                        );
-
-                        // For the sake of consistency we treat the whole `Voting` period as a single era.
-                        // This means no special handling is required for this period, it only lasts potentially longer than a single standard era.
-                        let subperiod_end_era = next_era.saturating_add(1);
-                        let voting_period_length = Self::blocks_per_voting_period();
-                        let next_era_start_block = now.saturating_add(voting_period_length);
-
-                        protocol_state
-                            .advance_to_next_subperiod(subperiod_end_era, next_era_start_block);
-
-                        era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
-
-                        // Re-calculate tier configuration for the upcoming new period
-                        let tier_params = StaticTierParams::<T>::get();
-                        let average_price = T::NativePriceProvider::average_price();
-                        let new_tier_config =
-                            TierConfig::<T>::get().calculate_new(average_price, &tier_params);
-                        NextTierConfig::<T>::put(new_tier_config);
-
-                        (
-                            Some(Event::<T>::NewSubperiod {
-                                subperiod: protocol_state.subperiod(),
-                                number: protocol_state.period_number(),
-                            }),
-                            era_reward,
-                        )
-                    } else {
-                        let next_era_start_block = now.saturating_add(T::StandardEraLength::get());
-                        protocol_state.next_era_start = next_era_start_block;
-
-                        era_info.migrate_to_next_era(None);
-
-                        (None, era_reward)
-                    }
-                }
-            };
-
-            // Update storage items
-            protocol_state.era = next_era;
-            ActiveProtocolState::<T>::put(protocol_state);
-
-            CurrentEraInfo::<T>::put(era_info);
-
-            let era_span_index = Self::era_reward_span_index(current_era);
-            let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
-            if let Err(_) = span.push(current_era, era_reward) {
-                // This must never happen but we log the error just in case.
-                log::error!(
-                    target: LOG_TARGET,
-                    "Failed to push era {} into the era reward span.",
-                    current_era
-                );
-            }
-            EraRewards::<T>::insert(&era_span_index, span);
-
-            Self::deposit_event(Event::<T>::NewEra { era: next_era });
-            if let Some(period_event) = maybe_period_event {
-                Self::deposit_event(period_event);
-            }
-
-            // TODO: benchmark later
-            T::DbWeight::get().reads_writes(3, 3)
+            Self::era_and_period_handler(now, TierAssignment::Real)
         }
     }
 
@@ -1793,6 +1659,158 @@ pub mod pallet {
                 period,
             )
             .unwrap_or_default()
+        }
+
+        /// TODO
+        pub(crate) fn era_and_period_handler(
+            now: BlockNumber,
+            tier_assignment: TierAssignment,
+        ) -> Weight {
+            let mut protocol_state = ActiveProtocolState::<T>::get();
+
+            // We should not modify pallet storage while in maintenance mode.
+            // This is a safety measure, since maintenance mode is expected to be
+            // enabled in case some misbehavior or corrupted storage is detected.
+            if protocol_state.maintenance {
+                return T::DbWeight::get().reads(1);
+            }
+
+            // Nothing to do if it's not new era
+            if !protocol_state.is_new_era(now) {
+                return T::DbWeight::get().reads(1);
+            }
+
+            // At this point it's clear that an era change will happen
+            let mut era_info = CurrentEraInfo::<T>::get();
+
+            let current_era = protocol_state.era;
+            let next_era = current_era.saturating_add(1);
+            let (maybe_period_event, era_reward) = match protocol_state.subperiod() {
+                // Voting subperiod only lasts for one 'prolonged' era
+                Subperiod::Voting => {
+                    // For the sake of consistency, we put zero reward into storage. There are no rewards for the voting subperiod.
+                    let era_reward = EraReward {
+                        staker_reward_pool: Balance::zero(),
+                        staked: era_info.total_staked_amount(),
+                        dapp_reward_pool: Balance::zero(),
+                    };
+
+                    let subperiod_end_era =
+                        next_era.saturating_add(T::StandardErasPerBuildAndEarnSubperiod::get());
+                    let build_and_earn_start_block =
+                        now.saturating_add(T::StandardEraLength::get());
+                    protocol_state
+                        .advance_to_next_subperiod(subperiod_end_era, build_and_earn_start_block);
+
+                    era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
+
+                    // Update tier configuration to be used when calculating rewards for the upcoming eras
+                    let next_tier_config = NextTierConfig::<T>::take();
+                    TierConfig::<T>::put(next_tier_config);
+
+                    (
+                        Some(Event::<T>::NewSubperiod {
+                            subperiod: protocol_state.subperiod(),
+                            number: protocol_state.period_number(),
+                        }),
+                        era_reward,
+                    )
+                }
+                Subperiod::BuildAndEarn => {
+                    let (staker_reward_pool, dapp_reward_pool) =
+                        T::RewardPoolProvider::normal_reward_pools();
+                    let era_reward = EraReward {
+                        staker_reward_pool,
+                        staked: era_info.total_staked_amount(),
+                        dapp_reward_pool,
+                    };
+
+                    // TODO: docs!
+                    // Distribute dapps into tiers, write it into storage
+                    let dapp_tier_rewards = match tier_assignment {
+                        TierAssignment::Real => Self::get_dapp_tier_assignment(
+                            current_era,
+                            protocol_state.period_number(),
+                            dapp_reward_pool,
+                        ),
+                        TierAssignment::Dummy => DAppTierRewardsFor::<T>::default(),
+                    };
+                    DAppTiers::<T>::insert(&current_era, dapp_tier_rewards);
+
+                    // Switch to `Voting` period if conditions are met.
+                    if protocol_state.period_info.is_next_period(next_era) {
+                        // Store info about period end
+                        let bonus_reward_pool = T::RewardPoolProvider::bonus_reward_pool();
+                        PeriodEnd::<T>::insert(
+                            &protocol_state.period_number(),
+                            PeriodEndInfo {
+                                bonus_reward_pool,
+                                total_vp_stake: era_info.staked_amount(Subperiod::Voting),
+                                final_era: current_era,
+                            },
+                        );
+
+                        // For the sake of consistency we treat the whole `Voting` period as a single era.
+                        // This means no special handling is required for this period, it only lasts potentially longer than a single standard era.
+                        let subperiod_end_era = next_era.saturating_add(1);
+                        let voting_period_length = Self::blocks_per_voting_period();
+                        let next_era_start_block = now.saturating_add(voting_period_length);
+
+                        protocol_state
+                            .advance_to_next_subperiod(subperiod_end_era, next_era_start_block);
+
+                        era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
+
+                        // Re-calculate tier configuration for the upcoming new period
+                        let tier_params = StaticTierParams::<T>::get();
+                        let average_price = T::NativePriceProvider::average_price();
+                        let new_tier_config =
+                            TierConfig::<T>::get().calculate_new(average_price, &tier_params);
+                        NextTierConfig::<T>::put(new_tier_config);
+
+                        (
+                            Some(Event::<T>::NewSubperiod {
+                                subperiod: protocol_state.subperiod(),
+                                number: protocol_state.period_number(),
+                            }),
+                            era_reward,
+                        )
+                    } else {
+                        let next_era_start_block = now.saturating_add(T::StandardEraLength::get());
+                        protocol_state.next_era_start = next_era_start_block;
+
+                        era_info.migrate_to_next_era(None);
+
+                        (None, era_reward)
+                    }
+                }
+            };
+
+            // Update storage items
+            protocol_state.era = next_era;
+            ActiveProtocolState::<T>::put(protocol_state);
+
+            CurrentEraInfo::<T>::put(era_info);
+
+            let era_span_index = Self::era_reward_span_index(current_era);
+            let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
+            if let Err(_) = span.push(current_era, era_reward) {
+                // This must never happen but we log the error just in case.
+                log::error!(
+                    target: LOG_TARGET,
+                    "Failed to push era {} into the era reward span.",
+                    current_era
+                );
+            }
+            EraRewards::<T>::insert(&era_span_index, span);
+
+            Self::deposit_event(Event::<T>::NewEra { era: next_era });
+            if let Some(period_event) = maybe_period_event {
+                Self::deposit_event(period_event);
+            }
+
+            // TODO: benchmark later
+            T::DbWeight::get().reads_writes(3, 3)
         }
     }
 }
