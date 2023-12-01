@@ -27,7 +27,7 @@ use frame_system::Pallet as System;
 pub(super) fn run_to_block<T: Config>(n: BlockNumberFor<T>) {
     while System::<T>::block_number() < n {
         DappStaking::<T>::on_finalize(System::<T>::block_number());
-        System::<T>::set_block_number(System::<T>::block_number() + One::one());
+        System::<T>::set_block_number(System::<T>::block_number() + 1);
         // This is performed outside of dapps staking but we expect it before on_initialize
         DappStaking::<T>::on_initialize(System::<T>::block_number());
     }
@@ -114,7 +114,7 @@ pub(super) fn initial_config<T: Config>() {
     // Init protocol state
     ActiveProtocolState::<T>::put(ProtocolState {
         era: 1,
-        next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + One::one(),
+        next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
         period_info: PeriodInfo {
             number: 1,
             subperiod: Subperiod::Voting,
@@ -178,4 +178,38 @@ pub(super) fn initial_config<T: Config>() {
 /// Maximum number of contracts that 'makes sense' - considers both contract number limit & number of slots.
 pub(super) fn max_number_of_contracts<T: Config>() -> u32 {
     T::MaxNumberOfContracts::get().min(NUMBER_OF_SLOTS).into()
+}
+
+/// TODO
+pub(super) fn prepare_contracts_for_tier_assignment<T: Config>(x: u32) {
+    let developer: T::AccountId = whitelisted_caller();
+    for id in 0..x {
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(id as u32);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            developer.clone().into(),
+            smart_contract,
+        ));
+    }
+
+    // TODO: try to make this more "shuffled" so the generated vector ends up being more random
+    let mut amount = 1000 * MIN_TIER_THRESHOLD;
+    for id in 0..x {
+        let staker = account("staker", id.into(), 1337);
+        T::Currency::make_free_balance_be(&staker, amount);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount,
+        ));
+
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(id as u32);
+        assert_ok!(DappStaking::<T>::stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            smart_contract,
+            amount,
+        ));
+
+        // Slowly decrease the stake amount
+        amount.saturating_reduce(UNIT);
+    }
 }

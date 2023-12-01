@@ -29,6 +29,8 @@ use frame_support::{
 };
 use sp_runtime::traits::Zero;
 
+use astar_primitives::{Balance, BlockNumber};
+
 #[test]
 fn maintenace_mode_works() {
     ExtBuilder::build().execute_with(|| {

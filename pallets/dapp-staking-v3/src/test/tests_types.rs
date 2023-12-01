@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use astar_primitives::{Balance, BlockNumber};
+use astar_primitives::Balance;
 use frame_support::assert_ok;
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::Permill;
@@ -85,7 +85,7 @@ fn period_info_basic_checks() {
 
 #[test]
 fn protocol_state_default() {
-    let protocol_state = ProtocolState::<BlockNumber>::default();
+    let protocol_state = ProtocolState::default();
 
     assert_eq!(protocol_state.era, 0);
     assert_eq!(
@@ -96,7 +96,7 @@ fn protocol_state_default() {
 
 #[test]
 fn protocol_state_basic_checks() {
-    let mut protocol_state = ProtocolState::<BlockNumber>::default();
+    let mut protocol_state = ProtocolState::default();
     let period_number = 5;
     let subperiod_end_era = 11;
     let next_era_start = 31;
@@ -173,7 +173,7 @@ fn dapp_info_basic_checks() {
 #[test]
 fn unlocking_chunk_basic_check() {
     // Sanity check
-    let unlocking_chunk = UnlockingChunk::<BlockNumber>::default();
+    let unlocking_chunk = UnlockingChunk::default();
     assert!(unlocking_chunk.amount.is_zero());
     assert!(unlocking_chunk.unlock_block.is_zero());
 }
@@ -181,7 +181,7 @@ fn unlocking_chunk_basic_check() {
 #[test]
 fn account_ledger_default() {
     get_u32_type!(UnlockingDummy, 5);
-    let acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     assert!(acc_ledger.is_empty());
     assert!(acc_ledger.active_locked_amount().is_zero());
@@ -190,7 +190,7 @@ fn account_ledger_default() {
 #[test]
 fn account_ledger_add_lock_amount_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // First step, sanity checks
     assert!(acc_ledger.active_locked_amount().is_zero());
@@ -209,7 +209,7 @@ fn account_ledger_add_lock_amount_works() {
 #[test]
 fn account_ledger_subtract_lock_amount_basic_usage_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Sanity check scenario
     // Cannot reduce if there is nothing locked, should be a noop
@@ -250,10 +250,10 @@ fn account_ledger_subtract_lock_amount_basic_usage_works() {
 #[test]
 fn account_ledger_add_unlocking_chunk_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Base sanity check
-    let default_unlocking_chunk = UnlockingChunk::<BlockNumber>::default();
+    let default_unlocking_chunk = UnlockingChunk::default();
     assert!(default_unlocking_chunk.amount.is_zero());
     assert!(default_unlocking_chunk.unlock_block.is_zero());
 
@@ -318,7 +318,7 @@ fn account_ledger_add_unlocking_chunk_works() {
 #[test]
 fn account_ledger_staked_amount_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Sanity check
     assert!(acc_ledger.staked_amount(0).is_zero());
@@ -355,7 +355,7 @@ fn account_ledger_staked_amount_works() {
 #[test]
 fn account_ledger_staked_amount_for_type_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // 1st scenario - 'current' entry is set, 'future' is None
     let (voting_1, build_and_earn_1, period) = (31, 43, 2);
@@ -416,7 +416,7 @@ fn account_ledger_staked_amount_for_type_works() {
 #[test]
 fn account_ledger_stakeable_amount_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Sanity check for empty ledger
     assert!(acc_ledger.stakeable_amount(1).is_zero());
@@ -458,7 +458,7 @@ fn account_ledger_stakeable_amount_works() {
 #[test]
 fn account_ledger_staked_era_period_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     let (era_1, period) = (10, 2);
     let stake_amount_1 = StakeAmount {
@@ -504,7 +504,7 @@ fn account_ledger_staked_era_period_works() {
 #[test]
 fn account_ledger_add_stake_amount_basic_example_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Sanity check
     let period_number = 2;
@@ -584,7 +584,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
 #[test]
 fn account_ledger_add_stake_amount_advanced_example_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // 1st scenario - stake some amount, and ensure values are as expected.
     let era_1 = 1;
@@ -636,7 +636,7 @@ fn account_ledger_add_stake_amount_advanced_example_works() {
 #[test]
 fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Prep actions
     let era_1 = 5;
@@ -703,7 +703,7 @@ fn account_ledger_add_stake_amount_invalid_era_or_period_fails() {
 #[test]
 fn account_ledger_add_stake_amount_too_large_amount_fails() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Sanity check
     assert_eq!(
@@ -747,7 +747,7 @@ fn account_ledger_add_stake_amount_too_large_amount_fails() {
 #[test]
 fn account_ledger_unstake_amount_basic_scenario_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Prep actions
     let amount_1 = 19;
@@ -803,7 +803,7 @@ fn account_ledger_unstake_amount_basic_scenario_works() {
 #[test]
 fn account_ledger_unstake_amount_advanced_scenario_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Prep actions
     let amount_1 = 19;
@@ -885,7 +885,7 @@ fn account_ledger_unstake_amount_advanced_scenario_works() {
 #[test]
 fn account_ledger_unstake_from_invalid_era_fails() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Prep actions
     let amount_1 = 13;
@@ -957,7 +957,7 @@ fn account_ledger_unstake_from_invalid_era_fails() {
 #[test]
 fn account_ledger_unstake_too_much_fails() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Prep actions
     let amount_1 = 23;
@@ -982,7 +982,7 @@ fn account_ledger_unstake_too_much_fails() {
 #[test]
 fn account_ledger_unlockable_amount_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Sanity check scenario
     assert!(acc_ledger.unlockable_amount(0).is_zero());
@@ -1023,7 +1023,7 @@ fn account_ledger_unlockable_amount_works() {
 #[test]
 fn account_ledger_claim_unlocked_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Sanity check scenario
     assert!(acc_ledger.claim_unlocked(0).is_zero());
@@ -1057,7 +1057,7 @@ fn account_ledger_claim_unlocked_works() {
 #[test]
 fn account_ledger_consume_unlocking_chunks_works() {
     get_u32_type!(UnlockingDummy, 5);
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
     // Sanity check scenario
     assert!(acc_ledger.consume_unlocking_chunks().is_zero());
@@ -1076,7 +1076,7 @@ fn account_ledger_expired_cleanup_works() {
     get_u32_type!(UnlockingDummy, 5);
 
     // 1st scenario - nothing is expired
-    let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
     acc_ledger.staked = StakeAmount {
         voting: 3,
         build_and_earn: 7,
@@ -1116,7 +1116,7 @@ fn account_ledger_claim_up_to_era_only_staked_without_cleanup_works() {
     let stake_era = 100;
 
     let acc_ledger_snapshot = {
-        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
         acc_ledger.staked = StakeAmount {
             voting: 3,
             build_and_earn: 7,
@@ -1189,7 +1189,7 @@ fn account_ledger_claim_up_to_era_only_staked_with_cleanup_works() {
     let stake_era = 100;
 
     let acc_ledger_snapshot = {
-        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
         acc_ledger.staked = StakeAmount {
             voting: 3,
             build_and_earn: 7,
@@ -1284,7 +1284,7 @@ fn account_ledger_claim_up_to_era_only_staked_future_without_cleanup_works() {
     let stake_era = 50;
 
     let acc_ledger_snapshot = {
-        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
         acc_ledger.staked_future = Some(StakeAmount {
             voting: 5,
             build_and_earn: 11,
@@ -1363,7 +1363,7 @@ fn account_ledger_claim_up_to_era_only_staked_future_with_cleanup_works() {
     let stake_era = 50;
 
     let acc_ledger_snapshot = {
-        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
         acc_ledger.staked_future = Some(StakeAmount {
             voting: 2,
             build_and_earn: 17,
@@ -1468,7 +1468,7 @@ fn account_ledger_claim_up_to_era_staked_and_staked_future_works() {
     let stake_era_2 = stake_era_1 + 1;
 
     let acc_ledger_snapshot = {
-        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
         acc_ledger.staked = StakeAmount {
             voting: 3,
             build_and_earn: 7,
@@ -1561,7 +1561,7 @@ fn account_ledger_claim_up_to_era_fails_for_historic_eras() {
 
     // Only staked entry
     {
-        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
         acc_ledger.staked = StakeAmount {
             voting: 2,
             build_and_earn: 17,
@@ -1576,7 +1576,7 @@ fn account_ledger_claim_up_to_era_fails_for_historic_eras() {
 
     // Only staked-future entry
     {
-        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
         acc_ledger.staked_future = Some(StakeAmount {
             voting: 2,
             build_and_earn: 17,
@@ -1591,7 +1591,7 @@ fn account_ledger_claim_up_to_era_fails_for_historic_eras() {
 
     // Both staked and staked-future entries
     {
-        let mut acc_ledger = AccountLedger::<BlockNumber, UnlockingDummy>::default();
+        let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
         acc_ledger.staked = StakeAmount {
             voting: 2,
             build_and_earn: 17,

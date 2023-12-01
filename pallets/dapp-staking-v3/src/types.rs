@@ -65,21 +65,20 @@
 //!
 
 use frame_support::{pallet_prelude::*, BoundedVec};
-use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, CheckedAdd, UniqueSaturatedInto, Zero},
+    traits::{CheckedAdd, UniqueSaturatedInto, Zero},
     FixedPointNumber, Permill, Saturating,
 };
 pub use sp_std::{fmt::Debug, vec::Vec};
 
-use astar_primitives::Balance;
+use astar_primitives::{Balance, BlockNumber};
 
 use crate::pallet::Config;
 
 // Convenience type for `AccountLedger` usage.
-pub type AccountLedgerFor<T> = AccountLedger<BlockNumberFor<T>, <T as Config>::MaxUnlockingChunks>;
+pub type AccountLedgerFor<T> = AccountLedger<<T as Config>::MaxUnlockingChunks>;
 
 // Convenience type for `DAppTierRewards` usage.
 pub type DAppTierRewardsFor<T> =
@@ -180,7 +179,7 @@ pub enum ForcingType {
 
 /// General information & state of the dApp staking protocol.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct ProtocolState<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen> {
+pub struct ProtocolState {
     /// Ongoing era number.
     #[codec(compact)]
     pub era: EraNumber,
@@ -193,14 +192,11 @@ pub struct ProtocolState<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen> {
     pub maintenance: bool,
 }
 
-impl<BlockNumber> Default for ProtocolState<BlockNumber>
-where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
-{
+impl Default for ProtocolState {
     fn default() -> Self {
         Self {
             era: 0,
-            next_era_start: BlockNumber::from(1_u32),
+            next_era_start: 1,
             period_info: PeriodInfo {
                 number: 0,
                 subperiod: Subperiod::Voting,
@@ -211,10 +207,7 @@ where
     }
 }
 
-impl<BlockNumber> ProtocolState<BlockNumber>
-where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
-{
+impl ProtocolState {
     /// Current subperiod.
     pub fn subperiod(&self) -> Subperiod {
         self.period_info.subperiod
@@ -299,7 +292,7 @@ impl<AccountId> DAppInfo<AccountId> {
 
 /// How much was unlocked in some block.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct UnlockingChunk<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+pub struct UnlockingChunk {
     /// Amount undergoing the unlocking period.
     #[codec(compact)]
     pub amount: Balance,
@@ -308,10 +301,7 @@ pub struct UnlockingChunk<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Co
     pub unlock_block: BlockNumber,
 }
 
-impl<BlockNumber> Default for UnlockingChunk<BlockNumber>
-where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-{
+impl Default for UnlockingChunk {
     fn default() -> Self {
         Self {
             amount: Balance::zero(),
@@ -332,15 +322,12 @@ where
     TypeInfo,
 )]
 #[scale_info(skip_type_params(UnlockingLen))]
-pub struct AccountLedger<
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
-    UnlockingLen: Get<u32>,
-> {
+pub struct AccountLedger<UnlockingLen: Get<u32>> {
     /// How much active locked amount an account has. This can be used for staking.
     #[codec(compact)]
     pub locked: Balance,
     /// Vector of all the unlocking chunks. This is also considered _locked_ but cannot be used for staking.
-    pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
+    pub unlocking: BoundedVec<UnlockingChunk, UnlockingLen>,
     /// Primary field used to store how much was staked in a particular era.
     pub staked: StakeAmount,
     /// Secondary field used to store 'stake' information for the 'next era'.
@@ -354,9 +341,8 @@ pub struct AccountLedger<
     pub contract_stake_count: u32,
 }
 
-impl<BlockNumber, UnlockingLen> Default for AccountLedger<BlockNumber, UnlockingLen>
+impl<UnlockingLen> Default for AccountLedger<UnlockingLen>
 where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
     UnlockingLen: Get<u32>,
 {
     fn default() -> Self {
@@ -370,9 +356,8 @@ where
     }
 }
 
-impl<BlockNumber, UnlockingLen> AccountLedger<BlockNumber, UnlockingLen>
+impl<UnlockingLen> AccountLedger<UnlockingLen>
 where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
     UnlockingLen: Get<u32>,
 {
     /// Empty if no locked/unlocking/staked info exists.

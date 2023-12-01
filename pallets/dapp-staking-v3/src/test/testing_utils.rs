@@ -19,8 +19,8 @@
 use crate::test::mock::*;
 use crate::types::*;
 use crate::{
-    pallet::Config, ActiveProtocolState, BlockNumberFor, ContractStake, CurrentEraInfo, DAppId,
-    DAppTiers, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, NextTierConfig, PeriodEnd,
+    pallet::Config, ActiveProtocolState, ContractStake, CurrentEraInfo, DAppId, DAppTiers,
+    EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, NextTierConfig, PeriodEnd,
     PeriodEndInfo, StakerInfo, TierConfig,
 };
 
@@ -28,11 +28,13 @@ use frame_support::{assert_ok, traits::Get};
 use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
 
+use astar_primitives::{Balance, BlockNumber};
+
 /// Helper struct used to store the entire pallet state snapshot.
 /// Used when comparison of before/after states is required.
 #[derive(Debug)]
 pub(crate) struct MemorySnapshot {
-    active_protocol_state: ProtocolState<BlockNumberFor<Test>>,
+    active_protocol_state: ProtocolState,
     next_dapp_id: DAppId,
     current_era_info: EraInfo,
     integrated_dapps: HashMap<

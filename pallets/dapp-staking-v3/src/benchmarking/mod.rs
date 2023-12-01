@@ -784,48 +784,43 @@ mod benchmarks {
         assert_last_event::<T>(Event::<T>::Force { forcing_type }.into());
     }
 
-    // TODO: investigate why the PoV size is so large here, evne after removing read of `IntegratedDApps` storage.
+    #[benchmark]
+    fn on_initialize_voting_to_build_and_earn() {
+        initial_config::<T>();
+
+        let state = ActiveProtocolState::<T>::get();
+        assert_eq!(state.subperiod(), Subperiod::Voting, "Sanity check.");
+
+        run_to_block::<T>(state.next_era_start - 1);
+        DappStaking::<T>::on_finalize(state.next_era_start - 1);
+        System::<T>::set_block_number(state.next_era_start);
+
+        #[block]
+        {
+            DappStaking::<T>::on_initialize(state.next_era_start);
+        }
+
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::BuildAndEarn
+        );
+    }
+
+    // TODO: investigate why the PoV size is so large here, even after removing read of `IntegratedDApps` storage.
     // Relevant file: polkadot-sdk/substrate/utils/frame/benchmarking-cli/src/pallet/writer.rs
     // UPDATE: after some investigation, it seems that PoV size benchmarks are very unprecise
     // - the worst case measured is usually very far off the actual value that is consumed on chain.
     // There's an ongoing item to improve it (mentioned on roundtable meeting).
+
+    /// This benchmark isn't used directly in the runtime code, but it's convenient to do manual analysis of the benchmarked values.
+    /// Tier assignment is a PoV heavy operation, and it has to be properly analyzed, independently from other weight items.
     #[benchmark]
     fn dapp_tier_assignment(x: Linear<0, { max_number_of_contracts::<T>() }>) {
         // Prepare init config (protocol state, tier params & config, etc.)
         initial_config::<T>();
 
-        let developer: T::AccountId = whitelisted_caller();
-        for id in 0..x {
-            let smart_contract = T::BenchmarkHelper::get_smart_contract(id as u32);
-            assert_ok!(DappStaking::<T>::register(
-                RawOrigin::Root.into(),
-                developer.clone().into(),
-                smart_contract,
-            ));
-        }
-
-        // TODO: try to make this more "shuffled" so the generated vector ends up being more random
-        let mut amount = 1000 * MIN_TIER_THRESHOLD;
-        for id in 0..x {
-            let staker = account("staker", id.into(), 1337);
-            T::Currency::make_free_balance_be(&staker, amount);
-            assert_ok!(DappStaking::<T>::lock(
-                RawOrigin::Signed(staker.clone()).into(),
-                amount,
-            ));
-
-            let smart_contract = T::BenchmarkHelper::get_smart_contract(id as u32);
-            assert_ok!(DappStaking::<T>::stake(
-                RawOrigin::Signed(staker.clone()).into(),
-                smart_contract,
-                amount,
-            ));
-
-            // Slowly decrease the stake amount
-            amount.saturating_reduce(UNIT);
-        }
-
-        // Advance to next era
+        // Register & stake contracts, to prepare for tier assignment.
+        prepare_contracts_for_tier_assignment::<T>(x);
         advance_to_next_era::<T>();
 
         let reward_era = ActiveProtocolState::<T>::get().era;

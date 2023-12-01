@@ -24,7 +24,7 @@ use crate::{
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU32, ConstU64},
+    traits::{ConstU128, ConstU32},
     weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -32,14 +32,14 @@ use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
+    generic::Header, // TODO: create testing primitives & move it there?
     traits::{BlakeTwo256, IdentityLookup},
     Permill,
 };
 
+use astar_primitives::{Balance, BlockNumber};
+
 pub(crate) type AccountId = u64;
-pub(crate) type BlockNumber = u64;
-pub(crate) type Balance = u128;
 
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(crate) const MINIMUM_LOCK_AMOUNT: Balance = 10;
@@ -61,7 +61,7 @@ construct_runtime!(
 );
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
+    pub const BlockHashCount: BlockNumber = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
@@ -78,7 +78,7 @@ impl frame_system::Config for Test {
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
+    type Header = Header<BlockNumber, BlakeTwo256>;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -157,7 +157,7 @@ impl pallet_dapp_staking::Config for Test {
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
     type RewardPoolProvider = DummyRewardPoolProvider;
-    type StandardEraLength = ConstU64<10>;
+    type StandardEraLength = ConstU32<10>;
     type StandardErasPerVotingSubperiod = ConstU32<8>;
     type StandardErasPerBuildAndEarnSubperiod = ConstU32<16>;
     type EraRewardSpanLength = ConstU32<8>;
@@ -278,7 +278,7 @@ impl ExtBuilder {
 
 /// Run to the specified block number.
 /// Function assumes first block has been initialized.
-pub(crate) fn run_to_block(n: u64) {
+pub(crate) fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
         DappStaking::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
@@ -292,7 +292,7 @@ pub(crate) fn run_to_block(n: u64) {
 
 /// Run for the specified number of blocks.
 /// Function assumes first block has been initialized.
-pub(crate) fn run_for_blocks(n: u64) {
+pub(crate) fn run_for_blocks(n: BlockNumber) {
     run_to_block(System::block_number() + n);
 }
 

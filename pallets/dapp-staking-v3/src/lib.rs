@@ -52,7 +52,7 @@ use sp_runtime::{
 };
 pub use sp_std::vec::Vec;
 
-use astar_primitives::Balance;
+use astar_primitives::{Balance, BlockNumber};
 
 pub use pallet::*;
 
@@ -91,7 +91,7 @@ pub mod pallet {
     }
 
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config<BlockNumber = BlockNumber> {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>
@@ -121,7 +121,7 @@ pub mod pallet {
 
         /// Length of a standard era in block numbers.
         #[pallet::constant]
-        type StandardEraLength: Get<Self::BlockNumber>;
+        type StandardEraLength: Get<BlockNumber>;
 
         /// Length of the `Voting` subperiod in standard eras.
         /// Although `Voting` subperiod only consumes one 'era', we still measure its length in standard eras
@@ -355,8 +355,7 @@ pub mod pallet {
     /// General information about dApp staking protocol state.
     #[pallet::storage]
     #[pallet::whitelist_storage]
-    pub type ActiveProtocolState<T: Config> =
-        StorageValue<_, ProtocolState<BlockNumberFor<T>>, ValueQuery>;
+    pub type ActiveProtocolState<T: Config> = StorageValue<_, ProtocolState, ValueQuery>;
 
     /// Counter for unique dApp identifiers.
     #[pallet::storage]
@@ -494,7 +493,9 @@ pub mod pallet {
             // Prepare initial protocol state
             let protocol_state = ProtocolState {
                 era: 1,
-                next_era_start: Pallet::<T>::blocks_per_voting_period() + 1_u32.into(),
+                next_era_start: Pallet::<T>::blocks_per_voting_period()
+                    .checked_add(1)
+                    .expect("Must not overflow - especially not at genesis."),
                 period_info: PeriodInfo {
                     number: 1,
                     subperiod: Subperiod::Voting,
@@ -512,8 +513,8 @@ pub mod pallet {
     }
 
     #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
+    impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
+        fn on_initialize(now: BlockNumber) -> Weight {
             let mut protocol_state = ActiveProtocolState::<T>::get();
 
             // We should not modify pallet storage while in maintenance mode.
@@ -1647,7 +1648,7 @@ pub mod pallet {
         }
 
         /// Returns the number of blocks per voting period.
-        pub(crate) fn blocks_per_voting_period() -> BlockNumberFor<T> {
+        pub(crate) fn blocks_per_voting_period() -> BlockNumber {
             T::StandardEraLength::get()
                 .saturating_mul(T::StandardErasPerVotingSubperiod::get().into())
         }
@@ -1670,7 +1671,7 @@ pub mod pallet {
         }
 
         /// Unlocking period expressed in the number of blocks.
-        pub(crate) fn unlock_period() -> BlockNumberFor<T> {
+        pub(crate) fn unlock_period() -> BlockNumber {
             T::StandardEraLength::get().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
