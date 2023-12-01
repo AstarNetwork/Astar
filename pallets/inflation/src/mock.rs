@@ -32,13 +32,12 @@ use frame_support::{
 
 use sp_core::H256;
 use sp_runtime::{
-    generic::Header, // TODO: create testing primitives & move it there?
     traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
     Perquintill,
 };
 
-use astar_primitives::{Balance, BlockNumber};
-pub(crate) type AccountId = u64; // TODO: might also be nice to have this under testing primitives?
+use astar_primitives::{testing::Header, Balance, BlockNumber};
+pub(crate) type AccountId = u64;
 
 /// Initial inflation params set by the mock.
 pub const INIT_PARAMS: InflationParameters = InflationParameters {
@@ -86,7 +85,7 @@ impl frame_system::Config for Test {
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header<BlockNumber, BlakeTwo256>;
+    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();

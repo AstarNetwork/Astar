@@ -1744,7 +1744,7 @@ pub mod pallet {
 
                     // Distribute dapps into tiers, write it into storage
                     //
-                    // To help with benchmarking, it's possible to omit real tier calculation use `Dummy` approach instead.
+                    // To help with benchmarking, it's possible to omit real tier calculation using the `Dummy` approach.
                     // This must never be used in production code, obviously.
                     let (dapp_tier_rewards, counter) = match tier_assignment {
                         TierAssignment::Real => Self::get_dapp_tier_assignment(

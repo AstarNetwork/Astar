@@ -35,6 +35,9 @@ pub mod evm;
 /// Precompiles
 pub mod precompiles;
 
+/// Useful primitives for testing.
+pub mod testing;
+
 /// Benchmark primitives
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarks;

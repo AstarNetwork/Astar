@@ -32,12 +32,11 @@ use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    generic::Header, // TODO: create testing primitives & move it there?
     traits::{BlakeTwo256, IdentityLookup},
     Permill,
 };
 
-use astar_primitives::{Balance, BlockNumber};
+use astar_primitives::{testing::Header, Balance, BlockNumber};
 
 pub(crate) type AccountId = u64;
 
@@ -78,7 +77,7 @@ impl frame_system::Config for Test {
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header<BlockNumber, BlakeTwo256>;
+    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
