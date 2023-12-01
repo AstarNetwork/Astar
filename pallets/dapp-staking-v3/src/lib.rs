@@ -327,6 +327,8 @@ pub mod pallet {
         InternalUnstakeError,
         /// Rewards are no longer claimable since they are too old.
         RewardExpired,
+        /// Reward payout has failed due to an unexpected reason.
+        RewardPayoutFailed,
         /// There are no claimable rewards.
         NoClaimableRewards,
         /// An unexpected error occured while trying to claim staker rewards.
@@ -1165,10 +1167,8 @@ pub mod pallet {
             }
             let rewards_len: u32 = rewards.len().unique_saturated_into();
 
-            // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
-            // Account exists since it has locked funds.
-            T::Currency::deposit_into_existing(&account, reward_sum)
-                .map_err(|_| Error::<T>::InternalClaimStakerError)?;
+            T::StakingRewardHandler::payout_reward(&account, reward_sum)
+                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
             Self::update_ledger(&account, ledger);
 
@@ -1234,10 +1234,8 @@ pub mod pallet {
                 Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
                     * period_end_info.bonus_reward_pool;
 
-            // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
-            // Account exists since it has locked funds.
-            T::Currency::deposit_into_existing(&account, bonus_reward)
-                .map_err(|_| Error::<T>::InternalClaimStakerError)?;
+            T::StakingRewardHandler::payout_reward(&account, bonus_reward)
+                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
             // Cleanup entry since the reward has been claimed
             StakerInfo::<T>::remove(&account, &smart_contract);
@@ -1262,6 +1260,7 @@ pub mod pallet {
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
 
+            // To keep in line with legacy behavior, dApp rewards can be claimed by anyone.
             let _ = ensure_signed(origin)?;
 
             let dapp_info =
@@ -1289,8 +1288,8 @@ pub mod pallet {
 
             // Get reward destination, and deposit the reward.
             let beneficiary = dapp_info.reward_beneficiary();
-            // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
-            T::Currency::deposit_creating(beneficiary, amount);
+            T::StakingRewardHandler::payout_reward(&beneficiary, amount)
+                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
             // Write back updated struct to prevent double reward claims
             DAppTiers::<T>::insert(&era, dapp_tiers);
