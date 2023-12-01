@@ -28,7 +28,7 @@
 //! ## Overview
 //!
 //! The Unified Accounts module provide functionality for native account holders to
-//! connect their evm address to have a unified experence across the different VMs.
+//! connect their evm address to have a unified experience across the different VMs.
 //! - Connect evm address you control
 //! - Connect default evm address
 //!
@@ -271,7 +271,7 @@ impl<T: Config> Pallet<T> {
         Ok(evm_address)
     }
 
-    /// Charge the (exact) storage fee (polietly) from the user and burn it
+    /// Charge the (exact) storage fee (politely) from the user and burn it
     /// while preserving the account from being reaped.
     fn charge_storage_fee(who: &T::AccountId) -> Result<Balance, DispatchError> {
         let balance = T::Currency::reducible_balance(who, Preserve, Polite);
@@ -373,7 +373,7 @@ impl<T: Config> AddressMapping<T::AccountId> for Pallet<T> {
     }
 }
 
-/// OnKilledAccout hooks implementation for removing storage mapping
+/// OnKilledAccount hooks implementation for removing storage mapping
 /// for killed accounts
 pub struct KillAccountMapping<T>(PhantomData<T>);
 impl<T: Config> OnKilledAccount<T::AccountId> for KillAccountMapping<T> {
