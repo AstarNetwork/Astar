@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use super::Balance;
+use super::{Balance, BlockNumber};
 
 // TODO2: However this ends up looking in the end, we should not duplicate these parameters in the runtime.
 //        Both the dApp staking & inflation pallet should use the same source.
@@ -40,7 +40,7 @@ pub trait CycleConfiguration {
     /// How many blocks are there per standard era.
     ///
     /// This value has to be at least 1.
-    fn blocks_per_era() -> u32;
+    fn blocks_per_era() -> BlockNumber;
 
     /// For how many standard era lengths does the period last.
     fn eras_per_period() -> u32 {
@@ -53,7 +53,7 @@ pub trait CycleConfiguration {
     }
 
     /// How many blocks are there per cycle (a 'year').
-    fn blocks_per_cycle() -> u32 {
+    fn blocks_per_cycle() -> BlockNumber {
         Self::blocks_per_era().saturating_mul(Self::eras_per_cycle())
     }
 

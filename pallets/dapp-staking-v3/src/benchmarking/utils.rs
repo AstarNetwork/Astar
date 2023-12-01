@@ -108,8 +108,8 @@ pub(super) fn dapp_staking_events<T: Config>() -> Vec<crate::Event<T>> {
 /// **NOTE:** This assumes similar tier configuration for all runtimes.
 /// If we decide to change this, we'll need to provide a more generic init function.
 pub(super) fn initial_config<T: Config>() {
-    let era_length = T::StandardEraLength::get();
-    let voting_period_length_in_eras = T::StandardErasPerVotingSubperiod::get();
+    let era_length = T::CycleConfiguration::blocks_per_era();
+    let voting_period_length_in_eras = T::CycleConfiguration::eras_per_voting_subperiod();
 
     // Init protocol state
     ActiveProtocolState::<T>::put(ProtocolState {

@@ -156,6 +156,25 @@ impl crate::BenchmarkHelper<MockSmartContract> for BenchmarkHelper<MockSmartCont
     }
 }
 
+pub struct DummyCycleConfiguration;
+impl CycleConfiguration for DummyCycleConfiguration {
+    fn periods_per_cycle() -> u32 {
+        4
+    }
+
+    fn eras_per_voting_subperiod() -> u32 {
+        8
+    }
+
+    fn eras_per_build_and_earn_subperiod() -> u32 {
+        16
+    }
+
+    fn blocks_per_era() -> u32 {
+        10
+    }
+}
+
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -163,9 +182,7 @@ impl pallet_dapp_staking::Config for Test {
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
-    type StandardEraLength = ConstU32<10>;
-    type StandardErasPerVotingSubperiod = ConstU32<8>;
-    type StandardErasPerBuildAndEarnSubperiod = ConstU32<16>;
+    type CycleConfiguration = DummyCycleConfiguration;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -201,12 +218,9 @@ impl ExtBuilder {
         ext.execute_with(|| {
             System::set_block_number(1);
 
-            // Not sure why the mess with type happens here, but trait specification is needed to compile
-            let era_length: BlockNumber =
-                <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
-            let voting_period_length_in_eras: EraNumber =
-                <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingSubperiod as sp_core::Get<_>>::get(
-                );
+            let era_length = <Test as Config>::CycleConfiguration::blocks_per_era();
+            let voting_period_length_in_eras =
+                <Test as Config>::CycleConfiguration::eras_per_voting_subperiod();
 
             // Init protocol state
             pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
@@ -234,7 +248,6 @@ impl ExtBuilder {
                     era: 2,
                     period: 1,
                 },
-
             });
 
             // Init tier params
@@ -254,9 +267,18 @@ impl ExtBuilder {
                 ])
                 .unwrap(),
                 tier_thresholds: BoundedVec::try_from(vec![
-                    TierThreshold::DynamicTvlAmount { amount: 100, minimum_amount: 80 },
-                    TierThreshold::DynamicTvlAmount { amount: 50, minimum_amount: 40 },
-                    TierThreshold::DynamicTvlAmount { amount: 20, minimum_amount: 20 },
+                    TierThreshold::DynamicTvlAmount {
+                        amount: 100,
+                        minimum_amount: 80,
+                    },
+                    TierThreshold::DynamicTvlAmount {
+                        amount: 50,
+                        minimum_amount: 40,
+                    },
+                    TierThreshold::DynamicTvlAmount {
+                        amount: 20,
+                        minimum_amount: 20,
+                    },
                     TierThreshold::FixedTvlAmount { amount: 15 },
                 ])
                 .unwrap(),
@@ -275,8 +297,7 @@ impl ExtBuilder {
             pallet_dapp_staking::NextTierConfig::<Test>::put(init_tier_config);
 
             DappStaking::on_initialize(System::block_number());
-        }
-        );
+        });
 
         ext
     }

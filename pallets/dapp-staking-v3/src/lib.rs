@@ -131,20 +131,8 @@ pub mod pallet {
         /// Used to handle reward payouts & reward pool amount fetching.
         type StakingRewardHandler: StakingRewardHandler<Self::AccountId>;
 
-        /// Length of a standard era in block numbers.
-        #[pallet::constant]
-        type StandardEraLength: Get<BlockNumber>;
-
-        /// Length of the `Voting` subperiod in standard eras.
-        /// Although `Voting` subperiod only consumes one 'era', we still measure its length in standard eras
-        /// for the sake of simplicity & consistency.
-        #[pallet::constant]
-        type StandardErasPerVotingSubperiod: Get<EraNumber>;
-
-        /// Length of the `Build&Earn` subperiod in standard eras.
-        /// Each `Build&Earn` subperiod consists of one or more distinct standard eras.
-        #[pallet::constant]
-        type StandardErasPerBuildAndEarnSubperiod: Get<EraNumber>;
+        /// Describes era length, subperiods & period length, as well as cycle length.
+        type CycleConfiguration: CycleConfiguration;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -1520,8 +1508,8 @@ pub mod pallet {
 
         /// Returns the number of blocks per voting period.
         pub(crate) fn blocks_per_voting_period() -> BlockNumber {
-            T::StandardEraLength::get()
-                .saturating_mul(T::StandardErasPerVotingSubperiod::get().into())
+            T::CycleConfiguration::blocks_per_era()
+                .saturating_mul(T::CycleConfiguration::eras_per_voting_subperiod().into())
         }
 
         /// `true` if smart contract is active, `false` if it has been unregistered.
@@ -1543,7 +1531,7 @@ pub mod pallet {
 
         /// Unlocking period expressed in the number of blocks.
         pub(crate) fn unlock_period() -> BlockNumber {
-            T::StandardEraLength::get().saturating_mul(T::UnlockingPeriod::get().into())
+            T::CycleConfiguration::blocks_per_era().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
@@ -1710,10 +1698,10 @@ pub mod pallet {
                         dapp_reward_pool: Balance::zero(),
                     };
 
-                    let next_subperiod_start_era =
-                        next_era.saturating_add(T::StandardErasPerBuildAndEarnSubperiod::get());
+                    let next_subperiod_start_era = next_era
+                        .saturating_add(T::CycleConfiguration::eras_per_build_and_earn_subperiod());
                     let build_and_earn_start_block =
-                        now.saturating_add(T::StandardEraLength::get());
+                        now.saturating_add(T::CycleConfiguration::blocks_per_era());
                     protocol_state.advance_to_next_subperiod(
                         next_subperiod_start_era,
                         build_and_earn_start_block,
@@ -1809,7 +1797,8 @@ pub mod pallet {
                             era_reward,
                         )
                     } else {
-                        let next_era_start_block = now.saturating_add(T::StandardEraLength::get());
+                        let next_era_start_block =
+                            now.saturating_add(T::CycleConfiguration::blocks_per_era());
                         protocol_state.next_era_start = next_era_start_block;
 
                         era_info.migrate_to_next_era(None);

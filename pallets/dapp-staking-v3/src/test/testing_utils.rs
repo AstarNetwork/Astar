@@ -28,7 +28,7 @@ use frame_support::{assert_ok, traits::Get};
 use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
 
-use astar_primitives::{Balance, BlockNumber};
+use astar_primitives::{dapp_staking::CycleConfiguration, Balance, BlockNumber};
 
 /// Helper struct used to store the entire pallet state snapshot.
 /// Used when comparison of before/after states is required.
@@ -1151,15 +1151,15 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
                 "Voting subperiod only lasts for a single era."
             );
 
-            let eras_per_bep: EraNumber =
-                <Test as Config>::StandardErasPerBuildAndEarnSubperiod::get();
+            let eras_per_bep =
+                <Test as Config>::CycleConfiguration::eras_per_build_and_earn_subperiod();
             assert_eq!(
                 post_protoc_state.period_info.next_subperiod_start_era,
                 post_protoc_state.era + eras_per_bep,
                 "Build&earn must last for the predefined amount of standard eras."
             );
 
-            let standard_era_length: BlockNumber = <Test as Config>::StandardEraLength::get();
+            let standard_era_length = <Test as Config>::CycleConfiguration::blocks_per_era();
             assert_eq!(
                 post_protoc_state.next_era_start,
                 current_block_number + standard_era_length,
@@ -1184,10 +1184,10 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
                     "Voting era must last for a single era."
                 );
 
-                let blocks_per_standard_era: BlockNumber =
-                    <Test as Config>::StandardEraLength::get();
-                let eras_per_voting_subperiod: EraNumber =
-                    <Test as Config>::StandardErasPerVotingSubperiod::get();
+                let blocks_per_standard_era =
+                    <Test as Config>::CycleConfiguration::blocks_per_era();
+                let eras_per_voting_subperiod =
+                    <Test as Config>::CycleConfiguration::eras_per_voting_subperiod();
                 let eras_per_voting_subperiod: BlockNumber = eras_per_voting_subperiod.into();
                 let era_length: BlockNumber = blocks_per_standard_era * eras_per_voting_subperiod;
                 assert_eq!(

@@ -18,7 +18,7 @@
 
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, DAppId, EraNumber, EraRewards, Error, Event, ForcingType,
+    pallet::Config, ActiveProtocolState, DAppId, EraRewards, Error, Event, ForcingType,
     IntegratedDApps, Ledger, NextDAppId, PeriodNumber, StakerInfo, Subperiod, TierConfig,
 };
 
@@ -29,7 +29,7 @@ use frame_support::{
 };
 use sp_runtime::traits::Zero;
 
-use astar_primitives::{Balance, BlockNumber};
+use astar_primitives::{dapp_staking::CycleConfiguration, Balance, BlockNumber};
 
 #[test]
 fn maintenace_mode_works() {
@@ -197,9 +197,9 @@ fn on_initialize_base_state_change_works() {
         assert_eq!(protocol_state.period_number(), 1);
 
         // Advance eras just until we reach the next voting period
-        let eras_per_bep_period: EraNumber =
-            <Test as Config>::StandardErasPerBuildAndEarnSubperiod::get();
-        let blocks_per_era: BlockNumber = <Test as Config>::StandardEraLength::get();
+        let eras_per_bep_period =
+            <Test as Config>::CycleConfiguration::eras_per_build_and_earn_subperiod();
+        let blocks_per_era: BlockNumber = <Test as Config>::CycleConfiguration::blocks_per_era();
         for era in 2..(2 + eras_per_bep_period - 1) {
             let pre_block = System::block_number();
             advance_to_next_era();

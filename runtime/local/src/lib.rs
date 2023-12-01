@@ -523,12 +523,6 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>>
     }
 }
 
-parameter_types! {
-    pub const StandardEraLength: BlockNumber = 30; // should be 1 minute per standard era
-    pub const StandardErasPerVotingSubperiod: u32 = 2;
-    pub const StandardErasPerBuildAndEarnSubperiod: u32 = 22;
-}
-
 impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -536,9 +530,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = Inflation;
-    type StandardEraLength = StandardEraLength;
-    type StandardErasPerVotingSubperiod = StandardErasPerVotingSubperiod;
-    type StandardErasPerBuildAndEarnSubperiod = StandardErasPerBuildAndEarnSubperiod;
+    type CycleConfiguration = InflationCycleConfig;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<100>;
@@ -571,15 +563,15 @@ impl CycleConfiguration for InflationCycleConfig {
     }
 
     fn eras_per_voting_subperiod() -> u32 {
-        StandardErasPerVotingSubperiod::get()
+        2
     }
 
     fn eras_per_build_and_earn_subperiod() -> u32 {
-        StandardErasPerBuildAndEarnSubperiod::get()
+        22
     }
 
-    fn blocks_per_era() -> u32 {
-        StandardEraLength::get()
+    fn blocks_per_era() -> BlockNumber {
+        30
     }
 }
 
