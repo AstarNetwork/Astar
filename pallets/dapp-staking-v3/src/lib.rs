@@ -505,7 +505,7 @@ pub mod pallet {
                 period_info: PeriodInfo {
                     number: 1,
                     subperiod: Subperiod::Voting,
-                    subperiod_end_era: 2,
+                    next_subperiod_start_era: 2,
                 },
                 maintenance: false,
             };
@@ -1461,7 +1461,7 @@ pub mod pallet {
                 match forcing_type {
                     ForcingType::Era => (),
                     ForcingType::Subperiod => {
-                        state.period_info.subperiod_end_era = state.era.saturating_add(1);
+                        state.period_info.next_subperiod_start_era = state.era.saturating_add(1);
                     }
                 }
             });
@@ -1695,12 +1695,14 @@ pub mod pallet {
                         dapp_reward_pool: Balance::zero(),
                     };
 
-                    let subperiod_end_era =
+                    let next_subperiod_start_era =
                         next_era.saturating_add(T::StandardErasPerBuildAndEarnSubperiod::get());
                     let build_and_earn_start_block =
                         now.saturating_add(T::StandardEraLength::get());
-                    protocol_state
-                        .advance_to_next_subperiod(subperiod_end_era, build_and_earn_start_block);
+                    protocol_state.advance_to_next_subperiod(
+                        next_subperiod_start_era,
+                        build_and_earn_start_block,
+                    );
 
                     era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
@@ -1752,12 +1754,14 @@ pub mod pallet {
 
                         // For the sake of consistency we treat the whole `Voting` period as a single era.
                         // This means no special handling is required for this period, it only lasts potentially longer than a single standard era.
-                        let subperiod_end_era = next_era.saturating_add(1);
+                        let next_subperiod_start_era = next_era.saturating_add(1);
                         let voting_period_length = Self::blocks_per_voting_period();
                         let next_era_start_block = now.saturating_add(voting_period_length);
 
-                        protocol_state
-                            .advance_to_next_subperiod(subperiod_end_era, next_era_start_block);
+                        protocol_state.advance_to_next_subperiod(
+                            next_subperiod_start_era,
+                            next_era_start_block,
+                        );
 
                         era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 

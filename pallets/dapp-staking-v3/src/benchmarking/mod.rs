@@ -825,7 +825,8 @@ mod benchmarks {
         advance_to_era::<T>(
             ActiveProtocolState::<T>::get()
                 .period_info
-                .subperiod_end_era - 1,
+                .next_subperiod_start_era
+                - 1,
         );
         run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
 

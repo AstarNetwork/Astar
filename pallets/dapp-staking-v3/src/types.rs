@@ -141,16 +141,16 @@ pub struct PeriodInfo {
     pub number: PeriodNumber,
     /// Subperiod type.
     pub subperiod: Subperiod,
-    /// Last era of the subperiod, after this a new subperiod should start.
+    /// Era in which the new subperiod starts.
     #[codec(compact)]
-    pub subperiod_end_era: EraNumber,
+    pub next_subperiod_start_era: EraNumber,
 }
 
 impl PeriodInfo {
     /// `true` if the provided era belongs to the next period, `false` otherwise.
     /// It's only possible to provide this information correctly for the ongoing `BuildAndEarn` subperiod.
     pub fn is_next_period(&self, era: EraNumber) -> bool {
-        self.subperiod == Subperiod::BuildAndEarn && self.subperiod_end_era <= era
+        self.subperiod == Subperiod::BuildAndEarn && self.next_subperiod_start_era <= era
     }
 }
 
@@ -200,7 +200,7 @@ impl Default for ProtocolState {
             period_info: PeriodInfo {
                 number: 0,
                 subperiod: Subperiod::Voting,
-                subperiod_end_era: 2,
+                next_subperiod_start_era: 2,
             },
             maintenance: false,
         }
@@ -219,8 +219,8 @@ impl ProtocolState {
     }
 
     /// Ending era of current period
-    pub fn period_end_era(&self) -> EraNumber {
-        self.period_info.subperiod_end_era
+    pub fn next_subperiod_start_era(&self) -> EraNumber {
+        self.period_info.next_subperiod_start_era
     }
 
     /// Checks whether a new era should be triggered, based on the provided _current_ block number argument
@@ -232,7 +232,7 @@ impl ProtocolState {
     /// Triggers the next subperiod, updating appropriate parameters.
     pub fn advance_to_next_subperiod(
         &mut self,
-        subperiod_end_era: EraNumber,
+        next_subperiod_start_era: EraNumber,
         next_era_start: BlockNumber,
     ) {
         let period_number = if self.subperiod() == Subperiod::BuildAndEarn {
@@ -244,7 +244,7 @@ impl ProtocolState {
         self.period_info = PeriodInfo {
             number: period_number,
             subperiod: self.subperiod().next(),
-            subperiod_end_era,
+            next_subperiod_start_era,
         };
         self.next_era_start = next_era_start;
     }

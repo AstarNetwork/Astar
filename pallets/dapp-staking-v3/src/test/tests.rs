@@ -913,7 +913,7 @@ fn stake_in_final_era_fails() {
         // Force Build&Earn period
         ActiveProtocolState::<Test>::mutate(|state| {
             state.period_info.subperiod = Subperiod::BuildAndEarn;
-            state.period_info.subperiod_end_era = state.era + 1;
+            state.period_info.next_subperiod_start_era = state.era + 1;
         });
 
         // Try to stake in the final era of the period, which should fail.
@@ -1376,7 +1376,7 @@ fn claim_staker_rewards_after_expiry_fails() {
         advance_to_era(
             ActiveProtocolState::<Test>::get()
                 .period_info
-                .subperiod_end_era
+                .next_subperiod_start_era
                 - 1,
         );
         assert_claim_staker_rewards(account);
@@ -1887,8 +1887,8 @@ fn force_era_works() {
             System::block_number() + 1,
         );
         assert_eq!(
-            ActiveProtocolState::<Test>::get().period_end_era(),
-            init_state.period_end_era(),
+            ActiveProtocolState::<Test>::get().next_subperiod_start_era(),
+            init_state.next_subperiod_start_era(),
         );
 
         // Go to the next block, and ensure new era is started
@@ -1909,7 +1909,7 @@ fn force_era_works() {
             init_state.next_era_start > System::block_number() + 1,
             "Sanity check, new era cannot start in next block, otherwise the test doesn't guarantee it tests what's expected."
         );
-        assert!(init_state.period_end_era() > init_state.era + 1, "Sanity check, otherwise the test doesn't guarantee it tests what's expected.");
+        assert!(init_state.next_subperiod_start_era() > init_state.era + 1, "Sanity check, otherwise the test doesn't guarantee it tests what's expected.");
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
         System::assert_last_event(RuntimeEvent::DappStaking(Event::Force {
             forcing_type: ForcingType::Era,
@@ -1921,8 +1921,8 @@ fn force_era_works() {
             System::block_number() + 1,
         );
         assert_eq!(
-            ActiveProtocolState::<Test>::get().period_end_era(),
-            init_state.period_end_era(),
+            ActiveProtocolState::<Test>::get().next_subperiod_start_era(),
+            init_state.next_subperiod_start_era(),
             "Only era is bumped, but we don't expect to switch over to the next subperiod."
         );
 
@@ -1965,7 +1965,7 @@ fn force_subperiod_works() {
             System::block_number() + 1,
         );
         assert_eq!(
-            ActiveProtocolState::<Test>::get().period_end_era(),
+            ActiveProtocolState::<Test>::get().next_subperiod_start_era(),
             init_state.era + 1,
             "The switch to the next subperiod must happen in the next era."
         );
@@ -1990,7 +1990,7 @@ fn force_subperiod_works() {
             init_state.next_era_start > System::block_number() + 1,
             "Sanity check, new era cannot start in next block, otherwise the test doesn't guarantee it tests what's expected."
         );
-        assert!(init_state.period_end_era() > init_state.era + 1, "Sanity check, otherwise the test doesn't guarantee it tests what's expected.");
+        assert!(init_state.next_subperiod_start_era() > init_state.era + 1, "Sanity check, otherwise the test doesn't guarantee it tests what's expected.");
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Subperiod));
         System::assert_last_event(RuntimeEvent::DappStaking(Event::Force {
             forcing_type: ForcingType::Subperiod,
@@ -2002,7 +2002,7 @@ fn force_subperiod_works() {
             System::block_number() + 1,
         );
         assert_eq!(
-            ActiveProtocolState::<Test>::get().period_end_era(),
+            ActiveProtocolState::<Test>::get().next_subperiod_start_era(),
             init_state.era + 1,
             "The switch to the next subperiod must happen in the next era."
         );

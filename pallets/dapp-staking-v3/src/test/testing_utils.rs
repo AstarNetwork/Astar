@@ -1135,7 +1135,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
     let is_new_subperiod = pre_snapshot
         .active_protocol_state
         .period_info
-        .subperiod_end_era
+        .next_subperiod_start_era
         <= post_snapshot.active_protocol_state.era;
 
     // 1. Verify protocol state
@@ -1154,7 +1154,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
             let eras_per_bep: EraNumber =
                 <Test as Config>::StandardErasPerBuildAndEarnSubperiod::get();
             assert_eq!(
-                post_protoc_state.period_info.subperiod_end_era,
+                post_protoc_state.period_info.next_subperiod_start_era,
                 post_protoc_state.era + eras_per_bep,
                 "Build&earn must last for the predefined amount of standard eras."
             );
@@ -1179,7 +1179,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
                     "Ending 'Build&Earn' triggers a new period."
                 );
                 assert_eq!(
-                    post_protoc_state.period_info.subperiod_end_era,
+                    post_protoc_state.period_info.next_subperiod_start_era,
                     post_protoc_state.era + 1,
                     "Voting era must last for a single era."
                 );
