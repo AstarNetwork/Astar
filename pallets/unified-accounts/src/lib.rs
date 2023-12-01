@@ -134,6 +134,8 @@ pub mod pallet {
         UnexpectedSignatureFormat,
         /// The signature verification failed due to mismatch evm address
         InvalidSignature,
+        /// Funds unavailable to claim account
+        FundsUnavailable,
     }
 
     #[pallet::event]
@@ -270,7 +272,11 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Charge the (exact) storage fee (polietly) from the user and burn it
+    /// while preserving the account from being reaped.
     fn charge_storage_fee(who: &T::AccountId) -> Result<Balance, DispatchError> {
+        let balance = T::Currency::reducible_balance(who, Preserve, Polite);
+        let fee = T::AccountMappingStorageFee::get();
+        ensure!(balance >= fee, Error::<T>::FundsUnavailable);
         T::Currency::burn_from(who, T::AccountMappingStorageFee::get(), Exact, Polite)
     }
 }
