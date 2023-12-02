@@ -42,7 +42,10 @@
 
 use frame_support::{
     pallet_prelude::*,
-    traits::{Currency, LockIdentifier, LockableCurrency, StorageVersion, WithdrawReasons},
+    traits::{
+        fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},
+        StorageVersion,
+    },
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
@@ -72,9 +75,6 @@ pub use types::{PriceProvider, TierThreshold};
 pub mod weights;
 pub use weights::WeightInfo;
 
-// Lock identifier for the dApp staking pallet
-const STAKING_ID: LockIdentifier = *b"dapstake";
-
 const LOG_TARGET: &str = "dapp-staking";
 
 /// Helper enum for benchmarking.
@@ -98,8 +98,10 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[cfg(feature = "runtime-benchmarks")]
-    pub trait BenchmarkHelper<SmartContract> {
+    pub trait BenchmarkHelper<SmartContract, AccountId> {
         fn get_smart_contract(id: u32) -> SmartContract;
+
+        fn set_balance(account: &AccountId, balance: Balance);
     }
 
     #[pallet::config]
@@ -109,13 +111,14 @@ pub mod pallet {
             + IsType<<Self as frame_system::Config>::RuntimeEvent>
             + TryInto<Event<Self>>;
 
+        /// The overarching freeze reason.
+        type RuntimeFreezeReason: From<FreezeReason>;
+
         /// Currency used for staking.
-        /// TODO: remove usage of deprecated LockableCurrency trait and use the new freeze approach. Might require some renaming of Lock to Freeze :)
-        // https://github.com/paritytech/substrate/pull/12951/
-        // Look at nomination pools implementation for reference!
-        type Currency: LockableCurrency<
+        /// Reference: https://github.com/paritytech/substrate/pull/12951/
+        type Currency: FunMutateFreeze<
             Self::AccountId,
-            Moment = Self::BlockNumber,
+            Id = Self::RuntimeFreezeReason,
             Balance = Balance,
         >;
 
@@ -177,7 +180,7 @@ pub mod pallet {
 
         /// Helper trait for benchmarks.
         #[cfg(feature = "runtime-benchmarks")]
-        type BenchmarkHelper: BenchmarkHelper<Self::SmartContract>;
+        type BenchmarkHelper: BenchmarkHelper<Self::SmartContract, Self::AccountId>;
     }
 
     #[pallet::event]
@@ -521,6 +524,14 @@ pub mod pallet {
         }
     }
 
+    /// A reason for freezing funds.
+    #[pallet::composite_enum]
+    pub enum FreezeReason {
+        /// Account is participating in dApp staking.
+        #[codec(index = 0)]
+        DAppStaking,
+    }
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Used to enable or disable maintenance mode.
@@ -717,7 +728,7 @@ pub mod pallet {
 
             // Calculate & check amount available for locking
             let available_balance =
-                T::Currency::free_balance(&account).saturating_sub(ledger.active_locked_amount());
+                T::Currency::balance(&account).saturating_sub(ledger.active_locked_amount());
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 
@@ -728,7 +739,7 @@ pub mod pallet {
                 Error::<T>::LockedAmountBelowThreshold
             );
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.add_locked(amount_to_lock);
             });
@@ -785,7 +796,7 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::TooManyUnlockingChunks)?;
 
             // Update storage
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unlocking_started(amount_to_unlock);
             });
@@ -819,7 +830,7 @@ pub mod pallet {
                 0
             };
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unlocking_removed(amount);
             });
@@ -847,7 +858,7 @@ pub mod pallet {
                 Error::<T>::LockedAmountBelowThreshold
             );
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.add_locked(amount);
                 era_info.unlocking_removed(amount);
@@ -971,7 +982,7 @@ pub mod pallet {
 
             // 5.
             // Update remaining storage entries
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
             ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
 
@@ -1082,7 +1093,7 @@ pub mod pallet {
                 StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
             }
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
 
             Self::deposit_event(Event::<T>::Unstake {
                 account,
@@ -1170,7 +1181,7 @@ pub mod pallet {
             T::StakingRewardHandler::payout_reward(&account, reward_sum)
                 .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
 
             rewards.into_iter().for_each(|(era, reward)| {
                 Self::deposit_event(Event::<T>::Reward {
@@ -1362,7 +1373,7 @@ pub mod pallet {
             // Seems wrong because it serves as discentive for unstaking & moving over to a new contract.
 
             // Update remaining storage entries
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             StakerInfo::<T>::remove(&account, &smart_contract);
 
             Self::deposit_event(Event::<T>::UnstakeFromUnregistered {
@@ -1419,7 +1430,7 @@ pub mod pallet {
                 .contract_stake_count
                 .saturating_reduce(entries_to_delete.unique_saturated_into());
             ledger.maybe_cleanup_expired(threshold_period); // Not necessary but we do it for the sake of consistency
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
 
             Self::deposit_event(Event::<T>::ExpiredEntriesRemoved {
                 account,
@@ -1490,19 +1501,25 @@ pub mod pallet {
         /// Update the account ledger, and dApp staking balance lock.
         ///
         /// In case account ledger is empty, entries from the DB are removed and lock is released.
-        pub(crate) fn update_ledger(account: &T::AccountId, ledger: AccountLedgerFor<T>) {
+        pub(crate) fn update_ledger(
+            account: &T::AccountId,
+            ledger: AccountLedgerFor<T>,
+        ) -> Result<(), DispatchError> {
             if ledger.is_empty() {
                 Ledger::<T>::remove(&account);
-                T::Currency::remove_lock(STAKING_ID, account);
+                T::Currency::thaw(&FreezeReason::DAppStaking.into(), account)?;
             } else {
-                T::Currency::set_lock(
-                    STAKING_ID,
+                T::Currency::set_freeze(
+                    &FreezeReason::DAppStaking.into(),
                     account,
                     ledger.active_locked_amount(),
-                    WithdrawReasons::all(),
-                );
+                )?;
                 Ledger::<T>::insert(account, ledger);
             }
+
+            // TODO: DOCS!
+
+            Ok(())
         }
 
         /// Returns the number of blocks per voting period.

@@ -199,7 +199,7 @@ pub(super) fn prepare_contracts_for_tier_assignment<T: Config>(x: u32) {
     let mut amount = 1000 * MIN_TIER_THRESHOLD;
     for id in 0..x {
         let staker = account("staker", id.into(), 1337);
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,

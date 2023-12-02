@@ -24,7 +24,10 @@ use crate::{
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU32},
+    traits::{
+        fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
+        ConstU128, ConstU32,
+    },
     weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -102,9 +105,9 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
     type AccountStore = System;
     type HoldIdentifier = ();
-    type FreezeIdentifier = ();
+    type FreezeIdentifier = RuntimeFreezeReason;
     type MaxHolds = ConstU32<0>;
-    type MaxFreezes = ConstU32<0>;
+    type MaxFreezes = ConstU32<1>;
     type WeightInfo = ();
 }
 
@@ -130,7 +133,7 @@ impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
 
     fn payout_reward(beneficiary: &AccountId, reward: Balance) -> Result<(), ()> {
         // TODO: add an option for this to fail, so we can test it
-        let _ = Balances::deposit_creating(beneficiary, reward);
+        let _ = Balances::mint_into(beneficiary, reward);
         Ok(())
     }
 }
@@ -148,11 +151,18 @@ impl Default for MockSmartContract {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct BenchmarkHelper<SC>(sp_std::marker::PhantomData<SC>);
+pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
-impl crate::BenchmarkHelper<MockSmartContract> for BenchmarkHelper<MockSmartContract> {
+impl crate::BenchmarkHelper<MockSmartContract, AccountId>
+    for BenchmarkHelper<MockSmartContract, AccountId>
+{
     fn get_smart_contract(id: u32) -> MockSmartContract {
         MockSmartContract::Wasm(id as AccountId)
+    }
+
+    fn set_balance(account: &AccountId, amount: Balance) {
+        Balances::write_balance(account, amount)
+            .expect("Must succeed in test/benchmark environment.");
     }
 }
 
@@ -177,6 +187,7 @@ impl CycleConfiguration for DummyCycleConfiguration {
 
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = MockSmartContract;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
@@ -194,7 +205,7 @@ impl pallet_dapp_staking::Config for Test {
     type NumberOfTiers = ConstU32<4>;
     type WeightInfo = weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = BenchmarkHelper<MockSmartContract>;
+    type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
 }
 
 pub struct ExtBuilder;

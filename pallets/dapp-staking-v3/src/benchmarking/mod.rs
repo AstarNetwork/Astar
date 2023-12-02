@@ -159,7 +159,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
 
         #[extrinsic_call]
         _(RawOrigin::Signed(staker.clone()), amount);
@@ -187,7 +187,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get() * 2;
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -212,7 +212,7 @@ mod benchmarks {
         let amount = (T::MinimumStakeAmount::get() + 1)
             * Into::<Balance>::into(max_number_of_contracts::<T>())
             + Into::<Balance>::into(T::MaxUnlockingChunks::get());
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -299,7 +299,7 @@ mod benchmarks {
 
         let amount =
             T::MinimumLockedAmount::get() * 2 + Into::<Balance>::into(T::MaxUnlockingChunks::get());
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -342,7 +342,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -379,7 +379,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get() + 1;
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -426,7 +426,7 @@ mod benchmarks {
 
         // Lock some amount by the staker
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -481,7 +481,7 @@ mod benchmarks {
 
         // Lock & stake some amount by the staker
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -536,7 +536,7 @@ mod benchmarks {
 
         // Lock & stake some amount by the staker
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -575,7 +575,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get() * 1000 * UNIT;
-        T::Currency::make_free_balance_be(&owner, amount);
+        T::BenchmarkHelper::set_balance(&owner, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(owner.clone()).into(),
             amount,
@@ -598,7 +598,7 @@ mod benchmarks {
             ));
 
             let staker: T::AccountId = account("staker", idx.into(), SEED);
-            T::Currency::make_free_balance_be(&staker, amount);
+            T::BenchmarkHelper::set_balance(&staker, amount);
             assert_ok!(DappStaking::<T>::lock(
                 RawOrigin::Signed(staker.clone()).into(),
                 amount,
@@ -660,7 +660,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -701,7 +701,7 @@ mod benchmarks {
         let staker: T::AccountId = whitelisted_caller();
         let amount = T::MinimumLockedAmount::get()
             * Into::<Balance>::into(T::MaxNumberOfStakedContracts::get());
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,

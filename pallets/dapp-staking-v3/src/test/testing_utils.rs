@@ -231,6 +231,8 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
         pre_snapshot.current_era_info.total_locked + expected_lock_amount,
         "Total locked balance should be increased by the amount locked."
     );
+
+    // TODO: test that frozen amount has been increased
 }
 
 /// Start the unlocking process for locked funds and assert success.
@@ -312,6 +314,8 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
             .saturating_sub(expected_unlock_amount),
         post_era_info.total_locked
     );
+
+    // TODO: test that frozen amount has been decreased
 }
 
 /// Claims the unlocked funds back into free balance of the user and assert success.

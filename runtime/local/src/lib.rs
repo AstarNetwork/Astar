@@ -28,8 +28,9 @@ use astar_primitives::evm::HashedDefaultMappings;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
+        fungible::Unbalanced as FunUnbalanced, AsEnsureOriginWithArg, ConstU128, ConstU32,
+        ConstU64, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter,
+        Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
         constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -297,9 +298,9 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = System;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
     type HoldIdentifier = ();
-    type FreezeIdentifier = ();
+    type FreezeIdentifier = RuntimeFreezeReason;
     type MaxHolds = ConstU32<0>;
-    type MaxFreezes = ConstU32<0>;
+    type MaxFreezes = ConstU32<1>;
 }
 
 parameter_types! {
@@ -513,18 +514,24 @@ impl pallet_dapp_staking_v3::PriceProvider for DummyPriceProvider {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct BenchmarkHelper<SC>(sp_std::marker::PhantomData<SC>);
+pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
-impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>>
-    for BenchmarkHelper<SmartContract<AccountId>>
+impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId>
+    for BenchmarkHelper<SmartContract<AccountId>, AccountId>
 {
     fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
         SmartContract::Wasm(AccountId::from([id as u8; 32]))
+    }
+
+    fn set_balance(account: &AccountId, amount: Balance) {
+        Balances::write_balance(account, amount)
+            .expect("Must succeed in test/benchmark environment.");
     }
 }
 
 impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
@@ -542,7 +549,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NumberOfTiers = ConstU32<4>;
     type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>>;
+    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
 
 pub struct InflationPayoutPerBlock;
