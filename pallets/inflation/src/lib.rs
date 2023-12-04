@@ -16,7 +16,86 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! TODO
+//! # Inflation Handler Pallet
+//!
+//! ## Overview
+//!
+//! This pallet's main responsibility is handling inflation calculation & distribution.
+//!
+//! Inflation configuration is calculated periodically, according to the inflation parameters.
+//! Based on this configuration, rewards are paid out - either per block or on demand.
+//!
+//! ## Cycles, Periods, Eras
+//!
+//! At the start of each cycle, the inflation configuration is recalculated.
+//!
+//! Cycle can be considered as a 'year' in the Astar network.
+//! When cycle starts, inflation is calculated according to the total issuance at that point in time.
+//! E.g. if 'yearly' inflation is set to be 7%, and total issuance is 200 ASTR, then the max inflation for that cycle will be 14 ASTR.
+//!
+//! Each cycle consists of one or more `periods`.
+//! Periods are integral part of dApp staking protocol, allowing dApps to promotove themselves, attract stakers and earn rewards.
+//! At the end of each period, all stakes are reset, and dApps need to repeat the process.
+//!
+//! Each period consists of two subperiods: `Voting` and `Build&Earn`.
+//! Length of these subperiods is expressed in eras. An `era` is the core _time unit_ in dApp staking protocol.
+//! When an era ends, in `Build&Earn` subperiod, rewards for dApps are calculated & assigned.
+//!
+//! Era's length is expressed in blocks. E.g. an era can last for 7200 blocks, which is approximately 1 day for 12 second block time.
+//!
+//! `Build&Earn` subperiod length is expressed in eras. E.g. if `Build&Earn` subperiod lasts for 5 eras, it means that during that subperiod,
+//! dApp rewards will be calculated & assigned 5 times in total. Also, 5 distinct eras will change during that subperiod. If e.g. `Build&Earn` started at era 100,
+//! with 5 eras per `Build&Earn` subperiod, then the subperiod will end at era 105.
+//!
+//! `Voting` subperiod always comes before `Build&Earn` subperiod. Its length is also expressed in eras, although it has to be interpreted a bit differently.
+//! Even though `Voting` can last for more than 1 era in respect of length, it always takes exactly 1 era.
+//! What this means is that if `Voting` lasts for 3 eras, and each era lasts 7200 blocks, then `Voting` will last for 21600 blocks.
+//! But unlike `Build&Earn` subperiod, `Voting` will only take up one 'numerical' era. So if `Voting` starts at era 110, it will end at era 11.
+//!
+//! #### Example
+//! * Cycle length: 4 periods
+//! * `Voting` length: 10 eras
+//! * `Build&Earn` length: 81 eras
+//! * Era length: 7200 blocks
+//!
+//! This would mean that cycle lasts for roughly 364 days (4 * (10 + 81)).
+//!
+//! ## Recalculation
+//!
+//! When new cycle begins, inflation configuration is recalculated according to the inflation parameters & total issuance at that point in time.
+//! Based on the max inflation rate, rewards for different network actors are calculated.
+//!
+//! Some rewards are calculated to be paid out per block, while some are per era or per period.
+//!
+//! ## Rewards
+//!
+//! ### Staker & Treasury Rewards
+//!
+//! These are paid out at the begininng of each block & are fixed amounts.
+//!
+//! ### Staker Rewards
+//! 
+//! Staker rewards are paid out per staker, _on-demand_.
+//! However, reward pool for an era is calculated at the end of each era.
+//!
+//! `era_reward_pool = base_staker_reward_pool_per_era + adjustable_staker_reward_pool_per_era`
+//!
+//! While the base staker reward pool is fixed, the adjustable part is calculated according to the total value staked & the ideal staking rate.
+//!
+//! ### dApp Rewards
+//!
+//! dApp rewards are paid out per dApp, _on-demand_. The reward is decided by the dApp staking protocol, or the tier system to be more precise.
+//! This pallet only provides the total reward pool for all dApps per era.
+//!
+//! # Interface
+//!
+//! ## StakingRewardHandler
+//!
+//! This pallet implements `StakingRewardHandler` trait, which is used by the dApp staking protocol to get reward pools & distribute rewards.
+//!
+
+
+
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
