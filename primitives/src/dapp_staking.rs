@@ -18,9 +18,13 @@
 
 use super::{Balance, BlockNumber};
 
-// TODO2: However this ends up looking in the end, we should not duplicate these parameters in the runtime.
-//        Both the dApp staking & inflation pallet should use the same source.
-/// TODO: docs!
+/// Configuration for cycles, periods, subperiods & eras.
+///
+/// * `cycle` - Time unit similar to 'year' in the real world. Consists of one or more periods. At the beginning of each cycle, inflation is recalculated.
+/// * `period` - Period consists of two distinct subperiods: `Voting` & `Build&Earn`. They are integral parts of dApp staking.
+///              Length is expressed in standard eras or just _eras_.
+/// * `era` - Era is the basic time unit in the dApp staking protocol. At the end of each era, reward pools for stakers & dApps are calculated.
+///           Era length is expressed in blocks.
 pub trait CycleConfiguration {
     /// How many different periods are there in a cycle (a 'year').
     ///
