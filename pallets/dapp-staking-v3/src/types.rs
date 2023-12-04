@@ -1352,9 +1352,6 @@ impl TierThreshold {
             Self::DynamicTvlAmount { amount, .. } => *amount,
         }
     }
-
-    // TODO: maybe add a check that compares `Self` to another threshold and ensures it has lower requirements?
-    // Could be useful to have this check as a sanity check when params are configured.
 }
 
 /// Top level description of tier slot parameters used to calculate tier configuration.
@@ -1637,7 +1634,9 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
         rewards: Vec<Balance>,
         period: PeriodNumber,
     ) -> Result<Self, ()> {
-        // TODO: should this part of the code ensure that dapps are sorted by Id?
+        // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is "guaranteed" due to lack of duplicated Ids).
+        let mut dapps = dapps;
+        dapps.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
 
         let dapps = BoundedVec::try_from(dapps).map_err(|_| ())?;
         let rewards = BoundedVec::try_from(rewards).map_err(|_| ())?;

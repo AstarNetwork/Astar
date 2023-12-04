@@ -24,7 +24,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use astar_primitives::evm::HashedDefaultMappings;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
@@ -65,7 +64,7 @@ use sp_std::prelude::*;
 
 pub use astar_primitives::{
     dapp_staking::{CycleConfiguration, StakingRewardHandler},
-    evm::EvmRevertCodeHandler,
+    evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 pub use pallet_block_rewards_hybrid::RewardDistributionConfig;

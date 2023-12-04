@@ -1369,9 +1369,6 @@ pub mod pallet {
                 era_info.unstake_amount(amount, protocol_state.subperiod());
             });
 
-            // TODO: HOWEVER, we should not pay out bonus rewards for such contracts.
-            // Seems wrong because it serves as discentive for unstaking & moving over to a new contract.
-
             // Update remaining storage entries
             Self::update_ledger(&account, ledger)?;
             StakerInfo::<T>::remove(&account, &smart_contract);
@@ -1498,9 +1495,12 @@ pub mod pallet {
             Ok(Some(who))
         }
 
-        /// Update the account ledger, and dApp staking balance lock.
+        /// Update the account ledger, and dApp staking balance freeze.
         ///
-        /// In case account ledger is empty, entries from the DB are removed and lock is released.
+        /// In case account ledger is empty, entries from the DB are removed and freeze is thawed.
+        ///
+        /// This call can fail if the `freeze` or `thaw` operations fail. This should never happen since
+        /// runtime definition must ensure it supports necessary freezes.
         pub(crate) fn update_ledger(
             account: &T::AccountId,
             ledger: AccountLedgerFor<T>,
@@ -1516,8 +1516,6 @@ pub mod pallet {
                 )?;
                 Ledger::<T>::insert(account, ledger);
             }
-
-            // TODO: DOCS!
 
             Ok(())
         }
@@ -1571,10 +1569,9 @@ pub mod pallet {
         ///            else:
         ///               exit loop since no more dApps will satisfy the threshold since they are sorted by score
         ///    ```
+        ///    (Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.)
         ///
-        /// 4. Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.
-        ///
-        /// 5. Calculate rewards for each tier.
+        /// 4. Calculate rewards for each tier.
         ///    This is done by dividing the total reward pool into tier reward pools,
         ///    after which the tier reward pool is divided by the number of available slots in the tier.
         ///
@@ -1643,13 +1640,12 @@ pub mod pallet {
                 tier_id.saturating_inc();
             }
 
-            // TODO: what if multiple dApps satisfy the tier entry threshold but there's not enough slots to accomodate them all?
+            // In case when tier has 1 more free slot, but two dApps with exactly same score satisfy the threshold,
+            // one of them will be assigned to the tier, and the other one will be assigned to the lower tier, if it exists.
+            //
+            // There is no explicit definition of which dApp gets the advantage - it's decided by dApp IDs hash & the unstable sort algorithm.
 
-            // 4.
-            // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is "guaranteed" due to lack of duplicated Ids).
-            dapp_tiers.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
-
-            // 5. Calculate rewards.
+            // 4. Calculate rewards.
             let tier_rewards = tier_config
                 .reward_portion
                 .iter()
@@ -1663,7 +1659,7 @@ pub mod pallet {
                 })
                 .collect::<Vec<_>>();
 
-            // 6.
+            // 5.
             // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
             (
