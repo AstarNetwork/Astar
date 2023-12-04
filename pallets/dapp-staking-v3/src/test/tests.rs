@@ -1402,6 +1402,34 @@ fn claim_staker_rewards_after_expiry_fails() {
 }
 
 #[test]
+fn claim_staker_rewards_fails_due_to_payout_failure() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount);
+
+        // Advance into Build&Earn period, and allow one era to pass.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+
+        // Disable successfull reward payout
+        DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = false);
+        assert_noop!(
+            DappStaking::claim_staker_rewards(RuntimeOrigin::signed(account)),
+            Error::<Test>::RewardPayoutFailed,
+        );
+
+        // Re-enable it again, claim should work again
+        DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = true);
+        assert_claim_staker_rewards(account);
+    })
+}
+
+#[test]
 fn claim_bonus_reward_works() {
     ExtBuilder::build().execute_with(|| {
         // Register smart contract, lock&stake some amount
@@ -1556,6 +1584,34 @@ fn claim_bonus_reward_after_expiry_fails() {
 }
 
 #[test]
+fn claim_bonus_reward_fails_due_to_payout_failure() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount);
+
+        // Advance to next period so we can claim bonus reward
+        advance_to_next_period();
+
+        // Disable successfull reward payout
+        DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = false);
+        assert_noop!(
+            DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account), smart_contract),
+            Error::<Test>::RewardPayoutFailed,
+        );
+
+        // Re-enable it again, claim should work again
+        DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = true);
+        assert_claim_bonus_reward(account, &smart_contract);
+    })
+}
+
+#[test]
 fn claim_dapp_reward_works() {
     ExtBuilder::build().execute_with(|| {
         // Register smart contract, lock&stake some amount
@@ -1693,6 +1749,42 @@ fn claim_dapp_reward_twice_for_same_era_fails() {
         // We can still claim for another valid era
         let claim_era_2 = claim_era_1 + 1;
         assert_claim_dapp_reward(account, &smart_contract, claim_era_2);
+    })
+}
+
+#[test]
+fn claim_dapp_fails_due_to_payout_failure() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::default();
+        assert_register(1, &smart_contract);
+
+        let account = 2;
+        let amount = 300;
+        assert_lock(account, amount);
+        assert_stake(account, &smart_contract, amount);
+
+        // Advance 2 eras so we have an entry for reward claiming
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+
+        // Disable successfull reward payout
+        DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = false);
+        assert_noop!(
+            DappStaking::claim_dapp_reward(
+                RuntimeOrigin::signed(account),
+                smart_contract,
+                ActiveProtocolState::<Test>::get().era - 1
+            ),
+            Error::<Test>::RewardPayoutFailed,
+        );
+
+        // Re-enable it again, claim should work again
+        DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = true);
+        assert_claim_dapp_reward(
+            account,
+            &smart_contract,
+            ActiveProtocolState::<Test>::get().era - 1,
+        );
     })
 }
 

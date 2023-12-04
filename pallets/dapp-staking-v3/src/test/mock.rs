@@ -38,6 +38,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     Permill,
 };
+use sp_std::cell::RefCell;
 
 use astar_primitives::{testing::Header, Balance, BlockNumber};
 
@@ -118,6 +119,10 @@ impl PriceProvider for DummyPriceProvider {
     }
 }
 
+thread_local! {
+    pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
+}
+
 pub struct DummyStakingRewardHandler;
 impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
     fn staker_and_dapp_reward_pools(_total_staked_value: Balance) -> (Balance, Balance) {
@@ -132,9 +137,12 @@ impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
     }
 
     fn payout_reward(beneficiary: &AccountId, reward: Balance) -> Result<(), ()> {
-        // TODO: add an option for this to fail, so we can test it
-        let _ = Balances::mint_into(beneficiary, reward);
-        Ok(())
+        if DOES_PAYOUT_SUCCEED.with(|v| v.borrow().clone()) {
+            let _ = Balances::mint_into(beneficiary, reward);
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 }
 
@@ -211,6 +219,9 @@ impl pallet_dapp_staking::Config for Test {
 pub struct ExtBuilder;
 impl ExtBuilder {
     pub fn build() -> TestExternalities {
+        // Normal behavior is for reward payout to succeed
+        DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = true);
+
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
