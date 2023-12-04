@@ -1060,10 +1060,10 @@ pub mod pallet {
             ledger
                 .unstake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
-                    // These are all defensive checks, which should never happen since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
                         Error::<T>::UnclaimedRewards
                     }
+                    // This is a defensive check, which should never happen since we calculate the correct value above.
                     AccountLedgerError::UnstakeAmountLargerThanStake => {
                         Error::<T>::UnstakeAmountTooLarge
                     }
@@ -1283,7 +1283,7 @@ pub mod pallet {
             // 'Consume' dApp reward for the specified era, if possible.
             let mut dapp_tiers = DAppTiers::<T>::get(&era).ok_or(Error::<T>::NoDAppTierInfo)?;
             ensure!(
-                Self::oldest_claimable_period(dapp_tiers.period) <= protocol_state.period_number(),
+                dapp_tiers.period >= Self::oldest_claimable_period(protocol_state.period_number()),
                 Error::<T>::RewardExpired
             );
 
