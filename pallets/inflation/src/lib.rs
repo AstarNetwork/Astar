@@ -74,7 +74,7 @@
 //! These are paid out at the begininng of each block & are fixed amounts.
 //!
 //! ### Staker Rewards
-//! 
+//!
 //! Staker rewards are paid out per staker, _on-demand_.
 //! However, reward pool for an era is calculated at the end of each era.
 //!
@@ -93,9 +93,6 @@
 //!
 //! This pallet implements `StakingRewardHandler` trait, which is used by the dApp staking protocol to get reward pools & distribute rewards.
 //!
-
-
-
 
 #![cfg_attr(not(feature = "std"), no_std)]
 

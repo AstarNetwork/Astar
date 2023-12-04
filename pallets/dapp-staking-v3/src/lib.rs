@@ -367,6 +367,9 @@ pub mod pallet {
     pub type NextDAppId<T: Config> = StorageValue<_, DAppId, ValueQuery>;
 
     /// Map of all dApps integrated into dApp staking protocol.
+    ///
+    /// Even though dApp is integrated, it does not mean it's still actively participating in dApp staking.
+    /// It might have been unregistered at some point in history.
     #[pallet::storage]
     pub type IntegratedDApps<T: Config> = CountedStorageMap<
         Hasher = Blake2_128Concat,
@@ -891,7 +894,7 @@ pub mod pallet {
 
             let dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
-            ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
+            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_era = protocol_state.era;
@@ -1018,7 +1021,7 @@ pub mod pallet {
 
             let dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
-            ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
+            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_era = protocol_state.era;
@@ -1328,7 +1331,7 @@ pub mod pallet {
             let account = ensure_signed(origin)?;
 
             ensure!(
-                !Self::is_active(&smart_contract),
+                !Self::is_registered(&smart_contract),
                 Error::<T>::ContractStillActive
             );
 
@@ -1526,10 +1529,10 @@ pub mod pallet {
                 .saturating_mul(T::CycleConfiguration::eras_per_voting_subperiod().into())
         }
 
-        /// `true` if smart contract is active, `false` if it has been unregistered.
-        pub(crate) fn is_active(smart_contract: &T::SmartContract) -> bool {
+        /// `true` if smart contract is registered, `false` otherwise.
+        pub(crate) fn is_registered(smart_contract: &T::SmartContract) -> bool {
             IntegratedDApps::<T>::get(smart_contract)
-                .map_or(false, |dapp_info| dapp_info.is_active())
+                .map_or(false, |dapp_info| dapp_info.is_registered())
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.

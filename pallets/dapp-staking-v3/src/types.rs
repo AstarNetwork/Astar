@@ -284,8 +284,8 @@ impl<AccountId> DAppInfo<AccountId> {
         }
     }
 
-    /// `true` if dApp is still active (registered), `false` otherwise.
-    pub fn is_active(&self) -> bool {
+    /// `true` if dApp is registered, `false` otherwise.
+    pub fn is_registered(&self) -> bool {
         self.state == DAppState::Registered
     }
 }

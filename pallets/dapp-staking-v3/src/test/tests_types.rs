@@ -169,11 +169,11 @@ fn dapp_info_basic_checks() {
     dapp_info.reward_destination = Some(beneficiary);
     assert_eq!(*dapp_info.reward_beneficiary(), beneficiary);
 
-    // Check if dApp is active
-    assert!(dapp_info.is_active());
+    // Check if dApp is registered
+    assert!(dapp_info.is_registered());
 
     dapp_info.state = DAppState::Unregistered(10);
-    assert!(!dapp_info.is_active());
+    assert!(!dapp_info.is_registered());
 }
 
 #[test]
