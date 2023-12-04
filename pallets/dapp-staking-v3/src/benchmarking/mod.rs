@@ -898,7 +898,6 @@ mod benchmarks {
         {
             let (dapp_tiers, _) =
                 Pallet::<T>::get_dapp_tier_assignment(reward_era, reward_period, reward_pool);
-            // TODO: how to move this outside of the 'block'? Cannot declare it outside, and then use it inside.
             assert_eq!(dapp_tiers.dapps.len(), x as usize);
         }
     }

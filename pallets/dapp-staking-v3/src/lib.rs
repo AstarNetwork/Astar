@@ -17,25 +17,20 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! # dApp Staking v3 Pallet
-//! TODO
 //!
-//! - [`Config`]
+//! For detailed high level documentation, please refer to the attached README.md file.
+//! The crate level docs will cover overal pallet structure & implementation details.
 //!
 //! ## Overview
 //!
-//! Pallet that implements dapps staking protocol.
+//! Pallet that implements the dApp staking v3 protocol.
+//! It covers everything from locking, staking, tier configuration & assignment, reward calculation & payout.
 //!
-//! <>
+//! The `types` module contains all of the types used to implement the pallet.
+//! All of these _types_ are exentisvely tested in their dedicated `test_types` module.
 //!
-//! ## Interface
-//!
-//! ### Dispatchable Function
-//!
-//! <>
-//!
-//! ### Other
-//!
-//! <>
+//! Rest of the pallet logic is concenrated in the lib.rs file.
+//! This logic is tested in the `tests` module, with the help of extensive `testing_utils`.
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -86,6 +81,7 @@ pub(crate) enum TierAssignment {
     Dummy,
 }
 
+#[doc = include_str!("../README.md")]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -115,7 +111,7 @@ pub mod pallet {
         type RuntimeFreezeReason: From<FreezeReason>;
 
         /// Currency used for staking.
-        /// Reference: https://github.com/paritytech/substrate/pull/12951/
+        /// Reference: <https://github.com/paritytech/substrate/pull/12951/>
         type Currency: FunMutateFreeze<
             Self::AccountId,
             Id = Self::RuntimeFreezeReason,
