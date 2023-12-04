@@ -17,9 +17,9 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    AccountId, AllPalletsWithSystem, AssetId, Assets, Balance, Balances, BurnFees, ParachainInfo,
-    ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-    ShidenAssetLocationIdConverter, TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue,
+    AccountId, AllPalletsWithSystem, AssetId, Assets, Balance, Balances, DealWithFees,
+    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+    ShidenAssetLocationIdConverter, TreasuryAccountId, XcAssetConfig, XcmWeightToFee, XcmpQueue,
 };
 use crate::weights;
 use frame_support::{
@@ -255,7 +255,7 @@ impl xcm_executor::Config for XcmConfig {
     type Barrier = XcmBarrier;
     type Weigher = Weigher;
     type Trader = (
-        UsingComponents<WeightToFee, ShidenLocation, AccountId, Balances, BurnFees>,
+        UsingComponents<XcmWeightToFee, ShidenLocation, AccountId, Balances, DealWithFees>,
         FixedRateOfForeignAsset<XcAssetConfig, ShidenXcmFungibleFeeHandler>,
     );
     type ResponseHandler = PolkadotXcm;

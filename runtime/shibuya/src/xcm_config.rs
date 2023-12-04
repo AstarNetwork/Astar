@@ -19,7 +19,7 @@
 use super::{
     AccountId, AllPalletsWithSystem, AssetId, Assets, Balance, Balances, DealWithFees,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
-    ShibuyaAssetLocationIdConverter, TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue,
+    ShibuyaAssetLocationIdConverter, TreasuryAccountId, XcAssetConfig, XcmWeightToFee, XcmpQueue,
 };
 use crate::weights;
 use frame_support::{
@@ -185,7 +185,7 @@ impl xcm_executor::Config for XcmConfig {
     type Barrier = XcmBarrier;
     type Weigher = Weigher;
     type Trader = (
-        UsingComponents<WeightToFee, ShibuyaLocation, AccountId, Balances, DealWithFees>,
+        UsingComponents<XcmWeightToFee, ShibuyaLocation, AccountId, Balances, DealWithFees>,
         FixedRateOfForeignAsset<XcAssetConfig, ShibuyaXcmFungibleFeeHandler>,
     );
     type ResponseHandler = PolkadotXcm;

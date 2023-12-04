@@ -660,8 +660,20 @@ impl WeightToFeePolynomial for WeightToFee {
     }
 }
 
-pub struct BurnFees;
-impl OnUnbalanced<NegativeImbalance> for BurnFees {
+/// Handles coverting weight consumed by XCM into native currency fee.
+///
+/// Similar to standard `WeightToFee` handler, but force uses the minimum multiplier.
+pub struct XcmWeightToFee;
+impl frame_support::weights::WeightToFee for XcmWeightToFee {
+    type Balance = Balance;
+
+    fn weight_to_fee(n: &Weight) -> Self::Balance {
+        MinimumMultiplier::get().saturating_mul_int(WeightToFee::weight_to_fee(&n))
+    }
+}
+
+pub struct DealWithFees;
+impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     /// Payout tips but burn all the fees
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
         if let Some(fees) = fees_then_tips.next() {
@@ -682,7 +694,7 @@ impl OnUnbalanced<NegativeImbalance> for BurnFees {
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, BurnFees>;
+    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate = TargetedFeeAdjustment<

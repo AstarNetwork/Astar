@@ -668,6 +668,18 @@ impl WeightToFeePolynomial for WeightToFee {
     }
 }
 
+/// Handles coverting weight consumed by XCM into native currency fee.
+///
+/// Similar to standard `WeightToFee` handler, but force uses the minimum multiplier.
+pub struct XcmWeightToFee;
+impl frame_support::weights::WeightToFee for XcmWeightToFee {
+    type Balance = Balance;
+
+    fn weight_to_fee(n: &Weight) -> Self::Balance {
+        MinimumMultiplier::get().saturating_mul_int(WeightToFee::weight_to_fee(&n))
+    }
+}
+
 pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
