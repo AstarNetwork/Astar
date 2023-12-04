@@ -13243,7 +13243,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-reward",
+ "pallet-block-rewards-hybrid",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
