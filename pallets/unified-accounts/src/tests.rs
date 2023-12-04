@@ -348,3 +348,52 @@ fn connecting_mapped_accounts_should_not_work() {
         );
     });
 }
+
+#[test]
+fn charging_storage_fee_should_not_reap_account() {
+    ExtBuilder::default().build().execute_with(|| {
+        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+        let alice_signature = get_evm_signature(&ALICE, &alice_secret());
+
+        // set alice balance just enough to claim accounts without being reaped
+        Balances::set_balance(
+            &ALICE,
+            ExistentialDeposit::get() + AccountMappingStorageFee::get(),
+        );
+
+        //
+        // With sufficent funds, claim should succeed
+        //
+        assert_ok!(UnifiedAccounts::claim_evm_address(
+            RuntimeOrigin::signed(ALICE),
+            alice_eth,
+            alice_signature
+        ));
+        // check for claimed event
+        System::assert_last_event(RuntimeEvent::UnifiedAccounts(
+            crate::Event::AccountClaimed {
+                account_id: ALICE.clone(),
+                evm_address: alice_eth,
+            },
+        ));
+
+        // confirm the balance, should be equal to ED
+        assert_eq!(Balances::total_balance(&ALICE), ExistentialDeposit::get());
+
+        // clear mappings
+        EvmToNative::<TestRuntime>::remove(alice_eth);
+        NativeToEvm::<TestRuntime>::remove(ALICE);
+
+        //
+        // When funds are less than required, should fail with funds unavailable
+        //
+        assert_noop!(
+            UnifiedAccounts::claim_evm_address(
+                RuntimeOrigin::signed(ALICE),
+                alice_eth,
+                alice_signature
+            ),
+            Error::<TestRuntime>::FundsUnavailable
+        );
+    });
+}
