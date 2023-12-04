@@ -1560,7 +1560,7 @@ pub mod pallet {
         ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
         ///    Iterate over tier thresholds & capacities, starting from the top tier, and assign dApps to them.
         ///    
-        ///    ```ignore
+        ///    ```text
         ////   for each tier:
         ///        for each unassigned dApp:
         ///            if tier has capacity && dApp satisfies the tier threshold:
