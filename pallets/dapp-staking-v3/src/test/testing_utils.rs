@@ -20,11 +20,14 @@ use crate::test::mock::*;
 use crate::types::*;
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, CurrentEraInfo, DAppId, DAppTiers,
-    EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, NextTierConfig, PeriodEnd,
-    PeriodEndInfo, StakerInfo, TierConfig,
+    EraRewards, Event, FreezeReason, IntegratedDApps, Ledger, NextDAppId, NextTierConfig,
+    PeriodEnd, PeriodEndInfo, StakerInfo, TierConfig,
 };
 
-use frame_support::{assert_ok, traits::Get};
+use frame_support::{
+    assert_ok,
+    traits::{fungible::InspectFreeze, Get},
+};
 use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
 
@@ -204,6 +207,8 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
 
     let free_balance = Balances::free_balance(&account);
     let locked_balance = pre_snapshot.locked_balance(&account);
+    let init_frozen_balance = Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account);
+
     let available_balance = free_balance
         .checked_sub(locked_balance)
         .expect("Locked amount cannot be greater than available free balance");
@@ -232,12 +237,16 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
         "Total locked balance should be increased by the amount locked."
     );
 
-    // TODO: test that frozen amount has been increased
+    assert_eq!(
+        init_frozen_balance + expected_lock_amount,
+        Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account)
+    );
 }
 
 /// Start the unlocking process for locked funds and assert success.
 pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
     let pre_snapshot = MemorySnapshot::new();
+    let init_frozen_balance = Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account);
 
     assert!(
         pre_snapshot.ledger.contains_key(&account),
@@ -315,7 +324,10 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
         post_era_info.total_locked
     );
 
-    // TODO: test that frozen amount has been decreased
+    assert_eq!(
+        init_frozen_balance - expected_unlock_amount,
+        Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account)
+    );
 }
 
 /// Claims the unlocked funds back into free balance of the user and assert success.

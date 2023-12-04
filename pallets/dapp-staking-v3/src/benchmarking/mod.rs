@@ -876,7 +876,7 @@ mod benchmarks {
         );
     }
 
-    // TODO: investigate why the PoV size is so large here, even after removing read of `IntegratedDApps` storage.
+    // Investigate why the PoV size is so large here, even after removing read of `IntegratedDApps` storage.
     // Relevant file: polkadot-sdk/substrate/utils/frame/benchmarking-cli/src/pallet/writer.rs
     // UPDATE: after some investigation, it seems that PoV size benchmarks are very unprecise
     // - the worst case measured is usually very far off the actual value that is consumed on chain.
