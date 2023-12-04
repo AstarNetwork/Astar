@@ -1482,7 +1482,8 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
 
     /// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
     pub fn calculate_new(&self, native_price: FixedU64, params: &TierParameters<NT>) -> Self {
-        let new_number_of_slots = Self::calculate_number_of_slots(native_price);
+        // It must always be at least 1 slot.
+        let new_number_of_slots = Self::calculate_number_of_slots(native_price).max(1);
 
         // Calculate how much each tier gets slots.
         let new_slots_per_tier: Vec<u16> = params
