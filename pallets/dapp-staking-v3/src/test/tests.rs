@@ -66,6 +66,7 @@ fn maintenace_mode_call_filtering_works() {
         assert_ok!(DappStaking::maintenance_mode(RuntimeOrigin::root(), true));
         assert!(ActiveProtocolState::<Test>::get().maintenance);
 
+        assert_storage_noop!(DappStaking::on_initialize(1));
         assert_noop!(
             DappStaking::register(RuntimeOrigin::root(), 1, MockSmartContract::Wasm(1)),
             Error::<Test>::Disabled
