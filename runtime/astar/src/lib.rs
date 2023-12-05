@@ -1057,11 +1057,6 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-// Used to cleanup BaseFee storage - remove once cleanup is done.
-parameter_types! {
-    pub const BaseFeeStr: &'static str = "BaseFee";
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
