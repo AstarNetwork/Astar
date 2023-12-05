@@ -7969,6 +7969,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-precompile-dapp-staking-v3"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum 0.5.11",
+ "pallet-balances",
+ "pallet-dapp-staking-v3",
+ "pallet-evm",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "serde",
+ "sha3",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-evm-precompile-dapps-staking"
 version = "3.6.3"
 dependencies = [

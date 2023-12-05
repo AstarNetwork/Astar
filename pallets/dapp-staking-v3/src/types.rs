@@ -85,6 +85,15 @@ pub type AccountLedgerFor<T> = AccountLedger<BlockNumberFor<T>, <T as Config>::M
 pub type DAppTierRewardsFor<T> =
     DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
 
+// Convenience type for `EraRewardSpan` usage.
+pub type EraRewardSpanFor<T> = EraRewardSpan<<T as Config>::EraRewardSpanLength>;
+
+// Convenience type for `DAppInfo` usage.
+pub type DAppInfoFor<T> = DAppInfo<<T as frame_system::Config>::AccountId>;
+
+// Convenience type for `ProtocolState` usage.
+pub type ProtocolStateFor<T> = ProtocolState<BlockNumberFor<T>>;
+
 /// Era number type
 pub type EraNumber = u32;
 /// Period number type

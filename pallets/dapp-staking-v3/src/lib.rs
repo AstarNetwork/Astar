@@ -63,8 +63,7 @@ mod test;
 mod benchmarking;
 
 mod types;
-use types::*;
-pub use types::{PriceProvider, RewardPoolProvider, TierThreshold};
+pub use types::*;
 
 mod dsv3_weight;
 
@@ -1640,7 +1639,7 @@ pub mod pallet {
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.
-        pub(crate) fn era_reward_span_index(era: EraNumber) -> EraNumber {
+        pub fn era_reward_span_index(era: EraNumber) -> EraNumber {
             era.saturating_sub(era % T::EraRewardSpanLength::get())
         }
 
@@ -1651,7 +1650,7 @@ pub mod pallet {
         }
 
         /// Unlocking period expressed in the number of blocks.
-        pub(crate) fn unlock_period() -> BlockNumberFor<T> {
+        pub fn unlock_period() -> BlockNumberFor<T> {
             T::StandardEraLength::get().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
