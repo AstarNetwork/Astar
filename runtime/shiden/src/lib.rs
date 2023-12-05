@@ -140,7 +140,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 112,
+    spec_version: 113,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1087,6 +1087,7 @@ impl OnRuntimeUpgrade for HybridInflationModelMigration {
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
+/// `HybridInflationModelMigration` to be applied on spec_version: 113
 pub type Migrations = HybridInflationModelMigration;
 
 type EventRecord = frame_system::EventRecord<
