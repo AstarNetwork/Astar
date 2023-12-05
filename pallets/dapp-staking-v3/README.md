@@ -27,18 +27,22 @@ Each period consists of two subperiods:
 Each period is denoted by a number, which increments each time a new period begins.
 Period beginning is marked by the `voting` subperiod, after which follows the `build&earn` period.
 
-Stakes are **only** valid throughout a period. When new period starts, all stakes are reset to zero. This helps prevent projects remaining staked due to intertia.
+Stakes are **only** valid throughout a period. When new period starts, all stakes are reset to **zero**. This helps prevent projects remaining staked due to intertia of stakers, and makes for a more dynamic staking system.
+
+Even though stakes are reset, locks (or freezes) of tokens remain.
 
 #### Voting
 
-When `Voting` starts, all _stakes_ are reset to **zero**.
+When `Voting` subperiod starts, all _stakes_ are reset to **zero**.
 Projects participating in dApp staking are expected to market themselves to (re)attract stakers.
 
 Stakers must assess whether the project they want to stake on brings value to the ecosystem, and then `vote` for it.
 Casting a vote, or staking, during the `Voting` subperiod makes the staker eligible for bonus rewards. so they are encouraged to participate.
 
 `Voting` subperiod length is expressed in _standard_ era lengths, even though the entire voting period is treated as a single _voting era_.
-E.g. if `voting` subperiod lasts for **10 eras**, and each era lasts for **100** blocks, total length of the `voting` subperiod will be **1000** blocks.
+E.g. if `voting` subperiod lasts for **5 eras**, and each era lasts for **100** blocks, total length of the `voting` subperiod will be **500** blocks.
+* Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
+* Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
 
 Neither stakers nor dApps earn rewards during this subperiod - no new rewards are generated after `voting` subperiod ends.
 
@@ -50,6 +54,16 @@ After each _era_ ends, eligible stakers and dApps can claim the rewards they ear
 
 It is still possible to _stake_ during this period, and stakers are encouraged to do so since this will increase the rewards they earn.
 The only exemption is the **final era** of the `build&earn` subperiod - it's not possible to _stake_ then since the stake would be invalid anyhow (stake is only valid from the next era which would be in the next period).
+
+To continue the previous example where era length is **100** blocks, let's assume that `Build&Earn` subperiod lasts for 10 eras:
+* Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
+* Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
+* Block 601, Era 3 starts, Period 1 continues, `Build&Earn` subperiod continues
+* Block 701, Era 4 starts, Period 1 continues, `Build&Earn` subperiod continues
+* ...
+* Block 1401, Era 11 starts, Period 1 continues, `Build&Earn` subperiod enters the final era
+* Block 1501, Era 12 starts, Period 2 starts, `Voting` subperiod starts
+* Block 2001, Era 13 starts, Period 2 continues, `Build&Earn` subperiod starts
 
 ### dApps & Smart Contracts
 
@@ -63,11 +77,13 @@ Projects, or _dApps_, must be registered into protocol to participate.
 Only a privileged `ManagerOrigin` can perform dApp registration.
 The pallet itself does not make assumptions who the privileged origin is, and it can differ from runtime to runtime.
 
+Once dApp has been registered, stakers can stake on it immediatelly.
+
+When contract is registered, it is assigned a unique compact numeric Id - 16 bit unsigned integer. This is important for the inner workings of the pallet, and is not directly exposed to the users.
+
 There is a limit of how many smart contracts can be registered at once. Once the limit is reached, any additional attempt to register a new contract will fail.
 
 #### Reward Beneficiary & Ownership
-
-When contract is registered, it is assigned a unique compact numeric Id - 16 bit unsigned integer. This is important for the inner workings of the pallet, and is not directly exposed to the users.
 
 After a dApp has been registered, it is possible to modify reward beneficiary or even the owner of the dApp. The owner can perform reward delegation and can further transfer ownership.
 
@@ -81,13 +97,13 @@ It's still possible however to claim past unclaimed rewards.
 
 Important to note that even if dApp has been unregistered, it still occupies a _slot_
 in the dApp staking protocol and counts towards maximum number of registered dApps.
-This will be improved in the future when dApp data will be cleaned up after the period ends.
+This will be improved in the future when dApp data will be cleaned up after some time.
 
 ### Stakers
 
 #### Locking Tokens
 
-In order for users to participate in dApp staking, the first step they need to take is lock some native currency. Reserved tokens cannot be locked, but tokens locked by another lock can be re-locked into dApp staking (double locked).
+In order for users to participate in dApp staking, the first step they need to take is lock (or freeze) some native currency. Reserved tokens cannot be locked, but tokens locked by another lock can be re-locked into dApp staking (double locked).
 
 **NOTE:** Locked funds cannot be used for paying fees, or for transfer.
 

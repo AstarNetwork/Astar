@@ -19,20 +19,25 @@
 use crate::test::mock::*;
 use crate::types::*;
 use crate::{
-    pallet::Config, ActiveProtocolState, BlockNumberFor, ContractStake, CurrentEraInfo, DAppId,
-    DAppTiers, EraRewards, Event, IntegratedDApps, Ledger, NextDAppId, NextTierConfig, PeriodEnd,
-    PeriodEndInfo, StakerInfo, TierConfig,
+    pallet::Config, ActiveProtocolState, ContractStake, CurrentEraInfo, DAppId, DAppTiers,
+    EraRewards, Event, FreezeReason, IntegratedDApps, Ledger, NextDAppId, NextTierConfig,
+    PeriodEnd, PeriodEndInfo, StakerInfo, TierConfig,
 };
 
-use frame_support::{assert_ok, traits::Get};
+use frame_support::{
+    assert_ok,
+    traits::{fungible::InspectFreeze, Get},
+};
 use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
+
+use astar_primitives::{dapp_staking::CycleConfiguration, Balance, BlockNumber};
 
 /// Helper struct used to store the entire pallet state snapshot.
 /// Used when comparison of before/after states is required.
 #[derive(Debug)]
 pub(crate) struct MemorySnapshot {
-    active_protocol_state: ProtocolState<BlockNumberFor<Test>>,
+    active_protocol_state: ProtocolState,
     next_dapp_id: DAppId,
     current_era_info: EraInfo,
     integrated_dapps: HashMap<
@@ -202,6 +207,8 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
 
     let free_balance = Balances::free_balance(&account);
     let locked_balance = pre_snapshot.locked_balance(&account);
+    let init_frozen_balance = Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account);
+
     let available_balance = free_balance
         .checked_sub(locked_balance)
         .expect("Locked amount cannot be greater than available free balance");
@@ -229,11 +236,17 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
         pre_snapshot.current_era_info.total_locked + expected_lock_amount,
         "Total locked balance should be increased by the amount locked."
     );
+
+    assert_eq!(
+        init_frozen_balance + expected_lock_amount,
+        Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account)
+    );
 }
 
 /// Start the unlocking process for locked funds and assert success.
 pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
     let pre_snapshot = MemorySnapshot::new();
+    let init_frozen_balance = Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account);
 
     assert!(
         pre_snapshot.ledger.contains_key(&account),
@@ -309,6 +322,11 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
             .total_locked
             .saturating_sub(expected_unlock_amount),
         post_era_info.total_locked
+    );
+
+    assert_eq!(
+        init_frozen_balance - expected_unlock_amount,
+        Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account)
     );
 }
 
@@ -1133,7 +1151,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
     let is_new_subperiod = pre_snapshot
         .active_protocol_state
         .period_info
-        .subperiod_end_era
+        .next_subperiod_start_era
         <= post_snapshot.active_protocol_state.era;
 
     // 1. Verify protocol state
@@ -1149,15 +1167,15 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
                 "Voting subperiod only lasts for a single era."
             );
 
-            let eras_per_bep: EraNumber =
-                <Test as Config>::StandardErasPerBuildAndEarnSubperiod::get();
+            let eras_per_bep =
+                <Test as Config>::CycleConfiguration::eras_per_build_and_earn_subperiod();
             assert_eq!(
-                post_protoc_state.period_info.subperiod_end_era,
+                post_protoc_state.period_info.next_subperiod_start_era,
                 post_protoc_state.era + eras_per_bep,
                 "Build&earn must last for the predefined amount of standard eras."
             );
 
-            let standard_era_length: BlockNumber = <Test as Config>::StandardEraLength::get();
+            let standard_era_length = <Test as Config>::CycleConfiguration::blocks_per_era();
             assert_eq!(
                 post_protoc_state.next_era_start,
                 current_block_number + standard_era_length,
@@ -1177,15 +1195,15 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
                     "Ending 'Build&Earn' triggers a new period."
                 );
                 assert_eq!(
-                    post_protoc_state.period_info.subperiod_end_era,
+                    post_protoc_state.period_info.next_subperiod_start_era,
                     post_protoc_state.era + 1,
                     "Voting era must last for a single era."
                 );
 
-                let blocks_per_standard_era: BlockNumber =
-                    <Test as Config>::StandardEraLength::get();
-                let eras_per_voting_subperiod: EraNumber =
-                    <Test as Config>::StandardErasPerVotingSubperiod::get();
+                let blocks_per_standard_era =
+                    <Test as Config>::CycleConfiguration::blocks_per_era();
+                let eras_per_voting_subperiod =
+                    <Test as Config>::CycleConfiguration::eras_per_voting_subperiod();
                 let eras_per_voting_subperiod: BlockNumber = eras_per_voting_subperiod.into();
                 let era_length: BlockNumber = blocks_per_standard_era * eras_per_voting_subperiod;
                 assert_eq!(

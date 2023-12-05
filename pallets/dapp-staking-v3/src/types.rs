@@ -65,21 +65,20 @@
 //!
 
 use frame_support::{pallet_prelude::*, BoundedVec};
-use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, CheckedAdd, UniqueSaturatedInto, Zero},
+    traits::{CheckedAdd, UniqueSaturatedInto, Zero},
     FixedPointNumber, Permill, Saturating,
 };
 pub use sp_std::{fmt::Debug, vec::Vec};
 
-use astar_primitives::Balance;
+use astar_primitives::{Balance, BlockNumber};
 
 use crate::pallet::Config;
 
 // Convenience type for `AccountLedger` usage.
-pub type AccountLedgerFor<T> = AccountLedger<BlockNumberFor<T>, <T as Config>::MaxUnlockingChunks>;
+pub type AccountLedgerFor<T> = AccountLedger<<T as Config>::MaxUnlockingChunks>;
 
 // Convenience type for `DAppTierRewards` usage.
 pub type DAppTierRewardsFor<T> =
@@ -151,16 +150,16 @@ pub struct PeriodInfo {
     pub number: PeriodNumber,
     /// Subperiod type.
     pub subperiod: Subperiod,
-    /// Last era of the subperiod, after this a new subperiod should start.
+    /// Era in which the new subperiod starts.
     #[codec(compact)]
-    pub subperiod_end_era: EraNumber,
+    pub next_subperiod_start_era: EraNumber,
 }
 
 impl PeriodInfo {
     /// `true` if the provided era belongs to the next period, `false` otherwise.
     /// It's only possible to provide this information correctly for the ongoing `BuildAndEarn` subperiod.
     pub fn is_next_period(&self, era: EraNumber) -> bool {
-        self.subperiod == Subperiod::BuildAndEarn && self.subperiod_end_era <= era
+        self.subperiod == Subperiod::BuildAndEarn && self.next_subperiod_start_era <= era
     }
 }
 
@@ -189,7 +188,7 @@ pub enum ForcingType {
 
 /// General information & state of the dApp staking protocol.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct ProtocolState<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen> {
+pub struct ProtocolState {
     /// Ongoing era number.
     #[codec(compact)]
     pub era: EraNumber,
@@ -202,28 +201,22 @@ pub struct ProtocolState<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen> {
     pub maintenance: bool,
 }
 
-impl<BlockNumber> Default for ProtocolState<BlockNumber>
-where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
-{
+impl Default for ProtocolState {
     fn default() -> Self {
         Self {
             era: 0,
-            next_era_start: BlockNumber::from(1_u32),
+            next_era_start: 1,
             period_info: PeriodInfo {
                 number: 0,
                 subperiod: Subperiod::Voting,
-                subperiod_end_era: 2,
+                next_subperiod_start_era: 2,
             },
             maintenance: false,
         }
     }
 }
 
-impl<BlockNumber> ProtocolState<BlockNumber>
-where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen,
-{
+impl ProtocolState {
     /// Current subperiod.
     pub fn subperiod(&self) -> Subperiod {
         self.period_info.subperiod
@@ -235,8 +228,8 @@ where
     }
 
     /// Ending era of current period
-    pub fn period_end_era(&self) -> EraNumber {
-        self.period_info.subperiod_end_era
+    pub fn next_subperiod_start_era(&self) -> EraNumber {
+        self.period_info.next_subperiod_start_era
     }
 
     /// Checks whether a new era should be triggered, based on the provided _current_ block number argument
@@ -248,7 +241,7 @@ where
     /// Triggers the next subperiod, updating appropriate parameters.
     pub fn advance_to_next_subperiod(
         &mut self,
-        subperiod_end_era: EraNumber,
+        next_subperiod_start_era: EraNumber,
         next_era_start: BlockNumber,
     ) {
         let period_number = if self.subperiod() == Subperiod::BuildAndEarn {
@@ -260,7 +253,7 @@ where
         self.period_info = PeriodInfo {
             number: period_number,
             subperiod: self.subperiod().next(),
-            subperiod_end_era,
+            next_subperiod_start_era,
         };
         self.next_era_start = next_era_start;
     }
@@ -300,15 +293,15 @@ impl<AccountId> DAppInfo<AccountId> {
         }
     }
 
-    /// `true` if dApp is still active (registered), `false` otherwise.
-    pub fn is_active(&self) -> bool {
+    /// `true` if dApp is registered, `false` otherwise.
+    pub fn is_registered(&self) -> bool {
         self.state == DAppState::Registered
     }
 }
 
 /// How much was unlocked in some block.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct UnlockingChunk<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy> {
+pub struct UnlockingChunk {
     /// Amount undergoing the unlocking period.
     #[codec(compact)]
     pub amount: Balance,
@@ -317,10 +310,7 @@ pub struct UnlockingChunk<BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Co
     pub unlock_block: BlockNumber,
 }
 
-impl<BlockNumber> Default for UnlockingChunk<BlockNumber>
-where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy,
-{
+impl Default for UnlockingChunk {
     fn default() -> Self {
         Self {
             amount: Balance::zero(),
@@ -341,15 +331,12 @@ where
     TypeInfo,
 )]
 #[scale_info(skip_type_params(UnlockingLen))]
-pub struct AccountLedger<
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
-    UnlockingLen: Get<u32>,
-> {
+pub struct AccountLedger<UnlockingLen: Get<u32>> {
     /// How much active locked amount an account has. This can be used for staking.
     #[codec(compact)]
     pub locked: Balance,
     /// Vector of all the unlocking chunks. This is also considered _locked_ but cannot be used for staking.
-    pub unlocking: BoundedVec<UnlockingChunk<BlockNumber>, UnlockingLen>,
+    pub unlocking: BoundedVec<UnlockingChunk, UnlockingLen>,
     /// Primary field used to store how much was staked in a particular era.
     pub staked: StakeAmount,
     /// Secondary field used to store 'stake' information for the 'next era'.
@@ -363,9 +350,8 @@ pub struct AccountLedger<
     pub contract_stake_count: u32,
 }
 
-impl<BlockNumber, UnlockingLen> Default for AccountLedger<BlockNumber, UnlockingLen>
+impl<UnlockingLen> Default for AccountLedger<UnlockingLen>
 where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
     UnlockingLen: Get<u32>,
 {
     fn default() -> Self {
@@ -379,9 +365,8 @@ where
     }
 }
 
-impl<BlockNumber, UnlockingLen> AccountLedger<BlockNumber, UnlockingLen>
+impl<UnlockingLen> AccountLedger<UnlockingLen>
 where
-    BlockNumber: AtLeast32BitUnsigned + MaxEncodedLen + Copy + Debug,
     UnlockingLen: Get<u32>,
 {
     /// Empty if no locked/unlocking/staked info exists.
@@ -1376,9 +1361,6 @@ impl TierThreshold {
             Self::DynamicTvlAmount { amount, .. } => *amount,
         }
     }
-
-    // TODO: maybe add a check that compares `Self` to another threshold and ensures it has lower requirements?
-    // Could be useful to have this check as a sanity check when params are configured.
 }
 
 /// Top level description of tier slot parameters used to calculate tier configuration.
@@ -1509,7 +1491,8 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
 
     /// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
     pub fn calculate_new(&self, native_price: FixedU64, params: &TierParameters<NT>) -> Self {
-        let new_number_of_slots = Self::calculate_number_of_slots(native_price);
+        // It must always be at least 1 slot.
+        let new_number_of_slots = Self::calculate_number_of_slots(native_price).max(1);
 
         // Calculate how much each tier gets slots.
         let new_slots_per_tier: Vec<u16> = params
@@ -1661,7 +1644,9 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
         rewards: Vec<Balance>,
         period: PeriodNumber,
     ) -> Result<Self, ()> {
-        // TODO: should this part of the code ensure that dapps are sorted by Id?
+        // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is "guaranteed" due to lack of duplicated Ids).
+        let mut dapps = dapps;
+        dapps.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
 
         let dapps = BoundedVec::try_from(dapps).map_err(|_| ())?;
         let rewards = BoundedVec::try_from(rewards).map_err(|_| ())?;
@@ -1730,22 +1715,4 @@ pub enum TierLabel {
 pub trait PriceProvider {
     /// Get the price of the native token.
     fn average_price() -> FixedU64;
-}
-
-// TODO: however the implementation ends up looking,
-// it should consider total staked amount when filling up the bonus pool.
-// This is to ensure bonus rewards aren't too large in case there is little amount of staked funds.
-pub trait RewardPoolProvider {
-    /// Get the reward pools for stakers and dApps.
-    ///
-    /// TODO: discussion about below
-    /// The assumption is that the underlying implementation keeps track of how often this is called.
-    /// E.g. let's assume it's supposed to be called at the end of each era.
-    /// In case era is forced, it will last shorter. If pallet is put into maintenance mode, era might last longer.
-    /// Reward should adjust to that accordingly.
-    /// Alternative is to provide number of blocks for which era lasted.
-    fn normal_reward_pools() -> (Balance, Balance);
-
-    /// Get the bonus pool for stakers.
-    fn bonus_reward_pool() -> Balance;
 }

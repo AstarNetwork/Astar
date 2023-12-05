@@ -17,32 +17,30 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 //! # dApp Staking v3 Pallet
-//! TODO
 //!
-//! - [`Config`]
+//! For detailed high level documentation, please refer to the attached README.md file.
+//! The crate level docs will cover overal pallet structure & implementation details.
 //!
 //! ## Overview
 //!
-//! Pallet that implements dapps staking protocol.
+//! Pallet that implements the dApp staking v3 protocol.
+//! It covers everything from locking, staking, tier configuration & assignment, reward calculation & payout.
 //!
-//! <>
+//! The `types` module contains all of the types used to implement the pallet.
+//! All of these _types_ are exentisvely tested in their dedicated `test_types` module.
 //!
-//! ## Interface
-//!
-//! ### Dispatchable Function
-//!
-//! <>
-//!
-//! ### Other
-//!
-//! <>
+//! Rest of the pallet logic is concenrated in the lib.rs file.
+//! This logic is tested in the `tests` module, with the help of extensive `testing_utils`.
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
     pallet_prelude::*,
-    traits::{Currency, LockIdentifier, LockableCurrency, StorageVersion, WithdrawReasons},
+    traits::{
+        fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},
+        StorageVersion,
+    },
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
@@ -52,7 +50,10 @@ use sp_runtime::{
 };
 pub use sp_std::vec::Vec;
 
-use astar_primitives::Balance;
+use astar_primitives::{
+    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    Balance, BlockNumber,
+};
 
 pub use pallet::*;
 
@@ -65,13 +66,21 @@ mod benchmarking;
 mod types;
 pub use types::*;
 
-mod dsv3_weight;
-
-// Lock identifier for the dApp staking pallet
-const STAKING_ID: LockIdentifier = *b"dapstake";
+pub mod weights;
+pub use weights::WeightInfo;
 
 const LOG_TARGET: &str = "dapp-staking";
 
+/// Helper enum for benchmarking.
+pub(crate) enum TierAssignment {
+    /// Real tier assignment calculation should be done.
+    Real,
+    /// Dummy tier assignment calculation should be done, e.g. default value should be returned.
+    #[cfg(feature = "runtime-benchmarks")]
+    Dummy,
+}
+
+#[doc = include_str!("../README.md")]
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -84,24 +93,27 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[cfg(feature = "runtime-benchmarks")]
-    pub trait BenchmarkHelper<SmartContract> {
+    pub trait BenchmarkHelper<SmartContract, AccountId> {
         fn get_smart_contract(id: u32) -> SmartContract;
+
+        fn set_balance(account: &AccountId, balance: Balance);
     }
 
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config<BlockNumber = BlockNumber> {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>
             + TryInto<Event<Self>>;
 
+        /// The overarching freeze reason.
+        type RuntimeFreezeReason: From<FreezeReason>;
+
         /// Currency used for staking.
-        /// TODO: remove usage of deprecated LockableCurrency trait and use the new freeze approach. Might require some renaming of Lock to Freeze :)
-        // https://github.com/paritytech/substrate/pull/12951/
-        // Look at nomination pools implementation for reference!
-        type Currency: LockableCurrency<
+        /// Reference: <https://github.com/paritytech/substrate/pull/12951/>
+        type Currency: FunMutateFreeze<
             Self::AccountId,
-            Moment = Self::BlockNumber,
+            Id = Self::RuntimeFreezeReason,
             Balance = Balance,
         >;
 
@@ -114,23 +126,11 @@ pub mod pallet {
         /// Used to provide price information about the native token.
         type NativePriceProvider: PriceProvider;
 
-        /// Used to provide reward pools amount.
-        type RewardPoolProvider: RewardPoolProvider;
+        /// Used to handle reward payouts & reward pool amount fetching.
+        type StakingRewardHandler: StakingRewardHandler<Self::AccountId>;
 
-        /// Length of a standard era in block numbers.
-        #[pallet::constant]
-        type StandardEraLength: Get<Self::BlockNumber>;
-
-        /// Length of the `Voting` subperiod in standard eras.
-        /// Although `Voting` subperiod only consumes one 'era', we still measure its length in standard eras
-        /// for the sake of simplicity & consistency.
-        #[pallet::constant]
-        type StandardErasPerVotingSubperiod: Get<EraNumber>;
-
-        /// Length of the `Build&Earn` subperiod in standard eras.
-        /// Each `Build&Earn` subperiod consists of one or more distinct standard eras.
-        #[pallet::constant]
-        type StandardErasPerBuildAndEarnSubperiod: Get<EraNumber>;
+        /// Describes era length, subperiods & period length, as well as cycle length.
+        type CycleConfiguration: CycleConfiguration;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -158,7 +158,7 @@ pub mod pallet {
         #[pallet::constant]
         type UnlockingPeriod: Get<EraNumber>;
 
-        /// Maximum amount of stake entries contract is allowed to have at once.
+        /// Maximum amount of stake contract entries an account is allowed to have at once.
         #[pallet::constant]
         type MaxNumberOfStakedContracts: Get<u32>;
 
@@ -170,9 +170,12 @@ pub mod pallet {
         #[pallet::constant]
         type NumberOfTiers: Get<u32>;
 
+        /// Weight info for various calls & operations in the pallet.
+        type WeightInfo: WeightInfo;
+
         /// Helper trait for benchmarks.
         #[cfg(feature = "runtime-benchmarks")]
-        type BenchmarkHelper: BenchmarkHelper<Self::SmartContract>;
+        type BenchmarkHelper: BenchmarkHelper<Self::SmartContract, Self::AccountId>;
     }
 
     #[pallet::event]
@@ -322,6 +325,8 @@ pub mod pallet {
         InternalUnstakeError,
         /// Rewards are no longer claimable since they are too old.
         RewardExpired,
+        /// Reward payout has failed due to an unexpected reason.
+        RewardPayoutFailed,
         /// There are no claimable rewards.
         NoClaimableRewards,
         /// An unexpected error occured while trying to claim staker rewards.
@@ -349,14 +354,17 @@ pub mod pallet {
 
     /// General information about dApp staking protocol state.
     #[pallet::storage]
-    pub type ActiveProtocolState<T: Config> =
-        StorageValue<_, ProtocolState<BlockNumberFor<T>>, ValueQuery>;
+    #[pallet::whitelist_storage]
+    pub type ActiveProtocolState<T: Config> = StorageValue<_, ProtocolState, ValueQuery>;
 
     /// Counter for unique dApp identifiers.
     #[pallet::storage]
     pub type NextDAppId<T: Config> = StorageValue<_, DAppId, ValueQuery>;
 
     /// Map of all dApps integrated into dApp staking protocol.
+    ///
+    /// Even though dApp is integrated, it does not mean it's still actively participating in dApp staking.
+    /// It might have been unregistered at some point in history.
     #[pallet::storage]
     pub type IntegratedDApps<T: Config> = CountedStorageMap<
         Hasher = Blake2_128Concat,
@@ -488,11 +496,13 @@ pub mod pallet {
             // Prepare initial protocol state
             let protocol_state = ProtocolState {
                 era: 1,
-                next_era_start: Pallet::<T>::blocks_per_voting_period() + 1_u32.into(),
+                next_era_start: Pallet::<T>::blocks_per_voting_period()
+                    .checked_add(1)
+                    .expect("Must not overflow - especially not at genesis."),
                 period_info: PeriodInfo {
                     number: 1,
                     subperiod: Subperiod::Voting,
-                    subperiod_end_era: 2,
+                    next_subperiod_start_era: 2,
                 },
                 maintenance: false,
             };
@@ -506,150 +516,18 @@ pub mod pallet {
     }
 
     #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
-            let mut protocol_state = ActiveProtocolState::<T>::get();
-
-            // We should not modify pallet storage while in maintenance mode.
-            // This is a safety measure, since maintenance mode is expected to be
-            // enabled in case some misbehavior or corrupted storage is detected.
-            if protocol_state.maintenance {
-                return T::DbWeight::get().reads(1);
-            }
-
-            // Nothing to do if it's not new era
-            if !protocol_state.is_new_era(now) {
-                return T::DbWeight::get().reads(1);
-            }
-
-            // At this point it's clear that an era change will happen
-            let mut era_info = CurrentEraInfo::<T>::get();
-
-            let current_era = protocol_state.era;
-            let next_era = current_era.saturating_add(1);
-            let (maybe_period_event, era_reward) = match protocol_state.subperiod() {
-                // Voting subperiod only lasts for one 'prolonged' era
-                Subperiod::Voting => {
-                    // For the sake of consistency, we put zero reward into storage. There are no rewards for the voting subperiod.
-                    let era_reward = EraReward {
-                        staker_reward_pool: Balance::zero(),
-                        staked: era_info.total_staked_amount(),
-                        dapp_reward_pool: Balance::zero(),
-                    };
-
-                    let subperiod_end_era =
-                        next_era.saturating_add(T::StandardErasPerBuildAndEarnSubperiod::get());
-                    let build_and_earn_start_block =
-                        now.saturating_add(T::StandardEraLength::get());
-                    protocol_state
-                        .advance_to_next_subperiod(subperiod_end_era, build_and_earn_start_block);
-
-                    era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
-
-                    // Update tier configuration to be used when calculating rewards for the upcoming eras
-                    let next_tier_config = NextTierConfig::<T>::take();
-                    TierConfig::<T>::put(next_tier_config);
-
-                    (
-                        Some(Event::<T>::NewSubperiod {
-                            subperiod: protocol_state.subperiod(),
-                            number: protocol_state.period_number(),
-                        }),
-                        era_reward,
-                    )
-                }
-                Subperiod::BuildAndEarn => {
-                    let (staker_reward_pool, dapp_reward_pool) =
-                        T::RewardPoolProvider::normal_reward_pools();
-                    let era_reward = EraReward {
-                        staker_reward_pool,
-                        staked: era_info.total_staked_amount(),
-                        dapp_reward_pool,
-                    };
-
-                    // Distribute dapps into tiers, write it into storage
-                    let dapp_tier_rewards = Self::get_dapp_tier_assignment(
-                        current_era,
-                        protocol_state.period_number(),
-                        dapp_reward_pool,
-                    );
-                    DAppTiers::<T>::insert(&current_era, dapp_tier_rewards);
-
-                    // Switch to `Voting` period if conditions are met.
-                    if protocol_state.period_info.is_next_period(next_era) {
-                        // Store info about period end
-                        let bonus_reward_pool = T::RewardPoolProvider::bonus_reward_pool();
-                        PeriodEnd::<T>::insert(
-                            &protocol_state.period_number(),
-                            PeriodEndInfo {
-                                bonus_reward_pool,
-                                total_vp_stake: era_info.staked_amount(Subperiod::Voting),
-                                final_era: current_era,
-                            },
-                        );
-
-                        // For the sake of consistency we treat the whole `Voting` period as a single era.
-                        // This means no special handling is required for this period, it only lasts potentially longer than a single standard era.
-                        let subperiod_end_era = next_era.saturating_add(1);
-                        let voting_period_length = Self::blocks_per_voting_period();
-                        let next_era_start_block = now.saturating_add(voting_period_length);
-
-                        protocol_state
-                            .advance_to_next_subperiod(subperiod_end_era, next_era_start_block);
-
-                        era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
-
-                        // Re-calculate tier configuration for the upcoming new period
-                        let tier_params = StaticTierParams::<T>::get();
-                        let average_price = T::NativePriceProvider::average_price();
-                        let new_tier_config =
-                            TierConfig::<T>::get().calculate_new(average_price, &tier_params);
-                        NextTierConfig::<T>::put(new_tier_config);
-
-                        (
-                            Some(Event::<T>::NewSubperiod {
-                                subperiod: protocol_state.subperiod(),
-                                number: protocol_state.period_number(),
-                            }),
-                            era_reward,
-                        )
-                    } else {
-                        let next_era_start_block = now.saturating_add(T::StandardEraLength::get());
-                        protocol_state.next_era_start = next_era_start_block;
-
-                        era_info.migrate_to_next_era(None);
-
-                        (None, era_reward)
-                    }
-                }
-            };
-
-            // Update storage items
-            protocol_state.era = next_era;
-            ActiveProtocolState::<T>::put(protocol_state);
-
-            CurrentEraInfo::<T>::put(era_info);
-
-            let era_span_index = Self::era_reward_span_index(current_era);
-            let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
-            if let Err(_) = span.push(current_era, era_reward) {
-                // This must never happen but we log the error just in case.
-                log::error!(
-                    target: LOG_TARGET,
-                    "Failed to push era {} into the era reward span.",
-                    current_era
-                );
-            }
-            EraRewards::<T>::insert(&era_span_index, span);
-
-            Self::deposit_event(Event::<T>::NewEra { era: next_era });
-            if let Some(period_event) = maybe_period_event {
-                Self::deposit_event(period_event);
-            }
-
-            // TODO: benchmark later
-            T::DbWeight::get().reads_writes(3, 3)
+    impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
+        fn on_initialize(now: BlockNumber) -> Weight {
+            Self::era_and_period_handler(now, TierAssignment::Real)
         }
+    }
+
+    /// A reason for freezing funds.
+    #[pallet::composite_enum]
+    pub enum FreezeReason {
+        /// Account is participating in dApp staking.
+        #[codec(index = 0)]
+        DAppStaking,
     }
 
     #[pallet::call]
@@ -657,7 +535,7 @@ pub mod pallet {
         /// Used to enable or disable maintenance mode.
         /// Can only be called by manager origin.
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::maintenance_mode())]
         pub fn maintenance_mode(origin: OriginFor<T>, enabled: bool) -> DispatchResult {
             T::ManagerOrigin::ensure_origin(origin)?;
             ActiveProtocolState::<T>::mutate(|state| state.maintenance = enabled);
@@ -671,7 +549,7 @@ pub mod pallet {
         /// If successful, smart contract will be assigned a simple, unique numerical identifier.
         /// Owner is set to be initial beneficiary & manager of the dApp.
         #[pallet::call_index(1)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::register())]
         pub fn register(
             origin: OriginFor<T>,
             owner: T::AccountId,
@@ -722,7 +600,7 @@ pub mod pallet {
         /// If set to `None`, rewards will be deposited to the dApp owner.
         /// After this call, all existing & future rewards will be paid out to the beneficiary.
         #[pallet::call_index(2)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::set_dapp_reward_beneficiary())]
         pub fn set_dapp_reward_beneficiary(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -761,7 +639,7 @@ pub mod pallet {
         /// 1. when the dApp owner account is compromised, manager can change the owner to a new account
         /// 2. if project wants to transfer ownership to a new account (DAO, multisig, etc.).
         #[pallet::call_index(3)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::set_dapp_owner())]
         pub fn set_dapp_owner(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -801,7 +679,7 @@ pub mod pallet {
         ///
         /// Can be called by dApp staking manager origin.
         #[pallet::call_index(4)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::unregister())]
         pub fn unregister(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -839,7 +717,7 @@ pub mod pallet {
         ///
         /// Locked amount can immediately be used for staking.
         #[pallet::call_index(5)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::lock())]
         pub fn lock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
@@ -848,7 +726,7 @@ pub mod pallet {
 
             // Calculate & check amount available for locking
             let available_balance =
-                T::Currency::free_balance(&account).saturating_sub(ledger.active_locked_amount());
+                T::Currency::balance(&account).saturating_sub(ledger.active_locked_amount());
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 
@@ -859,7 +737,7 @@ pub mod pallet {
                 Error::<T>::LockedAmountBelowThreshold
             );
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.add_locked(amount_to_lock);
             });
@@ -878,7 +756,7 @@ pub mod pallet {
         /// If the amount is greater than the available amount for unlocking, everything is unlocked.
         /// If the remaining locked amount would take the account below the minimum locked amount, everything is unlocked.
         #[pallet::call_index(6)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::unlock())]
         pub fn unlock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
@@ -916,7 +794,7 @@ pub mod pallet {
                 .map_err(|_| Error::<T>::TooManyUnlockingChunks)?;
 
             // Update storage
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unlocking_started(amount_to_unlock);
             });
@@ -931,8 +809,8 @@ pub mod pallet {
 
         /// Claims all of fully unlocked chunks, removing the lock from them.
         #[pallet::call_index(7)]
-        #[pallet::weight(Weight::zero())]
-        pub fn claim_unlocked(origin: OriginFor<T>) -> DispatchResult {
+        #[pallet::weight(T::WeightInfo::claim_unlocked(T::MaxNumberOfStakedContracts::get()))]
+        pub fn claim_unlocked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -943,26 +821,25 @@ pub mod pallet {
             ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
 
             // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
-            // TODO: will be used after benchmarks
-            let _removed_entries = if ledger.is_empty() {
+            let removed_entries = if ledger.is_empty() {
                 let _ = StakerInfo::<T>::clear_prefix(&account, ledger.contract_stake_count, None);
                 ledger.contract_stake_count
             } else {
                 0
             };
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.unlocking_removed(amount);
             });
 
             Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
 
-            Ok(())
+            Ok(Some(T::WeightInfo::claim_unlocked(removed_entries)).into())
         }
 
         #[pallet::call_index(8)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::relock_unlocking())]
         pub fn relock_unlocking(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
@@ -979,7 +856,7 @@ pub mod pallet {
                 Error::<T>::LockedAmountBelowThreshold
             );
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             CurrentEraInfo::<T>::mutate(|era_info| {
                 era_info.add_locked(amount);
                 era_info.unlocking_removed(amount);
@@ -999,7 +876,7 @@ pub mod pallet {
         ///
         /// Staked amount is only eligible for rewards from the next era onwards.
         #[pallet::call_index(9)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::stake())]
         pub fn stake(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1012,7 +889,7 @@ pub mod pallet {
 
             let dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
-            ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
+            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_era = protocol_state.era;
@@ -1103,7 +980,7 @@ pub mod pallet {
 
             // 5.
             // Update remaining storage entries
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
             ContractStake::<T>::insert(&dapp_info.id, contract_stake_info);
 
@@ -1126,7 +1003,7 @@ pub mod pallet {
         /// In case amount is unstaked during `Build&Earn` subperiod, first the `build_and_earn` is reduced,
         /// and any spillover is subtracted from the `voting` amount.
         #[pallet::call_index(10)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::unstake())]
         pub fn unstake(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1139,7 +1016,7 @@ pub mod pallet {
 
             let dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
-            ensure!(dapp_info.is_active(), Error::<T>::NotOperatedDApp);
+            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_era = protocol_state.era;
@@ -1182,10 +1059,10 @@ pub mod pallet {
             ledger
                 .unstake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| match err {
-                    // These are all defensive checks, which should never happen since we already checked them above.
                     AccountLedgerError::InvalidPeriod | AccountLedgerError::InvalidEra => {
                         Error::<T>::UnclaimedRewards
                     }
+                    // This is a defensive check, which should never happen since we calculate the correct value above.
                     AccountLedgerError::UnstakeAmountLargerThanStake => {
                         Error::<T>::UnstakeAmountTooLarge
                     }
@@ -1214,7 +1091,7 @@ pub mod pallet {
                 StakerInfo::<T>::insert(&account, &smart_contract, new_staking_info);
             }
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
 
             Self::deposit_event(Event::<T>::Unstake {
                 account,
@@ -1228,8 +1105,12 @@ pub mod pallet {
         /// Claims some staker rewards, if user has any.
         /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening.
         #[pallet::call_index(11)]
-        #[pallet::weight(Weight::zero())]
-        pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResult {
+        #[pallet::weight({
+            let max_span_length = T::EraRewardSpanLength::get();
+            T::WeightInfo::claim_staker_rewards_ongoing_period(max_span_length)
+                .max(T::WeightInfo::claim_staker_rewards_past_period(max_span_length))
+        })]
+        pub fn claim_staker_rewards(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -1293,13 +1174,12 @@ pub mod pallet {
                 rewards.push((era, staker_reward));
                 reward_sum.saturating_accrue(staker_reward);
             }
+            let rewards_len: u32 = rewards.len().unique_saturated_into();
 
-            // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
-            // Account exists since it has locked funds.
-            T::Currency::deposit_into_existing(&account, reward_sum)
-                .map_err(|_| Error::<T>::InternalClaimStakerError)?;
+            T::StakingRewardHandler::payout_reward(&account, reward_sum)
+                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
 
             rewards.into_iter().for_each(|(era, reward)| {
                 Self::deposit_event(Event::<T>::Reward {
@@ -1309,12 +1189,17 @@ pub mod pallet {
                 });
             });
 
-            Ok(())
+            Ok(Some(if period_end.is_some() {
+                T::WeightInfo::claim_staker_rewards_past_period(rewards_len)
+            } else {
+                T::WeightInfo::claim_staker_rewards_ongoing_period(rewards_len)
+            })
+            .into())
         }
 
         /// Used to claim bonus reward for a smart contract, if eligible.
         #[pallet::call_index(12)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::claim_bonus_reward())]
         pub fn claim_bonus_reward(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1358,10 +1243,8 @@ pub mod pallet {
                 Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
                     * period_end_info.bonus_reward_pool;
 
-            // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
-            // Account exists since it has locked funds.
-            T::Currency::deposit_into_existing(&account, bonus_reward)
-                .map_err(|_| Error::<T>::InternalClaimStakerError)?;
+            T::StakingRewardHandler::payout_reward(&account, bonus_reward)
+                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
             // Cleanup entry since the reward has been claimed
             StakerInfo::<T>::remove(&account, &smart_contract);
@@ -1378,7 +1261,7 @@ pub mod pallet {
 
         /// Used to claim dApp reward for the specified era.
         #[pallet::call_index(13)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::claim_dapp_reward())]
         pub fn claim_dapp_reward(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1386,7 +1269,7 @@ pub mod pallet {
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
 
-            // TODO: Shall we make sure only dApp owner or beneficiary can trigger the claim?
+            // To keep in line with legacy behavior, dApp rewards can be claimed by anyone.
             let _ = ensure_signed(origin)?;
 
             let dapp_info =
@@ -1399,7 +1282,7 @@ pub mod pallet {
             // 'Consume' dApp reward for the specified era, if possible.
             let mut dapp_tiers = DAppTiers::<T>::get(&era).ok_or(Error::<T>::NoDAppTierInfo)?;
             ensure!(
-                Self::oldest_claimable_period(dapp_tiers.period) <= protocol_state.period_number(),
+                dapp_tiers.period >= Self::oldest_claimable_period(protocol_state.period_number()),
                 Error::<T>::RewardExpired
             );
 
@@ -1414,8 +1297,8 @@ pub mod pallet {
 
             // Get reward destination, and deposit the reward.
             let beneficiary = dapp_info.reward_beneficiary();
-            // TODO: add extra layer of security here to prevent excessive minting. Probably via Tokenomics2.0 pallet.
-            T::Currency::deposit_creating(beneficiary, amount);
+            T::StakingRewardHandler::payout_reward(&beneficiary, amount)
+                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
 
             // Write back updated struct to prevent double reward claims
             DAppTiers::<T>::insert(&era, dapp_tiers);
@@ -1434,7 +1317,7 @@ pub mod pallet {
         /// Used to unstake funds from a contract that was unregistered after an account staked on it.
         /// This is required if staker wants to re-stake these funds on another active contract during the ongoing period.
         #[pallet::call_index(14)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::unstake_from_unregistered())]
         pub fn unstake_from_unregistered(
             origin: OriginFor<T>,
             smart_contract: T::SmartContract,
@@ -1443,7 +1326,7 @@ pub mod pallet {
             let account = ensure_signed(origin)?;
 
             ensure!(
-                !Self::is_active(&smart_contract),
+                !Self::is_registered(&smart_contract),
                 Error::<T>::ContractStillActive
             );
 
@@ -1484,11 +1367,8 @@ pub mod pallet {
                 era_info.unstake_amount(amount, protocol_state.subperiod());
             });
 
-            // TODO: HOWEVER, we should not pay out bonus rewards for such contracts.
-            // Seems wrong because it serves as discentive for unstaking & moving over to a new contract.
-
             // Update remaining storage entries
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
             StakerInfo::<T>::remove(&account, &smart_contract);
 
             Self::deposit_event(Event::<T>::UnstakeFromUnregistered {
@@ -1506,8 +1386,10 @@ pub mod pallet {
         /// 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
         /// 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
         #[pallet::call_index(15)]
-        #[pallet::weight(Weight::zero())]
-        pub fn cleanup_expired_entries(origin: OriginFor<T>) -> DispatchResult {
+        #[pallet::weight(T::WeightInfo::cleanup_expired_entries(
+            T::MaxNumberOfStakedContracts::get()
+        ))]
+        pub fn cleanup_expired_entries(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
@@ -1543,14 +1425,17 @@ pub mod pallet {
                 .contract_stake_count
                 .saturating_reduce(entries_to_delete.unique_saturated_into());
             ledger.maybe_cleanup_expired(threshold_period); // Not necessary but we do it for the sake of consistency
-            Self::update_ledger(&account, ledger);
+            Self::update_ledger(&account, ledger)?;
 
             Self::deposit_event(Event::<T>::ExpiredEntriesRemoved {
                 account,
                 count: entries_to_delete.unique_saturated_into(),
             });
 
-            Ok(())
+            Ok(Some(T::WeightInfo::cleanup_expired_entries(
+                entries_to_delete.unique_saturated_into(),
+            ))
+            .into())
         }
 
         /// Used to force a change of era or subperiod.
@@ -1561,7 +1446,7 @@ pub mod pallet {
         ///
         /// Can only be called by manager origin.
         #[pallet::call_index(16)]
-        #[pallet::weight(Weight::zero())]
+        #[pallet::weight(T::WeightInfo::force())]
         pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
@@ -1574,7 +1459,7 @@ pub mod pallet {
                 match forcing_type {
                     ForcingType::Era => (),
                     ForcingType::Subperiod => {
-                        state.period_info.subperiod_end_era = state.era.saturating_add(1);
+                        state.period_info.next_subperiod_start_era = state.era.saturating_add(1);
                     }
                 }
             });
@@ -1608,34 +1493,41 @@ pub mod pallet {
             Ok(Some(who))
         }
 
-        /// Update the account ledger, and dApp staking balance lock.
+        /// Update the account ledger, and dApp staking balance freeze.
         ///
-        /// In case account ledger is empty, entries from the DB are removed and lock is released.
-        pub(crate) fn update_ledger(account: &T::AccountId, ledger: AccountLedgerFor<T>) {
+        /// In case account ledger is empty, entries from the DB are removed and freeze is thawed.
+        ///
+        /// This call can fail if the `freeze` or `thaw` operations fail. This should never happen since
+        /// runtime definition must ensure it supports necessary freezes.
+        pub(crate) fn update_ledger(
+            account: &T::AccountId,
+            ledger: AccountLedgerFor<T>,
+        ) -> Result<(), DispatchError> {
             if ledger.is_empty() {
                 Ledger::<T>::remove(&account);
-                T::Currency::remove_lock(STAKING_ID, account);
+                T::Currency::thaw(&FreezeReason::DAppStaking.into(), account)?;
             } else {
-                T::Currency::set_lock(
-                    STAKING_ID,
+                T::Currency::set_freeze(
+                    &FreezeReason::DAppStaking.into(),
                     account,
                     ledger.active_locked_amount(),
-                    WithdrawReasons::all(),
-                );
+                )?;
                 Ledger::<T>::insert(account, ledger);
             }
+
+            Ok(())
         }
 
         /// Returns the number of blocks per voting period.
-        pub(crate) fn blocks_per_voting_period() -> BlockNumberFor<T> {
-            T::StandardEraLength::get()
-                .saturating_mul(T::StandardErasPerVotingSubperiod::get().into())
+        pub(crate) fn blocks_per_voting_period() -> BlockNumber {
+            T::CycleConfiguration::blocks_per_era()
+                .saturating_mul(T::CycleConfiguration::eras_per_voting_subperiod().into())
         }
 
-        /// `true` if smart contract is active, `false` if it has been unregistered.
-        pub(crate) fn is_active(smart_contract: &T::SmartContract) -> bool {
+        /// `true` if smart contract is registered, `false` otherwise.
+        pub(crate) fn is_registered(smart_contract: &T::SmartContract) -> bool {
             IntegratedDApps::<T>::get(smart_contract)
-                .map_or(false, |dapp_info| dapp_info.is_active())
+                .map_or(false, |dapp_info| dapp_info.is_registered())
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.
@@ -1650,8 +1542,8 @@ pub mod pallet {
         }
 
         /// Unlocking period expressed in the number of blocks.
-        pub fn unlock_period() -> BlockNumberFor<T> {
-            T::StandardEraLength::get().saturating_mul(T::UnlockingPeriod::get().into())
+        pub fn unlock_period() -> BlockNumber {
+            T::CycleConfiguration::blocks_per_era().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
@@ -1667,7 +1559,7 @@ pub mod pallet {
         ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
         ///    Iterate over tier thresholds & capacities, starting from the top tier, and assign dApps to them.
         ///    
-        ///    ```ignore
+        ///    ```text
         ////   for each tier:
         ///        for each unassigned dApp:
         ///            if tier has capacity && dApp satisfies the tier threshold:
@@ -1675,25 +1567,28 @@ pub mod pallet {
         ///            else:
         ///               exit loop since no more dApps will satisfy the threshold since they are sorted by score
         ///    ```
+        ///    (Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.)
         ///
-        /// 4. Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.
-        ///
-        /// 5. Calculate rewards for each tier.
+        /// 4. Calculate rewards for each tier.
         ///    This is done by dividing the total reward pool into tier reward pools,
         ///    after which the tier reward pool is divided by the number of available slots in the tier.
         ///
         /// The returned object contains information about each dApp that made it into a tier.
+        /// Alongside tier assignment info, number of read DB contract stake entries is returned.
         pub(crate) fn get_dapp_tier_assignment(
             era: EraNumber,
             period: PeriodNumber,
             dapp_reward_pool: Balance,
-        ) -> DAppTierRewardsFor<T> {
+        ) -> (DAppTierRewardsFor<T>, DAppId) {
             let mut dapp_stakes = Vec::with_capacity(T::MaxNumberOfContracts::get() as usize);
 
             // 1.
             // Iterate over all staked dApps.
             // This is bounded by max amount of dApps we allow to be registered.
+            let mut counter = 0;
             for (dapp_id, stake_amount) in ContractStake::<T>::iter() {
+                counter.saturating_inc();
+
                 // Skip dApps which don't have ANY amount staked
                 let stake_amount = match stake_amount.get(era, period) {
                     Some(stake_amount) if !stake_amount.total().is_zero() => stake_amount,
@@ -1743,13 +1638,12 @@ pub mod pallet {
                 tier_id.saturating_inc();
             }
 
-            // TODO: what if multiple dApps satisfy the tier entry threshold but there's not enough slots to accomodate them all?
+            // In case when tier has 1 more free slot, but two dApps with exactly same score satisfy the threshold,
+            // one of them will be assigned to the tier, and the other one will be assigned to the lower tier, if it exists.
+            //
+            // There is no explicit definition of which dApp gets the advantage - it's decided by dApp IDs hash & the unstable sort algorithm.
 
-            // 4.
-            // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is "guaranteed" due to lack of duplicated Ids).
-            dapp_tiers.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
-
-            // 5. Calculate rewards.
+            // 4. Calculate rewards.
             let tier_rewards = tier_config
                 .reward_portion
                 .iter()
@@ -1763,15 +1657,195 @@ pub mod pallet {
                 })
                 .collect::<Vec<_>>();
 
-            // 6.
+            // 5.
             // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
-            DAppTierRewards::<T::MaxNumberOfContracts, T::NumberOfTiers>::new(
-                dapp_tiers,
-                tier_rewards,
-                period,
+            (
+                DAppTierRewards::<T::MaxNumberOfContracts, T::NumberOfTiers>::new(
+                    dapp_tiers,
+                    tier_rewards,
+                    period,
+                )
+                .unwrap_or_default(),
+                counter,
             )
-            .unwrap_or_default()
+        }
+
+        /// Used to handle era & period transitions.
+        pub(crate) fn era_and_period_handler(
+            now: BlockNumber,
+            tier_assignment: TierAssignment,
+        ) -> Weight {
+            let mut protocol_state = ActiveProtocolState::<T>::get();
+
+            // `ActiveProtocolState` is whitelisted, so we need to account for its read.
+            let mut consumed_weight = T::DbWeight::get().reads(1);
+
+            // We should not modify pallet storage while in maintenance mode.
+            // This is a safety measure, since maintenance mode is expected to be
+            // enabled in case some misbehavior or corrupted storage is detected.
+            if protocol_state.maintenance {
+                return consumed_weight;
+            }
+
+            // Nothing to do if it's not new era
+            if !protocol_state.is_new_era(now) {
+                return consumed_weight;
+            }
+
+            // At this point it's clear that an era change will happen
+            let mut era_info = CurrentEraInfo::<T>::get();
+
+            let current_era = protocol_state.era;
+            let next_era = current_era.saturating_add(1);
+            let (maybe_period_event, era_reward) = match protocol_state.subperiod() {
+                // Voting subperiod only lasts for one 'prolonged' era
+                Subperiod::Voting => {
+                    // For the sake of consistency, we put zero reward into storage. There are no rewards for the voting subperiod.
+                    let era_reward = EraReward {
+                        staker_reward_pool: Balance::zero(),
+                        staked: era_info.total_staked_amount(),
+                        dapp_reward_pool: Balance::zero(),
+                    };
+
+                    let next_subperiod_start_era = next_era
+                        .saturating_add(T::CycleConfiguration::eras_per_build_and_earn_subperiod());
+                    let build_and_earn_start_block =
+                        now.saturating_add(T::CycleConfiguration::blocks_per_era());
+                    protocol_state.advance_to_next_subperiod(
+                        next_subperiod_start_era,
+                        build_and_earn_start_block,
+                    );
+
+                    era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
+
+                    // Update tier configuration to be used when calculating rewards for the upcoming eras
+                    let next_tier_config = NextTierConfig::<T>::take();
+                    TierConfig::<T>::put(next_tier_config);
+
+                    consumed_weight
+                        .saturating_accrue(T::WeightInfo::on_initialize_voting_to_build_and_earn());
+
+                    (
+                        Some(Event::<T>::NewSubperiod {
+                            subperiod: protocol_state.subperiod(),
+                            number: protocol_state.period_number(),
+                        }),
+                        era_reward,
+                    )
+                }
+                Subperiod::BuildAndEarn => {
+                    let staked = era_info.total_staked_amount();
+                    let (staker_reward_pool, dapp_reward_pool) =
+                        T::StakingRewardHandler::staker_and_dapp_reward_pools(staked);
+                    let era_reward = EraReward {
+                        staker_reward_pool,
+                        staked,
+                        dapp_reward_pool,
+                    };
+
+                    // Distribute dapps into tiers, write it into storage
+                    //
+                    // To help with benchmarking, it's possible to omit real tier calculation using the `Dummy` approach.
+                    // This must never be used in production code, obviously.
+                    let (dapp_tier_rewards, counter) = match tier_assignment {
+                        TierAssignment::Real => Self::get_dapp_tier_assignment(
+                            current_era,
+                            protocol_state.period_number(),
+                            dapp_reward_pool,
+                        ),
+                        #[cfg(feature = "runtime-benchmarks")]
+                        TierAssignment::Dummy => (DAppTierRewardsFor::<T>::default(), 0),
+                    };
+                    DAppTiers::<T>::insert(&current_era, dapp_tier_rewards);
+
+                    consumed_weight
+                        .saturating_accrue(T::WeightInfo::dapp_tier_assignment(counter.into()));
+
+                    // Switch to `Voting` period if conditions are met.
+                    if protocol_state.period_info.is_next_period(next_era) {
+                        // Store info about period end
+                        let bonus_reward_pool = T::StakingRewardHandler::bonus_reward_pool();
+                        PeriodEnd::<T>::insert(
+                            &protocol_state.period_number(),
+                            PeriodEndInfo {
+                                bonus_reward_pool,
+                                total_vp_stake: era_info.staked_amount(Subperiod::Voting),
+                                final_era: current_era,
+                            },
+                        );
+
+                        // For the sake of consistency we treat the whole `Voting` period as a single era.
+                        // This means no special handling is required for this period, it only lasts potentially longer than a single standard era.
+                        let next_subperiod_start_era = next_era.saturating_add(1);
+                        let voting_period_length = Self::blocks_per_voting_period();
+                        let next_era_start_block = now.saturating_add(voting_period_length);
+
+                        protocol_state.advance_to_next_subperiod(
+                            next_subperiod_start_era,
+                            next_era_start_block,
+                        );
+
+                        era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
+
+                        // Re-calculate tier configuration for the upcoming new period
+                        let tier_params = StaticTierParams::<T>::get();
+                        let average_price = T::NativePriceProvider::average_price();
+                        let new_tier_config =
+                            TierConfig::<T>::get().calculate_new(average_price, &tier_params);
+                        NextTierConfig::<T>::put(new_tier_config);
+
+                        consumed_weight.saturating_accrue(
+                            T::WeightInfo::on_initialize_build_and_earn_to_voting(),
+                        );
+
+                        (
+                            Some(Event::<T>::NewSubperiod {
+                                subperiod: protocol_state.subperiod(),
+                                number: protocol_state.period_number(),
+                            }),
+                            era_reward,
+                        )
+                    } else {
+                        let next_era_start_block =
+                            now.saturating_add(T::CycleConfiguration::blocks_per_era());
+                        protocol_state.next_era_start = next_era_start_block;
+
+                        era_info.migrate_to_next_era(None);
+
+                        consumed_weight.saturating_accrue(
+                            T::WeightInfo::on_initialize_build_and_earn_to_build_and_earn(),
+                        );
+
+                        (None, era_reward)
+                    }
+                }
+            };
+
+            // Update storage items
+            protocol_state.era = next_era;
+            ActiveProtocolState::<T>::put(protocol_state);
+
+            CurrentEraInfo::<T>::put(era_info);
+
+            let era_span_index = Self::era_reward_span_index(current_era);
+            let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
+            if let Err(_) = span.push(current_era, era_reward) {
+                // This must never happen but we log the error just in case.
+                log::error!(
+                    target: LOG_TARGET,
+                    "Failed to push era {} into the era reward span.",
+                    current_era
+                );
+            }
+            EraRewards::<T>::insert(&era_span_index, span);
+
+            Self::deposit_event(Event::<T>::NewEra { era: next_era });
+            if let Some(period_event) = maybe_period_event {
+                Self::deposit_event(period_event);
+            }
+
+            consumed_weight
         }
     }
 }
