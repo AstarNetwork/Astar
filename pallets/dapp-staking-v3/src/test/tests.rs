@@ -1260,9 +1260,6 @@ fn unstake_with_unclaimed_rewards_fails() {
             DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, 1),
             Error::<Test>::UnclaimedRewards
         );
-
-        // Advance to the next period, unstake should still fail.
-        advance_to_next_period();
     })
 }
 
