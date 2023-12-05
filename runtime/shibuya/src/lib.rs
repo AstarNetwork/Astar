@@ -1324,44 +1324,10 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
-pub struct HybridInflationModelMigration;
-impl OnRuntimeUpgrade for HybridInflationModelMigration {
-    fn on_runtime_upgrade() -> Weight {
-        let mut reward_config = pallet_block_rewards_hybrid::RewardDistributionConfig {
-            // 4.66%
-            treasury_percent: Perbill::from_rational(4_663_701u32, 100_000_000u32),
-            // 23.09%
-            base_staker_percent: Perbill::from_rational(2_309_024u32, 10_000_000u32),
-            // 17.31%
-            dapps_percent: Perbill::from_rational(173_094_531u32, 1_000_000_000u32),
-            // 2.99%
-            collators_percent: Perbill::from_rational(29_863_296u32, 1_000_000_000u32),
-            // 51.95%
-            adjustable_percent: Perbill::from_rational(519_502_763u32, 1_000_000_000u32),
-            // 60.00%
-            ideal_dapps_staking_tvl: Perbill::from_percent(60),
-        };
-
-        // This HAS to be tested prior to update - we need to ensure that config is consistent
-        #[cfg(feature = "try-runtime")]
-        assert!(reward_config.is_consistent());
-
-        // This should never execute but we need to have code in place that ensures config is consistent
-        if !reward_config.is_consistent() {
-            reward_config = Default::default();
-        }
-
-        pallet_block_rewards_hybrid::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
-
-        <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(1)
-    }
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = HybridInflationModelMigration;
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
