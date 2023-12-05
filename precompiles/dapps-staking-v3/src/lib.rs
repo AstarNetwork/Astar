@@ -23,11 +23,7 @@
 use fp_evm::{PrecompileHandle, PrecompileOutput};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
-use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
-    traits::Currency,
-};
-use frame_system::pallet_prelude::BlockNumberFor;
+use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 
 use pallet_evm::{AddressMapping, Precompile};
 use precompile_utils::{
@@ -39,15 +35,12 @@ use sp_runtime::traits::Zero;
 use sp_std::{marker::PhantomData, prelude::*};
 extern crate alloc;
 
+use astar_primitives::Balance;
 use pallet_dapp_staking_v3::{
     AccountLedgerFor, ActiveProtocolState, ContractStake, ContractStakeAmount, CurrentEraInfo,
     DAppInfoFor, EraInfo, EraRewardSpanFor, EraRewards, IntegratedDApps, Ledger,
-    Pallet as DAppStaking, ProtocolStateFor, SingularStakingInfo, StakerInfo,
+    Pallet as DAppStaking, ProtocolState, SingularStakingInfo, StakerInfo,
 };
-
-type BalanceOf<Runtime> = <<Runtime as pallet_dapp_staking_v3::Config>::Currency as Currency<
-    <Runtime as frame_system::Config>::AccountId,
->>::Balance;
 
 // #[cfg(test)]
 // mod mock;
@@ -68,8 +61,6 @@ pub struct DappStakingV3Precompile<R>(PhantomData<R>);
 impl<R> DappStakingV3Precompile<R>
 where
     R: pallet_evm::Config + pallet_dapp_staking_v3::Config,
-    BalanceOf<R>: EvmData,
-    BlockNumberFor<R>: EvmData,
     <R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
     R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
     R::RuntimeCall: From<pallet_dapp_staking_v3::Call<R>>,
@@ -80,7 +71,7 @@ where
         // TODO: benchmark this function so we can measure ref time & PoV correctly
         // Storage item: ActiveProtocolState:
         // Twox64(8) + ProtocolState::max_encoded_len
-        handle.record_db_read::<R>(4 + ProtocolStateFor::<R>::max_encoded_len())?;
+        handle.record_db_read::<R>(4 + ProtocolState::max_encoded_len())?;
 
         let current_era = ActiveProtocolState::<R>::get().era;
 
@@ -135,7 +126,7 @@ where
         // TODO: benchmark this function so we can measure ref time & PoV correctly
         // Storage item: ActiveProtocolState:
         // Twox64(8) + ProtocolState::max_encoded_len
-        handle.record_db_read::<R>(4 + ProtocolStateFor::<R>::max_encoded_len())?;
+        handle.record_db_read::<R>(4 + ProtocolState::max_encoded_len())?;
 
         let current_era = ActiveProtocolState::<R>::get().era;
 
@@ -196,7 +187,7 @@ where
         // Blake2_128Concat(16 + SmartContract::max_encoded_len) + Ledger::max_encoded_len
         handle.record_db_read::<R>(
             24 + AccountLedgerFor::<R>::max_encoded_len()
-                + ProtocolStateFor::<R>::max_encoded_len()
+                + ProtocolState::max_encoded_len()
                 + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len(),
         )?;
 
@@ -231,7 +222,7 @@ where
         // Storage item: StakerInfo:
         // Blake2_128Concat(16 + SmartContract::max_encoded_len) + SingularStakingInfo::max_encoded_len
         handle.record_db_read::<R>(
-            24 + ProtocolStateFor::<R>::max_encoded_len()
+            24 + ProtocolState::max_encoded_len()
                 + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len()
                 + SingularStakingInfo::max_encoded_len(),
         )?;
@@ -275,7 +266,7 @@ where
         // Storage item: ContractStake:
         // Twox64Concat(8) + EraIndex(4) + ContractStakeAmount::max_encoded_len
         handle.record_db_read::<R>(
-            36 + ProtocolStateFor::<R>::max_encoded_len()
+            36 + ProtocolState::max_encoded_len()
                 + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len()
                 + DAppInfoFor::<R>::max_encoded_len()
                 + ContractStakeAmount::max_encoded_len(),
@@ -326,7 +317,7 @@ where
         // Blake2_128Concat(16 + SmartContract::max_encoded_len()) + Ledger::max_encoded_len
         handle.record_db_read::<R>(
             24 + AccountLedgerFor::<R>::max_encoded_len()
-                + ProtocolStateFor::<R>::max_encoded_len()
+                + ProtocolState::max_encoded_len()
                 + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len(),
         )?;
 
@@ -336,7 +327,7 @@ where
         // Parse smart contract & amount
         let contract_h160 = input.read::<Address>()?.0;
         let smart_contract = Self::decode_smart_contract(contract_h160)?;
-        let amount: BalanceOf<R> = input.read()?;
+        let amount: Balance = input.read()?;
 
         log::trace!(target: "ds-precompile", "bond_and_stake {:?}, {:?}", smart_contract, amount);
 
@@ -374,7 +365,7 @@ where
         // Storage item: StakerInfo:
         // Blake2_128Concat(16 + SmartContract::max_encoded_len) + SingularStakingInfo::max_encoded_len
         handle.record_db_read::<R>(
-            24 + ProtocolStateFor::<R>::max_encoded_len()
+            24 + ProtocolState::max_encoded_len()
                 + <R as pallet_dapp_staking_v3::Config>::SmartContract::max_encoded_len()
                 + SingularStakingInfo::max_encoded_len(),
         )?;
@@ -385,7 +376,7 @@ where
         // Parse smart contract & amount
         let contract_h160 = input.read::<Address>()?.0;
         let smart_contract = Self::decode_smart_contract(contract_h160)?;
-        let amount: BalanceOf<R> = input.read()?;
+        let amount: Balance = input.read()?;
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         log::trace!(target: "ds-precompile", "unbond_and_unstake {:?}, {:?}", smart_contract, amount);
 
@@ -509,7 +500,7 @@ where
         let origin_contract_h160 = input.read::<Address>()?.0;
         let origin_smart_contract = Self::decode_smart_contract(origin_contract_h160)?;
 
-        let amount = input.read::<BalanceOf<R>>()?;
+        let amount = input.read::<Balance>()?;
 
         let target_contract_h160 = input.read::<Address>()?.0;
         let target_smart_contract = Self::decode_smart_contract(target_contract_h160)?;
@@ -629,8 +620,7 @@ where
         + Dispatchable<PostInfo = PostDispatchInfo>
         + GetDispatchInfo,
     <R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
-    BalanceOf<R>: EvmData,
-    BlockNumberFor<R>: EvmData,
+    Balance: EvmData,
     R::AccountId: From<[u8; 32]>,
 {
     fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {

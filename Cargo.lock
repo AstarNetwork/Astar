@@ -7972,6 +7972,7 @@ dependencies = [
 name = "pallet-evm-precompile-dapp-staking-v3"
 version = "0.1.0"
 dependencies = [
+ "astar-primitives",
  "derive_more",
  "fp-evm",
  "frame-support",
