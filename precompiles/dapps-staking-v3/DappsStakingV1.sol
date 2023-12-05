@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
-pragma solidity >=0.7.0;
+pragma solidity >=0.8.0;
 
-/// Interface to the precompiled contract on Shibuya/Shiden/Astar
 /// Predeployed at the address 0x0000000000000000000000000000000000005001
 /// For better understanding check the source code:
 /// repo: https://github.com/AstarNetwork/astar
@@ -15,11 +14,11 @@ interface DappsStaking {
     /// @return era: The current era
     function read_current_era() external view returns (uint256);
 
-    /// @notice Read unbonding period constant.
+    /// @notice Read the unbonding period (or unlocking period) in the number of eras.
     /// @return period: The unbonding period in eras
     function read_unbonding_period() external view returns (uint256);
 
-    /// @notice Read Total network reward for the given era
+    /// @notice Read Total network reward for the given era - sum of staker & dApp rewards.
     /// @return reward: Total network reward for the given era
     function read_era_reward(uint32 era) external view returns (uint128);
 

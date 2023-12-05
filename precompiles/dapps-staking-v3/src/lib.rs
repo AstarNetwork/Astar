@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! Astar dApps staking interface.
+//! Astar dApp staking interface.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -87,12 +87,12 @@ where
         Ok(succeed(EvmDataWriter::new().write(current_era).build()))
     }
 
-    /// Read the `unbonding period` or `unlocking period` expressed in the number of blocks.
+    /// Read the `unbonding period` or `unlocking period` expressed in the number of eras.
     fn read_unbonding_period(_: &impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         // constant, no DB read
         Ok(succeed(
             EvmDataWriter::new()
-                .write(DAppStaking::<R>::unlock_period())
+                .write(<R as pallet_dapp_staking_v3::Config>::UnlockingPeriod::get())
                 .build(),
         ))
     }
