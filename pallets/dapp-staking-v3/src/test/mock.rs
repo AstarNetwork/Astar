@@ -24,7 +24,10 @@ use crate::{
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU32, ConstU64},
+    traits::{
+        fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
+        ConstU128, ConstU32,
+    },
     weights::Weight,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -32,14 +35,14 @@ use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     Permill,
 };
+use sp_std::cell::RefCell;
+
+use astar_primitives::{testing::Header, Balance, BlockNumber};
 
 pub(crate) type AccountId = u64;
-pub(crate) type BlockNumber = u64;
-pub(crate) type Balance = u128;
 
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(crate) const MINIMUM_LOCK_AMOUNT: Balance = 10;
@@ -61,7 +64,7 @@ construct_runtime!(
 );
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
+    pub const BlockHashCount: BlockNumber = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
@@ -103,9 +106,9 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
     type AccountStore = System;
     type HoldIdentifier = ();
-    type FreezeIdentifier = ();
+    type FreezeIdentifier = RuntimeFreezeReason;
     type MaxHolds = ConstU32<0>;
-    type MaxFreezes = ConstU32<0>;
+    type MaxFreezes = ConstU32<1>;
     type WeightInfo = ();
 }
 
@@ -116,16 +119,30 @@ impl PriceProvider for DummyPriceProvider {
     }
 }
 
-pub struct DummyRewardPoolProvider;
-impl RewardPoolProvider for DummyRewardPoolProvider {
-    fn normal_reward_pools() -> (Balance, Balance) {
+thread_local! {
+    pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
+}
+
+pub struct DummyStakingRewardHandler;
+impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
+    fn staker_and_dapp_reward_pools(_total_staked_value: Balance) -> (Balance, Balance) {
         (
             Balance::from(1_000_000_000_000_u128),
             Balance::from(1_000_000_000_u128),
         )
     }
+
     fn bonus_reward_pool() -> Balance {
         Balance::from(3_000_000_u128)
+    }
+
+    fn payout_reward(beneficiary: &AccountId, reward: Balance) -> Result<(), ()> {
+        if DOES_PAYOUT_SUCCEED.with(|v| v.borrow().clone()) {
+            let _ = Balances::mint_into(beneficiary, reward);
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 }
 
@@ -142,24 +159,49 @@ impl Default for MockSmartContract {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct BenchmarkHelper<SC>(sp_std::marker::PhantomData<SC>);
+pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
-impl crate::BenchmarkHelper<MockSmartContract> for BenchmarkHelper<MockSmartContract> {
+impl crate::BenchmarkHelper<MockSmartContract, AccountId>
+    for BenchmarkHelper<MockSmartContract, AccountId>
+{
     fn get_smart_contract(id: u32) -> MockSmartContract {
         MockSmartContract::Wasm(id as AccountId)
+    }
+
+    fn set_balance(account: &AccountId, amount: Balance) {
+        Balances::write_balance(account, amount)
+            .expect("Must succeed in test/benchmark environment.");
+    }
+}
+
+pub struct DummyCycleConfiguration;
+impl CycleConfiguration for DummyCycleConfiguration {
+    fn periods_per_cycle() -> u32 {
+        4
+    }
+
+    fn eras_per_voting_subperiod() -> u32 {
+        8
+    }
+
+    fn eras_per_build_and_earn_subperiod() -> u32 {
+        16
+    }
+
+    fn blocks_per_era() -> u32 {
+        10
     }
 }
 
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = MockSmartContract;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
-    type RewardPoolProvider = DummyRewardPoolProvider;
-    type StandardEraLength = ConstU64<10>;
-    type StandardErasPerVotingSubperiod = ConstU32<8>;
-    type StandardErasPerBuildAndEarnSubperiod = ConstU32<16>;
+    type StakingRewardHandler = DummyStakingRewardHandler;
+    type CycleConfiguration = DummyCycleConfiguration;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -169,13 +211,17 @@ impl pallet_dapp_staking::Config for Test {
     type MaxNumberOfStakedContracts = ConstU32<5>;
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
+    type WeightInfo = weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = BenchmarkHelper<MockSmartContract>;
+    type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
 }
 
 pub struct ExtBuilder;
 impl ExtBuilder {
     pub fn build() -> TestExternalities {
+        // Normal behavior is for reward payout to succeed
+        DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = true);
+
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
@@ -194,12 +240,9 @@ impl ExtBuilder {
         ext.execute_with(|| {
             System::set_block_number(1);
 
-            // Not sure why the mess with type happens here, but trait specification is needed to compile
-            let era_length: BlockNumber =
-                <<Test as pallet_dapp_staking::Config>::StandardEraLength as sp_core::Get<_>>::get();
-            let voting_period_length_in_eras: EraNumber =
-                <<Test as pallet_dapp_staking::Config>::StandardErasPerVotingSubperiod as sp_core::Get<_>>::get(
-                );
+            let era_length = <Test as Config>::CycleConfiguration::blocks_per_era();
+            let voting_period_length_in_eras =
+                <Test as Config>::CycleConfiguration::eras_per_voting_subperiod();
 
             // Init protocol state
             pallet_dapp_staking::ActiveProtocolState::<Test>::put(ProtocolState {
@@ -208,7 +251,7 @@ impl ExtBuilder {
                 period_info: PeriodInfo {
                     number: 1,
                     subperiod: Subperiod::Voting,
-                    subperiod_end_era: 2,
+                    next_subperiod_start_era: 2,
                 },
                 maintenance: false,
             });
@@ -227,7 +270,6 @@ impl ExtBuilder {
                     era: 2,
                     period: 1,
                 },
-
             });
 
             // Init tier params
@@ -247,9 +289,18 @@ impl ExtBuilder {
                 ])
                 .unwrap(),
                 tier_thresholds: BoundedVec::try_from(vec![
-                    TierThreshold::DynamicTvlAmount { amount: 100, minimum_amount: 80 },
-                    TierThreshold::DynamicTvlAmount { amount: 50, minimum_amount: 40 },
-                    TierThreshold::DynamicTvlAmount { amount: 20, minimum_amount: 20 },
+                    TierThreshold::DynamicTvlAmount {
+                        amount: 100,
+                        minimum_amount: 80,
+                    },
+                    TierThreshold::DynamicTvlAmount {
+                        amount: 50,
+                        minimum_amount: 40,
+                    },
+                    TierThreshold::DynamicTvlAmount {
+                        amount: 20,
+                        minimum_amount: 20,
+                    },
                     TierThreshold::FixedTvlAmount { amount: 15 },
                 ])
                 .unwrap(),
@@ -267,10 +318,8 @@ impl ExtBuilder {
             pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());
             pallet_dapp_staking::NextTierConfig::<Test>::put(init_tier_config);
 
-            // TODO: include this into every test unless it explicitly doesn't need it.
-            // DappStaking::on_initialize(System::block_number());
-        }
-        );
+            DappStaking::on_initialize(System::block_number());
+        });
 
         ext
     }
@@ -278,7 +327,7 @@ impl ExtBuilder {
 
 /// Run to the specified block number.
 /// Function assumes first block has been initialized.
-pub(crate) fn run_to_block(n: u64) {
+pub(crate) fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
         DappStaking::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
@@ -292,7 +341,7 @@ pub(crate) fn run_to_block(n: u64) {
 
 /// Run for the specified number of blocks.
 /// Function assumes first block has been initialized.
-pub(crate) fn run_for_blocks(n: u64) {
+pub(crate) fn run_for_blocks(n: BlockNumber) {
     run_to_block(System::block_number() + n);
 }
 

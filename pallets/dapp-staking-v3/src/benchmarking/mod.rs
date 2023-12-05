@@ -26,161 +26,8 @@ use frame_system::{Pallet as System, RawOrigin};
 
 use ::assert_matches::assert_matches;
 
-// TODO: make benchmark utils file and move all these helper methods there to keep this file clean(er)
-
-// TODO2: non-extrinsic calls still need to be benchmarked.
-
-/// Run to the specified block number.
-/// Function assumes first block has been initialized.
-fn run_to_block<T: Config>(n: BlockNumberFor<T>) {
-    while System::<T>::block_number() < n {
-        DappStaking::<T>::on_finalize(System::<T>::block_number());
-        System::<T>::set_block_number(System::<T>::block_number() + One::one());
-        // This is performed outside of dapps staking but we expect it before on_initialize
-        DappStaking::<T>::on_initialize(System::<T>::block_number());
-    }
-}
-
-/// Run for the specified number of blocks.
-/// Function assumes first block has been initialized.
-fn run_for_blocks<T: Config>(n: BlockNumberFor<T>) {
-    run_to_block::<T>(System::<T>::block_number() + n);
-}
-
-/// Advance blocks until the specified era has been reached.
-///
-/// Function has no effect if era is already passed.
-pub(crate) fn advance_to_era<T: Config>(era: EraNumber) {
-    assert!(era >= ActiveProtocolState::<T>::get().era);
-    while ActiveProtocolState::<T>::get().era < era {
-        run_for_blocks::<T>(One::one());
-    }
-}
-
-/// Advance blocks until next era has been reached.
-pub(crate) fn advance_to_next_era<T: Config>() {
-    advance_to_era::<T>(ActiveProtocolState::<T>::get().era + 1);
-}
-
-/// Advance blocks until the specified period has been reached.
-///
-/// Function has no effect if period is already passed.
-pub(crate) fn advance_to_period<T: Config>(period: PeriodNumber) {
-    assert!(period >= ActiveProtocolState::<T>::get().period_number());
-    while ActiveProtocolState::<T>::get().period_number() < period {
-        run_for_blocks::<T>(One::one());
-    }
-}
-
-/// Advance blocks until next period has been reached.
-pub(crate) fn advance_to_next_period<T: Config>() {
-    advance_to_period::<T>(ActiveProtocolState::<T>::get().period_number() + 1);
-}
-
-/// Advance blocks until next period type has been reached.
-pub(crate) fn advance_to_next_subperiod<T: Config>() {
-    let subperiod = ActiveProtocolState::<T>::get().subperiod();
-    while ActiveProtocolState::<T>::get().subperiod() == subperiod {
-        run_for_blocks::<T>(One::one());
-    }
-}
-
-// All our networks use 18 decimals for native currency so this should be fine.
-const UNIT: Balance = 1_000_000_000_000_000_000;
-
-// Minimum amount that must be staked on a dApp to enter any tier
-const MIN_TIER_THRESHOLD: Balance = 10 * UNIT;
-
-const NUMBER_OF_SLOTS: u32 = 100;
-
-const SEED: u32 = 9000;
-
-/// Assert that the last event equals the provided one.
-fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
-    frame_system::Pallet::<T>::assert_last_event(generic_event.into());
-}
-
-// Return all dApp staking events from the event buffer.
-fn dapp_staking_events<T: Config>() -> Vec<crate::Event<T>> {
-    System::<T>::events()
-        .into_iter()
-        .map(|r| r.event)
-        .filter_map(|e| <T as Config>::RuntimeEvent::from(e).try_into().ok())
-        .collect::<Vec<_>>()
-}
-
-// TODO: make it more generic per runtime?
-pub fn initial_config<T: Config>() {
-    let era_length = T::StandardEraLength::get();
-    let voting_period_length_in_eras = T::StandardErasPerVotingSubperiod::get();
-
-    // Init protocol state
-    ActiveProtocolState::<T>::put(ProtocolState {
-        era: 1,
-        next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + One::one(),
-        period_info: PeriodInfo {
-            number: 1,
-            subperiod: Subperiod::Voting,
-            subperiod_end_era: 2,
-        },
-        maintenance: false,
-    });
-
-    // Init tier params
-    let tier_params = TierParameters::<T::NumberOfTiers> {
-        reward_portion: BoundedVec::try_from(vec![
-            Permill::from_percent(40),
-            Permill::from_percent(30),
-            Permill::from_percent(20),
-            Permill::from_percent(10),
-        ])
-        .unwrap(),
-        slot_distribution: BoundedVec::try_from(vec![
-            Permill::from_percent(10),
-            Permill::from_percent(20),
-            Permill::from_percent(30),
-            Permill::from_percent(40),
-        ])
-        .unwrap(),
-        tier_thresholds: BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: 100 * UNIT,
-                minimum_amount: 80 * UNIT,
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: 50 * UNIT,
-                minimum_amount: 40 * UNIT,
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: 20 * UNIT,
-                minimum_amount: 20 * UNIT,
-            },
-            TierThreshold::FixedTvlAmount {
-                amount: MIN_TIER_THRESHOLD,
-            },
-        ])
-        .unwrap(),
-    };
-
-    // Init tier config, based on the initial params
-    let init_tier_config = TiersConfiguration::<T::NumberOfTiers> {
-        number_of_slots: NUMBER_OF_SLOTS.try_into().unwrap(),
-        slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
-        reward_portion: tier_params.reward_portion.clone(),
-        tier_thresholds: tier_params.tier_thresholds.clone(),
-    };
-
-    assert!(tier_params.is_valid());
-    assert!(init_tier_config.is_valid());
-
-    StaticTierParams::<T>::put(tier_params);
-    TierConfig::<T>::put(init_tier_config.clone());
-    NextTierConfig::<T>::put(init_tier_config);
-}
-
-fn max_number_of_contracts<T: Config>() -> u32 {
-    T::MaxNumberOfContracts::get().min(NUMBER_OF_SLOTS).into()
-}
+mod utils;
+use utils::*;
 
 #[benchmarks]
 mod benchmarks {
@@ -312,7 +159,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
 
         #[extrinsic_call]
         _(RawOrigin::Signed(staker.clone()), amount);
@@ -340,7 +187,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get() * 2;
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -358,39 +205,6 @@ mod benchmarks {
         );
     }
 
-    // TODO: maybe this is not needed. Compare it after running benchmarks to the 'not-full' unlock
-    #[benchmark]
-    fn full_unlock() {
-        initial_config::<T>();
-
-        let staker: T::AccountId = whitelisted_caller();
-        let owner: T::AccountId = account("dapp_owner", 0, SEED);
-        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
-        assert_ok!(DappStaking::<T>::register(
-            RawOrigin::Root.into(),
-            owner.clone().into(),
-            smart_contract.clone(),
-        ));
-
-        let amount = T::MinimumLockedAmount::get() * 2;
-        T::Currency::make_free_balance_be(&staker, amount);
-        assert_ok!(DappStaking::<T>::lock(
-            RawOrigin::Signed(staker.clone()).into(),
-            amount,
-        ));
-
-        #[extrinsic_call]
-        unlock(RawOrigin::Signed(staker.clone()), amount);
-
-        assert_last_event::<T>(
-            Event::<T>::Unlocking {
-                account: staker,
-                amount,
-            }
-            .into(),
-        );
-    }
-
     #[benchmark]
     fn claim_unlocked(x: Linear<0, { T::MaxNumberOfStakedContracts::get() }>) {
         // Prepare staker account and lock some amount
@@ -398,7 +212,7 @@ mod benchmarks {
         let amount = (T::MinimumStakeAmount::get() + 1)
             * Into::<Balance>::into(max_number_of_contracts::<T>())
             + Into::<Balance>::into(T::MaxUnlockingChunks::get());
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -485,7 +299,7 @@ mod benchmarks {
 
         let amount =
             T::MinimumLockedAmount::get() * 2 + Into::<Balance>::into(T::MaxUnlockingChunks::get());
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -528,7 +342,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -565,7 +379,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get() + 1;
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -612,7 +426,7 @@ mod benchmarks {
 
         // Lock some amount by the staker
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -667,7 +481,7 @@ mod benchmarks {
 
         // Lock & stake some amount by the staker
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -722,7 +536,7 @@ mod benchmarks {
 
         // Lock & stake some amount by the staker
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -761,7 +575,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get() * 1000 * UNIT;
-        T::Currency::make_free_balance_be(&owner, amount);
+        T::BenchmarkHelper::set_balance(&owner, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(owner.clone()).into(),
             amount,
@@ -784,7 +598,7 @@ mod benchmarks {
             ));
 
             let staker: T::AccountId = account("staker", idx.into(), SEED);
-            T::Currency::make_free_balance_be(&staker, amount);
+            T::BenchmarkHelper::set_balance(&staker, amount);
             assert_ok!(DappStaking::<T>::lock(
                 RawOrigin::Signed(staker.clone()).into(),
                 amount,
@@ -846,7 +660,7 @@ mod benchmarks {
         ));
 
         let amount = T::MinimumLockedAmount::get();
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -887,7 +701,7 @@ mod benchmarks {
         let staker: T::AccountId = whitelisted_caller();
         let amount = T::MinimumLockedAmount::get()
             * Into::<Balance>::into(T::MaxNumberOfStakedContracts::get());
-        T::Currency::make_free_balance_be(&staker, amount);
+        T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
@@ -937,7 +751,132 @@ mod benchmarks {
         assert_last_event::<T>(Event::<T>::Force { forcing_type }.into());
     }
 
-    // TODO: investigate why the PoV size is so large here, evne after removing read of `IntegratedDApps` storage.
+    #[benchmark]
+    fn on_initialize_voting_to_build_and_earn() {
+        initial_config::<T>();
+
+        let state = ActiveProtocolState::<T>::get();
+        assert_eq!(state.subperiod(), Subperiod::Voting, "Sanity check.");
+
+        // Register & stake contracts, just so we don't have empty stakes.
+        prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
+
+        run_to_block::<T>(state.next_era_start - 1);
+        DappStaking::<T>::on_finalize(state.next_era_start - 1);
+        System::<T>::set_block_number(state.next_era_start);
+
+        #[block]
+        {
+            DappStaking::<T>::era_and_period_handler(state.next_era_start, TierAssignment::Dummy);
+        }
+
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::BuildAndEarn
+        );
+    }
+
+    #[benchmark]
+    fn on_initialize_build_and_earn_to_voting() {
+        initial_config::<T>();
+
+        // Get started
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::Voting,
+            "Sanity check."
+        );
+
+        // Register & stake contracts, just so we don't have empty stakes.
+        prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
+
+        // Advance to build&earn subperiod
+        advance_to_next_subperiod::<T>();
+        let snapshot_state = ActiveProtocolState::<T>::get();
+
+        // Advance over to the last era of the subperiod, and then again to the last block of that era.
+        advance_to_era::<T>(
+            ActiveProtocolState::<T>::get()
+                .period_info
+                .next_subperiod_start_era
+                - 1,
+        );
+        run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
+
+        // Some sanity checks, we should still be in the build&earn subperiod, and in the first period.
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::BuildAndEarn
+        );
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            snapshot_state.period_number(),
+        );
+
+        let new_era_start_block = ActiveProtocolState::<T>::get().next_era_start;
+        DappStaking::<T>::on_finalize(new_era_start_block - 1);
+        System::<T>::set_block_number(new_era_start_block);
+
+        #[block]
+        {
+            DappStaking::<T>::era_and_period_handler(new_era_start_block, TierAssignment::Dummy);
+        }
+
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::Voting
+        );
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            snapshot_state.period_number() + 1,
+        );
+    }
+
+    #[benchmark]
+    fn on_initialize_build_and_earn_to_build_and_earn() {
+        initial_config::<T>();
+
+        // Register & stake contracts, just so we don't have empty stakes.
+        prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
+
+        // Advance to build&earn subperiod
+        advance_to_next_subperiod::<T>();
+        let snapshot_state = ActiveProtocolState::<T>::get();
+
+        // Advance over to the next era, and then again to the last block of that era.
+        advance_to_next_era::<T>();
+        run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
+
+        // Some sanity checks, we should still be in the build&earn subperiod, and in the first period.
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::BuildAndEarn
+        );
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            snapshot_state.period_number(),
+        );
+
+        let new_era_start_block = ActiveProtocolState::<T>::get().next_era_start;
+        DappStaking::<T>::on_finalize(new_era_start_block - 1);
+        System::<T>::set_block_number(new_era_start_block);
+
+        #[block]
+        {
+            DappStaking::<T>::era_and_period_handler(new_era_start_block, TierAssignment::Dummy);
+        }
+
+        assert_eq!(
+            ActiveProtocolState::<T>::get().subperiod(),
+            Subperiod::BuildAndEarn
+        );
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            snapshot_state.period_number(),
+        );
+    }
+
+    // Investigate why the PoV size is so large here, even after removing read of `IntegratedDApps` storage.
     // Relevant file: polkadot-sdk/substrate/utils/frame/benchmarking-cli/src/pallet/writer.rs
     // UPDATE: after some investigation, it seems that PoV size benchmarks are very unprecise
     // - the worst case measured is usually very far off the actual value that is consumed on chain.
@@ -947,38 +886,8 @@ mod benchmarks {
         // Prepare init config (protocol state, tier params & config, etc.)
         initial_config::<T>();
 
-        let developer: T::AccountId = whitelisted_caller();
-        for id in 0..x {
-            let smart_contract = T::BenchmarkHelper::get_smart_contract(id as u32);
-            assert_ok!(DappStaking::<T>::register(
-                RawOrigin::Root.into(),
-                developer.clone().into(),
-                smart_contract,
-            ));
-        }
-
-        // TODO: try to make this more "shuffled" so the generated vector ends up being more random
-        let mut amount = 1000 * MIN_TIER_THRESHOLD;
-        for id in 0..x {
-            let staker = account("staker", id.into(), 1337);
-            T::Currency::make_free_balance_be(&staker, amount);
-            assert_ok!(DappStaking::<T>::lock(
-                RawOrigin::Signed(staker.clone()).into(),
-                amount,
-            ));
-
-            let smart_contract = T::BenchmarkHelper::get_smart_contract(id as u32);
-            assert_ok!(DappStaking::<T>::stake(
-                RawOrigin::Signed(staker.clone()).into(),
-                smart_contract,
-                amount,
-            ));
-
-            // Slowly decrease the stake amount
-            amount.saturating_reduce(UNIT);
-        }
-
-        // Advance to next era
+        // Register & stake contracts, to prepare for tier assignment.
+        prepare_contracts_for_tier_assignment::<T>(x);
         advance_to_next_era::<T>();
 
         let reward_era = ActiveProtocolState::<T>::get().era;
@@ -987,9 +896,8 @@ mod benchmarks {
 
         #[block]
         {
-            let dapp_tiers =
+            let (dapp_tiers, _) =
                 Pallet::<T>::get_dapp_tier_assignment(reward_era, reward_period, reward_pool);
-            // TODO: how to move this outside of the 'block'? Cannot declare it outside, and then use it inside.
             assert_eq!(dapp_tiers.dapps.len(), x as usize);
         }
     }
