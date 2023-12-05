@@ -6,7 +6,7 @@ pragma solidity >=0.8.0;
 /// For better understanding check the source code:
 /// repo: https://github.com/AstarNetwork/Astar
 /// code: frame/dapps-staking-v3
-interface DappsStaking {
+interface DAppStaking {
 
     // TODO: make a custom struct to represent protocol state?
 
