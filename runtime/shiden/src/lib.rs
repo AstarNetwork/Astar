@@ -483,7 +483,7 @@ impl pallet_block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for Benef
 }
 
 parameter_types! {
-    pub const MaxBlockRewardAmount: Balance = 2_307_700 * MICROSDN;
+    pub const MaxBlockRewardAmount: Balance = 2_313_789 * MICROSDN;
 }
 
 impl pallet_block_rewards_hybrid::Config for Runtime {
@@ -1055,16 +1055,16 @@ pub struct HybridInflationModelMigration;
 impl OnRuntimeUpgrade for HybridInflationModelMigration {
     fn on_runtime_upgrade() -> Weight {
         let mut reward_config = pallet_block_rewards_hybrid::RewardDistributionConfig {
-            // 4.66%
-            treasury_percent: Perbill::from_rational(4_662_651u32, 100_000_000u32),
-            // 23.09%
-            base_staker_percent: Perbill::from_rational(2_308_792u32, 10_000_000u32),
-            // 17.32%
-            dapps_percent: Perbill::from_rational(173_159_422u32, 1_000_000_000u32),
-            // 2.99%
-            collators_percent: Perbill::from_rational(29_856_567u32, 1_000_000_000u32),
-            // 51.95%
-            adjustable_percent: Perbill::from_rational(519_478_301u32, 1_000_000_000u32),
+            // 4.81%
+            treasury_percent: Perbill::from_rational(4_811_793u32, 100_000_000u32),
+            // 23.02%
+            base_staker_percent: Perbill::from_rational(23_027_164u32, 100_000_000u32),
+            // 17.27%
+            dapps_percent: Perbill::from_rational(17_270_373u32, 100_000_000u32),
+            // 3.07%
+            collators_percent: Perbill::from_rational(3_079_547u32, 100_000_000u32),
+            // 51.81%
+            adjustable_percent: Perbill::from_rational(51_811_123u32, 100_000_000u32),
             // 60.00%
             ideal_dapps_staking_tvl: Perbill::from_percent(60),
         };
@@ -1165,7 +1165,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]
-        [pallet_block_reward, BlockReward]
+        [block_rewards_hybrid, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
