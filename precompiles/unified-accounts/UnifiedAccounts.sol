@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
  * @title UA interface.
  */
 
-/// Interface to the precompiled contract on Shibuya
+/// Interface to the precompiled contract
 /// Predeployed at the address 0x0000000000000000000000000000000000005006
 /// For better understanding check the source code:
 /// repo: https://github.com/AstarNetwork/astar
