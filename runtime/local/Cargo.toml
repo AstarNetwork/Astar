@@ -82,6 +82,8 @@ pallet-inflation = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 pallet-xvm = { workspace = true }
 
+dapp-staking-v3-runtime-api = { workspace = true }
+
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
@@ -122,6 +124,7 @@ std = [
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dapps-staking/std",
 	"pallet-dapp-staking-v3/std",
+	"dapp-staking-v3-runtime-api/std",
 	"pallet-inflation/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",

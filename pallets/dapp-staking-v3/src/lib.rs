@@ -64,8 +64,7 @@ mod test;
 mod benchmarking;
 
 mod types;
-use types::*;
-pub use types::{PriceProvider, TierThreshold};
+pub use types::*;
 
 pub mod weights;
 pub use weights::WeightInfo;
