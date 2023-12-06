@@ -21,52 +21,32 @@ use super::*;
 use fp_evm::IsPrecompileResult;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU64, Currency, OnFinalize, OnInitialize},
+    traits::{fungible::Mutate, ConstU128, ConstU64},
     weights::{RuntimeDbWeight, Weight},
-    PalletId,
 };
-use pallet_dapps_staking::weights;
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use serde::{Deserialize, Serialize};
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{H160, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, ConstU32, IdentityLookup},
     AccountId32,
 };
 extern crate alloc;
 
-pub(crate) type BlockNumber = u64;
-pub(crate) type Balance = u128;
-pub(crate) type EraIndex = u32;
-pub(crate) const MILLIAST: Balance = 1_000_000_000_000_000;
-pub(crate) const AST: Balance = 1_000 * MILLIAST;
+use astar_primitives::{
+    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    testing::Header,
+    Balance, BlockNumber,
+};
+use pallet_dapp_staking_v3::PriceProvider;
 
-pub(crate) const TEST_CONTRACT: H160 = H160::repeat_byte(0x09);
-
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
-type Block = frame_system::mocking::MockBlock<TestRuntime>;
-
-/// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
-pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
-/// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
-pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10 * AST;
-pub(crate) const MINIMUM_REMAINING_AMOUNT: Balance = 1;
-pub(crate) const MAX_UNLOCKING_CHUNKS: u32 = 4;
-pub(crate) const UNBONDING_PERIOD: EraIndex = 3;
-pub(crate) const MAX_ERA_STAKE_VALUES: u32 = 10;
-
-// Do note that this needs to at least be 3 for tests to be valid. It can be greater but not smaller.
-pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
-
-pub(crate) const REGISTER_DEPOSIT: Balance = 10 * AST;
-
-pub(crate) const STAKER_BLOCK_REWARD: Balance = 531911;
-pub(crate) const DAPP_BLOCK_REWARD: Balance = 773333;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
 #[derive(
     Eq,
@@ -146,16 +126,16 @@ pub const READ_WEIGHT: u64 = 3;
 pub const WRITE_WEIGHT: u64 = 7;
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
+    pub const BlockHashCount: BlockNumber = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
-    pub const TestWeights: RuntimeDbWeight = RuntimeDbWeight {
-        read: READ_WEIGHT,
-        write: WRITE_WEIGHT,
-    };
+        pub const TestWeights: RuntimeDbWeight = RuntimeDbWeight {
+            read: READ_WEIGHT,
+            write: WRITE_WEIGHT,
+        };
 }
 
-impl frame_system::Config for TestRuntime {
+impl frame_system::Config for Test {
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockWeights = ();
     type BlockLength = ();
@@ -166,11 +146,11 @@ impl frame_system::Config for TestRuntime {
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId32;
-    type Lookup = IdentityLookup<AccountId32>;
+    type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
-    type DbWeight = TestWeights;
+    type DbWeight = ();
     type Version = ();
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
@@ -182,23 +162,20 @@ impl frame_system::Config for TestRuntime {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-parameter_types! {
-    pub const ExistentialDeposit: u128 = 1;
-}
-impl pallet_balances::Config for TestRuntime {
+impl pallet_balances::Config for Test {
+    type MaxLocks = ConstU32<4>;
     type MaxReserves = ();
-    type ReserveIdentifier = [u8; 4];
-    type MaxLocks = ();
+    type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
     type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
-    type ExistentialDeposit = ExistentialDeposit;
+    type ExistentialDeposit = ConstU128<1>;
     type AccountStore = System;
-    type WeightInfo = ();
     type HoldIdentifier = ();
-    type FreezeIdentifier = ();
-    type MaxHolds = ();
-    type MaxFreezes = ();
+    type FreezeIdentifier = RuntimeFreezeReason;
+    type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<1>;
+    type WeightInfo = ();
 }
 
 pub fn precompile_address() -> H160 {
@@ -206,16 +183,15 @@ pub fn precompile_address() -> H160 {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct DappPrecompile<R>(PhantomData<R>);
-
-impl<R> PrecompileSet for DappPrecompile<R>
+pub struct DappStakingPrecompile<R>(PhantomData<R>);
+impl<R> PrecompileSet for DappStakingPrecompile<R>
 where
     R: pallet_evm::Config,
-    DappsStakingWrapper<R>: Precompile,
+    DappStakingV3Precompile<R>: Precompile,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         match handle.code_address() {
-            a if a == precompile_address() => Some(DappsStakingWrapper::<R>::execute(handle)),
+            a if a == precompile_address() => Some(DappStakingV3Precompile::<R>::execute(handle)),
             _ => None,
         }
     }
@@ -229,11 +205,11 @@ where
 }
 
 parameter_types! {
-    pub PrecompilesValue: DappPrecompile<TestRuntime> = DappPrecompile(Default::default());
+    pub PrecompilesValue: DappStakingPrecompile<Test> = DappStakingPrecompile(Default::default());
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
-impl pallet_evm::Config for TestRuntime {
+impl pallet_evm::Config for Test {
     type FeeCalculator = ();
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
@@ -243,7 +219,7 @@ impl pallet_evm::Config for TestRuntime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type PrecompilesType = DappPrecompile<TestRuntime>;
+    type PrecompilesType = DappStakingPrecompile<Test>;
     type PrecompilesValue = PrecompilesValue;
     type Timestamp = Timestamp;
     type ChainId = ();
@@ -256,13 +232,10 @@ impl pallet_evm::Config for TestRuntime {
     type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
-parameter_types! {
-    pub const MinimumPeriod: u64 = 5;
-}
-impl pallet_timestamp::Config for TestRuntime {
+impl pallet_timestamp::Config for Test {
     type Moment = u64;
     type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
+    type MinimumPeriod = ConstU64<5>;
     type WeightInfo = ();
 }
 
@@ -280,70 +253,97 @@ impl<AccountId32> Default for MockSmartContract<AccountId32> {
     }
 }
 
-parameter_types! {
-    pub const RegisterDeposit: Balance = REGISTER_DEPOSIT;
-    pub const BlockPerEra: BlockNumber = BLOCKS_PER_ERA;
-    pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
-    pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
-    pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
-    pub const MinimumRemainingAmount: Balance = MINIMUM_REMAINING_AMOUNT;
-    pub const MaxUnlockingChunks: u32 = MAX_UNLOCKING_CHUNKS;
-    pub const UnbondingPeriod: EraIndex = UNBONDING_PERIOD;
-    pub const MaxEraStakeValues: u32 = MAX_ERA_STAKE_VALUES;
-}
-
-impl pallet_dapps_staking::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type BlockPerEra = BlockPerEra;
-    type RegisterDeposit = RegisterDeposit;
-    type SmartContract = MockSmartContract<AccountId32>;
-    type WeightInfo = weights::SubstrateWeight<TestRuntime>;
-    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
-    type MinimumStakingAmount = MinimumStakingAmount;
-    type PalletId = DappsStakingPalletId;
-    type MinimumRemainingAmount = MinimumRemainingAmount;
-    type MaxUnlockingChunks = MaxUnlockingChunks;
-    type UnbondingPeriod = UnbondingPeriod;
-    type MaxEraStakeValues = MaxEraStakeValues;
-    type UnregisteredDappRewardRetention = ConstU32<2>;
-}
-
-pub struct ExternalityBuilder {
-    balances: Vec<(AccountId32, Balance)>,
-}
-
-impl Default for ExternalityBuilder {
-    fn default() -> ExternalityBuilder {
-        ExternalityBuilder { balances: vec![] }
+pub struct DummyPriceProvider;
+impl PriceProvider for DummyPriceProvider {
+    fn average_price() -> FixedU64 {
+        FixedU64::from_rational(1, 10)
     }
 }
 
-impl ExternalityBuilder {
-    pub fn build(self) -> TestExternalities {
+pub struct DummyStakingRewardHandler;
+impl StakingRewardHandler<AccountId32> for DummyStakingRewardHandler {
+    fn staker_and_dapp_reward_pools(_total_staked_value: Balance) -> (Balance, Balance) {
+        (
+            Balance::from(1_000_000_000_000_u128),
+            Balance::from(1_000_000_000_u128),
+        )
+    }
+
+    fn bonus_reward_pool() -> Balance {
+        Balance::from(3_000_000_u128)
+    }
+
+    fn payout_reward(beneficiary: &AccountId32, reward: Balance) -> Result<(), ()> {
+        let _ = Balances::mint_into(beneficiary, reward);
+        Ok(())
+    }
+}
+
+pub struct DummyCycleConfiguration;
+impl CycleConfiguration for DummyCycleConfiguration {
+    fn periods_per_cycle() -> u32 {
+        4
+    }
+
+    fn eras_per_voting_subperiod() -> u32 {
+        8
+    }
+
+    fn eras_per_build_and_earn_subperiod() -> u32 {
+        16
+    }
+
+    fn blocks_per_era() -> u32 {
+        10
+    }
+}
+
+impl pallet_dapp_staking_v3::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
+    type Currency = Balances;
+    type SmartContract = MockSmartContract<Self::AccountId>;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId32>;
+    type NativePriceProvider = DummyPriceProvider;
+    type StakingRewardHandler = DummyStakingRewardHandler;
+    type CycleConfiguration = DummyCycleConfiguration;
+    type EraRewardSpanLength = ConstU32<8>;
+    type RewardRetentionInPeriods = ConstU32<2>;
+    type MaxNumberOfContracts = ConstU32<10>;
+    type MaxUnlockingChunks = ConstU32<5>;
+    type MinimumLockedAmount = ConstU128<10>;
+    type UnlockingPeriod = ConstU32<2>;
+    type MaxNumberOfStakedContracts = ConstU32<5>;
+    type MinimumStakeAmount = ConstU128<3>;
+    type NumberOfTiers = ConstU32<4>;
+    type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Test>;
+}
+
+pub struct _ExternalityBuilder;
+impl _ExternalityBuilder {
+    pub fn _build(self) -> TestExternalities {
         let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
+            .build_storage::<Test>()
             .unwrap();
 
-        pallet_balances::GenesisConfig::<TestRuntime> {
-            balances: self.balances,
-        }
-        .assimilate_storage(&mut storage)
-        .ok();
+        let balances = vec![10000; 9]
+            .into_iter()
+            .enumerate()
+            .map(|(idx, amount)| ([idx as u8; 32].into(), amount))
+            .collect();
+
+        pallet_balances::GenesisConfig::<Test> { balances: balances }
+            .assimilate_storage(&mut storage)
+            .ok();
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| System::set_block_number(1));
         ext
     }
-
-    pub(crate) fn with_balances(mut self, balances: Vec<(AccountId32, Balance)>) -> Self {
-        self.balances = balances;
-        self
-    }
 }
 
 construct_runtime!(
-    pub struct TestRuntime
+    pub struct Test
     where
         Block = Block,
         NodeBlock = Block,
@@ -353,57 +353,6 @@ construct_runtime!(
         Balances: pallet_balances,
         Evm: pallet_evm,
         Timestamp: pallet_timestamp,
-        DappsStaking: pallet_dapps_staking,
+        DappsStaking: pallet_dapp_staking_v3,
     }
 );
-
-/// Used to run to the specified block number
-pub fn run_to_block(n: u64) {
-    while System::block_number() < n {
-        DappsStaking::on_finalize(System::block_number());
-        System::set_block_number(System::block_number() + 1);
-        // This is performed outside of dapps staking but we expect it before on_initialize
-        payout_block_rewards();
-        DappsStaking::on_initialize(System::block_number());
-    }
-}
-
-/// Used to run the specified number of blocks
-pub fn run_for_blocks(n: u64) {
-    run_to_block(System::block_number() + n);
-}
-
-/// Advance blocks to the beginning of an era.
-///
-/// Function has no effect if era is already passed.
-pub fn advance_to_era(n: EraIndex) {
-    while DappsStaking::current_era() < n {
-        run_for_blocks(1);
-    }
-}
-
-/// Initialize first block.
-/// This method should only be called once in a UT otherwise the first block will get initialized multiple times.
-pub fn initialize_first_block() {
-    // This assert prevents method misuse
-    assert_eq!(System::block_number(), 1 as BlockNumber);
-
-    // This is performed outside of dapps staking but we expect it before on_initialize
-    payout_block_rewards();
-    DappsStaking::on_initialize(System::block_number());
-    run_to_block(2);
-}
-
-/// Returns total block rewards that goes to dapps-staking.
-/// Contains both `dapps` reward and `stakers` reward.
-pub fn joint_block_reward() -> Balance {
-    STAKER_BLOCK_REWARD + DAPP_BLOCK_REWARD
-}
-
-/// Payout block rewards to stakers & dapps
-fn payout_block_rewards() {
-    DappsStaking::rewards(
-        Balances::issue(STAKER_BLOCK_REWARD.into()),
-        Balances::issue(DAPP_BLOCK_REWARD.into()),
-    );
-}

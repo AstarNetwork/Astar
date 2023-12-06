@@ -42,8 +42,10 @@ use pallet_dapp_staking_v3::{
     Pallet as DAppStaking, ProtocolState, SingularStakingInfo, StakerInfo, Subperiod,
 };
 
-// #[cfg(test)]
-// mod mock;
+#[cfg(test)]
+mod mock;
+
+// TODO: uncomment & fix after uplift to new precompile utils
 // #[cfg(test)]
 // mod tests;
 

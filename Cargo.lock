@@ -7988,6 +7988,7 @@ dependencies = [
  "scale-info",
  "serde",
  "sha3",
+ "sp-arithmetic",
  "sp-core",
  "sp-io",
  "sp-runtime",
