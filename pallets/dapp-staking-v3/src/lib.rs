@@ -1438,6 +1438,11 @@ pub mod pallet {
             .into())
         }
 
+        // TODO: this call should be removed prior to mainnet launch.
+        // It's super useful for testing purposes, but even though force is used in this pallet & works well,
+        // it won't apply to the inflation recalculation logic - which is wrong.
+        // Probably for this call to make sense, an outside logic should handle both inflation & dApp staking state changes.
+        
         /// Used to force a change of era or subperiod.
         /// The effect isn't immediate but will happen on the next block.
         ///
