@@ -27,8 +27,9 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
+        fungible::Unbalanced as FunUnbalanced, AsEnsureOriginWithArg, ConstU128, ConstU32,
+        ConstU64, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter,
+        Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
         constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
