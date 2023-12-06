@@ -671,7 +671,7 @@ fn unlock_with_exceeding_unlocking_chunks_storage_limits_fails() {
 #[test]
 fn claim_unlocked_is_ok() {
     ExtBuilder::build().execute_with(|| {
-        let unlocking_blocks = DappStaking::unlock_period();
+        let unlocking_blocks = DappStaking::unlocking_period();
 
         // Lock some amount in a few eras
         let account = 2;
@@ -721,7 +721,7 @@ fn claim_unlocked_no_eligible_chunks_fails() {
         // Cannot claim if unlock period hasn't passed yet
         let lock_amount = 103;
         assert_lock(account, lock_amount);
-        let unlocking_blocks = DappStaking::unlock_period();
+        let unlocking_blocks = DappStaking::unlocking_period();
         run_for_blocks(unlocking_blocks - 1);
         assert_noop!(
             DappStaking::claim_unlocked(RuntimeOrigin::signed(account)),
@@ -799,7 +799,7 @@ fn relock_unlocking_insufficient_lock_amount_fails() {
         });
 
         // Make sure only one chunk is left
-        let unlocking_blocks = DappStaking::unlock_period();
+        let unlocking_blocks = DappStaking::unlocking_period();
         run_for_blocks(unlocking_blocks - 1);
         assert_claim_unlocked(account);
 

@@ -30,7 +30,7 @@ use precompile_utils::{
     error, revert, succeed, Address, Bytes, EvmData, EvmDataWriter, EvmResult, FunctionModifier,
     PrecompileHandleExt, RuntimeHelper,
 };
-use sp_core::{Get, H160};
+use sp_core::{Get, H160, U256};
 use sp_runtime::traits::Zero;
 use sp_std::{marker::PhantomData, prelude::*};
 extern crate alloc;
@@ -38,8 +38,8 @@ extern crate alloc;
 use astar_primitives::Balance;
 use pallet_dapp_staking_v3::{
     AccountLedgerFor, ActiveProtocolState, ContractStake, ContractStakeAmount, CurrentEraInfo,
-    DAppInfoFor, EraInfo, EraRewardSpanFor, EraRewards, IntegratedDApps, Ledger,
-    Pallet as DAppStaking, ProtocolState, SingularStakingInfo, StakerInfo,
+    DAppInfoFor, EraInfo, EraNumber, EraRewardSpanFor, EraRewards, IntegratedDApps, Ledger,
+    Pallet as DAppStaking, ProtocolState, SingularStakingInfo, StakerInfo, Subperiod,
 };
 
 // #[cfg(test)]
@@ -66,6 +66,8 @@ where
     R::RuntimeCall: From<pallet_dapp_staking_v3::Call<R>>,
     R::AccountId: From<[u8; 32]>,
 {
+    // v1 functions
+
     /// Read the ongoing `era` number.
     fn read_current_era(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
         // TODO: benchmark this function so we can measure ref time & PoV correctly
@@ -548,6 +550,210 @@ where
         Ok(succeed(EvmDataWriter::new().write(true).build()))
     }
 
+    // v2 functions
+
+    /// Read the current protocol state.
+    ///
+    /// Returns: `(current era, current period number, subperiod)`
+    fn protocol_state(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // TODO: benchmark this function so we can measure ref time & PoV correctly
+        // Storage item: ActiveProtocolState:
+        // Twox64(8) + ProtocolState::max_encoded_len
+        handle.record_db_read::<R>(4 + ProtocolState::max_encoded_len())?;
+
+        let protocol_state = ActiveProtocolState::<R>::get();
+
+        Ok(succeed(
+            EvmDataWriter::new()
+                .write(U256::from(protocol_state.era))
+                .write(U256::from(protocol_state.period_number()))
+                .write(Self::subperiod_id(&protocol_state.subperiod()))
+                .build(),
+        ))
+    }
+
+    /// Read the `unbonding period` or `unlocking period` expressed in the number of eras.
+    fn unlocking_period(_: &impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // constant, no DB read
+        Ok(succeed(
+            EvmDataWriter::new()
+                .write(DAppStaking::<R>::unlocking_period())
+                .build(),
+        ))
+    }
+
+    /// Attempt to lock the given amount into the dApp staking protocol.
+    fn lock(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Parse the amount
+        let mut input = handle.read_input()?;
+        input.expect_arguments(1)?;
+        let amount: Balance = input.read()?;
+
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let lock_call = pallet_dapp_staking_v3::Call::<R>::lock { amount };
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), lock_call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    /// Attempt to unlock the given amount from the dApp staking protocol.
+    fn unlock(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Parse the amount
+        let mut input = handle.read_input()?;
+        input.expect_arguments(1)?;
+        let amount: Balance = input.read()?;
+
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let unlock_call = pallet_dapp_staking_v3::Call::<R>::unlock { amount };
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unlock_call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    /// Attempts to claim unlocking chunks which have undergone the entire unlocking period.
+    fn claim_unlocked(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let claim_unlocked_call = pallet_dapp_staking_v3::Call::<R>::claim_unlocked {};
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_unlocked_call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    /// Attempts to stake the given amount on the given smart contract.
+    fn stake(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Parse smart contract & amount
+        let mut input = handle.read_input()?;
+        input.expect_arguments(2)?;
+
+        let contract_h160 = input.read::<Address>()?.0;
+        let smart_contract = Self::decode_smart_contract(contract_h160)?;
+        let amount: Balance = input.read()?;
+
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let stake_call = pallet_dapp_staking_v3::Call::<R>::stake {
+            smart_contract,
+            amount,
+        };
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), stake_call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    /// Attempts to unstake the given amount from the given smart contract.
+    fn unstake(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Parse smart contract & amount
+        let mut input = handle.read_input()?;
+        input.expect_arguments(2)?;
+
+        let contract_h160 = input.read::<Address>()?.0;
+        let smart_contract = Self::decode_smart_contract(contract_h160)?;
+        let amount: Balance = input.read()?;
+
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let unstake_call = pallet_dapp_staking_v3::Call::<R>::unstake {
+            smart_contract,
+            amount,
+        };
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), unstake_call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    /// Attempts to claim one or more pending staker rewards.
+    fn claim_staker_rewards(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let claim_staker_rewards_call = pallet_dapp_staking_v3::Call::<R>::claim_staker_rewards {};
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_staker_rewards_call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    /// Attempts to claim bonus reward for being a loyal staker of the given dApp.
+    fn claim_bonus_reward(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Parse smart contract
+        let mut input = handle.read_input()?;
+        input.expect_arguments(1)?;
+
+        let contract_h160 = input.read::<Address>()?.0;
+        let smart_contract = Self::decode_smart_contract(contract_h160)?;
+
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let claim_bonus_reward_call =
+            pallet_dapp_staking_v3::Call::<R>::claim_bonus_reward { smart_contract };
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_bonus_reward_call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    /// Attempts to claim dApp reward for the given dApp in the given era.
+    fn claim_dapp_reward(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Parse smart contract & era
+        let mut input = handle.read_input()?;
+        input.expect_arguments(2)?;
+
+        let contract_h160 = input.read::<Address>()?.0;
+        let smart_contract = Self::decode_smart_contract(contract_h160)?;
+        let era = input.read::<EraNumber>()?;
+
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let claim_dapp_reward_call = pallet_dapp_staking_v3::Call::<R>::claim_dapp_reward {
+            smart_contract,
+            era,
+        };
+        RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), claim_dapp_reward_call)?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    /// Attempts to unstake everything from an unregistered contract.
+    fn unstake_from_unregistered(
+        handle: &mut impl PrecompileHandle,
+    ) -> EvmResult<PrecompileOutput> {
+        // Parse smart contract
+        let mut input = handle.read_input()?;
+        input.expect_arguments(1)?;
+
+        let contract_h160 = input.read::<Address>()?.0;
+        let smart_contract = Self::decode_smart_contract(contract_h160)?;
+
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let unstake_from_unregistered_call =
+            pallet_dapp_staking_v3::Call::<R>::unstake_from_unregistered { smart_contract };
+        RuntimeHelper::<R>::try_dispatch(
+            handle,
+            Some(origin).into(),
+            unstake_from_unregistered_call,
+        )?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    /// Attempts to cleanup expired entries for the staker.
+    fn cleanup_expired_entries(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
+        // Prepare call & dispatch it
+        let origin = R::AddressMapping::into_account_id(handle.context().caller);
+        let cleanup_expired_entries_call =
+            pallet_dapp_staking_v3::Call::<R>::cleanup_expired_entries {};
+        RuntimeHelper::<R>::try_dispatch(
+            handle,
+            Some(origin).into(),
+            cleanup_expired_entries_call,
+        )?;
+
+        Ok(succeed(EvmDataWriter::new().write(true).build()))
+    }
+
+    // Utility functions
+
     /// Helper method to decode type SmartContract enum
     pub fn decode_smart_contract(
         contract_h160: H160,
@@ -592,11 +798,23 @@ where
 
         Ok(staker)
     }
+
+    /// Numeric Id of the subperiod enum value.
+    // TODO: add test for this to ensure it's the same as in the v2 interface
+    fn subperiod_id(subperiod: &Subperiod) -> u8 {
+        match subperiod {
+            Subperiod::Voting => 0,
+            Subperiod::BuildAndEarn => 1,
+        }
+    }
 }
 
 #[precompile_utils::generate_function_selector]
 #[derive(Debug, PartialEq)]
 pub enum Action {
+    // v1 functions
+
+    // View
     ReadCurrentEra = "read_current_era()",
     ReadUnbondingPeriod = "read_unbonding_period()",
     ReadEraReward = "read_era_reward(uint32)",
@@ -604,6 +822,8 @@ pub enum Action {
     ReadStakedAmount = "read_staked_amount(bytes)",
     ReadStakedAmountOnContract = "read_staked_amount_on_contract(address,bytes)",
     ReadContractStake = "read_contract_stake(address)",
+
+    // Dispathables
     Register = "register(address)",
     BondAndStake = "bond_and_stake(address,uint128)",
     UnbondAndUnstake = "unbond_and_unstake(address,uint128)",
@@ -613,6 +833,24 @@ pub enum Action {
     SetRewardDestination = "set_reward_destination(uint8)",
     WithdrawFromUnregistered = "withdraw_from_unregistered(address)",
     NominationTransfer = "nomination_transfer(address,uint128,address)",
+
+    // v2 functions
+
+    // View
+    ProtocolState = "protocol_state()",
+    UnlockingPeriod = "unlocking_period()",
+
+    // Dispatchables
+    Lock = "lock(uint128)",
+    Unlock = "unlock(uint128)",
+    ClaimUnlocked = "claim_unlocked()",
+    Stake = "stake(address,uint128)",
+    Unstake = "unstake(address,uint128)",
+    ClaimStakerRewards = "claim_staker_rewards()",
+    ClaimBonusReward = "claim_bonus_reward(address)",
+    ClaimDappReward = "claim_dapp_reward(address,uint32)",
+    UnstakeFromUnregistered = "unstake_from_unregistered(address)",
+    CleanupExpiredEntries = "cleanup_expired_entries()",
 }
 
 impl<R> Precompile for DappStakingV3Precompile<R>
@@ -637,12 +875,16 @@ where
             | Action::ReadEraStaked
             | Action::ReadStakedAmount
             | Action::ReadStakedAmountOnContract
-            | Action::ReadContractStake => FunctionModifier::View,
+            | Action::ReadContractStake
+            | Action::ProtocolState
+            | Action::UnlockingPeriod => FunctionModifier::View,
             _ => FunctionModifier::NonPayable,
         })?;
 
         match selector {
-            // read storage
+            // v1 functions
+
+            // View
             Action::ReadCurrentEra => Self::read_current_era(handle),
             Action::ReadUnbondingPeriod => Self::read_unbonding_period(handle),
             Action::ReadEraReward => Self::read_era_reward(handle),
@@ -661,6 +903,24 @@ where
             Action::SetRewardDestination => Self::set_reward_destination(handle),
             Action::WithdrawFromUnregistered => Self::withdraw_from_unregistered(handle),
             Action::NominationTransfer => Self::nomination_transfer(handle),
+
+            // v2 functions
+
+            // View
+            Action::ProtocolState => Self::protocol_state(handle),
+            Action::UnlockingPeriod => Self::unlocking_period(handle),
+
+            // Dispatchables
+            Action::Lock => Self::lock(handle),
+            Action::Unlock => Self::unlock(handle),
+            Action::ClaimUnlocked => Self::claim_unlocked(handle),
+            Action::Stake => Self::stake(handle),
+            Action::Unstake => Self::unstake(handle),
+            Action::ClaimStakerRewards => Self::claim_staker_rewards(handle),
+            Action::ClaimBonusReward => Self::claim_bonus_reward(handle),
+            Action::ClaimDappReward => Self::claim_dapp_reward(handle),
+            Action::UnstakeFromUnregistered => Self::unstake_from_unregistered(handle),
+            Action::CleanupExpiredEntries => Self::cleanup_expired_entries(handle),
         }
     }
 }

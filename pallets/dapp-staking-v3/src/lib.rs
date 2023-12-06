@@ -788,7 +788,7 @@ pub mod pallet {
             ledger.subtract_lock_amount(amount_to_unlock);
 
             let current_block = frame_system::Pallet::<T>::block_number();
-            let unlock_block = current_block.saturating_add(Self::unlock_period());
+            let unlock_block = current_block.saturating_add(Self::unlocking_period());
             ledger
                 .add_unlocking_chunk(amount_to_unlock, unlock_block)
                 .map_err(|_| Error::<T>::TooManyUnlockingChunks)?;
@@ -1542,7 +1542,7 @@ pub mod pallet {
         }
 
         /// Unlocking period expressed in the number of blocks.
-        pub fn unlock_period() -> BlockNumber {
+        pub fn unlocking_period() -> BlockNumber {
             T::CycleConfiguration::blocks_per_era().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
