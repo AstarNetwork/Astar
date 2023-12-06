@@ -23,18 +23,18 @@ use pallet_dapp_staking_v3::EraNumber;
 
 sp_api::decl_runtime_apis! {
 
-    /// DApp Staking Api.
+    /// dApp Staking Api.
     ///
     /// Used to provide information otherwise not available via RPC.
-    pub trait DAppStakingApi {
+    pub trait DappStakingApi {
 
-    /// For how many standard era lengths does the voting subperiod last.
-    fn eras_per_voting_subperiod() -> EraNumber;
+        /// For how many standard era lengths does the voting subperiod last.
+        fn eras_per_voting_subperiod() -> EraNumber;
 
-    /// How many standard eras are there in the build&earn subperiod.
-    fn eras_per_build_and_earn_subperiod() -> EraNumber;
+        /// How many standard eras are there in the build&earn subperiod.
+        fn eras_per_build_and_earn_subperiod() -> EraNumber;
 
-    /// How many blocks are there per standard era.
-    fn blocks_per_era() -> BlockNumber;
+        /// How many blocks are there per standard era.
+        fn blocks_per_era() -> BlockNumber;
     }
 }

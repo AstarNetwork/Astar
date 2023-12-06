@@ -27,9 +27,8 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        fungible::Unbalanced as FunUnbalanced, AsEnsureOriginWithArg, ConstU128, ConstU32,
-        ConstU64, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter,
-        Nothing, OnFinalize, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
+        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
         constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -1740,7 +1739,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl dapp_staking_v3_runtime_api::DAppStakingApi<Block> for Runtime {
+    impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
         fn eras_per_voting_subperiod() -> pallet_dapp_staking_v3::EraNumber {
             InflationCycleConfig::eras_per_voting_subperiod()
         }
