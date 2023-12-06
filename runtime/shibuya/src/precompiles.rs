@@ -36,6 +36,7 @@ use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
 use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
+use pallet_evm_precompile_unified_accounts::UnifiedAccountsPrecompile;
 use pallet_evm_precompile_xcm::XcmPrecompile;
 use pallet_evm_precompile_xvm::XvmPrecompile;
 use sp_core::H160;
@@ -79,6 +80,7 @@ impl<R, C> ShibuyaNetworkPrecompiles<R, C> {
     pub fn used_addresses() -> impl Iterator<Item = H160> {
         sp_std::vec![
             1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484, 20485,
+            20486
         ]
         .into_iter()
         .map(hash)
@@ -95,10 +97,12 @@ where
     XcmPrecompile<R, C>: Precompile,
     XvmPrecompile<R, pallet_xvm::Pallet<R>>: Precompile,
     Dispatch<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>: Precompile,
+    UnifiedAccountsPrecompile<R, pallet_unified_accounts::Pallet<R>>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config
         + pallet_xcm::Config
         + pallet_xvm::Config
+        + pallet_unified_accounts::Config
         + AddressToAssetId<<R as pallet_assets::Config>::AssetId>,
     C: xcm_executor::traits::Convert<MultiLocation, <R as pallet_assets::Config>::AssetId>,
 {
@@ -146,6 +150,11 @@ where
             a if a == hash(20485) => {
                 Some(XvmPrecompile::<R, pallet_xvm::Pallet<R>>::execute(handle))
             }
+            // UnifiedAccounts 0x5006
+            a if a == hash(20486) => Some(UnifiedAccountsPrecompile::<
+                R,
+                pallet_unified_accounts::Pallet<R>,
+            >::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)

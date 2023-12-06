@@ -291,6 +291,7 @@ pallet-evm-precompile-substrate-ecdsa = { path = "./precompiles/substrate-ecdsa"
 pallet-evm-precompile-xcm = { path = "./precompiles/xcm", default-features = false }
 pallet-evm-precompile-xvm = { path = "./precompiles/xvm", default-features = false }
 pallet-evm-precompile-dapps-staking = { path = "./precompiles/dapps-staking", default-features = false }
+pallet-evm-precompile-unified-accounts = { path = "./precompiles/unified-accounts", default-features = false }
 
 pallet-chain-extension-dapps-staking = { path = "./chain-extensions/dapps-staking", default-features = false }
 pallet-chain-extension-xvm = { path = "./chain-extensions/xvm", default-features = false }

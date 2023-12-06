@@ -75,6 +75,7 @@ pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
+pallet-evm-precompile-unified-accounts = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 pallet-xvm = { workspace = true }
@@ -131,6 +132,7 @@ std = [
 	"pallet-evm-precompile-dapps-staking/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
+	"pallet-evm-precompile-unified-accounts/std",
 	"pallet-evm-precompile-xvm/std",
 	"pallet-grandpa/std",
 	"pallet-insecure-randomness-collective-flip/std",
