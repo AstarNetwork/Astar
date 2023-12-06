@@ -195,6 +195,7 @@ where
         input.expect_arguments(1)?;
 
         // parse the staker account
+        // TODO: replace with bounded bytes
         let staker_vec: Vec<u8> = input.read::<Bytes>()?.into();
         let staker = Self::parse_input_address(staker_vec)?;
 
@@ -235,6 +236,7 @@ where
         let contract_id = Self::decode_smart_contract(contract_h160)?;
 
         // parsae the staker account
+        // TODO: replace with bounded bytes
         let staker_vec: Vec<u8> = input.read::<Bytes>()?.into();
         let staker = Self::parse_input_address(staker_vec)?;
 
