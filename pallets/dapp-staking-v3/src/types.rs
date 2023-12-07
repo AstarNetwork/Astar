@@ -1682,10 +1682,15 @@ pub enum DAppTierError {
     InternalError,
 }
 
-/// Tier labels can be assigned to dApps in order to provide them benefits (or drawbacks) when being assigned into a tier.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-pub enum TierLabel {
-    // Empty for now, on purpose.
+/// Describes which entries are next in line for cleanup.
+#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
+pub struct CleanupMarker {
+    /// Era reward span index that should be checked & cleaned up next.
+    #[codec(compact)]
+    pub era_reward_span: EraNumber,
+    /// dApp tier rewards index that should be checked & cleaned up next.
+    #[codec(compact)]
+    pub dapp_tiers: EraNumber,
 }
 
 ///////////////////////////////////////////////////////////////////////

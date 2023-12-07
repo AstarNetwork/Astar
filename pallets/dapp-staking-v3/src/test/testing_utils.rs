@@ -1354,27 +1354,21 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
 /// Verify `on_idle` cleanup.
 pub(crate) fn assert_on_idle_cleanup() {
     // Pre-data snapshot (limited to speed up testing)
-    let next_era_span_index_cleanup = HistoryCleanupMarker::<Test>::get();
+    let pre_cleanup_marker = HistoryCleanupMarker::<Test>::get();
     let pre_era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>> =
         EraRewards::<Test>::iter().collect();
     let pre_period_ends: HashMap<PeriodNumber, PeriodEndInfo> = PeriodEnd::<Test>::iter().collect();
 
-    // Calculated expected cleanup, if any
+    // Calculated the oldest era which is valid (not expired)
     let protocol_state = ActiveProtocolState::<Test>::get();
     let retention_period: PeriodNumber = <Test as Config>::RewardRetentionInPeriods::get();
 
-    // Check if any cleanup of reward spans should be done
-    match protocol_state
+    let oldest_valid_era = match protocol_state
         .period_number()
         .checked_sub(retention_period + 1)
     {
         Some(expired_period) if expired_period > 0 => {
-            let oldest_valid_era = pre_period_ends[&expired_period].final_era + 1;
-
-            if pre_era_rewards[&next_era_span_index_cleanup].last_era() >= oldest_valid_era {
-                assert_storage_noop!(DappStaking::on_idle(System::block_number(), Weight::MAX));
-                return;
-            }
+            pre_period_ends[&expired_period].final_era + 1
         }
         _ => {
             // No cleanup so no storage changes are expected
@@ -1382,6 +1376,12 @@ pub(crate) fn assert_on_idle_cleanup() {
             return;
         }
     };
+
+    // Check if any span or tiers cleanup is needed.
+    let is_era_span_cleanup_expected =
+        pre_era_rewards[&pre_cleanup_marker.era_reward_span].last_era() < oldest_valid_era;
+    let is_dapp_tiers_cleanup_expected =
+        pre_cleanup_marker.dapp_tiers > 0 && pre_cleanup_marker.dapp_tiers < oldest_valid_era;
 
     // Check if period end info should be cleaned up
     let maybe_period_end_cleanup = match protocol_state
@@ -1394,18 +1394,32 @@ pub(crate) fn assert_on_idle_cleanup() {
 
     // Cleanup and verify post state.
 
-    assert!(
-        EraRewards::<Test>::contains_key(next_era_span_index_cleanup),
-        "Sanity check."
-    );
-
     DappStaking::on_idle(System::block_number(), Weight::MAX);
 
     // Post checks
+    let post_cleanup_marker = HistoryCleanupMarker::<Test>::get();
 
-    assert!(!EraRewards::<Test>::contains_key(
-        next_era_span_index_cleanup
-    ));
+    if is_era_span_cleanup_expected {
+        assert!(!EraRewards::<Test>::contains_key(
+            pre_cleanup_marker.era_reward_span
+        ));
+        let span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
+        assert_eq!(
+            post_cleanup_marker.era_reward_span,
+            pre_cleanup_marker.era_reward_span + span_length
+        );
+    }
+    if is_dapp_tiers_cleanup_expected {
+        assert!(
+            !DAppTiers::<Test>::contains_key(pre_cleanup_marker.dapp_tiers),
+            "Sanity check."
+        );
+        assert_eq!(
+            post_cleanup_marker.dapp_tiers,
+            pre_cleanup_marker.dapp_tiers + 1
+        )
+    }
+
     if let Some(period) = maybe_period_end_cleanup {
         assert!(!PeriodEnd::<Test>::contains_key(period));
     }
