@@ -910,13 +910,18 @@ mod benchmarks {
         // Advance enough periods to trigger the cleanup
         let retention_period = T::RewardRetentionInPeriods::get();
         advance_to_period::<T>(
-            ActiveProtocolState::<T>::get().period_number() + retention_period + 1,
+            ActiveProtocolState::<T>::get().period_number() + retention_period + 2,
         );
 
         let first_era_span_index = 0;
         assert!(
             EraRewards::<T>::contains_key(first_era_span_index),
             "Sanity check - era reward span entry must exist."
+        );
+        let first_period = 1;
+        assert!(
+            PeriodEnd::<T>::contains_key(first_period),
+            "Sanity check - period end info must exist."
         );
         let block_number = System::<T>::block_number();
 
@@ -928,6 +933,10 @@ mod benchmarks {
         assert!(
             !EraRewards::<T>::contains_key(first_era_span_index),
             "Entry should have been cleaned up."
+        );
+        assert!(
+            !PeriodEnd::<T>::contains_key(first_period),
+            "Period end info should have been cleaned up."
         );
     }
 

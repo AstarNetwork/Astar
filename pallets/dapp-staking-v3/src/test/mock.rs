@@ -18,7 +18,7 @@
 
 use crate::{
     self as pallet_dapp_staking,
-    test::testing_utils::{assert_block_bump, MemorySnapshot},
+    test::testing_utils::{assert_block_bump, assert_on_idle_cleanup, MemorySnapshot},
     *,
 };
 
@@ -330,6 +330,7 @@ impl ExtBuilder {
 pub(crate) fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
         DappStaking::on_finalize(System::block_number());
+        assert_on_idle_cleanup();
         System::set_block_number(System::block_number() + 1);
         // This is performed outside of dapps staking but we expect it before on_initialize
 

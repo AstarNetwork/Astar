@@ -20,13 +20,14 @@ use crate::test::mock::*;
 use crate::types::*;
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, CurrentEraInfo, DAppId, DAppTiers,
-    EraRewards, Event, FreezeReason, IntegratedDApps, Ledger, NextDAppId, NextTierConfig,
-    PeriodEnd, PeriodEndInfo, StakerInfo, TierConfig,
+    EraRewards, Event, FreezeReason, HistoryCleanupMarker, IntegratedDApps, Ledger, NextDAppId,
+    NextTierConfig, PeriodEnd, PeriodEndInfo, StakerInfo, TierConfig,
 };
 
 use frame_support::{
-    assert_ok,
-    traits::{fungible::InspectFreeze, Get},
+    assert_ok, assert_storage_noop,
+    traits::{fungible::InspectFreeze, Get, OnIdle},
+    weights::Weight,
 };
 use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
@@ -1347,6 +1348,66 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
         System::assert_last_event(RuntimeEvent::DappStaking(Event::NewEra {
             era: post_protoc_state.era,
         }));
+    }
+}
+
+/// TODO
+pub(crate) fn assert_on_idle_cleanup() {
+    // Pre-data snapshot (limited to speed up testing)
+    let next_era_span_index_cleanup = HistoryCleanupMarker::<Test>::get();
+    let pre_era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>> =
+        EraRewards::<Test>::iter().collect();
+    let pre_period_ends: HashMap<PeriodNumber, PeriodEndInfo> = PeriodEnd::<Test>::iter().collect();
+
+    // Calculated expected cleanup, if any
+    let protocol_state = ActiveProtocolState::<Test>::get();
+    let retention_period: PeriodNumber = <Test as Config>::RewardRetentionInPeriods::get();
+
+    // Check if any cleanup of reward spans should be done
+    match protocol_state
+        .period_number()
+        .checked_sub(retention_period + 1)
+    {
+        Some(expired_period) if expired_period > 0 => {
+            let oldest_valid_era = pre_period_ends[&expired_period].final_era + 1;
+
+            if pre_era_rewards[&next_era_span_index_cleanup].last_era() >= oldest_valid_era {
+                assert_storage_noop!(DappStaking::on_idle(System::block_number(), Weight::MAX));
+                return;
+            }
+        }
+        _ => {
+            // No cleanup so no storage changes are expected
+            assert_storage_noop!(DappStaking::on_idle(System::block_number(), Weight::MAX));
+            return;
+        }
+    };
+
+    // Check if period end info should be cleaned up
+    let maybe_period_end_cleanup = match protocol_state
+        .period_number()
+        .checked_sub(retention_period + 2)
+    {
+        Some(period) if period > 0 => Some(period),
+        _ => None,
+    };
+
+    // Cleanup and verify post state.
+
+    assert!(
+        EraRewards::<Test>::contains_key(next_era_span_index_cleanup),
+        "Sanity check."
+    );
+
+    DappStaking::on_idle(System::block_number(), Weight::MAX);
+
+    // Post checks
+
+    assert!(!EraRewards::<Test>::contains_key(
+        next_era_span_index_cleanup
+    ));
+    if let Some(period) = maybe_period_end_cleanup {
+        assert!(!PeriodEnd::<Test>::contains_key(period));
     }
 }
 

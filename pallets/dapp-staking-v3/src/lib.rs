@@ -551,12 +551,7 @@ pub mod pallet {
             let oldest_valid_era = match PeriodEnd::<T>::get(latest_expired_period) {
                 Some(period_end_info) => period_end_info.final_era.saturating_add(1),
                 None => {
-                    // Should never happen due to previous checks, but if it does, log an error and move on.
-                    log::error!(
-                        target: LOG_TARGET,
-                        "Period end info for period number {} is missing.",
-                        latest_expired_period
-                    );
+                    // Can happen if it's period 0 or if the entry has already been cleaned up.
                     return T::WeightInfo::on_idle_cleanup();
                 }
             };
@@ -578,6 +573,16 @@ pub mod pallet {
                     "Era rewards span for era {} is missing, but cleanup marker is set.",
                     next_era_index
                 );
+            }
+
+            // One extra grace period before we cleanup period end info.
+            if let Some(period_end_cleanup) = latest_expired_period.checked_sub(1) {
+                println!(
+                    "Cleaning up perid_end_cleanup: {:?}, state: {:?}",
+                    period_end_cleanup,
+                    ActiveProtocolState::<T>::get()
+                );
+                PeriodEnd::<T>::remove(period_end_cleanup);
             }
 
             // We could try & cleanup more entries, but since it's not a critical operation and can happen whenever,
