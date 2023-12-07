@@ -27,7 +27,7 @@ Each period consists of two subperiods:
 Each period is denoted by a number, which increments each time a new period begins.
 Period beginning is marked by the `voting` subperiod, after which follows the `build&earn` period.
 
-Stakes are **only** valid throughout a period. When new period starts, all stakes are reset to **zero**. This helps prevent projects remaining staked due to intertia of stakers, and makes for a more dynamic staking system.
+Stakes are **only** valid throughout a period. When new period starts, all stakes are reset to **zero**. This helps prevent projects remaining staked due to intertia of stakers, and makes for a more dynamic staking system. Staker doesn't need to do anything for this to happe, it is automatic.
 
 Even though stakes are reset, locks (or freezes) of tokens remain.
 
@@ -39,7 +39,7 @@ Projects participating in dApp staking are expected to market themselves to (re)
 Stakers must assess whether the project they want to stake on brings value to the ecosystem, and then `vote` for it.
 Casting a vote, or staking, during the `Voting` subperiod makes the staker eligible for bonus rewards. so they are encouraged to participate.
 
-`Voting` subperiod length is expressed in _standard_ era lengths, even though the entire voting period is treated as a single _voting era_.
+`Voting` subperiod length is expressed in _standard_ era lengths, even though the entire voting subperiod is treated as a single _voting era_.
 E.g. if `voting` subperiod lasts for **5 eras**, and each era lasts for **100** blocks, total length of the `voting` subperiod will be **500** blocks.
 * Block 1, Era 1 starts, Period 1 starts, `Voting` subperiod starts
 * Block 501, Era 2 starts, Period 1 continues, `Build&Earn` subperiod starts
@@ -173,11 +173,70 @@ Rewards don't remain available forever, and if not claimed within some time peri
 
 Rewards are calculated using a simple formula: `staker_reward_pool * staker_staked_amount / total_staked_amount`.
 
-#### Claim Bonus Reward
+#### Claiming Bonus Reward
 
-If staker staked on a dApp during the voting period, and didn't reduce their staked amount below what was staked at the end of the voting period, this makes them eligible for the bonus reward.
+If staker staked on a dApp during the voting subperiod, and didn't reduce their staked amount below what was staked at the end of the voting subperiod, this makes them eligible for the bonus reward.
 
 Bonus rewards need to be claimed per contract, unlike staker rewards.
 
-Bonus reward is calculated using a simple formula: `bonus_reward_pool * staker_voting_period_stake / total_voting_period_stake`.
+Bonus reward is calculated using a simple formula: `bonus_reward_pool * staker_voting_subperiod_stake / total_voting_subperiod_stake`.
 
+#### Handling Expired Entries
+
+There is a limit to how much contracts can a staker stake on at once.
+Or to be more precise, for how many contract a database entry can exist at once.
+
+It's possible that stakers get themselves into a situation where some number of expired database entries associated to
+their account has accumulated. In that case, it's required to call a special extrinsic to cleanup these expired entries.
+
+### Developers
+
+Main thing for developers to do is develop a good product & attract stakers to stake on them.
+
+#### Claiming dApp Reward
+
+If at the end of an build&earn subperiod era dApp has high enough score to enter a tier, it gets rewards assigned to it.
+Rewards aren't paid out automatically but must be claimed instead, similar to staker & bonus rewards.
+
+When dApp reward is being claimed, both smart contract & claim era must be specified.
+
+dApp reward is calculated based on the tier in which ended. All dApps that end up in one tier will get the exact same reward.
+
+### Tier System
+
+At the end of each build&earn subperiod era, dApps are evaluated using a simple metric - total value staked on them.
+Based on this metric, they are sorted, and assigned to tiers.
+
+There is a limited number of tiers, and each tier has a limited capacity of slots.
+Each tier also has a _threshold_ which a dApp must satisfy in order to enter it.
+
+Better tiers bring bigger rewards, so dApps are encouraged to compete for higher tiers and attract staker's support.
+For each tier, the reward pool and capacity are fixed. Each dApp within a tier always gets the same amount of reward.
+Even if tier capacity hasn't been fully taken, rewards are paid out as if they were.
+
+For example, if tier 1 has capacity for 10 dApps, and reward pool is **500 ASTR**, it means that each dApp that ends up
+in this tier will earn **50 ASTR**. Even if only 3 dApps manage to enter this tier, they will still earn each **50 ASTR**.
+The rest, **350 ASTR** in this case, won't be minted (or will be _burned_ if the reader prefers such explanation).
+
+If there are more dApps eligible for a tier than there is capacity, the dApps with the higher score get the advantage.
+dApps which missed out get priority for entry into the next lower tier (if there still is any).
+
+In the case a dApp doesn't satisfy the entry threshold for any tier, even though there is still capacity, the dApp will simply
+be left out of tiers and won't earn **any** reward.
+
+In a special and unlikely case that two or more dApps have the exact same score and satisfy tier entry threshold, but there isn't enough
+leftover tier capacity to accomodate them all, this is considered _undefined_ behavior. Some of the dApps will manage to enter the tier, while
+others will be left out. There is no strict rule which defines this behavior - instead dApps are encouraged to ensure their tier entry by
+having a larger stake than the other dApp(s).
+
+### Reward Expiry
+
+Unclaimed rewards aren't kept indefinitely in storage. Eventually, they expire.
+Stakers & developers should make sure they claim those rewards before this happens.
+
+In case they don't, they will simply miss on the earnings.
+
+However, this should not be a problem given how the system is designed.
+There is no longer _stake&forger_ - users are expected to revisit dApp staking at least at the
+beginning of each new period to pick out old or new dApps on which to stake on.
+If they don't do that, they miss out on the bonus reward & won't earn staker rewards.
