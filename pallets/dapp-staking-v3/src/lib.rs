@@ -577,11 +577,6 @@ pub mod pallet {
 
             // One extra grace period before we cleanup period end info.
             if let Some(period_end_cleanup) = latest_expired_period.checked_sub(1) {
-                println!(
-                    "Cleaning up perid_end_cleanup: {:?}, state: {:?}",
-                    period_end_cleanup,
-                    ActiveProtocolState::<T>::get()
-                );
                 PeriodEnd::<T>::remove(period_end_cleanup);
             }
 
