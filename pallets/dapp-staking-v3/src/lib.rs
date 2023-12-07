@@ -649,7 +649,6 @@ pub mod pallet {
                     id: dapp_id,
                     state: DAppState::Registered,
                     reward_destination: None,
-                    tier_label: None,
                 },
             );
 

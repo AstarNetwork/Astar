@@ -271,8 +271,6 @@ pub struct DAppInfo<AccountId> {
     pub state: DAppState,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
     pub reward_destination: Option<AccountId>,
-    /// If `Some(_)` dApp has a tier label which can influence the tier assignment.
-    pub tier_label: Option<TierLabel>,
 }
 
 impl<AccountId> DAppInfo<AccountId> {
@@ -1053,8 +1051,6 @@ pub struct ContractStakeAmount {
     pub staked: StakeAmount,
     /// Staked amount in the next or 'future' era.
     pub staked_future: Option<StakeAmount>,
-    /// Tier label for the contract, if any.
-    pub tier_label: Option<TierLabel>,
 }
 
 impl ContractStakeAmount {

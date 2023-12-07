@@ -1351,7 +1351,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
     }
 }
 
-/// TODO
+/// Verify `on_idle` cleanup.
 pub(crate) fn assert_on_idle_cleanup() {
     // Pre-data snapshot (limited to speed up testing)
     let next_era_span_index_cleanup = HistoryCleanupMarker::<Test>::get();
