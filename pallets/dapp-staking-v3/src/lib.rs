@@ -443,6 +443,10 @@ pub mod pallet {
     pub type DAppTiers<T: Config> =
         StorageMap<_, Twox64Concat, EraNumber, DAppTierRewardsFor<T>, OptionQuery>;
 
+    /// History cleanup marker - holds information about which era index of reward span should be cleaned up next.
+    #[pallet::storage]
+    pub type HistoryCleanupMarker<T: Config> = StorageValue<_, EraNumber, ValueQuery>;
+
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig {
@@ -519,6 +523,67 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
         fn on_initialize(now: BlockNumber) -> Weight {
             Self::era_and_period_handler(now, TierAssignment::Real)
+        }
+
+        fn on_idle(_block: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
+            // Need to be able to at least process a single entry in full
+            if remaining_weight.any_lt(T::WeightInfo::on_idle_cleanup()) {
+                return Weight::zero();
+            }
+
+            // Get the cleanup marker
+            let next_era_index = HistoryCleanupMarker::<T>::get();
+
+            // Whitelisted storage, no need to account for the read.
+            let protocol_state = ActiveProtocolState::<T>::get();
+            let latest_expired_period = match protocol_state
+                .period_number()
+                .checked_sub(T::RewardRetentionInPeriods::get().saturating_add(1))
+            {
+                Some(latest_expired_period) => latest_expired_period,
+                None => {
+                    // Protocol hasn't advanced enough to have any expired entries.
+                    return T::WeightInfo::on_idle_cleanup();
+                }
+            };
+
+            // Get the oldest valid era - any era before it is safe to be cleaned up.
+            let oldest_valid_era = match PeriodEnd::<T>::get(latest_expired_period) {
+                Some(period_end_info) => period_end_info.final_era.saturating_add(1),
+                None => {
+                    // Should never happen due to previous checks, but if it does, log an error and move on.
+                    log::error!(
+                        target: LOG_TARGET,
+                        "Period end info for period number {} is missing.",
+                        latest_expired_period
+                    );
+                    return T::WeightInfo::on_idle_cleanup();
+                }
+            };
+
+            // Attempt to cleanup one expired entry.
+            if let Some(era_reward) = EraRewards::<T>::get(next_era_index) {
+                // If oldest valid era comes AFTER this span, it's safe to delete it.
+                if era_reward.last_era() < oldest_valid_era {
+                    EraRewards::<T>::remove(next_era_index);
+
+                    HistoryCleanupMarker::<T>::put(
+                        next_era_index.saturating_add(T::EraRewardSpanLength::get()),
+                    );
+                }
+            } else {
+                // Should never happen, but if it does, log an error and move on.
+                log::error!(
+                    target: LOG_TARGET,
+                    "Era rewards span for era {} is missing, but cleanup marker is set.",
+                    next_era_index
+                );
+            }
+
+            // We could try & cleanup more entries, but since it's not a critical operation and can happen whenever,
+            // we opt for the simpler solution where only 1 entry per block is cleaned up.
+
+            T::WeightInfo::on_idle_cleanup()
         }
     }
 

@@ -71,6 +71,7 @@ pub trait WeightInfo {
 	fn on_initialize_build_and_earn_to_voting() -> Weight;
 	fn on_initialize_build_and_earn_to_build_and_earn() -> Weight;
 	fn dapp_tier_assignment(x: u32, ) -> Weight;
+	fn on_idle_cleanup() -> Weight;
 }
 
 /// Weights for pallet_dapp_staking_v3 using the Substrate node and recommended hardware.
@@ -439,6 +440,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(x.into())))
 			.saturating_add(Weight::from_parts(0, 2073).saturating_mul(x.into()))
 	}
+	fn on_idle_cleanup() -> Weight {
+		T::DbWeight::get().reads_writes(3, 2)
+	}
 }
 
 // For backwards compatibility and tests
@@ -805,5 +809,8 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(x.into())))
 			.saturating_add(Weight::from_parts(0, 2073).saturating_mul(x.into()))
+	}
+	fn on_idle_cleanup() -> Weight {
+		RocksDbWeight::get().reads_writes(3, 2)
 	}
 }
