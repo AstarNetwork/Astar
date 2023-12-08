@@ -308,7 +308,60 @@ impl Default for UnlockingChunk {
     }
 }
 
-/// General info about user's stakes
+/// General info about an account's lock & stakes.
+///
+/// ## Overview
+///
+/// The most complex part about this type are the `staked` and `staked_future` fields.
+/// To understand why the two fields exist and how they are used, it's important to consider some facts:
+/// * when an account _stakes_, the staked amount is only eligible for rewards from the next era
+/// * all stakes are reset when a period ends - but this is done in a lazy fashion, account ledgers aren't directly updated
+/// * `stake` and `unstake` operations are allowed only if the account has claimed all pending rewards
+///
+/// In order to keep track of current era stake, and _next era_ stake, two fields are needed.
+/// Since it's not allowed to stake/unstake if there are pending rewards, it's guaranteed that the `staked` and `staked_future` eras are **always consecutive**.
+/// In order to understand if _stake_ is still valid, it's enough to check the `period` field of either `staked` or `staked_future`.
+///
+/// ## Example
+///
+/// ### Scenario 1
+///
+/// * current era is **20**, and current period is **1**
+/// * `staked` is equal to: `{ voting: 100, build_and_earn: 50, era: 5, period: 1 }`
+/// * `staked_future` is equal to: `{ voting: 100, build_and_earn: 100, era: 6, period: 1 }`
+///
+/// The correct way to interpret this is:
+/// * account had staked **150** in total in era 5
+/// * account had increased their stake to **200** in total in era 6
+/// * since then, era 6, account hadn't staked or unstaked anything or hasn't claimed any rewards
+/// * since we're in era **20** and period is still **1**, the account's stake for eras **7** to **20** is still **200**
+///
+/// ### Scenario 2
+///
+/// * current era is **20**, and current period is **1**
+/// * `staked` is equal to: `{ voting: 0, build_and_earn: 0, era: 0, period: 0 }`
+/// * `staked_future` is equal to: `{ voting: 0, build_and_earn: 350, era: 13, period: 1 }`
+///
+/// The correct way to interpret this is:
+/// * `staked` entry is _empty_
+/// * account had called `stake` during era 12, and staked **350** for the next era
+/// * account hadn't staked, unstaked or claimed rewards since then
+/// * since we're in era **20** and period is still **1**, the account's stake for eras **13** to **20** is still **350**
+///
+/// ### Scenario 3
+///
+/// * current era is **30**, and current period is **2**
+/// * period **1** ended after era **24**, and period **2** started in era **25**
+/// * `staked` is equal to: `{ voting: 100, build_and_earn: 300, era: 20, period: 1 }`
+/// * `staked_future` is equal to `None`
+///
+/// The correct way to interpret this is:
+/// * in era **20**, account had claimed rewards for the past eras, so only the `staked` entry remained
+/// * since then, account hadn't staked, unstaked or claimed rewards
+/// * period 1 ended in era **24**, which means that after that era, the `staked` entry is no longer valid
+/// * account had staked **400** in total from era **20** up to era **24** (inclusive)
+/// * account's stake in era **25** is **zero**
+///
 #[derive(
     Encode,
     Decode,
@@ -505,12 +558,12 @@ where
     /// Ensures that the provided era & period are valid according to the current ledger state.
     fn stake_unstake_argument_check(
         &self,
-        era: EraNumber,
+        current_era: EraNumber,
         current_period_info: &PeriodInfo,
     ) -> Result<(), AccountLedgerError> {
         if !self.staked.is_empty() {
             // In case entry for the current era exists, it must match the era exactly.
-            if self.staked.era != era {
+            if self.staked.era != current_era {
                 return Err(AccountLedgerError::InvalidEra);
             }
             if self.staked.period != current_period_info.number {
@@ -518,7 +571,7 @@ where
             }
             // In case it doesn't (i.e. first time staking), then the future era must either be the current or the next era.
         } else if let Some(stake_amount) = self.staked_future {
-            if stake_amount.era != era.saturating_add(1) && stake_amount.era != era {
+            if stake_amount.era != current_era.saturating_add(1) && stake_amount.era != current_era {
                 return Err(AccountLedgerError::InvalidEra);
             }
             if stake_amount.period != current_period_info.number {
@@ -542,14 +595,14 @@ where
     pub fn add_stake_amount(
         &mut self,
         amount: Balance,
-        era: EraNumber,
+        current_era: EraNumber,
         current_period_info: PeriodInfo,
     ) -> Result<(), AccountLedgerError> {
         if amount.is_zero() {
             return Ok(());
         }
 
-        self.stake_unstake_argument_check(era, &current_period_info)?;
+        self.stake_unstake_argument_check(current_era, &current_period_info)?;
 
         if self.stakeable_amount(current_period_info.number) < amount {
             return Err(AccountLedgerError::UnavailableStakeFunds);
@@ -562,7 +615,7 @@ where
             }
             None => {
                 let mut stake_amount = self.staked;
-                stake_amount.era = era.saturating_add(1);
+                stake_amount.era = current_era.saturating_add(1);
                 stake_amount.period = current_period_info.number;
                 stake_amount.add(amount, current_period_info.subperiod);
                 self.staked_future = Some(stake_amount);
@@ -580,14 +633,14 @@ where
     pub fn unstake_amount(
         &mut self,
         amount: Balance,
-        era: EraNumber,
+        current_era: EraNumber,
         current_period_info: PeriodInfo,
     ) -> Result<(), AccountLedgerError> {
         if amount.is_zero() {
             return Ok(());
         }
 
-        self.stake_unstake_argument_check(era, &current_period_info)?;
+        self.stake_unstake_argument_check(current_era, &current_period_info)?;
 
         // User must be precise with their unstake amount.
         if self.staked_amount(current_period_info.number) < amount {
