@@ -27,7 +27,7 @@ Each period consists of two subperiods:
 Each period is denoted by a number, which increments each time a new period begins.
 Period beginning is marked by the `voting` subperiod, after which follows the `build&earn` period.
 
-Stakes are **only** valid throughout a period. When new period starts, all stakes are reset to **zero**. This helps prevent projects remaining staked due to intertia of stakers, and makes for a more dynamic staking system. Staker doesn't need to do anything for this to happe, it is automatic.
+Stakes are **only** valid throughout a period. When new period starts, all stakes are reset to **zero**. This helps prevent projects remaining staked due to intertia of stakers, and makes for a more dynamic staking system. Staker doesn't need to do anything for this to happen, it is automatic.
 
 Even though stakes are reset, locks (or freezes) of tokens remain.
 
