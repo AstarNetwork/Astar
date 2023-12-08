@@ -79,6 +79,7 @@ where
 
         let current_era = ActiveProtocolState::<R>::get().era;
 
+        // TODO: cast to u256, and check other types where u256 is expected but not exactly provided
         Ok(succeed(EvmDataWriter::new().write(current_era).build()))
     }
 
