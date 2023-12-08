@@ -571,7 +571,8 @@ where
             }
             // In case it doesn't (i.e. first time staking), then the future era must either be the current or the next era.
         } else if let Some(stake_amount) = self.staked_future {
-            if stake_amount.era != current_era.saturating_add(1) && stake_amount.era != current_era {
+            if stake_amount.era != current_era.saturating_add(1) && stake_amount.era != current_era
+            {
                 return Err(AccountLedgerError::InvalidEra);
             }
             if stake_amount.period != current_period_info.number {
