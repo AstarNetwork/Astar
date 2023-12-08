@@ -902,6 +902,44 @@ mod benchmarks {
         }
     }
 
+    #[benchmark]
+    fn on_idle_cleanup() {
+        // Prepare init config (protocol state, tier params & config, etc.)
+        initial_config::<T>();
+
+        // Advance enough periods to trigger the cleanup
+        let retention_period = T::RewardRetentionInPeriods::get();
+        advance_to_period::<T>(
+            ActiveProtocolState::<T>::get().period_number() + retention_period + 2,
+        );
+
+        let first_era_span_index = 0;
+        assert!(
+            EraRewards::<T>::contains_key(first_era_span_index),
+            "Sanity check - era reward span entry must exist."
+        );
+        let first_period = 1;
+        assert!(
+            PeriodEnd::<T>::contains_key(first_period),
+            "Sanity check - period end info must exist."
+        );
+        let block_number = System::<T>::block_number();
+
+        #[block]
+        {
+            DappStaking::<T>::on_idle(block_number, Weight::MAX);
+        }
+
+        assert!(
+            !EraRewards::<T>::contains_key(first_era_span_index),
+            "Entry should have been cleaned up."
+        );
+        assert!(
+            !PeriodEnd::<T>::contains_key(first_period),
+            "Period end info should have been cleaned up."
+        );
+    }
+
     impl_benchmark_test_suite!(
         Pallet,
         crate::benchmarking::tests::new_test_ext(),

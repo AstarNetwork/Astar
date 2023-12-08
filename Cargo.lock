@@ -2435,6 +2435,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dapp-staking-v3-runtime-api"
+version = "0.0.1-alpha"
+dependencies = [
+ "astar-primitives",
+ "pallet-dapp-staking-v3",
+ "sp-api",
+]
+
+[[package]]
 name = "dapps-staking-chain-extension-types"
 version = "1.1.0"
 dependencies = [
@@ -6010,6 +6019,7 @@ version = "5.25.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
+ "dapp-staking-v3-runtime-api",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
