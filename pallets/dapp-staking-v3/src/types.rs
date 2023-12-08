@@ -1687,10 +1687,10 @@ pub enum DAppTierError {
 pub struct CleanupMarker {
     /// Era reward span index that should be checked & cleaned up next.
     #[codec(compact)]
-    pub era_reward_span: EraNumber,
+    pub era_reward_index: EraNumber,
     /// dApp tier rewards index that should be checked & cleaned up next.
     #[codec(compact)]
-    pub dapp_tiers: EraNumber,
+    pub dapp_tiers_index: EraNumber,
 }
 
 ///////////////////////////////////////////////////////////////////////

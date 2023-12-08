@@ -1138,7 +1138,7 @@ pub mod pallet {
                 .earliest_staked_era()
                 .ok_or(Error::<T>::InternalClaimStakerError)?;
             let era_rewards =
-                EraRewards::<T>::get(Self::era_reward_span_index(earliest_staked_era))
+                EraRewards::<T>::get(Self::era_reward_index(earliest_staked_era))
                     .ok_or(Error::<T>::NoClaimableRewards)?;
 
             // The last era for which we can theoretically claim rewards.
@@ -1543,7 +1543,7 @@ pub mod pallet {
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.
-        pub(crate) fn era_reward_span_index(era: EraNumber) -> EraNumber {
+        pub(crate) fn era_reward_index(era: EraNumber) -> EraNumber {
             era.saturating_sub(era % T::EraRewardSpanLength::get())
         }
 
@@ -1840,7 +1840,7 @@ pub mod pallet {
 
             CurrentEraInfo::<T>::put(era_info);
 
-            let era_span_index = Self::era_reward_span_index(current_era);
+            let era_span_index = Self::era_reward_index(current_era);
             let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
             if let Err(_) = span.push(current_era, era_reward) {
                 // This must never happen but we log the error just in case.
@@ -1895,12 +1895,12 @@ pub mod pallet {
             };
 
             // Attempt to cleanup one expired `EraRewards` entry.
-            if let Some(era_reward) = EraRewards::<T>::get(cleanup_marker.era_reward_span) {
+            if let Some(era_reward) = EraRewards::<T>::get(cleanup_marker.era_reward_index) {
                 // If oldest valid era comes AFTER this span, it's safe to delete it.
                 if era_reward.last_era() < oldest_valid_era {
-                    EraRewards::<T>::remove(cleanup_marker.era_reward_span);
+                    EraRewards::<T>::remove(cleanup_marker.era_reward_index);
                     cleanup_marker
-                        .era_reward_span
+                        .era_reward_index
                         .saturating_accrue(T::EraRewardSpanLength::get());
                 }
             } else {
@@ -1908,14 +1908,14 @@ pub mod pallet {
                 log::error!(
                     target: LOG_TARGET,
                     "Era rewards span for era {} is missing, but cleanup marker is set.",
-                    cleanup_marker.era_reward_span
+                    cleanup_marker.era_reward_index
                 );
             }
 
             // Attempt to cleanup one expired `DAppTiers` entry.
-            if cleanup_marker.dapp_tiers < oldest_valid_era {
-                DAppTiers::<T>::remove(cleanup_marker.dapp_tiers);
-                cleanup_marker.dapp_tiers.saturating_inc();
+            if cleanup_marker.dapp_tiers_index < oldest_valid_era {
+                DAppTiers::<T>::remove(cleanup_marker.dapp_tiers_index);
+                cleanup_marker.dapp_tiers_index.saturating_inc();
             }
 
             // One extra grace period before we cleanup period end info.

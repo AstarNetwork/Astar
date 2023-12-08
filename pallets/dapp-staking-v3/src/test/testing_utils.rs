@@ -1283,7 +1283,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
     }
 
     // 4. Verify era reward
-    let era_span_index = DappStaking::era_reward_span_index(pre_protoc_state.era);
+    let era_span_index = DappStaking::era_reward_index(pre_protoc_state.era);
     let maybe_pre_era_reward_span = pre_snapshot.era_rewards.get(&era_span_index);
     let post_era_reward_span = post_snapshot
         .era_rewards
@@ -1379,9 +1379,9 @@ pub(crate) fn assert_on_idle_cleanup() {
 
     // Check if any span or tiers cleanup is needed.
     let is_era_span_cleanup_expected =
-        pre_era_rewards[&pre_cleanup_marker.era_reward_span].last_era() < oldest_valid_era;
-    let is_dapp_tiers_cleanup_expected =
-        pre_cleanup_marker.dapp_tiers > 0 && pre_cleanup_marker.dapp_tiers < oldest_valid_era;
+        pre_era_rewards[&pre_cleanup_marker.era_reward_index].last_era() < oldest_valid_era;
+    let is_dapp_tiers_cleanup_expected = pre_cleanup_marker.dapp_tiers_index > 0
+        && pre_cleanup_marker.dapp_tiers_index < oldest_valid_era;
 
     // Check if period end info should be cleaned up
     let maybe_period_end_cleanup = match protocol_state
@@ -1401,22 +1401,22 @@ pub(crate) fn assert_on_idle_cleanup() {
 
     if is_era_span_cleanup_expected {
         assert!(!EraRewards::<Test>::contains_key(
-            pre_cleanup_marker.era_reward_span
+            pre_cleanup_marker.era_reward_index
         ));
         let span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
         assert_eq!(
-            post_cleanup_marker.era_reward_span,
-            pre_cleanup_marker.era_reward_span + span_length
+            post_cleanup_marker.era_reward_index,
+            pre_cleanup_marker.era_reward_index + span_length
         );
     }
     if is_dapp_tiers_cleanup_expected {
         assert!(
-            !DAppTiers::<Test>::contains_key(pre_cleanup_marker.dapp_tiers),
+            !DAppTiers::<Test>::contains_key(pre_cleanup_marker.dapp_tiers_index),
             "Sanity check."
         );
         assert_eq!(
-            post_cleanup_marker.dapp_tiers,
-            pre_cleanup_marker.dapp_tiers + 1
+            post_cleanup_marker.dapp_tiers_index,
+            pre_cleanup_marker.dapp_tiers_index + 1
         )
     }
 
@@ -1462,10 +1462,10 @@ pub(crate) fn required_number_of_reward_claims(account: AccountId) -> u32 {
     };
 
     let era_span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
-    let first = DappStaking::era_reward_span_index(range.0)
+    let first = DappStaking::era_reward_index(range.0)
         .checked_div(era_span_length)
         .unwrap();
-    let second = DappStaking::era_reward_span_index(range.1)
+    let second = DappStaking::era_reward_index(range.1)
         .checked_div(era_span_length)
         .unwrap();
 
