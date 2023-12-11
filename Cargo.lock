@@ -10493,6 +10493,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "xcm",
 ]
 
 [[package]]
@@ -10515,7 +10516,6 @@ dependencies = [
  "frame-support",
  "macrotest",
  "num_enum 0.5.11",
- "precompile-utils",
  "prettyplease 0.2.15",
  "proc-macro2",
  "quote",

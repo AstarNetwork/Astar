@@ -108,18 +108,6 @@ impl<Runtime, Instance> Erc20AssetsPrecompileSet<Runtime, Instance> {
     }
 }
 
-// impl<Runtime, Instance> Clone for Erc20AssetsPrecompileSet<Runtime, Instance> {
-//     fn clone(&self) -> Self {
-//         Self(PhantomData)
-//     }
-// }
-
-// impl<Runtime, Instance> Default for Erc20AssetsPrecompileSet<Runtime, Instance> {
-//     fn default() -> Self {
-//         Self(PhantomData)
-//     }
-// }
-
 #[precompile_utils::precompile]
 #[precompile::precompile_set]
 #[precompile::test_concrete_types(mock::Runtime, ())]
@@ -550,9 +538,9 @@ where
         Ok(true)
     }
 
-	fn u256_to_amount(value: U256) -> MayRevert<BalanceOf<Runtime, Instance>> {
-		value
-			.try_into()
-			.map_err(|_| RevertReason::value_is_too_large("balance type").into())
-	}
+    fn u256_to_amount(value: U256) -> MayRevert<BalanceOf<Runtime, Instance>> {
+        value
+            .try_into()
+            .map_err(|_| RevertReason::value_is_too_large("balance type").into())
+    }
 }

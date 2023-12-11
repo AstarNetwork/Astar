@@ -22,7 +22,7 @@ extern crate alloc;
 use alloc::format;
 
 use astar_primitives::xvm::{Context, FailureReason, VmId, XvmCall};
-use fp_evm::PrecompileHandle;
+use fp_evm::{ExitRevert, PrecompileFailure, PrecompileHandle};
 use frame_support::dispatch::Dispatchable;
 use pallet_evm::{AddressMapping, GasWeightMapping};
 use sp_core::U256;
@@ -128,7 +128,10 @@ where
                     u32::from_be_bytes(EVM_ERROR_MSG_SELECTOR),
                     UnboundedBytes::from(message.into_bytes()),
                 );
-                Err(revert(String::from_utf8_lossy(&data)))
+                Err(PrecompileFailure::Revert {
+                    exit_status: ExitRevert::Reverted,
+                    output: data,
+                })
             }
         }
     }
