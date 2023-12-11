@@ -25,7 +25,7 @@ syn = { version = "1.0", features = ["extra-traits", "fold", "full", "visit"] }
 macrotest = "1.0.9"
 trybuild = "1.0"
 
-precompile-utils-v2 = { path = "../", features = ["testing"] }
+precompile-utils = { path = "../", features = ["testing"] }
 
 fp-evm = { workspace = true }
 frame-support = { workspace = true }

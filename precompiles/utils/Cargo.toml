@@ -1,5 +1,5 @@
 [package]
-name = "precompile-utils"
+name = "precompile-utils-v1"
 authors = ["StakeTechnologies", "PureStake"]
 description = "Utils to write EVM precompiles."
 version = "0.5.0"

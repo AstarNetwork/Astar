@@ -1,5 +1,5 @@
 [package]
-name = "precompile-utils-v2"
+name = "precompile-utils"
 authors = { workspace = true }
 description = "Utils to write EVM precompiles."
 edition = "2021"
