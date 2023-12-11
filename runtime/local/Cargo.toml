@@ -12,6 +12,7 @@ log = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
+num_enum = { workspace = true }
 
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
@@ -78,6 +79,8 @@ pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 pallet-xvm = { workspace = true }
+
+precompile-utils = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
