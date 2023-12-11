@@ -852,9 +852,7 @@ mod xcm_new_interface_test {
                     },
                 )
                 .expect_no_logs()
-                .execute_reverts(|output| {
-                    output == b"currencies: Value is too large for length"
-                });
+                .execute_reverts(|output| output == b"currencies: Value is too large for length");
         });
     }
 
@@ -969,9 +967,7 @@ mod xcm_new_interface_test {
                     },
                 )
                 .expect_no_logs()
-                .execute_reverts(|output| {
-                    output == b"assets: Value is too large for length"
-                });
+                .execute_reverts(|output| output == b"assets: Value is too large for length");
         });
     }
 }
