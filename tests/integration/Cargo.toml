@@ -47,7 +47,7 @@ shibuya-runtime = { workspace = true, features = ["std"], optional = true }
 shiden-runtime = { workspace = true, features = ["std"], optional = true }
 
 [features]
-default = ["std", "shibuya"]
+default = ["std"]
 std = []
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]

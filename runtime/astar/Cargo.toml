@@ -14,6 +14,7 @@ log = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
+num_enum = { workspace = true }
 
 # primitives
 fp-rpc = { workspace = true }
@@ -110,6 +111,7 @@ pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 
 # Moonbeam tracing
+precompile-utils = { workspace = true }
 moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
