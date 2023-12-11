@@ -9,10 +9,10 @@ repository.workspace = true
 
 [dependencies]
 log = { workspace = true, optional = true }
+num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
-num_enum = { workspace = true }
 
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
