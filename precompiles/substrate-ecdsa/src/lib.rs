@@ -18,61 +18,47 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use fp_evm::{PrecompileHandle, PrecompileOutput};
-use pallet_evm::Precompile;
-use sp_core::ecdsa;
+use fp_evm::PrecompileHandle;
+use sp_core::{ecdsa, ConstU32};
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 
-use precompile_utils::{
-    succeed, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
-};
+use precompile_utils::prelude::*;
 
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
 
-#[precompile_utils::generate_function_selector]
-#[derive(Debug, PartialEq)]
-pub enum Action {
-    Verify = "verify(bytes,bytes,bytes)",
-}
+// ECDSA pub key bytes
+type ECDSAPubKeyBytes = ConstU32<33>;
+// ECDSA signature bytes
+type ECDSASignatureBytes = ConstU32<65>;
 
 /// A precompile to wrap substrate ecdsa functions.
 pub struct SubstrateEcdsaPrecompile<Runtime>(PhantomData<Runtime>);
 
-impl<Runtime: pallet_evm::Config> Precompile for SubstrateEcdsaPrecompile<Runtime> {
-    fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        log::trace!(target: "substrate-ecdsa-precompile", "In SubstrateEcdsa precompile");
-
-        let selector = handle.read_selector()?;
-
-        handle.check_function_modifier(FunctionModifier::View)?;
-
-        match selector {
-            // Dispatchables
-            Action::Verify => Self::verify(handle),
-        }
-    }
-}
-
+#[precompile_utils::precompile]
 impl<Runtime: pallet_evm::Config> SubstrateEcdsaPrecompile<Runtime> {
-    fn verify(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        let mut input = handle.read_input()?;
-        input.expect_arguments(3)?;
-
+    #[precompile::public("verify(bytes,bytes,bytes)")]
+    #[precompile::view]
+    fn verify(
+        _handle: &mut impl PrecompileHandle,
+        public_bytes: BoundedBytes<ECDSAPubKeyBytes>,
+        signature_bytes: BoundedBytes<ECDSASignatureBytes>,
+        message: UnboundedBytes,
+    ) -> EvmResult<bool> {
         // Parse arguments
-        let public_bytes: Vec<u8> = input.read::<Bytes>()?.into();
-        let signature_bytes: Vec<u8> = input.read::<Bytes>()?.into();
-        let message: Vec<u8> = input.read::<Bytes>()?.into();
+        let public_bytes: Vec<u8> = public_bytes.into();
+        let signature_bytes: Vec<u8> = signature_bytes.into();
+        let message: Vec<u8> = message.into();
 
         // Parse public key
         let public = if let Ok(public) = ecdsa::Public::try_from(&public_bytes[..]) {
             public
         } else {
             // Return `false` if public key length is wrong
-            return Ok(succeed(EvmDataWriter::new().write(false).build()));
+            return Ok(false);
         };
 
         // Parse signature
@@ -82,7 +68,7 @@ impl<Runtime: pallet_evm::Config> SubstrateEcdsaPrecompile<Runtime> {
             sig
         } else {
             // Return `false` if signature length is wrong
-            return Ok(succeed(EvmDataWriter::new().write(false).build()));
+            return Ok(false);
         };
 
         log::trace!(
@@ -99,6 +85,6 @@ impl<Runtime: pallet_evm::Config> SubstrateEcdsaPrecompile<Runtime> {
             signature, is_confirmed,
         );
 
-        Ok(succeed(EvmDataWriter::new().write(is_confirmed).build()))
+        Ok(is_confirmed)
     }
 }
