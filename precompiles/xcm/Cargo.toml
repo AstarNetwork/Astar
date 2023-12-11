@@ -13,7 +13,7 @@ log = { workspace = true }
 num_enum = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-xcm = { workspace = true }
-precompile-utils = { workspace = true }
+precompile-utils = { workspace = true, features = ["codec-xcm"] }
 
 # Substrate
 frame-support = { workspace = true }
@@ -42,7 +42,7 @@ hex-literal = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true }
 
-precompile-utils = { workspace = true, features = ["testing"] }
+precompile-utils = { workspace = true, features = ["testing", "codec-xcm"] }
 
 pallet-balances = { workspace = true }
 pallet-timestamp = { workspace = true }
