@@ -9,6 +9,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 parity-scale-codec = { workspace = true }
@@ -32,5 +33,14 @@ std = [
 	"frame-system/std",
 	"pallet-dapp-staking-v3/std",
 	"pallet-dapps-staking/std",
+	"frame-benchmarking/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-dapps-staking/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime"]

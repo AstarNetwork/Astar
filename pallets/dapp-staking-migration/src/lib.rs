@@ -31,11 +31,11 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use sp_io::{hashing::twox_128, storage::clear_prefix, KillStorageResult};
-use sp_runtime::traits::TrailingZeroInput;
+use sp_runtime::{traits::TrailingZeroInput, Saturating};
 
 use pallet_dapp_staking_v3::{
     AccountLedger as NewAccountLedger, CurrentEraInfo as NewCurrentEraInfo, EraInfo as NewEraInfo,
-    Ledger as NewLedger, PalletDisabled as OldPalletDisabled,
+    Ledger as NewLedger,
 };
 use pallet_dapps_staking::{
     CurrentEra as OldCurrentEra, GeneralEraInfo as OldGeneralEraInfo, Ledger as OldLedger,
@@ -105,20 +105,19 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         fn do_migrate(requested_weight_limit: Option<Weight>) -> Weight {
-            let version = <pallet_dapp_staking_v3::Pallet<T>>::on_chain_storage_version();
+            // Find out if migration is still in progress
+            let mut migration_state = MigrationStateStorage::<T>::get();
             let mut consumed_weight = T::DbWeight::get().reads(1);
 
-            // TODO: perhaps this can be improved a bit
-            if version != 0 {
+            if migration_state == MigrationState::Finished {
                 log::trace!(
                     target: LOG_TARGET,
-                    "Version is {:?} so skipping migration procedures.",
-                    version,
+                    "Migration has been finished, skipping any action."
                 );
-                Self::deposit_event(Event::<T>::EntriesMigrated(0));
                 return consumed_weight;
             }
 
+            // Calculate max allowed consumed weight.
             let max_allowed_call_weight = Self::max_call_weight();
             let weight_limit = requested_weight_limit
                 .unwrap_or(max_allowed_call_weight)
@@ -129,8 +128,13 @@ pub mod pallet {
                 weight_limit,
             );
 
-            let mut migration_state = MigrationStateStorage::<T>::get();
-
+            // Execute migration steps.
+            //
+            // 1. Migrate registered dApps
+            // 2. Migrate ledgers
+            // 3. Migrate era & stake info
+            // 4. Cleanup
+            let (mut entries_migrated, mut entries_deleted) = (0_u32, 0_u32);
             while consumed_weight.all_lt(weight_limit) {
                 match migration_state {
                     MigrationState::NotInProgress | MigrationState::RegisteredDApps => {
@@ -139,6 +143,7 @@ pub mod pallet {
                         match Self::migrate_dapps() {
                             Ok(weight) => {
                                 consumed_weight.saturating_accrue(weight);
+                                entries_migrated.saturating_inc();
                             }
                             Err(weight) => {
                                 consumed_weight.saturating_accrue(weight);
@@ -149,26 +154,42 @@ pub mod pallet {
                     MigrationState::Ledgers => match Self::migrate_ledger() {
                         Ok(weight) => {
                             consumed_weight.saturating_accrue(weight);
+                            entries_migrated.saturating_inc();
                         }
                         Err(weight) => {
                             consumed_weight.saturating_accrue(weight);
-                            migration_state = MigrationState::Cleanup;
+                            migration_state = MigrationState::EraAndLocked;
                         }
                     },
+                    MigrationState::EraAndLocked => {
+                        let weight = Self::final_migration_step();
+                        consumed_weight.saturating_accrue(weight);
+                        entries_migrated.saturating_inc();
+                        migration_state = MigrationState::Cleanup;
+                    }
                     MigrationState::Cleanup => match Self::cleanup_old_storage() {
                         Ok(weight) => {
                             consumed_weight.saturating_accrue(weight);
+                            entries_deleted.saturating_inc();
                         }
                         Err(weight) => {
                             consumed_weight.saturating_accrue(weight);
-                            migration_state = MigrationState::Final;
+                            migration_state = MigrationState::Finished;
                         }
                     },
-                    MigrationState::Final => {
-                        let weight = Self::final_migration_step();
-                        consumed_weight.saturating_accrue(weight);
+                    MigrationState::Finished => {
+                        // Nothing more to do here
+                        break;
                     }
                 }
+            }
+
+            // Deposit events if needed
+            if entries_migrated > 0 {
+                Self::deposit_event(Event::<T>::EntriesMigrated(entries_migrated));
+            }
+            if entries_deleted > 0 {
+                Self::deposit_event(Event::<T>::EntriesDeleted(entries_deleted));
             }
 
             consumed_weight
@@ -384,10 +405,12 @@ pub mod pallet {
         RegisteredDApps,
         /// In the middle of `Ledgers` migration.
         Ledgers,
+        /// Era & lock info
+        EraAndLocked,
         /// In the middle of old v2 storage cleanup
         Cleanup,
-        /// Final migration step, single migration steps.
-        Final,
+        /// All migrations have been finished
+        Finished,
     }
 
     impl Default for MigrationState {
