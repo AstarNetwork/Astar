@@ -1,8 +1,8 @@
 [package]
-name = "pallet-contracts-migration"
+name = "dapp-staking-migration"
 version = "1.0.0"
 license = "Apache-2.0"
-description = "FRAME pallet for managing multi-block pallet contracts storage migration"
+description = "Pallet for managing dApp staking v2 to v3 migration."
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -11,12 +11,15 @@ repository.workspace = true
 [dependencies]
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-pallet-contracts = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-arithmetic = { workspace = true }
+sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
+
+pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapps-staking = { workspace = true }
 
 [features]
 default = ["std"]
@@ -24,8 +27,10 @@ std = [
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"sp-std/std",
+	"sp-io/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-contracts/std",
+	"pallet-dapp-staking-v3/std",
+	"pallet-dapps-staking/std",
 ]
 try-runtime = ["frame-support/try-runtime"]

@@ -2435,6 +2435,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "dapp-staking-migration"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-dapp-staking-v3",
+ "pallet-dapps-staking",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "dapp-staking-v3-runtime-api"
 version = "0.0.1-alpha"
 dependencies = [
@@ -7660,20 +7676,6 @@ dependencies = [
  "wasm-instrument 0.4.0",
  "wasmi 0.28.0",
  "wasmparser-nostd",
-]
-
-[[package]]
-name = "pallet-contracts-migration"
-version = "1.0.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-contracts",
- "parity-scale-codec",
- "scale-info",
- "sp-arithmetic",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]

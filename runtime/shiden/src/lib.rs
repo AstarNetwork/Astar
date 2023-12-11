@@ -339,6 +339,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type UnbondingPeriod = UnbondingPeriod;
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<7>;
+    type ForcePalletDisabled = ConstBool<false>;
 }
 
 /// Multi-VM pointer to smart contract instance.

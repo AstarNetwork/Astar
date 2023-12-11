@@ -479,6 +479,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<3>;
+    type ForcePalletDisabled = ConstBool<true>;
 }
 
 /// Multi-VM pointer to smart contract instance.
