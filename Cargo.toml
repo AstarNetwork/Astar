@@ -302,7 +302,7 @@ xvm-chain-extension-types = { path = "./chain-extensions/types/xvm", default-fea
 assets-chain-extension-types = { path = "./chain-extensions/types/assets", default-features = false }
 unified-accounts-chain-extension-types = { path = "./chain-extensions/types/unified-accounts", default-features = false }
 
-precompile-utils = { path = "./precompiles/utils_v2", default-features = false }
+precompile-utils = { path = "./precompiles/utils", default-features = false }
 
 local-runtime = { path = "./runtime/local", default-features = false }
 shibuya-runtime = { path = "./runtime/shibuya", default-features = false }

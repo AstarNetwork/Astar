@@ -10497,17 +10497,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "precompile-utils-macro"
-version = "0.1.0"
-dependencies = [
- "num_enum 0.5.11",
- "proc-macro2",
- "quote",
- "sha3",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "precompile-utils-macro-v2"
 version = "0.1.0"
 dependencies = [
@@ -10523,35 +10512,6 @@ dependencies = [
  "sp-std",
  "syn 1.0.109",
  "trybuild",
-]
-
-[[package]]
-name = "precompile-utils-v1"
-version = "0.5.0"
-dependencies = [
- "assert_matches",
- "derive_more",
- "environmental",
- "evm",
- "fp-evm",
- "frame-support",
- "frame-system",
- "hex-literal",
- "impl-trait-for-tuples",
- "log",
- "num_enum 0.5.11",
- "pallet-evm",
- "parity-scale-codec",
- "precompile-utils-macro",
- "scale-info",
- "serde",
- "sha3",
- "similar-asserts",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
 ]
 
 [[package]]
