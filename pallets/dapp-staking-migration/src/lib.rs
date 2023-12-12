@@ -25,7 +25,7 @@ pub use pallet::*;
 use frame_support::{
     log,
     pallet_prelude::*,
-    traits::{fungible::MutateFreeze, Get, LockableCurrency},
+    traits::{fungible::MutateFreeze, Get, LockableCurrency, ReservableCurrency},
 };
 
 use frame_system::pallet_prelude::*;
@@ -44,6 +44,9 @@ use pallet_dapps_staking::{
 
 pub use crate::pallet::CustomMigration;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 const LOG_TARGET: &str = "dapp-staking-migration";
 
 #[frame_support::pallet]
@@ -55,6 +58,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config:
+        // Tight coupling, but it's fine since pallet is supposed to be just temporary and will be removed after migration.
         frame_system::Config + pallet_dapp_staking_v3::Config + pallet_dapps_staking::Config
     {
         /// The overarching event type.
@@ -62,7 +66,6 @@ pub mod pallet {
     }
 
     #[pallet::storage]
-    #[pallet::getter(fn migration_state)]
     pub type MigrationStateStorage<T: Config> = StorageValue<_, MigrationState, ValueQuery>;
 
     #[pallet::event]
@@ -106,10 +109,10 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         fn do_migrate(requested_weight_limit: Option<Weight>) -> Weight {
             // Find out if migration is still in progress
-            let mut migration_state = MigrationStateStorage::<T>::get();
+            let init_migration_state = MigrationStateStorage::<T>::get();
             let mut consumed_weight = T::DbWeight::get().reads(1);
 
-            if migration_state == MigrationState::Finished {
+            if init_migration_state == MigrationState::Finished {
                 log::trace!(
                     target: LOG_TARGET,
                     "Migration has been finished, skipping any action."
@@ -128,13 +131,15 @@ pub mod pallet {
                 weight_limit,
             );
 
+            let mut migration_state = init_migration_state.clone();
+            let (mut entries_migrated, mut entries_deleted) = (0_u32, 0_u32);
+
             // Execute migration steps.
             //
             // 1. Migrate registered dApps
             // 2. Migrate ledgers
             // 3. Migrate era & stake info
             // 4. Cleanup
-            let (mut entries_migrated, mut entries_deleted) = (0_u32, 0_u32);
             while consumed_weight.all_lt(weight_limit) {
                 match migration_state {
                     MigrationState::NotInProgress | MigrationState::RegisteredDApps => {
@@ -162,7 +167,7 @@ pub mod pallet {
                         }
                     },
                     MigrationState::EraAndLocked => {
-                        let weight = Self::final_migration_step();
+                        let weight = Self::migrate_era_and_locked();
                         consumed_weight.saturating_accrue(weight);
                         entries_migrated.saturating_inc();
                         migration_state = MigrationState::Cleanup;
@@ -192,6 +197,11 @@ pub mod pallet {
                 Self::deposit_event(Event::<T>::EntriesDeleted(entries_deleted));
             }
 
+            if migration_state != init_migration_state {
+                MigrationStateStorage::<T>::put(migration_state);
+                consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
+            }
+
             consumed_weight
         }
 
@@ -211,6 +221,12 @@ pub mod pallet {
                         // TODO - benchmark this
                         return Ok(T::DbWeight::get().reads(1));
                     }
+
+                    // Release reserved funds from the old dApps staking
+                    <T as pallet_dapps_staking::Config>::Currency::unreserve(
+                        &old_dapp_info.developer,
+                        <T as pallet_dapps_staking::Config>::RegisterDeposit::get(),
+                    );
 
                     // Trick to get around different associated types which are essentially the same underlying struct.
                     let new_smart_contract = match Decode::decode(&mut TrailingZeroInput::new(
@@ -232,11 +248,6 @@ pub mod pallet {
                         }
                     };
 
-                    // TODO: alternative is that we don't use the extrinsic logic, but do the insert manually.
-                    // Howeer, this approach has the benefit of the obvious code reuse + emitting of the event.
-                    // Each dApp is getting a new unique dApp id and this will keep event data consistent - every dApp will have an event with its associated Id.
-                    //
-                    // TODO2: maybe also use the same approach for `lock` of the new `Ledger`?
                     match pallet_dapp_staking_v3::Pallet::<T>::register(
                         frame_system::RawOrigin::Root.into(),
                         old_dapp_info.developer.clone(),
@@ -293,11 +304,15 @@ pub mod pallet {
                         &staker,
                     );
 
-                    // TODO: emit event for claiming unbonded amount
-                    // TODO2: check with team to understant what kind of additional events we want to emit in order for
+                    // TODO: emit event for claiming unbonded amount?
+                    // TODO2: check with team to understand what kind of additional events we want to emit in order for
                     // indexer logic to keep on working?
 
-                    // TODO3: also need to copy over `staked` into `CurrentEraInfo` storage!
+                    // TODO3: Maybe we can call the extrinsic directly here.
+                    // As a result, we have no logic duplication, and correct event will be emitted.
+                    // This should make it easy for the indexers.
+
+                    // TODO4: need to check if new minimum lock amount is different from the previous one.
 
                     match <T as pallet_dapp_staking_v3::Config>::Currency::set_freeze(
                         &pallet_dapp_staking_v3::FreezeReason::DAppStaking.into(),
@@ -345,25 +360,8 @@ pub mod pallet {
             }
         }
 
-        /// Used to remove one entry from the old _dapps_staking_v2_ storage.
-        ///
-        /// If there are no more entries to remove, returns `Err(_)` with consumed weight. Otherwise returns Ok with consumed weight.
-        pub(crate) fn cleanup_old_storage() -> Result<Weight, Weight> {
-            let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
-            let keys_removed = match clear_prefix(&hashed_prefix, Some(1)) {
-                KillStorageResult::AllRemoved(value) => value,
-                KillStorageResult::SomeRemaining(value) => value,
-            } as u64;
-
-            if keys_removed > 0 {
-                Ok(T::DbWeight::get().writes(1))
-            } else {
-                Err(T::DbWeight::get().reads(1))
-            }
-        }
-
-        /// Execute final migration step - copy over total locked amount.
-        pub(crate) fn final_migration_step() -> Weight {
+        /// Migrate era and total locked amount
+        pub(crate) fn migrate_era_and_locked() -> Weight {
             let ongoing_era = OldCurrentEra::<T>::get();
             let general_era_info = OldGeneralEraInfo::<T>::get(&ongoing_era).unwrap_or_else(|| {
                 log::error!(
@@ -390,11 +388,30 @@ pub mod pallet {
             T::DbWeight::get().reads(1)
         }
 
+        /// Used to remove one entry from the old _dapps_staking_v2_ storage.
+        ///
+        /// If there are no more entries to remove, returns `Err(_)` with consumed weight. Otherwise returns Ok with consumed weight.
+        pub(crate) fn cleanup_old_storage() -> Result<Weight, Weight> {
+            let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
+            let keys_removed = match clear_prefix(&hashed_prefix, Some(1)) {
+                KillStorageResult::AllRemoved(value) => value,
+                KillStorageResult::SomeRemaining(value) => value,
+            } as u64;
+
+            if keys_removed > 0 {
+                Ok(T::DbWeight::get().writes(1))
+            } else {
+                Err(T::DbWeight::get().reads(1))
+            }
+        }
+
         /// Max allowed weight that migration should be allowed to consume
         fn max_call_weight() -> Weight {
             // 50% of block should be fine
             T::BlockWeights::get().max_block / 2
         }
+
+        // TODO: add some safety margin, in case of overspending
     }
 
     #[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
