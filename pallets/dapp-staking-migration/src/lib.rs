@@ -25,10 +25,10 @@ pub use pallet::*;
 use frame_support::{
     log,
     pallet_prelude::*,
-    traits::{fungible::MutateFreeze, Get, LockableCurrency, ReservableCurrency},
+    traits::{Get, LockableCurrency, ReservableCurrency},
 };
 
-use frame_system::pallet_prelude::*;
+use frame_system::{pallet_prelude::*, RawOrigin};
 use parity_scale_codec::{Decode, Encode};
 use sp_io::{hashing::twox_128, storage::clear_prefix, KillStorageResult};
 use sp_runtime::{
@@ -36,10 +36,7 @@ use sp_runtime::{
     Saturating,
 };
 
-use pallet_dapp_staking_v3::{
-    AccountLedger as NewAccountLedger, CurrentEraInfo as NewCurrentEraInfo, EraInfo as NewEraInfo,
-    Ledger as NewLedger,
-};
+use pallet_dapp_staking_v3::{CurrentEraInfo as NewCurrentEraInfo, EraInfo as NewEraInfo};
 use pallet_dapps_staking::{
     CurrentEra as OldCurrentEra, GeneralEraInfo as OldGeneralEraInfo, Ledger as OldLedger,
     RegisteredDapps as OldRegisteredDapps,
@@ -276,7 +273,7 @@ pub mod pallet {
                     };
 
                     match pallet_dapp_staking_v3::Pallet::<T>::register(
-                        frame_system::RawOrigin::Root.into(),
+                        RawOrigin::Root.into(),
                         old_dapp_info.developer.clone(),
                         new_smart_contract,
                     ) {
@@ -329,50 +326,27 @@ pub mod pallet {
                         &staker,
                     );
 
-                    // TODO: emit event for claiming unbonded amount?
-                    // TODO2: check with team to understand what kind of additional events we want to emit in order for
-                    // indexer logic to keep on working?
-
-                    // TODO3: Maybe we can call the extrinsic directly here.
-                    // As a result, we have no logic duplication, and correct event will be emitted.
-                    // This should make it easy for the indexers.
-
-                    // TODO4: need to check if new minimum lock amount is different from the previous one.
-
-                    match <T as pallet_dapp_staking_v3::Config>::Currency::set_freeze(
-                        &pallet_dapp_staking_v3::FreezeReason::DAppStaking.into(),
-                        &staker,
+                    match pallet_dapp_staking_v3::Pallet::<T>::lock(
+                        RawOrigin::Signed(staker.clone()).into(),
                         locked,
                     ) {
                         Ok(_) => {}
-                        Err(err) => {
-                            // Shortly - this can never happen. If it does, it should be detected during test.
-                            // However, fallback is to just log it and continue - stakers locks have been released,
-                            // so worst case scenario, we will have some stakers with full unlock.
+                        Err(error) => {
                             log::error!(
                                 target: LOG_TARGET,
-                                "Failed to set freeze for {:?} with error: {:?}.",
+                                "Failed to lock for staker {:?} with error: {:?}.",
                                 staker,
-                                err,
+                                error,
                             );
 
+                            // This should never happen, but if it does, we want to know about it.
                             #[cfg(feature = "try-runtime")]
                             panic!(
-                                "Failed to set freeze for {:?} with error: {:?}.",
-                                staker, err
+                                "Failed to lock for staker {:?} with error: {:?}.",
+                                staker, error,
                             );
-                            #[cfg(not(feature = "try-runtime"))]
-                            return Ok(SubstrateWeight::<T>::migrate_ledger_success());
                         }
                     }
-
-                    NewLedger::<T>::insert(
-                        &staker,
-                        NewAccountLedger {
-                            locked,
-                            ..Default::default()
-                        },
-                    );
 
                     Ok(SubstrateWeight::<T>::migrate_ledger_success())
                 }

@@ -18,11 +18,9 @@
 
 use super::{Pallet as Migration, *};
 
-use frame_benchmarking::account as benchmark_account;
-use frame_benchmarking::v2::*;
+use frame_benchmarking::{account as benchmark_account, v2::*};
 
 use frame_support::{assert_ok, storage::unhashed::put_raw, traits::Currency};
-use frame_system::RawOrigin;
 
 use astar_primitives::Balance;
 use pallet_dapps_staking::EraInfo as OldEraInfo;
