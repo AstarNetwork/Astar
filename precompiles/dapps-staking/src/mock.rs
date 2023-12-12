@@ -228,7 +228,7 @@ where
     }
 }
 
-pub type PCall = DappsStakingWrapperCall<TestRuntime>;
+pub type PrecompileCall = DappsStakingWrapperCall<TestRuntime>;
 
 parameter_types! {
     pub PrecompilesValue: DappPrecompile<TestRuntime> = DappPrecompile(Default::default());

@@ -216,7 +216,7 @@ where
     /// Register contract with the dapp-staking pallet
     /// Register is root origin only. This should always fail when called via evm precompile.
     #[precompile::public("register(address)")]
-    fn register(_: &mut impl PrecompileHandle, _address: Address) -> EvmResult {
+    fn register(_: &mut impl PrecompileHandle, _address: Address) -> EvmResult<bool> {
         // register is root-origin call. it should always fail when called via evm precompiles.
         Err(RevertReason::custom("register via evm precompile is not allowed").into())
     }
@@ -227,7 +227,7 @@ where
         handle: &mut impl PrecompileHandle,
         contract_h160: Address,
         value: u128,
-    ) -> EvmResult {
+    ) -> EvmResult<bool> {
         // parse contract's address
         let contract_id = Self::decode_smart_contract(contract_h160.into())?;
 
@@ -239,7 +239,7 @@ where
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
-        Ok(())
+        Ok(true)
     }
 
     /// Start unbonding process and unstake balance from the contract.
@@ -248,7 +248,7 @@ where
         handle: &mut impl PrecompileHandle,
         contract_h160: Address,
         value: u128,
-    ) -> EvmResult {
+    ) -> EvmResult<bool> {
         // parse contract's address
         let contract_id = Self::decode_smart_contract(contract_h160.into())?;
 
@@ -260,19 +260,19 @@ where
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
-        Ok(())
+        Ok(true)
     }
 
     /// Start unbonding process and unstake balance from the contract.
     #[precompile::public("withdraw_unbonded()")]
-    fn withdraw_unbonded(handle: &mut impl PrecompileHandle) -> EvmResult {
+    fn withdraw_unbonded(handle: &mut impl PrecompileHandle) -> EvmResult<bool> {
         // Build call with origin.
         let origin = R::AddressMapping::into_account_id(handle.context().caller);
         let call = pallet_dapps_staking::Call::<R>::withdraw_unbonded {};
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
-        Ok(())
+        Ok(true)
     }
 
     /// Claim rewards for the contract in the dapps-staking pallet
@@ -281,7 +281,7 @@ where
         handle: &mut impl PrecompileHandle,
         contract_h160: Address,
         era: u128,
-    ) -> EvmResult {
+    ) -> EvmResult<bool> {
         // parse contract's address
         let contract_id = Self::decode_smart_contract(contract_h160.into())?;
 
@@ -299,12 +299,12 @@ where
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
-        Ok(())
+        Ok(true)
     }
 
     /// Claim rewards for the contract in the dapps-staking pallet
     #[precompile::public("claim_staker(address)")]
-    fn claim_staker(handle: &mut impl PrecompileHandle, contract_h160: Address) -> EvmResult {
+    fn claim_staker(handle: &mut impl PrecompileHandle, contract_h160: Address) -> EvmResult<bool> {
         // parse contract's address
         let contract_id = Self::decode_smart_contract(contract_h160.into())?;
         log::trace!(target: "ds-precompile", "claim_staker {:?}", contract_id);
@@ -315,7 +315,7 @@ where
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
-        Ok(())
+        Ok(true)
     }
 
     /// Set claim reward destination for the caller
@@ -323,7 +323,7 @@ where
     fn set_reward_destination(
         handle: &mut impl PrecompileHandle,
         reward_destination_raw: u8,
-    ) -> EvmResult {
+    ) -> EvmResult<bool> {
         // Transform raw value into dapps staking enum
         let reward_destination = if reward_destination_raw == 0 {
             RewardDestination::FreeBalance
@@ -341,7 +341,7 @@ where
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
-        Ok(())
+        Ok(true)
     }
 
     /// Withdraw staked funds from the unregistered contract
@@ -349,7 +349,7 @@ where
     fn withdraw_from_unregistered(
         handle: &mut impl PrecompileHandle,
         contract_h160: Address,
-    ) -> EvmResult {
+    ) -> EvmResult<bool> {
         // parse contract's address
         let contract_id = Self::decode_smart_contract(contract_h160.into())?;
         log::trace!(target: "ds-precompile", "withdraw_from_unregistered {:?}", contract_id);
@@ -360,7 +360,7 @@ where
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
-        Ok(())
+        Ok(true)
     }
 
     /// Claim rewards for the contract in the dapps-staking pallet
@@ -370,7 +370,7 @@ where
         origin_contract_h160: Address,
         value: u128,
         target_contract_h160: Address,
-    ) -> EvmResult {
+    ) -> EvmResult<bool> {
         // parse origin contract's address
         let origin_contract_id = Self::decode_smart_contract(origin_contract_h160.into())?;
 
@@ -389,7 +389,7 @@ where
 
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), call)?;
 
-        Ok(())
+        Ok(true)
     }
 
     /// Helper method to decode type SmartContract enum

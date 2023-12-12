@@ -83,18 +83,18 @@ fn no_selector_exists_but_length_is_right() {
 
 #[test]
 fn selectors() {
-    assert!(PCall::balance_of_selectors().contains(&0x70a08231));
-    assert!(PCall::total_supply_selectors().contains(&0x18160ddd));
-    assert!(PCall::approve_selectors().contains(&0x095ea7b3));
-    assert!(PCall::allowance_selectors().contains(&0xdd62ed3e));
-    assert!(PCall::transfer_selectors().contains(&0xa9059cbb));
-    assert!(PCall::transfer_from_selectors().contains(&0x23b872dd));
-    assert!(PCall::name_selectors().contains(&0x06fdde03));
-    assert!(PCall::symbol_selectors().contains(&0x95d89b41));
-    assert!(PCall::decimals_selectors().contains(&0x313ce567));
+    assert!(PrecompileCall::balance_of_selectors().contains(&0x70a08231));
+    assert!(PrecompileCall::total_supply_selectors().contains(&0x18160ddd));
+    assert!(PrecompileCall::approve_selectors().contains(&0x095ea7b3));
+    assert!(PrecompileCall::allowance_selectors().contains(&0xdd62ed3e));
+    assert!(PrecompileCall::transfer_selectors().contains(&0xa9059cbb));
+    assert!(PrecompileCall::transfer_from_selectors().contains(&0x23b872dd));
+    assert!(PrecompileCall::name_selectors().contains(&0x06fdde03));
+    assert!(PrecompileCall::symbol_selectors().contains(&0x95d89b41));
+    assert!(PrecompileCall::decimals_selectors().contains(&0x313ce567));
 
-    assert!(PCall::mint_selectors().contains(&0x40c10f19));
-    assert!(PCall::burn_selectors().contains(&0x9dc29fac));
+    assert!(PrecompileCall::mint_selectors().contains(&0x40c10f19));
+    assert!(PrecompileCall::burn_selectors().contains(&0x9dc29fac));
 
     assert_eq!(
         crate::SELECTOR_LOG_TRANSFER,
@@ -123,18 +123,18 @@ fn modifiers() {
             let mut tester =
                 PrecompilesModifierTester::new(precompiles(), CryptoAlith, LocalAssetId(0u128));
 
-            tester.test_view_modifier(PCall::balance_of_selectors());
-            tester.test_view_modifier(PCall::total_supply_selectors());
-            tester.test_default_modifier(PCall::approve_selectors());
-            tester.test_view_modifier(PCall::allowance_selectors());
-            tester.test_default_modifier(PCall::transfer_selectors());
-            tester.test_default_modifier(PCall::transfer_from_selectors());
-            tester.test_view_modifier(PCall::name_selectors());
-            tester.test_view_modifier(PCall::symbol_selectors());
-            tester.test_view_modifier(PCall::decimals_selectors());
+            tester.test_view_modifier(PrecompileCall::balance_of_selectors());
+            tester.test_view_modifier(PrecompileCall::total_supply_selectors());
+            tester.test_default_modifier(PrecompileCall::approve_selectors());
+            tester.test_view_modifier(PrecompileCall::allowance_selectors());
+            tester.test_default_modifier(PrecompileCall::transfer_selectors());
+            tester.test_default_modifier(PrecompileCall::transfer_from_selectors());
+            tester.test_view_modifier(PrecompileCall::name_selectors());
+            tester.test_view_modifier(PrecompileCall::symbol_selectors());
+            tester.test_view_modifier(PrecompileCall::decimals_selectors());
 
-            tester.test_default_modifier(PCall::mint_selectors());
-            tester.test_default_modifier(PCall::burn_selectors());
+            tester.test_default_modifier(PrecompileCall::mint_selectors());
+            tester.test_default_modifier(PrecompileCall::burn_selectors());
         });
 }
 
@@ -159,7 +159,11 @@ fn get_total_supply() {
             ));
 
             precompiles()
-                .prepare_test(CryptoAlith, LocalAssetId(0u128), PCall::total_supply {})
+                .prepare_test(
+                    CryptoAlith,
+                    LocalAssetId(0u128),
+                    PrecompileCall::total_supply {},
+                )
                 .expect_cost(0) // TODO: Test db read/write costs
                 .expect_no_logs()
                 .execute_returns(U256::from(1000u64));
@@ -190,7 +194,7 @@ fn get_balances_known_user() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::balance_of {
+                    PrecompileCall::balance_of {
                         who: Address(CryptoAlith.into()),
                     },
                 )
@@ -218,7 +222,7 @@ fn get_balances_unknown_user() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::balance_of {
+                    PrecompileCall::balance_of {
                         who: Address(Bob.into()),
                     },
                 )
@@ -249,7 +253,7 @@ fn mint_is_ok() {
             .prepare_test(
                 CryptoAlith,
                 LocalAssetId(asset_id),
-                PCall::mint {
+                PrecompileCall::mint {
                     to: Address(Bob.into()),
                     value: mint_amount.into(),
                 },
@@ -285,7 +289,7 @@ fn mint_non_admin_is_not_ok() {
             .prepare_test(
                 Bob,
                 LocalAssetId(asset_id),
-                PCall::mint {
+                PrecompileCall::mint {
                     to: Address(Bob.into()),
                     value: 42.into(),
                 },
@@ -297,7 +301,7 @@ fn mint_non_admin_is_not_ok() {
             .prepare_test(
                 CryptoAlith,
                 LocalAssetId(0u128),
-                PCall::mint {
+                PrecompileCall::mint {
                     to: Address(CryptoAlith.into()),
                     value: U256::from(1) << 128,
                 },
@@ -338,7 +342,7 @@ fn burn_is_ok() {
             .prepare_test(
                 CryptoAlith,
                 LocalAssetId(asset_id),
-                PCall::burn {
+                PrecompileCall::burn {
                     from: Address(Bob.into()),
                     value: burn_amount.into(),
                 },
@@ -383,7 +387,7 @@ fn burn_non_admin_is_not_ok() {
             .prepare_test(
                 Bob,
                 LocalAssetId(asset_id),
-                PCall::burn {
+                PrecompileCall::burn {
                     from: Address(Bob.into()),
                     value: 42.into(),
                 },
@@ -395,7 +399,7 @@ fn burn_non_admin_is_not_ok() {
             .prepare_test(
                 CryptoAlith,
                 LocalAssetId(0u128),
-                PCall::burn {
+                PrecompileCall::burn {
                     from: Address(CryptoAlith.into()),
                     value: U256::from(1) << 128,
                 },
@@ -432,7 +436,7 @@ fn approve() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::approve {
+                    PrecompileCall::approve {
                         spender: Address(Bob.into()),
                         value: 500.into(),
                     },
@@ -472,7 +476,7 @@ fn approve_saturating() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::approve {
+                    PrecompileCall::approve {
                         spender: Address(Bob.into()),
                         value: U256::MAX,
                     },
@@ -490,7 +494,7 @@ fn approve_saturating() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::allowance {
+                    PrecompileCall::allowance {
                         owner: Address(CryptoAlith.into()),
                         spender: Address(Bob.into()),
                     },
@@ -525,7 +529,7 @@ fn check_allowance_existing() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::approve {
+                    PrecompileCall::approve {
                         spender: Address(Bob.into()),
                         value: 500.into(),
                     },
@@ -536,7 +540,7 @@ fn check_allowance_existing() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::allowance {
+                    PrecompileCall::allowance {
                         owner: Address(CryptoAlith.into()),
                         spender: Address(Bob.into()),
                     },
@@ -565,7 +569,7 @@ fn check_allowance_not_existing() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::allowance {
+                    PrecompileCall::allowance {
                         owner: Address(CryptoAlith.into()),
                         spender: Address(Bob.into()),
                     },
@@ -600,7 +604,7 @@ fn transfer() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::transfer {
+                    PrecompileCall::transfer {
                         to: Address(Bob.into()),
                         value: 400.into(),
                     },
@@ -618,7 +622,7 @@ fn transfer() {
                 .prepare_test(
                     Bob,
                     LocalAssetId(0u128),
-                    PCall::balance_of {
+                    PrecompileCall::balance_of {
                         who: Address(Bob.into()),
                     },
                 )
@@ -630,7 +634,7 @@ fn transfer() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::balance_of {
+                    PrecompileCall::balance_of {
                         who: Address(CryptoAlith.into()),
                     },
                 )
@@ -664,7 +668,7 @@ fn transfer_not_enough_founds() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::transfer {
+                    PrecompileCall::transfer {
                         to: Address(Charlie.into()),
                         value: 50.into(),
                     },
@@ -680,7 +684,7 @@ fn transfer_not_enough_founds() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::transfer {
+                    PrecompileCall::transfer {
                         to: Address(Charlie.into()),
                         value: U256::from(1) << 128,
                     },
@@ -717,7 +721,7 @@ fn transfer_from() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::approve {
+                    PrecompileCall::approve {
                         spender: Address(Bob.into()),
                         value: 500.into(),
                     },
@@ -728,7 +732,7 @@ fn transfer_from() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::approve {
+                    PrecompileCall::approve {
                         spender: Address(Bob.into()),
                         value: 500.into(),
                     },
@@ -739,7 +743,7 @@ fn transfer_from() {
                 .prepare_test(
                     Bob, // Bob is the one sending transferFrom!
                     LocalAssetId(0u128),
-                    PCall::transfer_from {
+                    PrecompileCall::transfer_from {
                         from: Address(CryptoAlith.into()),
                         to: Address(Charlie.into()),
                         value: 400.into(),
@@ -758,7 +762,7 @@ fn transfer_from() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::balance_of {
+                    PrecompileCall::balance_of {
                         who: Address(CryptoAlith.into()),
                     },
                 )
@@ -770,7 +774,7 @@ fn transfer_from() {
                 .prepare_test(
                     Bob,
                     LocalAssetId(0u128),
-                    PCall::balance_of {
+                    PrecompileCall::balance_of {
                         who: Address(Bob.into()),
                     },
                 )
@@ -782,7 +786,7 @@ fn transfer_from() {
                 .prepare_test(
                     Charlie,
                     LocalAssetId(0u128),
-                    PCall::balance_of {
+                    PrecompileCall::balance_of {
                         who: Address(Charlie.into()),
                     },
                 )
@@ -817,7 +821,7 @@ fn transfer_from_non_incremental_approval() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::approve {
+                    PrecompileCall::approve {
                         spender: Address(Bob.into()),
                         value: 500.into(),
                     },
@@ -839,7 +843,7 @@ fn transfer_from_non_incremental_approval() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::approve {
+                    PrecompileCall::approve {
                         spender: Address(Bob.into()),
                         value: 300.into(),
                     },
@@ -858,7 +862,7 @@ fn transfer_from_non_incremental_approval() {
                 .prepare_test(
                     Bob, // Bob is the one sending transferFrom!
                     LocalAssetId(0u128),
-                    PCall::transfer_from {
+                    PrecompileCall::transfer_from {
                         from: Address(CryptoAlith.into()),
                         to: Address(Bob.into()),
                         value: 500.into(),
@@ -896,7 +900,7 @@ fn transfer_from_above_allowance() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::approve {
+                    PrecompileCall::approve {
                         spender: Address(Bob.into()),
                         value: 300.into(),
                     },
@@ -907,7 +911,7 @@ fn transfer_from_above_allowance() {
                 .prepare_test(
                     Bob, // Bob is the one sending transferFrom!
                     LocalAssetId(0u128),
-                    PCall::transfer_from {
+                    PrecompileCall::transfer_from {
                         from: Address(CryptoAlith.into()),
                         to: Address(Bob.into()),
                         value: 400.into(),
@@ -923,7 +927,7 @@ fn transfer_from_above_allowance() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::transfer_from {
+                    PrecompileCall::transfer_from {
                         from: Address(CryptoAlith.into()),
                         to: Address(Bob.into()),
                         value: U256::from(1) << 128,
@@ -961,7 +965,7 @@ fn transfer_from_self() {
                 .prepare_test(
                     CryptoAlith, // Alice sending transferFrom herself, no need for allowance.
                     LocalAssetId(0u128),
-                    PCall::transfer_from {
+                    PrecompileCall::transfer_from {
                         from: Address(CryptoAlith.into()),
                         to: Address(Bob.into()),
                         value: 400.into(),
@@ -980,7 +984,7 @@ fn transfer_from_self() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::balance_of {
+                    PrecompileCall::balance_of {
                         who: Address(CryptoAlith.into()),
                     },
                 )
@@ -992,7 +996,7 @@ fn transfer_from_self() {
                 .prepare_test(
                     CryptoAlith,
                     LocalAssetId(0u128),
-                    PCall::balance_of {
+                    PrecompileCall::balance_of {
                         who: Address(Bob.into()),
                     },
                 )
@@ -1025,19 +1029,23 @@ fn get_metadata() {
             ));
 
             precompiles()
-                .prepare_test(CryptoAlith, LocalAssetId(0u128), PCall::name {})
+                .prepare_test(CryptoAlith, LocalAssetId(0u128), PrecompileCall::name {})
                 .expect_cost(0) // TODO: Test db read/write costs
                 .expect_no_logs()
                 .execute_returns(UnboundedBytes::from("TestToken"));
 
             precompiles()
-                .prepare_test(CryptoAlith, LocalAssetId(0u128), PCall::symbol {})
+                .prepare_test(CryptoAlith, LocalAssetId(0u128), PrecompileCall::symbol {})
                 .expect_cost(0) // TODO: Test db read/write costs
                 .expect_no_logs()
                 .execute_returns(UnboundedBytes::from("Test"));
 
             precompiles()
-                .prepare_test(CryptoAlith, LocalAssetId(0u128), PCall::decimals {})
+                .prepare_test(
+                    CryptoAlith,
+                    LocalAssetId(0u128),
+                    PrecompileCall::decimals {},
+                )
                 .expect_cost(0) // TODO: Test db read/write costs
                 .expect_no_logs()
                 .execute_returns(12u8);
@@ -1057,7 +1065,11 @@ fn minimum_balance_is_right() {
         ));
 
         precompiles()
-            .prepare_test(CryptoAlith, LocalAssetId(0u128), PCall::minimum_balance {})
+            .prepare_test(
+                CryptoAlith,
+                LocalAssetId(0u128),
+                PrecompileCall::minimum_balance {},
+            )
             .expect_cost(0) // TODO: Test db read/write costs
             .expect_no_logs()
             .execute_returns(U256::from(expected_min_balance));

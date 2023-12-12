@@ -158,7 +158,7 @@ parameter_types! {
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
-pub type PCall = Erc20AssetsPrecompileSetCall<Runtime, ()>;
+pub type PrecompileCall = Erc20AssetsPrecompileSetCall<Runtime, ()>;
 
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();

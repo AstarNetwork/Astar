@@ -45,7 +45,7 @@ fn current_era_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                PCall::read_current_era {},
+                PrecompileCall::read_current_era {},
             )
             .expect_cost(READ_WEIGHT)
             .expect_no_logs()
@@ -59,7 +59,7 @@ fn current_era_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                PCall::read_current_era {},
+                PrecompileCall::read_current_era {},
             )
             .expect_cost(READ_WEIGHT)
             .expect_no_logs()
@@ -76,7 +76,7 @@ fn read_unbonding_period_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                PCall::read_unbonding_period {},
+                PrecompileCall::read_unbonding_period {},
             )
             .expect_cost(0)
             .expect_no_logs()
@@ -97,7 +97,7 @@ fn read_era_reward_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                PCall::read_era_reward {
+                PrecompileCall::read_era_reward {
                     era: second_era.into(),
                 },
             )
@@ -119,7 +119,7 @@ fn read_era_staked_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                PCall::read_era_staked { era: zero_era },
+                PrecompileCall::read_era_staked { era: zero_era },
             )
             .expect_cost(READ_WEIGHT)
             .expect_no_logs()
@@ -139,7 +139,7 @@ fn register_via_precompile_fails() {
                 .prepare_test(
                     TestAccount::Alex,
                     precompile_address(),
-                    PCall::register {
+                    PrecompileCall::register {
                         _address: Address(TEST_CONTRACT.clone()),
                     },
                 )
@@ -421,7 +421,7 @@ fn read_staked_amount_h160_verify(staker: TestAccount, amount: u128) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            PCall::read_staked_amount {
+            PrecompileCall::read_staked_amount {
                 staker: H160::from(staker).to_fixed_bytes().into(),
             },
         )
@@ -435,7 +435,7 @@ fn read_staked_amount_ss58_verify(staker: TestAccount, amount: u128) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            PCall::read_staked_amount {
+            PrecompileCall::read_staked_amount {
                 staker: AccountId32::from(staker).encode().into(),
             },
         )
@@ -449,13 +449,13 @@ fn bond_stake_and_verify(staker: TestAccount, contract: H160, amount: u128) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            PCall::bond_and_stake {
+            PrecompileCall::bond_and_stake {
                 contract_h160: Address(contract),
                 value: amount,
             },
         )
         .expect_no_logs()
-        .execute_returns(());
+        .execute_returns(true);
 
     read_staked_amount_h160_verify(staker.clone(), amount);
     read_staked_amount_ss58_verify(staker, amount);
@@ -467,13 +467,13 @@ fn unbond_unstake_and_verify(staker: TestAccount, contract: H160, amount: u128) 
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            PCall::unbond_and_unstake {
+            PrecompileCall::unbond_and_unstake {
                 contract_h160: Address(contract),
                 value: amount,
             },
         )
         .expect_no_logs()
-        .execute_returns(());
+        .execute_returns(true);
 }
 
 /// helper function to withdraw unstaked funds and verify if result is OK
@@ -490,10 +490,10 @@ fn withdraw_unbonded_verify(staker: TestAccount) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            PCall::withdraw_unbonded {},
+            PrecompileCall::withdraw_unbonded {},
         )
         .expect_no_logs()
-        .execute_returns(());
+        .execute_returns(true);
 
     assert_eq!(
         <TestRuntime as pallet_evm::Config>::Currency::free_balance(&staker_acc_id),
@@ -517,12 +517,12 @@ fn set_reward_destination_verify(staker: TestAccount, reward_destination: Reward
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            PCall::set_reward_destination {
+            PrecompileCall::set_reward_destination {
                 reward_destination_raw,
             },
         )
         .expect_no_logs()
-        .execute_returns(());
+        .execute_returns(true);
 
     let final_ledger = DappsStaking::ledger(&staker_acc_id);
     assert_eq!(final_ledger.reward_destination(), reward_destination);
@@ -540,12 +540,12 @@ fn withdraw_from_unregistered_verify(staker: TestAccount, contract: H160) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            PCall::withdraw_from_unregistered {
+            PrecompileCall::withdraw_from_unregistered {
                 contract_h160: Address(contract),
             },
         )
         .expect_no_logs()
-        .execute_returns(());
+        .execute_returns(true);
 
     let final_staker_info = DappsStaking::staker_info(&staker_acc_id, &smart_contract);
     assert!(final_staker_info.latest_staked_value().is_zero());
@@ -572,14 +572,14 @@ fn nomination_transfer_verify(
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            PCall::nomination_transfer {
+            PrecompileCall::nomination_transfer {
                 origin_contract_h160: Address(origin_contract),
                 value: amount,
                 target_contract_h160: Address(target_contract),
             },
         )
         .expect_no_logs()
-        .execute_returns(());
+        .execute_returns(true);
 
     let final_origin_staker_info =
         DappsStaking::staker_info(&staker_acc_id, &origin_smart_contract);
@@ -613,13 +613,13 @@ fn claim_dapp_and_verify(contract: H160, era: EraIndex) {
         .prepare_test(
             TestAccount::Bobo,
             precompile_address(),
-            PCall::claim_dapp {
+            PrecompileCall::claim_dapp {
                 contract_h160: Address(contract),
                 era: era as u128,
             },
         )
         .expect_no_logs()
-        .execute_returns(());
+        .execute_returns(true);
 }
 
 /// helper function to bond, stake and verify if the result is OK
@@ -628,12 +628,12 @@ fn claim_staker_and_verify(staker: TestAccount, contract: H160) {
         .prepare_test(
             staker,
             precompile_address(),
-            PCall::claim_staker {
+            PrecompileCall::claim_staker {
                 contract_h160: Address(contract),
             },
         )
         .expect_no_logs()
-        .execute_returns(());
+        .execute_returns(true);
 }
 
 fn contract_era_stake_verify(contract: H160, amount: Balance) {
@@ -641,7 +641,7 @@ fn contract_era_stake_verify(contract: H160, amount: Balance) {
         .prepare_test(
             TestAccount::Alex,
             precompile_address(),
-            PCall::read_contract_stake {
+            PrecompileCall::read_contract_stake {
                 contract_h160: Address(contract),
             },
         )
@@ -656,7 +656,7 @@ fn verify_staked_amount(contract: H160, staker: TestAccount, amount: Balance) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            PCall::read_staked_amount_on_contract {
+            PrecompileCall::read_staked_amount_on_contract {
                 contract_h160: Address(contract),
                 staker: H160::from(staker).to_fixed_bytes().into(),
             },

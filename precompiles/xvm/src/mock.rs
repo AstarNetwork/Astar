@@ -216,7 +216,7 @@ parameter_types! {
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
-pub type PCall = XvmPrecompileCall<Runtime, MockXvmWithArgsCheck>;
+pub type PrecompileCall = XvmPrecompileCall<Runtime, MockXvmWithArgsCheck>;
 
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();

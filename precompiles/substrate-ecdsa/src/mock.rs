@@ -198,7 +198,7 @@ parameter_types! {
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
-pub type PCall = SubstrateEcdsaPrecompileCall<Runtime>;
+pub type PrecompileCall = SubstrateEcdsaPrecompileCall<Runtime>;
 
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();

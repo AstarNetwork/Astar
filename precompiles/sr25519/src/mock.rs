@@ -198,7 +198,7 @@ parameter_types! {
     pub const WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
-pub type PCall = Sr25519PrecompileCall<Runtime>;
+pub type PrecompileCall = Sr25519PrecompileCall<Runtime>;
 
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();

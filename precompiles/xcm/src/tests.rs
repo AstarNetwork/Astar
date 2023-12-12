@@ -42,7 +42,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_withdraw_native_v1 {
+                    PrecompileCall::assets_withdraw_native_v1 {
                         assets: vec![Address::from(H160::repeat_byte(0xF1))].into(),
                         amounts: vec![].into(),
                         recipient_account_id: H256::repeat_byte(0xF1),
@@ -58,7 +58,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_withdraw_native_v1 {
+                    PrecompileCall::assets_withdraw_native_v1 {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![42000u64.into()].into(),
                         recipient_account_id: H256::repeat_byte(0xF1),
@@ -83,7 +83,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_withdraw_native_v1 {
+                    PrecompileCall::assets_withdraw_native_v1 {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![42000u64.into()].into(),
                         recipient_account_id: H256::repeat_byte(0xF1),
@@ -102,7 +102,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_withdraw_native_v1 {
+                    PrecompileCall::assets_withdraw_native_v1 {
                         assets: vec![
                             Address::from(H160::repeat_byte(0xF1)),
                             Address::from(H160::repeat_byte(0xF2)),
@@ -137,7 +137,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_withdraw_native_v1 {
+                    PrecompileCall::assets_withdraw_native_v1 {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![42000u64.into()].into(),
                         recipient_account_id: H256::repeat_byte(0xF1),
@@ -154,7 +154,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_withdraw_evm_v1 {
+                    PrecompileCall::assets_withdraw_evm_v1 {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![42000u64.into()].into(),
                         recipient_account_id: Address(H160::repeat_byte(0xDE)),
@@ -171,7 +171,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_withdraw_evm_v1 {
+                    PrecompileCall::assets_withdraw_evm_v1 {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![42000u64.into()].into(),
                         recipient_account_id: Address(H160::repeat_byte(0xDE)),
@@ -193,7 +193,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::remote_transact_v1 {
+                    PrecompileCall::remote_transact_v1 {
                         para_id: 0.into(),
                         is_relay: true,
                         fee_asset_addr: Address::from(Runtime::asset_id_to_address(1_u128)),
@@ -215,7 +215,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_reserve_transfer_native_v1 {
+                    PrecompileCall::assets_reserve_transfer_native_v1 {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![U256::from(42000u64)].into(),
                         recipient_account_id: H256::repeat_byte(0xF1),
@@ -232,7 +232,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_reserve_transfer_evm_v1 {
+                    PrecompileCall::assets_reserve_transfer_evm_v1 {
                         assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
                         amounts: vec![U256::from(42000u64)].into(),
                         recipient_account_id: Address::from(H160::repeat_byte(0xDE)),
@@ -291,7 +291,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_reserve_transfer_native_v1 {
+                    PrecompileCall::assets_reserve_transfer_native_v1 {
                         assets: vec![Address::from(H160::zero())].into(),
                         amounts: vec![U256::from(42000u64)].into(),
                         recipient_account_id: H256::repeat_byte(0xF1),
@@ -307,7 +307,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::assets_reserve_transfer_evm_v1 {
+                    PrecompileCall::assets_reserve_transfer_evm_v1 {
                         assets: vec![Address::from(H160::zero())].into(),
                         amounts: vec![U256::from(42000u64)].into(),
                         recipient_account_id: Address::from(H160::repeat_byte(0xDE)),
@@ -374,7 +374,7 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::send_xcm {
+                    PrecompileCall::send_xcm {
                         dest,
                         xcm_call: xcm_to_send.as_slice().into(),
                     },
@@ -423,7 +423,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer {
+                    PrecompileCall::transfer {
                         currency_address: Address::from(Runtime::asset_id_to_address(1u128)),
                         amount_of_tokens: 42000u64.into(),
                         destination: parent_destination,
@@ -453,7 +453,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer {
+                    PrecompileCall::transfer {
                         currency_address: Address::from(Runtime::asset_id_to_address(2u128)),
                         amount_of_tokens: 42000u64.into(),
                         destination: sibling_parachain_location,
@@ -497,7 +497,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer {
+                    PrecompileCall::transfer {
                         currency_address: Address::from(NATIVE_ADDRESS),
                         amount_of_tokens: 42000u64.into(),
                         destination: parent_destination,
@@ -541,7 +541,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer_with_fee {
+                    PrecompileCall::transfer_with_fee {
                         currency_address: Address::from(Runtime::asset_id_to_address(1u128)),
                         amount_of_tokens: 42000u64.into(),
                         fee: 50.into(),
@@ -590,7 +590,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer_with_fee {
+                    PrecompileCall::transfer_with_fee {
                         currency_address: Address::from(NATIVE_ADDRESS),
                         amount_of_tokens: 42000u64.into(),
                         fee: 50.into(),
@@ -654,7 +654,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer_multiasset {
+                    PrecompileCall::transfer_multiasset {
                         asset_location: relay_token_location,
                         amount_of_tokens: amount.into(),
                         destination: relay_destination,
@@ -685,7 +685,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer_multiasset {
+                    PrecompileCall::transfer_multiasset {
                         asset_location: relay_token_location,
                         amount_of_tokens: amount.into(),
                         destination: para_destination,
@@ -717,7 +717,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer_multiasset {
+                    PrecompileCall::transfer_multiasset {
                         asset_location: native_token_location, // zero address by convention
                         amount_of_tokens: amount.into(),
                         destination: para_destination,
@@ -778,7 +778,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer_multi_currencies {
+                    PrecompileCall::transfer_multi_currencies {
                         currencies,
                         fee_item: 0u32,
                         destination,
@@ -844,7 +844,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer_multi_currencies {
+                    PrecompileCall::transfer_multi_currencies {
                         currencies,
                         fee_item: 0u32,
                         destination,
@@ -896,7 +896,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer_multi_assets {
+                    PrecompileCall::transfer_multi_assets {
                         assets,
                         fee_item: 0u32,
                         destination,
@@ -959,7 +959,7 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    PCall::transfer_multi_assets {
+                    PrecompileCall::transfer_multi_assets {
                         assets,
                         fee_item: 0u32,
                         destination,

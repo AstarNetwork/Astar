@@ -39,7 +39,7 @@ fn wrong_signature_length_returns_false() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                PCall::verify {
+                PrecompileCall::verify {
                     public: public.into(),
                     signature: signature.into(),
                     message: message.into(),
@@ -65,7 +65,7 @@ fn bad_signature_returns_false() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                PCall::verify {
+                PrecompileCall::verify {
                     public: public.into(),
                     signature: <sr25519::Signature as AsRef<[u8]>>::as_ref(&signature).into(),
                     message: bad_message.into(),
@@ -95,7 +95,7 @@ fn substrate_test_vector_works() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                PCall::verify {
+                PrecompileCall::verify {
                     public: public.into(),
                     signature: <sr25519::Signature as AsRef<[u8]>>::as_ref(&signature).into(),
                     message: message.into(),

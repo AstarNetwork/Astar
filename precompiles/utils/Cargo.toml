@@ -17,7 +17,7 @@ scale-info = { workspace = true, optional = true, features = ["derive"] }
 serde = { workspace = true, optional = true }
 similar-asserts = { workspace = true, optional = true }
 
-# Moonbeam
+# Frontier
 precompile-utils-macro-v2 = { path = "macro" }
 
 # Substrate
