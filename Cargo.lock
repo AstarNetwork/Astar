@@ -456,7 +456,6 @@ dependencies = [
  "moonbeam-rpc-primitives-txpool",
  "moonbeam-rpc-trace",
  "moonbeam-rpc-txpool",
- "pallet-block-reward",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-transaction-payment",
@@ -575,7 +574,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-reward",
+ "pallet-block-rewards-hybrid",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
@@ -7418,25 +7417,6 @@ dependencies = [
  "sp-consensus-beefy",
  "sp-core",
  "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-block-reward"
-version = "2.2.2"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-core",
  "sp-runtime",
  "sp-std",
 ]
