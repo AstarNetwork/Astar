@@ -2435,24 +2435,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dapp-staking-migration"
-version = "1.0.0"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-dapp-staking-v3",
- "pallet-dapps-staking",
- "parity-scale-codec",
- "scale-info",
- "sp-arithmetic",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "dapp-staking-v3-runtime-api"
 version = "0.0.1-alpha"
 dependencies = [
@@ -6062,6 +6044,7 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-migration",
  "pallet-dapp-staking-v3",
  "pallet-dapps-staking",
  "pallet-democracy",
@@ -7715,6 +7698,26 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapp-staking-migration"
+version = "1.0.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-dapp-staking-v3",
+ "pallet-dapps-staking",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",

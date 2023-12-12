@@ -479,7 +479,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<3>;
-    type ForcePalletDisabled = ConstBool<true>;
+    type ForcePalletDisabled = ConstBool<false>; // This will be set to `true` when needed
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -588,6 +588,10 @@ impl pallet_inflation::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_inflation::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_dapp_staking_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -1117,6 +1121,7 @@ construct_runtime!(
         Vesting: pallet_vesting,
         DappsStaking: pallet_dapps_staking,
         DappStaking: pallet_dapp_staking_v3,
+        DAppStakingMigration: pallet_dapp_staking_migration,
         Inflation: pallet_inflation,
         BlockReward: pallet_block_rewards_hybrid,
         TransactionPayment: pallet_transaction_payment,
@@ -1251,6 +1256,7 @@ mod benches {
         [pallet_block_rewards_hybrid, BlockReward]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_dapp_staking_v3, DappStaking]
+        [pallet_dapp_staking_migration, DAppStakingMigration]
         [pallet_inflation, Inflation]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
     );

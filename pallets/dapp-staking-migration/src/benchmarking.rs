@@ -18,6 +18,7 @@
 
 use super::{Pallet as Migration, *};
 
+use frame_benchmarking::account as benchmark_account;
 use frame_benchmarking::v2::*;
 
 use frame_support::{assert_ok, traits::Currency};
@@ -45,10 +46,15 @@ pub(super) fn initial_config<T: Config>() {
 
     // Add some dummy dApps to the old pallet.
     for idx in 0..dapps_number {
+        let developer: T::AccountId = benchmark_account("developer", idx.into(), 123);
+        <T as pallet_dapps_staking::Config>::Currency::make_free_balance_be(
+            &developer,
+            <T as pallet_dapps_staking::Config>::RegisterDeposit::get(),
+        );
         let smart_contract = smart_contract::<T>(idx);
         assert_ok!(pallet_dapps_staking::Pallet::<T>::register(
             RawOrigin::Root.into(),
-            account.clone(),
+            developer,
             smart_contract,
         ));
     }
@@ -56,7 +62,7 @@ pub(super) fn initial_config<T: Config>() {
     // Add some dummy stakers to the old pallet
     <T as pallet_dapps_staking::Config>::Currency::make_free_balance_be(
         &account,
-        Balance::max_value(),
+        Balance::max_value() / 2,
     );
     for idx in 0..dapps_number {
         let smart_contract = smart_contract::<T>(idx);
@@ -134,5 +140,21 @@ mod benchmarks {
         {
             assert!(Migration::<T>::cleanup_old_storage().is_err());
         }
+    }
+
+    impl_benchmark_test_suite!(
+        Pallet,
+        crate::benchmarking::tests::new_test_ext(),
+        crate::mock::Test,
+    );
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::mock;
+    use sp_io::TestExternalities;
+
+    pub fn new_test_ext() -> TestExternalities {
+        mock::ExtBuilder::build()
     }
 }

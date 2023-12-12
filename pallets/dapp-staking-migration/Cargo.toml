@@ -1,7 +1,7 @@
 [package]
-name = "dapp-staking-migration"
+name = "pallet-dapp-staking-migration"
 version = "1.0.0"
-license = "Apache-2.0"
+license = "GPL-3.0-or-later"
 description = "Pallet for managing dApp staking v2 to v3 migration."
 authors.workspace = true
 edition.workspace = true
@@ -23,6 +23,10 @@ astar-primitives = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 
+[dev-dependencies]
+pallet-balances = { workspace = true }
+sp-core = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
@@ -36,6 +40,8 @@ std = [
 	"pallet-dapps-staking/std",
 	"frame-benchmarking/std",
 	"astar-primitives/std",
+	"sp-core/std",
+	"pallet-balances/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

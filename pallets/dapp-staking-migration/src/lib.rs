@@ -44,6 +44,9 @@ use pallet_dapps_staking::{
 
 pub use crate::pallet::CustomMigration;
 
+#[cfg(test)]
+mod mock;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
