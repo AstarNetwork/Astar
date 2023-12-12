@@ -413,7 +413,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.25.0"
+version = "5.26.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -543,7 +543,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.25.0"
+version = "5.26.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -6007,7 +6007,7 @@ checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 
 [[package]]
 name = "local-runtime"
-version = "5.25.0"
+version = "5.26.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -6053,6 +6053,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
+ "pallet-evm-precompile-unified-accounts",
  "pallet-evm-precompile-xvm",
  "pallet-grandpa",
  "pallet-insecure-randomness-collective-flip",
@@ -8057,6 +8058,35 @@ dependencies = [
  "pallet-balances",
  "pallet-evm",
  "pallet-timestamp",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-evm-precompile-unified-accounts"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "derive_more",
+ "ethers",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal",
+ "libsecp256k1",
+ "log",
+ "num_enum 0.5.11",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-timestamp",
+ "pallet-unified-accounts",
  "parity-scale-codec",
  "precompile-utils",
  "scale-info",
@@ -13068,7 +13098,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.25.0"
+version = "5.26.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -13128,6 +13158,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
+ "pallet-evm-precompile-unified-accounts",
  "pallet-evm-precompile-xcm",
  "pallet-evm-precompile-xvm",
  "pallet-identity",
@@ -13177,7 +13208,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.25.0"
+version = "5.26.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -13210,7 +13241,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-reward",
+ "pallet-block-rewards-hybrid",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
