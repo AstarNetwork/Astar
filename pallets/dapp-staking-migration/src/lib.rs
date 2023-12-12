@@ -31,7 +31,10 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
 use sp_io::{hashing::twox_128, storage::clear_prefix, KillStorageResult};
-use sp_runtime::{traits::TrailingZeroInput, Saturating};
+use sp_runtime::{
+    traits::{TrailingZeroInput, UniqueSaturatedInto},
+    Saturating,
+};
 
 use pallet_dapp_staking_v3::{
     AccountLedger as NewAccountLedger, CurrentEraInfo as NewCurrentEraInfo, EraInfo as NewEraInfo,
@@ -178,17 +181,33 @@ pub mod pallet {
                         entries_migrated.saturating_inc();
                         migration_state = MigrationState::Cleanup;
                     }
-                    MigrationState::Cleanup => match Self::cleanup_old_storage(1) {
-                        // TODO!
-                        Ok(weight) => {
-                            consumed_weight.saturating_accrue(weight);
-                            entries_deleted.saturating_inc();
+                    MigrationState::Cleanup => {
+                        // Ensure we don't attempt to delete too much at once.
+                        const SAFETY_MARGIN: u32 = 1000;
+                        let remaining_weight = weight_limit.saturating_sub(consumed_weight);
+                        let capacity = match remaining_weight.checked_div_per_component(
+                            &SubstrateWeight::<T>::cleanup_old_storage_success(),
+                        ) {
+                            Some(entries_to_delete) => {
+                                SAFETY_MARGIN.min(entries_to_delete.unique_saturated_into())
+                            }
+                            None => {
+                                // Not enough weight to delete even a single entry
+                                break;
+                            }
+                        };
+
+                        match Self::cleanup_old_storage(capacity) {
+                            Ok(weight) => {
+                                consumed_weight.saturating_accrue(weight);
+                                entries_deleted.saturating_inc();
+                            }
+                            Err(weight) => {
+                                consumed_weight.saturating_accrue(weight);
+                                migration_state = MigrationState::Finished;
+                            }
                         }
-                        Err(weight) => {
-                            consumed_weight.saturating_accrue(weight);
-                            migration_state = MigrationState::Finished;
-                        }
-                    },
+                    }
                     MigrationState::Finished => {
                         // Nothing more to do here
                         break;
@@ -402,7 +421,10 @@ pub mod pallet {
             };
 
             if keys_removed > 0 {
-                Ok(SubstrateWeight::<T>::cleanup_old_storage_success())
+                Ok(
+                    SubstrateWeight::<T>::cleanup_old_storage_success()
+                        .saturating_mul(limit.into()),
+                )
             } else {
                 Err(SubstrateWeight::<T>::cleanup_old_storage_noop())
             }
