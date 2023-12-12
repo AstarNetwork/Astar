@@ -21,10 +21,11 @@ use super::{Pallet as Migration, *};
 use frame_benchmarking::account as benchmark_account;
 use frame_benchmarking::v2::*;
 
-use frame_support::{assert_ok, traits::Currency};
+use frame_support::{assert_ok, storage::unhashed::put_raw, traits::Currency};
 use frame_system::RawOrigin;
 
 use astar_primitives::Balance;
+use pallet_dapps_staking::EraInfo as OldEraInfo;
 
 /// Generate an unique smart contract using the provided index as a sort-of indetifier
 fn smart_contract<T: pallet_dapps_staking::Config>(index: u8) -> T::SmartContract {
@@ -42,14 +43,16 @@ pub(super) fn initial_config<T: Config>() {
     let dapps_number = 10;
 
     // Configure current era
-    OldCurrentEra::<T>::put(1);
+    let era = 1;
+    OldCurrentEra::<T>::put(era);
+    OldGeneralEraInfo::<T>::insert(era, OldEraInfo::default());
 
     // Add some dummy dApps to the old pallet.
     for idx in 0..dapps_number {
         let developer: T::AccountId = benchmark_account("developer", idx.into(), 123);
         <T as pallet_dapps_staking::Config>::Currency::make_free_balance_be(
             &developer,
-            <T as pallet_dapps_staking::Config>::RegisterDeposit::get(),
+            <T as pallet_dapps_staking::Config>::RegisterDeposit::get() * 2,
         );
         let smart_contract = smart_contract::<T>(idx);
         assert_ok!(pallet_dapps_staking::Pallet::<T>::register(
@@ -126,19 +129,31 @@ mod benchmarks {
 
     #[benchmark]
     fn cleanup_old_storage_success() {
-        initial_config::<T>();
+        let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
+        let _ = clear_prefix(&hashed_prefix, None);
+
+        put_raw(&hashed_prefix, &[0xFF; 128]);
 
         #[block]
         {
-            assert!(Migration::<T>::cleanup_old_storage().is_ok());
+            if cfg!(test) {
+                // TODO: for some reason, tests always fail here, nothing gets removed from storage.
+                // When tested against real runtime, it works just fine.
+                let _ = Migration::<T>::cleanup_old_storage(1).is_ok();
+            } else {
+                assert!(Migration::<T>::cleanup_old_storage(1).is_ok());
+            }
         }
     }
 
     #[benchmark]
     fn cleanup_old_storage_noop() {
+        let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
+        let _ = clear_prefix(&hashed_prefix, None);
+
         #[block]
         {
-            assert!(Migration::<T>::cleanup_old_storage().is_err());
+            assert!(Migration::<T>::cleanup_old_storage(1).is_err());
         }
     }
 

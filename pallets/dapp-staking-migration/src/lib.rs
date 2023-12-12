@@ -50,6 +50,9 @@ mod mock;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+mod weights;
+use weights::{SubstrateWeight, WeightInfo};
+
 const LOG_TARGET: &str = "dapp-staking-migration";
 
 #[frame_support::pallet]
@@ -175,7 +178,8 @@ pub mod pallet {
                         entries_migrated.saturating_inc();
                         migration_state = MigrationState::Cleanup;
                     }
-                    MigrationState::Cleanup => match Self::cleanup_old_storage() {
+                    MigrationState::Cleanup => match Self::cleanup_old_storage(1) {
+                        // TODO!
                         Ok(weight) => {
                             consumed_weight.saturating_accrue(weight);
                             entries_deleted.saturating_inc();
@@ -221,8 +225,8 @@ pub mod pallet {
                 Some((smart_contract, old_dapp_info)) => {
                     // In case dApp was unregistered, nothing more to do here
                     if old_dapp_info.is_unregistered() {
-                        // TODO - benchmark this
-                        return Ok(T::DbWeight::get().reads(1));
+                        // Not precise, but happens rarely
+                        return Ok(SubstrateWeight::<T>::migrate_dapps_success());
                     }
 
                     // Release reserved funds from the old dApps staking
@@ -247,7 +251,8 @@ pub mod pallet {
                             #[cfg(feature = "try-runtime")]
                             panic!("Failed to decode smart contract: {:?}", smart_contract);
                             #[cfg(not(feature = "try-runtime"))]
-                            return Ok(T::DbWeight::get().reads(1));
+                            // Not precise, but must never happen in production
+                            return Ok(SubstrateWeight::<T>::migrate_dapps_success());
                         }
                     };
 
@@ -274,13 +279,11 @@ pub mod pallet {
                         }
                     }
 
-                    // TODO - benchmark this
-                    Ok(T::DbWeight::get().reads(1))
+                    Ok(SubstrateWeight::<T>::migrate_dapps_success())
                 }
                 None => {
-                    // TODO - benchmark this
                     // Nothing more to migrate here
-                    Err(T::DbWeight::get().reads(1))
+                    Err(SubstrateWeight::<T>::migrate_dapps_noop())
                 }
             }
         }
@@ -340,7 +343,7 @@ pub mod pallet {
                                 staker, err
                             );
                             #[cfg(not(feature = "try-runtime"))]
-                            return Ok(T::DbWeight::get().reads(1));
+                            return Ok(SubstrateWeight::<T>::migrate_ledger_success());
                         }
                     }
 
@@ -352,13 +355,11 @@ pub mod pallet {
                         },
                     );
 
-                    // TODO - benchmark this
-                    Ok(T::DbWeight::get().reads(1))
+                    Ok(SubstrateWeight::<T>::migrate_ledger_success())
                 }
                 None => {
-                    // TODO - benchmark this
                     // Nothing more to migrate here
-                    Err(T::DbWeight::get().reads(1))
+                    Err(SubstrateWeight::<T>::migrate_ledger_noop())
                 }
             }
         }
@@ -387,24 +388,23 @@ pub mod pallet {
                 ..Default::default()
             });
 
-            // TODO - benchmark this
-            T::DbWeight::get().reads(1)
+            SubstrateWeight::<T>::migrate_era_and_locked()
         }
 
         /// Used to remove one entry from the old _dapps_staking_v2_ storage.
         ///
         /// If there are no more entries to remove, returns `Err(_)` with consumed weight. Otherwise returns Ok with consumed weight.
-        pub(crate) fn cleanup_old_storage() -> Result<Weight, Weight> {
+        pub(crate) fn cleanup_old_storage(limit: u32) -> Result<Weight, Weight> {
             let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
-            let keys_removed = match clear_prefix(&hashed_prefix, Some(1)) {
+            let keys_removed = match clear_prefix(&hashed_prefix, Some(limit)) {
                 KillStorageResult::AllRemoved(value) => value,
                 KillStorageResult::SomeRemaining(value) => value,
-            } as u64;
+            };
 
             if keys_removed > 0 {
-                Ok(T::DbWeight::get().writes(1))
+                Ok(SubstrateWeight::<T>::cleanup_old_storage_success())
             } else {
-                Err(T::DbWeight::get().reads(1))
+                Err(SubstrateWeight::<T>::cleanup_old_storage_noop())
             }
         }
 
