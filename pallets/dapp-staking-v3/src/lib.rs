@@ -1254,6 +1254,9 @@ pub mod pallet {
 
             // Cleanup entry since the reward has been claimed
             StakerInfo::<T>::remove(&account, &smart_contract);
+            Ledger::<T>::mutate(&account, |ledger| {
+                ledger.contract_stake_count.saturating_dec();
+            });
 
             Self::deposit_event(Event::<T>::BonusReward {
                 account: account.clone(),

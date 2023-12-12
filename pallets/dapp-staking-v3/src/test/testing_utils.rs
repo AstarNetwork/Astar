@@ -919,6 +919,11 @@ pub(crate) fn assert_claim_bonus_reward(account: AccountId, smart_contract: &Moc
         !StakerInfo::<Test>::contains_key(&account, smart_contract),
         "Entry must be removed after successful reward claim."
     );
+    assert_eq!(
+        pre_snapshot.ledger[&account].contract_stake_count,
+        Ledger::<Test>::get(&account).contract_stake_count + 1,
+        "Count must be reduced since the staker info entry was removed."
+    );
 }
 
 /// Claim dapp reward for a particular era.
