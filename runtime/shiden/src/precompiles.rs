@@ -64,7 +64,7 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
         }
     }
 }
-/// The PrecompileSet installed in the Astar runtime.
+/// The PrecompileSet installed in the Shiden runtime.
 #[precompile_utils::precompile_name_from_address]
 pub type ShidenPrecompilesSetAt<R, C> = (
     // Ethereum precompiles:
