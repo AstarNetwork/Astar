@@ -116,16 +116,6 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn migrate_era_and_locked() {
-        initial_config::<T>();
-
-        #[block]
-        {
-            Migration::<T>::migrate_era_and_locked();
-        }
-    }
-
-    #[benchmark]
     fn cleanup_old_storage_success() {
         let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
         let _ = clear_prefix(&hashed_prefix, None);

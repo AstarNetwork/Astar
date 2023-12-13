@@ -18,11 +18,22 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Purpose of this pallet is to provide multi-stage migration for moving
-/// from the old _dapps_staking_v2_ over to the new _dapp_staking_v3_.
+//! Purpose of this pallet is to provide multi-stage migration for moving
+//! from the old _dapps_staking_v2_ over to the new _dapp_staking_v3_.
+//!
+//! Since a lof of data has to be cleaned up & migrated, it is necessary to do this in multiple steps.
+//! To reduce the risk of something going wrong, nothing is done in _mandatory hooks_, like `on_initialize` or `on_idle`.
+//! Instead, a dedicated extrinsic call is introdudec, which can be called to move the migration forward.
+//! As long as this call moves the migration forward, its cost is refunded to the user.
+//! Once migration finishes, the extrinsic call will no longer do anything but won't refund the call cost either.
+//!
+//! The pallet doesn't clean after itself, so when it's removed from the runtime,
+//! the old storage should be cleaned up using `RemovePallet` type.
+
 pub use pallet::*;
 
 use frame_support::{
+    dispatch::PostDispatchInfo,
     log,
     pallet_prelude::*,
     traits::{Get, LockableCurrency, ReservableCurrency},
@@ -36,7 +47,6 @@ use sp_runtime::{
     Saturating,
 };
 
-use pallet_dapp_staking_v3::{CurrentEraInfo as NewCurrentEraInfo, EraInfo as NewEraInfo};
 use pallet_dapps_staking::{
     CurrentEra as OldCurrentEra, GeneralEraInfo as OldGeneralEraInfo, Ledger as OldLedger,
     RegisteredDapps as OldRegisteredDapps,
@@ -71,6 +81,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
     }
 
+    /// Used to store the current migration state.
     #[pallet::storage]
     pub type MigrationStateStorage<T: Config> = StorageValue<_, MigrationState, ValueQuery>;
 
@@ -83,22 +94,17 @@ pub mod pallet {
         EntriesDeleted(u32),
     }
 
-    #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
-            // TODO
-            Weight::zero()
-        }
-    }
-
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Attempt to execute migration steps, consuming up to specified amount of weight.
+        /// If no weight is specified, max allowed weight is used.
+        ///
+        /// Regardless of the specified weight limit, it will be clamped between the minimum & maximum allowed values.
+        /// This means that even if user specifies `Weight::zero()` as the limit,
+        /// the call will be charged & executed using the minimum allowed weight.
         #[pallet::call_index(0)]
         #[pallet::weight({
-            let max_allowed_call_weight = Pallet::<T>::max_call_weight();
-            weight_limit
-                .unwrap_or(max_allowed_call_weight)
-                .min(max_allowed_call_weight)
+            Pallet::<T>::clamp_call_weight(*weight_limit)
         })]
         pub fn migrate(
             origin: OriginFor<T>,
@@ -106,14 +112,27 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_signed(origin)?;
 
-            let consumed_weight = Self::do_migrate(weight_limit);
+            let weight_to_use = Self::clamp_call_weight(weight_limit);
+            let consumed_weight = Self::do_migrate(weight_to_use);
 
-            Ok(Some(consumed_weight).into())
+            // Refund the user in case migration call was needed.
+            match consumed_weight {
+                Ok(weight) => Ok(PostDispatchInfo {
+                    actual_weight: Some(weight),
+                    pays_fee: Pays::No,
+                }),
+                // No refunds or adjustments!
+                Err(_) => Ok(().into()),
+            }
         }
     }
 
     impl<T: Config> Pallet<T> {
-        fn do_migrate(requested_weight_limit: Option<Weight>) -> Weight {
+        /// Execute migrations steps until the specified weight limit has been consumed.
+        ///
+        /// Depending on the number of entries migrated and/or deleted, appropriate events are emited.
+        ///
+        fn do_migrate(weight_limit: Weight) -> Result<Weight, Weight> {
             // Find out if migration is still in progress
             let init_migration_state = MigrationStateStorage::<T>::get();
             let mut consumed_weight = T::DbWeight::get().reads(1);
@@ -123,21 +142,10 @@ pub mod pallet {
                     target: LOG_TARGET,
                     "Migration has been finished, skipping any action."
                 );
-                return consumed_weight;
+                return Err(consumed_weight);
             }
 
-            // Calculate max allowed consumed weight.
-            let max_allowed_call_weight = Self::max_call_weight();
-            let weight_limit = requested_weight_limit
-                .unwrap_or(max_allowed_call_weight)
-                .min(max_allowed_call_weight);
-            log::trace!(
-                target: LOG_TARGET,
-                "Migration weight limit will be {:?}.",
-                weight_limit,
-            );
-
-            let mut migration_state = init_migration_state.clone();
+            let mut migration_state = init_migration_state;
             let (mut entries_migrated, mut entries_deleted) = (0_u32, 0_u32);
 
             // Execute migration steps.
@@ -146,7 +154,10 @@ pub mod pallet {
             // 2. Migrate ledgers
             // 3. Migrate era & stake info
             // 4. Cleanup
-            while consumed_weight.all_lt(weight_limit) {
+            while weight_limit
+                .saturating_sub(consumed_weight)
+                .all_gte(Self::migration_weight_margin())
+            {
                 match migration_state {
                     MigrationState::NotInProgress | MigrationState::RegisteredDApps => {
                         migration_state = MigrationState::RegisteredDApps;
@@ -169,15 +180,9 @@ pub mod pallet {
                         }
                         Err(weight) => {
                             consumed_weight.saturating_accrue(weight);
-                            migration_state = MigrationState::EraAndLocked;
+                            migration_state = MigrationState::Cleanup;
                         }
                     },
-                    MigrationState::EraAndLocked => {
-                        let weight = Self::migrate_era_and_locked();
-                        consumed_weight.saturating_accrue(weight);
-                        entries_migrated.saturating_inc();
-                        migration_state = MigrationState::Cleanup;
-                    }
                     MigrationState::Cleanup => {
                         // Ensure we don't attempt to delete too much at once.
                         const SAFETY_MARGIN: u32 = 1000;
@@ -225,13 +230,14 @@ pub mod pallet {
                 consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
             }
 
-            consumed_weight
+            Ok(consumed_weight)
         }
 
         /// Used to migrate `RegisteredDapps` from the _old_ dApps staking v2 pallet over to the new `IntegratedDApps`.
         ///
         /// Steps:
         /// 1. Attempt to `drain` a single DB entry from the old storage. If it's unregistered, move on.
+        /// 2. Unregister the old `RegisterDeposit` from the developer account.
         /// 2. Re-decode old smart contract type into new one. Operation should be infalible in practice since the same underlying type is used.
         /// 3. `register` the old-new smart contract into dApp staking v3 pallet.
         ///
@@ -308,8 +314,10 @@ pub mod pallet {
         ///
         /// Steps:
         /// 1. Attempt to `drain` a single DB entry from the old storage.
-        /// 2. Re-decode old ledger into the new one. Operation should be infalible in practice since the same underlying type is used.
-        /// 3. `register` the old-new smart contract into dApp staking v3 pallet.
+        /// 2. Release the old lock from the staker account, in full.
+        /// 3. Lock (or freeze) the old _staked_ amount into the new dApp staking v3 pallet.
+        ///
+        /// **NOTE:** the amount that was undergoing the unbonding process is not migrated but is immediately fully released.
         ///
         /// Returns `Ok(_)` if an entry was migrated, `Err(_)` if there are no more entries to migrate.
         pub(crate) fn migrate_ledger() -> Result<Weight, Weight> {
@@ -357,33 +365,6 @@ pub mod pallet {
             }
         }
 
-        /// Migrate era and total locked amount
-        pub(crate) fn migrate_era_and_locked() -> Weight {
-            let ongoing_era = OldCurrentEra::<T>::get();
-            let general_era_info = OldGeneralEraInfo::<T>::get(&ongoing_era).unwrap_or_else(|| {
-                log::error!(
-                    target: LOG_TARGET,
-                    "Failed to get general era info for era (old dApps staking): {:?}.",
-                    ongoing_era,
-                );
-
-                // This should never happen, but if it does, we want to know about it.
-                #[cfg(feature = "try-runtime")]
-                panic!("Failed to get general era info for era: {:?}.", ongoing_era);
-                #[cfg(not(feature = "try-runtime"))]
-                Default::default()
-            });
-
-            // In the _old_ dapps staking, `staked` kept track of how much
-            // was actively locked & staked in the ongoing era.
-            NewCurrentEraInfo::<T>::put(NewEraInfo {
-                total_locked: general_era_info.staked,
-                ..Default::default()
-            });
-
-            SubstrateWeight::<T>::migrate_era_and_locked()
-        }
-
         /// Used to remove one entry from the old _dapps_staking_v2_ storage.
         ///
         /// If there are no more entries to remove, returns `Err(_)` with consumed weight. Otherwise returns Ok with consumed weight.
@@ -404,16 +385,46 @@ pub mod pallet {
             }
         }
 
-        /// Max allowed weight that migration should be allowed to consume
+        /// Max allowed weight that migration should be allowed to consume.
         fn max_call_weight() -> Weight {
             // 50% of block should be fine
             T::BlockWeights::get().max_block / 2
         }
 
-        // TODO: add some safety margin, in case of overspending
+        /// Min allowed weight that migration should be allowed to consume.
+        ///
+        /// This serves as a safety marging, to prevent accidental underspending due to
+        /// inprecision in implementation or benchmarks.
+        fn min_call_weight() -> Weight {
+            // 5% of block should be fine
+            T::BlockWeights::get().max_block / 10
+        }
+
+        /// Calculate call weight to use.
+        ///
+        /// In case of `None`, use the max allowed call weight.
+        /// Otherwise clamp the specified weight between the allowed min & max values.
+        fn clamp_call_weight(weight: Option<Weight>) -> Weight {
+            weight
+                .unwrap_or(Self::max_call_weight())
+                .min(Self::max_call_weight())
+                .max(Self::min_call_weight())
+        }
+
+        /// Returns the least amount of weight which should be remaining for migration in order to attempt another step.
+        ///
+        /// This is used to ensure we don't go over the limit.
+        fn migration_weight_margin() -> Weight {
+            // Consider the weight of all steps
+            SubstrateWeight::<T>::migrate_dapps_success()
+                .max(SubstrateWeight::<T>::migrate_ledger_success())
+                .max(SubstrateWeight::<T>::cleanup_old_storage_success())
+                // and add the weight of updating migration status
+                .saturating_add(T::DbWeight::get().writes(1))
+        }
     }
 
-    #[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
+    #[derive(PartialEq, Eq, Clone, Encode, Decode, Copy, TypeInfo, RuntimeDebug, MaxEncodedLen)]
     pub enum MigrationState {
         /// No migration in progress
         NotInProgress,
@@ -421,8 +432,6 @@ pub mod pallet {
         RegisteredDApps,
         /// In the middle of `Ledgers` migration.
         Ledgers,
-        /// Era & lock info
-        EraAndLocked,
         /// In the middle of old v2 storage cleanup
         Cleanup,
         /// All migrations have been finished
@@ -440,12 +449,12 @@ pub mod pallet {
         fn on_runtime_upgrade() -> Weight {
             // Ensures that first step only starts the migration with minimal changes in case of production build.
             // In case of `try-runtime`, we want predefined limit.
-            let limit = if cfg!(feature = "try-runtime") {
-                None
-            } else {
-                Some(Weight::zero())
-            };
-            Pallet::<T>::do_migrate(limit)
+            // let limit = if cfg!(feature = "try-runtime") {
+            //     Weight::zero()
+            // } else {
+            //     Weight::zero()
+            // };
+            Weight::zero()
         }
     }
 }
