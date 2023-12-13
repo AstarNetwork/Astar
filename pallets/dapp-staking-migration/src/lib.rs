@@ -70,8 +70,10 @@ use pallet_dapps_staking::{Ledger as OldLedger, RegisteredDapps as OldRegistered
 
 #[cfg(feature = "try-runtime")]
 use astar_primitives::Balance;
+#[cfg(feature = "try-runtime")]
+use sp_std::vec::Vec;
 
-pub use crate::pallet::CustomMigration;
+pub use crate::pallet::DappStakingMigrationHandler;
 
 #[cfg(test)]
 mod mock;
@@ -238,12 +240,13 @@ pub mod pallet {
                         };
 
                         match Self::cleanup_old_storage(capacity) {
-                            Ok(weight) => {
+                            Ok((weight, count)) => {
                                 consumed_weight.saturating_accrue(weight);
-                                entries_deleted.saturating_inc();
+                                entries_deleted.saturating_accrue(count);
                             }
-                            Err(weight) => {
+                            Err((weight, count)) => {
                                 consumed_weight.saturating_accrue(weight);
+                                entries_deleted.saturating_accrue(count);
                                 migration_state = MigrationState::Finished;
                             }
                         }
@@ -415,8 +418,9 @@ pub mod pallet {
 
         /// Used to remove one entry from the old _dapps_staking_v2_ storage.
         ///
-        /// If there are no more entries to remove, returns `Err(_)` with consumed weight. Otherwise returns Ok with consumed weight.
-        pub(crate) fn cleanup_old_storage(limit: u32) -> Result<Weight, Weight> {
+        /// If there are no more entries to remove, returns `Err(_)` with consumed weight and number of deleted entries.
+        /// Otherwise returns `Ok(_)` with consumed weight and number of consumed enries.
+        pub(crate) fn cleanup_old_storage(limit: u32) -> Result<(Weight, u32), (Weight, u32)> {
             let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
 
             // Repeated calls in the same block don't work, so we set the limit to `Unlimited` in case of `try-runtime` testing.
@@ -426,16 +430,29 @@ pub mod pallet {
                 Some(limit)
             };
 
-            let keys_removed = match clear_prefix(&hashed_prefix, inner_limit) {
-                KillStorageResult::AllRemoved(value) => value,
-                KillStorageResult::SomeRemaining(value) => value,
+            let (keys_removed, done) = match clear_prefix(&hashed_prefix, inner_limit) {
+                KillStorageResult::AllRemoved(value) => (value, true),
+                KillStorageResult::SomeRemaining(value) => (value, false),
             };
 
-            if keys_removed > 0 {
-                Ok(SubstrateWeight::<T>::cleanup_old_storage_success()
-                    .saturating_mul(keys_removed.into()))
+            log::trace!(
+                target: LOG_TARGET,
+                "Removed {} keys from storage.",
+                keys_removed
+            );
+
+            if !done {
+                Ok((
+                    SubstrateWeight::<T>::cleanup_old_storage_success()
+                        .saturating_mul(keys_removed.into()),
+                    keys_removed as u32,
+                ))
             } else {
-                Err(SubstrateWeight::<T>::cleanup_old_storage_noop())
+                log::trace!(target: LOG_TARGET, "All keys have been removed.",);
+                Err((
+                    SubstrateWeight::<T>::cleanup_old_storage_noop(),
+                    keys_removed as u32,
+                ))
             }
         }
 
@@ -474,7 +491,7 @@ pub mod pallet {
                 .max(SubstrateWeight::<T>::migrate_ledger_success())
                 .max(SubstrateWeight::<T>::cleanup_old_storage_success())
                 // and add the weight of updating migration status
-                .saturating_add(T::DbWeight::get().reads_writes(1, 2))
+                .saturating_add(T::DbWeight::get().writes(1))
         }
     }
 
@@ -498,16 +515,19 @@ pub mod pallet {
         }
     }
 
-    pub struct CustomMigration<T: Config>(PhantomData<T>);
-    impl<T: Config> frame_support::traits::OnRuntimeUpgrade for CustomMigration<T> {
+    pub struct DappStakingMigrationHandler<T: Config>(PhantomData<T>);
+    impl<T: Config> frame_support::traits::OnRuntimeUpgrade for DappStakingMigrationHandler<T> {
         fn on_runtime_upgrade() -> Weight {
             // When upgrade happens, we need to put dApp staking v3 into maintenance mode immediately.
             // For the old pallet, since the storage cleanup is going to happen, maintenance mode must be ensured
             // by the runtime config itself.
-            let mut consumed_weight = T::DbWeight::get().reads_writes(1, 1);
+            let mut consumed_weight = T::DbWeight::get().reads_writes(1, 2);
             pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
                 state.maintenance = true;
             });
+
+            // Set the correct init storage version
+            pallet_dapp_staking_v3::STORAGE_VERSION.put::<pallet_dapp_staking_v3::Pallet<T>>();
 
             if cfg!(feature = "try-runtime") {
                 let mut steps = 0_u32;
@@ -523,7 +543,7 @@ pub mod pallet {
                     }
                 }
 
-                log::info!(
+                log::trace!(
                     target: LOG_TARGET,
                     "dApp Staking migration finished after {} steps with total weight of {}.",
                     steps,
@@ -532,7 +552,7 @@ pub mod pallet {
 
                 consumed_weight
             } else {
-                Weight::zero()
+                consumed_weight
             }
         }
 

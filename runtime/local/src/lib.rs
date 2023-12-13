@@ -1175,7 +1175,11 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    Migrations,
 >;
+
+// TODO: remove this prior to the PR merge
+pub type Migrations = (pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
