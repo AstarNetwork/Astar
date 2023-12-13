@@ -145,6 +145,12 @@ pub mod pallet {
                 return Err(consumed_weight);
             }
 
+            // Ensure we can call dApp staking v3 extrinsics within this call.
+            consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
+            pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
+                state.maintenance = false;
+            });
+
             let mut migration_state = init_migration_state;
             let (mut entries_migrated, mut entries_deleted) = (0_u32, 0_u32);
 
@@ -152,8 +158,7 @@ pub mod pallet {
             //
             // 1. Migrate registered dApps
             // 2. Migrate ledgers
-            // 3. Migrate era & stake info
-            // 4. Cleanup
+            // 3. Cleanup
             while weight_limit
                 .saturating_sub(consumed_weight)
                 .all_gte(Self::migration_weight_margin())
@@ -224,6 +229,11 @@ pub mod pallet {
             if entries_deleted > 0 {
                 Self::deposit_event(Event::<T>::EntriesDeleted(entries_deleted));
             }
+
+            // Put the pallet back into maintenance mode.
+            pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
+                state.maintenance = true;
+            });
 
             if migration_state != init_migration_state {
                 MigrationStateStorage::<T>::put(migration_state);
@@ -420,7 +430,7 @@ pub mod pallet {
                 .max(SubstrateWeight::<T>::migrate_ledger_success())
                 .max(SubstrateWeight::<T>::cleanup_old_storage_success())
                 // and add the weight of updating migration status
-                .saturating_add(T::DbWeight::get().writes(1))
+                .saturating_add(T::DbWeight::get().reads_writes(1, 2))
         }
     }
 
@@ -447,14 +457,39 @@ pub mod pallet {
     pub struct CustomMigration<T: Config>(PhantomData<T>);
     impl<T: Config> frame_support::traits::OnRuntimeUpgrade for CustomMigration<T> {
         fn on_runtime_upgrade() -> Weight {
-            // Ensures that first step only starts the migration with minimal changes in case of production build.
-            // In case of `try-runtime`, we want predefined limit.
-            // let limit = if cfg!(feature = "try-runtime") {
-            //     Weight::zero()
-            // } else {
-            //     Weight::zero()
-            // };
-            Weight::zero()
+            // When upgrade happens, we need to put dApp staking v3 into maintenance mode immediately.
+            // For the old pallet, since the storage cleanup is going to happen, maintenance mode must be ensured
+            // by the runtime config itself.
+            let mut consumed_weight = T::DbWeight::get().reads_writes(1, 1);
+            pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
+                state.maintenance = true;
+            });
+
+            if cfg!(feature = "try-runtime") {
+                let mut steps = 0_u32;
+                while MigrationStateStorage::<T>::get() != MigrationState::Finished {
+                    match Pallet::<T>::do_migrate(crate::Pallet::<T>::max_call_weight()) {
+                        Ok(weight) => {
+                            consumed_weight.saturating_accrue(weight);
+                            steps.saturating_inc();
+                        }
+                        Err(_) => {
+                            panic!("Must never happen since we check whether state is `Finished` before calling `do_migrate`.");
+                        }
+                    }
+                }
+
+                log::info!(
+                    target: LOG_TARGET,
+                    "dApp Staking migration finished after {} steps with total weight of {}.",
+                    steps,
+                    consumed_weight,
+                );
+
+                consumed_weight
+            } else {
+                Weight::zero()
+            }
         }
     }
 }
