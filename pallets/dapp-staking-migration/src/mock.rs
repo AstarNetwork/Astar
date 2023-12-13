@@ -229,6 +229,7 @@ impl pallet_dapps_staking::Config for Test {
 
 impl pallet_dapp_staking_migration::Config for Test {
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = crate::weights::SubstrateWeight<Test>;
 }
 
 pub struct ExtBuilder;

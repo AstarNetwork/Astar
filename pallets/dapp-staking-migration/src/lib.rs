@@ -83,8 +83,8 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-mod weights;
-use weights::{SubstrateWeight, WeightInfo};
+pub mod weights;
+pub use weights::WeightInfo;
 
 const LOG_TARGET: &str = "dapp-staking-migration";
 
@@ -102,6 +102,9 @@ pub mod pallet {
     {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        /// Weight info for various calls & operations in the pallet.
+        type WeightInfo: WeightInfo;
     }
 
     /// Used to store the current migration state.
@@ -230,7 +233,7 @@ pub mod pallet {
                         const SAFETY_MARGIN: u32 = 1000;
                         let remaining_weight = weight_limit.saturating_sub(consumed_weight);
                         let capacity = match remaining_weight.checked_div_per_component(
-                            &SubstrateWeight::<T>::cleanup_old_storage_success(),
+                            &<T as Config>::WeightInfo::cleanup_old_storage_success(),
                         ) {
                             Some(entries_to_delete) => {
                                 SAFETY_MARGIN.min(entries_to_delete.unique_saturated_into())
@@ -296,7 +299,7 @@ pub mod pallet {
                     // In case dApp was unregistered, nothing more to do here
                     if old_dapp_info.is_unregistered() {
                         // Not precise, but happens rarely
-                        return Ok(SubstrateWeight::<T>::migrate_dapps_success());
+                        return Ok(<T as Config>::WeightInfo::migrate_dapps_success());
                     }
 
                     // Release reserved funds from the old dApps staking
@@ -322,7 +325,7 @@ pub mod pallet {
                             panic!("Failed to decode smart contract: {:?}", smart_contract);
                             #[cfg(not(feature = "try-runtime"))]
                             // Not precise, but must never happen in production
-                            return Ok(SubstrateWeight::<T>::migrate_dapps_success());
+                            return Ok(<T as Config>::WeightInfo::migrate_dapps_success());
                         }
                     };
 
@@ -349,11 +352,11 @@ pub mod pallet {
                         }
                     }
 
-                    Ok(SubstrateWeight::<T>::migrate_dapps_success())
+                    Ok(<T as Config>::WeightInfo::migrate_dapps_success())
                 }
                 None => {
                     // Nothing more to migrate here
-                    Err(SubstrateWeight::<T>::migrate_dapps_noop())
+                    Err(<T as Config>::WeightInfo::migrate_dapps_noop())
                 }
             }
         }
@@ -409,11 +412,11 @@ pub mod pallet {
 
                     // In case no lock action, it will be imprecise but it's fine since this
                     // isn't expected to happen, and even if it does, it's not a big deal.
-                    Ok(SubstrateWeight::<T>::migrate_ledger_success())
+                    Ok(<T as Config>::WeightInfo::migrate_ledger_success())
                 }
                 None => {
                     // Nothing more to migrate here
-                    Err(SubstrateWeight::<T>::migrate_ledger_noop())
+                    Err(<T as Config>::WeightInfo::migrate_ledger_noop())
                 }
             }
         }
@@ -445,14 +448,14 @@ pub mod pallet {
 
             if !done {
                 Ok((
-                    SubstrateWeight::<T>::cleanup_old_storage_success()
+                    <T as Config>::WeightInfo::cleanup_old_storage_success()
                         .saturating_mul(keys_removed.into()),
                     keys_removed as u32,
                 ))
             } else {
                 log::trace!(target: LOG_TARGET, "All keys have been removed.",);
                 Err((
-                    SubstrateWeight::<T>::cleanup_old_storage_noop(),
+                    <T as Config>::WeightInfo::cleanup_old_storage_noop(),
                     keys_removed as u32,
                 ))
             }
@@ -489,9 +492,9 @@ pub mod pallet {
         /// This is used to ensure we don't go over the limit.
         fn migration_weight_margin() -> Weight {
             // Consider the weight of all steps
-            SubstrateWeight::<T>::migrate_dapps_success()
-                .max(SubstrateWeight::<T>::migrate_ledger_success())
-                .max(SubstrateWeight::<T>::cleanup_old_storage_success())
+            <T as Config>::WeightInfo::migrate_dapps_success()
+                .max(<T as Config>::WeightInfo::migrate_ledger_success())
+                .max(<T as Config>::WeightInfo::cleanup_old_storage_success())
                 // and add the weight of updating migration status
                 .saturating_add(T::DbWeight::get().writes(1))
         }

@@ -592,6 +592,7 @@ impl pallet_inflation::Config for Runtime {
 
 impl pallet_dapp_staking_migration::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {

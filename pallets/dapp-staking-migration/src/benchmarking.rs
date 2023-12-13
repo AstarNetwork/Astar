@@ -21,8 +21,6 @@ use super::{Pallet as Migration, *};
 use frame_benchmarking::{account as benchmark_account, v2::*};
 use frame_support::{assert_ok, storage::unhashed::put_raw, traits::Currency};
 
-use astar_primitives::Balance;
-
 /// Generate an unique smart contract using the provided index as a sort-of indetifier
 fn smart_contract<T: pallet_dapps_staking::Config>(index: u8) -> T::SmartContract {
     // This is a hacky approach to provide different smart contracts without touching the smart contract trait.
@@ -35,7 +33,8 @@ fn smart_contract<T: pallet_dapps_staking::Config>(index: u8) -> T::SmartContrac
 
 /// Initialize the old dApp staking pallet with some storage.
 pub(super) fn initial_config<T: Config>() {
-    let dapps_number = <T as pallet_dapp_staking_v3::Config>::MaxNumberOfContracts;
+    let dapps_number = <T as pallet_dapp_staking_v3::Config>::MaxNumberOfContracts::get();
+    let dapps_number = (dapps_number as u8).min(100);
 
     // Add some dummy dApps to the old pallet.
     for idx in 0..dapps_number {
@@ -59,7 +58,7 @@ pub(super) fn initial_config<T: Config>() {
             lock_amount * 100,
         );
         assert_ok!(pallet_dapps_staking::Pallet::<T>::bond_and_stake(
-            RawOrigin::Signed(account.clone()).into(),
+            RawOrigin::Signed(staker.clone()).into(),
             smart_contract,
             lock_amount,
         ));

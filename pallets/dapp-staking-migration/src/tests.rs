@@ -44,7 +44,7 @@ fn migrate_dapps_check() {
 
         assert_eq!(
             DappStakingMigration::migrate_dapps(),
-            Ok(SubstrateWeight::<Test>::migrate_dapps_success())
+            Ok(<Test as Config>::WeightInfo::migrate_dapps_success())
         );
         assert_eq!(
             init_old_count,
@@ -61,14 +61,14 @@ fn migrate_dapps_check() {
         for _ in 1..init_old_count {
             assert_eq!(
                 DappStakingMigration::migrate_dapps(),
-                Ok(SubstrateWeight::<Test>::migrate_dapps_success())
+                Ok(<Test as Config>::WeightInfo::migrate_dapps_success())
             );
         }
 
         // Further calls should result in Err
         assert_eq!(
             DappStakingMigration::migrate_dapps(),
-            Err(SubstrateWeight::<Test>::migrate_dapps_noop())
+            Err(<Test as Config>::WeightInfo::migrate_dapps_noop())
         );
     });
 }
@@ -92,7 +92,7 @@ fn migrate_ledgers_check() {
         for x in 0..init_old_count {
             assert_eq!(
                 DappStakingMigration::migrate_ledger(),
-                Ok(SubstrateWeight::<Test>::migrate_ledger_success())
+                Ok(<Test as Config>::WeightInfo::migrate_ledger_success())
             );
 
             assert_eq!(
@@ -111,7 +111,7 @@ fn migrate_ledgers_check() {
         // Further calls should result in Err
         assert_eq!(
             DappStakingMigration::migrate_ledger(),
-            Err(SubstrateWeight::<Test>::migrate_ledger_noop())
+            Err(<Test as Config>::WeightInfo::migrate_ledger_noop())
         );
     });
 }
