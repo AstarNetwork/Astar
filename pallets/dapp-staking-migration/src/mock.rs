@@ -157,6 +157,7 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<MockSmartContract, AccountId>
     }
 
     fn set_balance(account: &AccountId, amount: Balance) {
+        use frame_support::traits::fungible::Unbalanced as FunUnbalanced;
         Balances::write_balance(account, amount)
             .expect("Must succeed in test/benchmark environment.");
     }
