@@ -23,8 +23,8 @@ use frame_support::{
     dispatch::DispatchClass,
     match_types, parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, Currency, Everything,
-        Imbalance, InstanceFilter, Nothing, OnUnbalanced,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains, Currency,
+        Everything, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -311,6 +311,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type UnbondingPeriod = ConstU32<2>;
     type MaxEraStakeValues = ConstU32<4>;
     type UnregisteredDappRewardRetention = ConstU32<7>;
+    type ForcePalletDisabled = ConstBool<false>;
 }
 
 /// The type used to represent the kinds of proxying allowed.
