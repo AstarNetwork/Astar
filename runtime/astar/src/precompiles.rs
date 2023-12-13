@@ -34,7 +34,6 @@ use pallet_evm_precompile_sr25519::Sr25519Precompile;
 use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
 use pallet_evm_precompile_xcm::XcmPrecompile;
 use precompile_utils::precompile_set::*;
-use sp_core::H160;
 use sp_std::fmt::Debug;
 
 /// The asset precompile address prefix. Addresses that match against this prefix will be routed
@@ -129,8 +128,3 @@ pub type AstarPrecompiles<R, C> = PrecompileSetBuilder<
         PrecompileSetStartingWith<AssetPrefix, Erc20AssetsPrecompileSet<R>, CallableByContract>,
     ),
 >;
-
-pub fn is_precompile_blacklisted(address: &H160) -> bool {
-    // `dispatch` precompile is not allowed to be called by smart contracts, hence the ommision of this address.
-    H160::from_low_u64_be(1025) == *address
-}

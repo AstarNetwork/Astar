@@ -89,9 +89,7 @@ mod xcm_config;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
-pub use precompiles::{
-    is_precompile_blacklisted, ShidenPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX,
-};
+pub use precompiles::{ShidenPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = ShidenPrecompiles<Runtime, ShidenAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.

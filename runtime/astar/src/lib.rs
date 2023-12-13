@@ -88,9 +88,7 @@ mod xcm_config;
 
 pub type AstarAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
-pub use precompiles::{
-    is_precompile_blacklisted, AstarPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX,
-};
+pub use precompiles::{AstarPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = AstarPrecompiles<Runtime, AstarAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.

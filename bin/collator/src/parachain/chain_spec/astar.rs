@@ -19,8 +19,8 @@
 //! Astar chain specifications.
 
 use astar_runtime::{
-    is_precompile_blacklisted, wasm_binary_unwrap, AccountId, AuraId, Balance, BlockRewardConfig,
-    EVMConfig, ParachainInfoConfig, Precompiles, Signature, SystemConfig, ASTR,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, BlockRewardConfig, EVMConfig,
+    ParachainInfoConfig, Precompiles, Signature, SystemConfig, ASTR,
 };
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
@@ -141,7 +141,6 @@ fn make_genesis(
             // We need _some_ code inserted at the precompile address so that
             // the evm will actually call the address.
             accounts: Precompiles::used_addresses()
-                .filter(|addr| !is_precompile_blacklisted(addr))
                 .map(|addr| {
                     (
                         addr,
