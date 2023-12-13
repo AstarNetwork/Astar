@@ -19,10 +19,10 @@
 use crate::{self as pallet_dapp_staking_migration, *};
 
 use frame_support::{
-    construct_runtime, parameter_types,
+    assert_ok, construct_runtime, parameter_types,
     traits::{
         fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
-        ConstBool, ConstU128, ConstU32,
+        ConstBool, ConstU128, ConstU32, Currency,
     },
     weights::Weight,
     PalletId,
@@ -257,5 +257,32 @@ impl ExtBuilder {
         });
 
         ext
+    }
+}
+
+/// Initialize old dApps staking storage.
+///
+/// This is kept outside of the test ext creation since the same mock is reused
+/// in the benchmarks code.
+pub fn init() {
+    let dapps_number = 10_u32;
+    let staker = dapps_number.into();
+    Balances::make_free_balance_be(&staker, 1_000_000_000_000_000_000);
+
+    // Add some dummy dApps to the old pallet & stake on them.
+    for idx in 0..dapps_number {
+        let developer = idx.into();
+        Balances::make_free_balance_be(&developer, 1_000_000_000_000);
+        let smart_contract = MockSmartContract::Wasm(idx.into());
+        assert_ok!(pallet_dapps_staking::Pallet::<Test>::register(
+            RawOrigin::Root.into(),
+            developer,
+            smart_contract.clone(),
+        ));
+        assert_ok!(pallet_dapps_staking::Pallet::<Test>::bond_and_stake(
+            RawOrigin::Signed(staker.clone()).into(),
+            smart_contract,
+            1_000,
+        ));
     }
 }

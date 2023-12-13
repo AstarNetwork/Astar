@@ -169,7 +169,7 @@ pub mod pallet {
     /// Simple map where developer account points to their smart contract
     #[pallet::storage]
     #[pallet::getter(fn registered_contract)]
-    pub(crate) type RegisteredDevelopers<T: Config> =
+    pub type RegisteredDevelopers<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, T::SmartContract>;
 
     /// Simple map where smart contract points to basic info about it (e.g. developer address, state)

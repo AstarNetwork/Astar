@@ -23,7 +23,6 @@ use frame_benchmarking::{account as benchmark_account, v2::*};
 use frame_support::{assert_ok, storage::unhashed::put_raw, traits::Currency};
 
 use astar_primitives::Balance;
-use pallet_dapps_staking::EraInfo as OldEraInfo;
 
 /// Generate an unique smart contract using the provided index as a sort-of indetifier
 fn smart_contract<T: pallet_dapps_staking::Config>(index: u8) -> T::SmartContract {
@@ -39,11 +38,6 @@ fn smart_contract<T: pallet_dapps_staking::Config>(index: u8) -> T::SmartContrac
 pub(super) fn initial_config<T: Config>() {
     let account: T::AccountId = whitelisted_caller();
     let dapps_number = 10;
-
-    // Configure current era
-    let era = 1;
-    OldCurrentEra::<T>::put(era);
-    OldGeneralEraInfo::<T>::insert(era, OldEraInfo::default());
 
     // Add some dummy dApps to the old pallet.
     for idx in 0..dapps_number {
@@ -127,7 +121,7 @@ mod benchmarks {
             if cfg!(test) {
                 // TODO: for some reason, tests always fail here, nothing gets removed from storage.
                 // When tested against real runtime, it works just fine.
-                let _ = Migration::<T>::cleanup_old_storage(1).is_ok();
+                let _ = Migration::<T>::cleanup_old_storage(1);
             } else {
                 assert!(Migration::<T>::cleanup_old_storage(1).is_ok());
             }

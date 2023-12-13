@@ -47,15 +47,14 @@ use sp_runtime::{
     Saturating,
 };
 
-use pallet_dapps_staking::{
-    CurrentEra as OldCurrentEra, GeneralEraInfo as OldGeneralEraInfo, Ledger as OldLedger,
-    RegisteredDapps as OldRegisteredDapps,
-};
+use pallet_dapps_staking::{Ledger as OldLedger, RegisteredDapps as OldRegisteredDapps};
 
 pub use crate::pallet::CustomMigration;
 
 #[cfg(test)]
 mod mock;
+#[cfg(test)]
+mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -396,7 +395,7 @@ pub mod pallet {
         }
 
         /// Max allowed weight that migration should be allowed to consume.
-        fn max_call_weight() -> Weight {
+        pub(crate) fn max_call_weight() -> Weight {
             // 50% of block should be fine
             T::BlockWeights::get().max_block / 2
         }
@@ -405,7 +404,7 @@ pub mod pallet {
         ///
         /// This serves as a safety marging, to prevent accidental underspending due to
         /// inprecision in implementation or benchmarks.
-        fn min_call_weight() -> Weight {
+        pub(crate) fn min_call_weight() -> Weight {
             // 5% of block should be fine
             T::BlockWeights::get().max_block / 10
         }
