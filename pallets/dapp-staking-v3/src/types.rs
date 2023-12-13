@@ -390,6 +390,7 @@ pub struct AccountLedger<UnlockingLen: Get<u32>> {
     /// Number of contract stake entries in storage.
     #[codec(compact)]
     pub contract_stake_count: u32,
+    // TODO: rename to staker_info_count?
 }
 
 impl<UnlockingLen> Default for AccountLedger<UnlockingLen>
