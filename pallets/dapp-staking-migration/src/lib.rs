@@ -27,7 +27,7 @@
 //!
 //! ### Multi-Stage Migration
 //!
-//! Since a lof of data has to be cleaned up & migrated, it is necessary to do this in multiple steps.
+//! Since a lot of data has to be cleaned up & migrated, it is necessary to do this in multiple steps.
 //! To reduce the risk of something going wrong, nothing is done in _mandatory hooks_, like `on_initialize` or `on_idle`.
 //! Instead, a dedicated extrinsic call is introduced, which can be called to move the migration forward.
 //! As long as this call moves the migration forward, its cost is refunded to the user.
@@ -36,12 +36,12 @@
 //! ### Migration Steps
 //!
 //! The general approach used when migrating is:
-//! 1. Manually clean up old pallet's storage
+//! 1. Clean up old pallet's storage using custom code
 //! 2. Use dedicated dApp staking v3 extrinsic calls for registering dApps & locking funds.
 //!
 //! The main benefits of this approach are that we don't duplicate logic that is already present in dApp staking v3,
-//! and that we ensure proper events are emitted for each action which will make indexers happy - no special handling will
-//! be required to migrate dApps or locked/staked funds over from the old pallet to the new one.
+//! and that we ensure proper events are emitted for each action which will make indexers happy. No special handling will
+//! be required to migrate dApps or locked/staked funds over from the old pallet to the new one, from the indexers  perspective.
 //!
 //! ### Final Cleanup
 //!
@@ -119,7 +119,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Attempt to execute migration steps, consuming up to specified amount of weight.
+        /// Attempt to execute migration steps, consuming up to the specified amount of weight.
         /// If no weight is specified, max allowed weight is used.
         ///
         /// Regardless of the specified weight limit, it will be clamped between the minimum & maximum allowed values.
@@ -167,6 +167,8 @@ pub mod pallet {
         ///
         /// Depending on the number of entries migrated and/or deleted, appropriate events are emited.
         ///
+        /// In case at least some progress is made, `Ok(_)` is returned.
+        /// If no progress is made, `Err(_)` is returned.
         fn do_migrate(weight_limit: Weight) -> Result<Weight, Weight> {
             // Find out if migration is still in progress
             let init_migration_state = MigrationStateStorage::<T>::get();
@@ -181,7 +183,7 @@ pub mod pallet {
             }
 
             // Ensure we can call dApp staking v3 extrinsics within this call.
-            consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
+            consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 2));
             pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
                 state.maintenance = false;
             });
@@ -189,7 +191,7 @@ pub mod pallet {
             let mut migration_state = init_migration_state;
             let (mut entries_migrated, mut entries_deleted) = (0_u32, 0_u32);
 
-            // Execute migration steps.
+            // Execute migration steps only if we have enough weight to do so.
             //
             // 1. Migrate registered dApps
             // 2. Migrate ledgers
@@ -272,8 +274,8 @@ pub mod pallet {
             });
 
             if migration_state != init_migration_state {
+                // Already charged in pessimistic manner at the beginning of the function.
                 MigrationStateStorage::<T>::put(migration_state);
-                consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
             }
 
             Ok(consumed_weight)
@@ -283,7 +285,7 @@ pub mod pallet {
         ///
         /// Steps:
         /// 1. Attempt to `drain` a single DB entry from the old storage. If it's unregistered, move on.
-        /// 2. Unregister the old `RegisterDeposit` from the developer account.
+        /// 2. Unreserve the old `RegisterDeposit` amount from the developer account.
         /// 2. Re-decode old smart contract type into new one. Operation should be infalible in practice since the same underlying type is used.
         /// 3. `register` the old-new smart contract into dApp staking v3 pallet.
         ///
@@ -464,8 +466,8 @@ pub mod pallet {
 
         /// Min allowed weight that migration should be allowed to consume.
         ///
-        /// This serves as a safety marging, to prevent accidental underspending due to
-        /// inprecision in implementation or benchmarks.
+        /// This serves as a safety marging, to prevent accidental overspending, due to
+        /// inprecision in implementation or benchmarks, when small weight limit is specified.
         pub(crate) fn min_call_weight() -> Weight {
             // 5% of block should be fine
             T::BlockWeights::get().max_block / 10
@@ -529,6 +531,8 @@ pub mod pallet {
             // Set the correct init storage version
             pallet_dapp_staking_v3::STORAGE_VERSION.put::<pallet_dapp_staking_v3::Pallet<T>>();
 
+            // In case of try-runtime, we want to execute the whole logic, to ensure it works
+            // with on-chain data.
             if cfg!(feature = "try-runtime") {
                 let mut steps = 0_u32;
                 while MigrationStateStorage::<T>::get() != MigrationState::Finished {

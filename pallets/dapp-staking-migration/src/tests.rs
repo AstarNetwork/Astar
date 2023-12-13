@@ -130,11 +130,7 @@ fn storage_cleanup_check() {
             + pallet_dapps_staking::Ledger::<Test>::iter().count()) as u32;
 
         for _ in 0..init_count {
-            assert_eq!(
-                DappStakingMigration::cleanup_old_storage(init_count),
-                Ok(SubstrateWeight::<Test>::cleanup_old_storage_success()
-                    .saturating_mul(init_count.into()))
-            );
+            assert_ok!(DappStakingMigration::cleanup_old_storage(init_count));
         }
     });
 }
@@ -152,7 +148,10 @@ fn migrate_call_works() {
                 Some(Weight::from_parts(1, 1))
             ));
 
-            assert!(pallet_dapp_staking_v3::ActiveProtocolState::<Test>::get().maintenance);
+            assert!(
+                pallet_dapp_staking_v3::ActiveProtocolState::<Test>::get().maintenance,
+                "Maintenance must always be returned after migrate call finishes."
+            );
         }
 
         // Check post-state

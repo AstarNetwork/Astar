@@ -19,7 +19,6 @@
 use super::{Pallet as Migration, *};
 
 use frame_benchmarking::{account as benchmark_account, v2::*};
-
 use frame_support::{assert_ok, storage::unhashed::put_raw, traits::Currency};
 
 use astar_primitives::Balance;
@@ -36,8 +35,7 @@ fn smart_contract<T: pallet_dapps_staking::Config>(index: u8) -> T::SmartContrac
 
 /// Initialize the old dApp staking pallet with some storage.
 pub(super) fn initial_config<T: Config>() {
-    let account: T::AccountId = whitelisted_caller();
-    let dapps_number = 10;
+    let dapps_number = <T as pallet_dapp_staking_v3::Config>::MaxNumberOfContracts;
 
     // Add some dummy dApps to the old pallet.
     for idx in 0..dapps_number {
@@ -50,21 +48,20 @@ pub(super) fn initial_config<T: Config>() {
         assert_ok!(pallet_dapps_staking::Pallet::<T>::register(
             RawOrigin::Root.into(),
             developer,
-            smart_contract,
+            smart_contract.clone(),
         ));
-    }
 
-    // Add some dummy stakers to the old pallet
-    <T as pallet_dapps_staking::Config>::Currency::make_free_balance_be(
-        &account,
-        Balance::max_value() / 2,
-    );
-    for idx in 0..dapps_number {
-        let smart_contract = smart_contract::<T>(idx);
+        let staker: T::AccountId = benchmark_account("staker", idx.into(), 123);
+        let lock_amount = <T as pallet_dapps_staking::Config>::MinimumStakingAmount::get()
+            .max(<T as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get());
+        <T as pallet_dapps_staking::Config>::Currency::make_free_balance_be(
+            &staker,
+            lock_amount * 100,
+        );
         assert_ok!(pallet_dapps_staking::Pallet::<T>::bond_and_stake(
             RawOrigin::Signed(account.clone()).into(),
-            smart_contract.clone(),
-            <T as pallet_dapps_staking::Config>::MinimumStakingAmount::get() * 1000,
+            smart_contract,
+            lock_amount,
         ));
     }
 }
