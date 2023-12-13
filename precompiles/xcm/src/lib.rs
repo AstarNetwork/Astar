@@ -148,13 +148,6 @@ where
         parachain_id: U256,
         fee_index: U256,
     ) -> EvmResult<bool> {
-        // Check that assets list is valid:
-        // * all assets resolved to multi-location
-        // * all assets has corresponded amount
-        if assets.len() != amounts.len() || assets.is_empty() {
-            return Err(revert("Assets resolution failure."));
-        }
-
         // Read arguments and check it
         let assets = assets
             .iter()
@@ -169,6 +162,13 @@ where
             .map(|x| x.try_into())
             .collect::<Result<Vec<u128>, _>>()
             .map_err(|_| revert("error converting amounts, maybe value too large"))?;
+
+        // Check that assets list is valid:
+        // * all assets resolved to multi-location
+        // * all assets has corresponded amount
+        if assets.len() != amounts.len() || assets.is_empty() {
+            return Err(revert("Assets resolution failure."));
+        }
 
         let parachain_id: u32 = parachain_id
             .try_into()

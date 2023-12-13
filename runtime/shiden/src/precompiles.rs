@@ -121,8 +121,8 @@ pub type ShidenPrecompiles<R, C> = PrecompileSetBuilder<
     (
         // Skip precompiles if out of range.
         PrecompilesInRangeInclusive<
-            // TODO: what is the range for precompiles sets 1 - ?
-            (AddressU64<1>, AddressU64<40951>),
+            // We take range as last precompile index, UPDATE this once new prcompile is added
+            (AddressU64<1>, AddressU64<20484>),
             ShidenPrecompilesSetAt<R, C>,
         >,
         // Prefixed precompile sets (XC20)
