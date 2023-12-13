@@ -37,7 +37,7 @@ use frame_system::{
     EnsureRoot, EnsureSigned,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use sp_core::{ConstBool, H256};
+use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{AccountIdConversion, Convert, Get, IdentityLookup},
