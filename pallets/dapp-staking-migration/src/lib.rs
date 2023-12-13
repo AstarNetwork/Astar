@@ -18,17 +18,36 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+//! ## Summary
+//!
 //! Purpose of this pallet is to provide multi-stage migration for moving
 //! from the old _dapps_staking_v2_ over to the new _dapp_staking_v3_.
 //!
+//! ## Approach
+//!
+//! ### Multi-Stage Migration
+//!
 //! Since a lof of data has to be cleaned up & migrated, it is necessary to do this in multiple steps.
 //! To reduce the risk of something going wrong, nothing is done in _mandatory hooks_, like `on_initialize` or `on_idle`.
-//! Instead, a dedicated extrinsic call is introdudec, which can be called to move the migration forward.
+//! Instead, a dedicated extrinsic call is introduced, which can be called to move the migration forward.
 //! As long as this call moves the migration forward, its cost is refunded to the user.
 //! Once migration finishes, the extrinsic call will no longer do anything but won't refund the call cost either.
 //!
+//! ### Migration Steps
+//!
+//! The general approach used when migrating is:
+//! 1. Manually clean up old pallet's storage
+//! 2. Use dedicated dApp staking v3 extrinsic calls for registering dApps & locking funds.
+//!
+//! The main benefits of this approach are that we don't duplicate logic that is already present in dApp staking v3,
+//! and that we ensure proper events are emitted for each action which will make indexers happy - no special handling will
+//! be required to migrate dApps or locked/staked funds over from the old pallet to the new one.
+//!
+//! ### Final Cleanup
+//!
 //! The pallet doesn't clean after itself, so when it's removed from the runtime,
 //! the old storage should be cleaned up using `RemovePallet` type.
+//!
 
 pub use pallet::*;
 
