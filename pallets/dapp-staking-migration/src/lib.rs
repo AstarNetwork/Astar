@@ -126,6 +126,18 @@ pub mod pallet {
         }
     }
 
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn integrity_test() {
+            assert!(Pallet::<T>::max_call_weight().all_gte(Pallet::<T>::min_call_weight()));
+
+            assert!(Pallet::<T>::max_call_weight()
+                .all_lte(<T as frame_system::Config>::BlockWeights::get().max_block));
+
+            assert!(Pallet::<T>::migration_weight_margin().all_lte(Pallet::<T>::min_call_weight()));
+        }
+    }
+
     impl<T: Config> Pallet<T> {
         /// Execute migrations steps until the specified weight limit has been consumed.
         ///

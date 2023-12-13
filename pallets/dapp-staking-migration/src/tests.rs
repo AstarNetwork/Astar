@@ -151,6 +151,8 @@ fn migrate_call_works() {
                 frame_system::RawOrigin::Signed(account).into(),
                 Some(Weight::from_parts(1, 1))
             ));
+
+            assert!(pallet_dapp_staking_v3::ActiveProtocolState::<Test>::get().maintenance);
         }
 
         // Check post-state

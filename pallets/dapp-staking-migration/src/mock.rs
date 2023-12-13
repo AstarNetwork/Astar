@@ -20,10 +20,7 @@ use crate::{self as pallet_dapp_staking_migration, *};
 
 use frame_support::{
     assert_ok, construct_runtime, parameter_types,
-    traits::{
-        fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
-        ConstBool, ConstU128, ConstU32, Currency,
-    },
+    traits::{fungible::Mutate as FunMutate, ConstBool, ConstU128, ConstU32, Currency},
     weights::Weight,
     PalletId,
 };

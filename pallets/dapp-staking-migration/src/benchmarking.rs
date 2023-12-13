@@ -20,7 +20,11 @@ use super::{Pallet as Migration, *};
 
 use frame_benchmarking::{account as benchmark_account, v2::*};
 
-use frame_support::{assert_ok, storage::unhashed::put_raw, traits::Currency};
+use frame_support::{
+    assert_ok,
+    storage::unhashed::put_raw,
+    traits::{fungible::Unbalanced as FunUnbalanced, Currency},
+};
 
 use astar_primitives::Balance;
 
