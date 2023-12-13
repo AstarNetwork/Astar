@@ -211,7 +211,7 @@ pub mod pallet {
     /// Stores the current pallet storage version.
     #[pallet::storage]
     #[pallet::getter(fn storage_version)]
-    pub(crate) type StorageVersion<T> = StorageValue<_, Version, ValueQuery>;
+    pub type StorageVersion<T> = StorageValue<_, Version, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]

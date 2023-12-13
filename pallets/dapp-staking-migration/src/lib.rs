@@ -49,6 +49,9 @@ use sp_runtime::{
 
 use pallet_dapps_staking::{Ledger as OldLedger, RegisteredDapps as OldRegisteredDapps};
 
+#[cfg(feature = "try-runtime")]
+use astar_primitives::Balance;
+
 pub use crate::pallet::CustomMigration;
 
 #[cfg(test)]
@@ -355,28 +358,33 @@ pub mod pallet {
                         &staker,
                     );
 
-                    match pallet_dapp_staking_v3::Pallet::<T>::lock(
-                        RawOrigin::Signed(staker.clone()).into(),
-                        locked,
-                    ) {
-                        Ok(_) => {}
-                        Err(error) => {
-                            log::error!(
-                                target: LOG_TARGET,
-                                "Failed to lock for staker {:?} with error: {:?}.",
-                                staker,
-                                error,
-                            );
+                    // No point in attempting to lock the old amount into dApp staking v3 if amount is insufficient.
+                    if locked >= <T as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get() {
+                        match pallet_dapp_staking_v3::Pallet::<T>::lock(
+                            RawOrigin::Signed(staker.clone()).into(),
+                            locked,
+                        ) {
+                            Ok(_) => {}
+                            Err(error) => {
+                                log::error!(
+                                    target: LOG_TARGET,
+                                    "Failed to lock for staker {:?} with error: {:?}.",
+                                    staker,
+                                    error,
+                                );
 
-                            // This should never happen, but if it does, we want to know about it.
-                            #[cfg(feature = "try-runtime")]
-                            panic!(
-                                "Failed to lock for staker {:?} with error: {:?}.",
-                                staker, error,
-                            );
+                                // This should never happen, but if it does, we want to know about it.
+                                #[cfg(feature = "try-runtime")]
+                                panic!(
+                                    "Failed to lock for staker {:?} with error: {:?}.",
+                                    staker, error,
+                                );
+                            }
                         }
                     }
 
+                    // In case no lock action, it will be imprecise but it's fine since this
+                    // isn't expected to happen, and even if it does, it's not a big deal.
                     Ok(SubstrateWeight::<T>::migrate_ledger_success())
                 }
                 None => {
@@ -511,12 +519,128 @@ pub mod pallet {
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
-            Ok(Vec::new())
+            // Get dev accounts with registered dapps and their total reserved balance
+            let developers: Vec<_> = pallet_dapps_staking::RegisteredDapps::<T>::iter()
+                .filter_map(|(smart_contract, info)| {
+                    if info.state == pallet_dapps_staking::DAppState::Registered {
+                        let reserved =
+                            <T as pallet_dapps_staking::Config>::Currency::reserved_balance(
+                                &info.developer,
+                            );
+                        Some((info.developer, smart_contract, reserved))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            // Get the stakers and their active locked (staked) amount.
+            let stakers: Vec<_> = pallet_dapps_staking::Ledger::<T>::iter()
+                .map(|(staker, ledger)| (staker, ledger.locked))
+                .collect();
+
+            let helper = Helper::<T> {
+                developers,
+                stakers,
+            };
+
+            Ok(helper.encode())
         }
 
         #[cfg(feature = "try-runtime")]
-        fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+        fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+            use sp_runtime::traits::Zero;
+
+            let helper = Helper::<T>::decode(&mut TrailingZeroInput::new(state.as_ref()))
+                .map_err(|_| "Cannot decode data from pre_upgrade")?;
+
+            // 1. Ensure that all entries have been unregistered/removed and all dev accounts have been refunded.
+            //    Also check that dApps have been registered in the new pallet.
+            assert!(pallet_dapps_staking::RegisteredDapps::<T>::iter()
+                .count()
+                .is_zero());
+            assert_eq!(
+                pallet_dapp_staking_v3::IntegratedDApps::<T>::iter().count(),
+                helper.developers.len()
+            );
+
+            let register_deposit = <T as pallet_dapps_staking::Config>::RegisterDeposit::get();
+            for (dev_account, smart_contract, old_reserved) in helper.developers {
+                let new_reserved =
+                    <T as pallet_dapps_staking::Config>::Currency::reserved_balance(&dev_account);
+                assert_eq!(old_reserved, new_reserved + register_deposit);
+
+                let new_smart_contract: <T as pallet_dapp_staking_v3::Config>::SmartContract =
+                    Decode::decode(&mut TrailingZeroInput::new(
+                        smart_contract.encode().as_ref(),
+                    ))
+                    .expect("Must succeed since we're using the same underlying type.");
+
+                let dapp_info =
+                    pallet_dapp_staking_v3::IntegratedDApps::<T>::get(&new_smart_contract)
+                        .expect("Must exist!");
+                assert_eq!(dapp_info.owner, dev_account);
+            }
+
+            // 2. Ensure that all ledger entries have been migrated over to the new pallet.
+            //    Total locked amount in the new pallet must equal the sum of all old locked amounts.
+            assert!(pallet_dapps_staking::Ledger::<T>::iter().count().is_zero());
+            assert_eq!(
+                pallet_dapp_staking_v3::Ledger::<T>::iter().count(),
+                helper.stakers.len()
+            );
+
+            for (staker, old_locked) in &helper.stakers {
+                let new_locked = pallet_dapp_staking_v3::Ledger::<T>::get(&staker).locked;
+                assert_eq!(*old_locked, new_locked);
+            }
+
+            let total_locked = helper
+                .stakers
+                .iter()
+                .map(|(_, locked)| locked)
+                .sum::<Balance>();
+            assert_eq!(
+                pallet_dapp_staking_v3::CurrentEraInfo::<T>::get().total_locked,
+                total_locked
+            );
+
+            // 3. Check that rest of the storage has been cleaned up.
+            assert!(!pallet_dapps_staking::PalletDisabled::<T>::exists());
+            assert!(!pallet_dapps_staking::CurrentEra::<T>::exists());
+            assert!(!pallet_dapps_staking::BlockRewardAccumulator::<T>::exists());
+            assert!(!pallet_dapps_staking::ForceEra::<T>::exists());
+            assert!(!pallet_dapps_staking::NextEraStartingBlock::<T>::exists());
+            assert!(!pallet_dapps_staking::StorageVersion::<T>::exists());
+
+            assert!(pallet_dapps_staking::RegisteredDevelopers::<T>::iter()
+                .count()
+                .is_zero());
+            assert!(pallet_dapps_staking::GeneralEraInfo::<T>::iter()
+                .count()
+                .is_zero());
+            assert!(pallet_dapps_staking::ContractEraStake::<T>::iter()
+                .count()
+                .is_zero());
+            assert!(pallet_dapps_staking::GeneralStakerInfo::<T>::iter()
+                .count()
+                .is_zero());
+
             Ok(())
         }
     }
+}
+
+#[cfg(feature = "try-runtime")]
+/// Used to help with `try-runtime` testing.
+#[derive(Encode, Decode)]
+struct Helper<T: Config> {
+    /// Vec of devs, with their associated smart contract & total reserved balance
+    developers: Vec<(
+        T::AccountId,
+        <T as pallet_dapps_staking::Config>::SmartContract,
+        Balance,
+    )>,
+    /// Stakers with their total active locked amount (not undergoing the unbonding process)
+    stakers: Vec<(T::AccountId, Balance)>,
 }
