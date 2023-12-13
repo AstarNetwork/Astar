@@ -379,16 +379,22 @@ pub mod pallet {
         /// If there are no more entries to remove, returns `Err(_)` with consumed weight. Otherwise returns Ok with consumed weight.
         pub(crate) fn cleanup_old_storage(limit: u32) -> Result<Weight, Weight> {
             let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
-            let keys_removed = match clear_prefix(&hashed_prefix, Some(limit)) {
+
+            // Repeated calls in the same block don't work, so we set the limit to `Unlimited` in case of `try-runtime` testing.
+            let inner_limit = if cfg!(feature = "try-runtime") {
+                None
+            } else {
+                Some(limit)
+            };
+
+            let keys_removed = match clear_prefix(&hashed_prefix, inner_limit) {
                 KillStorageResult::AllRemoved(value) => value,
                 KillStorageResult::SomeRemaining(value) => value,
             };
 
             if keys_removed > 0 {
-                Ok(
-                    SubstrateWeight::<T>::cleanup_old_storage_success()
-                        .saturating_mul(limit.into()),
-                )
+                Ok(SubstrateWeight::<T>::cleanup_old_storage_success()
+                    .saturating_mul(keys_removed.into()))
             } else {
                 Err(SubstrateWeight::<T>::cleanup_old_storage_noop())
             }

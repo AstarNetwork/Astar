@@ -120,7 +120,10 @@ fn migrate_ledgers_check() {
 #[ignore]
 #[test]
 fn storage_cleanup_check() {
-    ExtBuilder::build().execute_with(|| {
+    let mut ext = ExtBuilder::build();
+    assert_ok!(ext.commit_all());
+
+    ext.execute_with(|| {
         init();
 
         let init_count = (pallet_dapps_staking::RegisteredDapps::<Test>::iter().count()
