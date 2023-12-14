@@ -88,7 +88,6 @@ where
     <R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
     R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
     R::RuntimeCall: From<pallet_dapp_staking_v3::Call<R>>,
-    R::AccountId: From<[u8; 32]>,
 {
     // v1 functions
 

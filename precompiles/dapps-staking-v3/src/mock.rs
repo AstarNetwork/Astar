@@ -27,97 +27,29 @@ use frame_support::{
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use serde::{Deserialize, Serialize};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{H160, H256};
 use sp_io::TestExternalities;
-use sp_runtime::{
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
-    AccountId32,
-};
+use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
 extern crate alloc;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    dapp_staking::{CycleConfiguration, SmartContract, StakingRewardHandler},
     testing::Header,
-    Balance, BlockNumber,
+    AccountId, Balance, BlockNumber,
 };
 use pallet_dapp_staking_v3::PriceProvider;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-#[derive(
-    Eq,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Clone,
-    Encode,
-    Decode,
-    Debug,
-    MaxEncodedLen,
-    Serialize,
-    Deserialize,
-    derive_more::Display,
-    scale_info::TypeInfo,
-)]
-
-pub enum TestAccount {
-    Empty,
-    Alex,
-    Bobo,
-    Dino,
-}
-
-impl Default for TestAccount {
-    fn default() -> Self {
-        Self::Empty
-    }
-}
-
-// needed for associated type in pallet_evm
-impl AddressMapping<AccountId32> for TestAccount {
-    fn into_account_id(h160_account: H160) -> AccountId32 {
-        match h160_account {
-            a if a == H160::repeat_byte(0x01) => TestAccount::Alex.into(),
-            a if a == H160::repeat_byte(0x02) => TestAccount::Bobo.into(),
-            a if a == H160::repeat_byte(0x03) => TestAccount::Dino.into(),
-            _ => TestAccount::Empty.into(),
-        }
-    }
-}
-
-impl From<TestAccount> for H160 {
-    fn from(x: TestAccount) -> H160 {
-        match x {
-            TestAccount::Alex => H160::repeat_byte(0x01),
-            TestAccount::Bobo => H160::repeat_byte(0x02),
-            TestAccount::Dino => H160::repeat_byte(0x03),
-            _ => Default::default(),
-        }
-    }
-}
-
-impl From<H160> for TestAccount {
-    fn from(address: H160) -> TestAccount {
-        match address {
-            a if a == H160::repeat_byte(0x01) => TestAccount::Alex,
-            a if a == H160::repeat_byte(0x02) => TestAccount::Bobo,
-            a if a == H160::repeat_byte(0x03) => TestAccount::Dino,
-        }
-    }
-}
-
-impl From<TestAccount> for AccountId32 {
-    fn from(x: TestAccount) -> Self {
-        match x {
-            TestAccount::Alex => AccountId32::from([1u8; 32]),
-            TestAccount::Bobo => AccountId32::from([2u8; 32]),
-            TestAccount::Dino => AccountId32::from([3u8; 32]),
-            _ => AccountId32::from([0u8; 32]),
-        }
+pub struct AddressMapper;
+impl AddressMapping<AccountId> for AddressMapper {
+    fn into_account_id(account: H160) -> AccountId {
+        account
+            .as_bytes()
+            .try_into()
+            .expect("H160 is 20 bytes long so it must fit into 32 bytes; QED")
     }
 }
 
@@ -144,7 +76,7 @@ impl frame_system::Config for Test {
     type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = AccountId32;
+    type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
     type RuntimeEvent = RuntimeEvent;
@@ -212,9 +144,9 @@ impl pallet_evm::Config for Test {
     type FeeCalculator = ();
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
-    type CallOrigin = EnsureAddressRoot<AccountId32>;
-    type WithdrawOrigin = EnsureAddressNever<AccountId32>;
-    type AddressMapping = TestAccount;
+    type CallOrigin = EnsureAddressRoot<AccountId>;
+    type WithdrawOrigin = EnsureAddressNever<AccountId>;
+    type AddressMapping = AddressMapper;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
@@ -238,19 +170,7 @@ impl pallet_timestamp::Config for Test {
     type WeightInfo = ();
 }
 
-#[derive(
-    PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, scale_info::TypeInfo, MaxEncodedLen,
-)]
-pub enum MockSmartContract<AccountId32> {
-    Evm(sp_core::H160),
-    Wasm(AccountId32),
-}
-
-impl<AccountId32> Default for MockSmartContract<AccountId32> {
-    fn default() -> Self {
-        MockSmartContract::Evm(H160::repeat_byte(0x00))
-    }
-}
+type MockSmartContract = SmartContract<<Test as frame_system::Config>::AccountId>;
 
 pub struct DummyPriceProvider;
 impl PriceProvider for DummyPriceProvider {
@@ -260,7 +180,7 @@ impl PriceProvider for DummyPriceProvider {
 }
 
 pub struct DummyStakingRewardHandler;
-impl StakingRewardHandler<AccountId32> for DummyStakingRewardHandler {
+impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
     fn staker_and_dapp_reward_pools(_total_staked_value: Balance) -> (Balance, Balance) {
         (
             Balance::from(1_000_000_000_000_u128),
@@ -272,7 +192,7 @@ impl StakingRewardHandler<AccountId32> for DummyStakingRewardHandler {
         Balance::from(3_000_000_u128)
     }
 
-    fn payout_reward(beneficiary: &AccountId32, reward: Balance) -> Result<(), ()> {
+    fn payout_reward(beneficiary: &AccountId, reward: Balance) -> Result<(), ()> {
         let _ = Balances::mint_into(beneficiary, reward);
         Ok(())
     }
@@ -301,8 +221,8 @@ impl pallet_dapp_staking_v3::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
-    type SmartContract = MockSmartContract<Self::AccountId>;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId32>;
+    type SmartContract = MockSmartContract;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
