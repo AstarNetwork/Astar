@@ -40,7 +40,7 @@ use sp_runtime::{
 };
 use sp_std::cell::RefCell;
 
-use astar_primitives::{testing::Header, Balance, BlockNumber};
+use astar_primitives::{dapp_staking::SmartContract, testing::Header, Balance, BlockNumber};
 
 pub(crate) type AccountId = u64;
 
@@ -146,17 +146,7 @@ impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
     }
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Hash)]
-pub enum MockSmartContract {
-    Wasm(AccountId),
-    Other(AccountId),
-}
-
-impl Default for MockSmartContract {
-    fn default() -> Self {
-        MockSmartContract::Wasm(1)
-    }
-}
+pub(crate) type MockSmartContract = SmartContract<AccountId>;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
@@ -165,7 +155,7 @@ impl crate::BenchmarkHelper<MockSmartContract, AccountId>
     for BenchmarkHelper<MockSmartContract, AccountId>
 {
     fn get_smart_contract(id: u32) -> MockSmartContract {
-        MockSmartContract::Wasm(id as AccountId)
+        MockSmartContract::wasm(id as AccountId)
     }
 
     fn set_balance(account: &AccountId, amount: Balance) {

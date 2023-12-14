@@ -51,7 +51,7 @@ use sp_runtime::{
 pub use sp_std::vec::Vec;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    dapp_staking::{CycleConfiguration, SmartContractHandle, StakingRewardHandler},
     Balance, BlockNumber,
 };
 
@@ -118,7 +118,10 @@ pub mod pallet {
         >;
 
         /// Describes smart contract in the context required by dApp staking.
-        type SmartContract: Parameter + Member + MaxEncodedLen;
+        type SmartContract: Parameter
+            + Member
+            + MaxEncodedLen
+            + SmartContractHandle<Self::AccountId>;
 
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
