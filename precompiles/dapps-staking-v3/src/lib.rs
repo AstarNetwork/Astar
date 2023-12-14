@@ -602,7 +602,7 @@ where
     }
 
     /// Attempts to stake the given amount on the given smart contract.
-    #[precompile::public("stake((u8,bytes),uint128)")]
+    #[precompile::public("stake((uint8,bytes),uint128)")]
     fn stake(
         handle: &mut impl PrecompileHandle,
         smart_contract: SmartContractV2,
@@ -622,7 +622,7 @@ where
     }
 
     /// Attempts to unstake the given amount from the given smart contract.
-    #[precompile::public("unstake((u8,bytes),uint128)")]
+    #[precompile::public("unstake((uint8,bytes),uint128)")]
     fn unstake(
         handle: &mut impl PrecompileHandle,
         smart_contract: SmartContractV2,
@@ -653,7 +653,7 @@ where
     }
 
     /// Attempts to claim bonus reward for being a loyal staker of the given dApp.
-    #[precompile::public("claim_bonus_reward((u8,bytes))")]
+    #[precompile::public("claim_bonus_reward((uint8,bytes))")]
     fn claim_bonus_reward(
         handle: &mut impl PrecompileHandle,
         smart_contract: SmartContractV2,
@@ -670,7 +670,7 @@ where
     }
 
     /// Attempts to claim dApp reward for the given dApp in the given era.
-    #[precompile::public("claim_bonus_reward((u8,bytes),uint256)")]
+    #[precompile::public("claim_bonus_reward((uint8,bytes),uint256)")]
     fn claim_dapp_reward(
         handle: &mut impl PrecompileHandle,
         smart_contract: SmartContractV2,
@@ -694,7 +694,7 @@ where
     }
 
     /// Attempts to unstake everything from an unregistered contract.
-    #[precompile::public("unstake_from_unregistered((u8,bytes))")]
+    #[precompile::public("unstake_from_unregistered((uint8,bytes))")]
     fn unstake_from_unregistered(
         handle: &mut impl PrecompileHandle,
         smart_contract: SmartContractV2,

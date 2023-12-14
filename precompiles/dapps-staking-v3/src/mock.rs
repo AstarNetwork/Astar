@@ -18,7 +18,7 @@
 
 use super::*;
 
-use fp_evm::IsPrecompileResult;
+use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{fungible::Mutate, ConstU128, ConstU64},
