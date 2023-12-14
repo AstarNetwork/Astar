@@ -272,7 +272,6 @@ orml-xcm-support = { git = "https://github.com/open-web3-stack/open-runtime-modu
 
 # Astar pallets & modules
 # (wasm)
-pallet-block-reward = { path = "./pallets/block-reward", default-features = false }
 pallet-block-rewards-hybrid = { path = "./pallets/block-rewards-hybrid", default-features = false }
 pallet-collator-selection = { path = "./pallets/collator-selection", default-features = false }
 pallet-dapps-staking = { path = "./pallets/dapps-staking", default-features = false }

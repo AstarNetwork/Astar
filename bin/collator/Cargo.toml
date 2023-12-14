@@ -94,7 +94,6 @@ shiden-runtime = { workspace = true, features = ["std"] }
 
 # astar pallets dependencies
 astar-primitives = { workspace = true }
-pallet-block-reward = { workspace = true }
 
 # frame dependencies
 frame-system = { workspace = true, features = ["std"] }
