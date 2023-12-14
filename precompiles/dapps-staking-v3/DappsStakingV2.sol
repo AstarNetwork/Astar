@@ -29,32 +29,32 @@ interface DAppStaking {
     // Extrinsic calls
 
     /// @notice Lock the given amount of tokens into dApp staking protocol.
-    function lock(uint128) external;
+    function lock(uint128) external returns (bool);
 
     /// @notice Start the unlocking process for the given amount of tokens.
-    function unlock(uint128) external;
+    function unlock(uint128) external returns (bool);
 
     /// @notice Claims unlocked tokens.
-    function claim_unlocked() external;
+    function claim_unlocked() external returns (bool);
 
     /// @notice Stake the given amount of tokens on the specified smart contract.
-    function stake(address, uint128) external;
+    function stake(address, uint128) external returns (bool);
 
     /// @notice Unstake the given amount of tokens from the specified smart contract.
-    function unstake(address, uint128) external;
+    function unstake(address, uint128) external returns (bool);
 
     /// @notice Claims one or more pending staker rewards.
-    function claim_staker_rewards() external;
+    function claim_staker_rewards() external returns (bool);
 
     /// @notice Claim the bonus reward for the specified smart contract.
-    function claim_bonus_reward(address) external;
+    function claim_bonus_reward(address) external returns (bool);
 
     /// @notice Claim dApp reward for the specified smart contract & era.
-    function claim_dapp_reward(address, uint128) external;
+    function claim_dapp_reward(address, uint128) external returns (bool);
 
     /// @notice Unstake all funds from the unregistered smart contract.
-    function unstake_from_unregistered(address) external;
+    function unstake_from_unregistered(address) external returns (bool);
 
     /// @notice Used to cleanup all expired contract stake entries from the caller.
-    function cleanup_expired_entries() external;
+    function cleanup_expired_entries() external returns (bool);
 }
