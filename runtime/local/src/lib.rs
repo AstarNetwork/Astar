@@ -1122,7 +1122,7 @@ construct_runtime!(
         Vesting: pallet_vesting,
         DappsStaking: pallet_dapps_staking,
         DappStaking: pallet_dapp_staking_v3,
-        DAppStakingMigration: pallet_dapp_staking_migration,
+        DappStakingMigration: pallet_dapp_staking_migration,
         Inflation: pallet_inflation,
         BlockReward: pallet_block_rewards_hybrid,
         TransactionPayment: pallet_transaction_payment,
@@ -1261,7 +1261,7 @@ mod benches {
         [pallet_block_rewards_hybrid, BlockReward]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_dapp_staking_v3, DappStaking]
-        [pallet_dapp_staking_migration, DAppStakingMigration]
+        [pallet_dapp_staking_migration, DappStakingMigration]
         [pallet_inflation, Inflation]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
     );
