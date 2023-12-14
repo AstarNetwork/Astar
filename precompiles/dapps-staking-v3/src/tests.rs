@@ -354,7 +354,7 @@ fn withdraw_from_unregistered() {
             bond_stake_and_verify(TestAccount::Bobo, TEST_CONTRACT, amount_staked_bobo);
 
             let contract_id =
-                decode_smart_contract_from_array(TEST_CONTRACT.clone().to_fixed_bytes()).unwrap();
+                decode_smart_contract_v1_from_array(TEST_CONTRACT.clone().to_fixed_bytes()).unwrap();
             assert_ok!(DappsStaking::unregister(RuntimeOrigin::root(), contract_id));
 
             withdraw_from_unregistered_verify(TestAccount::Bobo.into(), TEST_CONTRACT);
@@ -400,7 +400,7 @@ fn nomination_transfer() {
 /// helper function to register and verify if registration is valid
 fn register_and_verify(developer: TestAccount, contract: H160) {
     let smart_contract =
-        decode_smart_contract_from_array(contract.clone().to_fixed_bytes()).unwrap();
+        decode_smart_contract_v1_from_array(contract.clone().to_fixed_bytes()).unwrap();
     DappsStaking::register(
         RuntimeOrigin::root(),
         developer.clone().into(),
@@ -540,7 +540,7 @@ fn set_reward_destination_verify(staker: TestAccount, reward_destination: Reward
 /// helper function to withdraw funds from unregistered contract
 fn withdraw_from_unregistered_verify(staker: TestAccount, contract: H160) {
     let smart_contract =
-        decode_smart_contract_from_array(contract.clone().to_fixed_bytes()).unwrap();
+        decode_smart_contract_v1_from_array(contract.clone().to_fixed_bytes()).unwrap();
     let staker_acc_id = AccountId32::from(staker.clone());
     let init_staker_info = DappsStaking::staker_info(&staker_acc_id, &smart_contract);
     assert!(!init_staker_info.latest_staked_value().is_zero());
@@ -568,9 +568,9 @@ fn nomination_transfer_verify(
     target_contract: H160,
 ) {
     let origin_smart_contract =
-        decode_smart_contract_from_array(origin_contract.clone().to_fixed_bytes()).unwrap();
+        decode_smart_contract_v1_from_array(origin_contract.clone().to_fixed_bytes()).unwrap();
     let target_smart_contract =
-        decode_smart_contract_from_array(target_contract.clone().to_fixed_bytes()).unwrap();
+        decode_smart_contract_v1_from_array(target_contract.clone().to_fixed_bytes()).unwrap();
     let staker_acc_id = AccountId32::from(staker.clone());
 
     // Read init data staker info states
@@ -678,7 +678,7 @@ fn verify_staked_amount(contract: H160, staker: TestAccount, amount: Balance) {
 }
 
 /// Helper method to decode type SmartContract enum from [u8; 20]
-fn decode_smart_contract_from_array(
+fn decode_smart_contract_v1_from_array(
     contract_array: [u8; 20],
 ) -> Result<<TestRuntime as pallet_dapps_staking::Config>::SmartContract, String> {
     // Encode contract address to fit SmartContract enum.
