@@ -30,7 +30,7 @@ use frame_support::{
 use sp_runtime::traits::Zero;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContractTypes},
+    dapp_staking::{CycleConfiguration, SmartContractHandle},
     Balance, BlockNumber,
 };
 

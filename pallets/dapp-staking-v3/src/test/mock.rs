@@ -30,7 +30,6 @@ use frame_support::{
     },
     weights::Weight,
 };
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
 use sp_io::TestExternalities;
