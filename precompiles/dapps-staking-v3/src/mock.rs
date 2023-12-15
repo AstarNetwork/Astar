@@ -290,16 +290,12 @@ pub const ALICE: H160 = H160::repeat_byte(0xAA);
 
 /// Used to register a smart contract, and stake some funds on it.
 ///
-/// Returns `(staker H160 address, smart contract, staked amount)`.
-pub fn register_and_stake() -> (
-    H160,
-    <Test as pallet_dapp_staking_v3::Config>::SmartContract,
-    Balance,
-) {
-    let smart_contract =
-        <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(H160::repeat_byte(0xFA));
-
-    let alice_native = AddressMapper::into_account_id(ALICE);
+/// Returns staked amount.
+pub fn register_and_stake(
+    account: H160,
+    smart_contract: <Test as pallet_dapp_staking_v3::Config>::SmartContract,
+) -> Balance {
+    let alice_native = AddressMapper::into_account_id(account);
 
     // 1. Register smart contract
     assert_ok!(DappStaking::register(
@@ -328,7 +324,17 @@ pub fn register_and_stake() -> (
         amount,
     ));
 
-    (ALICE, smart_contract, amount)
+    amount
+}
+
+/// TODO
+pub fn into_dynamic_addresses(address: H160) -> [DynamicAddress; 2] {
+    [
+        address.as_bytes().try_into().unwrap(),
+        <AccountId as AsRef<[u8]>>::as_ref(&AddressMapper::into_account_id(address))
+            .try_into()
+            .unwrap(),
+    ]
 }
 
 /// Initialize first block.

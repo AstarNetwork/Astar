@@ -120,7 +120,11 @@ fn read_era_staked_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize();
 
-        let (staker_h160, smart_contract, amount) = register_and_stake();
+        let staker_h160 = ALICE;
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let amount = register_and_stake(staker_h160, smart_contract.clone());
         let anchor_era = ActiveProtocolState::<Test>::get().era;
 
         // 1. Current era stake must be zero, since stake is only valid from the next era.
@@ -168,6 +172,174 @@ fn read_era_staked_is_ok() {
             )
             .expect_no_logs()
             .execute_reverts(|output| output == b"Era is in the future");
+    });
+}
+
+#[test]
+fn read_staked_amount_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        let staker_h160 = ALICE;
+        let dynamic_addresses = into_dynamic_addresses(staker_h160);
+
+        // 1. Sanity checks - must be zero before anything is staked.
+        for staker in &dynamic_addresses {
+            precompiles()
+                .prepare_test(
+                    staker_h160,
+                    precompile_address(),
+                    PrecompileCall::read_staked_amount {
+                        staker: staker.clone(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(Balance::zero());
+        }
+
+        // 2. Stake some amount and check again
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let amount = register_and_stake(staker_h160, smart_contract.clone());
+        for staker in &dynamic_addresses {
+            precompiles()
+                .prepare_test(
+                    staker_h160,
+                    precompile_address(),
+                    PrecompileCall::read_staked_amount {
+                        staker: staker.clone(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(amount);
+        }
+
+        // 3. Advance into next period, it should be reset back to zero
+        advance_to_next_period();
+        for staker in &dynamic_addresses {
+            precompiles()
+                .prepare_test(
+                    staker_h160,
+                    precompile_address(),
+                    PrecompileCall::read_staked_amount {
+                        staker: staker.clone(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(Balance::zero());
+        }
+    });
+}
+
+#[test]
+fn read_staked_amount_on_contract_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        let staker_h160 = ALICE;
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let dynamic_addresses = into_dynamic_addresses(staker_h160);
+
+        // 1. Sanity checks - must be zero before anything is staked.
+        for staker in &dynamic_addresses {
+            precompiles()
+                .prepare_test(
+                    staker_h160,
+                    precompile_address(),
+                    PrecompileCall::read_staked_amount_on_contract {
+                        contract_h160: smart_contract_h160.into(),
+                        staker: staker.clone(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(Balance::zero());
+        }
+
+        // 2. Stake some amount and check again
+        let amount = register_and_stake(staker_h160, smart_contract.clone());
+        for staker in &dynamic_addresses {
+            precompiles()
+                .prepare_test(
+                    staker_h160,
+                    precompile_address(),
+                    PrecompileCall::read_staked_amount_on_contract {
+                        contract_h160: smart_contract_h160.into(),
+                        staker: staker.clone(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(amount);
+        }
+
+        // 3. Advance into next period, it should be reset back to zero
+        advance_to_next_period();
+        for staker in &dynamic_addresses {
+            precompiles()
+                .prepare_test(
+                    staker_h160,
+                    precompile_address(),
+                    PrecompileCall::read_staked_amount_on_contract {
+                        contract_h160: smart_contract_h160.into(),
+                        staker: staker.clone(),
+                    },
+                )
+                .expect_no_logs()
+                .execute_returns(Balance::zero());
+        }
+    });
+}
+
+#[test]
+fn read_contract_stake_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        let staker_h160 = ALICE;
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+
+        // 1. Sanity checks - must be zero before anything is staked.
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::read_contract_stake {
+                    contract_h160: smart_contract_h160.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(Balance::zero());
+
+        // 2. Stake some amount and check again
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let amount = register_and_stake(staker_h160, smart_contract.clone());
+
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::read_contract_stake {
+                    contract_h160: smart_contract_h160.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(amount);
+
+        // 3. Advance into next period, it should be reset back to zero
+        advance_to_next_period();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::read_contract_stake {
+                    contract_h160: smart_contract_h160.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(Balance::zero());
     });
 }
 

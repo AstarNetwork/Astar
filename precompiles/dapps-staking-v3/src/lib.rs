@@ -46,6 +46,8 @@ use pallet_dapp_staking_v3::{
 pub const STAKER_BYTES_LIMIT: u32 = 32;
 type GetStakerBytesLimit = ConstU32<STAKER_BYTES_LIMIT>;
 
+pub type DynamicAddress = BoundedBytes<GetStakerBytesLimit>;
+
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -62,7 +64,7 @@ pub struct PrecompileProtocolState {
 #[derive(Debug, Clone, solidity::Codec)]
 pub struct SmartContractV2 {
     contract_type: u8,
-    address: BoundedBytes<GetStakerBytesLimit>,
+    address: DynamicAddress,
 }
 
 pub struct DappStakingV3Precompile<R>(PhantomData<R>);
@@ -180,7 +182,7 @@ where
     #[precompile::view]
     fn read_staked_amount(
         handle: &mut impl PrecompileHandle,
-        staker: BoundedBytes<GetStakerBytesLimit>,
+        staker: DynamicAddress,
     ) -> EvmResult<u128> {
         // TODO: benchmark this function so we can measure ref time & PoV correctly
         // Storage item: ActiveProtocolState:
@@ -211,7 +213,7 @@ where
     fn read_staked_amount_on_contract(
         handle: &mut impl PrecompileHandle,
         contract_h160: Address,
-        staker: BoundedBytes<GetStakerBytesLimit>,
+        staker: DynamicAddress,
     ) -> EvmResult<u128> {
         // TODO: benchmark this function so we can measure ref time & PoV correctly
         // Storage item: ActiveProtocolState:
