@@ -23,7 +23,7 @@ use frame_support::{
     assert_ok, construct_runtime, parameter_types,
     traits::{
         fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
-        ConstU128, ConstU64, Hooks,
+        ConstU128, ConstU64, GenesisBuild, Hooks,
     },
     weights::{RuntimeDbWeight, Weight},
 };
@@ -31,7 +31,7 @@ use frame_system::RawOrigin;
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use sp_arithmetic::fixed_point::FixedU64;
+use sp_arithmetic::{fixed_point::FixedU64, Permill};
 use sp_core::{H160, H256};
 use sp_io::TestExternalities;
 use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
@@ -42,7 +42,7 @@ use astar_primitives::{
     testing::Header,
     AccountId, Balance, BlockNumber,
 };
-use pallet_dapp_staking_v3::{EraNumber, PeriodNumber, PriceProvider};
+use pallet_dapp_staking_v3::{EraNumber, PeriodNumber, PriceProvider, TierThreshold};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -246,29 +246,6 @@ impl pallet_dapp_staking_v3::Config for Test {
     type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Test>;
 }
 
-pub struct ExternalityBuilder;
-impl ExternalityBuilder {
-    pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
-            .unwrap();
-
-        let balances = vec![10000; 9]
-            .into_iter()
-            .enumerate()
-            .map(|(idx, amount)| ([idx as u8; 32].into(), amount))
-            .collect();
-
-        pallet_balances::GenesisConfig::<Test> { balances: balances }
-            .assimilate_storage(&mut storage)
-            .ok();
-
-        let mut ext = TestExternalities::from(storage);
-        ext.execute_with(|| System::set_block_number(1));
-        ext
-    }
-}
-
 construct_runtime!(
     pub struct Test
     where
@@ -284,17 +261,74 @@ construct_runtime!(
     }
 );
 
+pub struct ExternalityBuilder;
+impl ExternalityBuilder {
+    pub fn build() -> TestExternalities {
+        let mut storage = frame_system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .unwrap();
+
+        <pallet_dapp_staking_v3::GenesisConfig as GenesisBuild<Test>>::assimilate_storage(
+            &pallet_dapp_staking_v3::GenesisConfig {
+                reward_portion: vec![
+                    Permill::from_percent(40),
+                    Permill::from_percent(30),
+                    Permill::from_percent(20),
+                    Permill::from_percent(10),
+                ],
+                slot_distribution: vec![
+                    Permill::from_percent(10),
+                    Permill::from_percent(20),
+                    Permill::from_percent(30),
+                    Permill::from_percent(40),
+                ],
+                tier_thresholds: vec![
+                    TierThreshold::DynamicTvlAmount {
+                        amount: 100,
+                        minimum_amount: 80,
+                    },
+                    TierThreshold::DynamicTvlAmount {
+                        amount: 50,
+                        minimum_amount: 40,
+                    },
+                    TierThreshold::DynamicTvlAmount {
+                        amount: 20,
+                        minimum_amount: 20,
+                    },
+                    TierThreshold::FixedTvlAmount { amount: 10 },
+                ],
+                slots_per_tier: vec![10, 20, 30, 40],
+            },
+            &mut storage,
+        )
+        .ok();
+
+        let mut ext = TestExternalities::from(storage);
+        ext.execute_with(|| {
+            System::set_block_number(1);
+
+            let alice_native = AddressMapper::into_account_id(ALICE);
+            assert_ok!(
+                <Test as pallet_dapp_staking_v3::Config>::Currency::write_balance(
+                    &alice_native,
+                    1000_000_000_000_000_000_000 as Balance,
+                )
+            );
+        });
+        ext
+    }
+}
+
 // Utility functions
 
 pub const ALICE: H160 = H160::repeat_byte(0xAA);
 
 /// Used to register a smart contract, and stake some funds on it.
-///
-/// Returns staked amount.
 pub fn register_and_stake(
     account: H160,
     smart_contract: <Test as pallet_dapp_staking_v3::Config>::SmartContract,
-) -> Balance {
+    amount: Balance,
+) {
     let alice_native = AddressMapper::into_account_id(account);
 
     // 1. Register smart contract
@@ -305,13 +339,6 @@ pub fn register_and_stake(
     ));
 
     // 2. Lock some amount
-    assert_ok!(
-        <Test as pallet_dapp_staking_v3::Config>::Currency::write_balance(
-            &alice_native,
-            1000_000_000_000_000_000_000 as Balance,
-        )
-    );
-    let amount = 1_000_000_000_000;
     assert_ok!(DappStaking::lock(
         RawOrigin::Signed(alice_native.clone()).into(),
         amount,
@@ -323,8 +350,6 @@ pub fn register_and_stake(
         smart_contract.clone(),
         amount,
     ));
-
-    amount
 }
 
 /// TODO

@@ -20,11 +20,14 @@ extern crate alloc;
 use crate::{mock::*, *};
 use fp_evm::ExitError;
 use frame_support::assert_ok;
+use frame_system::RawOrigin;
 use precompile_utils::testing::*;
 use sp_core::H160;
 use sp_runtime::{traits::Zero, AccountId32, Perbill};
 
-use pallet_dapp_staking_v3::{AccountLedger, ActiveProtocolState, EraNumber, EraRewards};
+use assert_matches::assert_matches;
+
+use pallet_dapp_staking_v3::{AccountLedger, ActiveProtocolState, EraNumber, EraRewards, Event};
 
 fn precompiles() -> DappStakingPrecompile<Test> {
     PrecompilesValue::get()
@@ -124,7 +127,8 @@ fn read_era_staked_is_ok() {
         let smart_contract_h160 = H160::repeat_byte(0xFA);
         let smart_contract =
             <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
-        let amount = register_and_stake(staker_h160, smart_contract.clone());
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
         let anchor_era = ActiveProtocolState::<Test>::get().era;
 
         // 1. Current era stake must be zero, since stake is only valid from the next era.
@@ -201,7 +205,8 @@ fn read_staked_amount_is_ok() {
         let smart_contract_h160 = H160::repeat_byte(0xFA);
         let smart_contract =
             <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
-        let amount = register_and_stake(staker_h160, smart_contract.clone());
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
         for staker in &dynamic_addresses {
             precompiles()
                 .prepare_test(
@@ -259,7 +264,8 @@ fn read_staked_amount_on_contract_is_ok() {
         }
 
         // 2. Stake some amount and check again
-        let amount = register_and_stake(staker_h160, smart_contract.clone());
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
         for staker in &dynamic_addresses {
             precompiles()
                 .prepare_test(
@@ -315,7 +321,8 @@ fn read_contract_stake_is_ok() {
         // 2. Stake some amount and check again
         let smart_contract =
             <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
-        let amount = register_and_stake(staker_h160, smart_contract.clone());
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
 
         precompiles()
             .prepare_test(
@@ -343,89 +350,290 @@ fn read_contract_stake_is_ok() {
     });
 }
 
-// #[test]
-// fn register_via_precompile_fails() {
-//     ExternalityBuilder::default()
-//         .with_balances(vec![(TestAccount::Alex.into(), 200 * AST)])
-//         .build()
-//         .execute_with(|| {
-//             initialize_first_block();
+#[test]
+fn register_is_unsupported() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
 
-//             precompiles()
-//                 .prepare_test(
-//                     TestAccount::Alex,
-//                     precompile_address(),
-//                     EvmDataWriter::new_with_selector(Action::Register)
-//                         .write(Address(TEST_CONTRACT.clone()))
-//                         .build(),
-//                 )
-//                 .expect_no_logs()
-//                 .execute_error(ExitError::Other(alloc::borrow::Cow::Borrowed(
-//                     "register via evm precompile is not allowed",
-//                 )));
-//         });
-// }
+        precompiles()
+            .prepare_test(
+                ALICE,
+                precompile_address(),
+                PrecompileCall::register {
+                    _address: Default::default(),
+                },
+            )
+            .expect_no_logs()
+            .execute_reverts(|output| output == b"register via evm precompile is not allowed");
+    });
+}
 
-// #[test]
-// fn bond_and_stake_is_ok() {
-//     ExternalityBuilder::default()
-//         .with_balances(vec![
-//             (TestAccount::Alex.into(), 200 * AST),
-//             (TestAccount::Bobo.into(), 200 * AST),
-//             (TestAccount::Dino.into(), 100 * AST),
-//         ])
-//         .build()
-//         .execute_with(|| {
-//             initialize_first_block();
+#[test]
+fn set_reward_destination_is_unsupported() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
 
-//             register_and_verify(TestAccount::Alex, TEST_CONTRACT);
+        precompiles()
+            .prepare_test(
+                ALICE,
+                precompile_address(),
+                PrecompileCall::set_reward_destination { _destination: 0 },
+            )
+            .expect_no_logs()
+            .execute_reverts(|output| {
+                output == b"Setting reward destination is no longer supported."
+            });
+    });
+}
 
-//             let amount_staked_bobo = 100 * AST;
-//             bond_stake_and_verify(TestAccount::Bobo, TEST_CONTRACT, amount_staked_bobo);
+#[test]
+fn bond_and_stake_with_two_calls_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
 
-//             let amount_staked_dino = 50 * AST;
-//             bond_stake_and_verify(TestAccount::Dino, TEST_CONTRACT, amount_staked_dino);
+        // Register a dApp for staking
+        let staker_h160 = ALICE;
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        assert_ok!(DappStaking::register(
+            RawOrigin::Root.into(),
+            AddressMapper::into_account_id(staker_h160),
+            smart_contract.clone()
+        ));
 
-//             contract_era_stake_verify(TEST_CONTRACT, amount_staked_bobo + amount_staked_dino);
-//             verify_staked_amount(TEST_CONTRACT, TestAccount::Bobo.into(), amount_staked_bobo);
-//             verify_staked_amount(TEST_CONTRACT, TestAccount::Dino.into(), amount_staked_dino);
-//         });
-// }
+        // Lock some amount, but not enough to cover the `bond_and_stake` call.
+        let pre_lock_amount = 500;
+        let stake_amount = 1_000_000;
+        assert_ok!(DappStaking::lock(
+            RawOrigin::Signed(AddressMapper::into_account_id(staker_h160)).into(),
+            pre_lock_amount,
+        ));
 
-// #[test]
-// fn unbond_and_unstake_is_ok() {
-//     ExternalityBuilder::default()
-//         .with_balances(vec![
-//             (TestAccount::Alex.into(), 200 * AST),
-//             (TestAccount::Bobo.into(), 200 * AST),
-//             (TestAccount::Dino.into(), 100 * AST),
-//         ])
-//         .build()
-//         .execute_with(|| {
-//             initialize_first_block();
+        // Execute legacy call, expect missing funds to be locked.
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::bond_and_stake {
+                    contract_h160: smart_contract_h160.into(),
+                    amount: stake_amount,
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
 
-//             // register new contract by Alex
-//             let developer = TestAccount::Alex.into();
-//             register_and_verify(developer, TEST_CONTRACT);
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 2);
+        let additional_lock_amount = stake_amount - pre_lock_amount;
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking_v3::Event::Locked {
+                amount: additional_lock_amount,
+                ..
+            }
+        );
+        assert_matches!(
+            events[1].clone(),
+            pallet_dapp_staking_v3::Event::Stake {
+                smart_contract,
+                amount: stake_amount,
+                ..
+            }
+        );
+    });
+}
 
-//             let amount_staked_bobo = 100 * AST;
-//             bond_stake_and_verify(TestAccount::Bobo, TEST_CONTRACT, amount_staked_bobo);
-//             let amount_staked_dino = 50 * AST;
-//             bond_stake_and_verify(TestAccount::Dino, TEST_CONTRACT, amount_staked_dino);
+#[test]
+fn bond_and_stake_with_single_call_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
 
-//             // Bobo unstakes all
-//             let era = 2;
-//             advance_to_era(era);
-//             unbond_unstake_and_verify(TestAccount::Bobo, TEST_CONTRACT, amount_staked_bobo);
+        // Register a dApp for staking
+        let staker_h160 = ALICE;
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        assert_ok!(DappStaking::register(
+            RawOrigin::Root.into(),
+            AddressMapper::into_account_id(staker_h160),
+            smart_contract.clone()
+        ));
 
-//             contract_era_stake_verify(TEST_CONTRACT, amount_staked_dino);
-//             verify_staked_amount(TEST_CONTRACT, TestAccount::Dino, amount_staked_dino);
+        // Lock enough amount to cover `bond_and_stake` call.
+        let amount = 3000;
+        assert_ok!(DappStaking::lock(
+            RawOrigin::Signed(AddressMapper::into_account_id(staker_h160)).into(),
+            amount,
+        ));
 
-//             // withdraw unbonded funds
-//             advance_to_era(era + UNBONDING_PERIOD + 1);
-//             withdraw_unbonded_verify(TestAccount::Bobo);
-//         });
-// }
+        // Execute legacy call, expect only single stake to be executed.
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::bond_and_stake {
+                    contract_h160: smart_contract_h160.into(),
+                    amount,
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 1);
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking_v3::Event::Stake {
+                smart_contract,
+                amount,
+                ..
+            }
+        );
+    });
+}
+
+#[test]
+fn unbond_and_unstake_with_two_calls_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        // Register a dApp for staking
+        let staker_h160 = ALICE;
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
+
+        // Execute legacy call, expect funds to first unstaked, and then unlocked
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::unbond_and_unstake {
+                    contract_h160: smart_contract_h160.into(),
+                    amount,
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 2);
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking_v3::Event::Unstake {
+                smart_contract,
+                amount,
+                ..
+            }
+        );
+        assert_matches!(
+            events[1].clone(),
+            pallet_dapp_staking_v3::Event::Unlocking { amount, .. }
+        );
+    });
+}
+
+#[test]
+fn unbond_and_unstake_with_single_calls_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        // Register a dApp for staking
+        let staker_h160 = ALICE;
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
+
+        // Unstake the entire amount, so only unlock call is expected.
+        assert_ok!(DappStaking::unstake(
+            RawOrigin::Signed(AddressMapper::into_account_id(staker_h160)).into(),
+            smart_contract.clone(),
+            amount,
+        ));
+
+        // Execute legacy call, expect funds to be unlocked
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::unbond_and_unstake {
+                    contract_h160: smart_contract_h160.into(),
+                    amount,
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 1);
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking_v3::Event::Unlocking { amount, .. }
+        );
+    });
+}
+
+#[test]
+fn withdraw_unbonded_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        // Register a dApp for staking
+        let staker_h160 = ALICE;
+        let staker_native = AddressMapper::into_account_id(staker_h160);
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
+
+        // Unlock some amount
+        assert_ok!(DappStaking::unstake(
+            RawOrigin::Signed(staker_native.clone()).into(),
+            smart_contract.clone(),
+            amount,
+        ));
+        let unlock_amount = amount / 7;
+        assert_ok!(DappStaking::unlock(
+            RawOrigin::Signed(staker_native.clone()).into(),
+            unlock_amount,
+        ));
+
+        // Advance enough into time so unlocking chunk can be claimed
+        let unlock_block = Ledger::<Test>::get(&staker_native).unlocking[0].unlock_block;
+        run_to_block(unlock_block);
+
+        // Execute legacy call, expect funds to be unlocked
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::withdraw_unbonded {},
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 1);
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking_v3::Event::ClaimedUnlocked {
+                amount: unlock_amount,
+                ..
+            }
+        );
+    });
+}
 
 // #[test]
 // fn claim_dapp_is_ok() {

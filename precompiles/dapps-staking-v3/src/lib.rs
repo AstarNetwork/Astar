@@ -446,7 +446,7 @@ where
     /// This call has been deprecated by dApp staking v3.
     #[precompile::public("set_reward_destination(uint8)")]
     fn set_reward_destination(_: &mut impl PrecompileHandle, _destination: u8) -> EvmResult<bool> {
-        Err(RevertReason::custom("Call is no longer supported.").into())
+        Err(RevertReason::custom("Setting reward destination is no longer supported.").into())
     }
 
     /// Withdraw staked funds from the unregistered contract
