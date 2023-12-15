@@ -21,7 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use fp_evm::PrecompileHandle;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::MaxEncodedLen;
 
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
@@ -32,11 +32,11 @@ use frame_support::{
 use pallet_evm::AddressMapping;
 use precompile_utils::prelude::*;
 use sp_core::{Get, H160, U256};
-use sp_runtime::traits::{TrailingZeroInput, Zero};
+use sp_runtime::traits::Zero;
 use sp_std::{marker::PhantomData, prelude::*};
 extern crate alloc;
 
-use astar_primitives::{AccountId, Balance};
+use astar_primitives::{dapp_staking::SmartContractHandle, AccountId, Balance};
 use pallet_dapp_staking_v3::{
     AccountLedgerFor, ActiveProtocolState, ContractStake, ContractStakeAmount, CurrentEraInfo,
     DAppInfoFor, EraInfo, EraRewardSpanFor, EraRewards, IntegratedDApps, Ledger,
@@ -48,21 +48,8 @@ type GetStakerBytesLimit = ConstU32<STAKER_BYTES_LIMIT>;
 
 #[cfg(test)]
 mod mock;
-// TODO: uncomment & fix after uplift to new precompile utils
-// #[cfg(test)]
-// mod tests;
-
-// TODO: move smart contract enum under primitives, so it can be reused in other pallets.
-// Or at least introduce some trait on it so it can be more easily manipulated between runtimes/precompiles.
-
-/// This is only used to encode SmartContract enum
-#[derive(PartialEq, Eq, Clone, Encode, Decode, Debug)]
-pub enum Contract {
-    /// EVM smart contract instance.
-    Evm(H160),
-    /// Wasm smart contract instance. Not used in this precompile
-    Wasm(AccountId),
-}
+#[cfg(test)]
+mod tests;
 
 /// Helper struct used to encode protocol state.
 #[derive(Debug, Clone, solidity::Codec)]
@@ -735,37 +722,23 @@ where
     pub fn decode_smart_contract_v1(
         contract_h160: H160,
     ) -> EvmResult<<R as pallet_dapp_staking_v3::Config>::SmartContract> {
-        // Encode contract address to fit SmartContract enum.
-        // Since the SmartContract enum type can't be accessed from this pecompile,
-        // use locally defined enum clone (see Contract enum)
-        let contract_enum_encoded = Contract::Evm(contract_h160).encode();
-
-        // encoded enum will add one byte before the contract's address
-        // therefore we need to decode len(H160) + 1 byte = 21
-        let smart_contract = <R as pallet_dapp_staking_v3::Config>::SmartContract::decode(
-            &mut &contract_enum_encoded[..21],
-        )
-        .map_err(|_| revert("Error while decoding SmartContract"))?;
-
-        Ok(smart_contract)
+        Ok(<R as pallet_dapp_staking_v3::Config>::SmartContract::evm(
+            contract_h160,
+        ))
     }
 
     /// Helper method to decode smart contract struct for v2 calls
-    ///
-    /// TODO: this is temporary and must be improved!
     pub fn decode_smart_contract_v2(
         smart_contract: SmartContractV2,
     ) -> EvmResult<<R as pallet_dapp_staking_v3::Config>::SmartContract> {
-        // TODO: this needs to be improved now since it's incredibly hacky and ugly
-
-        let contract_encoded = match smart_contract.contract_type {
+        let smart_contract = match smart_contract.contract_type {
             0 => {
                 ensure!(
                     smart_contract.address.as_bytes().len() == 20,
                     revert("Invalid address length for Astar EVM smart contract.")
                 );
                 let h160_address = H160::from_slice(smart_contract.address.as_bytes());
-                Contract::Evm(h160_address).encode()
+                <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(h160_address)
             }
             1 => {
                 ensure!(
@@ -775,17 +748,12 @@ where
                 let mut staker_bytes = [0_u8; 32];
                 staker_bytes[..].clone_from_slice(&smart_contract.address.as_bytes());
 
-                Contract::Wasm(staker_bytes.into()).encode()
+                <R as pallet_dapp_staking_v3::Config>::SmartContract::wasm(staker_bytes.into())
             }
             _ => {
                 return Err(revert("Error while decoding SmartContract"));
             }
         };
-
-        let smart_contract = <R as pallet_dapp_staking_v3::Config>::SmartContract::decode(
-            &mut TrailingZeroInput::new(contract_encoded.as_ref()),
-        )
-        .map_err(|_| revert("Error while decoding SmartContract"))?;
 
         Ok(smart_contract)
     }
