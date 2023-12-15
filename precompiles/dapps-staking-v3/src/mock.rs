@@ -20,10 +20,14 @@ use super::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{fungible::Mutate, ConstU128, ConstU64},
+    assert_ok, construct_runtime, parameter_types,
+    traits::{
+        fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
+        ConstU128, ConstU64, Hooks,
+    },
     weights::{RuntimeDbWeight, Weight},
 };
+use frame_system::RawOrigin;
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
@@ -38,7 +42,7 @@ use astar_primitives::{
     testing::Header,
     AccountId, Balance, BlockNumber,
 };
-use pallet_dapp_staking_v3::PriceProvider;
+use pallet_dapp_staking_v3::{EraNumber, PeriodNumber, PriceProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -46,8 +50,10 @@ type Block = frame_system::mocking::MockBlock<Test>;
 pub struct AddressMapper;
 impl AddressMapping<AccountId> for AddressMapper {
     fn into_account_id(account: H160) -> AccountId {
-        account
-            .as_bytes()
+        let mut account_id = [0u8; 32];
+        account_id[0..20].clone_from_slice(&account.as_bytes());
+
+        account_id
             .try_into()
             .expect("H160 is 20 bytes long so it must fit into 32 bytes; QED")
     }
@@ -134,6 +140,8 @@ where
         }
     }
 }
+
+pub type PrecompileCall = DappStakingV3PrecompileCall<Test>;
 
 parameter_types! {
     pub PrecompilesValue: DappStakingPrecompile<Test> = DappStakingPrecompile(Default::default());
@@ -238,9 +246,9 @@ impl pallet_dapp_staking_v3::Config for Test {
     type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Test>;
 }
 
-pub struct _ExternalityBuilder;
-impl _ExternalityBuilder {
-    pub fn _build(self) -> TestExternalities {
+pub struct ExternalityBuilder;
+impl ExternalityBuilder {
+    pub fn build() -> TestExternalities {
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
@@ -272,6 +280,129 @@ construct_runtime!(
         Balances: pallet_balances,
         Evm: pallet_evm,
         Timestamp: pallet_timestamp,
-        DappsStaking: pallet_dapp_staking_v3,
+        DappStaking: pallet_dapp_staking_v3,
     }
 );
+
+// Utility functions
+
+pub const ALICE: H160 = H160::repeat_byte(0xAA);
+
+/// Used to register a smart contract, and stake some funds on it.
+///
+/// Returns `(staker H160 address, smart contract, staked amount)`.
+pub fn register_and_stake() -> (
+    H160,
+    <Test as pallet_dapp_staking_v3::Config>::SmartContract,
+    Balance,
+) {
+    let smart_contract =
+        <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(H160::repeat_byte(0xFA));
+
+    let alice_native = AddressMapper::into_account_id(ALICE);
+
+    // 1. Register smart contract
+    assert_ok!(DappStaking::register(
+        RawOrigin::Root.into(),
+        alice_native.clone(),
+        smart_contract.clone()
+    ));
+
+    // 2. Lock some amount
+    assert_ok!(
+        <Test as pallet_dapp_staking_v3::Config>::Currency::write_balance(
+            &alice_native,
+            1000_000_000_000_000_000_000 as Balance,
+        )
+    );
+    let amount = 1_000_000_000_000;
+    assert_ok!(DappStaking::lock(
+        RawOrigin::Signed(alice_native.clone()).into(),
+        amount,
+    ));
+
+    // 3. Stake the locked amount
+    assert_ok!(DappStaking::stake(
+        RawOrigin::Signed(alice_native.clone()).into(),
+        smart_contract.clone(),
+        amount,
+    ));
+
+    (ALICE, smart_contract, amount)
+}
+
+/// Initialize first block.
+/// This method should only be called once in a UT otherwise the first block will get initialized multiple times.
+pub fn initialize() {
+    // This assert prevents method misuse
+    assert_eq!(System::block_number(), 1 as BlockNumber);
+    DappStaking::on_initialize(System::block_number());
+    run_to_block(2);
+}
+
+/// Run to the specified block number.
+/// Function assumes first block has been initialized.
+pub(crate) fn run_to_block(n: BlockNumber) {
+    while System::block_number() < n {
+        DappStaking::on_finalize(System::block_number());
+        System::set_block_number(System::block_number() + 1);
+        DappStaking::on_initialize(System::block_number());
+    }
+}
+
+/// Run for the specified number of blocks.
+/// Function assumes first block has been initialized.
+pub(crate) fn run_for_blocks(n: BlockNumber) {
+    run_to_block(System::block_number() + n);
+}
+
+/// Advance blocks until the specified era has been reached.
+///
+/// Function has no effect if era is already passed.
+pub(crate) fn advance_to_era(era: EraNumber) {
+    assert!(era >= ActiveProtocolState::<Test>::get().era);
+    while ActiveProtocolState::<Test>::get().era < era {
+        run_for_blocks(1);
+    }
+}
+
+/// Advance blocks until next era has been reached.
+pub(crate) fn advance_to_next_era() {
+    advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+}
+
+/// Advance blocks until the specified period has been reached.
+///
+/// Function has no effect if period is already passed.
+pub(crate) fn advance_to_period(period: PeriodNumber) {
+    assert!(period >= ActiveProtocolState::<Test>::get().period_number());
+    while ActiveProtocolState::<Test>::get().period_number() < period {
+        run_for_blocks(1);
+    }
+}
+
+/// Advance blocks until next period has been reached.
+pub(crate) fn advance_to_next_period() {
+    advance_to_period(ActiveProtocolState::<Test>::get().period_number() + 1);
+}
+
+/// Advance blocks until next period type has been reached.
+pub(crate) fn advance_to_next_subperiod() {
+    let subperiod = ActiveProtocolState::<Test>::get().subperiod();
+    while ActiveProtocolState::<Test>::get().subperiod() == subperiod {
+        run_for_blocks(1);
+    }
+}
+
+// Return all dApp staking events from the event buffer.
+pub fn dapp_staking_events() -> Vec<pallet_dapp_staking_v3::Event<Test>> {
+    System::events()
+        .into_iter()
+        .map(|r| r.event)
+        .filter_map(|e| {
+            <Test as pallet_dapp_staking_v3::Config>::RuntimeEvent::from(e)
+                .try_into()
+                .ok()
+        })
+        .collect::<Vec<_>>()
+}

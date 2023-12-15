@@ -24,104 +24,152 @@ use precompile_utils::testing::*;
 use sp_core::H160;
 use sp_runtime::{traits::Zero, AccountId32, Perbill};
 
+use pallet_dapp_staking_v3::{AccountLedger, ActiveProtocolState, EraNumber, EraRewards};
+
 fn precompiles() -> DappStakingPrecompile<Test> {
     PrecompilesValue::get()
 }
 
-// #[test]
-// fn current_era_is_ok() {
-//     ExternalityBuilder::default().build().execute_with(|| {
-//         initialize_first_block();
+#[test]
+fn read_current_era_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
 
-//         let current_era = DappsStaking::current_era();
+        precompiles()
+            .prepare_test(
+                Alice,
+                precompile_address(),
+                PrecompileCall::read_current_era {},
+            )
+            .expect_no_logs()
+            .execute_returns(ActiveProtocolState::<Test>::get().era);
 
-//         precompiles()
-//             .prepare_test(
-//                 TestAccount::Alex,
-//                 precompile_address(),
-//                 EvmDataWriter::new_with_selector(Action::ReadCurrentEra).build(),
-//             )
-//             .expect_cost(READ_WEIGHT)
-//             .expect_no_logs()
-//             .execute_returns(EvmDataWriter::new().write(current_era).build());
+        // advance a few eras, check value again
+        advance_to_era(7);
+        precompiles()
+            .prepare_test(
+                Alice,
+                precompile_address(),
+                PrecompileCall::read_current_era {},
+            )
+            .expect_no_logs()
+            .execute_returns(ActiveProtocolState::<Test>::get().era);
+    });
+}
 
-//         // advance to era 5 and check output
-//         advance_to_era(5);
-//         let current_era = DappsStaking::current_era();
+#[test]
+fn read_unbonding_period_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
 
-//         precompiles()
-//             .prepare_test(
-//                 TestAccount::Alex,
-//                 precompile_address(),
-//                 EvmDataWriter::new_with_selector(Action::ReadCurrentEra).build(),
-//             )
-//             .expect_cost(READ_WEIGHT)
-//             .expect_no_logs()
-//             .execute_returns(EvmDataWriter::new().write(current_era).build());
-//     });
-// }
+        let unlocking_period_in_eras: EraNumber =
+            <Test as pallet_dapp_staking_v3::Config>::UnlockingPeriod::get();
 
-// #[test]
-// fn read_unbonding_period_is_ok() {
-//     ExternalityBuilder::default().build().execute_with(|| {
-//         initialize_first_block();
+        precompiles()
+            .prepare_test(
+                Alice,
+                precompile_address(),
+                PrecompileCall::read_unbonding_period {},
+            )
+            .expect_no_logs()
+            .execute_returns(unlocking_period_in_eras);
+    });
+}
 
-//         precompiles()
-//             .prepare_test(
-//                 TestAccount::Alex,
-//                 precompile_address(),
-//                 EvmDataWriter::new_with_selector(Action::ReadUnbondingPeriod).build(),
-//             )
-//             .expect_cost(0)
-//             .expect_no_logs()
-//             .execute_returns(EvmDataWriter::new().write(UNBONDING_PERIOD).build());
-//     });
-// }
+#[test]
+fn read_era_reward_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
 
-// #[test]
-// fn read_era_reward_is_ok() {
-//     ExternalityBuilder::default().build().execute_with(|| {
-//         initialize_first_block();
+        // Check historic era for rewards
+        let era = 3;
+        advance_to_era(era + 1);
 
-//         advance_to_era(3);
-//         let era_reward = joint_block_reward() * BLOCKS_PER_ERA as u128;
-//         let second_era: EraIndex = 2;
+        let span_index = DAppStaking::<Test>::era_reward_span_index(era);
 
-//         precompiles()
-//             .prepare_test(
-//                 TestAccount::Alex,
-//                 precompile_address(),
-//                 EvmDataWriter::new_with_selector(Action::ReadEraReward)
-//                     .write(second_era)
-//                     .build(),
-//             )
-//             .expect_cost(READ_WEIGHT)
-//             .expect_no_logs()
-//             .execute_returns(EvmDataWriter::new().write(era_reward).build());
-//     });
-// }
+        let era_rewards_span = EraRewards::<Test>::get(span_index).expect("Entry must exist.");
+        let expected_reward = era_rewards_span
+            .get(era)
+            .map(|r| r.staker_reward_pool + r.dapp_reward_pool)
+            .expect("It's history era so it must exist.");
+        assert!(expected_reward > 0, "Sanity check.");
 
-// #[test]
-// fn read_era_staked_is_ok() {
-//     ExternalityBuilder::default().build().execute_with(|| {
-//         initialize_first_block();
+        precompiles()
+            .prepare_test(
+                Alice,
+                precompile_address(),
+                PrecompileCall::read_era_reward { era },
+            )
+            .expect_no_logs()
+            .execute_returns(expected_reward);
 
-//         let zero_era = EraIndex::zero();
-//         let staked = Balance::zero();
+        // Check current era for rewards, must be zero
+        precompiles()
+            .prepare_test(
+                Alice,
+                precompile_address(),
+                PrecompileCall::read_era_reward { era: era + 1 },
+            )
+            .expect_no_logs()
+            .execute_returns(Balance::zero());
+    });
+}
 
-//         precompiles()
-//             .prepare_test(
-//                 TestAccount::Alex,
-//                 precompile_address(),
-//                 EvmDataWriter::new_with_selector(Action::ReadEraStaked)
-//                     .write(zero_era)
-//                     .build(),
-//             )
-//             .expect_cost(READ_WEIGHT)
-//             .expect_no_logs()
-//             .execute_returns(EvmDataWriter::new().write(staked).build());
-//     });
-// }
+#[test]
+fn read_era_staked_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        let (staker_h160, smart_contract, amount) = register_and_stake();
+        let anchor_era = ActiveProtocolState::<Test>::get().era;
+
+        // 1. Current era stake must be zero, since stake is only valid from the next era.
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::read_era_staked { era: anchor_era },
+            )
+            .expect_no_logs()
+            .execute_returns(Balance::zero());
+
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::read_era_staked {
+                    era: anchor_era + 1,
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(amount);
+
+        // 2. Advance to next era, and check next era after the anchor.
+        advance_to_era(anchor_era + 5);
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::read_era_staked {
+                    era: anchor_era + 1,
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(amount);
+
+        // 3. Check era after the next one, must throw an error.
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::read_era_staked {
+                    era: ActiveProtocolState::<Test>::get().era + 2,
+                },
+            )
+            .expect_no_logs()
+            .execute_reverts(|output| output == b"Era is in the future");
+    });
+}
 
 // #[test]
 // fn register_via_precompile_fails() {
