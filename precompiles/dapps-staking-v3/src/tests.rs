@@ -612,7 +612,7 @@ fn withdraw_unbonded_is_ok() {
         let unlock_block = Ledger::<Test>::get(&staker_native).unlocking[0].unlock_block;
         run_to_block(unlock_block);
 
-        // Execute legacy call, expect funds to be unlocked
+        // Execute legacy call, expect unlocked funds to be claimed back
         System::reset_events();
         precompiles()
             .prepare_test(
@@ -629,6 +629,244 @@ fn withdraw_unbonded_is_ok() {
             events[0].clone(),
             pallet_dapp_staking_v3::Event::ClaimedUnlocked {
                 amount: unlock_amount,
+                ..
+            }
+        );
+    });
+}
+
+#[test]
+fn claim_dapp_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        // Register a dApp for staking
+        let staker_h160 = ALICE;
+        let staker_native = AddressMapper::into_account_id(staker_h160);
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
+
+        // Advance enough eras so we can claim dApp reward
+        advance_to_era(3);
+        let claim_era = 2;
+
+        // Execute legacy call, expect dApp rewards to be claimed
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::claim_dapp {
+                    contract_h160: smart_contract_h160.into(),
+                    era: claim_era,
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 1);
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking_v3::Event::DAppReward {
+                amount: claim_era,
+                smart_contract,
+                ..
+            }
+        );
+    });
+}
+
+#[test]
+fn claim_staker_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        // Register a dApp for staking
+        let staker_h160 = ALICE;
+        let staker_native = AddressMapper::into_account_id(staker_h160);
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
+
+        // Advance enough eras so we can claim dApp reward
+        advance_to_era(5);
+        let number_of_claims = (2..=4).count();
+
+        // Execute legacy call, expect dApp rewards to be claimed
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::claim_staker {
+                    contract_h160: smart_contract_h160.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        // We expect multiple reward to be claimed
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), number_of_claims as usize);
+        for era in 2..=4 {
+            assert_matches!(
+                events[era as usize - 2].clone(),
+                pallet_dapp_staking_v3::Event::Reward { era, .. }
+            );
+        }
+    });
+}
+
+#[test]
+fn withdraw_from_unregistered_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        // Register a dApp for staking
+        let staker_h160 = ALICE;
+        let staker_native = AddressMapper::into_account_id(staker_h160);
+        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract.clone(), amount);
+
+        // Unregister the dApp
+        assert_ok!(DappStaking::unregister(
+            RawOrigin::Root.into(),
+            smart_contract.clone()
+        ));
+
+        // Execute legacy call, expect funds to be unstaked & withdrawn
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::withdraw_from_unregistered {
+                    contract_h160: smart_contract_h160.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 1);
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking_v3::Event::UnstakeFromUnregistered {
+                smart_contract,
+                amount,
+                ..
+            }
+        );
+    });
+}
+
+#[test]
+fn nomination_transfer_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize();
+
+        // Register the first dApp, and stke on it.
+        let staker_h160 = ALICE;
+        let staker_native = AddressMapper::into_account_id(staker_h160);
+        let smart_contract_h160_1 = H160::repeat_byte(0xFA);
+        let smart_contract_1 =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160_1);
+        let amount = 1_000_000_000_000;
+        register_and_stake(staker_h160, smart_contract_1.clone(), amount);
+
+        // Register the second dApp.
+        let smart_contract_h160_2 = H160::repeat_byte(0xBF);
+        let smart_contract_2 =
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160_2);
+        assert_ok!(DappStaking::register(
+            RawOrigin::Root.into(),
+            staker_native.clone(),
+            smart_contract_2.clone()
+        ));
+
+        // 1st scenario - transfer enough amount from the first to second dApp to cover the stake,
+        //                but not enough for full unstake.
+        let minimum_stake_amount: Balance =
+            <Test as pallet_dapp_staking_v3::Config>::MinimumStakeAmount::get();
+
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::nomination_transfer {
+                    origin_contract_h160: smart_contract_h160_1.into(),
+                    amount: minimum_stake_amount,
+                    target_contract_h160: smart_contract_h160_2.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        // We expect the same amount to be staked on the second contract
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 2);
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking_v3::Event::Unstake {
+                smart_contract: smart_contract_1,
+                amount: minimum_stake_amount,
+                ..
+            }
+        );
+        assert_matches!(
+            events[1].clone(),
+            pallet_dapp_staking_v3::Event::Stake {
+                smart_contract: smart_contract_2,
+                amount: minimum_stake_amount,
+                ..
+            }
+        );
+
+        // 2nd scenario - transfer almost the entire amount from the first to second dApp.
+        //                The amount is large enough to trigger full unstake of the first contract.
+        let unstake_amount = amount - minimum_stake_amount - 1;
+        let expected_stake_unstake_amount = amount - minimum_stake_amount;
+
+        System::reset_events();
+        precompiles()
+            .prepare_test(
+                staker_h160,
+                precompile_address(),
+                PrecompileCall::nomination_transfer {
+                    origin_contract_h160: smart_contract_h160_1.into(),
+                    amount: unstake_amount,
+                    target_contract_h160: smart_contract_h160_2.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        // We expect the same amount to be staked on the second contract
+        let events = dapp_staking_events();
+        assert_eq!(events.len(), 2);
+        assert_matches!(
+            events[0].clone(),
+            pallet_dapp_staking_v3::Event::Unstake {
+                smart_contract: smart_contract_1,
+                amount: expected_stake_unstake_amount,
+                ..
+            }
+        );
+        assert_matches!(
+            events[1].clone(),
+            pallet_dapp_staking_v3::Event::Stake {
+                smart_contract: smart_contract_2,
+                amount: expected_stake_unstake_amount,
                 ..
             }
         );
