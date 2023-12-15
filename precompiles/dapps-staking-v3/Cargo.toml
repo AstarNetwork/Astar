@@ -31,6 +31,7 @@ fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
+assert_matches = { workspace = true }
 derive_more = { workspace = true }
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true }
@@ -39,7 +40,6 @@ serde = { workspace = true }
 sha3 = { workspace = true }
 sp-arithmetic = { workspace = true }
 sp-io = { workspace = true }
-assert_matches = { workspace = true }
 
 [features]
 default = ["std"]

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use super::*;
+use crate::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
@@ -319,6 +319,10 @@ impl ExternalityBuilder {
     }
 }
 
+pub fn precompiles() -> DappStakingPrecompile<Test> {
+    PrecompilesValue::get()
+}
+
 // Utility functions
 
 pub const ALICE: H160 = H160::repeat_byte(0xAA);
@@ -397,11 +401,6 @@ pub(crate) fn advance_to_era(era: EraNumber) {
     }
 }
 
-/// Advance blocks until next era has been reached.
-pub(crate) fn advance_to_next_era() {
-    advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
-}
-
 /// Advance blocks until the specified period has been reached.
 ///
 /// Function has no effect if period is already passed.
@@ -415,14 +414,6 @@ pub(crate) fn advance_to_period(period: PeriodNumber) {
 /// Advance blocks until next period has been reached.
 pub(crate) fn advance_to_next_period() {
     advance_to_period(ActiveProtocolState::<Test>::get().period_number() + 1);
-}
-
-/// Advance blocks until next period type has been reached.
-pub(crate) fn advance_to_next_subperiod() {
-    let subperiod = ActiveProtocolState::<Test>::get().subperiod();
-    while ActiveProtocolState::<Test>::get().subperiod() == subperiod {
-        run_for_blocks(1);
-    }
 }
 
 // Return all dApp staking events from the event buffer.
