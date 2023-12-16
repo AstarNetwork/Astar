@@ -59,3 +59,4 @@ std = [
 	"pallet-balances/std",
 	"sp-arithmetic/std",
 ]
+runtime-benchmarks = ["pallet-dapp-staking-v3/runtime-benchmarks"]

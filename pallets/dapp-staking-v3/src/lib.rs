@@ -1140,8 +1140,9 @@ pub mod pallet {
             let earliest_staked_era = ledger
                 .earliest_staked_era()
                 .ok_or(Error::<T>::InternalClaimStakerError)?;
-            let era_rewards = EraRewards::<T>::get(Self::era_reward_span_index(earliest_staked_era))
-                .ok_or(Error::<T>::NoClaimableRewards)?;
+            let era_rewards =
+                EraRewards::<T>::get(Self::era_reward_span_index(earliest_staked_era))
+                    .ok_or(Error::<T>::NoClaimableRewards)?;
 
             // The last era for which we can theoretically claim rewards.
             // And indicator if we know the period's ending era.

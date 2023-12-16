@@ -225,6 +225,20 @@ impl CycleConfiguration for DummyCycleConfiguration {
     }
 }
 
+// Just to satsify the trait bound
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_dapp_staking_v3::BenchmarkHelper<MockSmartContract, AccountId>
+    for BenchmarkHelper<MockSmartContract, AccountId>
+{
+    fn get_smart_contract(id: u32) -> MockSmartContract {
+        MockSmartContract::evm(H160::from_low_u64_be(id as u64))
+    }
+
+    fn set_balance(_account: &AccountId, _amount: Balance) {}
+}
+
 impl pallet_dapp_staking_v3::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -244,6 +258,8 @@ impl pallet_dapp_staking_v3::Config for Test {
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
     type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Test>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
 }
 
 construct_runtime!(
