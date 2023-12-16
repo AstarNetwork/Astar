@@ -5,7 +5,7 @@ pragma solidity >=0.8.0;
 /// Predeployed at the address 0x0000000000000000000000000000000000005001
 /// For better understanding check the source code:
 /// repo: https://github.com/AstarNetwork/Astar
-/// code: frame/dapps-staking-v3
+/// code: pallets/dapp-staking-v3
 interface DAppStaking {
 
     // Types

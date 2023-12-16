@@ -4,8 +4,15 @@ pragma solidity >=0.8.0;
 
 /// Predeployed at the address 0x0000000000000000000000000000000000005001
 /// For better understanding check the source code:
-/// repo: https://github.com/AstarNetwork/astar
-/// code: frame/dapps-staking/src/pallet
+/// repo: https://github.com/AstarNetwork/Astar
+///
+/// **NOTE:** This is a soft-deprecated interface used by the old dApps staking v2.
+///           It is still supported by the network, but doesn't reflect how dApp staking v3 should be used.
+///           Please refer to the `v2` interface for the latest version of the dApp staking contract.
+///
+///           It is possible that dApp staking feature will once again evolve in the future so all developers are encouraged
+///           to keep their smart contracts which utilize dApp staking precompile interface as upgradable, or implement their logic
+///           in such a way it's relatively simple to migrate to the new version of the interface.
 interface DappsStaking {
 
     // Types
