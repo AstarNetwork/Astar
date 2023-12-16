@@ -49,31 +49,43 @@ interface DAppStaking {
     // Extrinsic calls
 
     /// @notice Lock the given amount of tokens into dApp staking protocol.
-    function lock(uint128) external returns (bool);
+    /// @param amount: The amount of tokens to be locked.
+    function lock(uint128 amount) external returns (bool);
 
     /// @notice Start the unlocking process for the given amount of tokens.
-    function unlock(uint128) external returns (bool);
+    /// @param amount: The amount of tokens to be unlocked.
+    function unlock(uint128 amount) external returns (bool);
 
-    /// @notice Claims unlocked tokens.
+    /// @notice Claims unlocked tokens, if there are any
     function claim_unlocked() external returns (bool);
 
     /// @notice Stake the given amount of tokens on the specified smart contract.
-    function stake(SmartContract calldata, uint128) external returns (bool);
+    ///         The amount specified must be precise, otherwise the call will fail.
+    /// @param smart_contract: The smart contract to be staked on.
+    /// @param amount: The amount of tokens to be staked.
+    function stake(SmartContract calldata smart_contract, uint128 amount) external returns (bool);
 
     /// @notice Unstake the given amount of tokens from the specified smart contract.
-    function unstake(SmartContract calldata, uint128) external returns (bool);
+    ///         The amount specified must be precise, otherwise the call will fail.
+    /// @param smart_contract: The smart contract to be unstaked from.
+    /// @param amount: The amount of tokens to be unstaked.
+    function unstake(SmartContract calldata smart_contract, uint128 amount) external returns (bool);
 
     /// @notice Claims one or more pending staker rewards.
     function claim_staker_rewards() external returns (bool);
 
     /// @notice Claim the bonus reward for the specified smart contract.
-    function claim_bonus_reward(SmartContract calldata) external returns (bool);
+    /// @param smart_contract: The smart contract for which the bonus reward should be claimed.
+    function claim_bonus_reward(SmartContract calldata smart_contract) external returns (bool);
 
     /// @notice Claim dApp reward for the specified smart contract & era.
-    function claim_dapp_reward(SmartContract calldata, uint256) external returns (bool);
+    /// @param smart_contract: The smart contract for which the dApp reward should be claimed.
+    /// @param era: The era for which the dApp reward should be claimed.
+    function claim_dapp_reward(SmartContract calldata smart_contract, uint256 era) external returns (bool);
 
     /// @notice Unstake all funds from the unregistered smart contract.
-    function unstake_from_unregistered(SmartContract calldata) external returns (bool);
+    /// @param smart_contract: The smart contract which was unregistered and from which all funds should be unstaked.
+    function unstake_from_unregistered(SmartContract calldata smart_contract) external returns (bool);
 
     /// @notice Used to cleanup all expired contract stake entries from the caller.
     function cleanup_expired_entries() external returns (bool);
