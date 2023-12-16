@@ -73,7 +73,7 @@ pub struct SmartContractV2 {
 }
 
 /// Convenience type for smart contract type handling.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum SmartContractTypes {
     Evm,
     Wasm,
