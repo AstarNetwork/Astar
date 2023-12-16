@@ -20,13 +20,14 @@ use crate::test::mock::*;
 use crate::types::*;
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, CurrentEraInfo, DAppId, DAppTiers,
-    EraRewards, Event, FreezeReason, IntegratedDApps, Ledger, NextDAppId, NextTierConfig,
-    PeriodEnd, PeriodEndInfo, StakerInfo, TierConfig,
+    EraRewards, Event, FreezeReason, HistoryCleanupMarker, IntegratedDApps, Ledger, NextDAppId,
+    NextTierConfig, PeriodEnd, PeriodEndInfo, StakerInfo, TierConfig,
 };
 
 use frame_support::{
-    assert_ok,
-    traits::{fungible::InspectFreeze, Get},
+    assert_ok, assert_storage_noop,
+    traits::{fungible::InspectFreeze, Get, OnIdle},
+    weights::Weight,
 };
 use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
@@ -918,6 +919,11 @@ pub(crate) fn assert_claim_bonus_reward(account: AccountId, smart_contract: &Moc
         !StakerInfo::<Test>::contains_key(&account, smart_contract),
         "Entry must be removed after successful reward claim."
     );
+    assert_eq!(
+        pre_snapshot.ledger[&account].contract_stake_count,
+        Ledger::<Test>::get(&account).contract_stake_count + 1,
+        "Count must be reduced since the staker info entry was removed."
+    );
 }
 
 /// Claim dapp reward for a particular era.
@@ -1282,7 +1288,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
     }
 
     // 4. Verify era reward
-    let era_span_index = DappStaking::era_reward_span_index(pre_protoc_state.era);
+    let era_span_index = DappStaking::era_reward_index(pre_protoc_state.era);
     let maybe_pre_era_reward_span = pre_snapshot.era_rewards.get(&era_span_index);
     let post_era_reward_span = post_snapshot
         .era_rewards
@@ -1350,6 +1356,80 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
     }
 }
 
+/// Verify `on_idle` cleanup.
+pub(crate) fn assert_on_idle_cleanup() {
+    // Pre-data snapshot (limited to speed up testing)
+    let pre_cleanup_marker = HistoryCleanupMarker::<Test>::get();
+    let pre_era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>> =
+        EraRewards::<Test>::iter().collect();
+    let pre_period_ends: HashMap<PeriodNumber, PeriodEndInfo> = PeriodEnd::<Test>::iter().collect();
+
+    // Calculated the oldest era which is valid (not expired)
+    let protocol_state = ActiveProtocolState::<Test>::get();
+    let retention_period: PeriodNumber = <Test as Config>::RewardRetentionInPeriods::get();
+
+    let oldest_valid_era = match protocol_state
+        .period_number()
+        .checked_sub(retention_period + 1)
+    {
+        Some(expired_period) if expired_period > 0 => {
+            pre_period_ends[&expired_period].final_era + 1
+        }
+        _ => {
+            // No cleanup so no storage changes are expected
+            assert_storage_noop!(DappStaking::on_idle(System::block_number(), Weight::MAX));
+            return;
+        }
+    };
+
+    // Check if any span or tiers cleanup is needed.
+    let is_era_span_cleanup_expected =
+        pre_era_rewards[&pre_cleanup_marker.era_reward_index].last_era() < oldest_valid_era;
+    let is_dapp_tiers_cleanup_expected = pre_cleanup_marker.dapp_tiers_index > 0
+        && pre_cleanup_marker.dapp_tiers_index < oldest_valid_era;
+
+    // Check if period end info should be cleaned up
+    let maybe_period_end_cleanup = match protocol_state
+        .period_number()
+        .checked_sub(retention_period + 2)
+    {
+        Some(period) if period > 0 => Some(period),
+        _ => None,
+    };
+
+    // Cleanup and verify post state.
+
+    DappStaking::on_idle(System::block_number(), Weight::MAX);
+
+    // Post checks
+    let post_cleanup_marker = HistoryCleanupMarker::<Test>::get();
+
+    if is_era_span_cleanup_expected {
+        assert!(!EraRewards::<Test>::contains_key(
+            pre_cleanup_marker.era_reward_index
+        ));
+        let span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
+        assert_eq!(
+            post_cleanup_marker.era_reward_index,
+            pre_cleanup_marker.era_reward_index + span_length
+        );
+    }
+    if is_dapp_tiers_cleanup_expected {
+        assert!(
+            !DAppTiers::<Test>::contains_key(pre_cleanup_marker.dapp_tiers_index),
+            "Sanity check."
+        );
+        assert_eq!(
+            post_cleanup_marker.dapp_tiers_index,
+            pre_cleanup_marker.dapp_tiers_index + 1
+        )
+    }
+
+    if let Some(period) = maybe_period_end_cleanup {
+        assert!(!PeriodEnd::<Test>::contains_key(period));
+    }
+}
+
 /// Returns from which starting era to which ending era can rewards be claimed for the specified account.
 ///
 /// If `None` is returned, there is nothing to claim.
@@ -1387,10 +1467,10 @@ pub(crate) fn required_number_of_reward_claims(account: AccountId) -> u32 {
     };
 
     let era_span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
-    let first = DappStaking::era_reward_span_index(range.0)
+    let first = DappStaking::era_reward_index(range.0)
         .checked_div(era_span_length)
         .unwrap();
-    let second = DappStaking::era_reward_span_index(range.1)
+    let second = DappStaking::era_reward_index(range.1)
         .checked_div(era_span_length)
         .unwrap();
 

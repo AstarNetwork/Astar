@@ -159,7 +159,6 @@ fn dapp_info_basic_checks() {
         id: 7,
         state: DAppState::Registered,
         reward_destination: None,
-        tier_label: None,
     };
 
     // Owner receives reward in case no beneficiary is set
@@ -2123,7 +2122,6 @@ fn contract_stake_amount_basic_get_checks_work() {
     let contract_stake = ContractStakeAmount {
         staked: Default::default(),
         staked_future: None,
-        tier_label: None,
     };
     assert!(contract_stake.is_empty());
     assert!(contract_stake.latest_stake_period().is_none());
@@ -2145,7 +2143,6 @@ fn contract_stake_amount_basic_get_checks_work() {
     let contract_stake = ContractStakeAmount {
         staked: amount,
         staked_future: None,
-        tier_label: None,
     };
     assert!(!contract_stake.is_empty());
 
@@ -2194,7 +2191,6 @@ fn contract_stake_amount_advanced_get_checks_work() {
     let contract_stake = ContractStakeAmount {
         staked: amount_1,
         staked_future: Some(amount_2),
-        tier_label: None,
     };
 
     // Sanity checks - all values from the 'future' entry should be relevant

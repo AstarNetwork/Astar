@@ -1074,7 +1074,7 @@ fn stake_fails_due_to_too_many_staked_contracts() {
         // Advance to build&earn subperiod so we ensure non-loyal staking
         advance_to_next_subperiod();
 
-        // Register smart contracts up the the max allowed number
+        // Register smart contracts up to the max allowed number
         for id in 1..=max_number_of_contracts {
             let smart_contract = MockSmartContract::Wasm(id.into());
             assert_register(2, &MockSmartContract::Wasm(id.into()));
@@ -2382,6 +2382,13 @@ fn get_dapp_tier_assignment_zero_slots_per_tier_works() {
     })
 }
 
+#[test]
+fn advance_for_some_periods_works() {
+    ExtBuilder::build().execute_with(|| {
+        advance_to_period(10);
+    })
+}
+
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -2477,5 +2484,39 @@ fn stake_and_unstake_after_reward_claim_is_ok() {
         }
         assert_stake(account, &smart_contract, 1);
         assert_unstake(account, &smart_contract, 1);
+    })
+}
+
+#[test]
+fn stake_after_period_ends_with_max_staked_contracts() {
+    ExtBuilder::build().execute_with(|| {
+        let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
+
+        // Lock amount by staker
+        let account = 1;
+        assert_lock(account, 100 as Balance * max_number_of_contracts as Balance);
+
+        // Register smart contracts up to the max allowed number
+        for id in 1..=max_number_of_contracts {
+            let smart_contract = MockSmartContract::Wasm(id.into());
+            assert_register(2, &smart_contract);
+            assert_stake(account, &smart_contract, 10);
+        }
+
+        // Advance to the next period, and claim ALL rewards
+        advance_to_next_period();
+        for _ in 0..required_number_of_reward_claims(account) {
+            assert_claim_staker_rewards(account);
+        }
+        for id in 1..=max_number_of_contracts {
+            let smart_contract = MockSmartContract::Wasm(id.into());
+            assert_claim_bonus_reward(account, &smart_contract);
+        }
+
+        // Make sure it's possible to stake again
+        for id in 1..=max_number_of_contracts {
+            let smart_contract = MockSmartContract::Wasm(id.into());
+            assert_stake(account, &smart_contract, 10);
+        }
     })
 }

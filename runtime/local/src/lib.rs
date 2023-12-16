@@ -27,9 +27,8 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        fungible::Unbalanced as FunUnbalanced, AsEnsureOriginWithArg, ConstU128, ConstU32,
-        ConstU64, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter,
-        Nothing, OnFinalize, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
+        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
         constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -500,6 +499,7 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
     }
 
     fn set_balance(account: &AccountId, amount: Balance) {
+        use frame_support::traits::fungible::Unbalanced as FunUnbalanced;
         Balances::write_balance(account, amount)
             .expect("Must succeed in test/benchmark environment.");
     }
@@ -1713,6 +1713,20 @@ impl_runtime_apis! {
             key: Vec<u8>,
         ) -> pallet_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
+        fn eras_per_voting_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+            InflationCycleConfig::eras_per_voting_subperiod()
+        }
+
+        fn eras_per_build_and_earn_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+            InflationCycleConfig::eras_per_build_and_earn_subperiod()
+        }
+
+        fn blocks_per_era() -> BlockNumber {
+            InflationCycleConfig::blocks_per_era()
         }
     }
 
