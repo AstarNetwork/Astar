@@ -30,7 +30,13 @@ use frame_support::{
 };
 
 use pallet_evm::AddressMapping;
-use precompile_utils::prelude::*;
+use precompile_utils::{
+    prelude::*,
+    solidity::{
+        codec::{Reader, Writer},
+        Codec,
+    },
+};
 use sp_core::{Get, H160, U256};
 use sp_runtime::traits::Zero;
 use sp_std::{marker::PhantomData, prelude::*};
@@ -62,12 +68,12 @@ pub(crate) struct PrecompileProtocolState {
 /// Helper struct used to encode different smart contract types for the v2 interface.
 #[derive(Debug, Clone, solidity::Codec)]
 pub struct SmartContractV2 {
-    contract_type: u8,
+    contract_type: SmartContractTypes,
     address: DynamicAddress,
 }
 
-// TODO - try to add this under the SmartContractV2 type???
-/// Convenience type to handle smart contract v2 handling.
+/// Convenience type for smart contract type handling.
+#[derive(Clone, Debug)]
 pub(crate) enum SmartContractTypes {
     Evm,
     Wasm,
@@ -91,6 +97,33 @@ impl Into<u8> for SmartContractTypes {
             Self::Evm => 0,
             Self::Wasm => 1,
         }
+    }
+}
+
+impl Codec for SmartContractTypes {
+    fn read(reader: &mut Reader) -> MayRevert<SmartContractTypes> {
+        let value256: U256 = reader
+            .read()
+            .map_err(|_| RevertReason::read_out_of_bounds(Self::signature()))?;
+
+        let value_as_u8: u8 = value256
+            .try_into()
+            .map_err(|_| RevertReason::value_is_too_large(Self::signature()))?;
+
+        value_as_u8.try_into()
+    }
+
+    fn write(writer: &mut Writer, value: Self) {
+        let value_as_u8: u8 = value.into();
+        U256::write(writer, value_as_u8.into());
+    }
+
+    fn has_static_size() -> bool {
+        true
+    }
+
+    fn signature() -> String {
+        "uint8".into()
     }
 }
 
@@ -756,9 +789,7 @@ where
     pub(crate) fn decode_smart_contract(
         smart_contract: SmartContractV2,
     ) -> EvmResult<<R as pallet_dapp_staking_v3::Config>::SmartContract> {
-        let smart_contract_type = smart_contract.contract_type.try_into()?;
-
-        let smart_contract = match smart_contract_type {
+        let smart_contract = match smart_contract.contract_type {
             SmartContractTypes::Evm => {
                 ensure!(
                     smart_contract.address.as_bytes().len() == 20,
@@ -810,7 +841,6 @@ where
 }
 
 /// Numeric Id of the subperiod enum value.
-// TODO: add test for this to ensure it's the same as in the v2 interface
 pub(crate) fn subperiod_id(subperiod: &Subperiod) -> u8 {
     match subperiod {
         Subperiod::Voting => 0,

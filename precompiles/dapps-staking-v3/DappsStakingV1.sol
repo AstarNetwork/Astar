@@ -8,6 +8,13 @@ pragma solidity >=0.8.0;
 /// code: frame/dapps-staking/src/pallet
 interface DappsStaking {
 
+    // Types
+
+    /// Instruction how to handle reward payout for staker.
+    /// `FreeBalance` - Reward will be paid out to the staker (free balance).
+    /// `StakeBalance` - Reward will be paid out to the staker and is immediately restaked (locked balance)
+    enum RewardDestination {FreeBalance, StakeBalance}
+
     // Storage getters
 
     /// @notice Read current era.
@@ -67,11 +74,6 @@ interface DappsStaking {
     /// @param smart_contract: The smart contract address used for staking
     /// @param era: The era to be claimed
     function claim_dapp(address smart_contract, uint128 era) external returns (bool);
-
-    /// Instruction how to handle reward payout for staker.
-    /// `FreeBalance` - Reward will be paid out to the staker (free balance).
-    /// `StakeBalance` - Reward will be paid out to the staker and is immediately restaked (locked balance)
-    enum RewardDestination {FreeBalance, StakeBalance}
 
     /// @notice Set reward destination for staker rewards
     /// @param reward_destination: The instruction on how the reward payout should be handled

@@ -356,7 +356,9 @@ pub fn register_and_stake(
     ));
 }
 
-/// TODO
+/// Utility function used to create `DynamicAddress` out of the given `H160` address.
+/// The first one is simply byte representation of the H160 address.
+/// The second one is byte representation of the derived `AccountId` from the H160 address.
 pub fn into_dynamic_addresses(address: H160) -> [DynamicAddress; 2] {
     [
         address.as_bytes().try_into().unwrap(),

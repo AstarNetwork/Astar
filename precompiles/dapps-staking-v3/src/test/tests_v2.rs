@@ -209,7 +209,7 @@ fn stake_is_ok() {
         ));
 
         let smart_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Evm.into(),
+            contract_type: SmartContractTypes::Evm,
             address: smart_contract_h160.as_bytes().try_into().unwrap(),
         };
 
@@ -270,7 +270,7 @@ fn unstake_is_ok() {
         ));
 
         let smart_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm.into(),
+            contract_type: SmartContractTypes::Wasm,
             address: smart_contract_address.into(),
         };
 
@@ -361,7 +361,7 @@ fn claim_bonus_reward_is_ok() {
         advance_to_next_period();
 
         let smart_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm.into(),
+            contract_type: SmartContractTypes::Wasm,
             address: smart_contract_address.into(),
         };
 
@@ -405,7 +405,7 @@ fn claim_dapp_reward_is_ok() {
         advance_to_era(3);
 
         let smart_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm.into(),
+            contract_type: SmartContractTypes::Wasm,
             address: smart_contract_address.into(),
         };
 
@@ -454,7 +454,7 @@ fn unstake_from_unregistered_is_ok() {
         ));
 
         let smart_contract_v2 = SmartContractV2 {
-            contract_type: SmartContractTypes::Wasm.into(),
+            contract_type: SmartContractTypes::Wasm,
             address: smart_contract_address.into(),
         };
 
@@ -487,7 +487,11 @@ fn cleanup_expired_entries_is_ok() {
 
         // Advance over to the Build&Earn subperiod
         advance_to_next_subperiod();
-        assert_eq!(ActiveProtocolState::<Test>::get().subperiod(), Subperiod::BuildEarn, "Sanity check.");
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().subperiod(),
+            Subperiod::BuildAndEarn,
+            "Sanity check."
+        );
 
         // Register a dApp and stake on it
         let staker_h160 = ALICE;
@@ -507,8 +511,7 @@ fn cleanup_expired_entries_is_ok() {
             .prepare_test(
                 staker_h160,
                 precompile_address(),
-                PrecompileCall::cleanup_expired_entries {
-                },
+                PrecompileCall::cleanup_expired_entries {},
             )
             .expect_no_logs()
             .execute_returns(true);
@@ -517,7 +520,7 @@ fn cleanup_expired_entries_is_ok() {
         assert_eq!(events.len(), 1);
         assert_matches!(
             events[0].clone(),
-            pallet_dapp_staking_v3::Event::UnstakeFromUnregistered { smart_contract, amount, .. } if smart_contract == smart_contract && amount == amount
+            pallet_dapp_staking_v3::Event::ExpiredEntriesRemoved { count, .. } if count == 1
         );
     });
 }
