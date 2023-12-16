@@ -119,9 +119,9 @@ fn read_era_staked_is_ok() {
         initialize();
 
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
         let anchor_era = ActiveProtocolState::<Test>::get().era;
@@ -197,9 +197,9 @@ fn read_staked_amount_is_ok() {
         }
 
         // 2. Stake some amount and check again
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
         for staker in &dynamic_addresses {
@@ -238,9 +238,9 @@ fn read_staked_amount_on_contract_is_ok() {
         initialize();
 
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let dynamic_addresses = into_dynamic_addresses(staker_h160);
 
         // 1. Sanity checks - must be zero before anything is staked.
@@ -250,7 +250,7 @@ fn read_staked_amount_on_contract_is_ok() {
                     staker_h160,
                     precompile_address(),
                     PrecompileCall::read_staked_amount_on_contract {
-                        contract_h160: smart_contract_h160.into(),
+                        contract_h160: smart_contract_address.into(),
                         staker: staker.clone(),
                     },
                 )
@@ -267,7 +267,7 @@ fn read_staked_amount_on_contract_is_ok() {
                     staker_h160,
                     precompile_address(),
                     PrecompileCall::read_staked_amount_on_contract {
-                        contract_h160: smart_contract_h160.into(),
+                        contract_h160: smart_contract_address.into(),
                         staker: staker.clone(),
                     },
                 )
@@ -283,7 +283,7 @@ fn read_staked_amount_on_contract_is_ok() {
                     staker_h160,
                     precompile_address(),
                     PrecompileCall::read_staked_amount_on_contract {
-                        contract_h160: smart_contract_h160.into(),
+                        contract_h160: smart_contract_address.into(),
                         staker: staker.clone(),
                     },
                 )
@@ -299,7 +299,7 @@ fn read_contract_stake_is_ok() {
         initialize();
 
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
 
         // 1. Sanity checks - must be zero before anything is staked.
         precompiles()
@@ -307,7 +307,7 @@ fn read_contract_stake_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::read_contract_stake {
-                    contract_h160: smart_contract_h160.into(),
+                    contract_h160: smart_contract_address.into(),
                 },
             )
             .expect_no_logs()
@@ -315,7 +315,7 @@ fn read_contract_stake_is_ok() {
 
         // 2. Stake some amount and check again
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -324,7 +324,7 @@ fn read_contract_stake_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::read_contract_stake {
-                    contract_h160: smart_contract_h160.into(),
+                    contract_h160: smart_contract_address.into(),
                 },
             )
             .expect_no_logs()
@@ -337,7 +337,7 @@ fn read_contract_stake_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::read_contract_stake {
-                    contract_h160: smart_contract_h160.into(),
+                    contract_h160: smart_contract_address.into(),
                 },
             )
             .expect_no_logs()
@@ -388,9 +388,9 @@ fn bond_and_stake_with_two_calls_is_ok() {
 
         // Register a dApp for staking
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         assert_ok!(DappStaking::register(
             RawOrigin::Root.into(),
             AddressMapper::into_account_id(staker_h160),
@@ -412,7 +412,7 @@ fn bond_and_stake_with_two_calls_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::bond_and_stake {
-                    contract_h160: smart_contract_h160.into(),
+                    contract_h160: smart_contract_address.into(),
                     amount: stake_amount,
                 },
             )
@@ -447,9 +447,9 @@ fn bond_and_stake_with_single_call_is_ok() {
 
         // Register a dApp for staking
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         assert_ok!(DappStaking::register(
             RawOrigin::Root.into(),
             AddressMapper::into_account_id(staker_h160),
@@ -470,7 +470,7 @@ fn bond_and_stake_with_single_call_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::bond_and_stake {
-                    contract_h160: smart_contract_h160.into(),
+                    contract_h160: smart_contract_address.into(),
                     amount,
                 },
             )
@@ -497,9 +497,9 @@ fn unbond_and_unstake_with_two_calls_is_ok() {
 
         // Register a dApp for staking
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -510,7 +510,7 @@ fn unbond_and_unstake_with_two_calls_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::unbond_and_unstake {
-                    contract_h160: smart_contract_h160.into(),
+                    contract_h160: smart_contract_address.into(),
                     amount,
                 },
             )
@@ -541,9 +541,9 @@ fn unbond_and_unstake_with_single_calls_is_ok() {
 
         // Register a dApp for staking
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -561,7 +561,7 @@ fn unbond_and_unstake_with_single_calls_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::unbond_and_unstake {
-                    contract_h160: smart_contract_h160.into(),
+                    contract_h160: smart_contract_address.into(),
                     amount,
                 },
             )
@@ -585,9 +585,9 @@ fn withdraw_unbonded_is_ok() {
         // Register a dApp for staking
         let staker_h160 = ALICE;
         let staker_native = AddressMapper::into_account_id(staker_h160);
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -637,9 +637,9 @@ fn claim_dapp_is_ok() {
 
         // Register a dApp for staking
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -654,7 +654,7 @@ fn claim_dapp_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::claim_dapp {
-                    contract_h160: smart_contract_h160.into(),
+                    contract_h160: smart_contract_address.into(),
                     era: claim_era,
                 },
             )
@@ -681,15 +681,16 @@ fn claim_staker_is_ok() {
 
         // Register a dApp for staking
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
         // Advance enough eras so we can claim dApp reward
-        advance_to_era(5);
-        let number_of_claims = (2..=4).count();
+        let target_era = 5;
+        advance_to_era(target_era);
+        let number_of_claims = (2..target_era).count();
 
         // Execute legacy call, expect dApp rewards to be claimed
         System::reset_events();
@@ -698,7 +699,7 @@ fn claim_staker_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::claim_staker {
-                    _contract_h160: smart_contract_h160.into(),
+                    _contract_h160: smart_contract_address.into(),
                 },
             )
             .expect_no_logs()
@@ -707,7 +708,7 @@ fn claim_staker_is_ok() {
         // We expect multiple reward to be claimed
         let events = dapp_staking_events();
         assert_eq!(events.len(), number_of_claims as usize);
-        for era in 2..=4 {
+        for era in 2..target_era {
             assert_matches!(
                 events[era as usize - 2].clone(),
                 pallet_dapp_staking_v3::Event::Reward { era, .. } if era == era
@@ -723,9 +724,9 @@ fn withdraw_from_unregistered_is_ok() {
 
         // Register a dApp for staking
         let staker_h160 = ALICE;
-        let smart_contract_h160 = H160::repeat_byte(0xFA);
+        let smart_contract_address = H160::repeat_byte(0xFA);
         let smart_contract =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract.clone(), amount);
 
@@ -742,7 +743,7 @@ fn withdraw_from_unregistered_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::withdraw_from_unregistered {
-                    contract_h160: smart_contract_h160.into(),
+                    contract_h160: smart_contract_address.into(),
                 },
             )
             .expect_no_logs()
@@ -769,16 +770,16 @@ fn nomination_transfer_is_ok() {
         // Register the first dApp, and stke on it.
         let staker_h160 = ALICE;
         let staker_native = AddressMapper::into_account_id(staker_h160);
-        let smart_contract_h160_1 = H160::repeat_byte(0xFA);
+        let smart_contract_address_1 = H160::repeat_byte(0xFA);
         let smart_contract_1 =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160_1);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address_1);
         let amount = 1_000_000_000_000;
         register_and_stake(staker_h160, smart_contract_1.clone(), amount);
 
         // Register the second dApp.
-        let smart_contract_h160_2 = H160::repeat_byte(0xBF);
+        let smart_contract_address_2 = H160::repeat_byte(0xBF);
         let smart_contract_2 =
-            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_h160_2);
+            <Test as pallet_dapp_staking_v3::Config>::SmartContract::evm(smart_contract_address_2);
         assert_ok!(DappStaking::register(
             RawOrigin::Root.into(),
             staker_native.clone(),
@@ -796,9 +797,9 @@ fn nomination_transfer_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::nomination_transfer {
-                    origin_contract_h160: smart_contract_h160_1.into(),
+                    origin_contract_h160: smart_contract_address_1.into(),
                     amount: minimum_stake_amount,
-                    target_contract_h160: smart_contract_h160_2.into(),
+                    target_contract_h160: smart_contract_address_2.into(),
                 },
             )
             .expect_no_logs()
@@ -835,9 +836,9 @@ fn nomination_transfer_is_ok() {
                 staker_h160,
                 precompile_address(),
                 PrecompileCall::nomination_transfer {
-                    origin_contract_h160: smart_contract_h160_1.into(),
+                    origin_contract_h160: smart_contract_address_1.into(),
                     amount: unstake_amount,
-                    target_contract_h160: smart_contract_h160_2.into(),
+                    target_contract_h160: smart_contract_address_2.into(),
                 },
             )
             .expect_no_logs()

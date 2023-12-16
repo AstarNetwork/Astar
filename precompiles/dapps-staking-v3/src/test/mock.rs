@@ -401,6 +401,19 @@ pub(crate) fn advance_to_era(era: EraNumber) {
     }
 }
 
+/// Advance blocks until next era has been reached.
+pub(crate) fn advance_to_next_era() {
+    advance_to_era(ActiveProtocolState::<Test>::get().era + 1);
+}
+
+/// Advance blocks until next period type has been reached.
+pub(crate) fn advance_to_next_subperiod() {
+    let subperiod = ActiveProtocolState::<Test>::get().subperiod();
+    while ActiveProtocolState::<Test>::get().subperiod() == subperiod {
+        run_for_blocks(1);
+    }
+}
+
 /// Advance blocks until the specified period has been reached.
 ///
 /// Function has no effect if period is already passed.

@@ -2,7 +2,7 @@
 name = "pallet-evm-precompile-dapp-staking-v3"
 version = "0.1.0"
 license = "GPL-3.0-or-later"
-description = "dApps Staking EVM precompiles"
+description = "dApp Staking EVM precompiles"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true

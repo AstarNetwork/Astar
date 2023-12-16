@@ -8,7 +8,7 @@ pragma solidity >=0.8.0;
 /// code: frame/dapps-staking-v3
 interface DAppStaking {
 
-    // Storage getters
+    // Types
 
     /// Describes the subperiod in which the protocol currently is.
     enum Subperiod {Voting, BuildAndEarn}
@@ -34,6 +34,8 @@ interface DAppStaking {
         SmartContractType contract_type;
         bytes contract_address;
     }
+
+    // Storage getters
 
     /// @notice Get the current protocol state.
     /// @return (current era, current period number, current subperiod type).

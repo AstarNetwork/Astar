@@ -53,7 +53,7 @@ mod test;
 
 /// Helper struct used to encode protocol state.
 #[derive(Debug, Clone, solidity::Codec)]
-pub struct PrecompileProtocolState {
+pub(crate) struct PrecompileProtocolState {
     era: U256,
     period: U256,
     subperiod: u8,
@@ -64,6 +64,34 @@ pub struct PrecompileProtocolState {
 pub struct SmartContractV2 {
     contract_type: u8,
     address: DynamicAddress,
+}
+
+// TODO - try to add this under the SmartContractV2 type???
+/// Convenience type to handle smart contract v2 handling.
+pub(crate) enum SmartContractTypes {
+    Evm,
+    Wasm,
+}
+
+impl TryFrom<u8> for SmartContractTypes {
+    type Error = Revert;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Evm),
+            1 => Ok(Self::Wasm),
+            _ => Err(RevertReason::custom("Unknown smart contract type").into()),
+        }
+    }
+}
+
+impl Into<u8> for SmartContractTypes {
+    fn into(self) -> u8 {
+        match self {
+            Self::Evm => 0,
+            Self::Wasm => 1,
+        }
+    }
 }
 
 pub struct DappStakingV3Precompile<R>(PhantomData<R>);
@@ -548,7 +576,7 @@ where
         Ok(PrecompileProtocolState {
             era: protocol_state.era.into(),
             period: protocol_state.period_number().into(),
-            subperiod: Self::subperiod_id(&protocol_state.subperiod()),
+            subperiod: subperiod_id(&protocol_state.subperiod()),
         })
     }
 
@@ -725,11 +753,13 @@ where
     // Utility functions
 
     /// Helper method to decode smart contract struct for v2 calls
-    pub fn decode_smart_contract(
+    pub(crate) fn decode_smart_contract(
         smart_contract: SmartContractV2,
     ) -> EvmResult<<R as pallet_dapp_staking_v3::Config>::SmartContract> {
-        let smart_contract = match smart_contract.contract_type {
-            0 => {
+        let smart_contract_type = smart_contract.contract_type.try_into()?;
+
+        let smart_contract = match smart_contract_type {
+            SmartContractTypes::Evm => {
                 ensure!(
                     smart_contract.address.as_bytes().len() == 20,
                     revert("Invalid address length for Astar EVM smart contract.")
@@ -737,7 +767,7 @@ where
                 let h160_address = H160::from_slice(smart_contract.address.as_bytes());
                 <R as pallet_dapp_staking_v3::Config>::SmartContract::evm(h160_address)
             }
-            1 => {
+            SmartContractTypes::Wasm => {
                 ensure!(
                     smart_contract.address.as_bytes().len() == 32,
                     revert("Invalid address length for Astar WASM smart contract.")
@@ -747,16 +777,13 @@ where
 
                 <R as pallet_dapp_staking_v3::Config>::SmartContract::wasm(staker_bytes.into())
             }
-            _ => {
-                return Err(revert("Error while decoding SmartContract"));
-            }
         };
 
         Ok(smart_contract)
     }
 
     /// Helper method to parse H160 or SS58 address
-    fn parse_input_address(staker_vec: Vec<u8>) -> EvmResult<R::AccountId> {
+    pub(crate) fn parse_input_address(staker_vec: Vec<u8>) -> EvmResult<R::AccountId> {
         let staker: R::AccountId = match staker_vec.len() {
             // public address of the ss58 account has 32 bytes
             32 => {
@@ -780,13 +807,13 @@ where
 
         Ok(staker)
     }
+}
 
-    /// Numeric Id of the subperiod enum value.
-    // TODO: add test for this to ensure it's the same as in the v2 interface
-    fn subperiod_id(subperiod: &Subperiod) -> u8 {
-        match subperiod {
-            Subperiod::Voting => 0,
-            Subperiod::BuildAndEarn => 1,
-        }
+/// Numeric Id of the subperiod enum value.
+// TODO: add test for this to ensure it's the same as in the v2 interface
+pub(crate) fn subperiod_id(subperiod: &Subperiod) -> u8 {
+    match subperiod {
+        Subperiod::Voting => 0,
+        Subperiod::BuildAndEarn => 1,
     }
 }
