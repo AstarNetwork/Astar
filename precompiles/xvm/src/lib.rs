@@ -87,6 +87,10 @@ where
 
         let from = R::AddressMapping::into_account_id(handle.context().caller);
 
+        log::trace!(
+            target: "xvm-precompile::xvm_call",
+            "vm_id: {:?}, from: {:?}, call_to: {:?}, call_input: {:?}, value: {:?}, limit: {:?}", vm_id, from, call_to, call_input, value, limit
+        );
         let call_result = XC::call(xvm_context, vm_id, from, call_to, call_input, value, limit);
 
         let used_weight = match &call_result {
