@@ -24,7 +24,7 @@ use astar_primitives::evm::HashedDefaultMappings;
 use frame_support::{
     construct_runtime, parameter_types,
     sp_io::TestExternalities,
-    traits::{ConstU128, ConstU64, FindAuthor},
+    traits::{ConstU64, FindAuthor},
     weights::Weight,
 };
 use pallet_ethereum::PostLogContent;
@@ -39,6 +39,7 @@ use sp_runtime::{
 parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
+    pub const ExistentialDeposit: u128 = 100;
 }
 
 impl frame_system::Config for TestRuntime {
@@ -75,7 +76,7 @@ impl pallet_balances::Config for TestRuntime {
     type Balance = Balance;
     type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
-    type ExistentialDeposit = ConstU128<2>;
+    type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
     type HoldIdentifier = ();
