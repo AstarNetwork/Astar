@@ -6044,6 +6044,7 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-migration",
  "pallet-dapp-staking-v3",
  "pallet-dapps-staking",
  "pallet-democracy",
@@ -7663,20 +7664,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-contracts-migration"
-version = "1.0.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-contracts",
- "parity-scale-codec",
- "scale-info",
- "sp-arithmetic",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-contracts-primitives"
 version = "7.0.0"
 source = "git+https://github.com/AstarNetwork/substrate?branch=astar-polkadot-v0.9.43#3cf04f2d82a9305bf2e0bd74886c27c1c60c287e"
@@ -7711,6 +7698,26 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapp-staking-migration"
+version = "1.0.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-dapp-staking-v3",
+ "pallet-dapps-staking",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",

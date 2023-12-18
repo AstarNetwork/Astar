@@ -336,6 +336,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxEraStakeValues = MaxEraStakeValues;
     // Not allowed on Astar yet
     type UnregisteredDappRewardRetention = ConstU32<{ u32::MAX }>;
+    type ForcePalletDisabled = ConstBool<false>;
 }
 
 /// Multi-VM pointer to smart contract instance.

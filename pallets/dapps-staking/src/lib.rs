@@ -111,7 +111,7 @@ const MAX_ASSUMED_VEC_LEN: u32 = 10;
 
 /// DApp State descriptor
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-enum DAppState {
+pub enum DAppState {
     /// Contract is registered and active.
     Registered,
     /// Contract has been unregistered and is inactive.
@@ -122,9 +122,9 @@ enum DAppState {
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct DAppInfo<AccountId> {
     /// Developer (owner) account
-    developer: AccountId,
+    pub developer: AccountId,
     /// Current DApp State
-    state: DAppState,
+    pub state: DAppState,
 }
 
 impl<AccountId> DAppInfo<AccountId> {
@@ -137,7 +137,7 @@ impl<AccountId> DAppInfo<AccountId> {
     }
 
     /// `true` if dApp has been unregistered, `false` otherwise
-    fn is_unregistered(&self) -> bool {
+    pub fn is_unregistered(&self) -> bool {
         matches!(self.state, DAppState::Unregistered(_))
     }
 }
@@ -475,7 +475,7 @@ impl UnbondingInfo {
     }
 
     /// Returns sum of all unlocking chunks.
-    fn sum(&self) -> Balance {
+    pub fn sum(&self) -> Balance {
         self.unlocking_chunks
             .iter()
             .map(|chunk| chunk.amount)
@@ -551,7 +551,7 @@ pub struct AccountLedger {
     #[codec(compact)]
     pub locked: Balance,
     /// Information about unbonding chunks.
-    unbonding_info: UnbondingInfo,
+    pub unbonding_info: UnbondingInfo,
     /// Instruction on how to handle reward payout
     reward_destination: RewardDestination,
 }
