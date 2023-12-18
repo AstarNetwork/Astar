@@ -30,7 +30,7 @@ use sp_io::TestExternalities;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, StakingRewardHandler, SmartContract},
+    dapp_staking::{CycleConfiguration, SmartContract, StakingRewardHandler},
     testing::Header,
     Balance, BlockNumber,
 };
