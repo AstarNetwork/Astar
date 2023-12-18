@@ -28,7 +28,7 @@ use pallet_evm::{
 use pallet_evm_precompile_assets_erc20::{AddressToAssetId, Erc20AssetsPrecompileSet};
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
-use pallet_evm_precompile_dapps_staking::DappsStakingWrapper;
+use pallet_evm_precompile_dapp_staking_v3::DappStakingV3Precompile;
 use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_ed25519::Ed25519Verify;
 use pallet_evm_precompile_modexp::Modexp;
@@ -89,7 +89,7 @@ impl<R> LocalNetworkPrecompiles<R> {
 impl<R> PrecompileSet for LocalNetworkPrecompiles<R>
 where
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
-    DappsStakingWrapper<R>: Precompile,
+    DappStakingV3Precompile<R>: Precompile,
     XvmPrecompile<R, pallet_xvm::Pallet<R>>: Precompile,
     Dispatch<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>: Precompile,
     UnifiedAccountsPrecompile<R, pallet_unified_accounts::Pallet<R>>: Precompile,
@@ -132,7 +132,7 @@ where
             a if a == hash(1027) => Some(Ed25519Verify::execute(handle)),
             // Astar precompiles (starts from 0x5000):
             // DappStaking 0x5001
-            a if a == hash(20481) => Some(DappsStakingWrapper::<R>::execute(handle)),
+            a if a == hash(20481) => Some(DappStakingV3Precompile::<R>::execute(handle)),
             // Sr25519 0x5002
             a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(handle)),
             // SubstrateEcdsa 0x5003

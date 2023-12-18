@@ -21,6 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use fp_evm::PrecompileHandle;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use parity_scale_codec::MaxEncodedLen;
 
 use frame_support::{
@@ -73,31 +74,11 @@ pub struct SmartContractV2 {
 }
 
 /// Convenience type for smart contract type handling.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
 pub(crate) enum SmartContractTypes {
     Evm,
     Wasm,
-}
-
-impl TryFrom<u8> for SmartContractTypes {
-    type Error = Revert;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Self::Evm),
-            1 => Ok(Self::Wasm),
-            _ => Err(RevertReason::custom("Unknown smart contract type").into()),
-        }
-    }
-}
-
-impl Into<u8> for SmartContractTypes {
-    fn into(self) -> u8 {
-        match self {
-            Self::Evm => 0,
-            Self::Wasm => 1,
-        }
-    }
 }
 
 impl Codec for SmartContractTypes {
@@ -110,7 +91,9 @@ impl Codec for SmartContractTypes {
             .try_into()
             .map_err(|_| RevertReason::value_is_too_large(Self::signature()))?;
 
-        value_as_u8.try_into()
+        value_as_u8
+            .try_into()
+            .map_err(|_| RevertReason::custom("Unknown smart contract type").into())
     }
 
     fn write(writer: &mut Writer, value: Self) {
