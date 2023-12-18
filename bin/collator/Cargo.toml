@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "5.25.0"
+version = "5.27.0"
 description = "Astar collator implementation in Rust."
 build = "build.rs"
 default-run = "astar-collator"
@@ -94,7 +94,6 @@ shiden-runtime = { workspace = true, features = ["std"] }
 
 # astar pallets dependencies
 astar-primitives = { workspace = true }
-pallet-block-reward = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 
 # frame dependencies

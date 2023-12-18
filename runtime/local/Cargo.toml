@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.25.0"
+version = "5.27.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -78,6 +78,7 @@ pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapps-staking = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
+pallet-evm-precompile-unified-accounts = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-inflation = { workspace = true }
 pallet-unified-accounts = { workspace = true }
@@ -141,6 +142,7 @@ std = [
 	"pallet-evm-precompile-dapps-staking/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
+	"pallet-evm-precompile-unified-accounts/std",
 	"pallet-evm-precompile-xvm/std",
 	"pallet-grandpa/std",
 	"pallet-insecure-randomness-collective-flip/std",

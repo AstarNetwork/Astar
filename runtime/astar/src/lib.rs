@@ -49,8 +49,10 @@ use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot, EnsureSigned,
 };
+pub use pallet_block_rewards_hybrid::RewardDistributionConfig;
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
+use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
@@ -69,8 +71,6 @@ use sp_runtime::{
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
-
-use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
@@ -138,7 +138,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 72,
+    spec_version: 74,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -466,7 +466,7 @@ impl Get<Balance> for DappsStakingTvlProvider {
 }
 
 pub struct BeneficiaryPayout();
-impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
+impl pallet_block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
     fn treasury(reward: NegativeImbalance) {
         Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
@@ -481,16 +481,16 @@ impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPa
 }
 
 parameter_types! {
-    pub const RewardAmount: Balance = 253_080 * MILLIASTR;
+    pub const MaxBlockRewardAmount: Balance = 231_206_532 * MICROASTR;
 }
 
-impl pallet_block_reward::Config for Runtime {
+impl pallet_block_rewards_hybrid::Config for Runtime {
     type Currency = Balances;
     type DappsStakingTvlProvider = DappsStakingTvlProvider;
     type BeneficiaryPayout = BeneficiaryPayout;
-    type RewardAmount = RewardAmount;
+    type MaxBlockRewardAmount = MaxBlockRewardAmount;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_block_reward::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = pallet_block_rewards_hybrid::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -666,6 +666,18 @@ impl WeightToFeePolynomial for WeightToFee {
             coeff_frac: Perbill::from_rational(p % q, q),
             coeff_integer: p / q,
         }]
+    }
+}
+
+/// Handles coverting weight consumed by XCM into native currency fee.
+///
+/// Similar to standard `WeightToFee` handler, but force uses the minimum multiplier.
+pub struct XcmWeightToFee;
+impl frame_support::weights::WeightToFee for XcmWeightToFee {
+    type Balance = Balance;
+
+    fn weight_to_fee(n: &Weight) -> Self::Balance {
+        MinimumMultiplier::get().saturating_mul_int(WeightToFee::weight_to_fee(&n))
     }
 }
 
@@ -986,7 +998,7 @@ construct_runtime!(
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
         DappsStaking: pallet_dapps_staking = 34,
-        BlockReward: pallet_block_reward = 35,
+        BlockReward: pallet_block_rewards_hybrid = 35,
         Assets: pallet_assets = 36,
 
         Authorship: pallet_authorship = 40,
@@ -1046,41 +1058,45 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-// Used to cleanup BaseFee storage - remove once cleanup is done.
-parameter_types! {
-    pub const BaseFeeStr: &'static str = "BaseFee";
-}
-
-/// Simple `OnRuntimeUpgrade` logic to prepare Astar runtime for `DynamicEvmBaseFee` pallet.
 pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
-pub struct DynamicEvmBaseFeeMigration;
-impl OnRuntimeUpgrade for DynamicEvmBaseFeeMigration {
+pub struct HybridInflationModelMigration;
+impl OnRuntimeUpgrade for HybridInflationModelMigration {
     fn on_runtime_upgrade() -> Weight {
-        // Safety check to ensure we don't execute this migration twice
-        if pallet_dynamic_evm_base_fee::BaseFeePerGas::<Runtime>::exists() {
-            return <Runtime as frame_system::Config>::DbWeight::get().reads(1);
+        let mut reward_config = pallet_block_rewards_hybrid::RewardDistributionConfig {
+            // 4.78%
+            treasury_percent: Perbill::from_rational(4_783_623u32, 100_000_000u32),
+            // 23.04%
+            base_staker_percent: Perbill::from_rational(23_041_451u32, 100_000_000u32),
+            // 17.27%
+            dapps_percent: Perbill::from_rational(17_272_878u32, 100_000_000u32),
+            // 3.06%
+            collators_percent: Perbill::from_rational(3_061_518u32, 100_000_000u32),
+            // 51.84%
+            adjustable_percent: Perbill::from_rational(51_840_530u32, 100_000_000u32),
+            // 60.00%
+            ideal_dapps_staking_tvl: Perbill::from_percent(60),
+        };
+
+        // This HAS to be tested prior to update - we need to ensure that config is consistent
+        #[cfg(feature = "try-runtime")]
+        assert!(reward_config.is_consistent());
+
+        // This should never execute but we need to have code in place that ensures config is consistent
+        if !reward_config.is_consistent() {
+            reward_config = Default::default();
         }
 
-        // Set the init value to what was set before on the old `BaseFee` pallet.
-        pallet_dynamic_evm_base_fee::BaseFeePerGas::<Runtime>::put(U256::from(1_000_000_000_u128));
+        pallet_block_rewards_hybrid::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
 
-        // Astar's multiplier should be set to lowest value to keep native transaction price as close as possible to the legacy.
-        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::put(MinimumMultiplier::get());
-
-        // Set init storage version for the pallet
-        StorageVersion::new(1).put::<pallet_dynamic_evm_base_fee::Pallet<Runtime>>();
-
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 3)
+        <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(1)
     }
 }
 
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    frame_support::migrations::RemovePallet<BaseFeeStr, RocksDbWeight>,
-    DynamicEvmBaseFeeMigration,
-);
+/// `HybridInflationModelMigration` to be applied on spec_version: 74
+pub type Migrations = HybridInflationModelMigration;
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1158,7 +1174,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]
-        [pallet_block_reward, BlockReward]
+        [block_rewards_hybrid, BlockReward]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
