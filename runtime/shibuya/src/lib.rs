@@ -405,7 +405,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<10>;
-    type ForcePalletDisabled = ConstBool<false>;
+    type ForcePalletDisabled = ConstBool<true>;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -1391,7 +1391,11 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,);
+pub type Migrations = (
+    // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode
+    pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
+    // TODO: add migration to configure pallet inflation & dApp staking v3 init config
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
