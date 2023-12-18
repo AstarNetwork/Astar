@@ -23,6 +23,9 @@
 pub mod bytes;
 pub mod native;
 
+#[cfg(any(feature = "codec-xcm", test))]
+pub mod xcm;
+
 use crate::solidity::revert::{MayRevert, RevertReason};
 use core::{marker::PhantomData, ops::Range};
 use sp_core::{H256, U256};

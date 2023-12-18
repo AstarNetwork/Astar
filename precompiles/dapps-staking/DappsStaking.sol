@@ -47,27 +47,27 @@ interface DappsStaking {
 
     /// @notice Register is root origin only and not allowed via evm precompile.
     ///         This should always fail.
-    function register(address) external;
+    function register(address) external returns (bool);
 
     /// @notice Stake provided amount on the contract.
-    function bond_and_stake(address, uint128) external;
+    function bond_and_stake(address, uint128) external returns (bool);
 
     /// @notice Start unbonding process and unstake balance from the contract.
-    function unbond_and_unstake(address, uint128) external;
+    function unbond_and_unstake(address, uint128) external returns (bool);
 
     /// @notice Withdraw all funds that have completed the unbonding process.
-    function withdraw_unbonded() external;
+    function withdraw_unbonded() external returns (bool);
 
     /// @notice Claim earned staker rewards for the oldest unclaimed era.
     ///         In order to claim multiple eras, this call has to be called multiple times.
     ///         Staker account is derived from the caller address.
     /// @param smart_contract: The smart contract address used for staking
-    function claim_staker(address smart_contract) external;
+    function claim_staker(address smart_contract) external returns (bool);
 
     /// @notice Claim one era of unclaimed dapp rewards for the specified contract and era.
     /// @param smart_contract: The smart contract address used for staking
     /// @param era: The era to be claimed
-    function claim_dapp(address smart_contract, uint128 era) external;
+    function claim_dapp(address smart_contract, uint128 era) external returns (bool);
 
     /// Instruction how to handle reward payout for staker.
     /// `FreeBalance` - Reward will be paid out to the staker (free balance).
@@ -76,15 +76,15 @@ interface DappsStaking {
 
     /// @notice Set reward destination for staker rewards
     /// @param reward_destination: The instruction on how the reward payout should be handled
-    function set_reward_destination(RewardDestination reward_destination) external;
+    function set_reward_destination(RewardDestination reward_destination) external returns (bool);
 
     /// @notice Withdraw staked funds from an unregistered contract.
     /// @param smart_contract: The smart contract address used for staking
-    function withdraw_from_unregistered(address smart_contract) external;
+    function withdraw_from_unregistered(address smart_contract) external returns (bool);
 
     /// @notice Transfer part or entire nomination from origin smart contract to target smart contract
     /// @param origin_smart_contract: The origin smart contract address
     /// @param amount: The amount to transfer from origin to target
     /// @param target_smart_contract: The target smart contract address
-    function nomination_transfer(address origin_smart_contract, uint128 amount, address target_smart_contract) external;
+    function nomination_transfer(address origin_smart_contract, uint128 amount, address target_smart_contract) external returns (bool);
 }

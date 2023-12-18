@@ -11,6 +11,7 @@ repository.workspace = true
 # third-party dependencies
 hex-literal = { workspace = true }
 log = { workspace = true, optional = true }
+num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
@@ -114,6 +115,8 @@ pallet-unified-accounts = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 pallet-xvm = { workspace = true }
+
+precompile-utils = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }

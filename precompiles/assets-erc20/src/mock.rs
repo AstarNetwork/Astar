@@ -42,122 +42,50 @@ use frame_support::{
     traits::{AsEnsureOriginWithArg, ConstU64, Everything},
     weights::Weight,
 };
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
 use frame_system::EnsureRoot;
-use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot};
-use scale_info::TypeInfo;
-use serde::{Deserialize, Serialize};
+use pallet_evm::{EnsureAddressNever, EnsureAddressRoot};
+use precompile_utils::{
+    mock_account,
+    testing::{AddressInPrefixedSet, MockAccount},
+};
+
 use sp_core::{ConstU32, H160, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
 
-pub type AccountId = Account;
+pub type AccountId = MockAccount;
 pub type AssetId = u128;
 pub type Balance = u128;
 pub type BlockNumber = u64;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 pub type Block = frame_system::mocking::MockBlock<Runtime>;
 
-/// A simple account type.
-#[derive(
-    Eq,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Clone,
-    Encode,
-    Decode,
-    Debug,
-    MaxEncodedLen,
-    Serialize,
-    Deserialize,
-    derive_more::Display,
-    TypeInfo,
-)]
-pub enum Account {
-    Alice,
-    Bob,
-    Charlie,
-    Bogus,
-    AssetId(AssetId),
-}
+/// The local asset precompile address prefix. Addresses that match against this prefix will
+/// be routed to Erc20AssetsPrecompileSet being marked as local
+pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: u32 = 0xfffffffe;
 
-impl Default for Account {
-    fn default() -> Self {
-        Self::Bogus
-    }
-}
-
-impl AddressMapping<Account> for Account {
-    fn into_account_id(h160_account: H160) -> Account {
-        match h160_account {
-            a if a == H160::repeat_byte(0xAA) => Self::Alice,
-            a if a == H160::repeat_byte(0xBB) => Self::Bob,
-            a if a == H160::repeat_byte(0xCC) => Self::Charlie,
-            _ => {
-                let mut data = [0u8; 16];
-                let (prefix_part, id_part) = h160_account.as_fixed_bytes().split_at(4);
-                if prefix_part == &[255u8; 4] {
-                    data.copy_from_slice(id_part);
-
-                    return Self::AssetId(u128::from_be_bytes(data));
-                }
-                Self::Bogus
-            }
-        }
-    }
-}
-
-pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
+mock_account!(LocalAssetId(AssetId), |value: LocalAssetId| {
+    AddressInPrefixedSet(ASSET_PRECOMPILE_ADDRESS_PREFIX, value.0).into()
+});
 
 // Implement the trait, where we convert AccountId to AssetID
 impl AddressToAssetId<AssetId> for Runtime {
     /// The way to convert an account to assetId is by ensuring that the prefix is 0XFFFFFFFF
     /// and by taking the lowest 128 bits as the assetId
     fn address_to_asset_id(address: H160) -> Option<AssetId> {
-        let mut data = [0u8; 16];
-        let address_bytes: [u8; 20] = address.into();
-        if ASSET_PRECOMPILE_ADDRESS_PREFIX.eq(&address_bytes[0..4]) {
-            data.copy_from_slice(&address_bytes[4..20]);
-            Some(u128::from_be_bytes(data))
+        let address: MockAccount = address.into();
+        if address.has_prefix_u32(ASSET_PRECOMPILE_ADDRESS_PREFIX) {
+            return Some(address.without_prefix());
         } else {
             None
         }
     }
 
     fn asset_id_to_address(asset_id: AssetId) -> H160 {
-        let mut data = [0u8; 20];
-        data[0..4].copy_from_slice(ASSET_PRECOMPILE_ADDRESS_PREFIX);
-        data[4..20].copy_from_slice(&asset_id.to_be_bytes());
-        H160::from(data)
-    }
-}
-
-impl From<Account> for H160 {
-    fn from(x: Account) -> H160 {
-        match x {
-            Account::Alice => H160::repeat_byte(0xAA),
-            Account::Bob => H160::repeat_byte(0xBB),
-            Account::Charlie => H160::repeat_byte(0xCC),
-            Account::AssetId(asset_id) => {
-                let mut data = [0u8; 20];
-                let id_as_bytes = asset_id.to_be_bytes();
-                data[0..4].copy_from_slice(&[255u8; 4]);
-                data[4..20].copy_from_slice(&id_as_bytes);
-                H160::from_slice(&data)
-            }
-            Account::Bogus => Default::default(),
-        }
-    }
-}
-
-impl From<Account> for H256 {
-    fn from(x: Account) -> H256 {
-        let x: H160 = x.into();
-        x.into()
+        LocalAssetId(asset_id).into()
     }
 }
 
@@ -229,6 +157,8 @@ parameter_types! {
         Erc20AssetsPrecompileSet(PhantomData);
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
+
+pub type PrecompileCall = Erc20AssetsPrecompileSetCall<Runtime, ()>;
 
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();
