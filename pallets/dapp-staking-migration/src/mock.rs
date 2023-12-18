@@ -24,14 +24,13 @@ use frame_support::{
     weights::Weight,
     PalletId,
 };
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    dapp_staking::{CycleConfiguration, StakingRewardHandler, SmartContract},
     testing::Header,
     Balance, BlockNumber,
 };
@@ -134,17 +133,7 @@ impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
     }
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Hash)]
-pub enum MockSmartContract {
-    Wasm(AccountId),
-    Other(AccountId),
-}
-
-impl Default for MockSmartContract {
-    fn default() -> Self {
-        MockSmartContract::Wasm(1)
-    }
-}
+pub(crate) type MockSmartContract = SmartContract<AccountId>;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
