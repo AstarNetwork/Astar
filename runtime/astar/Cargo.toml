@@ -11,6 +11,7 @@ repository.workspace = true
 # third-party dependencies
 hex-literal = { workspace = true }
 log = { workspace = true, optional = true }
+num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
@@ -113,6 +114,7 @@ pallet-xcm = { workspace = true }
 moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
+precompile-utils = { workspace = true }
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }

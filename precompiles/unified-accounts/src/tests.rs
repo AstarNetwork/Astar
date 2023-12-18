@@ -21,7 +21,6 @@ use crate::*;
 
 use frame_support::assert_ok;
 use precompile_utils::testing::*;
-use precompile_utils::EvmDataWriter;
 
 fn precompiles() -> TestPrecompileSet<TestRuntime> {
     PrecompilesValue::get()
@@ -41,12 +40,12 @@ fn test_get_evm_address() {
             .prepare_test(
                 TestAccount::Viktor,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::GetEvmAddressOrDefault)
-                    .write(H256::zero()) // Alice's Address
-                    .build(),
+                PrecompileCall::get_evm_address_or_default {
+                    account_id: H256::zero(), // Alice's Address
+                },
             )
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(res).build());
+            .execute_returns(res);
     });
 
     // Case 2 : Address Mapped
@@ -66,12 +65,12 @@ fn test_get_evm_address() {
             .prepare_test(
                 TestAccount::Viktor,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::GetEvmAddressOrDefault)
-                    .write(H256::zero()) // Alice's Address
-                    .build(),
+                PrecompileCall::get_evm_address_or_default {
+                    account_id: H256::zero(), // Alice's Address
+                },
             )
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(res).build());
+            .execute_returns(res);
     });
 }
 
@@ -95,12 +94,10 @@ fn test_get_native_address() {
             .prepare_test(
                 TestAccount::Viktor,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::GetNativeAddressOrDefault)
-                    .write(alice_eth_address) // Alice's Address
-                    .build(),
+                PrecompileCall::get_native_address_or_default { evm_address: alice_eth_address }
             )
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(res).build());
+            .execute_returns(res);
     });
 
     // Case 2 : mapped address
@@ -123,11 +120,11 @@ fn test_get_native_address() {
             .prepare_test(
                 TestAccount::Viktor,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::GetNativeAddressOrDefault)
-                    .write(alice_eth) // Alice's Address
-                    .build(),
+                PrecompileCall::get_native_address_or_default {
+                    evm_address: alice_eth,
+                },
             )
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(res).build());
+            .execute_returns(res);
     });
 }

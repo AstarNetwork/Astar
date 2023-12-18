@@ -1,27 +1,24 @@
 [package]
 name = "precompile-utils"
-authors = ["StakeTechnologies", "PureStake"]
+authors = { workspace = true }
 description = "Utils to write EVM precompiles."
-version = "0.5.0"
-edition.workspace = true
-homepage.workspace = true
-repository.workspace = true
+edition = "2021"
+version = "0.1.0"
 
 [dependencies]
-# There's a problem with --all-features when this is moved under dev-deps
 derive_more = { workspace = true, optional = true }
 environmental = { workspace = true }
-evm = { workspace = true, features = ["with-codec"] }
+hex = { workspace = true }
 hex-literal = { workspace = true, optional = true }
 impl-trait-for-tuples = { workspace = true }
 log = { workspace = true }
 num_enum = { workspace = true }
 scale-info = { workspace = true, optional = true, features = ["derive"] }
 serde = { workspace = true, optional = true }
-sha3 = { workspace = true }
 similar-asserts = { workspace = true, optional = true }
 
-precompile-utils-macro = { path = "macro" }
+# Frontier
+precompile-utils-macro-v2 = { path = "macro" }
 
 # Substrate
 frame-support = { workspace = true }
@@ -33,31 +30,29 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
 # Frontier
+evm = { workspace = true, features = ["with-codec"] }
 fp-evm = { workspace = true }
-pallet-evm = { workspace = true }
+pallet-evm = { workspace = true, features = ["forbid-evm-reentrancy"] }
 
 # Polkadot / XCM
-xcm = { workspace = true }
-
-assert_matches = { workspace = true }
+xcm = { workspace = true, optional = true }
 
 [dev-dependencies]
 hex-literal = { workspace = true }
+xcm = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	"evm/std",
-	"parity-scale-codec/std",
+	"environmental/std",
 	"fp-evm/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-evm/std",
+	"parity-scale-codec/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-std/std",
-	"sp-runtime/std",
-	"xcm/std",
-	"environmental/std",
 ]
-testing = ["similar-asserts", "std", "scale-info", "serde", "derive_more", "hex-literal"]
+codec-xcm = ["xcm"]
+testing = ["derive_more", "hex-literal", "scale-info", "serde", "similar-asserts", "std"]

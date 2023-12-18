@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 log = { workspace = true, optional = true }
+num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
@@ -85,6 +86,8 @@ pallet-unified-accounts = { workspace = true }
 pallet-xvm = { workspace = true }
 
 dapp-staking-v3-runtime-api = { workspace = true }
+
+precompile-utils = { workspace = true }
 
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }

@@ -47,7 +47,7 @@ jobs:
       uses: actions-rs/tarpaulin@v0.1
       with:
         version: 0.22.0
-        args: '--workspace -e astar-collator xcm-tools local-runtime shibuya-runtime shiden-runtime astar-runtime integration-tests --exclude-files vendor/* bin/* runtime/* tests/* **/mock.rs **/weights.rs precompiles/utils_v2/*'
+        args: '--workspace -e astar-collator xcm-tools local-runtime shibuya-runtime shiden-runtime astar-runtime integration-tests --exclude-files vendor/* bin/* runtime/* tests/* **/mock.rs **/weights.rs precompiles/utils/*'
         out-type: Xml
 
     - name: Code Coverage Summary Report

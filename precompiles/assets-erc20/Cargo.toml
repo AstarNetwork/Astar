@@ -12,7 +12,7 @@ log = { workspace = true }
 num_enum = { workspace = true }
 slices = { workspace = true }
 
-precompile-utils = { workspace = true }
+precompile-utils = { workspace = true, default-features = false }
 
 # Substrate
 frame-support = { workspace = true }

@@ -141,7 +141,6 @@ fn make_genesis(
             // We need _some_ code inserted at the precompile address so that
             // the evm will actually call the address.
             accounts: Precompiles::used_addresses()
-                .filter(|addr| !Precompiles::is_blacklisted(addr))
                 .map(|addr| {
                     (
                         addr,

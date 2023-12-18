@@ -18,7 +18,7 @@
 
 use super::*;
 
-use fp_evm::IsPrecompileResult;
+use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{construct_runtime, parameter_types, traits::ConstU64, weights::Weight};
 pub use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
@@ -205,6 +205,8 @@ parameter_types! {
         TestPrecompileSet(PhantomData);
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
+
+pub type PrecompileCall = UnifiedAccountsPrecompileCall<TestRuntime, UnifiedAccounts>;
 
 impl pallet_evm::Config for TestRuntime {
     type FeeCalculator = ();

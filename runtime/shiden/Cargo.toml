@@ -11,6 +11,7 @@ repository.workspace = true
 # third-party dependencies
 hex-literal = { workspace = true }
 log = { workspace = true, optional = true }
+num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 smallvec = { workspace = true }
@@ -111,6 +112,8 @@ pallet-evm-precompile-xcm = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 
+precompile-utils = { workspace = true }
+
 # Moonbeam tracing
 moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
@@ -145,6 +148,7 @@ std = [
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
+	"pallet-collective/std",
 	"pallet-contracts-primitives/std",
 	"pallet-block-rewards-hybrid/std",
 	"pallet-dynamic-evm-base-fee/std",

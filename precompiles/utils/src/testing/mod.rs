@@ -1,30 +1,33 @@
-// This file is part of Astar.
-
-// Copyright 2019-2022 PureStake Inc.
-// Copyright (C) 2022-2023 Stake Technologies Pte.Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
 //
-// This file is part of Utils package, originally developed by Purestake Inc.
-// Utils package used in Astar Network in terms of GPLv3.
+// Copyright (c) 2019-2022 Moonsong Labs.
+// Copyright (c) 2023 Parity Technologies (UK) Ltd.
 //
-// Utils is free software: you can redistribute it and/or modify
+// This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
-// Utils is distributed in the hope that it will be useful,
+//
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
-// along with Utils.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 pub mod account;
 pub mod execution;
 pub mod handle;
+pub mod modifier;
+mod solidity;
 
-pub use {account::*, execution::*, handle::*};
+pub use account::*;
+pub use execution::*;
+pub use handle::*;
+pub use modifier::*;
+pub use solidity::{check_precompile_implements_solidity_interfaces, compute_selector};
 
 use fp_evm::Log;
 
@@ -63,6 +66,7 @@ impl core::fmt::Debug for PrettyLog {
             .finish()
     }
 }
+
 /// Panics if an event is not found in the system log of events
 #[macro_export]
 macro_rules! assert_event_emitted {
@@ -70,10 +74,10 @@ macro_rules! assert_event_emitted {
         match &$event {
             e => {
                 assert!(
-                    crate::mock::events().iter().find(|x| *x == e).is_some(),
+                    $crate::mock::events().iter().find(|x| *x == e).is_some(),
                     "Event {:?} was not found in events: \n {:?}",
                     e,
-                    crate::mock::events()
+                    $crate::mock::events()
                 );
             }
         }
@@ -87,10 +91,10 @@ macro_rules! assert_event_not_emitted {
         match &$event {
             e => {
                 assert!(
-                    crate::mock::events().iter().find(|x| *x == e).is_none(),
+                    $crate::mock::events().iter().find(|x| *x == e).is_none(),
                     "Event {:?} was found in events: \n {:?}",
                     e,
-                    crate::mock::events()
+                    $crate::mock::events()
                 );
             }
         }
