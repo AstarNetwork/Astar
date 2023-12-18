@@ -29,9 +29,9 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly,
-        FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced,
-        WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EitherOfDiverse,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize,
+        OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -54,6 +54,7 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -68,11 +69,12 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use astar_primitives::{
-    ethereum_checked::CheckedEthereumTransact, evm::EvmRevertCodeHandler,
-    xcm::AssetLocationIdConverter, AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header,
-    Index, Signature,
+    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    ethereum_checked::CheckedEthereumTransact,
+    evm::EvmRevertCodeHandler,
+    xcm::AssetLocationIdConverter,
+    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
-pub use pallet_block_rewards_hybrid::RewardDistributionConfig;
 
 pub use crate::precompiles::WhitelistedCalls;
 
@@ -297,7 +299,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = BlockReward;
+    type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
@@ -428,6 +430,96 @@ impl<AccountId: From<[u8; 32]>> From<[u8; 32]> for SmartContract<AccountId> {
     }
 }
 
+pub struct DummyPriceProvider;
+impl pallet_dapp_staking_v3::PriceProvider for DummyPriceProvider {
+    fn average_price() -> FixedU64 {
+        FixedU64::from_rational(1, 10)
+    }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId>
+    for BenchmarkHelper<SmartContract<AccountId>, AccountId>
+{
+    fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
+        SmartContract::Wasm(AccountId::from([id as u8; 32]))
+    }
+
+    fn set_balance(account: &AccountId, amount: Balance) {
+        use frame_support::traits::fungible::Unbalanced as FunUnbalanced;
+        Balances::write_balance(account, amount)
+            .expect("Must succeed in test/benchmark environment.");
+    }
+}
+
+impl pallet_dapp_staking_v3::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
+    type Currency = Balances;
+    type SmartContract = SmartContract<AccountId>;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type NativePriceProvider = DummyPriceProvider;
+    type StakingRewardHandler = Inflation;
+    type CycleConfiguration = InflationCycleConfig;
+    type EraRewardSpanLength = ConstU32<8>;
+    type RewardRetentionInPeriods = ConstU32<2>;
+    type MaxNumberOfContracts = ConstU32<100>;
+    type MaxUnlockingChunks = ConstU32<5>;
+    type MinimumLockedAmount = ConstU128<SBY>;
+    type UnlockingPeriod = ConstU32<2>;
+    type MaxNumberOfStakedContracts = ConstU32<3>;
+    type MinimumStakeAmount = ConstU128<SBY>;
+    type NumberOfTiers = ConstU32<4>;
+    type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
+}
+
+pub struct InflationPayoutPerBlock;
+impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerBlock {
+    fn treasury(reward: NegativeImbalance) {
+        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
+    }
+
+    fn collators(_reward: NegativeImbalance) {
+        // no collators for local dev node
+    }
+}
+
+pub struct InflationCycleConfig;
+impl CycleConfiguration for InflationCycleConfig {
+    fn periods_per_cycle() -> u32 {
+        4
+    }
+
+    fn eras_per_voting_subperiod() -> u32 {
+        2
+    }
+
+    fn eras_per_build_and_earn_subperiod() -> u32 {
+        22
+    }
+
+    fn blocks_per_era() -> BlockNumber {
+        30
+    }
+}
+
+impl pallet_inflation::Config for Runtime {
+    type Currency = Balances;
+    type PayoutPerBlock = InflationPayoutPerBlock;
+    type CycleConfiguration = InflationCycleConfig;
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_inflation::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_dapp_staking_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Runtime>;
+}
+
 impl pallet_utility::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
@@ -531,41 +623,6 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
     }
 }
 
-pub struct DappsStakingTvlProvider();
-impl Get<Balance> for DappsStakingTvlProvider {
-    fn get() -> Balance {
-        DappsStaking::tvl()
-    }
-}
-
-pub struct BeneficiaryPayout();
-impl pallet_block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
-    fn treasury(reward: NegativeImbalance) {
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
-    }
-
-    fn collators(reward: NegativeImbalance) {
-        ToStakingPot::on_unbalanced(reward);
-    }
-
-    fn dapps_staking(stakers: NegativeImbalance, dapps: NegativeImbalance) {
-        DappsStaking::rewards(stakers, dapps)
-    }
-}
-
-parameter_types! {
-    pub const MaxBlockRewardAmount: Balance = 230_718 * MILLISBY;
-}
-
-impl pallet_block_rewards_hybrid::Config for Runtime {
-    type Currency = Balances;
-    type DappsStakingTvlProvider = DappsStakingTvlProvider;
-    type BeneficiaryPayout = BeneficiaryPayout;
-    type MaxBlockRewardAmount = MaxBlockRewardAmount;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_block_rewards_hybrid::weights::SubstrateWeight<Runtime>;
-}
-
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1_000_000;
     pub const MaxLocks: u32 = 50;
@@ -583,9 +640,9 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
     type HoldIdentifier = ();
-    type FreezeIdentifier = ();
+    type FreezeIdentifier = RuntimeFreezeReason;
     type MaxHolds = ConstU32<0>;
-    type MaxFreezes = ConstU32<0>;
+    type MaxFreezes = ConstU32<1>;
 }
 
 parameter_types! {
@@ -1253,8 +1310,8 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment = 30,
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
-        DappsStaking: pallet_dapps_staking = 34,
-        BlockReward: pallet_block_rewards_hybrid = 35,
+        DappStaking: pallet_dapp_staking_v3 = 34,
+        Inflation: pallet_inflation = 35,
         Assets: pallet_assets = 36,
 
         Authorship: pallet_authorship = 40,
@@ -1288,6 +1345,11 @@ construct_runtime!(
         Xvm: pallet_xvm = 90,
 
         Sudo: pallet_sudo = 99,
+
+        // To be removed & cleaned up after migration has been finished
+        DappStakingMigration: pallet_dapp_staking_migration = 254,
+        // Legacy dApps staking v2, to be removed after migration has been finished
+        DappsStaking: pallet_dapps_staking = 255,
     }
 );
 
@@ -1406,7 +1468,9 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]
-        [block_rewards_hybrid, BlockReward]
+        [pallet_dapp_staking_v3, DappsStaking]
+        [pallet_inflation, Inflation]
+        [pallet_dapp_staking_migration, DappStakingMigration]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
@@ -1868,6 +1932,20 @@ impl_runtime_apis! {
             key: Vec<u8>,
         ) -> pallet_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
+        fn eras_per_voting_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+            InflationCycleConfig::eras_per_voting_subperiod()
+        }
+
+        fn eras_per_build_and_earn_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+            InflationCycleConfig::eras_per_build_and_earn_subperiod()
+        }
+
+        fn blocks_per_era() -> BlockNumber {
+            InflationCycleConfig::blocks_per_era()
         }
     }
 
