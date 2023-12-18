@@ -21,19 +21,14 @@
 extern crate alloc;
 use alloc::format;
 
-use astar_primitives::{
-    xvm::{Context, FailureReason, VmId, XvmCall},
-    Balance,
-};
-use fp_evm::{PrecompileHandle, PrecompileOutput};
+use astar_primitives::xvm::{Context, FailureReason, VmId, XvmCall};
+use fp_evm::{ExitRevert, PrecompileFailure, PrecompileHandle};
 use frame_support::dispatch::Dispatchable;
-use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
-use sp_std::{marker::PhantomData, prelude::*};
+use pallet_evm::{AddressMapping, GasWeightMapping};
+use sp_core::U256;
+use sp_std::marker::PhantomData;
 
-use precompile_utils::{
-    revert, succeed, Bytes, EvmDataWriter, EvmResult, FunctionModifier, PrecompileHandleExt,
-};
-
+use precompile_utils::prelude::*;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -42,36 +37,10 @@ mod tests;
 // The selector on EVM revert, calculated by: `Keccak256::digest(b"Error(string)")[..4]`
 const EVM_ERROR_MSG_SELECTOR: [u8; 4] = [8, 195, 121, 160];
 
-#[precompile_utils::generate_function_selector]
-#[derive(Debug, PartialEq)]
-pub enum Action {
-    XvmCall = "xvm_call(uint8,bytes,bytes,uint256,uint256)",
-}
-
 /// A precompile that expose XVM related functions.
 pub struct XvmPrecompile<T, XC>(PhantomData<(T, XC)>);
 
-impl<R, XC> Precompile for XvmPrecompile<R, XC>
-where
-    R: pallet_evm::Config,
-    <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
-        From<Option<R::AccountId>>,
-    XC: XvmCall<R::AccountId>,
-{
-    fn execute(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        log::trace!(target: "xvm-precompile", "In XVM precompile");
-
-        let selector = handle.read_selector()?;
-
-        handle.check_function_modifier(FunctionModifier::NonPayable)?;
-
-        match selector {
-            // Dispatchables
-            Action::XvmCall => Self::xvm_call(handle),
-        }
-    }
-}
-
+#[precompile_utils::precompile]
 impl<R, XC> XvmPrecompile<R, XC>
 where
     R: pallet_evm::Config,
@@ -79,14 +48,16 @@ where
         From<Option<R::AccountId>>,
     XC: XvmCall<R::AccountId>,
 {
-    fn xvm_call(handle: &mut impl PrecompileHandle) -> EvmResult<PrecompileOutput> {
-        let mut input = handle.read_input()?;
-        input.expect_arguments(4)?;
-
-        let vm_id = {
-            let id = input.read::<u8>()?;
-            id.try_into().map_err(|_| revert("invalid vm id"))
-        }?;
+    #[precompile::public("xvm_call(uint8,bytes,bytes,uint256,uint256)")]
+    fn xvm_call(
+        handle: &mut impl PrecompileHandle,
+        vm_id: u8,
+        call_to: UnboundedBytes,
+        call_input: UnboundedBytes,
+        value: U256,
+        storage_deposit_limit: U256,
+    ) -> EvmResult<(bool, UnboundedBytes)> {
+        let vm_id = vm_id.try_into().map_err(|_| revert("invalid vm id"))?;
 
         let mut gas_limit = handle.remaining_gas();
         // If user specified a gas limit, make sure it's not exceeded.
@@ -99,28 +70,28 @@ where
             weight_limit,
         };
 
-        let call_to = input.read::<Bytes>()?.0;
-        let call_input = input.read::<Bytes>()?.0;
-        let value = input.read::<Balance>()?;
-        let storage_deposit_limit = {
-            let limit = input.read::<Balance>()?;
-            if limit == 0 {
+        let call_to = call_to.into();
+        let call_input = call_input.into();
+        let value = value.try_into().map_err(|_| revert("value overflow"))?;
+        let storage_deposit_limit: u128 = storage_deposit_limit
+            .try_into()
+            .map_err(|_| revert("value overflow"))?;
+
+        let limit = {
+            if storage_deposit_limit == 0 {
                 None
             } else {
-                Some(limit)
+                Some(storage_deposit_limit)
             }
         };
+
         let from = R::AddressMapping::into_account_id(handle.context().caller);
 
-        let call_result = XC::call(
-            xvm_context,
-            vm_id,
-            from,
-            call_to,
-            call_input,
-            value,
-            storage_deposit_limit,
+        log::trace!(
+            target: "xvm-precompile::xvm_call",
+            "vm_id: {:?}, from: {:?}, call_to: {:?}, call_input: {:?}, value: {:?}, limit: {:?}", vm_id, from, call_to, call_input, value, limit
         );
+        let call_result = XC::call(xvm_context, vm_id, from, call_to, call_input, value, limit);
 
         let used_weight = match &call_result {
             Ok(s) => s.used_weight,
@@ -137,12 +108,7 @@ where
                     "success: {:?}", success
                 );
 
-                Ok(succeed(
-                    EvmDataWriter::new()
-                        .write(true)
-                        .write(Bytes(success.output))
-                        .build(),
-                ))
+                Ok((true, success.output.into()))
             }
 
             Err(failure) => {
@@ -162,11 +128,14 @@ where
                         format!("{:?}", failure_error)
                     }
                 };
-                let data =
-                    EvmDataWriter::new_with_selector(u32::from_be_bytes(EVM_ERROR_MSG_SELECTOR))
-                        .write(Bytes(message.into_bytes()))
-                        .build();
-                Err(revert(data))
+                let data = solidity::encode_with_selector(
+                    u32::from_be_bytes(EVM_ERROR_MSG_SELECTOR),
+                    UnboundedBytes::from(message.into_bytes()),
+                );
+                Err(PrecompileFailure::Revert {
+                    exit_status: ExitRevert::Reverted,
+                    output: data,
+                })
             }
         }
     }

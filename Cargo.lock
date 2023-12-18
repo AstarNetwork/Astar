@@ -568,6 +568,7 @@ dependencies = [
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
+ "num_enum 0.5.11",
  "orml-xcm-support",
  "orml-xtokens",
  "pallet-assets",
@@ -612,6 +613,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
+ "precompile-utils",
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
@@ -6021,6 +6023,7 @@ dependencies = [
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
+ "num_enum 0.5.11",
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
@@ -6066,6 +6069,7 @@ dependencies = [
  "pallet-vesting",
  "pallet-xvm",
  "parity-scale-codec",
+ "precompile-utils",
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
@@ -10480,65 +10484,6 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "precompile-utils"
-version = "0.5.0"
-dependencies = [
- "assert_matches",
- "derive_more",
- "environmental",
- "evm",
- "fp-evm",
- "frame-support",
- "frame-system",
- "hex-literal",
- "impl-trait-for-tuples",
- "log",
- "num_enum 0.5.11",
- "pallet-evm",
- "parity-scale-codec",
- "precompile-utils-macro",
- "scale-info",
- "serde",
- "sha3",
- "similar-asserts",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
-]
-
-[[package]]
-name = "precompile-utils-macro"
-version = "0.1.0"
-dependencies = [
- "num_enum 0.5.11",
- "proc-macro2",
- "quote",
- "sha3",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "precompile-utils-macro-v2"
-version = "0.1.0"
-dependencies = [
- "case",
- "fp-evm",
- "frame-support",
- "macrotest",
- "num_enum 0.5.11",
- "precompile-utils-v2",
- "prettyplease 0.2.15",
- "proc-macro2",
- "quote",
- "sp-core-hashing",
- "sp-std",
- "syn 1.0.109",
- "trybuild",
-]
-
-[[package]]
-name = "precompile-utils-v2"
 version = "0.1.0"
 dependencies = [
  "derive_more",
@@ -10562,6 +10507,25 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "precompile-utils-macro-v2"
+version = "0.1.0"
+dependencies = [
+ "case",
+ "fp-evm",
+ "frame-support",
+ "macrotest",
+ "num_enum 0.5.11",
+ "prettyplease 0.2.15",
+ "proc-macro2",
+ "quote",
+ "sp-core-hashing",
+ "sp-std",
+ "syn 1.0.109",
+ "trybuild",
 ]
 
 [[package]]
@@ -13140,6 +13104,7 @@ dependencies = [
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
+ "num_enum 0.5.11",
  "orml-xcm-support",
  "orml-xtokens",
  "pallet-assets",
@@ -13199,6 +13164,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
+ "precompile-utils",
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
@@ -13248,6 +13214,7 @@ dependencies = [
  "moonbeam-evm-tracer",
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
+ "num_enum 0.5.11",
  "orml-xcm-support",
  "orml-xtokens",
  "pallet-assets",
@@ -13293,6 +13260,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
+ "precompile-utils",
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",

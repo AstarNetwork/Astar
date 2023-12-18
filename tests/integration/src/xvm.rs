@@ -29,7 +29,7 @@ use frame_support::{dispatch::PostDispatchInfo, traits::Currency, weights::Weigh
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_contracts_primitives::{ExecReturnValue, ReturnFlags};
 use parity_scale_codec::Encode;
-use precompile_utils::{Bytes, EvmDataWriter};
+use precompile_utils::{prelude::*, solidity};
 use sp_runtime::MultiAddress;
 
 // Build EVM revert message error data.
@@ -37,9 +37,7 @@ fn evm_revert_message_error(msg: &str) -> Vec<u8> {
     let hash = &Keccak256::digest(b"Error(string)")[..4];
     let selector = u32::from_be_bytes([hash[0], hash[1], hash[2], hash[3]]);
 
-    EvmDataWriter::new_with_selector(selector)
-        .write(Bytes(msg.to_owned().into_bytes()))
-        .build()
+    solidity::encode_with_selector(selector, UnboundedBytes::from(msg.to_owned().into_bytes()))
 }
 
 /*

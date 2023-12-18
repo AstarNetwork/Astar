@@ -1,11 +1,9 @@
 [package]
-name = "precompile-utils-macro"
-authors = ["StakeTechnologies", "PureStake"]
+name = "precompile-utils-macro-v2"
+authors = { workspace = true }
 description = ""
+edition = "2021"
 version = "0.1.0"
-edition.workspace = true
-homepage.workspace = true
-repository.workspace = true
 
 [lib]
 proc-macro = true
@@ -15,8 +13,21 @@ name = "tests"
 path = "tests/tests.rs"
 
 [dependencies]
+case = "1.0"
 num_enum = { workspace = true }
-proc-macro2 = { workspace = true }
-quote = { workspace = true }
-sha3 = { workspace = true }
-syn = { workspace = true, features = ["extra-traits", "fold", "full", "visit"] }
+prettyplease = "0.2.12"
+proc-macro2 = "1.0"
+quote = "1.0"
+sp-core-hashing = { workspace = true }
+syn = { version = "1.0", features = ["extra-traits", "fold", "full", "visit"] }
+
+[dev-dependencies]
+macrotest = "1.0.9"
+trybuild = "1.0"
+
+# precompile-utils = { path = "../", features = ["testing"] }
+
+fp-evm = { workspace = true }
+frame-support = { workspace = true }
+sp-core-hashing = { workspace = true }
+sp-std = { workspace = true }

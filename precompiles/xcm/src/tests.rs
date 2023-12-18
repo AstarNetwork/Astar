@@ -25,7 +25,6 @@ use xcm::latest::{
 use orml_xtokens::Event as XtokensEvent;
 use parity_scale_codec::Encode;
 use precompile_utils::testing::*;
-use precompile_utils::EvmDataWriter;
 use sp_core::{H160, H256};
 use sp_runtime::traits::Convert;
 use xcm::VersionedXcm;
@@ -43,14 +42,14 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsWithdrawNative)
-                        .write(vec![Address::from(H160::repeat_byte(0xF1))])
-                        .write(Vec::<U256>::new())
-                        .write(H256::repeat_byte(0xF1))
-                        .write(true)
-                        .write(U256::from(0_u64))
-                        .write(U256::from(0_u64))
-                        .build(),
+                    PrecompileCall::assets_withdraw_native_v1 {
+                        assets: vec![Address::from(H160::repeat_byte(0xF1))].into(),
+                        amounts: vec![].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: true,
+                        parachain_id: 0.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
                 .execute_reverts(|output| output == b"Assets resolution failure.");
@@ -59,14 +58,14 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsWithdrawNative)
-                        .write(vec![Address::from(Runtime::asset_id_to_address(1u128))])
-                        .write(vec![U256::from(42000u64)])
-                        .write(H256::repeat_byte(0xF1))
-                        .write(true)
-                        .write(U256::from(0_u64))
-                        .write(U256::from(2_u64))
-                        .build(),
+                    PrecompileCall::assets_withdraw_native_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: true,
+                        parachain_id: 0.into(),
+                        fee_index: 2.into(),
+                    },
                 )
                 .expect_no_logs()
                 .execute_reverts(|output| {
@@ -84,14 +83,14 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsWithdrawNative)
-                        .write(vec![Address::from(Runtime::asset_id_to_address(1u128))])
-                        .write(vec![U256::from(42000u64)])
-                        .write(H256::repeat_byte(0xF1))
-                        .write(false)
-                        .write(U256::from(u64::MAX)) // parachain id should be u32
-                        .write(U256::from(0_u64))
-                        .build(),
+                    PrecompileCall::assets_withdraw_native_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: false,
+                        parachain_id: u64::MAX.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
                 .execute_reverts(|output| {
@@ -103,27 +102,29 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsWithdrawNative)
-                        .write(vec![
+                    PrecompileCall::assets_withdraw_native_v1 {
+                        assets: vec![
                             Address::from(H160::repeat_byte(0xF1)),
                             Address::from(H160::repeat_byte(0xF2)),
                             Address::from(H160::repeat_byte(0xF3)),
-                        ])
-                        .write(vec![
+                        ]
+                        .into(),
+                        amounts: vec![
                             U256::from(42000u64),
                             U256::from(42000u64),
                             U256::from(42000u64),
-                        ])
-                        .write(H256::repeat_byte(0xF1))
-                        .write(false)
-                        .write(U256::from(1_u64))
-                        .write(U256::from(0_u64))
-                        .build(),
+                        ]
+                        .into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: false,
+                        parachain_id: 1.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
                 .execute_reverts(|output| {
                     let error_string = String::from_utf8_lossy(output);
-                    error_string.contains("Array has more than max items allowed")
+                    error_string.contains("assets: Value is too large for length")
                 });
         });
     }
@@ -136,51 +137,51 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsWithdrawNative)
-                        .write(vec![Address::from(Runtime::asset_id_to_address(1u128))])
-                        .write(vec![U256::from(42000u64)])
-                        .write(H256::repeat_byte(0xF1))
-                        .write(true)
-                        .write(U256::from(0_u64))
-                        .write(U256::from(0_u64))
-                        .build(),
+                    PrecompileCall::assets_withdraw_native_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: true,
+                        parachain_id: 0.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             // H160
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsWithdrawEvm)
-                        .write(vec![Address::from(Runtime::asset_id_to_address(1u128))])
-                        .write(vec![U256::from(42000u64)])
-                        .write(Address::from(H160::repeat_byte(0xDE)))
-                        .write(true)
-                        .write(U256::from(0_u64))
-                        .write(U256::from(0_u64))
-                        .build(),
+                    PrecompileCall::assets_withdraw_evm_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: Address(H160::repeat_byte(0xDE)),
+                        is_relay: false,
+                        parachain_id: 0.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             // Checking for non-relay destination case
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsWithdrawEvm)
-                        .write(vec![Address::from(Runtime::asset_id_to_address(1u128))])
-                        .write(vec![U256::from(42000u64)])
-                        .write(Address::from(H160::repeat_byte(0xDE)))
-                        .write(false)
-                        .write(U256::from(123_u64))
-                        .write(U256::from(0_u64))
-                        .build(),
+                    PrecompileCall::assets_withdraw_evm_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
+                        amounts: vec![42000u64.into()].into(),
+                        recipient_account_id: Address(H160::repeat_byte(0xDE)),
+                        is_relay: false,
+                        parachain_id: 123.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
         });
     }
 
@@ -192,17 +193,17 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::RemoteTransact)
-                        .write(U256::from(0_u64))
-                        .write(true)
-                        .write(Address::from(Runtime::asset_id_to_address(1_u128)))
-                        .write(U256::from(367))
-                        .write(vec![0xff_u8, 0xaa, 0x77, 0x00])
-                        .write(U256::from(3_000_000_000u64))
-                        .build(),
+                    PrecompileCall::remote_transact_v1 {
+                        para_id: 0.into(),
+                        is_relay: true,
+                        fee_asset_addr: Address::from(Runtime::asset_id_to_address(1_u128)),
+                        fee_amount: 367.into(),
+                        remote_call: vec![0xff_u8, 0xaa, 0x77, 0x00].into(),
+                        transact_weight: 3_000_000_000u64.into(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
         });
     }
 
@@ -214,34 +215,34 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsReserveTransferNative)
-                        .write(vec![Address::from(Runtime::asset_id_to_address(1u128))])
-                        .write(vec![U256::from(42000u64)])
-                        .write(H256::repeat_byte(0xF1))
-                        .write(true)
-                        .write(U256::from(0_u64))
-                        .write(U256::from(0_u64))
-                        .build(),
+                    PrecompileCall::assets_reserve_transfer_native_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
+                        amounts: vec![U256::from(42000u64)].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: true,
+                        parachain_id: 0.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             // H160
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsReserveTransferEvm)
-                        .write(vec![Address::from(Runtime::asset_id_to_address(1u128))])
-                        .write(vec![U256::from(42000u64)])
-                        .write(Address::from(H160::repeat_byte(0xDE)))
-                        .write(true)
-                        .write(U256::from(0_u64))
-                        .write(U256::from(0_u64))
-                        .build(),
+                    PrecompileCall::assets_reserve_transfer_evm_v1 {
+                        assets: vec![Address::from(Runtime::asset_id_to_address(1u128))].into(),
+                        amounts: vec![U256::from(42000u64)].into(),
+                        recipient_account_id: Address::from(H160::repeat_byte(0xDE)),
+                        is_relay: true,
+                        parachain_id: 0.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             for (location, Xcm(instructions)) in take_sent_xcm() {
                 assert_eq!(
@@ -290,33 +291,33 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsReserveTransferNative)
-                        .write(vec![Address::from(H160::zero())]) // zero address by convention
-                        .write(vec![U256::from(42000u64)])
-                        .write(H256::repeat_byte(0xF1))
-                        .write(true)
-                        .write(U256::from(0_u64))
-                        .write(U256::from(0_u64))
-                        .build(),
+                    PrecompileCall::assets_reserve_transfer_native_v1 {
+                        assets: vec![Address::from(H160::zero())].into(),
+                        amounts: vec![U256::from(42000u64)].into(),
+                        recipient_account_id: H256::repeat_byte(0xF1),
+                        is_relay: true,
+                        parachain_id: 0.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::AssetsReserveTransferEvm)
-                        .write(vec![Address::from(H160::zero())]) // zero address by convention
-                        .write(vec![U256::from(42000u64)])
-                        .write(Address::from(H160::repeat_byte(0xDE)))
-                        .write(true)
-                        .write(U256::from(0_u64))
-                        .write(U256::from(0_u64))
-                        .build(),
+                    PrecompileCall::assets_reserve_transfer_evm_v1 {
+                        assets: vec![Address::from(H160::zero())].into(),
+                        amounts: vec![U256::from(42000u64)].into(),
+                        recipient_account_id: Address::from(H160::repeat_byte(0xDE)),
+                        is_relay: true,
+                        parachain_id: 0.into(),
+                        fee_index: 0.into(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             for (location, Xcm(instructions)) in take_sent_xcm() {
                 assert_eq!(
@@ -373,15 +374,15 @@ mod xcm_old_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::SendXCM)
-                        .write(dest)
-                        .write(Bytes::from(xcm_to_send.as_slice()))
-                        .build(),
+                    PrecompileCall::send_xcm {
+                        dest,
+                        xcm_call: xcm_to_send.as_slice().into(),
+                    },
                 )
                 // Fixed: TestWeightInfo
                 .expect_cost(100000000)
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let sent_messages = take_sent_xcm();
             let (_, sent_message) = sent_messages.first().unwrap();
@@ -422,15 +423,15 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransfer)
-                        .write(Address::from(Runtime::asset_id_to_address(1u128))) // zero address by convention
-                        .write(U256::from(42000u64))
-                        .write(parent_destination)
-                        .write(weight.clone())
-                        .build(),
+                    PrecompileCall::transfer {
+                        currency_address: Address::from(Runtime::asset_id_to_address(1u128)),
+                        amount_of_tokens: 42000u64.into(),
+                        destination: parent_destination,
+                        weight: weight.clone(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected_asset: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(1).unwrap()),
@@ -452,15 +453,15 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransfer)
-                        .write(Address::from(Runtime::asset_id_to_address(2u128))) // zero address by convention
-                        .write(U256::from(42000u64))
-                        .write(sibling_parachain_location)
-                        .write(weight)
-                        .build(),
+                    PrecompileCall::transfer {
+                        currency_address: Address::from(Runtime::asset_id_to_address(2u128)),
+                        amount_of_tokens: 42000u64.into(),
+                        destination: sibling_parachain_location,
+                        weight,
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected_asset: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(2).unwrap()),
@@ -496,15 +497,15 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransfer)
-                        .write(Address::from(NATIVE_ADDRESS)) // zero address by convention
-                        .write(U256::from(42000u64))
-                        .write(parent_destination)
-                        .write(weight.clone())
-                        .build(),
+                    PrecompileCall::transfer {
+                        currency_address: Address::from(NATIVE_ADDRESS),
+                        amount_of_tokens: 42000u64.into(),
+                        destination: parent_destination,
+                        weight: weight.clone(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected_asset: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(Here.into()),
@@ -540,16 +541,16 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransferWithFee)
-                        .write(Address::from(Runtime::asset_id_to_address(1u128))) // zero address by convention
-                        .write(U256::from(42000u64))
-                        .write(U256::from(50))
-                        .write(parent_destination)
-                        .write(weight)
-                        .build(),
+                    PrecompileCall::transfer_with_fee {
+                        currency_address: Address::from(Runtime::asset_id_to_address(1u128)),
+                        amount_of_tokens: 42000u64.into(),
+                        fee: 50.into(),
+                        destination: parent_destination,
+                        weight,
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected_asset: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(1).unwrap()),
@@ -589,16 +590,16 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransferWithFee)
-                        .write(Address::from(NATIVE_ADDRESS)) // zero address by convention
-                        .write(U256::from(42000u64))
-                        .write(U256::from(50))
-                        .write(parent_destination)
-                        .write(weight.clone())
-                        .build(),
+                    PrecompileCall::transfer_with_fee {
+                        currency_address: Address::from(NATIVE_ADDRESS),
+                        amount_of_tokens: 42000u64.into(),
+                        fee: 50.into(),
+                        destination: parent_destination,
+                        weight,
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected_asset: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(Here.into()),
@@ -653,15 +654,15 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransferMultiasset)
-                        .write(relay_token_location) // zero address by convention
-                        .write(U256::from(amount))
-                        .write(relay_destination)
-                        .write(weight.clone())
-                        .build(),
+                    PrecompileCall::transfer_multiasset {
+                        asset_location: relay_token_location,
+                        amount_of_tokens: amount.into(),
+                        destination: relay_destination,
+                        weight: weight.clone(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected_asset: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(relay_token_location),
@@ -684,15 +685,15 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransferMultiasset)
-                        .write(relay_token_location) // zero address by convention
-                        .write(U256::from(amount))
-                        .write(para_destination)
-                        .write(weight.clone())
-                        .build(),
+                    PrecompileCall::transfer_multiasset {
+                        asset_location: relay_token_location,
+                        amount_of_tokens: amount.into(),
+                        destination: para_destination,
+                        weight: weight.clone(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected_asset: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(relay_token_location),
@@ -716,15 +717,15 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransferMultiasset)
-                        .write(native_token_location) // zero address by convention
-                        .write(U256::from(amount))
-                        .write(para_destination)
-                        .write(weight.clone())
-                        .build(),
+                    PrecompileCall::transfer_multiasset {
+                        asset_location: native_token_location, // zero address by convention
+                        amount_of_tokens: amount.into(),
+                        destination: para_destination,
+                        weight: weight.clone(),
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected_asset: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(native_token_location),
@@ -758,7 +759,7 @@ mod xcm_new_interface_test {
 
         //  NOTE: Currently only support `ToReserve` with relay-chain asset as fee. other case
         // like `NonReserve` or `SelfReserve` with relay-chain fee is not support.
-        let currencies: Vec<Currency> = vec![
+        let currencies = vec![
             (
                 Address::from(Runtime::asset_id_to_address(2u128)),
                 U256::from(500),
@@ -769,22 +770,23 @@ mod xcm_new_interface_test {
                 U256::from(500),
             )
                 .into(),
-        ];
+        ]
+        .into();
 
         ExtBuilder::default().build().execute_with(|| {
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransferMulticurrencies)
-                        .write(currencies) // zero address by convention
-                        .write(U256::from(0))
-                        .write(destination)
-                        .write(weight)
-                        .build(),
+                    PrecompileCall::transfer_multi_currencies {
+                        currencies,
+                        fee_item: 0u32,
+                        destination,
+                        weight,
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected_asset_1: MultiAsset = MultiAsset {
                 id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(2u128).unwrap()),
@@ -818,7 +820,7 @@ mod xcm_new_interface_test {
         );
         let weight = WeightV2::from(3_000_000_000u64, 1024);
         // we only allow upto 2 currencies to be transfered
-        let currencies: Vec<Currency> = vec![
+        let currencies = vec![
             (
                 Address::from(Runtime::asset_id_to_address(2u128)),
                 U256::from(500),
@@ -834,24 +836,23 @@ mod xcm_new_interface_test {
                 U256::from(500),
             )
                 .into(),
-        ];
+        ]
+        .into();
 
         ExtBuilder::default().build().execute_with(|| {
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransferMulticurrencies)
-                        .write(currencies) // zero address by convention
-                        .write(U256::from(0))
-                        .write(destination)
-                        .write(weight)
-                        .build(),
+                    PrecompileCall::transfer_multi_currencies {
+                        currencies,
+                        fee_item: 0u32,
+                        destination,
+                        weight,
+                    },
                 )
                 .expect_no_logs()
-                .execute_reverts(|output| {
-                    output == b"value too large : Array has more than max items allowed"
-                });
+                .execute_reverts(|output| output == b"currencies: Value is too large for length");
         });
     }
 
@@ -878,10 +879,11 @@ mod xcm_new_interface_test {
             Junctions::X2(Junction::Parachain(2), Junction::GeneralIndex(1u128)),
         );
 
-        let assets: Vec<EvmMultiAsset> = vec![
+        let assets = vec![
             (asset_1_location.clone(), U256::from(500)).into(),
             (asset_2_location.clone(), U256::from(500)).into(),
-        ];
+        ]
+        .into();
 
         let multiassets = MultiAssets::from_sorted_and_deduplicated(vec![
             (asset_1_location.clone(), 500).into(),
@@ -894,15 +896,15 @@ mod xcm_new_interface_test {
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransferMultiassets)
-                        .write(assets) // zero address by convention
-                        .write(U256::from(0))
-                        .write(destination)
-                        .write(weight)
-                        .build(),
+                    PrecompileCall::transfer_multi_assets {
+                        assets,
+                        fee_item: 0u32,
+                        destination,
+                        weight,
+                    },
                 )
                 .expect_no_logs()
-                .execute_returns(EvmDataWriter::new().write(true).build());
+                .execute_returns(true);
 
             let expected: crate::mock::RuntimeEvent =
                 mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
@@ -945,28 +947,27 @@ mod xcm_new_interface_test {
             Junctions::X2(Junction::Parachain(2), Junction::GeneralIndex(3u128)),
         );
 
-        let assets: Vec<EvmMultiAsset> = vec![
+        let assets = vec![
             (asset_1_location.clone(), U256::from(500)).into(),
             (asset_2_location.clone(), U256::from(500)).into(),
             (asset_3_location.clone(), U256::from(500)).into(),
-        ];
+        ]
+        .into();
 
         ExtBuilder::default().build().execute_with(|| {
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
-                    EvmDataWriter::new_with_selector(Action::XtokensTransferMultiassets)
-                        .write(assets) // zero address by convention
-                        .write(U256::from(0))
-                        .write(destination)
-                        .write(weight)
-                        .build(),
+                    PrecompileCall::transfer_multi_assets {
+                        assets,
+                        fee_item: 0u32,
+                        destination,
+                        weight,
+                    },
                 )
                 .expect_no_logs()
-                .execute_reverts(|output| {
-                    output == b"value too large : Array has more than max items allowed"
-                });
+                .execute_reverts(|output| output == b"assets: Value is too large for length");
         });
     }
 }

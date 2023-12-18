@@ -88,8 +88,8 @@ mod xcm_config;
 
 pub type AstarAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
-pub use precompiles::{AstarNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
-pub type Precompiles = AstarNetworkPrecompiles<Runtime, AstarAssetLocationIdConverter>;
+pub use precompiles::{AstarPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
+pub type Precompiles = AstarPrecompiles<Runtime, AstarAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
 pub const MICROASTR: Balance = 1_000_000_000_000;
@@ -776,7 +776,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS
     );
-    pub PrecompilesValue: Precompiles = AstarNetworkPrecompiles::<_, _>::new();
+    pub PrecompilesValue: Precompiles = AstarPrecompiles::<_, _>::new();
     pub WeightPerGas: Weight = Weight::from_parts(WEIGHT_PER_GAS, 0);
     /// The amount of gas per PoV size. Value is calculated as:
     ///

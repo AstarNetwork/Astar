@@ -20,7 +20,7 @@
 
 use super::*;
 
-use fp_evm::IsPrecompileResult;
+use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{ConstU32, ConstU64, Everything},
@@ -197,6 +197,8 @@ parameter_types! {
         TestPrecompileSet(PhantomData);
     pub const WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
+
+pub type PrecompileCall = Sr25519PrecompileCall<Runtime>;
 
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();

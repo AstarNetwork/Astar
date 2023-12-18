@@ -1,30 +1,26 @@
-// This file is part of Astar.
-
-// Copyright 2019-2022 PureStake Inc.
-// Copyright (C) 2022-2023 Stake Technologies Pte.Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
 //
-// This file is part of Utils package, originally developed by Purestake Inc.
-// Utils package used in Astar Network in terms of GPLv3.
+// Copyright (c) 2019-2022 Moonsong Labs.
+// Copyright (c) 2023 Parity Technologies (UK) Ltd.
 //
-// Utils is free software: you can redistribute it and/or modify
+// This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
-// Utils is distributed in the hope that it will be useful,
+//
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
-// along with Utils.  If not, see <http://www.gnu.org/licenses/>.
-use {
-    pallet_evm::AddressMapping,
-    scale_info::TypeInfo,
-    serde::{Deserialize, Serialize},
-    sp_core::{Decode, Encode, MaxEncodedLen, H160, H256},
-};
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+use pallet_evm::AddressMapping;
+use scale_info::TypeInfo;
+use serde::{Deserialize, Serialize};
+use sp_core::{Decode, Encode, MaxEncodedLen, H160, H256};
 
 #[derive(
     Eq,
@@ -100,6 +96,12 @@ impl From<[u8; 20]> for MockAccount {
 
 impl AddressMapping<MockAccount> for MockAccount {
     fn into_account_id(address: H160) -> MockAccount {
+        address.into()
+    }
+}
+
+impl sp_runtime::traits::Convert<H160, MockAccount> for MockAccount {
+    fn convert(address: H160) -> MockAccount {
         address.into()
     }
 }

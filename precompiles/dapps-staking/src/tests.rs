@@ -24,7 +24,6 @@ use crate::{
     },
     *,
 };
-use fp_evm::ExitError;
 use frame_support::assert_ok;
 use pallet_dapps_staking::RewardDestination;
 use precompile_utils::testing::*;
@@ -46,11 +45,11 @@ fn current_era_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                EvmDataWriter::new_with_selector(Action::ReadCurrentEra).build(),
+                PrecompileCall::read_current_era {},
             )
             .expect_cost(READ_WEIGHT)
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(current_era).build());
+            .execute_returns(current_era);
 
         // advance to era 5 and check output
         advance_to_era(5);
@@ -60,11 +59,11 @@ fn current_era_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                EvmDataWriter::new_with_selector(Action::ReadCurrentEra).build(),
+                PrecompileCall::read_current_era {},
             )
             .expect_cost(READ_WEIGHT)
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(current_era).build());
+            .execute_returns(current_era);
     });
 }
 
@@ -77,11 +76,11 @@ fn read_unbonding_period_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                EvmDataWriter::new_with_selector(Action::ReadUnbondingPeriod).build(),
+                PrecompileCall::read_unbonding_period {},
             )
             .expect_cost(0)
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(UNBONDING_PERIOD).build());
+            .execute_returns(UNBONDING_PERIOD as u128);
     });
 }
 
@@ -98,13 +97,13 @@ fn read_era_reward_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                EvmDataWriter::new_with_selector(Action::ReadEraReward)
-                    .write(second_era)
-                    .build(),
+                PrecompileCall::read_era_reward {
+                    era: second_era.into(),
+                },
             )
             .expect_cost(READ_WEIGHT)
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(era_reward).build());
+            .execute_returns(era_reward);
     });
 }
 
@@ -120,13 +119,11 @@ fn read_era_staked_is_ok() {
             .prepare_test(
                 TestAccount::Alex,
                 precompile_address(),
-                EvmDataWriter::new_with_selector(Action::ReadEraStaked)
-                    .write(zero_era)
-                    .build(),
+                PrecompileCall::read_era_staked { era: zero_era },
             )
             .expect_cost(READ_WEIGHT)
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(staked).build());
+            .execute_returns(staked);
     });
 }
 
@@ -142,14 +139,12 @@ fn register_via_precompile_fails() {
                 .prepare_test(
                     TestAccount::Alex,
                     precompile_address(),
-                    EvmDataWriter::new_with_selector(Action::Register)
-                        .write(Address(TEST_CONTRACT.clone()))
-                        .build(),
+                    PrecompileCall::register {
+                        _address: Address(TEST_CONTRACT.clone()),
+                    },
                 )
                 .expect_no_logs()
-                .execute_error(ExitError::Other(alloc::borrow::Cow::Borrowed(
-                    "register via evm precompile is not allowed",
-                )));
+                .execute_reverts(|output| output == b"register via evm precompile is not allowed");
         });
 }
 
@@ -426,30 +421,26 @@ fn read_staked_amount_h160_verify(staker: TestAccount, amount: u128) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::ReadStakedAmount)
-                .write(Bytes(
-                    Into::<H160>::into(staker.clone()).to_fixed_bytes().to_vec(),
-                ))
-                .build(),
+            PrecompileCall::read_staked_amount {
+                staker: H160::from(staker).to_fixed_bytes().into(),
+            },
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(amount).build());
+        .execute_returns(amount);
 }
 
 /// helper function to read ledger storage item for ss58 account
 fn read_staked_amount_ss58_verify(staker: TestAccount, amount: u128) {
-    let staker_acc_id: AccountId32 = staker.clone().into();
-
     precompiles()
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::ReadStakedAmount)
-                .write(Bytes(staker_acc_id.encode()))
-                .build(),
+            PrecompileCall::read_staked_amount {
+                staker: AccountId32::from(staker).encode().into(),
+            },
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(amount).build());
+        .execute_returns(amount);
 }
 
 /// helper function to bond, stake and verify if resulet is OK
@@ -458,13 +449,13 @@ fn bond_stake_and_verify(staker: TestAccount, contract: H160, amount: u128) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::BondAndStake)
-                .write(Address(contract.clone()))
-                .write(amount)
-                .build(),
+            PrecompileCall::bond_and_stake {
+                contract_h160: Address(contract),
+                value: amount,
+            },
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(true).build());
+        .execute_returns(true);
 
     read_staked_amount_h160_verify(staker.clone(), amount);
     read_staked_amount_ss58_verify(staker, amount);
@@ -476,13 +467,13 @@ fn unbond_unstake_and_verify(staker: TestAccount, contract: H160, amount: u128) 
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::UnbondAndUnstake)
-                .write(Address(contract.clone()))
-                .write(amount)
-                .build(),
+            PrecompileCall::unbond_and_unstake {
+                contract_h160: Address(contract),
+                value: amount,
+            },
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(true).build());
+        .execute_returns(true);
 }
 
 /// helper function to withdraw unstaked funds and verify if result is OK
@@ -499,10 +490,10 @@ fn withdraw_unbonded_verify(staker: TestAccount) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::WithdrawUnbounded).build(),
+            PrecompileCall::withdraw_unbonded {},
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(true).build());
+        .execute_returns(true);
 
     assert_eq!(
         <TestRuntime as pallet_evm::Config>::Currency::free_balance(&staker_acc_id),
@@ -526,12 +517,12 @@ fn set_reward_destination_verify(staker: TestAccount, reward_destination: Reward
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::SetRewardDestination)
-                .write(reward_destination_raw)
-                .build(),
+            PrecompileCall::set_reward_destination {
+                reward_destination_raw,
+            },
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(true).build());
+        .execute_returns(true);
 
     let final_ledger = DappsStaking::ledger(&staker_acc_id);
     assert_eq!(final_ledger.reward_destination(), reward_destination);
@@ -549,12 +540,12 @@ fn withdraw_from_unregistered_verify(staker: TestAccount, contract: H160) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::WithdrawFromUnregistered)
-                .write(Address(contract.clone()))
-                .build(),
+            PrecompileCall::withdraw_from_unregistered {
+                contract_h160: Address(contract),
+            },
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(true).build());
+        .execute_returns(true);
 
     let final_staker_info = DappsStaking::staker_info(&staker_acc_id, &smart_contract);
     assert!(final_staker_info.latest_staked_value().is_zero());
@@ -581,14 +572,14 @@ fn nomination_transfer_verify(
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::NominationTransfer)
-                .write(Address(origin_contract.clone()))
-                .write(amount)
-                .write(Address(target_contract.clone()))
-                .build(),
+            PrecompileCall::nomination_transfer {
+                origin_contract_h160: Address(origin_contract),
+                value: amount,
+                target_contract_h160: Address(target_contract),
+            },
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(true).build());
+        .execute_returns(true);
 
     let final_origin_staker_info =
         DappsStaking::staker_info(&staker_acc_id, &origin_smart_contract);
@@ -622,13 +613,13 @@ fn claim_dapp_and_verify(contract: H160, era: EraIndex) {
         .prepare_test(
             TestAccount::Bobo,
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::ClaimDapp)
-                .write(Address(contract.clone()))
-                .write(era)
-                .build(),
+            PrecompileCall::claim_dapp {
+                contract_h160: Address(contract),
+                era: era as u128,
+            },
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(true).build());
+        .execute_returns(true);
 }
 
 /// helper function to bond, stake and verify if the result is OK
@@ -637,12 +628,12 @@ fn claim_staker_and_verify(staker: TestAccount, contract: H160) {
         .prepare_test(
             staker,
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::ClaimStaker)
-                .write(Address(contract.clone()))
-                .build(),
+            PrecompileCall::claim_staker {
+                contract_h160: Address(contract),
+            },
         )
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(true).build());
+        .execute_returns(true);
 }
 
 fn contract_era_stake_verify(contract: H160, amount: Balance) {
@@ -650,13 +641,13 @@ fn contract_era_stake_verify(contract: H160, amount: Balance) {
         .prepare_test(
             TestAccount::Alex,
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::ReadContractStake)
-                .write(Address(contract.clone()))
-                .build(),
+            PrecompileCall::read_contract_stake {
+                contract_h160: Address(contract),
+            },
         )
         .expect_cost(2 * READ_WEIGHT)
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(amount).build());
+        .execute_returns(amount);
 }
 
 /// helper function to verify latest staked amount
@@ -665,16 +656,14 @@ fn verify_staked_amount(contract: H160, staker: TestAccount, amount: Balance) {
         .prepare_test(
             staker.clone(),
             precompile_address(),
-            EvmDataWriter::new_with_selector(Action::ReadStakedAmountOnContract)
-                .write(Address(contract.clone()))
-                .write(Bytes(
-                    Into::<H160>::into(staker.clone()).to_fixed_bytes().to_vec(),
-                ))
-                .build(),
+            PrecompileCall::read_staked_amount_on_contract {
+                contract_h160: Address(contract),
+                staker: H160::from(staker).to_fixed_bytes().into(),
+            },
         )
         .expect_cost(READ_WEIGHT)
         .expect_no_logs()
-        .execute_returns(EvmDataWriter::new().write(amount).build());
+        .execute_returns(amount);
 }
 
 /// Helper method to decode type SmartContract enum from [u8; 20]

@@ -20,8 +20,6 @@ use crate::mock::*;
 use crate::*;
 
 use precompile_utils::testing::*;
-use precompile_utils::EvmDataWriter;
-use sp_core::U256;
 
 fn precompiles() -> TestPrecompileSet<Runtime> {
     PrecompilesValue::get()
@@ -34,23 +32,22 @@ fn wrong_argument_reverts() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::XvmCall)
-                    .write(42u64)
-                    .build(),
+                solidity::encode_with_selector(PrecompileCall::xvm_call_selectors()[0], 42u32),
             )
             .expect_no_logs()
-            .execute_reverts(|output| output == b"input doesn't match expected length");
+            .execute_reverts(|output| output == b"Expected at least 5 arguments");
 
         precompiles()
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::XvmCall)
-                    .write(0u8)
-                    .write(Bytes(b"".to_vec()))
-                    .write(Bytes(b"".to_vec()))
-                    .write(U256::one())
-                    .build(),
+                PrecompileCall::xvm_call {
+                    vm_id: 0.into(),
+                    call_to: b"".into(),
+                    call_input: b"".into(),
+                    value: 1.into(),
+                    storage_deposit_limit: 0.into(),
+                },
             )
             .expect_no_logs()
             .execute_reverts(|output| output == b"invalid vm id");
@@ -64,15 +61,15 @@ fn correct_arguments_works() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::XvmCall)
-                    .write(0x1Fu8)
-                    .write(Bytes(b"".to_vec()))
-                    .write(
-                        hex::decode("0000000000000000000000000000000000000000")
-                            .expect("invalid hex"),
-                    )
-                    .write(U256::one())
-                    .build(),
+                PrecompileCall::xvm_call {
+                    vm_id: 0x1Fu8.into(),
+                    call_to: b"".into(),
+                    call_input: hex::decode("0000000000000000000000000000000000000000")
+                        .expect("invalid hex")
+                        .into(),
+                    value: 1.into(),
+                    storage_deposit_limit: 0.into(),
+                },
             )
             .expect_no_logs()
             .execute_some();
@@ -87,15 +84,15 @@ fn weight_limit_is_min_of_remaining_and_user_limit() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::XvmCall)
-                    .write(0x1Fu8)
-                    .write(Bytes(
-                        hex::decode("0000000000000000000000000000000000000000")
-                            .expect("invalid hex"),
-                    ))
-                    .write(Bytes(b"".to_vec()))
-                    .write(U256::one())
-                    .build(),
+                PrecompileCall::xvm_call {
+                    vm_id: 0x1Fu8.into(),
+                    call_to: hex::decode("0000000000000000000000000000000000000000")
+                        .expect("invalid hex")
+                        .into(),
+                    call_input: b"".into(),
+                    value: 1.into(),
+                    storage_deposit_limit: 0.into(),
+                },
             )
             .expect_no_logs()
             .execute_some();
@@ -110,17 +107,17 @@ fn weight_limit_is_min_of_remaining_and_user_limit() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::XvmCall)
-                    .write(0x1Fu8)
-                    .write(Bytes(
-                        hex::decode("0000000000000000000000000000000000000000")
-                            .expect("invalid hex"),
-                    ))
-                    .write(Bytes(b"".to_vec()))
-                    .write(U256::one())
-                    .build(),
+                PrecompileCall::xvm_call {
+                    vm_id: 0x1Fu8.into(),
+                    call_to: hex::decode("0000000000000000000000000000000000000000")
+                        .expect("invalid hex")
+                        .into(),
+                    call_input: b"".into(),
+                    value: 1.into(),
+                    storage_deposit_limit: 0.into(),
+                },
             )
-            .with_gas_limit(gas_limit)
+            .with_target_gas(gas_limit.into())
             .expect_no_logs()
             .execute_some();
         assert_eq!(

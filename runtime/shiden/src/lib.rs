@@ -89,8 +89,8 @@ mod xcm_config;
 
 pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
 
-pub use precompiles::{ShidenNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
-pub type Precompiles = ShidenNetworkPrecompiles<Runtime, ShidenAssetLocationIdConverter>;
+pub use precompiles::{ShidenPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
+pub type Precompiles = ShidenPrecompiles<Runtime, ShidenAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
 pub const NANOSDN: Balance = 1_000_000_000;
@@ -768,7 +768,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS
     );
-    pub PrecompilesValue: Precompiles = ShidenNetworkPrecompiles::<_, _>::new();
+    pub PrecompilesValue: Precompiles = ShidenPrecompiles::<_, _>::new();
     pub WeightPerGas: Weight = Weight::from_parts(WEIGHT_PER_GAS, 0);
     /// The amount of gas per PoV size. Value is calculated as:
     ///

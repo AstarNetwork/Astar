@@ -19,10 +19,9 @@
 use hex_literal::hex;
 
 use crate::mock::*;
-use crate::*;
 
 use precompile_utils::testing::*;
-use sp_core::{sr25519, Pair, H256};
+use sp_core::{sr25519, Pair};
 
 fn precompiles() -> TestPrecompileSet<Runtime> {
     PrecompilesValue::get()
@@ -40,14 +39,14 @@ fn wrong_signature_length_returns_false() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::Verify)
-                    .write(H256::from(public))
-                    .write(Bytes::from(&signature[..]))
-                    .write(Bytes::from(&message[..]))
-                    .build(),
+                PrecompileCall::verify {
+                    public: public.into(),
+                    signature: signature.into(),
+                    message: message.into(),
+                },
             )
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(false).build());
+            .execute_returns(false);
     });
 }
 
@@ -66,14 +65,14 @@ fn bad_signature_returns_false() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::Verify)
-                .write(H256::from(public))
-                .write(Bytes::from(<sr25519::Signature as AsRef<[u8]>>::as_ref(&signature)))
-                .write(Bytes::from(&bad_message[..]))
-                .build(),
+                PrecompileCall::verify {
+                    public: public.into(),
+                    signature: <sr25519::Signature as AsRef<[u8]>>::as_ref(&signature).into(),
+                    message: bad_message.into(),
+                },
             )
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(false).build());
+            .execute_returns(false);
     });
 }
 
@@ -96,13 +95,13 @@ fn substrate_test_vector_works() {
             .prepare_test(
                 TestAccount::Alice,
                 PRECOMPILE_ADDRESS,
-                EvmDataWriter::new_with_selector(Action::Verify)
-                .write(H256::from(public))
-                .write(Bytes::from(<sr25519::Signature as AsRef<[u8]>>::as_ref(&signature)))
-                .write(Bytes::from(&message[..]))
-                .build(),
+                PrecompileCall::verify {
+                    public: public.into(),
+                    signature: <sr25519::Signature as AsRef<[u8]>>::as_ref(&signature).into(),
+                    message: message.into(),
+                },
             )
             .expect_no_logs()
-            .execute_returns(EvmDataWriter::new().write(true).build());
+            .execute_returns(true);
     });
 }

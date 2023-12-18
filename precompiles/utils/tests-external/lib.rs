@@ -207,7 +207,7 @@ pub type Precompiles<R> = PrecompileSetBuilder<
 	),
 >;
 
-pub type PCall = MockPrecompileCall;
+pub type PrecompileCall = MockPrecompileCall;
 
 const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 
@@ -281,7 +281,7 @@ fn precompiles() -> Precompiles<Runtime> {
 fn default_checks_succeed_when_called_by_eoa() {
 	ExtBuilder::default().build().execute_with(|| {
 		precompiles()
-			.prepare_test(Alice, H160::from_low_u64_be(1), PCall::success {})
+			.prepare_test(Alice, H160::from_low_u64_be(1), PrecompileCall::success {})
 			.with_subcall_handle(|Subcall { .. }| panic!("there should be no subcall"))
 			.execute_returns(())
 	})
@@ -294,7 +294,7 @@ fn default_checks_revert_when_called_by_precompile() {
 			.prepare_test(
 				H160::from_low_u64_be(1),
 				H160::from_low_u64_be(1),
-				PCall::success {},
+				PrecompileCall::success {},
 			)
 			.with_subcall_handle(|Subcall { .. }| panic!("there should be no subcall"))
 			.execute_reverts(|r| r == b"Function not callable by precompiles")
@@ -310,7 +310,7 @@ fn default_checks_revert_when_called_by_contract() {
 		);
 
 		precompiles()
-			.prepare_test(Alice, H160::from_low_u64_be(1), PCall::success {})
+			.prepare_test(Alice, H160::from_low_u64_be(1), PrecompileCall::success {})
 			.with_subcall_handle(|Subcall { .. }| panic!("there should be no subcall"))
 			.execute_reverts(|r| r == b"Function not callable by smart contracts")
 	})
@@ -320,7 +320,7 @@ fn default_checks_revert_when_called_by_contract() {
 fn default_checks_revert_when_doing_subcall() {
 	ExtBuilder::default().build().execute_with(|| {
 		precompiles()
-			.prepare_test(Alice, H160::from_low_u64_be(1), PCall::subcall {})
+			.prepare_test(Alice, H160::from_low_u64_be(1), PrecompileCall::subcall {})
 			.with_subcall_handle(|Subcall { .. }| panic!("there should be no subcall"))
 			.execute_reverts(|r| r == b"subcalls disabled for this precompile")
 	})
@@ -335,7 +335,7 @@ fn callable_by_contract_works() {
 		);
 
 		precompiles()
-			.prepare_test(Alice, H160::from_low_u64_be(2), PCall::success {})
+			.prepare_test(Alice, H160::from_low_u64_be(2), PrecompileCall::success {})
 			.with_subcall_handle(|Subcall { .. }| panic!("there should be no subcall"))
 			.execute_returns(())
 	})
@@ -348,7 +348,7 @@ fn callable_by_precompile_works() {
 			.prepare_test(
 				H160::from_low_u64_be(3),
 				H160::from_low_u64_be(3),
-				PCall::success {},
+				PrecompileCall::success {},
 			)
 			.with_subcall_handle(|Subcall { .. }| panic!("there should be no subcall"))
 			.execute_returns(())
@@ -362,7 +362,7 @@ fn subcalls_works_when_allowed() {
 		{
 			let subcall_occured = Rc::clone(&subcall_occured);
 			precompiles()
-				.prepare_test(Alice, H160::from_low_u64_be(4), PCall::subcall {})
+				.prepare_test(Alice, H160::from_low_u64_be(4), PrecompileCall::subcall {})
 				.with_subcall_handle(move |Subcall { .. }| {
 					*subcall_occured.borrow_mut() = true;
 					SubcallOutput::succeed()

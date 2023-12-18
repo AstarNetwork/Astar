@@ -1,56 +1,32 @@
-// This file is part of Astar.
-
-// Copyright 2019-2022 PureStake Inc.
-// Copyright (C) 2022-2023 Stake Technologies Pte.Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
 //
-// This file is part of Utils package, originally developed by Purestake Inc.
-// Utils package used in Astar Network in terms of GPLv3.
+// Copyright (c) 2019-2022 Moonsong Labs.
+// Copyright (c) 2023 Parity Technologies (UK) Ltd.
 //
-// Utils is free software: you can redistribute it and/or modify
+// This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
-// Utils is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with Utils.  If not, see <http://www.gnu.org/licenses/>.
-// This file is part of Astar.
-
-// Copyright 2019-2022 PureStake Inc.
-// Copyright (C) 2022-2023 Stake Technologies Pte.Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later
 //
-// This file is part of Utils package, originally developed by Purestake Inc.
-// Utils package used in Astar Network in terms of GPLv3.
-//
-// Utils is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// Utils is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
-// along with Utils.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    crate::testing::{decode_revert_message, MockHandle, PrettyLog, SubcallHandle, SubcallTrait},
-    assert_matches::assert_matches,
-    fp_evm::{
-        Context, ExitError, ExitSucceed, Log, PrecompileFailure, PrecompileOutput,
-        PrecompileResult, PrecompileSet,
-    },
-    sp_core::{H160, U256},
-    sp_std::boxed::Box,
+use crate::{
+    solidity::codec::Codec,
+    testing::{decode_revert_message, MockHandle, PrettyLog, SubcallHandle, SubcallTrait},
 };
+use fp_evm::{
+    Context, ExitError, ExitSucceed, Log, PrecompileFailure, PrecompileOutput, PrecompileResult,
+    PrecompileSet,
+};
+use sp_core::{H160, U256};
+use sp_std::boxed::Box;
 
 #[must_use]
 pub struct PrecompilesTester<'p, P> {
@@ -62,6 +38,7 @@ pub struct PrecompilesTester<'p, P> {
 
     expected_cost: Option<u64>,
     expected_logs: Option<Vec<PrettyLog>>,
+    static_call: bool,
 }
 
 impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
@@ -73,7 +50,7 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
     ) -> Self {
         let to = to.into();
         let mut handle = MockHandle::new(
-            to.clone(),
+            to,
             Context {
                 address: to,
                 caller: from.into(),
@@ -92,6 +69,7 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
 
             expected_cost: None,
             expected_logs: None,
+            static_call: false,
         }
     }
 
@@ -110,8 +88,8 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
         self
     }
 
-    pub fn with_gas_limit(mut self, gas_limit: u64) -> Self {
-        self.handle.gas_limit = gas_limit;
+    pub fn with_static_call(mut self, static_call: bool) -> Self {
+        self.static_call = static_call;
         self
     }
 
@@ -127,7 +105,7 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
 
     pub fn expect_log(mut self, log: Log) -> Self {
         self.expected_logs = Some({
-            let mut logs = self.expected_logs.unwrap_or_else(Vec::new);
+            let mut logs = self.expected_logs.unwrap_or_default();
             logs.push(PrettyLog(log));
             logs
         });
@@ -147,6 +125,7 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
     fn execute(&mut self) -> Option<PrecompileResult> {
         let handle = &mut self.handle;
         handle.subcall_handle = self.subcall_handle.take();
+        handle.is_static = self.static_call;
 
         if let Some(gas_limit) = self.target_gas {
             handle.gas_limit = gas_limit;
@@ -214,19 +193,33 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
     }
 
     /// Execute the precompile set and check it returns provided Solidity encoded output.
-    pub fn execute_returns(self, output: Vec<u8>) {
-        self.execute_returns_raw(output)
+    pub fn execute_returns(self, output: impl Codec) {
+        self.execute_returns_raw(crate::solidity::encode_return_value(output))
     }
 
     /// Execute the precompile set and check if it reverts.
     /// Take a closure allowing to perform custom matching on the output.
     pub fn execute_reverts(mut self, check: impl Fn(&[u8]) -> bool) {
         let res = self.execute();
-        assert_matches!(
-            res,
-            Some(Err(PrecompileFailure::Revert { output, ..}))
-                if check(&output)
-        );
+
+        match res {
+            Some(Err(PrecompileFailure::Revert { output, .. })) => {
+                let decoded = decode_revert_message(&output);
+                if !check(decoded) {
+                    eprintln!(
+                        "Revert message (bytes): {:?}",
+                        sp_core::hexdisplay::HexDisplay::from(&decoded)
+                    );
+                    eprintln!(
+                        "Revert message (string): {:?}",
+                        core::str::from_utf8(decoded).ok()
+                    );
+                    panic!("Revert reason doesn't match !");
+                }
+            }
+            other => panic!("Didn't revert, instead returned {:?}", other),
+        }
+
         self.assert_optionals();
     }
 

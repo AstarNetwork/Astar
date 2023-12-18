@@ -33,7 +33,7 @@ precompile-utils = { workspace = true, features = ["testing"] }
 
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-pallet-balances = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true }
 sp-runtime = { workspace = true }
 

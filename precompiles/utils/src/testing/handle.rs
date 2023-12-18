@@ -1,32 +1,27 @@
-// This file is part of Astar.
-
-// Copyright 2019-2022 PureStake Inc.
-// Copyright (C) 2022-2023 Stake Technologies Pte.Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+// This file is part of Frontier.
 //
-// This file is part of Utils package, originally developed by Purestake Inc.
-// Utils package used in Astar Network in terms of GPLv3.
+// Copyright (c) 2019-2022 Moonsong Labs.
+// Copyright (c) 2023 Parity Technologies (UK) Ltd.
 //
-// Utils is free software: you can redistribute it and/or modify
+// This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
-// Utils is distributed in the hope that it will be useful,
+//
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
-// along with Utils.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use {
-    crate::testing::PrettyLog,
-    evm::{ExitRevert, ExitSucceed},
-    fp_evm::{Context, ExitError, ExitReason, Log, PrecompileHandle, Transfer},
-    sp_core::{H160, H256},
-    sp_std::boxed::Box,
-};
+use crate::testing::PrettyLog;
+use evm::{ExitRevert, ExitSucceed};
+use fp_evm::{Context, ExitError, ExitReason, Log, PrecompileHandle, Transfer};
+use sp_core::{H160, H256};
+use sp_std::boxed::Box;
 
 #[derive(Debug, Clone)]
 pub struct Subcall {
@@ -121,7 +116,7 @@ impl PrecompileHandle for MockHandle {
         context: &Context,
     ) -> (ExitReason, Vec<u8>) {
         if self
-            .record_cost(crate::call_cost(
+            .record_cost(crate::evm::costs::call_cost(
                 context.apparent_value,
                 &evm::Config::london(),
             ))
@@ -171,15 +166,6 @@ impl PrecompileHandle for MockHandle {
         }
     }
 
-    fn record_external_cost(
-        &mut self,
-        _ref_time: Option<u64>,
-        _proof_size: Option<u64>,
-    ) -> Result<(), ExitError> {
-        Ok(())
-    }
-    fn refund_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) {}
-
     fn remaining_gas(&self) -> u64 {
         self.gas_limit - self.gas_used
     }
@@ -217,4 +203,14 @@ impl PrecompileHandle for MockHandle {
     fn gas_limit(&self) -> Option<u64> {
         Some(self.gas_limit)
     }
+
+    fn record_external_cost(
+        &mut self,
+        _ref_time: Option<u64>,
+        _proof_size: Option<u64>,
+    ) -> Result<(), ExitError> {
+        Ok(())
+    }
+
+    fn refund_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) {}
 }

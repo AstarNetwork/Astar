@@ -20,7 +20,7 @@
 
 use super::*;
 
-use fp_evm::IsPrecompileResult;
+use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
     construct_runtime, ensure, parameter_types,
     traits::{ConstU32, ConstU64, Everything},
@@ -216,6 +216,8 @@ parameter_types! {
     pub WeightPerGas: Weight = Weight::from_parts(1, 0);
 }
 
+pub type PrecompileCall = XvmPrecompileCall<Runtime, MockXvmWithArgsCheck>;
+
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
@@ -258,7 +260,7 @@ impl WeightLimitCalledWith {
     }
 }
 
-struct MockXvmWithArgsCheck;
+pub struct MockXvmWithArgsCheck;
 impl XvmCall<AccountId> for MockXvmWithArgsCheck {
     fn call(
         context: Context,

@@ -109,8 +109,8 @@ impl_opaque_keys! {
 }
 
 mod precompiles;
-pub use precompiles::{LocalNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
-pub type Precompiles = LocalNetworkPrecompiles<Runtime>;
+pub use precompiles::{LocalPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
+pub type Precompiles = LocalPrecompiles<Runtime>;
 
 mod chain_extensions;
 pub use chain_extensions::*;
@@ -582,7 +582,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * WEIGHT_REF_TIME_PER_SECOND / WEIGHT_PER_GAS
     );
-    pub PrecompilesValue: Precompiles = LocalNetworkPrecompiles::<_>::new();
+    pub PrecompilesValue: Precompiles = LocalPrecompiles::<_>::new();
     pub WeightPerGas: Weight = Weight::from_parts(WEIGHT_PER_GAS, 0);
     /// The amount of gas per PoV size. Value is calculated as:
     ///
