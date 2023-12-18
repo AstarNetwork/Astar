@@ -1659,7 +1659,9 @@ pub mod pallet {
             // In case when tier has 1 more free slot, but two dApps with exactly same score satisfy the threshold,
             // one of them will be assigned to the tier, and the other one will be assigned to the lower tier, if it exists.
             //
-            // There is no explicit definition of which dApp gets the advantage - it's decided by dApp IDs hash & the unstable sort algorithm.
+            // In the current implementation, the dApp with the lower dApp Id has the advantage.
+            // There is no guarantee this will persist in the future, so it's best for dApps to do their
+            // best to avoid getting themselves into such situations.
 
             // 4. Calculate rewards.
             let tier_rewards = tier_config
