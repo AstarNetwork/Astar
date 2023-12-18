@@ -122,7 +122,11 @@ pub mod pallet {
 
     use super::*;
 
+    /// The current storage version.
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(PhantomData<T>);
 
     // Negative imbalance type of this pallet.
