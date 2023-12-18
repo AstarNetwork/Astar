@@ -29,9 +29,9 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize,
-        OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly,
+        FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced,
+        WithdrawReasons,
     },
     weights::{
         constants::{
@@ -68,13 +68,14 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-pub use astar_primitives::{
-    dapp_staking::{CycleConfiguration, StakingRewardHandler},
-    ethereum_checked::CheckedEthereumTransact,
-    evm::EvmRevertCodeHandler,
-    xcm::AssetLocationIdConverter,
-    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+use astar_primitives::{
+    dapp_staking::CycleConfiguration, evm::EvmRevertCodeHandler, xcm::AssetLocationIdConverter,
+    Address, AssetId, BlockNumber, Hash, Header, Index,
 };
+
+pub use astar_primitives::{AccountId, Balance, Signature};
+pub use pallet_dapp_staking_v3::TierThreshold;
+pub use pallet_inflation::InflationParameters;
 
 pub use crate::precompiles::WhitelistedCalls;
 
@@ -463,14 +464,14 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
-    type EraRewardSpanLength = ConstU32<8>;
-    type RewardRetentionInPeriods = ConstU32<2>;
-    type MaxNumberOfContracts = ConstU32<100>;
-    type MaxUnlockingChunks = ConstU32<5>;
-    type MinimumLockedAmount = ConstU128<SBY>;
-    type UnlockingPeriod = ConstU32<2>;
-    type MaxNumberOfStakedContracts = ConstU32<3>;
-    type MinimumStakeAmount = ConstU128<SBY>;
+    type EraRewardSpanLength = ConstU32<32>; // TODO: experiment with this in benchmarks
+    type RewardRetentionInPeriods = ConstU32<2>; // Low enough value so we can get some expired rewards during testing
+    type MaxNumberOfContracts = ConstU32<500>;
+    type MaxUnlockingChunks = ConstU32<8>;
+    type MinimumLockedAmount = MinimumStakingAmount; // Keep the same as the old pallet
+    type UnlockingPeriod = ConstU32<4>; // Keep it low so it's easier to test
+    type MaxNumberOfStakedContracts = ConstU32<8>;
+    type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
     type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
@@ -483,27 +484,27 @@ impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerB
         Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
 
-    fn collators(_reward: NegativeImbalance) {
-        // no collators for local dev node
+    fn collators(reward: NegativeImbalance) {
+        ToStakingPot::on_unbalanced(reward);
     }
 }
 
 pub struct InflationCycleConfig;
 impl CycleConfiguration for InflationCycleConfig {
     fn periods_per_cycle() -> u32 {
-        4
-    }
-
-    fn eras_per_voting_subperiod() -> u32 {
         2
     }
 
+    fn eras_per_voting_subperiod() -> u32 {
+        8
+    }
+
     fn eras_per_build_and_earn_subperiod() -> u32 {
-        22
+        20
     }
 
     fn blocks_per_era() -> BlockNumber {
-        30
+        6 * HOURS
     }
 }
 
@@ -1390,7 +1391,7 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = ();
+pub type Migrations = (pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

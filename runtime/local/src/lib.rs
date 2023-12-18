@@ -61,12 +61,15 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-pub use astar_primitives::{
-    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+use astar_primitives::{
+    dapp_staking::CycleConfiguration,
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
-    AccountId, Address, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature,
+    Address, AssetId, Balance, BlockNumber, Hash, Header, Index,
 };
+
+pub use astar_primitives::{AccountId, Signature};
 pub use pallet_block_rewards_hybrid::RewardDistributionConfig;
+pub use pallet_dapp_staking_v3::TierThreshold;
 
 pub use crate::precompiles::WhitelistedCalls;
 #[cfg(feature = "std")]
@@ -1179,8 +1182,7 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-// TODO: remove this prior to the PR merge
-pub type Migrations = (pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,);
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

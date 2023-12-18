@@ -456,7 +456,6 @@ dependencies = [
  "moonbeam-rpc-primitives-txpool",
  "moonbeam-rpc-trace",
  "moonbeam-rpc-txpool",
- "pallet-dapp-staking-v3",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-transaction-payment",

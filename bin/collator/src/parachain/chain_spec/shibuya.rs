@@ -1,37 +1,37 @@
-// This file is part of Astar.
+// This file is part of SBYar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Astar is free software: you can redistribute it and/or modify
+// SBYar is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
-// Astar is distributed in the hope that it will be useful,
+// SBYar is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
 // You should have received a copy of the GNU General Public License
-// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+// along with SBYar. If not, see <http://www.gnu.org/licenses/>.
 
 //! Shibuya chain specifications.
 
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shibuya_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BlockRewardConfig,
-    CollatorSelectionConfig, CouncilConfig, DemocracyConfig, EVMChainIdConfig, EVMConfig,
-    GenesisConfig, ParachainInfoConfig, Precompiles, RewardDistributionConfig, SessionConfig,
-    SessionKeys, Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig,
-    VestingConfig, SBY,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
+    CollatorSelectionConfig, CouncilConfig, DappStakingConfig, DemocracyConfig, EVMChainIdConfig,
+    EVMConfig, GenesisConfig, InflationConfig, InflationParameters, ParachainInfoConfig,
+    Precompiles, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig,
+    TechnicalCommitteeConfig, TierThreshold, TreasuryConfig, VestingConfig, SBY,
 };
 use sp_core::{sr25519, Pair, Public};
 
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
-    Perbill,
+    Permill,
 };
 
 use super::{get_from_seed, Extensions};
@@ -114,17 +114,6 @@ fn make_genesis(
         },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: BalancesConfig { balances },
-        block_reward: BlockRewardConfig {
-            // Make sure sum is 100
-            reward_config: RewardDistributionConfig {
-                treasury_percent: Perbill::from_percent(10),
-                base_staker_percent: Perbill::from_percent(20),
-                dapps_percent: Perbill::from_percent(20),
-                collators_percent: Perbill::from_percent(5),
-                adjustable_percent: Perbill::from_percent(45),
-                ideal_dapps_staking_tvl: Perbill::from_percent(40),
-            },
-        },
         vesting: VestingConfig { vesting: vec![] },
         session: SessionConfig {
             keys: authorities
@@ -174,6 +163,41 @@ fn make_genesis(
         },
         democracy: DemocracyConfig::default(),
         treasury: TreasuryConfig::default(),
+        dapp_staking: DappStakingConfig {
+            reward_portion: vec![
+                Permill::from_percent(40),
+                Permill::from_percent(30),
+                Permill::from_percent(20),
+                Permill::from_percent(10),
+            ],
+            slot_distribution: vec![
+                Permill::from_percent(10),
+                Permill::from_percent(20),
+                Permill::from_percent(30),
+                Permill::from_percent(40),
+            ],
+            // TODO: adjust this if needed
+            tier_thresholds: vec![
+                TierThreshold::DynamicTvlAmount {
+                    amount: 100 * SBY,
+                    minimum_amount: 80 * SBY,
+                },
+                TierThreshold::DynamicTvlAmount {
+                    amount: 50 * SBY,
+                    minimum_amount: 40 * SBY,
+                },
+                TierThreshold::DynamicTvlAmount {
+                    amount: 20 * SBY,
+                    minimum_amount: 20 * SBY,
+                },
+                TierThreshold::FixedTvlAmount { amount: 10 * SBY },
+            ],
+            slots_per_tier: vec![10, 20, 30, 40],
+        },
+        // TODO: adjust this if needed
+        inflation: InflationConfig {
+            params: InflationParameters::default(),
+        },
     }
 }
 
