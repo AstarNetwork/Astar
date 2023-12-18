@@ -70,6 +70,7 @@ pallet-block-rewards-hybrid = { workspace = true }
 pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
+pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
@@ -126,6 +127,7 @@ std = [
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dapps-staking/std",
 	"pallet-dapp-staking-v3/std",
+	"pallet-dapp-staking-migration/std",
 	"dapp-staking-v3-runtime-api/std",
 	"pallet-inflation/std",
 	"pallet-dynamic-evm-base-fee/std",
@@ -203,6 +205,7 @@ runtime-benchmarks = [
 	"pallet-dapp-staking-v3/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"pallet-dapp-staking-migration/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -238,6 +241,7 @@ try-runtime = [
 	"pallet-dynamic-evm-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
+	"pallet-dapp-staking-migration/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

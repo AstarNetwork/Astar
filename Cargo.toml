@@ -276,6 +276,7 @@ pallet-block-rewards-hybrid = { path = "./pallets/block-rewards-hybrid", default
 pallet-collator-selection = { path = "./pallets/collator-selection", default-features = false }
 pallet-dapps-staking = { path = "./pallets/dapps-staking", default-features = false }
 pallet-dapp-staking-v3 = { path = "./pallets/dapp-staking-v3", default-features = false }
+pallet-dapp-staking-migration = { path = "./pallets/dapp-staking-migration", default-features = false }
 pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features = false }
 pallet-xvm = { path = "./pallets/xvm", default-features = false }
 pallet-ethereum-checked = { path = "./pallets/ethereum-checked", default-features = false }
