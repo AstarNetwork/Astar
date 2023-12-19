@@ -1985,13 +1985,15 @@ impl<
             number: 1,
         });
 
+        log::info!("dApp Staking v3 storage initialized.");
+
         T::DbWeight::get().reads_writes(1, 4)
     }
 
     #[cfg(feature = "try-runtime")]
     fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
         assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
-        assert!(!ActiveProtocolState::<T>::get().maintenance);
+        assert!(ActiveProtocolState::<T>::get().maintenance);
 
         let number_of_tiers = T::NumberOfTiers::get();
 

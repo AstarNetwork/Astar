@@ -622,6 +622,8 @@ impl<T: Config, P: Get<InflationParameters>> OnRuntimeUpgrade for PalletInflatio
         // 3. Set version
         STORAGE_VERSION.put::<Pallet<T>>();
 
+        log::info!("Inflation pallet storage initialized.");
+
         T::WeightInfo::hook_with_recalculation()
             .saturating_add(T::DbWeight::get().reads_writes(1, 2))
     }

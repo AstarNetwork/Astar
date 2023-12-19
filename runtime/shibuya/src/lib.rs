@@ -1390,7 +1390,6 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-
 parameter_types! {
     pub const BlockRewardName: &'static str = "BlockReward";
 }

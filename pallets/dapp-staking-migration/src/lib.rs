@@ -581,8 +581,17 @@ pub mod pallet {
                 .collect();
 
             // Get the stakers and their active locked (staked) amount.
+
+            let min_lock_amount: Balance =
+                <T as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get();
             let stakers: Vec<_> = pallet_dapps_staking::Ledger::<T>::iter()
-                .map(|(staker, ledger)| (staker, ledger.locked))
+                .filter_map(|(staker, ledger)| {
+                    if ledger.locked >= min_lock_amount {
+                        Some((staker, ledger.locked))
+                    } else {
+                        None
+                    }
+                })
                 .collect();
 
             let helper = Helper::<T> {
