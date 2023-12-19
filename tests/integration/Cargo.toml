@@ -26,6 +26,7 @@ pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapps-staking = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-utility = { workspace = true }
 sp-core = { workspace = true }

@@ -4977,6 +4977,7 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapp-staking-v3",
+ "pallet-dapps-staking",
  "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",

@@ -25,6 +25,8 @@ mod setup;
 
 #[cfg(any(feature = "shibuya"))]
 mod proxy_new;
+
+// Remove this once dApp staking v3 is integrated into Shiden & Astar
 #[cfg(any(feature = "shiden", feature = "astar"))]
 mod proxy_old;
 
@@ -36,6 +38,8 @@ mod xvm;
 
 #[cfg(any(feature = "shibuya"))]
 mod dispatch_precompile_filter_new;
+
+// Remove this once dApp staking v3 is integrated into Shiden & Astar
 #[cfg(any(feature = "shiden", feature = "astar"))]
 mod dispatch_precompile_filter_old;
 
