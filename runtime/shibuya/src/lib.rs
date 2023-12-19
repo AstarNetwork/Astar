@@ -1390,12 +1390,13 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-/// All migrations that will run on the next runtime upgrade.
-///
-/// Once done, migrations should be removed from the tuple.
+
 parameter_types! {
     pub const BlockRewardName: &'static str = "BlockReward";
 }
+/// All migrations that will run on the next runtime upgrade.
+///
+/// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
     pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParams>,
     pallet_dapp_staking_v3::DAppStakingV3InitConfig<Runtime, InitDappStakingv3Params>,
