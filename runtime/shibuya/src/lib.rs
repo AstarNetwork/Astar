@@ -30,8 +30,8 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly,
-        FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize, OnRuntimeUpgrade,
-        OnUnbalanced, WithdrawReasons,
+        FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced,
+        WithdrawReasons,
     },
     weights::{
         constants::{
@@ -1393,7 +1393,7 @@ pub type Executive = frame_executive::Executive<
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
     pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParams>,
-    pallet_dapps_staking_v3::DAppStakingV3InitConfig<Runtime, InitDappStakingv3Params>,
+    pallet_dapp_staking_v3::DAppStakingV3InitConfig<Runtime, InitDappStakingv3Params>,
     // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode.
     // But it's most important for testing with try-runtime.
     pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
@@ -1419,14 +1419,22 @@ impl Get<pallet_inflation::InflationParameters> for InitInflationParams {
 }
 
 use frame_support::BoundedVec;
-use pallet_dapp_staking_v3::{
-    ActiveProtocolState, ProtocolState, StaticTierParams, Subperiod, TierConfig, TierParameters,
-    TiersConfiguration,
-};
+use pallet_dapp_staking_v3::{EraNumber, TierParameters, TiersConfiguration};
+type NumberOfTiers = <Runtime as pallet_dapp_staking_v3::Config>::NumberOfTiers;
 /// Used to initialize dApp staking parameters for the runtime.
 pub struct InitDappStakingv3Params;
-impl Get<(EraNumber, TierParameters, TiersConfiguration)> for InitDappStakingv3Params {
-    fn get() -> (EraNumber, TierParameters, TiersConfiguration) {
+impl
+    Get<(
+        EraNumber,
+        TierParameters<NumberOfTiers>,
+        TiersConfiguration<NumberOfTiers>,
+    )> for InitDappStakingv3Params
+{
+    fn get() -> (
+        EraNumber,
+        TierParameters<NumberOfTiers>,
+        TiersConfiguration<NumberOfTiers>,
+    ) {
         // 1. Prepare init values
 
         // Init era of dApp staking v3 should be the next era after dApp staking v2

@@ -599,6 +599,8 @@ pub trait PayoutPerBlock<Imbalance> {
 }
 
 /// `OnRuntimeUpgrade` logic for integrating this pallet into the live network.
+#[cfg(feature = "try-runtime")]
+use sp_std::vec::Vec;
 pub struct PalletInflationInitConfig<T, P>(PhantomData<(T, P)>);
 impl<T: Config, P: Get<InflationParameters>> OnRuntimeUpgrade for PalletInflationInitConfig<T, P> {
     fn on_runtime_upgrade() -> Weight {
