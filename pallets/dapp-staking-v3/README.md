@@ -227,7 +227,8 @@ be left out of tiers and won't earn **any** reward.
 In a special and unlikely case that two or more dApps have the exact same score and satisfy tier entry threshold, but there isn't enough
 leftover tier capacity to accomodate them all, this is considered _undefined_ behavior. Some of the dApps will manage to enter the tier, while
 others will be left out. There is no strict rule which defines this behavior - instead dApps are encouraged to ensure their tier entry by
-having a larger stake than the other dApp(s).
+having a larger stake than the other dApp(s). Tehnically, at the moment, the dApp with the lower `dApp Id` will have the advantage over a dApp with
+the larger Id.
 
 ### Reward Expiry
 

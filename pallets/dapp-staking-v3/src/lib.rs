@@ -51,7 +51,7 @@ use sp_runtime::{
 pub use sp_std::vec::Vec;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    dapp_staking::{CycleConfiguration, SmartContractHandle, StakingRewardHandler},
     Balance, BlockNumber,
 };
 
@@ -118,7 +118,10 @@ pub mod pallet {
         >;
 
         /// Describes smart contract in the context required by dApp staking.
-        type SmartContract: Parameter + Member + MaxEncodedLen;
+        type SmartContract: Parameter
+            + Member
+            + MaxEncodedLen
+            + SmartContractHandle<Self::AccountId>;
 
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
@@ -795,7 +798,7 @@ pub mod pallet {
             ledger.subtract_lock_amount(amount_to_unlock);
 
             let current_block = frame_system::Pallet::<T>::block_number();
-            let unlock_block = current_block.saturating_add(Self::unlock_period());
+            let unlock_block = current_block.saturating_add(Self::unlocking_period());
             ledger
                 .add_unlocking_chunk(amount_to_unlock, unlock_block)
                 .map_err(|_| Error::<T>::TooManyUnlockingChunks)?;
@@ -1137,8 +1140,9 @@ pub mod pallet {
             let earliest_staked_era = ledger
                 .earliest_staked_era()
                 .ok_or(Error::<T>::InternalClaimStakerError)?;
-            let era_rewards = EraRewards::<T>::get(Self::era_reward_index(earliest_staked_era))
-                .ok_or(Error::<T>::NoClaimableRewards)?;
+            let era_rewards =
+                EraRewards::<T>::get(Self::era_reward_span_index(earliest_staked_era))
+                    .ok_or(Error::<T>::NoClaimableRewards)?;
 
             // The last era for which we can theoretically claim rewards.
             // And indicator if we know the period's ending era.
@@ -1545,7 +1549,7 @@ pub mod pallet {
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.
-        pub(crate) fn era_reward_index(era: EraNumber) -> EraNumber {
+        pub fn era_reward_span_index(era: EraNumber) -> EraNumber {
             era.saturating_sub(era % T::EraRewardSpanLength::get())
         }
 
@@ -1556,7 +1560,7 @@ pub mod pallet {
         }
 
         /// Unlocking period expressed in the number of blocks.
-        pub(crate) fn unlock_period() -> BlockNumber {
+        pub fn unlocking_period() -> BlockNumber {
             T::CycleConfiguration::blocks_per_era().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
@@ -1655,7 +1659,9 @@ pub mod pallet {
             // In case when tier has 1 more free slot, but two dApps with exactly same score satisfy the threshold,
             // one of them will be assigned to the tier, and the other one will be assigned to the lower tier, if it exists.
             //
-            // There is no explicit definition of which dApp gets the advantage - it's decided by dApp IDs hash & the unstable sort algorithm.
+            // In the current implementation, the dApp with the lower dApp Id has the advantage.
+            // There is no guarantee this will persist in the future, so it's best for dApps to do their
+            // best to avoid getting themselves into such situations.
 
             // 4. Calculate rewards.
             let tier_rewards = tier_config
@@ -1842,7 +1848,7 @@ pub mod pallet {
 
             CurrentEraInfo::<T>::put(era_info);
 
-            let era_span_index = Self::era_reward_index(current_era);
+            let era_span_index = Self::era_reward_span_index(current_era);
             let mut span = EraRewards::<T>::get(&era_span_index).unwrap_or(EraRewardSpan::new());
             if let Err(_) = span.push(current_era, era_reward) {
                 // This must never happen but we log the error just in case.

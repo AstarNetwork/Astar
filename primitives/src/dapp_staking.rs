@@ -18,6 +18,12 @@
 
 use super::{Balance, BlockNumber};
 
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+
+use frame_support::RuntimeDebug;
+use sp_core::H160;
+use sp_std::hash::Hash;
+
 /// Configuration for cycles, periods, subperiods & eras.
 ///
 /// * `cycle` - Time unit similar to 'year' in the real world. Consists of one or more periods. At the beginning of each cycle, inflation is recalculated.
@@ -82,4 +88,51 @@ pub trait StakingRewardHandler<AccountId> {
 
     /// Attempts to pay out the rewards to the beneficiary.
     fn payout_reward(beneficiary: &AccountId, reward: Balance) -> Result<(), ()>;
+}
+
+/// Trait defining the interface for dApp staking `smart contract types` handler.
+///
+/// It can be used to create a representation of the specified smart contract instance type.
+pub trait SmartContractHandle<AccountId> {
+    /// Create a new smart contract representation for the specified EVM address.
+    fn evm(address: H160) -> Self;
+    /// Create a new smart contract representation for the specified Wasm address.
+    fn wasm(address: AccountId) -> Self;
+}
+
+/// Multi-VM pointer to smart contract instance.
+#[derive(
+    PartialEq,
+    Eq,
+    Copy,
+    Clone,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    MaxEncodedLen,
+    Hash,
+    scale_info::TypeInfo,
+)]
+pub enum SmartContract<AccountId> {
+    /// EVM smart contract instance.
+    Evm(H160),
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
+}
+
+// TODO: remove this once dApps staking v2 has been removed.
+impl<AccountId> Default for SmartContract<AccountId> {
+    fn default() -> Self {
+        Self::evm([0x01; 20].into())
+    }
+}
+
+impl<AccountId> SmartContractHandle<AccountId> for SmartContract<AccountId> {
+    fn evm(address: H160) -> Self {
+        Self::Evm(address)
+    }
+
+    fn wasm(address: AccountId) -> Self {
+        Self::Wasm(address)
+    }
 }
