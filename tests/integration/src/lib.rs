@@ -23,8 +23,10 @@
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod setup;
 
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod proxy;
+#[cfg(any(feature = "shibuya"))]
+mod proxy_new;
+#[cfg(any(feature = "shiden", feature = "astar"))]
+mod proxy_old;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod assets;
@@ -33,6 +35,9 @@ mod assets;
 mod xvm;
 
 #[cfg(any(feature = "shibuya"))]
-mod dispatch_precompile_filter;
+mod dispatch_precompile_filter_new;
+#[cfg(any(feature = "shiden", feature = "astar"))]
+mod dispatch_precompile_filter_old;
+
 #[cfg(feature = "shibuya")]
 mod unified_accounts;
