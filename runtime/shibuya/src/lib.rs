@@ -453,7 +453,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MaxNumberOfStakedContracts = ConstU32<8>;
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
-    type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
@@ -1559,7 +1559,7 @@ mod benches {
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapps_staking, DappsStaking]
-        [pallet_dapp_staking_v3, DappsStaking]
+        [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_dapp_staking_migration, DappStakingMigration]
         [pallet_xc_asset_config, XcAssetConfig]
