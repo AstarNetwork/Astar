@@ -1938,7 +1938,7 @@ pub mod pallet {
     }
 }
 
-/// `OnRuntimeUpgrade` logic used to set & configure
+/// `OnRuntimeUpgrade` logic used to set & configure init dApp staking v3 storage items.
 pub struct DAppStakingV3InitConfig<T, G>(PhantomData<(T, G)>);
 impl<
         T: Config,

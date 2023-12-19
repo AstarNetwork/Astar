@@ -431,6 +431,8 @@ impl<AccountId: From<[u8; 32]>> From<[u8; 32]> for SmartContract<AccountId> {
     }
 }
 
+// Placeholder until we introduce a pallet for this.
+// Real solution will be an oracle.
 pub struct DummyPriceProvider;
 impl pallet_dapp_staking_v3::PriceProvider for DummyPriceProvider {
     fn average_price() -> FixedU64 {
@@ -1391,9 +1393,16 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
+parameter_types! {
+    pub const BlockRewardName: &'static str = "BlockReward";
+}
 pub type Migrations = (
     pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParams>,
     pallet_dapp_staking_v3::DAppStakingV3InitConfig<Runtime, InitDappStakingv3Params>,
+    frame_support::migrations::RemovePallet<
+        BlockRewardName,
+        <Runtime as frame_system::Config>::DbWeight,
+    >,
     // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode.
     // But it's most important for testing with try-runtime.
     pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
