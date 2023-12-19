@@ -1288,7 +1288,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
     }
 
     // 4. Verify era reward
-    let era_span_index = DappStaking::era_reward_index(pre_protoc_state.era);
+    let era_span_index = DappStaking::era_reward_span_index(pre_protoc_state.era);
     let maybe_pre_era_reward_span = pre_snapshot.era_rewards.get(&era_span_index);
     let post_era_reward_span = post_snapshot
         .era_rewards
@@ -1467,10 +1467,10 @@ pub(crate) fn required_number_of_reward_claims(account: AccountId) -> u32 {
     };
 
     let era_span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
-    let first = DappStaking::era_reward_index(range.0)
+    let first = DappStaking::era_reward_span_index(range.0)
         .checked_div(era_span_length)
         .unwrap();
-    let second = DappStaking::era_reward_index(range.1)
+    let second = DappStaking::era_reward_span_index(range.1)
         .checked_div(era_span_length)
         .unwrap();
 

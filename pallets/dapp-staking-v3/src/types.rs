@@ -84,6 +84,12 @@ pub type AccountLedgerFor<T> = AccountLedger<<T as Config>::MaxUnlockingChunks>;
 pub type DAppTierRewardsFor<T> =
     DAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
 
+// Convenience type for `EraRewardSpan` usage.
+pub type EraRewardSpanFor<T> = EraRewardSpan<<T as Config>::EraRewardSpanLength>;
+
+// Convenience type for `DAppInfo` usage.
+pub type DAppInfoFor<T> = DAppInfo<<T as frame_system::Config>::AccountId>;
+
 /// Era number type
 pub type EraNumber = u32;
 /// Period number type

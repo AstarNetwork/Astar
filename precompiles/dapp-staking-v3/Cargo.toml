@@ -1,0 +1,62 @@
+[package]
+name = "pallet-evm-precompile-dapp-staking-v3"
+version = "0.1.0"
+license = "GPL-3.0-or-later"
+description = "dApp Staking EVM precompiles"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+log = { workspace = true }
+num_enum = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# Astar
+astar-primitives = { workspace = true }
+pallet-dapp-staking-v3 = { workspace = true }
+precompile-utils = { workspace = true, default-features = false }
+
+# Frontier
+fp-evm = { workspace = true }
+pallet-evm = { workspace = true }
+
+[dev-dependencies]
+assert_matches = { workspace = true }
+derive_more = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true }
+precompile-utils = { workspace = true, features = ["testing"] }
+serde = { workspace = true }
+sha3 = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-io = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"astar-primitives/std",
+	"sp-std/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"fp-evm/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-dapp-staking-v3/std",
+	"pallet-evm/std",
+	"precompile-utils/std",
+	"pallet-balances/std",
+	"sp-arithmetic/std",
+]
+runtime-benchmarks = ["pallet-dapp-staking-v3/runtime-benchmarks"]
