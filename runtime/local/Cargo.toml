@@ -68,7 +68,6 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 # Astar pallets
 astar-primitives = { workspace = true }
 pallet-block-rewards-hybrid = { workspace = true }
-pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-dapp-staking-migration = { workspace = true }
@@ -124,7 +123,6 @@ std = [
 	"pallet-block-rewards-hybrid/std",
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
-	"pallet-chain-extension-dapps-staking/std",
 	"pallet-chain-extension-xvm/std",
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dapps-staking/std",

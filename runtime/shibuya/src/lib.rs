@@ -22,7 +22,6 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-use astar_primitives::evm::HashedDefaultMappings;
 use cumulus_pallet_parachain_system::AnyRelayNumber;
 use frame_support::{
     construct_runtime,
@@ -69,7 +68,9 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 use astar_primitives::{
-    dapp_staking::CycleConfiguration, evm::EvmRevertCodeHandler, xcm::AssetLocationIdConverter,
+    dapp_staking::{CycleConfiguration, SmartContract},
+    evm::{EvmRevertCodeHandler, HashedDefaultMappings},
+    xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Index,
 };
 
@@ -406,29 +407,6 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<10>;
     type ForcePalletDisabled = ConstBool<false>; // TODO: set to true before merge, false is needed for benchmarks!
-}
-
-/// Multi-VM pointer to smart contract instance.
-#[derive(
-    PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, MaxEncodedLen, scale_info::TypeInfo,
-)]
-pub enum SmartContract<AccountId> {
-    /// EVM smart contract instance.
-    Evm(sp_core::H160),
-    /// Wasm smart contract instance.
-    Wasm(AccountId),
-}
-
-impl<AccountId> Default for SmartContract<AccountId> {
-    fn default() -> Self {
-        SmartContract::Evm(H160::repeat_byte(0x00))
-    }
-}
-
-impl<AccountId: From<[u8; 32]>> From<[u8; 32]> for SmartContract<AccountId> {
-    fn from(input: [u8; 32]) -> Self {
-        SmartContract::Wasm(input.into())
-    }
 }
 
 // Placeholder until we introduce a pallet for this.
