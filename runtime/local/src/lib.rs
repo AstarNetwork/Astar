@@ -62,7 +62,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContract, StakingRewardHandler},
+    dapp_staking::{CycleConfiguration, SmartContract},
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     Address, AssetId, Balance, BlockNumber, Hash, Header, Index,
 };

@@ -2444,17 +2444,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dapps-staking-chain-extension-types"
-version = "1.1.0"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
-]
-
-[[package]]
 name = "darling"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6040,7 +6029,6 @@ dependencies = [
  "pallet-balances",
  "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
- "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
  "pallet-collective",
@@ -7489,25 +7477,6 @@ dependencies = [
  "pallet-assets",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-chain-extension-dapps-staking"
-version = "1.1.0"
-dependencies = [
- "dapps-staking-chain-extension-types",
- "frame-support",
- "frame-system",
- "log",
- "num-traits",
- "pallet-contracts",
- "pallet-contracts-primitives",
- "pallet-dapps-staking",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
