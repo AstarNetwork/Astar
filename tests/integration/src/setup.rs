@@ -243,7 +243,7 @@ pub fn run_to_block(n: u32) {
         AuraExt::on_initialize(block_number);
         Ethereum::on_initialize(block_number);
         DynamicEvmBaseFee::on_initialize(block_number);
-        #[cfg(any(feature = "shibuya", feature = "shiden", features = "astar"))]
+        #[cfg(any(feature = "shibuya", feature = "shiden"))]
         RandomnessCollectiveFlip::on_initialize(block_number);
 
         XcmpQueue::on_idle(block_number, Weight::MAX);

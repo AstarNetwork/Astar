@@ -19,7 +19,7 @@
 use super::{Pallet as Migration, *};
 
 use frame_benchmarking::{account as benchmark_account, v2::*};
-use frame_support::{assert_ok, storage::unhashed::put_raw, traits::Currency};
+use frame_support::{assert_ok, traits::Currency};
 
 /// Generate an unique smart contract using the provided index as a sort-of indetifier
 fn smart_contract<T: pallet_dapps_staking::Config>(index: u8) -> T::SmartContract {
@@ -107,20 +107,13 @@ mod benchmarks {
 
     #[benchmark]
     fn cleanup_old_storage_success() {
-        let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
-        let _ = clear_prefix(&hashed_prefix, None);
-
-        put_raw(&hashed_prefix, &[0xFF; 128]);
+        initial_config::<T>();
 
         #[block]
         {
-            if cfg!(test) {
-                // TODO: for some reason, tests always fail here, nothing gets removed from storage.
-                // When tested against real runtime, it works just fine.
-                let _ = Migration::<T>::cleanup_old_storage(1);
-            } else {
-                assert!(Migration::<T>::cleanup_old_storage(1).is_ok());
-            }
+            // TODO: for some reason, tests always fail here, nothing gets removed from storage.
+            // When tested against real runtime, it works just fine.
+            let _ = Migration::<T>::cleanup_old_storage(1);
         }
     }
 
