@@ -411,8 +411,12 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn claim_staker_rewards_past_period(x: Linear<1, { T::EraRewardSpanLength::get() }>) {
+    fn claim_staker_rewards_past_period(x: Linear<1, { T::EraRewardSpanLength::get().min(8) }>) {
         initial_config::<T>();
+
+        // TODO: this benchmark needs to be improved since it's possible that
+        // we cannot stake because next era is part of the next period.
+        // Suggestion is to simplify it, and maybe allow custom benchmark params to be specified in the runtime.
 
         // Prepare staker & register smart contract
         let staker: T::AccountId = whitelisted_caller();
@@ -466,7 +470,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn claim_staker_rewards_ongoing_period(x: Linear<1, { T::EraRewardSpanLength::get() }>) {
+    fn claim_staker_rewards_ongoing_period(x: Linear<1, { T::EraRewardSpanLength::get().min(8) }>) {
         initial_config::<T>();
 
         // Prepare staker & register smart contract
@@ -574,7 +578,7 @@ mod benchmarks {
             smart_contract.clone(),
         ));
 
-        let amount = T::MinimumLockedAmount::get() * 1000 * UNIT;
+        let amount = MIN_TIER_THRESHOLD * 1000;
         T::BenchmarkHelper::set_balance(&owner, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(owner.clone()).into(),
@@ -610,16 +614,17 @@ mod benchmarks {
             ));
         }
 
+        // Advance enough eras so dApp reward can be claimed.
+        advance_to_next_subperiod::<T>();
+
         // This is a hacky part to ensure we accomodate max number of contracts.
         TierConfig::<T>::mutate(|config| {
             let max_number_of_contracts: u16 = T::MaxNumberOfContracts::get().try_into().unwrap();
             config.number_of_slots = max_number_of_contracts;
             config.slots_per_tier[0] = max_number_of_contracts;
             config.slots_per_tier[1..].iter_mut().for_each(|x| *x = 0);
+            config.tier_thresholds[0] = TierThreshold::FixedTvlAmount { amount: 1 };
         });
-
-        // Advance enough eras so dApp reward can be claimed.
-        advance_to_next_subperiod::<T>();
         advance_to_next_era::<T>();
         let claim_era = ActiveProtocolState::<T>::get().era - 1;
 
