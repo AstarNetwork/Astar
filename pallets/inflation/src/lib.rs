@@ -102,9 +102,13 @@ use astar_primitives::{
     dapp_staking::{CycleConfiguration, StakingRewardHandler},
     Balance, BlockNumber,
 };
-use frame_support::{pallet_prelude::*, traits::Currency};
+use frame_support::{
+    pallet_prelude::*,
+    traits::{Currency, GetStorageVersion, OnRuntimeUpgrade},
+};
 use frame_system::{ensure_root, pallet_prelude::*};
 use sp_runtime::{traits::CheckedAdd, Perquintill};
+use sp_std::marker::PhantomData;
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -592,4 +596,39 @@ pub trait PayoutPerBlock<Imbalance> {
 
     /// Payout reward to the collator responsible for producing the block.
     fn collators(reward: Imbalance);
+}
+
+/// `OnRuntimeUpgrade` logic for integrating this pallet into the live network.
+pub struct PalletInflationInitConfig<T, P>(PhantomData<(T, P)>);
+impl<T: Config, P: Get<InflationParameters>> OnRuntimeUpgrade for PalletInflationInitConfig<T, P> {
+    fn on_runtime_upgrade() -> Weight {
+        if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
+            return T::DbWeight::get().reads(1);
+        }
+
+        // 1. Get & set inflation parameters
+        let inflation_params = P::get();
+        InflationParams::<T>::put(inflation_params.clone());
+
+        // 2. Calculation inflation config, set it & depossit event
+        let now = frame_system::Pallet::<T>::block_number();
+        let config = Pallet::<T>::recalculate_inflation(now);
+        ActiveInflationConfig::<T>::put(config.clone());
+
+        Pallet::<T>::deposit_event(Event::<T>::NewInflationConfiguration { config });
+
+        // 3. Set version
+        STORAGE_VERSION.put::<Pallet<T>>();
+
+        T::WeightInfo::hook_with_recalculation()
+            .saturating_add(T::DbWeight::get().reads_writes(1, 2))
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+        assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
+        assert!(InflationParams::<T>::get().is_valid());
+
+        Ok(())
+    }
 }

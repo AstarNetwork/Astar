@@ -1392,20 +1392,18 @@ pub type Executive = frame_executive::Executive<
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    PalletInflationInitConfig,
+    pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParams>,
     // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode.
     // But it's most important for testing with try-runtime.
     pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
     // TODO: add migration to configure pallet inflation & dApp staking v3 init config
 );
 
-/// `OnRuntimeUpgrade` logic used to set & configure the pallet inflation storage
-pub struct PalletInflationInitConfig;
-impl OnRuntimeUpgrade for PalletInflationInitConfig {
-    fn on_runtime_upgrade() -> Weight {
-        // 1. Inflation parameters
-        // TODO: set parameters properly after some experimentation
-        let inflation_params = pallet_inflation::InflationParameters {
+pub struct InitInflationParams;
+impl Get<pallet_inflation::InflationParameters> for InitInflationParams {
+    fn get() -> pallet_inflation::InflationParameters {
+        // TODO: set proper inflation parameters
+        pallet_inflation::InflationParameters {
             max_inflation_rate: Perquintill::from_percent(7),
             treasury_part: Perquintill::from_percent(5),
             collators_part: Perquintill::from_percent(3),
@@ -1414,49 +1412,87 @@ impl OnRuntimeUpgrade for PalletInflationInitConfig {
             adjustable_stakers_part: Perquintill::from_percent(35),
             bonus_part: Perquintill::from_percent(12),
             ideal_staking_rate: Perquintill::from_percent(50),
-        };
-
-        // 2. Active Inflation Config
-        let block_number = System::block_number();
-        let active_inflation_confing = pallet_inflation::InflationConfiguration {
-            // We want to do active inflation configuration recalculation immediately!
-            recalculation_block: block_number,
-            // Rest of the parameters are irelevant, they will immediately be overwritten.
-            // Not using default just so it's clear for review what's set.
-            issuance_safety_cap: 0,
-            collator_reward_per_block: 0,
-            treasury_reward_per_block: 0,
-            dapp_reward_pool_per_era: 0,
-            base_staker_reward_pool_per_era: 0,
-            adjustable_staker_reward_pool_per_era: 0,
-            bonus_reward_pool_per_period: 0,
-            ideal_staking_rate: Perquintill::from_percent(50),
-        };
-        // TODO: double-check from which block the new runtime is used.
-
-        // 3. Set storage
-        pallet_inflation::InflationParams::<Runtime>::put(inflation_params);
-        pallet_inflation::ActiveInflationConfig::<Runtime>::put(active_inflation_confing);
-        pallet_inflation::STORAGE_VERSION.put::<pallet_inflation::Pallet<Runtime>>();
-
-        <Runtime as frame_system::Config>::DbWeight::get().writes(3)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-        use frame_support::traits::GetStorageVersion;
-        assert_eq!(Inflation::on_chain_storage_version(), 1);
-        assert!(pallet_inflation::InflationParams::<Runtime>::get().is_valid());
-
-        Ok(())
+        }
     }
 }
 
-/// `OnRuntimeUpgrade` logic used to set & configure the pallet inflation storage
+use frame_support::BoundedVec;
+use pallet_dapp_staking_v3::{
+    ActiveProtocolState, ProtocolState, StaticTierParams, Subperiod, TierConfig, TierParameters,
+    TiersConfiguration,
+};
 pub struct DAppStakingV3InitConfig;
 impl OnRuntimeUpgrade for DAppStakingV3InitConfig {
     fn on_runtime_upgrade() -> Weight {
-        // TODO: continue here
+        // 1. Prepare active protocol state
+        let block_number = System::block_number();
+        let current_era = pallet_dapps_staking::CurrentEra::<Runtime>::get();
+
+        // TODO
+        let protocol_state = ProtocolState {
+            era: current_era,
+            next_era_start: block_number.saturating_add(1),
+            period_info: pallet_dapp_staking_v3::PeriodInfo {
+                number: 0,
+                subperiod: Subperiod::BuildAndEarn,
+                next_subperiod_start_era: 2,
+            },
+            maintenance: true,
+        };
+
+        // 2. Tier Params
+        let reward_portion = BoundedVec::try_from(vec![
+            Permill::from_percent(40),
+            Permill::from_percent(30),
+            Permill::from_percent(20),
+            Permill::from_percent(10),
+        ])
+        .unwrap_or_default();
+
+        let tier_thresholds = BoundedVec::try_from(vec![
+            TierThreshold::DynamicTvlAmount {
+                amount: SBY.saturating_mul(1_000_000),
+                minimum_amount: SBY.saturating_mul(150_000),
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: SBY.saturating_mul(100_000),
+                minimum_amount: SBY.saturating_mul(60_000),
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: SBY.saturating_mul(50_000),
+                minimum_amount: SBY.saturating_mul(15_000),
+            },
+            TierThreshold::FixedTvlAmount {
+                amount: SBY.saturating_mul(10_000),
+            },
+        ])
+        .unwrap_or_default();
+
+        let tier_params =
+            TierParameters::<<Runtime as pallet_dapp_staking_v3::Config>::NumberOfTiers> {
+                reward_portion: reward_portion.clone(),
+                slot_distribution: BoundedVec::try_from(vec![
+                    Permill::from_percent(10),
+                    Permill::from_percent(20),
+                    Permill::from_percent(30),
+                    Permill::from_percent(40),
+                ])
+                .unwrap_or_default(),
+                tier_thresholds: tier_thresholds.clone(),
+            };
+
+        // 3. Init tier config
+        let init_tier_config = TiersConfiguration {
+            number_of_slots: 100,
+            slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap_or_default(),
+            reward_portion,
+            tier_thresholds,
+        };
+
+        // 4. Set storage
+        ActiveProtocolState::<Runtime>::put(protocol_state);
+        StaticTierParams::<Runtime>::put(tier_params);
+        TierConfig::<Runtime>::put(init_tier_config);
 
         <Runtime as frame_system::Config>::DbWeight::get().writes(3)
     }

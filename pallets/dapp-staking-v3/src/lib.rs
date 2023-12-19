@@ -39,7 +39,7 @@ use frame_support::{
     pallet_prelude::*,
     traits::{
         fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},
-        StorageVersion,
+        OnRuntimeUpgrade, StorageVersion,
     },
     weights::Weight,
 };
@@ -1935,5 +1935,64 @@ pub mod pallet {
 
             T::WeightInfo::on_idle_cleanup()
         }
+    }
+}
+
+/// `OnRuntimeUpgrade` logic used to set & configure
+pub struct DAppStakingV3InitConfig<T, G>(PhantomData<(T, G)>);
+impl<
+        T: Config,
+        G: Get<(
+            EraNumber,
+            TierParameters<T::NumberOfTiers>,
+            TiersConfiguration<T::NumberOfTiers>,
+        )>,
+    > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G>
+{
+    fn on_runtime_upgrade() -> Weight {
+        if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
+            return T::DbWeight::get().reads(1);
+        }
+
+        // 0. Unwrap arguments
+        let (init_era, tier_params, init_tier_config) = G::get();
+
+        // 1. Prepare active protocol state
+        let now = frame_system::Pallet::<T>::block_number();
+        let voting_period_length = Pallet::<T>::blocks_per_voting_period();
+
+        let protocol_state = ProtocolState {
+            era: init_era,
+            next_era_start: now.saturating_add(voting_period_length),
+            period_info: PeriodInfo {
+                number: 1,
+                subperiod: Subperiod::Voting,
+                next_subperiod_start_era: init_era.saturating_add(1),
+            },
+            maintenance: true,
+        };
+
+        // 2. Write necessary items into storage
+        ActiveProtocolState::<T>::put(protocol_state);
+        StaticTierParams::<T>::put(tier_params);
+        TierConfig::<T>::put(init_tier_config);
+        STORAGE_VERSION.put::<Pallet<T>>();
+
+        // 3. Emit events to make indexers happy
+        Pallet::<T>::deposit_event(Event::<T>::NewEra { era: init_era });
+        Pallet::<T>::deposit_event(Event::<T>::NewSubperiod {
+            subperiod: Subperiod::Voting,
+            number: 1,
+        });
+
+        T::DbWeight::get().reads_writes(1, 4)
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+        assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
+        assert!(!ActiveProtocolState::<T>::get().maintenance);
+
+        Ok(())
     }
 }

@@ -18,6 +18,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 scale-info = { workspace = true }
 sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 frame-benchmarking = { workspace = true, optional = true }
 
@@ -33,6 +34,7 @@ std = [
 	"sp-core/std",
 	"scale-info/std",
 	"serde/std",
+	"sp-std/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
