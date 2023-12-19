@@ -170,7 +170,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 117,
+    spec_version: 118,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1141,7 +1141,7 @@ pub enum ProxyType {
     /// Only reject_announcement call from pallet proxy allowed for proxy account
     CancelProxy,
     /// All runtime calls from pallet DappStaking allowed for proxy account
-    DappsStaking,
+    DappStaking,
     /// Only claim_staker call from pallet DappStaking allowed for proxy account
     StakerRewardClaim,
 }
@@ -1176,7 +1176,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
 				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
 				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
-                        | RuntimeCall::DappsStaking(..)
+                        | RuntimeCall::DappStaking(..)
                         // Skip entire Assets pallet
                         | RuntimeCall::CollatorSelection(..)
                         | RuntimeCall::Session(..)
@@ -1227,13 +1227,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 )
             }
             // All runtime calls from pallet DappStaking allowed for proxy account
-            ProxyType::DappsStaking => {
-                matches!(c, RuntimeCall::DappsStaking(..))
+            ProxyType::DappStaking => {
+                matches!(c, RuntimeCall::DappStaking(..))
             }
             ProxyType::StakerRewardClaim => {
                 matches!(
                     c,
-                    RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
+                    RuntimeCall::DappStaking(
+                        pallet_dapp_staking_v3::Call::claim_staker_rewards { .. }
+                    )
                 )
             }
         }
@@ -1245,7 +1247,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             (ProxyType::Any, _) => true,
             (_, ProxyType::Any) => false,
             (ProxyType::NonTransfer, _) => true,
-            (ProxyType::DappsStaking, ProxyType::StakerRewardClaim) => true,
+            (ProxyType::DappStaking, ProxyType::StakerRewardClaim) => true,
             _ => false,
         }
     }

@@ -31,10 +31,7 @@ use parity_scale_codec::Compact;
 #[test]
 fn filter_accepts_batch_call_with_whitelisted_calls() {
     ExtBuilder::default().build().execute_with(|| {
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-        let inner_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
-            contract_id: contract.clone(),
-        });
+        let inner_call = RuntimeCall::DappStaking(DappStakingCall::Call::claim_staker_rewards {});
         let call = RuntimeCall::Utility(UtilityCall::batch {
             calls: vec![inner_call],
         });
@@ -60,10 +57,7 @@ fn filter_rejects_non_whitelisted_batch_calls() {
 
         // CASE 2 - now whitelisted mixed with whitelisted calls
 
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-        let staking_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
-            contract_id: contract.clone(),
-        });
+        let staking_call = RuntimeCall::DappStaking(DappStakingCall::Call::claim_staker_rewards {});
         let staking = Box::new(staking_call);
 
         let call = Box::new(RuntimeCall::Utility(UtilityCall::batch {
@@ -79,10 +73,7 @@ fn filter_rejects_non_whitelisted_batch_calls() {
 fn filter_accepts_whitelisted_calls() {
     ExtBuilder::default().build().execute_with(|| {
         // Dappstaking call works
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-        let stake_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
-            contract_id: contract.clone(),
-        });
+        let stake_call = RuntimeCall::DappStaking(DappStakingCall::Call::claim_staker_rewards {});
         assert!(WhitelistedCalls::contains(&stake_call));
 
         // Pallet::Assets transfer call works
@@ -116,13 +107,8 @@ fn filter_rejects_non_whitelisted_calls() {
 #[test]
 fn filter_accepts_whitelisted_batch_all_calls() {
     ExtBuilder::default().build().execute_with(|| {
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-        let inner_call1 = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
-            contract_id: contract.clone(),
-        });
-        let inner_call2 = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
-            contract_id: contract.clone(),
-        });
+        let inner_call1 = RuntimeCall::DappStaking(DappStakingCall::Call::claim_staker_rewards {});
+        let inner_call2 = RuntimeCall::DappStaking(DappStakingCall::Call::claim_staker_rewards {});
         let transfer_call = RuntimeCall::Assets(pallet_assets::Call::transfer {
             id: Compact(0),
             target: MultiAddress::Address20(H160::repeat_byte(0x01).into()),
@@ -143,7 +129,7 @@ fn test_correct_dispatch_info_works() {
         struct AccountId;
         enum RuntimeCall {
             System,
-            DappsStaking,
+            DappStaking,
         }
         impl GetDispatchInfo for RuntimeCall {
             fn get_dispatch_info(&self) -> DispatchInfo {
@@ -154,7 +140,7 @@ fn test_correct_dispatch_info_works() {
         impl Contains<RuntimeCall> for Filter {
             fn contains(t: &RuntimeCall) -> bool {
                 match t {
-                    RuntimeCall::DappsStaking => true,
+                    RuntimeCall::DappStaking => true,
                     _ => false,
                 }
             }
@@ -163,7 +149,7 @@ fn test_correct_dispatch_info_works() {
         assert_eq!(
             DispatchFilterValidate::<RuntimeCall, Filter>::validate_before_dispatch(
                 &AccountId,
-                &RuntimeCall::DappsStaking
+                &RuntimeCall::DappStaking
             ),
             Option::None
         );
@@ -187,7 +173,7 @@ fn test_incorrect_dispatch_info_fails() {
         struct Filter;
         struct AccountId;
         enum RuntimeCall {
-            DappsStaking,
+            DappStaking,
         }
         impl GetDispatchInfo for RuntimeCall {
             fn get_dispatch_info(&self) -> DispatchInfo {
@@ -202,7 +188,7 @@ fn test_incorrect_dispatch_info_fails() {
         impl Contains<RuntimeCall> for Filter {
             fn contains(t: &RuntimeCall) -> bool {
                 match t {
-                    RuntimeCall::DappsStaking => true,
+                    RuntimeCall::DappStaking => true,
                 }
             }
         }
@@ -211,7 +197,7 @@ fn test_incorrect_dispatch_info_fails() {
         assert_eq!(
             DispatchFilterValidate::<RuntimeCall, Filter>::validate_before_dispatch(
                 &AccountId,
-                &RuntimeCall::DappsStaking
+                &RuntimeCall::DappStaking
             ),
             Option::Some(PrecompileFailure::Error {
                 exit_status: ExitError::Other("invalid call".into()),

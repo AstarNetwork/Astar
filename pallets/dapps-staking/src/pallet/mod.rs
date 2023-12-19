@@ -306,7 +306,7 @@ pub mod pallet {
             // Runtime upgrade should be timed so we ensure that we complete it before
             // a new era is triggered. This code is just a safety net to ensure nothing is broken
             // if we fail to do that.
-            if PalletDisabled::<T>::get() {
+            if PalletDisabled::<T>::get() || T::ForcePalletDisabled::get() {
                 return T::DbWeight::get().reads(1);
             }
 
