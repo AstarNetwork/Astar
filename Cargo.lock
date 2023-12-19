@@ -13201,7 +13201,6 @@ dependencies = [
  "pallet-balances",
  "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
- "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
  "pallet-collator-selection",

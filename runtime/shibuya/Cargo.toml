@@ -97,7 +97,6 @@ orml-xtokens = { workspace = true }
 # Astar pallets
 astar-primitives = { workspace = true }
 pallet-block-rewards-hybrid = { workspace = true }
-pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-collator-selection = { workspace = true }
@@ -165,7 +164,6 @@ std = [
 	"pallet-block-rewards-hybrid/std",
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
-	"pallet-chain-extension-dapps-staking/std",
 	"pallet-chain-extension-xvm/std",
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dynamic-evm-base-fee/std",
