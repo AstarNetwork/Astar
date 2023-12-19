@@ -1393,12 +1393,14 @@ pub type Executive = frame_executive::Executive<
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
     pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParams>,
+    pallet_dapps_staking_v3::DAppStakingV3InitConfig<Runtime, InitDappStakingv3Params>,
     // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode.
     // But it's most important for testing with try-runtime.
     pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
     // TODO: add migration to configure pallet inflation & dApp staking v3 init config
 );
 
+/// Used to initialize inflation parameters for the runtime.
 pub struct InitInflationParams;
 impl Get<pallet_inflation::InflationParameters> for InitInflationParams {
     fn get() -> pallet_inflation::InflationParameters {
@@ -1421,26 +1423,16 @@ use pallet_dapp_staking_v3::{
     ActiveProtocolState, ProtocolState, StaticTierParams, Subperiod, TierConfig, TierParameters,
     TiersConfiguration,
 };
-pub struct DAppStakingV3InitConfig;
-impl OnRuntimeUpgrade for DAppStakingV3InitConfig {
-    fn on_runtime_upgrade() -> Weight {
-        // 1. Prepare active protocol state
-        let block_number = System::block_number();
-        let current_era = pallet_dapps_staking::CurrentEra::<Runtime>::get();
+/// Used to initialize dApp staking parameters for the runtime.
+pub struct InitDappStakingv3Params;
+impl Get<(EraNumber, TierParameters, TiersConfiguration)> for InitDappStakingv3Params {
+    fn get() -> (EraNumber, TierParameters, TiersConfiguration) {
+        // 1. Prepare init values
 
-        // TODO
-        let protocol_state = ProtocolState {
-            era: current_era,
-            next_era_start: block_number.saturating_add(1),
-            period_info: pallet_dapp_staking_v3::PeriodInfo {
-                number: 0,
-                subperiod: Subperiod::BuildAndEarn,
-                next_subperiod_start_era: 2,
-            },
-            maintenance: true,
-        };
+        // Init era of dApp staking v3 should be the next era after dApp staking v2
+        let init_era = pallet_dapps_staking::CurrentEra::<Runtime>::get().saturating_add(1);
 
-        // 2. Tier Params
+        // Reward portions according to the Tokenomics 2.0 report
         let reward_portion = BoundedVec::try_from(vec![
             Permill::from_percent(40),
             Permill::from_percent(30),
@@ -1449,6 +1441,7 @@ impl OnRuntimeUpgrade for DAppStakingV3InitConfig {
         ])
         .unwrap_or_default();
 
+        // Tier thresholds adjusted according to numbers observed on Shibuya
         let tier_thresholds = BoundedVec::try_from(vec![
             TierThreshold::DynamicTvlAmount {
                 amount: SBY.saturating_mul(1_000_000),
@@ -1468,6 +1461,7 @@ impl OnRuntimeUpgrade for DAppStakingV3InitConfig {
         ])
         .unwrap_or_default();
 
+        // 2. Tier params
         let tier_params =
             TierParameters::<<Runtime as pallet_dapp_staking_v3::Config>::NumberOfTiers> {
                 reward_portion: reward_portion.clone(),
@@ -1489,12 +1483,7 @@ impl OnRuntimeUpgrade for DAppStakingV3InitConfig {
             tier_thresholds,
         };
 
-        // 4. Set storage
-        ActiveProtocolState::<Runtime>::put(protocol_state);
-        StaticTierParams::<Runtime>::put(tier_params);
-        TierConfig::<Runtime>::put(init_tier_config);
-
-        <Runtime as frame_system::Config>::DbWeight::get().writes(3)
+        (init_era, tier_params, init_tier_config)
     }
 }
 

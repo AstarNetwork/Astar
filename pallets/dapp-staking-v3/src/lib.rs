@@ -1993,6 +1993,17 @@ impl<
         assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
         assert!(!ActiveProtocolState::<T>::get().maintenance);
 
+        let number_of_tiers = T::NumberOfTiers::get();
+
+        let tier_params = StaticTierParams::<T>::get();
+        assert_eq!(tier_params.reward_portion.len(), number_of_tiers as usize);
+        assert!(tier_params.is_valid());
+
+        let tier_config = TierConfig::<T>::get();
+        assert_eq!(tier_config.reward_portion.len(), number_of_tiers as usize);
+        assert_eq!(tier_config.slots_per_tier.len(), number_of_tiers as usize);
+        assert_eq!(tier_config.tier_thresholds.len(), number_of_tiers as usize);
+
         Ok(())
     }
 }
