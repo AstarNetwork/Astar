@@ -444,7 +444,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
-    type EraRewardSpanLength = ConstU32<32>; // TODO: experiment with this in benchmarks
+    type EraRewardSpanLength = ConstU32<16>; // TODO: experiment with this in benchmarks
     type RewardRetentionInPeriods = ConstU32<2>; // Low enough value so we can get some expired rewards during testing
     type MaxNumberOfContracts = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;

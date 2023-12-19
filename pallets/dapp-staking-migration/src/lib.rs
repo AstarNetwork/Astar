@@ -594,6 +594,13 @@ pub mod pallet {
                 })
                 .collect();
 
+            log::info!(
+                target: LOG_TARGET,
+                "Out of {} stakers, {} have sufficient amount to lock.",
+                pallet_dapps_staking::Ledger::<T>::iter().count(),
+                stakers.len(),
+            );
+
             let helper = Helper::<T> {
                 developers,
                 stakers,
@@ -658,6 +665,12 @@ pub mod pallet {
             assert_eq!(
                 pallet_dapp_staking_v3::CurrentEraInfo::<T>::get().total_locked,
                 total_locked
+            );
+
+            log::info!(
+                target: LOG_TARGET,
+                "Total locked amount in the new pallet: {:?}.",
+                total_locked,
             );
 
             // 3. Check that rest of the storage has been cleaned up.
