@@ -326,8 +326,9 @@ pub(crate) fn assert_unlock(account: AccountId, amount: Balance) {
     );
 
     assert_eq!(
-        init_frozen_balance - expected_unlock_amount,
-        Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account)
+        init_frozen_balance ,
+        Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account),
+        "Frozen balance must remain the same since the funds are still locked/frozen, only undergoing the unlocking process."
     );
 }
 
