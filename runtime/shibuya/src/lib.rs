@@ -406,7 +406,11 @@ impl pallet_dapps_staking::Config for Runtime {
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<10>;
-    type ForcePalletDisabled = ConstBool<false>; // TODO: set to true before merge, false is needed for benchmarks!
+    // Needed so benchmark can use the pallets extrinsics
+    #[cfg(feature = "runtime-benchmarks")]
+    type ForcePalletDisabled = ConstBool<false>;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type ForcePalletDisabled = ConstBool<true>;
 }
 
 // Placeholder until we introduce a pallet for this.
@@ -448,7 +452,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
-    type EraRewardSpanLength = ConstU32<16>; // TODO: experiment with this in benchmarks
+    type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<2>; // Low enough value so we can get some expired rewards during testing
     type MaxNumberOfContracts = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
@@ -1389,23 +1393,22 @@ pub type Migrations = (
     // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode.
     // But it's most important for testing with try-runtime.
     pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
-    // TODO: add migration to configure pallet inflation & dApp staking v3 init config
 );
 
 /// Used to initialize inflation parameters for the runtime.
 pub struct InitInflationParams;
 impl Get<pallet_inflation::InflationParameters> for InitInflationParams {
     fn get() -> pallet_inflation::InflationParameters {
-        // TODO: set proper inflation parameters
         pallet_inflation::InflationParameters {
-            max_inflation_rate: Perquintill::from_percent(7),
+            // Recalculation is done every two weeks, hence the small %.
+            max_inflation_rate: Perquintill::from_percent(1),
             treasury_part: Perquintill::from_percent(5),
             collators_part: Perquintill::from_percent(3),
             dapps_part: Perquintill::from_percent(20),
             base_stakers_part: Perquintill::from_percent(25),
             adjustable_stakers_part: Perquintill::from_percent(35),
             bonus_part: Perquintill::from_percent(12),
-            ideal_staking_rate: Perquintill::from_percent(50),
+            ideal_staking_rate: Perquintill::from_percent(20),
         }
     }
 }
