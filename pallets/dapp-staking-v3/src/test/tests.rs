@@ -25,7 +25,7 @@ use crate::{
 use frame_support::{
     assert_noop, assert_ok, assert_storage_noop,
     error::BadOrigin,
-    traits::{Currency, Get, OnFinalize, OnInitialize},
+    traits::{fungible::Unbalanced as FunUnbalanced, Currency, Get, OnFinalize, OnInitialize},
 };
 use sp_runtime::traits::Zero;
 
@@ -2518,5 +2518,64 @@ fn stake_after_period_ends_with_max_staked_contracts() {
             let smart_contract = MockSmartContract::Wasm(id.into());
             assert_stake(account, &smart_contract, 10);
         }
+    })
+}
+
+#[test]
+fn post_unlock_balance_cannot_be_transfered() {
+    ExtBuilder::build().execute_with(|| {
+        let staker = 2;
+
+        // Lock some of the free balance
+        let init_free_balance = Balances::free_balance(&staker);
+        let lock_amount = init_free_balance / 3;
+        assert_lock(staker, lock_amount);
+
+        // Make sure second account is empty
+        let other_account = 42;
+        assert_ok!(Balances::write_balance(&other_account, 0));
+
+        // 1. Ensure we can only transfer what is not locked/frozen.
+        assert_ok!(Balances::transfer_all(
+            RuntimeOrigin::signed(staker),
+            other_account,
+            true
+        ));
+        assert_eq!(
+            Balances::free_balance(&other_account),
+            init_free_balance - lock_amount,
+            "Only what is locked can be transferred."
+        );
+
+        // 2. Start the 'unlocking process' for the locked amount, but ensure it still cannot be transferred.
+        assert_unlock(staker, lock_amount);
+
+        assert_ok!(Balances::write_balance(&other_account, 0));
+        assert_ok!(Balances::transfer_all(
+            RuntimeOrigin::signed(staker),
+            other_account,
+            true
+        ));
+        assert!(
+            Balances::free_balance(&other_account).is_zero(),
+            "Nothing could have been transferred since it's still locked/frozen."
+        );
+
+        // 3. Claim the unlocked chunk, and ensure it can be transferred afterwards.
+        run_to_block(Ledger::<Test>::get(&staker).unlocking[0].unlock_block);
+        assert_claim_unlocked(staker);
+
+        assert_ok!(Balances::write_balance(&other_account, 0));
+        assert_ok!(Balances::transfer_all(
+            RuntimeOrigin::signed(staker),
+            other_account,
+            false
+        ));
+        assert_eq!(
+            Balances::free_balance(&other_account),
+            lock_amount,
+            "Everything should have been transferred."
+        );
+        assert!(Balances::free_balance(&staker).is_zero());
     })
 }
