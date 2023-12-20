@@ -280,6 +280,6 @@ fn trivial_fisher_yates_shuffle<T>(vector: &mut Vec<T>, random_seed: u64) {
     for i in (1..vector.len()).rev() {
         let j = rng % (i + 1);
         vector.swap(i, j);
-        rng = (rng.wrapping_mul(6364793005) + 1) as usize; // Some random number generation
+        rng = (rng.wrapping_mul(8427637) + 1) as usize; // Some random number generation
     }
 }
