@@ -24,10 +24,7 @@ use crate::{
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{
-        fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
-        ConstU128, ConstU32,
-    },
+    traits::{fungible::Mutate as FunMutate, ConstU128, ConstU32},
     weights::Weight,
 };
 use sp_arithmetic::fixed_point::FixedU64;
@@ -158,6 +155,7 @@ impl crate::BenchmarkHelper<MockSmartContract, AccountId>
     }
 
     fn set_balance(account: &AccountId, amount: Balance) {
+        use frame_support::traits::fungible::Unbalanced as FunUnbalanced;
         Balances::write_balance(account, amount)
             .expect("Must succeed in test/benchmark environment.");
     }
