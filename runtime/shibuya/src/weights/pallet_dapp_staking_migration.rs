@@ -40,22 +40,14 @@
 // --output=./benchmark-results/shibuya-dev/dapp_staking_migration_weights.rs
 // --template=./scripts/templates/weight-template.hbs
 
+
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
 
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use core::marker::PhantomData;
-
-/// Weight functions needed for pallet_dapp_staking_migration.
-pub trait WeightInfo {
-	fn migrate_dapps_success() -> Weight;
-	fn migrate_dapps_noop() -> Weight;
-	fn migrate_ledger_success() -> Weight;
-	fn migrate_ledger_noop() -> Weight;
-	fn cleanup_old_storage_success() -> Weight;
-	fn cleanup_old_storage_noop() -> Weight;
-}
+use pallet_dapp_staking_migration::WeightInfo;
 
 /// Weights for pallet_dapp_staking_migration using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
@@ -130,88 +122,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(7_383_000, 6472)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
-	fn cleanup_old_storage_noop() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 2_095_000 picoseconds.
-		Weight::from_parts(2_213_000, 0)
-	}
-}
-
-// For backwards compatibility and tests
-impl WeightInfo for () {
-	/// Storage: DappsStaking RegisteredDapps (r:2 w:1)
-	/// Proof: DappsStaking RegisteredDapps (max_values: None, max_size: Some(86), added: 2561, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: DappStaking IntegratedDApps (r:1 w:1)
-	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(121), added: 2101, mode: MaxEncodedLen)
-	/// Storage: DappStaking CounterForIntegratedDApps (r:1 w:1)
-	/// Proof: DappStaking CounterForIntegratedDApps (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: DappStaking NextDAppId (r:1 w:1)
-	/// Proof: DappStaking NextDAppId (max_values: Some(1), max_size: Some(2), added: 497, mode: MaxEncodedLen)
-	fn migrate_dapps_success() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `558`
-		//  Estimated: `6112`
-		// Minimum execution time: 46_218_000 picoseconds.
-		Weight::from_parts(47_610_000, 6112)
-			.saturating_add(RocksDbWeight::get().reads(6_u64))
-			.saturating_add(RocksDbWeight::get().writes(5_u64))
-	}
-	/// Storage: DappsStaking RegisteredDapps (r:1 w:0)
-	/// Proof: DappsStaking RegisteredDapps (max_values: None, max_size: Some(86), added: 2561, mode: MaxEncodedLen)
-	fn migrate_dapps_noop() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `3551`
-		// Minimum execution time: 3_385_000 picoseconds.
-		Weight::from_parts(3_552_000, 3551)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-	}
-	/// Storage: DappsStaking Ledger (r:2 w:1)
-	/// Proof: DappsStaking Ledger (max_values: None, max_size: Some(266), added: 2741, mode: MaxEncodedLen)
-	/// Storage: Balances Locks (r:1 w:1)
-	/// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
-	/// Storage: Balances Freezes (r:1 w:1)
-	/// Proof: Balances Freezes (max_values: None, max_size: Some(67), added: 2542, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: DappStaking Ledger (r:1 w:1)
-	/// Proof: DappStaking Ledger (max_values: None, max_size: Some(310), added: 2785, mode: MaxEncodedLen)
-	/// Storage: DappStaking CurrentEraInfo (r:1 w:1)
-	/// Proof: DappStaking CurrentEraInfo (max_values: Some(1), max_size: Some(112), added: 607, mode: MaxEncodedLen)
-	fn migrate_ledger_success() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `1748`
-		//  Estimated: `6472`
-		// Minimum execution time: 69_553_000 picoseconds.
-		Weight::from_parts(70_319_000, 6472)
-			.saturating_add(RocksDbWeight::get().reads(7_u64))
-			.saturating_add(RocksDbWeight::get().writes(6_u64))
-	}
-	/// Storage: DappsStaking Ledger (r:1 w:0)
-	/// Proof: DappsStaking Ledger (max_values: None, max_size: Some(266), added: 2741, mode: MaxEncodedLen)
-	fn migrate_ledger_noop() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `3731`
-		// Minimum execution time: 2_918_000 picoseconds.
-		Weight::from_parts(3_022_000, 3731)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-	}
-	/// Storage: DappsStaking Ledger (r:2 w:1)
-	/// Proof: DappsStaking Ledger (max_values: None, max_size: Some(266), added: 2741, mode: MaxEncodedLen)
-	fn cleanup_old_storage_success() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `739`
-		//  Estimated: `6472`
-		// Minimum execution time: 7_109_000 picoseconds.
-		Weight::from_parts(7_383_000, 6472)
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	fn cleanup_old_storage_noop() -> Weight {
 		// Proof Size summary in bytes:

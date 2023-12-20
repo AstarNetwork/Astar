@@ -396,7 +396,6 @@ pub struct AccountLedger<UnlockingLen: Get<u32>> {
     /// Number of contract stake entries in storage.
     #[codec(compact)]
     pub contract_stake_count: u32,
-    // TODO: rename to staker_info_count?
 }
 
 impl<UnlockingLen> Default for AccountLedger<UnlockingLen>
@@ -1524,6 +1523,11 @@ impl<NT: Get<u32>> Default for TiersConfiguration<NT> {
         }
     }
 }
+
+// Some TODOs:
+// Some parts regarding tiers should be refactored.
+// * There's no need to keep thresholds in two separate storage items since the calculation can always be done compared to the
+//    anchor value of 5 cents. This still needs to be checked & investigated, but it's worth a try.
 
 impl<NT: Get<u32>> TiersConfiguration<NT> {
     /// Check if parameters are valid.

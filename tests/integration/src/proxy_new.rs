@@ -17,6 +17,8 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::setup::*;
+use astar_primitives::dapp_staking::SmartContractHandle;
+use pallet_dapp_staking_v3::ForcingType;
 
 #[test]
 fn test_utility_call_pass_for_any() {
@@ -135,7 +137,7 @@ fn test_utility_call_fail_for_dappstaking() {
         assert_ok!(Proxy::add_proxy(
             RuntimeOrigin::signed(ALICE),
             MultiAddress::Id(BOB),
-            ProxyType::DappsStaking,
+            ProxyType::DappStaking,
             0
         ));
 
@@ -178,27 +180,34 @@ fn test_staker_reward_claim_proxy_works() {
             0
         ));
 
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = <Runtime as pallet_dapp_staking_v3::Config>::SmartContract::evm(
+            H160::repeat_byte(0x01),
+        );
         let staker_reward_claim_call =
-            RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
-                contract_id: contract.clone(),
-            });
+            RuntimeCall::DappStaking(DappStakingCall::Call::claim_staker_rewards {});
         let call = Box::new(staker_reward_claim_call);
 
         // contract must be registered
-        assert_ok!(DappsStaking::register(
+        assert_ok!(DappStaking::register(
             RuntimeOrigin::root(),
             ALICE.clone(),
             contract.clone()
         ));
 
-        // some amount must be staked
-        assert_ok!(DappsStaking::bond_and_stake(
+        // some amount must be locked&staked
+        let amount = 600 * UNIT;
+        assert_ok!(DappStaking::lock(RuntimeOrigin::signed(BOB), amount));
+        assert_ok!(DappStaking::stake(
             RuntimeOrigin::signed(BOB),
             contract.clone(),
-            600 * UNIT
+            amount,
         ));
-        run_to_block(10);
+
+        // Generate some rewards
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_to_block(System::block_number() + 1);
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_to_block(System::block_number() + 1);
 
         // CAT making proxy call on behalf of staker (BOB)
         assert_ok!(Proxy::proxy(

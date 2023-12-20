@@ -29,6 +29,11 @@ use ::assert_matches::assert_matches;
 mod utils;
 use utils::*;
 
+// A lot of benchmarks which require many blocks, eras or periods to pass have been optimized to utilize
+// `force` approach, which skips the required amount of blocks that need to be produced in order to advance.
+//
+// Without this optimization, benchmarks can take hours to execute for production runtimes.
+
 #[benchmarks]
 mod benchmarks {
     use super::*;
@@ -220,7 +225,7 @@ mod benchmarks {
 
         // Move over to the build&earn subperiod to ensure 'non-loyal' staking.
         // This is needed so we can achieve staker entry cleanup after claiming unlocked tokens.
-        advance_to_next_subperiod::<T>();
+        force_advance_to_next_subperiod::<T>();
         assert_eq!(
           ActiveProtocolState::<T>::get().subperiod(),
           Subperiod::BuildAndEarn,
@@ -261,8 +266,18 @@ mod benchmarks {
         );
         let unlock_amount = unlock_amount * Into::<Balance>::into(T::MaxUnlockingChunks::get());
 
+        // Hack
+        // In order to speed up the benchmark, we reduce how long it takes to unlock the chunks
+        let mut counter = 1;
+        Ledger::<T>::mutate(&staker, |ledger| {
+            ledger.unlocking.iter_mut().for_each(|unlocking| {
+                unlocking.unlock_block = System::<T>::block_number() + counter;
+            });
+            counter += 1;
+        });
+
         // Advance to next period to ensure the old stake entries are cleaned up.
-        advance_to_next_period::<T>();
+        force_advance_to_next_period::<T>();
 
         // Additionally, ensure enough blocks have passed so that the unlocking chunk can be claimed.
         let unlock_block = Ledger::<T>::get(&staker)
@@ -424,32 +439,50 @@ mod benchmarks {
             smart_contract.clone(),
         ));
 
-        // Lock some amount by the staker
+        // Lock & stake some amount by the staker
         let amount = T::MinimumLockedAmount::get();
         T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(staker.clone()).into(),
             amount,
         ));
-
-        // Advance to the era just before a new span entry is created.
-        // This ensures that when rewards are claimed, we'll be claiming from the new span.
-        //
-        // This is convenient because it allows us to control how many rewards are claimed.
-        advance_to_era::<T>(T::EraRewardSpanLength::get() - 1);
-
-        // Now ensure the expected amount of rewards are claimable.
-        advance_to_era::<T>(
-            ActiveProtocolState::<T>::get().era + T::EraRewardSpanLength::get() - x,
-        );
         assert_ok!(DappStaking::<T>::stake(
             RawOrigin::Signed(staker.clone()).into(),
             smart_contract.clone(),
             amount
         ));
 
+        // Advance to era just after the last era covered by the first span
+        force_advance_to_era::<T>(T::EraRewardSpanLength::get());
+
+        // Hack - modify staker's stake so it seems as if stake was valid from the 'first stake era'/
+        // Also fill up the reward span.
+        //
+        // This allows us to easily control how many rewards are claimed, without having to advance large amount of blocks/eras/periods
+        // to find an appropriate scenario.
+        let first_stake_era = T::EraRewardSpanLength::get() - x;
+        Ledger::<T>::mutate(&staker, |ledger| {
+            ledger.staked = ledger.staked_future.unwrap();
+            ledger.staked_future = None;
+            ledger.staked.era = first_stake_era;
+        });
+
+        // Just fill them up, the ledger entry will control how much claims we can make
+        let mut reward_span = EraRewardSpan::<_>::new();
+        for era in 0..(T::EraRewardSpanLength::get()) {
+            assert_ok!(reward_span.push(
+                era as EraNumber,
+                EraReward {
+                    staker_reward_pool: 1_000_000_000_000,
+                    staked: amount,
+                    dapp_reward_pool: 1_000_000_000_000,
+                },
+            ));
+        }
+        EraRewards::<T>::insert(&0, reward_span);
+
         // This ensures we claim from the past period.
-        advance_to_next_period::<T>();
+        force_advance_to_next_period::<T>();
 
         // For testing purposes
         System::<T>::reset_events();
@@ -486,25 +519,41 @@ mod benchmarks {
             RawOrigin::Signed(staker.clone()).into(),
             amount,
         ));
-
-        // Advance to the era just before a new span entry is created.
-        // This ensures that when rewards are claimed, we'll be claiming from the new span.
-        //
-        // This is convenient because it allows us to control how many rewards are claimed.
-        advance_to_era::<T>(T::EraRewardSpanLength::get() - 1);
-
-        // Now ensure the expected amount of rewards are claimable.
-        advance_to_era::<T>(
-            ActiveProtocolState::<T>::get().era + T::EraRewardSpanLength::get() - x,
-        );
         assert_ok!(DappStaking::<T>::stake(
             RawOrigin::Signed(staker.clone()).into(),
             smart_contract.clone(),
             amount
         ));
 
-        // This ensures we move over the entire span.
-        advance_to_era::<T>(T::EraRewardSpanLength::get() * 2);
+        // Advance to era just after the last era covered by the first span
+        // This means we'll be able to claim all of the rewards from the previous span.
+        force_advance_to_era::<T>(T::EraRewardSpanLength::get());
+
+        // Hack - modify staker's stake so it seems as if stake was valid from the 'first stake era'/
+        // Also fill up the reward span.
+        //
+        // This allows us to easily control how many rewards are claimed, without having to advance large amount of blocks/eras/periods
+        // to find an appropriate scenario.
+        let first_stake_era = T::EraRewardSpanLength::get() - x;
+        Ledger::<T>::mutate(&staker, |ledger| {
+            ledger.staked = ledger.staked_future.unwrap();
+            ledger.staked_future = None;
+            ledger.staked.era = first_stake_era;
+        });
+
+        // Just fill them up, the ledger entry will control how much claims we can make
+        let mut reward_span = EraRewardSpan::<_>::new();
+        for era in 0..(T::EraRewardSpanLength::get()) {
+            assert_ok!(reward_span.push(
+                era as EraNumber,
+                EraReward {
+                    staker_reward_pool: 1_000_000_000_000,
+                    staked: amount,
+                    dapp_reward_pool: 1_000_000_000_000,
+                },
+            ));
+        }
+        EraRewards::<T>::insert(&0, reward_span);
 
         // For testing purposes
         System::<T>::reset_events();
@@ -548,7 +597,7 @@ mod benchmarks {
         ));
 
         // Advance to the next period so we can claim the bonus reward.
-        advance_to_next_period::<T>();
+        force_advance_to_next_period::<T>();
 
         #[extrinsic_call]
         _(RawOrigin::Signed(staker.clone()), smart_contract.clone());
@@ -574,7 +623,7 @@ mod benchmarks {
             smart_contract.clone(),
         ));
 
-        let amount = T::MinimumLockedAmount::get() * 1000 * UNIT;
+        let amount = MIN_TIER_THRESHOLD * 1000;
         T::BenchmarkHelper::set_balance(&owner, amount);
         assert_ok!(DappStaking::<T>::lock(
             RawOrigin::Signed(owner.clone()).into(),
@@ -610,17 +659,18 @@ mod benchmarks {
             ));
         }
 
+        // Advance enough eras so dApp reward can be claimed.
+        force_advance_to_next_subperiod::<T>();
+
         // This is a hacky part to ensure we accomodate max number of contracts.
         TierConfig::<T>::mutate(|config| {
             let max_number_of_contracts: u16 = T::MaxNumberOfContracts::get().try_into().unwrap();
             config.number_of_slots = max_number_of_contracts;
             config.slots_per_tier[0] = max_number_of_contracts;
             config.slots_per_tier[1..].iter_mut().for_each(|x| *x = 0);
+            config.tier_thresholds[0] = TierThreshold::FixedTvlAmount { amount: 1 };
         });
-
-        // Advance enough eras so dApp reward can be claimed.
-        advance_to_next_subperiod::<T>();
-        advance_to_next_era::<T>();
+        force_advance_to_next_era::<T>();
         let claim_era = ActiveProtocolState::<T>::get().era - 1;
 
         assert_eq!(
@@ -695,7 +745,7 @@ mod benchmarks {
         initial_config::<T>();
 
         // Move over to the build&earn subperiod to ensure 'non-loyal' staking.
-        advance_to_next_subperiod::<T>();
+        force_advance_to_next_subperiod::<T>();
 
         // Prepare staker & lock some amount
         let staker: T::AccountId = whitelisted_caller();
@@ -725,7 +775,7 @@ mod benchmarks {
         }
 
         // Move over to the next period, marking the entries as expired since they don't have the loyalty flag.
-        advance_to_next_period::<T>();
+        force_advance_to_next_period::<T>();
 
         #[extrinsic_call]
         _(RawOrigin::Signed(staker.clone()));
@@ -791,7 +841,7 @@ mod benchmarks {
         prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
 
         // Advance to build&earn subperiod
-        advance_to_next_subperiod::<T>();
+        force_advance_to_next_subperiod::<T>();
         let snapshot_state = ActiveProtocolState::<T>::get();
 
         // Advance over to the last era of the subperiod, and then again to the last block of that era.
@@ -840,11 +890,11 @@ mod benchmarks {
         prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
 
         // Advance to build&earn subperiod
-        advance_to_next_subperiod::<T>();
+        force_advance_to_next_subperiod::<T>();
         let snapshot_state = ActiveProtocolState::<T>::get();
 
         // Advance over to the next era, and then again to the last block of that era.
-        advance_to_next_era::<T>();
+        force_advance_to_next_era::<T>();
         run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
 
         // Some sanity checks, we should still be in the build&earn subperiod, and in the first period.
@@ -888,7 +938,7 @@ mod benchmarks {
 
         // Register & stake contracts, to prepare for tier assignment.
         prepare_contracts_for_tier_assignment::<T>(x);
-        advance_to_next_era::<T>();
+        force_advance_to_next_era::<T>();
 
         let reward_era = ActiveProtocolState::<T>::get().era;
         let reward_period = ActiveProtocolState::<T>::get().period_number();
@@ -907,9 +957,13 @@ mod benchmarks {
         // Prepare init config (protocol state, tier params & config, etc.)
         initial_config::<T>();
 
-        // Advance enough periods to trigger the cleanup
+        // Advance to era just after the last era covered by the first span.
+        // This is sufficient to completely fill up the first span with entries for the ongoing era.
+        force_advance_to_era::<T>(T::EraRewardSpanLength::get());
+
+        // Advance enough periods to make cleanup feasible.
         let retention_period = T::RewardRetentionInPeriods::get();
-        advance_to_period::<T>(
+        force_advance_to_period::<T>(
             ActiveProtocolState::<T>::get().period_number() + retention_period + 2,
         );
 

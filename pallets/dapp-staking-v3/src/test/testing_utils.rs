@@ -21,7 +21,7 @@ use crate::types::*;
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, CurrentEraInfo, DAppId, DAppTiers,
     EraRewards, Event, FreezeReason, HistoryCleanupMarker, IntegratedDApps, Ledger, NextDAppId,
-    NextTierConfig, PeriodEnd, PeriodEndInfo, StakerInfo, TierConfig,
+    PeriodEnd, PeriodEndInfo, StakerInfo,
 };
 
 use frame_support::{
@@ -57,8 +57,6 @@ pub(crate) struct MemorySnapshot {
     era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
     period_end: HashMap<PeriodNumber, PeriodEndInfo>,
     dapp_tiers: HashMap<EraNumber, DAppTierRewardsFor<Test>>,
-    tier_config: TiersConfiguration<<Test as Config>::NumberOfTiers>,
-    next_tier_config: TiersConfiguration<<Test as Config>::NumberOfTiers>,
 }
 
 impl MemorySnapshot {
@@ -77,8 +75,6 @@ impl MemorySnapshot {
             era_rewards: EraRewards::<Test>::iter().collect(),
             period_end: PeriodEnd::<Test>::iter().collect(),
             dapp_tiers: DAppTiers::<Test>::iter().collect(),
-            tier_config: TierConfig::<Test>::get(),
-            next_tier_config: NextTierConfig::<Test>::get(),
         }
     }
 
@@ -1273,22 +1269,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
         );
     }
 
-    // 3. Verify tier config
-    match pre_protoc_state.subperiod() {
-        Subperiod::Voting => {
-            assert!(!NextTierConfig::<Test>::exists());
-            assert_eq!(post_snapshot.tier_config, pre_snapshot.next_tier_config);
-        }
-        Subperiod::BuildAndEarn if is_new_subperiod => {
-            assert!(NextTierConfig::<Test>::exists());
-            assert_eq!(post_snapshot.tier_config, pre_snapshot.tier_config);
-        }
-        _ => {
-            assert_eq!(post_snapshot.tier_config, pre_snapshot.tier_config);
-        }
-    }
-
-    // 4. Verify era reward
+    // 3. Verify era reward
     let era_span_index = DappStaking::era_reward_span_index(pre_protoc_state.era);
     let maybe_pre_era_reward_span = pre_snapshot.era_rewards.get(&era_span_index);
     let post_era_reward_span = post_snapshot
@@ -1319,7 +1300,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
         "Total staked amount must be equal to total amount staked at the end of the era."
     );
 
-    // 5. Verify period end
+    // 4. Verify period end
     if is_new_subperiod && pre_protoc_state.subperiod() == Subperiod::BuildAndEarn {
         let period_end_info = post_snapshot.period_end[&pre_protoc_state.period_number()];
         assert_eq!(
@@ -1330,7 +1311,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
         );
     }
 
-    // 6. Verify event(s)
+    // 5. Verify event(s)
     if is_new_subperiod {
         let events = dapp_staking_events();
         assert!(

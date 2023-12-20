@@ -456,7 +456,6 @@ dependencies = [
  "moonbeam-rpc-primitives-txpool",
  "moonbeam-rpc-trace",
  "moonbeam-rpc-txpool",
- "pallet-dapp-staking-v3",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-transaction-payment",
@@ -2442,17 +2441,6 @@ dependencies = [
  "astar-primitives",
  "pallet-dapp-staking-v3",
  "sp-api",
-]
-
-[[package]]
-name = "dapps-staking-chain-extension-types"
-version = "1.1.0"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
 ]
 
 [[package]]
@@ -4977,6 +4965,7 @@ dependencies = [
  "pallet-balances",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-v3",
  "pallet-dapps-staking",
  "pallet-ethereum-checked",
  "pallet-evm",
@@ -6040,7 +6029,6 @@ dependencies = [
  "pallet-balances",
  "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
- "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
  "pallet-collective",
@@ -7497,25 +7485,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-chain-extension-dapps-staking"
-version = "1.1.0"
-dependencies = [
- "dapps-staking-chain-extension-types",
- "frame-support",
- "frame-system",
- "log",
- "num-traits",
- "pallet-contracts",
- "pallet-contracts-primitives",
- "pallet-dapps-staking",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-chain-extension-unified-accounts"
 version = "0.1.0"
 dependencies = [
@@ -8318,6 +8287,7 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -13178,6 +13148,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "dapp-staking-v3-runtime-api",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -13199,7 +13170,6 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
@@ -13207,6 +13177,8 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-migration",
+ "pallet-dapp-staking-v3",
  "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
@@ -13217,7 +13189,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dapps-staking",
+ "pallet-evm-precompile-dapp-staking-v3",
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
@@ -13229,6 +13201,7 @@ dependencies = [
  "pallet-evm-precompile-xcm",
  "pallet-evm-precompile-xvm",
  "pallet-identity",
+ "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
  "pallet-preimage",
@@ -13255,6 +13228,7 @@ dependencies = [
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",

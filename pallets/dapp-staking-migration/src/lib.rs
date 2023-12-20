@@ -581,9 +581,25 @@ pub mod pallet {
                 .collect();
 
             // Get the stakers and their active locked (staked) amount.
+
+            let min_lock_amount: Balance =
+                <T as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get();
             let stakers: Vec<_> = pallet_dapps_staking::Ledger::<T>::iter()
-                .map(|(staker, ledger)| (staker, ledger.locked))
+                .filter_map(|(staker, ledger)| {
+                    if ledger.locked >= min_lock_amount {
+                        Some((staker, ledger.locked))
+                    } else {
+                        None
+                    }
+                })
                 .collect();
+
+            log::info!(
+                target: LOG_TARGET,
+                "Out of {} stakers, {} have sufficient amount to lock.",
+                pallet_dapps_staking::Ledger::<T>::iter().count(),
+                stakers.len(),
+            );
 
             let helper = Helper::<T> {
                 developers,
@@ -649,6 +665,12 @@ pub mod pallet {
             assert_eq!(
                 pallet_dapp_staking_v3::CurrentEraInfo::<T>::get().total_locked,
                 total_locked
+            );
+
+            log::info!(
+                target: LOG_TARGET,
+                "Total locked amount in the new pallet: {:?}.",
+                total_locked,
             );
 
             // 3. Check that rest of the storage has been cleaned up.

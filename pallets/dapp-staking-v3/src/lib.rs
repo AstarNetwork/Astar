@@ -39,7 +39,7 @@ use frame_support::{
     pallet_prelude::*,
     traits::{
         fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},
-        StorageVersion,
+        OnRuntimeUpgrade, StorageVersion,
     },
     weights::Weight,
 };
@@ -431,11 +431,6 @@ pub mod pallet {
     pub type StaticTierParams<T: Config> =
         StorageValue<_, TierParameters<T::NumberOfTiers>, ValueQuery>;
 
-    /// Tier configuration to be used during the newly started period
-    #[pallet::storage]
-    pub type NextTierConfig<T: Config> =
-        StorageValue<_, TiersConfiguration<T::NumberOfTiers>, ValueQuery>;
-
     /// Tier configuration user for current & preceding eras.
     #[pallet::storage]
     pub type TierConfig<T: Config> =
@@ -518,7 +513,6 @@ pub mod pallet {
             ActiveProtocolState::<T>::put(protocol_state);
             StaticTierParams::<T>::put(tier_params);
             TierConfig::<T>::put(tier_config.clone());
-            NextTierConfig::<T>::put(tier_config);
         }
     }
 
@@ -530,6 +524,27 @@ pub mod pallet {
 
         fn on_idle(_block: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
             Self::expired_entry_cleanup(&remaining_weight)
+        }
+
+        fn integrity_test() {
+            // dApp staking params
+            // Sanity checks
+            assert!(T::EraRewardSpanLength::get() > 0);
+            assert!(T::RewardRetentionInPeriods::get() > 0);
+            assert!(T::MaxNumberOfContracts::get() > 0);
+            assert!(T::MaxUnlockingChunks::get() > 0);
+            assert!(T::UnlockingPeriod::get() > 0);
+            assert!(T::MaxNumberOfStakedContracts::get() > 0);
+
+            assert!(T::MinimumLockedAmount::get() > 0);
+            assert!(T::MinimumStakeAmount::get() > 0);
+            assert!(T::MinimumLockedAmount::get() >= T::MinimumStakeAmount::get());
+
+            // Cycle config
+            assert!(T::CycleConfiguration::periods_per_cycle() > 0);
+            assert!(T::CycleConfiguration::eras_per_voting_subperiod() > 0);
+            assert!(T::CycleConfiguration::eras_per_build_and_earn_subperiod() > 0);
+            assert!(T::CycleConfiguration::blocks_per_era() > 0);
         }
     }
 
@@ -1739,10 +1754,6 @@ pub mod pallet {
 
                     era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
-                    // Update tier configuration to be used when calculating rewards for the upcoming eras
-                    let next_tier_config = NextTierConfig::<T>::take();
-                    TierConfig::<T>::put(next_tier_config);
-
                     consumed_weight
                         .saturating_accrue(T::WeightInfo::on_initialize_voting_to_build_and_earn());
 
@@ -1813,7 +1824,7 @@ pub mod pallet {
                         let average_price = T::NativePriceProvider::average_price();
                         let new_tier_config =
                             TierConfig::<T>::get().calculate_new(average_price, &tier_params);
-                        NextTierConfig::<T>::put(new_tier_config);
+                        TierConfig::<T>::put(new_tier_config);
 
                         consumed_weight.saturating_accrue(
                             T::WeightInfo::on_initialize_build_and_earn_to_voting(),
@@ -1941,5 +1952,77 @@ pub mod pallet {
 
             T::WeightInfo::on_idle_cleanup()
         }
+    }
+}
+
+/// `OnRuntimeUpgrade` logic used to set & configure init dApp staking v3 storage items.
+pub struct DAppStakingV3InitConfig<T, G>(PhantomData<(T, G)>);
+impl<
+        T: Config,
+        G: Get<(
+            EraNumber,
+            TierParameters<T::NumberOfTiers>,
+            TiersConfiguration<T::NumberOfTiers>,
+        )>,
+    > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G>
+{
+    fn on_runtime_upgrade() -> Weight {
+        if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
+            return T::DbWeight::get().reads(1);
+        }
+
+        // 0. Unwrap arguments
+        let (init_era, tier_params, init_tier_config) = G::get();
+
+        // 1. Prepare active protocol state
+        let now = frame_system::Pallet::<T>::block_number();
+        let voting_period_length = Pallet::<T>::blocks_per_voting_period();
+
+        let protocol_state = ProtocolState {
+            era: init_era,
+            next_era_start: now.saturating_add(voting_period_length),
+            period_info: PeriodInfo {
+                number: 1,
+                subperiod: Subperiod::Voting,
+                next_subperiod_start_era: init_era.saturating_add(1),
+            },
+            maintenance: true,
+        };
+
+        // 2. Write necessary items into storage
+        ActiveProtocolState::<T>::put(protocol_state);
+        StaticTierParams::<T>::put(tier_params);
+        TierConfig::<T>::put(init_tier_config);
+        STORAGE_VERSION.put::<Pallet<T>>();
+
+        // 3. Emit events to make indexers happy
+        Pallet::<T>::deposit_event(Event::<T>::NewEra { era: init_era });
+        Pallet::<T>::deposit_event(Event::<T>::NewSubperiod {
+            subperiod: Subperiod::Voting,
+            number: 1,
+        });
+
+        log::info!("dApp Staking v3 storage initialized.");
+
+        T::DbWeight::get().reads_writes(1, 4)
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+        assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
+        assert!(ActiveProtocolState::<T>::get().maintenance);
+
+        let number_of_tiers = T::NumberOfTiers::get();
+
+        let tier_params = StaticTierParams::<T>::get();
+        assert_eq!(tier_params.reward_portion.len(), number_of_tiers as usize);
+        assert!(tier_params.is_valid());
+
+        let tier_config = TierConfig::<T>::get();
+        assert_eq!(tier_config.reward_portion.len(), number_of_tiers as usize);
+        assert_eq!(tier_config.slots_per_tier.len(), number_of_tiers as usize);
+        assert_eq!(tier_config.tier_thresholds.len(), number_of_tiers as usize);
+
+        Ok(())
     }
 }

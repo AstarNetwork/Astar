@@ -22,7 +22,6 @@ use super::{Runtime, UnifiedAccounts, Xvm};
 pub use pallet_chain_extension_assets::AssetsExtension;
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 
-pub use pallet_chain_extension_dapps_staking::DappsStakingExtension;
 pub use pallet_chain_extension_unified_accounts::UnifiedAccountsExtension;
 pub use pallet_chain_extension_xvm::XvmExtension;
 

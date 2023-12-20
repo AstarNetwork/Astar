@@ -49,32 +49,86 @@ pub(super) fn advance_to_era<T: Config>(era: EraNumber) {
     }
 }
 
+/// Advance blocks until the specified era has been reached.
+///
+/// Relies on the `force` approach to advance one era per block.
+pub(super) fn force_advance_to_era<T: Config>(era: EraNumber) {
+    assert!(era >= ActiveProtocolState::<T>::get().era);
+    while ActiveProtocolState::<T>::get().era < era {
+        assert_ok!(DappStaking::<T>::force(
+            RawOrigin::Root.into(),
+            ForcingType::Era
+        ));
+        run_for_blocks::<T>(One::one());
+    }
+}
+
 /// Advance blocks until next era has been reached.
-pub(super) fn advance_to_next_era<T: Config>() {
+pub(super) fn _advance_to_next_era<T: Config>() {
     advance_to_era::<T>(ActiveProtocolState::<T>::get().era + 1);
+}
+
+/// Advance to next era, in the next block using the `force` approach.
+pub(crate) fn force_advance_to_next_era<T: Config>() {
+    assert_ok!(DappStaking::<T>::force(
+        RawOrigin::Root.into(),
+        ForcingType::Era
+    ));
+    run_for_blocks::<T>(One::one());
 }
 
 /// Advance blocks until the specified period has been reached.
 ///
 /// Function has no effect if period is already passed.
-pub(super) fn advance_to_period<T: Config>(period: PeriodNumber) {
+pub(super) fn _advance_to_period<T: Config>(period: PeriodNumber) {
     assert!(period >= ActiveProtocolState::<T>::get().period_number());
     while ActiveProtocolState::<T>::get().period_number() < period {
         run_for_blocks::<T>(One::one());
     }
 }
 
+/// Advance to the specified period, using the `force` approach.
+pub(super) fn force_advance_to_period<T: Config>(period: PeriodNumber) {
+    assert!(period >= ActiveProtocolState::<T>::get().period_number());
+    while ActiveProtocolState::<T>::get().period_number() < period {
+        force_advance_to_next_subperiod::<T>();
+    }
+}
+
 /// Advance blocks until next period has been reached.
-pub(super) fn advance_to_next_period<T: Config>() {
-    advance_to_period::<T>(ActiveProtocolState::<T>::get().period_number() + 1);
+pub(super) fn _advance_to_next_period<T: Config>() {
+    _advance_to_period::<T>(ActiveProtocolState::<T>::get().period_number() + 1);
+}
+
+/// Advance blocks until next period has been reached.
+///
+/// Relies on the `force` approach to advance one subperiod per block.
+pub(super) fn force_advance_to_next_period<T: Config>() {
+    let init_period_number = ActiveProtocolState::<T>::get().period_number();
+    while ActiveProtocolState::<T>::get().period_number() == init_period_number {
+        assert_ok!(DappStaking::<T>::force(
+            RawOrigin::Root.into(),
+            ForcingType::Subperiod
+        ));
+        run_for_blocks::<T>(One::one());
+    }
 }
 
 /// Advance blocks until next period type has been reached.
-pub(super) fn advance_to_next_subperiod<T: Config>() {
+pub(super) fn _advance_to_next_subperiod<T: Config>() {
     let subperiod = ActiveProtocolState::<T>::get().subperiod();
     while ActiveProtocolState::<T>::get().subperiod() == subperiod {
         run_for_blocks::<T>(One::one());
     }
+}
+
+/// Use the `force` approach to advance to the next subperiod immediately in the next block.
+pub(super) fn force_advance_to_next_subperiod<T: Config>() {
+    assert_ok!(DappStaking::<T>::force(
+        RawOrigin::Root.into(),
+        ForcingType::Subperiod
+    ));
+    run_for_blocks::<T>(One::one());
 }
 
 /// All our networks use 18 decimals for native currency so this should be fine.
@@ -172,7 +226,6 @@ pub(super) fn initial_config<T: Config>() {
 
     StaticTierParams::<T>::put(tier_params);
     TierConfig::<T>::put(init_tier_config.clone());
-    NextTierConfig::<T>::put(init_tier_config);
 }
 
 /// Maximum number of contracts that 'makes sense' - considers both contract number limit & number of slots.
@@ -195,9 +248,14 @@ pub(super) fn prepare_contracts_for_tier_assignment<T: Config>(x: u32) {
         ));
     }
 
-    // TODO: try to make this more "shuffled" so the generated vector ends up being more random
-    let mut amount = 1000 * MIN_TIER_THRESHOLD;
+    let anchor_amount = 1000 * MIN_TIER_THRESHOLD;
+    let mut amounts: Vec<_> = (0..x)
+        .map(|i| anchor_amount - UNIT * i as Balance)
+        .collect();
+    trivial_fisher_yates_shuffle(&mut amounts, SEED.into());
+
     for id in 0..x {
+        let amount = amounts[id as usize];
         let staker = account("staker", id.into(), 1337);
         T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
@@ -211,8 +269,17 @@ pub(super) fn prepare_contracts_for_tier_assignment<T: Config>(x: u32) {
             smart_contract,
             amount,
         ));
+    }
+}
 
-        // Slowly decrease the stake amount
-        amount.saturating_reduce(UNIT);
+/// Reuse from `sassafras` pallet tests.
+///
+/// Just a trivial, insecure shuffle for the benchmarks.
+fn trivial_fisher_yates_shuffle<T>(vector: &mut Vec<T>, random_seed: u64) {
+    let mut rng = random_seed as usize;
+    for i in (1..vector.len()).rev() {
+        let j = rng % (i + 1);
+        vector.swap(i, j);
+        rng = (rng.wrapping_mul(8427637) + 1) as usize; // Some random number generation
     }
 }

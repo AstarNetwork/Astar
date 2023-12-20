@@ -159,7 +159,8 @@ pub const INITIAL_AMOUNT: u128 = 100_000 * UNIT;
 
 pub type SystemError = frame_system::Error<Runtime>;
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_dapps_staking as DappStakingCall;
+pub use pallet_dapp_staking_v3 as DappStakingCall;
+pub use pallet_dapps_staking as DappsStakingCall;
 pub use pallet_proxy::Event as ProxyEvent;
 pub use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
 
@@ -212,32 +213,37 @@ pub const BLOCK_TIME: u64 = 12_000;
 pub fn run_to_block(n: u32) {
     while System::block_number() < n {
         let block_number = System::block_number();
-        Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
         TransactionPayment::on_finalize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        DappStaking::on_finalize(block_number);
+        #[cfg(any(feature = "astar", feature = "shiden"))]
         DappsStaking::on_finalize(block_number);
         Authorship::on_finalize(block_number);
         Session::on_finalize(block_number);
         AuraExt::on_finalize(block_number);
         PolkadotXcm::on_finalize(block_number);
         Ethereum::on_finalize(block_number);
-        #[cfg(any(features = "astar"))]
-        BaseFee::on_finalize(block_number);
-        #[cfg(any(feature = "shibuya", feature = "shiden"))]
         DynamicEvmBaseFee::on_finalize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        Inflation::on_finalize(block_number);
 
         System::set_block_number(block_number + 1);
+        let block_number = System::block_number();
 
+        #[cfg(any(feature = "shibuya"))]
+        Inflation::on_initialize(block_number);
+        Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
         TransactionPayment::on_initialize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        DappStaking::on_initialize(block_number);
+        #[cfg(any(feature = "astar", feature = "shiden"))]
         DappsStaking::on_initialize(block_number);
         Authorship::on_initialize(block_number);
         Aura::on_initialize(block_number);
         AuraExt::on_initialize(block_number);
         Ethereum::on_initialize(block_number);
-        #[cfg(any(features = "astar"))]
-        BaseFee::on_initialize(block_number);
-        #[cfg(any(feature = "shibuya", feature = "shiden"))]
         DynamicEvmBaseFee::on_initialize(block_number);
-        #[cfg(any(feature = "shibuya", feature = "shiden", features = "astar"))]
+        #[cfg(any(feature = "shibuya", feature = "shiden"))]
         RandomnessCollectiveFlip::on_initialize(block_number);
 
         XcmpQueue::on_idle(block_number, Weight::MAX);

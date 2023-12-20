@@ -22,8 +22,8 @@ use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BlockRewardConfig,
     CouncilConfig, DappStakingConfig, DemocracyConfig, EVMConfig, GenesisConfig, GrandpaConfig,
     GrandpaId, InflationConfig, InflationParameters, Precompiles, RewardDistributionConfig,
-    Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig,
-    AST,
+    Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TierThreshold, TreasuryConfig,
+    VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -31,8 +31,6 @@ use sp_runtime::{
     traits::{IdentifyAccount, Verify},
     Perbill, Permill,
 };
-
-use pallet_dapp_staking_v3::TierThreshold;
 
 type AccountPublic = <Signature as Verify>::Signer;
 

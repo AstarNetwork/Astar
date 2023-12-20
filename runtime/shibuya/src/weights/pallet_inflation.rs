@@ -46,15 +46,7 @@
 
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use core::marker::PhantomData;
-
-/// Weight functions needed for pallet_inflation.
-pub trait WeightInfo {
-	fn force_set_inflation_params() -> Weight;
-	fn force_set_inflation_config() -> Weight;
-	fn force_inflation_recalculation() -> Weight;
-	fn hook_with_recalculation() -> Weight;
-	fn hook_without_recalculation() -> Weight;
-}
+use pallet_inflation::WeightInfo;
 
 /// Weights for pallet_inflation using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
@@ -109,60 +101,5 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(22_378_000, 6196)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
-}
-
-// For backwards compatibility and tests
-impl WeightInfo for () {
-	/// Storage: Inflation InflationParams (r:0 w:1)
-	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
-	fn force_set_inflation_params() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 9_036_000 picoseconds.
-		Weight::from_parts(9_186_000, 0)
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
-	}
-	fn force_set_inflation_config() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 9_073_000 picoseconds.
-		Weight::from_parts(9_411_000, 0)
-	}
-	/// Storage: Inflation InflationParams (r:1 w:0)
-	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
-	fn force_inflation_recalculation() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `58`
-		//  Estimated: `1549`
-		// Minimum execution time: 14_839_000 picoseconds.
-		Weight::from_parts(15_198_000, 1549)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-	}
-	/// Storage: System Account (r:2 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: Inflation InflationParams (r:1 w:0)
-	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
-	fn hook_with_recalculation() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `232`
-		//  Estimated: `6196`
-		// Minimum execution time: 31_965_000 picoseconds.
-		Weight::from_parts(32_498_000, 6196)
-			.saturating_add(RocksDbWeight::get().reads(3_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
-	}
-	/// Storage: System Account (r:2 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	fn hook_without_recalculation() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `174`
-		//  Estimated: `6196`
-		// Minimum execution time: 22_235_000 picoseconds.
-		Weight::from_parts(22_378_000, 6196)
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
