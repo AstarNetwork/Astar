@@ -525,6 +525,27 @@ pub mod pallet {
         fn on_idle(_block: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
             Self::expired_entry_cleanup(&remaining_weight)
         }
+
+        fn integrity_test() {
+            // dApp staking params
+            // Sanity checks
+            assert!(T::EraRewardSpanLength::get() > 0);
+            assert!(T::RewardRetentionInPeriods::get() > 0);
+            assert!(T::MaxNumberOfContracts::get() > 0);
+            assert!(T::MaxUnlockingChunks::get() > 0);
+            assert!(T::UnlockingPeriod::get() > 0);
+            assert!(T::MaxNumberOfStakedContracts::get() > 0);
+
+            assert!(T::MinimumLockedAmount::get() > 0);
+            assert!(T::MinimumStakeAmount::get() > 0);
+            assert!(T::MinimumLockedAmount::get() >= T::MinimumStakeAmount::get());
+
+            // Cycle config
+            assert!(T::CycleConfiguration::periods_per_cycle() > 0);
+            assert!(T::CycleConfiguration::eras_per_voting_subperiod() > 0);
+            assert!(T::CycleConfiguration::eras_per_build_and_earn_subperiod() > 0);
+            assert!(T::CycleConfiguration::blocks_per_era() > 0);
+        }
     }
 
     /// A reason for freezing funds.
