@@ -171,7 +171,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 117,
+    spec_version: 118,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1384,6 +1384,7 @@ parameter_types! {
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
+    // The following 4 migrations should be done as part of shibuya-118 upgrade.
     pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParams>,
     pallet_dapp_staking_v3::DAppStakingV3InitConfig<Runtime, InitDappStakingv3Params>,
     frame_support::migrations::RemovePallet<
