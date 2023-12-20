@@ -1528,7 +1528,7 @@ pub mod pallet {
                 T::Currency::set_freeze(
                     &FreezeReason::DAppStaking.into(),
                     account,
-                    ledger.active_locked_amount(),
+                    ledger.total_locked_amount(),
                 )?;
                 Ledger::<T>::insert(account, ledger);
             }
