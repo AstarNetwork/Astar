@@ -2435,14 +2435,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "dapps-staking-chain-extension-types"
-version = "1.1.0"
+name = "dapp-staking-v3-runtime-api"
+version = "0.0.1-alpha"
 dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
+ "astar-primitives",
+ "pallet-dapp-staking-v3",
+ "sp-api",
 ]
 
 [[package]]
@@ -4967,6 +4965,7 @@ dependencies = [
  "pallet-balances",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-v3",
  "pallet-dapps-staking",
  "pallet-ethereum-checked",
  "pallet-evm",
@@ -6010,6 +6009,7 @@ version = "5.27.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
+ "dapp-staking-v3-runtime-api",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -6029,12 +6029,13 @@ dependencies = [
  "pallet-balances",
  "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
- "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-migration",
+ "pallet-dapp-staking-v3",
  "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
@@ -6044,7 +6045,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dapps-staking",
+ "pallet-evm-precompile-dapp-staking-v3",
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
@@ -6055,6 +6056,7 @@ dependencies = [
  "pallet-evm-precompile-unified-accounts",
  "pallet-evm-precompile-xvm",
  "pallet-grandpa",
+ "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
  "pallet-preimage",
  "pallet-proxy",
@@ -6073,6 +6075,7 @@ dependencies = [
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",
@@ -7482,25 +7485,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-chain-extension-dapps-staking"
-version = "1.1.0"
-dependencies = [
- "dapps-staking-chain-extension-types",
- "frame-support",
- "frame-system",
- "log",
- "num-traits",
- "pallet-contracts",
- "pallet-contracts-primitives",
- "pallet-dapps-staking",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-chain-extension-unified-accounts"
 version = "0.1.0"
 dependencies = [
@@ -7634,20 +7618,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-contracts-migration"
-version = "1.0.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-contracts",
- "parity-scale-codec",
- "scale-info",
- "sp-arithmetic",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-contracts-primitives"
 version = "7.0.0"
 source = "git+https://github.com/AstarNetwork/substrate?branch=astar-polkadot-v0.9.43#3cf04f2d82a9305bf2e0bd74886c27c1c60c287e"
@@ -7682,6 +7652,48 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapp-staking-migration"
+version = "1.0.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-dapp-staking-v3",
+ "pallet-dapps-staking",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapp-staking-v3"
+version = "0.0.1-alpha"
+dependencies = [
+ "assert_matches",
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -7925,6 +7937,34 @@ dependencies = [
  "fp-evm",
  "sp-core",
  "substrate-bn",
+]
+
+[[package]]
+name = "pallet-evm-precompile-dapp-staking-v3"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "astar-primitives",
+ "derive_more",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum 0.5.11",
+ "pallet-balances",
+ "pallet-dapp-staking-v3",
+ "pallet-evm",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "serde",
+ "sha3",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -8228,6 +8268,24 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-keyring",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-inflation"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
  "sp-runtime",
  "sp-std",
 ]
@@ -13090,6 +13148,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "dapp-staking-v3-runtime-api",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -13111,15 +13170,15 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-rewards-hybrid",
  "pallet-chain-extension-assets",
- "pallet-chain-extension-dapps-staking",
  "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-migration",
+ "pallet-dapp-staking-v3",
  "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
@@ -13130,7 +13189,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dapps-staking",
+ "pallet-evm-precompile-dapp-staking-v3",
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
@@ -13142,6 +13201,7 @@ dependencies = [
  "pallet-evm-precompile-xcm",
  "pallet-evm-precompile-xvm",
  "pallet-identity",
+ "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
  "pallet-preimage",
@@ -13168,6 +13228,7 @@ dependencies = [
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",

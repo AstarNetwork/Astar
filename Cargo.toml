@@ -15,7 +15,6 @@ members = [
 
 	"primitives",
 
-	"chain-extensions/dapps-staking",
 	"chain-extensions/pallet-assets",
 	"chain-extensions/xvm",
 	"chain-extensions/unified-accounts",
@@ -275,11 +274,16 @@ orml-xcm-support = { git = "https://github.com/open-web3-stack/open-runtime-modu
 pallet-block-rewards-hybrid = { path = "./pallets/block-rewards-hybrid", default-features = false }
 pallet-collator-selection = { path = "./pallets/collator-selection", default-features = false }
 pallet-dapps-staking = { path = "./pallets/dapps-staking", default-features = false }
+pallet-dapp-staking-v3 = { path = "./pallets/dapp-staking-v3", default-features = false }
+pallet-dapp-staking-migration = { path = "./pallets/dapp-staking-migration", default-features = false }
 pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features = false }
 pallet-xvm = { path = "./pallets/xvm", default-features = false }
 pallet-ethereum-checked = { path = "./pallets/ethereum-checked", default-features = false }
+pallet-inflation = { path = "./pallets/inflation", default-features = false }
 pallet-dynamic-evm-base-fee = { path = "./pallets/dynamic-evm-base-fee", default-features = false }
 pallet-unified-accounts = { path = "./pallets/unified-accounts", default-features = false }
+
+dapp-staking-v3-runtime-api = { path = "./pallets/dapp-staking-v3/rpc/runtime-api", default-features = false }
 
 astar-primitives = { path = "./primitives", default-features = false }
 astar-test-utils = { path = "./tests/utils", default-features = false }
@@ -290,14 +294,13 @@ pallet-evm-precompile-substrate-ecdsa = { path = "./precompiles/substrate-ecdsa"
 pallet-evm-precompile-xcm = { path = "./precompiles/xcm", default-features = false }
 pallet-evm-precompile-xvm = { path = "./precompiles/xvm", default-features = false }
 pallet-evm-precompile-dapps-staking = { path = "./precompiles/dapps-staking", default-features = false }
+pallet-evm-precompile-dapp-staking-v3 = { path = "./precompiles/dapp-staking-v3", default-features = false }
 pallet-evm-precompile-unified-accounts = { path = "./precompiles/unified-accounts", default-features = false }
 
-pallet-chain-extension-dapps-staking = { path = "./chain-extensions/dapps-staking", default-features = false }
 pallet-chain-extension-xvm = { path = "./chain-extensions/xvm", default-features = false }
 pallet-chain-extension-assets = { path = "./chain-extensions/pallet-assets", default-features = false }
 pallet-chain-extension-unified-accounts = { path = "./chain-extensions/unified-accounts", default-features = false }
 
-dapps-staking-chain-extension-types = { path = "./chain-extensions/types/dapps-staking", default-features = false }
 xvm-chain-extension-types = { path = "./chain-extensions/types/xvm", default-features = false }
 assets-chain-extension-types = { path = "./chain-extensions/types/assets", default-features = false }
 unified-accounts-chain-extension-types = { path = "./chain-extensions/types/unified-accounts", default-features = false }

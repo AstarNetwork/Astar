@@ -37,7 +37,7 @@ use sp_runtime::{
 };
 use sp_std::{convert::From, mem};
 
-const STAKING_ID: LockIdentifier = *b"dapstake";
+pub const STAKING_ID: LockIdentifier = *b"dapstake";
 
 #[frame_support::pallet]
 #[allow(clippy::module_inception)]
@@ -115,6 +115,10 @@ pub mod pallet {
         #[pallet::constant]
         type UnregisteredDappRewardRetention: Get<u32>;
 
+        /// Can be used to force pallet into permanent maintenance mode.
+        #[pallet::constant]
+        type ForcePalletDisabled: Get<bool>;
+
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -165,13 +169,13 @@ pub mod pallet {
     /// Simple map where developer account points to their smart contract
     #[pallet::storage]
     #[pallet::getter(fn registered_contract)]
-    pub(crate) type RegisteredDevelopers<T: Config> =
+    pub type RegisteredDevelopers<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, T::SmartContract>;
 
     /// Simple map where smart contract points to basic info about it (e.g. developer address, state)
     #[pallet::storage]
     #[pallet::getter(fn dapp_info)]
-    pub(crate) type RegisteredDapps<T: Config> =
+    pub type RegisteredDapps<T: Config> =
         StorageMap<_, Blake2_128Concat, T::SmartContract, DAppInfo<T::AccountId>>;
 
     /// General information about an era like TVL, total staked value, rewards.
@@ -207,7 +211,7 @@ pub mod pallet {
     /// Stores the current pallet storage version.
     #[pallet::storage]
     #[pallet::getter(fn storage_version)]
-    pub(crate) type StorageVersion<T> = StorageValue<_, Version, ValueQuery>;
+    pub type StorageVersion<T> = StorageValue<_, Version, ValueQuery>;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
@@ -302,7 +306,7 @@ pub mod pallet {
             // Runtime upgrade should be timed so we ensure that we complete it before
             // a new era is triggered. This code is just a safety net to ensure nothing is broken
             // if we fail to do that.
-            if PalletDisabled::<T>::get() {
+            if PalletDisabled::<T>::get() || T::ForcePalletDisabled::get() {
                 return T::DbWeight::get().reads(1);
             }
 
@@ -1135,7 +1139,7 @@ pub mod pallet {
 
         /// `Err` if pallet disabled for maintenance, `Ok` otherwise
         pub fn ensure_pallet_enabled() -> Result<(), Error<T>> {
-            if PalletDisabled::<T>::get() {
+            if PalletDisabled::<T>::get() || T::ForcePalletDisabled::get() {
                 Err(Error::<T>::Disabled)
             } else {
                 Ok(())

@@ -48,6 +48,7 @@ pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 sp-api = { workspace = true }
+sp-arithmetic = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
@@ -67,19 +68,23 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 # Astar pallets
 astar-primitives = { workspace = true }
 pallet-block-rewards-hybrid = { workspace = true }
-pallet-chain-extension-dapps-staking = { workspace = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
+pallet-dapp-staking-migration = { workspace = true }
+pallet-dapp-staking-v3 = { workspace = true }
 pallet-dapps-staking = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
-pallet-evm-precompile-dapps-staking = { workspace = true }
+pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-unified-accounts = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
+pallet-inflation = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 pallet-xvm = { workspace = true }
+
+dapp-staking-v3-runtime-api = { workspace = true }
 
 precompile-utils = { workspace = true }
 
@@ -118,10 +123,13 @@ std = [
 	"pallet-block-rewards-hybrid/std",
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
-	"pallet-chain-extension-dapps-staking/std",
 	"pallet-chain-extension-xvm/std",
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dapps-staking/std",
+	"pallet-dapp-staking-v3/std",
+	"pallet-dapp-staking-migration/std",
+	"dapp-staking-v3-runtime-api/std",
+	"pallet-inflation/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
@@ -132,7 +140,7 @@ std = [
 	"pallet-evm-precompile-ed25519/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
-	"pallet-evm-precompile-dapps-staking/std",
+	"pallet-evm-precompile-dapp-staking-v3/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-unified-accounts/std",
@@ -155,6 +163,7 @@ std = [
 	"sp-offchain/std",
 	"sp-runtime/std",
 	"sp-session/std",
+	"sp-arithmetic/std",
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
@@ -192,7 +201,10 @@ runtime-benchmarks = [
 	"pallet-unified-accounts/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
+	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-inflation/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"pallet-dapp-staking-migration/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -206,6 +218,8 @@ try-runtime = [
 	"pallet-block-rewards-hybrid/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-dapps-staking/try-runtime",
+	"pallet-dapp-staking-v3/try-runtime",
+	"pallet-inflation/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-sudo/try-runtime",
@@ -226,6 +240,7 @@ try-runtime = [
 	"pallet-dynamic-evm-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
+	"pallet-dapp-staking-migration/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

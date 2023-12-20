@@ -1,0 +1,56 @@
+[package]
+name = "pallet-dapp-staking-migration"
+version = "1.0.0"
+license = "GPL-3.0-or-later"
+description = "Pallet for managing dApp staking v2 to v3 migration."
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+astar-primitives = { workspace = true, optional = true }
+pallet-dapp-staking-v3 = { workspace = true }
+pallet-dapps-staking = { workspace = true }
+
+[dev-dependencies]
+astar-primitives = { workspace = true }
+pallet-balances = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-std/std",
+	"sp-io/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-dapp-staking-v3/std",
+	"pallet-dapps-staking/std",
+	"frame-benchmarking/std",
+	"astar-primitives?/std",
+	"sp-core/std",
+	"pallet-balances/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-dapps-staking/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime", "astar-primitives"]

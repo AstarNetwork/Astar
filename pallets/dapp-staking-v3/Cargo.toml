@@ -1,0 +1,60 @@
+[package]
+name = "pallet-dapp-staking-v3"
+version = "0.0.1-alpha"
+description = "Pallet for dApp staking v3 protocol"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+num-traits = { workspace = true }
+parity-scale-codec = { workspace = true }
+
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
+sp-arithmetic = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+astar-primitives = { workspace = true }
+
+assert_matches = { workspace = true, optional = true }
+frame-benchmarking = { workspace = true, optional = true }
+
+[dev-dependencies]
+pallet-balances = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	"log/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"num-traits/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-arithmetic/std",
+	"sp-io/std",
+	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"astar-primitives/std",
+	"frame-benchmarking/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
+	"assert_matches",
+]
+try-runtime = ["frame-support/try-runtime"]

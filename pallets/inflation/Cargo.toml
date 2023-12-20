@@ -1,0 +1,50 @@
+[package]
+name = "pallet-inflation"
+version = "0.1.0"
+license = "GPL-3.0-or-later"
+description = "Manages inflation rate & inflation distribution"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+log = { workspace = true }
+parity-scale-codec = { workspace = true }
+serde = { workspace = true }
+
+astar-primitives = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+scale-info = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+frame-benchmarking = { workspace = true, optional = true }
+
+[dev-dependencies]
+pallet-balances = { workspace = true }
+sp-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"log/std",
+	"sp-core/std",
+	"scale-info/std",
+	"serde/std",
+	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"astar-primitives/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime"]

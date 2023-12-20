@@ -32,7 +32,7 @@ use parity_scale_codec::Compact;
 fn filter_accepts_batch_call_with_whitelisted_calls() {
     ExtBuilder::default().build().execute_with(|| {
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-        let inner_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+        let inner_call = RuntimeCall::DappsStaking(DappsStakingCall::Call::claim_staker {
             contract_id: contract.clone(),
         });
         let call = RuntimeCall::Utility(UtilityCall::batch {
@@ -61,7 +61,7 @@ fn filter_rejects_non_whitelisted_batch_calls() {
         // CASE 2 - now whitelisted mixed with whitelisted calls
 
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-        let staking_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+        let staking_call = RuntimeCall::DappsStaking(DappsStakingCall::Call::claim_staker {
             contract_id: contract.clone(),
         });
         let staking = Box::new(staking_call);
@@ -80,7 +80,7 @@ fn filter_accepts_whitelisted_calls() {
     ExtBuilder::default().build().execute_with(|| {
         // Dappstaking call works
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-        let stake_call = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+        let stake_call = RuntimeCall::DappsStaking(DappsStakingCall::Call::claim_staker {
             contract_id: contract.clone(),
         });
         assert!(WhitelistedCalls::contains(&stake_call));
@@ -117,10 +117,10 @@ fn filter_rejects_non_whitelisted_calls() {
 fn filter_accepts_whitelisted_batch_all_calls() {
     ExtBuilder::default().build().execute_with(|| {
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
-        let inner_call1 = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+        let inner_call1 = RuntimeCall::DappsStaking(DappsStakingCall::Call::claim_staker {
             contract_id: contract.clone(),
         });
-        let inner_call2 = RuntimeCall::DappsStaking(DappStakingCall::Call::claim_staker {
+        let inner_call2 = RuntimeCall::DappsStaking(DappsStakingCall::Call::claim_staker {
             contract_id: contract.clone(),
         });
         let transfer_call = RuntimeCall::Assets(pallet_assets::Call::transfer {

@@ -24,7 +24,7 @@ use frame_support::{parameter_types, traits::Contains};
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
-use pallet_evm_precompile_dapps_staking::DappsStakingWrapper;
+use pallet_evm_precompile_dapp_staking_v3::DappStakingV3Precompile;
 use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_ed25519::Ed25519Verify;
 use pallet_evm_precompile_modexp::Modexp;
@@ -59,7 +59,7 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
             | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
                 calls.iter().all(|call| WhitelistedCalls::contains(call))
             }
-            RuntimeCall::DappsStaking(_) => true,
+            RuntimeCall::DappStaking(_) => true,
             RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
             _ => false,
         }
@@ -93,7 +93,7 @@ pub type ShibuyaPrecompilesSetAt<R, C> = (
     // Astar specific precompiles:
     PrecompileAt<
         AddressU64<20481>,
-        DappsStakingWrapper<R>,
+        DappStakingV3Precompile<R>,
         (CallableByContract, CallableByPrecompile),
     >,
     PrecompileAt<
