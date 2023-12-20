@@ -17,6 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::setup::*;
+use astar_primitives::dapp_staking::SmartContractHandle;
 use pallet_dapp_staking_v3::ForcingType;
 
 #[test]
@@ -179,7 +180,9 @@ fn test_staker_reward_claim_proxy_works() {
             0
         ));
 
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = <Runtime as pallet_dapp_staking_v3::Config>::SmartContract::evm(
+            H160::repeat_byte(0x01),
+        );
         let staker_reward_claim_call =
             RuntimeCall::DappStaking(DappStakingCall::Call::claim_staker_rewards {});
         let call = Box::new(staker_reward_claim_call);
