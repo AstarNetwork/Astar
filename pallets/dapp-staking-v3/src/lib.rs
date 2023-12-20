@@ -431,11 +431,6 @@ pub mod pallet {
     pub type StaticTierParams<T: Config> =
         StorageValue<_, TierParameters<T::NumberOfTiers>, ValueQuery>;
 
-    /// Tier configuration to be used during the newly started period
-    #[pallet::storage]
-    pub type NextTierConfig<T: Config> =
-        StorageValue<_, TiersConfiguration<T::NumberOfTiers>, ValueQuery>;
-
     /// Tier configuration user for current & preceding eras.
     #[pallet::storage]
     pub type TierConfig<T: Config> =
@@ -518,7 +513,6 @@ pub mod pallet {
             ActiveProtocolState::<T>::put(protocol_state);
             StaticTierParams::<T>::put(tier_params);
             TierConfig::<T>::put(tier_config.clone());
-            NextTierConfig::<T>::put(tier_config);
         }
     }
 
@@ -1739,10 +1733,6 @@ pub mod pallet {
 
                     era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
-                    // Update tier configuration to be used when calculating rewards for the upcoming eras
-                    let next_tier_config = NextTierConfig::<T>::take();
-                    TierConfig::<T>::put(next_tier_config);
-
                     consumed_weight
                         .saturating_accrue(T::WeightInfo::on_initialize_voting_to_build_and_earn());
 
@@ -1813,7 +1803,7 @@ pub mod pallet {
                         let average_price = T::NativePriceProvider::average_price();
                         let new_tier_config =
                             TierConfig::<T>::get().calculate_new(average_price, &tier_params);
-                        NextTierConfig::<T>::put(new_tier_config);
+                        TierConfig::<T>::put(new_tier_config);
 
                         consumed_weight.saturating_accrue(
                             T::WeightInfo::on_initialize_build_and_earn_to_voting(),
