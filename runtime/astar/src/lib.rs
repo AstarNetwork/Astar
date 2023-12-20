@@ -138,7 +138,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 74,
+    spec_version: 75,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1058,45 +1058,7 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-pub use frame_support::traits::{OnRuntimeUpgrade, StorageVersion};
-pub struct HybridInflationModelMigration;
-impl OnRuntimeUpgrade for HybridInflationModelMigration {
-    fn on_runtime_upgrade() -> Weight {
-        let mut reward_config = pallet_block_rewards_hybrid::RewardDistributionConfig {
-            // 4.78%
-            treasury_percent: Perbill::from_rational(4_783_623u32, 100_000_000u32),
-            // 23.04%
-            base_staker_percent: Perbill::from_rational(23_041_451u32, 100_000_000u32),
-            // 17.27%
-            dapps_percent: Perbill::from_rational(17_272_878u32, 100_000_000u32),
-            // 3.06%
-            collators_percent: Perbill::from_rational(3_061_518u32, 100_000_000u32),
-            // 51.84%
-            adjustable_percent: Perbill::from_rational(51_840_530u32, 100_000_000u32),
-            // 60.00%
-            ideal_dapps_staking_tvl: Perbill::from_percent(60),
-        };
-
-        // This HAS to be tested prior to update - we need to ensure that config is consistent
-        #[cfg(feature = "try-runtime")]
-        assert!(reward_config.is_consistent());
-
-        // This should never execute but we need to have code in place that ensures config is consistent
-        if !reward_config.is_consistent() {
-            reward_config = Default::default();
-        }
-
-        pallet_block_rewards_hybrid::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
-
-        <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(1)
-    }
-}
-
-/// All migrations that will run on the next runtime upgrade.
-///
-/// Once done, migrations should be removed from the tuple.
-/// `HybridInflationModelMigration` to be applied on spec_version: 74
-pub type Migrations = HybridInflationModelMigration;
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
