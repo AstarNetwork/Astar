@@ -194,9 +194,14 @@ pub(super) fn prepare_contracts_for_tier_assignment<T: Config>(x: u32) {
         ));
     }
 
-    // TODO: try to make this more "shuffled" so the generated vector ends up being more random
-    let mut amount = 1000 * MIN_TIER_THRESHOLD;
+    let anchor_amount = 1000 * MIN_TIER_THRESHOLD;
+    let mut amounts: Vec<_> = (0..x)
+        .map(|i| anchor_amount - UNIT * i as Balance)
+        .collect();
+    trivial_fisher_yates_shuffle(&mut amounts, SEED.into());
+
     for id in 0..x {
+        let amount = amounts[id as usize];
         let staker = account("staker", id.into(), 1337);
         T::BenchmarkHelper::set_balance(&staker, amount);
         assert_ok!(DappStaking::<T>::lock(
@@ -210,8 +215,17 @@ pub(super) fn prepare_contracts_for_tier_assignment<T: Config>(x: u32) {
             smart_contract,
             amount,
         ));
+    }
+}
 
-        // Slowly decrease the stake amount
-        amount.saturating_reduce(UNIT);
+/// Reuse from `sassafras` pallet tests.
+///
+/// Just a trivial, insecure shuffle for the benchmarks.
+fn trivial_fisher_yates_shuffle<T>(vector: &mut Vec<T>, random_seed: u64) {
+    let mut rng = random_seed as usize;
+    for i in (1..vector.len()).rev() {
+        let j = rng % (i + 1);
+        vector.swap(i, j);
+        rng = (rng.wrapping_mul(6364793005) + 1) as usize; // Some random number generation
     }
 }
