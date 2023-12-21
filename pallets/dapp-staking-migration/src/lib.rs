@@ -271,9 +271,15 @@ pub mod pallet {
                 Self::deposit_event(Event::<T>::EntriesDeleted(entries_deleted));
             }
 
-            // Put the pallet back into maintenance mode.
+            // Put the pallet back into maintenance mode in case we're still migration the old storage over,
+            // otherwise disable the maintenance mode.
             pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
-                state.maintenance = true;
+                state.maintenance = match migration_state {
+                    MigrationState::NotInProgress
+                    | MigrationState::RegisteredDApps
+                    | MigrationState::Ledgers => true,
+                    MigrationState::Cleanup | MigrationState::Finished => false,
+                };
             });
 
             if migration_state != init_migration_state {
