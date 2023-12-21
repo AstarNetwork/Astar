@@ -233,7 +233,7 @@ pub mod pallet {
                         const SAFETY_MARGIN: u32 = 2000;
                         let remaining_weight = weight_limit.saturating_sub(consumed_weight);
                         let capacity = match remaining_weight.checked_div_per_component(
-                            &<T as Config>::WeightInfo::cleanup_old_storage_success(),
+                            &<T as Config>::WeightInfo::cleanup_old_storage_success(1),
                         ) {
                             Some(entries_to_delete) => {
                                 SAFETY_MARGIN.min(entries_to_delete.unique_saturated_into())
@@ -454,8 +454,7 @@ pub mod pallet {
 
             if !done {
                 Ok((
-                    <T as Config>::WeightInfo::cleanup_old_storage_success()
-                        .saturating_mul(keys_removed.into()),
+                    <T as Config>::WeightInfo::cleanup_old_storage_success(keys_removed),
                     keys_removed as u32,
                 ))
             } else {
@@ -500,7 +499,7 @@ pub mod pallet {
             // Consider the weight of all steps
             <T as Config>::WeightInfo::migrate_dapps_success()
                 .max(<T as Config>::WeightInfo::migrate_ledger_success())
-                .max(<T as Config>::WeightInfo::cleanup_old_storage_success())
+                .max(<T as Config>::WeightInfo::cleanup_old_storage_success(1))
                 // and add the weight of updating migration status
                 .saturating_add(T::DbWeight::get().writes(1))
         }
