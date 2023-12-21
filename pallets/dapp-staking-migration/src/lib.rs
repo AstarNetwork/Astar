@@ -230,7 +230,7 @@ pub mod pallet {
                     },
                     MigrationState::Cleanup => {
                         // Ensure we don't attempt to delete too much at once.
-                        const SAFETY_MARGIN: u32 = 1000;
+                        const SAFETY_MARGIN: u32 = 2000;
                         let remaining_weight = weight_limit.saturating_sub(consumed_weight);
                         let capacity = match remaining_weight.checked_div_per_component(
                             &<T as Config>::WeightInfo::cleanup_old_storage_success(),
