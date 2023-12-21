@@ -105,7 +105,6 @@ mod benchmarks {
         }
     }
 
-    
     #[benchmark]
     fn cleanup_old_storage_success(x: Linear<1, 5>) {
         initial_config::<T>();
