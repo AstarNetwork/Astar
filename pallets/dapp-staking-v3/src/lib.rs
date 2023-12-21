@@ -1501,6 +1501,36 @@ pub mod pallet {
 
             Ok(())
         }
+
+        // TODO: remove this prior to Astar launch, to be only used for testing
+        #[pallet::call_index(100)]
+        #[pallet::weight(T::DbWeight::get().writes(1))]
+        pub fn force_set_tier_params(
+            origin: OriginFor<T>,
+            value: TierParameters<T::NumberOfTiers>,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            T::ManagerOrigin::ensure_origin(origin)?;
+
+            StaticTierParams::<T>::put(value);
+
+            Ok(())
+        }
+
+        // TODO: remove this prior to Astar launch, to be only used for testing
+        #[pallet::call_index(101)]
+        #[pallet::weight(T::DbWeight::get().writes(1))]
+        pub fn force_set_tier_config(
+            origin: OriginFor<T>,
+            value: TiersConfiguration<T::NumberOfTiers>,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            T::ManagerOrigin::ensure_origin(origin)?;
+
+            TierConfig::<T>::put(value);
+
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
