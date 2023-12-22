@@ -353,6 +353,9 @@ pub mod pallet {
         TooManyStakedContracts,
         /// There are no expired entries to cleanup for the account.
         NoExpiredEntries,
+        // TODO: remove this prior to the launch
+        /// Tier parameters aren't valid.
+        InvalidTierParameters,
     }
 
     /// General information about dApp staking protocol state.
@@ -1511,6 +1514,7 @@ pub mod pallet {
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
+            ensure!(value.is_valid(), Error::<T>::InvalidTierParameters);
 
             StaticTierParams::<T>::put(value);
 
