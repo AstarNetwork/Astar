@@ -353,6 +353,9 @@ pub mod pallet {
         TooManyStakedContracts,
         /// There are no expired entries to cleanup for the account.
         NoExpiredEntries,
+        // TODO: remove this prior to the launch
+        /// Tier parameters aren't valid.
+        InvalidTierParameters,
     }
 
     /// General information about dApp staking protocol state.
@@ -1501,6 +1504,37 @@ pub mod pallet {
 
             Ok(())
         }
+
+        // TODO: remove this prior to Astar launch, to be only used for testing
+        #[pallet::call_index(100)]
+        #[pallet::weight(T::DbWeight::get().writes(1))]
+        pub fn force_set_tier_params(
+            origin: OriginFor<T>,
+            value: TierParameters<T::NumberOfTiers>,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            T::ManagerOrigin::ensure_origin(origin)?;
+            ensure!(value.is_valid(), Error::<T>::InvalidTierParameters);
+
+            StaticTierParams::<T>::put(value);
+
+            Ok(())
+        }
+
+        // TODO: remove this prior to Astar launch, to be only used for testing
+        #[pallet::call_index(101)]
+        #[pallet::weight(T::DbWeight::get().writes(1))]
+        pub fn force_set_tier_config(
+            origin: OriginFor<T>,
+            value: TiersConfiguration<T::NumberOfTiers>,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            T::ManagerOrigin::ensure_origin(origin)?;
+
+            TierConfig::<T>::put(value);
+
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -1974,28 +2008,48 @@ impl<
         // 0. Unwrap arguments
         let (init_era, tier_params, init_tier_config) = G::get();
 
-        // 1. Prepare active protocol state
+        // 1. Prepare init active protocol state
         let now = frame_system::Pallet::<T>::block_number();
         let voting_period_length = Pallet::<T>::blocks_per_voting_period();
 
+        let period_number = 1;
         let protocol_state = ProtocolState {
             era: init_era,
             next_era_start: now.saturating_add(voting_period_length),
             period_info: PeriodInfo {
-                number: 1,
+                number: period_number,
                 subperiod: Subperiod::Voting,
                 next_subperiod_start_era: init_era.saturating_add(1),
             },
             maintenance: true,
         };
 
-        // 2. Write necessary items into storage
+        // 2. Prepare init current era info - need to set correct eras
+        let init_era_info = EraInfo {
+            total_locked: 0,
+            unlocking: 0,
+            current_stake_amount: StakeAmount {
+                voting: 0,
+                build_and_earn: 0,
+                era: init_era,
+                period: period_number,
+            },
+            next_stake_amount: StakeAmount {
+                voting: 0,
+                build_and_earn: 0,
+                era: init_era.saturating_add(1),
+                period: period_number,
+            },
+        };
+
+        // 3. Write necessary items into storage
         ActiveProtocolState::<T>::put(protocol_state);
         StaticTierParams::<T>::put(tier_params);
         TierConfig::<T>::put(init_tier_config);
         STORAGE_VERSION.put::<Pallet<T>>();
+        CurrentEraInfo::<T>::put(init_era_info);
 
-        // 3. Emit events to make indexers happy
+        // 4. Emit events to make indexers happy
         Pallet::<T>::deposit_event(Event::<T>::NewEra { era: init_era });
         Pallet::<T>::deposit_event(Event::<T>::NewSubperiod {
             subperiod: Subperiod::Voting,
@@ -2004,13 +2058,14 @@ impl<
 
         log::info!("dApp Staking v3 storage initialized.");
 
-        T::DbWeight::get().reads_writes(1, 4)
+        T::DbWeight::get().reads_writes(2, 5)
     }
 
     #[cfg(feature = "try-runtime")]
     fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
         assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
-        assert!(ActiveProtocolState::<T>::get().maintenance);
+        let protocol_state = ActiveProtocolState::<T>::get();
+        assert!(protocol_state.maintenance);
 
         let number_of_tiers = T::NumberOfTiers::get();
 
@@ -2022,6 +2077,16 @@ impl<
         assert_eq!(tier_config.reward_portion.len(), number_of_tiers as usize);
         assert_eq!(tier_config.slots_per_tier.len(), number_of_tiers as usize);
         assert_eq!(tier_config.tier_thresholds.len(), number_of_tiers as usize);
+
+        let current_era_info = CurrentEraInfo::<T>::get();
+        assert_eq!(
+            current_era_info.current_stake_amount.era,
+            protocol_state.era
+        );
+        assert_eq!(
+            current_era_info.next_stake_amount.era,
+            protocol_state.era + 1
+        );
 
         Ok(())
     }
