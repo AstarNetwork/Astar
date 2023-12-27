@@ -404,9 +404,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 name = "assets-chain-extension-types"
 version = "0.1.0"
 dependencies = [
- "frame-system",
  "num_enum 0.5.11",
- "pallet-contracts",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",

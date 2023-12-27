@@ -13,8 +13,6 @@ num_enum = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
-frame-system = { workspace = true }
-pallet-contracts = { workspace = true }
 sp-runtime = { workspace = true }
 
 [features]
@@ -22,7 +20,5 @@ default = ["std"]
 std = [
 	"scale-info/std",
 	"parity-scale-codec/std",
-	"pallet-contracts/std",
 	"sp-runtime/std",
-	"frame-system/std",
 ]
