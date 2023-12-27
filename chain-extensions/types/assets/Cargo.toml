@@ -18,6 +18,7 @@ sp-runtime = { workspace = true }
 [features]
 default = ["std"]
 std = [
+	"num_enum/std",
 	"scale-info/std",
 	"parity-scale-codec/std",
 	"sp-runtime/std",

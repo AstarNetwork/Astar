@@ -17,6 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{DispatchError, ModuleError};
