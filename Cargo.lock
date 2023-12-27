@@ -405,6 +405,7 @@ name = "assets-chain-extension-types"
 version = "0.1.0"
 dependencies = [
  "frame-system",
+ "num_enum 0.5.11",
  "pallet-contracts",
  "parity-scale-codec",
  "scale-info",

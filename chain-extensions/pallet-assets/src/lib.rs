@@ -18,149 +18,73 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod weights;
-
-use assets_chain_extension_types::{select_origin, Origin, Outcome};
-use frame_support::traits::{
-    fungibles::approvals::Inspect as ApprovalInspect,
-    fungibles::metadata::Inspect as MetadataInspect,
-};
+use assets_chain_extension_types::Outcome;
 use frame_system::RawOrigin;
 use pallet_assets::WeightInfo;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, SysConfig,
 };
-use parity_scale_codec::Encode;
 use sp_runtime::traits::StaticLookup;
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
-use sp_std::vec::Vec;
-
-enum AssetsFunc {
-    Create,
-    Transfer,
-    Mint,
-    Burn,
-    BalanceOf,
-    TotalSupply,
-    Allowance,
-    ApproveTransfer,
-    CancelApproval,
-    TransferApproved,
-    SetMetadata,
-    MetadataName,
-    MetadataSymbol,
-    MetadataDecimals,
-    TransferOwnership,
-}
-
-impl TryFrom<u16> for AssetsFunc {
-    type Error = DispatchError;
-
-    fn try_from(value: u16) -> Result<Self, Self::Error> {
-        match value {
-            1 => Ok(AssetsFunc::Create),
-            2 => Ok(AssetsFunc::Transfer),
-            3 => Ok(AssetsFunc::Mint),
-            4 => Ok(AssetsFunc::Burn),
-            5 => Ok(AssetsFunc::BalanceOf),
-            6 => Ok(AssetsFunc::TotalSupply),
-            7 => Ok(AssetsFunc::Allowance),
-            8 => Ok(AssetsFunc::ApproveTransfer),
-            9 => Ok(AssetsFunc::CancelApproval),
-            10 => Ok(AssetsFunc::TransferApproved),
-            11 => Ok(AssetsFunc::SetMetadata),
-            12 => Ok(AssetsFunc::MetadataName),
-            13 => Ok(AssetsFunc::MetadataSymbol),
-            14 => Ok(AssetsFunc::MetadataDecimals),
-            15 => Ok(AssetsFunc::TransferOwnership),
-            _ => Err(DispatchError::Other(
-                "PalletAssetsExtension: Unimplemented func_id",
-            )),
-        }
-    }
-}
+pub use assets_chain_extension_types::Command::{self, *};
+type Weight<T> = <T as pallet_assets::Config>::WeightInfo;
 
 /// Pallet Assets chain extension.
-pub struct AssetsExtension<T, W>(PhantomData<(T, W)>);
+pub struct AssetsExtension<T>(PhantomData<T>);
 
-impl<T, W> Default for AssetsExtension<T, W> {
+impl<T> Default for AssetsExtension<T> {
     fn default() -> Self {
         AssetsExtension(PhantomData)
     }
 }
 
-impl<T, W> ChainExtension<T> for AssetsExtension<T, W>
+impl<T> ChainExtension<T> for AssetsExtension<T>
 where
     T: pallet_assets::Config + pallet_contracts::Config,
     <T as pallet_assets::Config>::AssetId: Copy,
     <<T as SysConfig>::Lookup as StaticLookup>::Source: From<<T as SysConfig>::AccountId>,
-    <T as SysConfig>::AccountId: From<[u8; 32]>,
-    W: weights::WeightInfo,
 {
     fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
     where
         E: Ext<T = T>,
     {
-        let func_id = env.func_id().try_into()?;
         let mut env = env.buf_in_buf_out();
-
-        match func_id {
-            AssetsFunc::Create => {
-                let (origin, id, admin, min_balance): (
-                    Origin,
+        match env.func_id().try_into().map_err(|_| {
+            DispatchError::Other("Unsupported func id in Pallet Assets Chain Extension")
+        })? {
+            Transfer => {
+                let (id, target, amount): (
                     <T as pallet_assets::Config>::AssetId,
                     T::AccountId,
                     T::Balance,
                 ) = env.read_as()?;
 
-                let base_weight = <T as pallet_assets::Config>::WeightInfo::create();
-                env.charge_weight(base_weight)?;
+                log::trace!(target: "pallet-chain-extension-assets::transfer",
+                    "Raw arguments: id: {:?}, to: {:?}, amount: {:?}",
+                      id, target, amount);
 
-                let raw_origin = select_origin!(&origin, env.ext().address().clone());
-
-                let call_result = pallet_assets::Pallet::<T>::create(
-                    raw_origin.into(),
-                    id.into(),
-                    admin.into(),
-                    min_balance,
-                );
-                return match call_result {
-                    Err(e) => {
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
-            }
-            AssetsFunc::Transfer => {
-                let (origin, id, target, amount): (
-                    Origin,
-                    <T as pallet_assets::Config>::AssetId,
-                    T::AccountId,
-                    T::Balance,
-                ) = env.read_as()?;
-
-                let base_weight = <T as pallet_assets::Config>::WeightInfo::transfer();
-                env.charge_weight(base_weight)?;
-
-                let raw_origin = select_origin!(&origin, env.ext().address().clone());
+                env.charge_weight(Weight::<T>::transfer())?;
 
                 let call_result = pallet_assets::Pallet::<T>::transfer(
-                    raw_origin.into(),
+                    RawOrigin::Signed(env.ext().address().clone().clone()).into(),
                     id.into(),
                     target.into(),
                     amount,
                 );
                 return match call_result {
                     Err(e) => {
+                        log::trace!(
+                            target: "pallet-chain-extension-assets::transfer",
+                            "err: {:?}", e
+                        );
                         let mapped_error = Outcome::from(e);
                         Ok(RetVal::Converging(mapped_error as u32))
                     }
                     Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
                 };
             }
-            AssetsFunc::Mint => {
+            /*            AssetsFunc::Mint => {
                 let (origin, id, beneficiary, amount): (
                     Origin,
                     <T as pallet_assets::Config>::AssetId,
@@ -273,31 +197,6 @@ where
                     Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
                 };
             }
-            AssetsFunc::CancelApproval => {
-                let (origin, id, delegate): (
-                    Origin,
-                    <T as pallet_assets::Config>::AssetId,
-                    T::AccountId,
-                ) = env.read_as()?;
-
-                let base_weight = <T as pallet_assets::Config>::WeightInfo::cancel_approval();
-                env.charge_weight(base_weight)?;
-
-                let raw_origin = select_origin!(&origin, env.ext().address().clone());
-
-                let call_result = pallet_assets::Pallet::<T>::cancel_approval(
-                    raw_origin.into(),
-                    id.into(),
-                    delegate.into(),
-                );
-                return match call_result {
-                    Err(e) => {
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
-            }
             AssetsFunc::TransferApproved => {
                 let (origin, id, owner, destination, amount): (
                     Origin,
@@ -318,38 +217,6 @@ where
                     owner.into(),
                     destination.into(),
                     amount,
-                );
-                return match call_result {
-                    Err(e) => {
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
-            }
-            AssetsFunc::SetMetadata => {
-                let (origin, id, name, symbol, decimals): (
-                    Origin,
-                    <T as pallet_assets::Config>::AssetId,
-                    Vec<u8>,
-                    Vec<u8>,
-                    u8,
-                ) = env.read_as_unbounded(env.in_len())?;
-
-                let base_weight = <T as pallet_assets::Config>::WeightInfo::set_metadata(
-                    name.len() as u32,
-                    symbol.len() as u32,
-                );
-                env.charge_weight(base_weight)?;
-
-                let raw_origin = select_origin!(&origin, env.ext().address().clone());
-
-                let call_result = pallet_assets::Pallet::<T>::set_metadata(
-                    raw_origin.into(),
-                    id.into(),
-                    name,
-                    symbol,
-                    decimals,
                 );
                 return match call_result {
                     Err(e) => {
@@ -385,32 +252,8 @@ where
 
                 let decimals = pallet_assets::Pallet::<T>::decimals(id);
                 env.write(&decimals.encode(), false, None)?;
-            }
-            AssetsFunc::TransferOwnership => {
-                let (origin, id, owner): (
-                    Origin,
-                    <T as pallet_assets::Config>::AssetId,
-                    T::AccountId,
-                ) = env.read_as()?;
-
-                let base_weight = <T as pallet_assets::Config>::WeightInfo::transfer_ownership();
-                env.charge_weight(base_weight)?;
-
-                let raw_origin = select_origin!(&origin, env.ext().address().clone());
-
-                let call_result = pallet_assets::Pallet::<T>::transfer_ownership(
-                    raw_origin.into(),
-                    id.into(),
-                    owner.into(),
-                );
-                return match call_result {
-                    Err(e) => {
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
-            }
+            }*/
+            _ => {}
         }
 
         Ok(RetVal::Converging(Outcome::Success as u32))
