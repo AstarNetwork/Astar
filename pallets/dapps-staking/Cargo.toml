@@ -29,6 +29,7 @@ frame-benchmarking = { workspace = true, optional = true }
 pallet-balances = { workspace = true }
 pallet-session = { workspace = true }
 pallet-timestamp = { workspace = true }
+assert_matches = { workspace = true }
 
 [features]
 default = ["std"]

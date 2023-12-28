@@ -7703,6 +7703,7 @@ dependencies = [
 name = "pallet-dapps-staking"
 version = "3.10.0"
 dependencies = [
+ "assert_matches",
  "astar-primitives",
  "frame-benchmarking",
  "frame-support",

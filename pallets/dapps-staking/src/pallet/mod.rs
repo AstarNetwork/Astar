@@ -132,6 +132,11 @@ pub mod pallet {
     #[pallet::getter(fn pallet_disabled)]
     pub type PalletDisabled<T: Config> = StorageValue<_, bool, ValueQuery>;
 
+    /// Denotes whether pallet decomissioning has started or not.
+    #[pallet::storage]
+    #[pallet::whitelist_storage]
+    pub type DecomissionStarted<T: Config> = StorageValue<_, bool, ValueQuery>;
+
     /// General information about the staker (non-smart-contract specific).
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
@@ -244,6 +249,8 @@ pub mod pallet {
         ///
         /// \(developer account, smart contract, era, amount burned\)
         StaleRewardBurned(T::AccountId, T::SmartContract, EraIndex, Balance),
+        /// Pallet is being decomissioned.
+        Decomission,
     }
 
     #[pallet::error]
@@ -296,6 +303,8 @@ pub mod pallet {
         NotActiveStaker,
         /// Transfering nomination to the same contract
         NominationTransferToSameContract,
+        /// Pallet decomission hasn't been started yet so this call is not allowed.
+        DecomissionNotStarted,
     }
 
     #[pallet::hooks]
@@ -709,8 +718,6 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // TODO: do we need to add force methods or at least methods that allow others to claim for someone else?
-
         /// Claim earned staker rewards for the oldest unclaimed era.
         /// In order to claim multiple eras, this call has to be called multiple times.
         ///
@@ -725,94 +732,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let staker = ensure_signed(origin)?;
 
-            // Ensure we have something to claim
-            let mut staker_info = Self::staker_info(&staker, &contract_id);
-            let (era, staked) = staker_info.claim();
-            ensure!(staked > Zero::zero(), Error::<T>::NotStakedContract);
-
-            let dapp_info =
-                RegisteredDapps::<T>::get(&contract_id).ok_or(Error::<T>::NotOperatedContract)?;
-
-            if let DAppState::Unregistered(unregister_era) = dapp_info.state {
-                ensure!(era < unregister_era, Error::<T>::NotOperatedContract);
-            }
-
-            let current_era = Self::current_era();
-            ensure!(era < current_era, Error::<T>::EraOutOfBounds);
-
-            let staking_info = Self::contract_stake_info(&contract_id, era).unwrap_or_default();
-            let reward_and_stake =
-                Self::general_era_info(era).ok_or(Error::<T>::UnknownEraReward)?;
-
-            let (_, stakers_joint_reward) =
-                Self::dev_stakers_split(&staking_info, &reward_and_stake);
-            let staker_reward =
-                Perbill::from_rational(staked, staking_info.total) * stakers_joint_reward;
-
-            let mut ledger = Self::ledger(&staker);
-
-            let should_restake_reward = Self::should_restake_reward(
-                ledger.reward_destination,
-                dapp_info.state,
-                staker_info.latest_staked_value(),
-            );
-
-            if should_restake_reward {
-                staker_info
-                    .stake(current_era, staker_reward)
-                    .map_err(|_| Error::<T>::UnexpectedStakeInfoEra)?;
-
-                // Restaking will, in the worst case, remove one, and add one record,
-                // so it's fine if the vector is full
-                ensure!(
-                    staker_info.len() <= T::MaxEraStakeValues::get(),
-                    Error::<T>::TooManyEraStakeValues
-                );
-            }
-
-            // Withdraw reward funds from the dapps staking pot
-            let reward_imbalance = T::Currency::withdraw(
-                &Self::account_id(),
-                staker_reward,
-                WithdrawReasons::TRANSFER,
-                ExistenceRequirement::AllowDeath,
-            )?;
-
-            if should_restake_reward {
-                ledger.locked = ledger.locked.saturating_add(staker_reward);
-                Self::update_ledger(&staker, ledger);
-
-                // Update storage
-                GeneralEraInfo::<T>::mutate(&current_era, |value| {
-                    if let Some(x) = value {
-                        x.staked = x.staked.saturating_add(staker_reward);
-                        x.locked = x.locked.saturating_add(staker_reward);
-                    }
-                });
-
-                ContractEraStake::<T>::mutate(contract_id.clone(), current_era, |staking_info| {
-                    if let Some(x) = staking_info {
-                        x.total = x.total.saturating_add(staker_reward);
-                    }
-                });
-
-                Self::deposit_event(Event::<T>::BondAndStake(
-                    staker.clone(),
-                    contract_id.clone(),
-                    staker_reward,
-                ));
-            }
-
-            T::Currency::resolve_creating(&staker, reward_imbalance);
-            Self::update_staker_info(&staker, &contract_id, staker_info);
-            Self::deposit_event(Event::<T>::Reward(staker, contract_id, era, staker_reward));
-
-            Ok(Some(if should_restake_reward {
-                T::WeightInfo::claim_staker_with_restake()
-            } else {
-                T::WeightInfo::claim_staker_without_restake()
-            })
-            .into())
+            Self::claim_staker_rewards_for(staker, contract_id, true)
         }
 
         /// Claim earned dapp rewards for the specified era.
@@ -985,6 +905,42 @@ pub mod pallet {
                 era,
                 dapp_reward,
             ));
+
+            Ok(().into())
+        }
+
+        /// Claim earned staker rewards for the given staker, and the oldest unclaimed era.
+        /// In order to claim multiple eras, this call has to be called multiple times.
+        ///
+        /// The rewards are always deposited into the staker's free balance.
+        #[pallet::call_index(14)]
+        #[pallet::weight(T::WeightInfo::claim_staker_with_restake().max(T::WeightInfo::claim_staker_without_restake()))]
+        pub fn claim_staker_for(
+            origin: OriginFor<T>,
+            staker: T::AccountId,
+            contract_id: T::SmartContract,
+        ) -> DispatchResultWithPostInfo {
+            Self::ensure_pallet_enabled()?;
+            ensure!(
+                DecomissionStarted::<T>::get(),
+                Error::<T>::DecomissionNotStarted
+            );
+            ensure_signed(origin)?;
+
+            // Reward restaking is forbidden for this call.
+            Self::claim_staker_rewards_for(staker, contract_id, false)
+        }
+
+        /// Enable the `decomission` flag for the pallet.
+        ///
+        /// The dispatch origin must be Root.
+        #[pallet::call_index(15)]
+        #[pallet::weight(T::WeightInfo::maintenance_mode())] // Good enough approximation
+        pub fn decomission(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            Self::ensure_pallet_enabled()?;
+            ensure_root(origin)?;
+            DecomissionStarted::<T>::put(true);
+            Self::deposit_event(Event::<T>::Decomission);
 
             Ok(().into())
         }
@@ -1297,6 +1253,103 @@ pub mod pallet {
                 // Should never happen since era info for current era must always exist
                 Zero::zero()
             }
+        }
+
+        /// Claim earned staker rewards for the given staker, and the oldest unclaimed era.
+        fn claim_staker_rewards_for(
+            staker: T::AccountId,
+            contract_id: T::SmartContract,
+            restake_allowed: bool,
+        ) -> DispatchResultWithPostInfo {
+            // Ensure we have something to claim
+            let mut staker_info = Self::staker_info(&staker, &contract_id);
+            let (era, staked) = staker_info.claim();
+            ensure!(staked > Zero::zero(), Error::<T>::NotStakedContract);
+
+            let dapp_info =
+                RegisteredDapps::<T>::get(&contract_id).ok_or(Error::<T>::NotOperatedContract)?;
+
+            if let DAppState::Unregistered(unregister_era) = dapp_info.state {
+                ensure!(era < unregister_era, Error::<T>::NotOperatedContract);
+            }
+
+            let current_era = Self::current_era();
+            ensure!(era < current_era, Error::<T>::EraOutOfBounds);
+
+            let staking_info = Self::contract_stake_info(&contract_id, era).unwrap_or_default();
+            let reward_and_stake =
+                Self::general_era_info(era).ok_or(Error::<T>::UnknownEraReward)?;
+
+            let (_, stakers_joint_reward) =
+                Self::dev_stakers_split(&staking_info, &reward_and_stake);
+            let staker_reward =
+                Perbill::from_rational(staked, staking_info.total) * stakers_joint_reward;
+
+            let mut ledger = Self::ledger(&staker);
+
+            let should_restake_reward = restake_allowed
+                && Self::should_restake_reward(
+                    ledger.reward_destination,
+                    dapp_info.state,
+                    staker_info.latest_staked_value(),
+                );
+
+            if should_restake_reward {
+                staker_info
+                    .stake(current_era, staker_reward)
+                    .map_err(|_| Error::<T>::UnexpectedStakeInfoEra)?;
+
+                // Restaking will, in the worst case, remove one, and add one record,
+                // so it's fine if the vector is full
+                ensure!(
+                    staker_info.len() <= T::MaxEraStakeValues::get(),
+                    Error::<T>::TooManyEraStakeValues
+                );
+            }
+
+            // Withdraw reward funds from the dapps staking pot
+            let reward_imbalance = T::Currency::withdraw(
+                &Self::account_id(),
+                staker_reward,
+                WithdrawReasons::TRANSFER,
+                ExistenceRequirement::AllowDeath,
+            )?;
+
+            if should_restake_reward {
+                ledger.locked = ledger.locked.saturating_add(staker_reward);
+                Self::update_ledger(&staker, ledger);
+
+                // Update storage
+                GeneralEraInfo::<T>::mutate(&current_era, |value| {
+                    if let Some(x) = value {
+                        x.staked = x.staked.saturating_add(staker_reward);
+                        x.locked = x.locked.saturating_add(staker_reward);
+                    }
+                });
+
+                ContractEraStake::<T>::mutate(contract_id.clone(), current_era, |staking_info| {
+                    if let Some(x) = staking_info {
+                        x.total = x.total.saturating_add(staker_reward);
+                    }
+                });
+
+                Self::deposit_event(Event::<T>::BondAndStake(
+                    staker.clone(),
+                    contract_id.clone(),
+                    staker_reward,
+                ));
+            }
+
+            T::Currency::resolve_creating(&staker, reward_imbalance);
+            Self::update_staker_info(&staker, &contract_id, staker_info);
+            Self::deposit_event(Event::<T>::Reward(staker, contract_id, era, staker_reward));
+
+            Ok(Some(if should_restake_reward {
+                T::WeightInfo::claim_staker_with_restake()
+            } else {
+                T::WeightInfo::claim_staker_without_restake()
+            })
+            .into())
         }
     }
 }

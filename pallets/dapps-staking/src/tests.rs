@@ -29,6 +29,8 @@ use sp_runtime::{
     Perbill,
 };
 
+use ::assert_matches::assert_matches;
+
 use testing_utils::*;
 
 #[test]
@@ -2060,6 +2062,14 @@ fn maintenance_mode_is_ok() {
             ),
             Error::<TestRuntime>::Disabled
         );
+        assert_noop!(
+            DappsStaking::claim_staker_for(RuntimeOrigin::signed(account), account, contract_id),
+            Error::<TestRuntime>::Disabled
+        );
+        assert_noop!(
+            DappsStaking::decomission(RuntimeOrigin::root()),
+            Error::<TestRuntime>::Disabled
+        );
 
         //
         // 3
@@ -2339,6 +2349,75 @@ fn burn_stale_reward_negative_checks() {
         assert_noop!(
             DappsStaking::burn_stale_reward(RuntimeOrigin::root(), contract_id, start_era,),
             Error::<TestRuntime>::AlreadyClaimedInThisEra
+        );
+    })
+}
+
+#[test]
+fn decomission_works() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Sanity check
+        assert!(
+            !DecomissionStarted::<TestRuntime>::get(),
+            "Init state must be false."
+        );
+
+        // Ensure non-root cannot call it
+        assert_noop!(
+            DappsStaking::decomission(RuntimeOrigin::signed(1)),
+            BadOrigin
+        );
+
+        // Assert post-call state
+        assert_ok!(DappsStaking::decomission(RuntimeOrigin::root()));
+        System::assert_last_event(mock::RuntimeEvent::DappsStaking(Event::Decomission));
+        assert!(
+            DecomissionStarted::<TestRuntime>::get(),
+            "Must be true after decomission has started."
+        );
+    })
+}
+
+#[test]
+fn claim_staker_for_works() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Register a dApp and stake some amount on it
+        let developer = 1;
+        let claimer = 2;
+        let staker = claimer + 1; // has to be different
+        let smart_contract = MockSmartContract::Evm(H160::repeat_byte(0x02));
+        assert_register(developer, &smart_contract);
+        assert_bond_and_stake(staker, &smart_contract, 17);
+
+        // Advance to next era so we can claim rewards for it
+        advance_to_era(DappsStaking::current_era() + 1);
+
+        // Claiming for another staker is not possible unless decomission has started
+        assert_noop!(
+            DappsStaking::claim_staker_for(
+                RuntimeOrigin::signed(claimer),
+                staker,
+                smart_contract.clone()
+            ),
+            Error::<TestRuntime>::DecomissionNotStarted
+        );
+
+        // Enable decomission mode
+        assert_ok!(DappsStaking::decomission(RuntimeOrigin::root()));
+        assert_ok!(DappsStaking::claim_staker_for(
+            RuntimeOrigin::signed(claimer),
+            staker,
+            smart_contract.clone()
+        ));
+
+        // The reward must be claimed for the staker, not the claimer!
+        assert_matches!(
+            System::events().last().unwrap().event,
+            mock::RuntimeEvent::DappsStaking(Event::Reward(staker, _, _, _)) if staker == staker
         );
     })
 }
