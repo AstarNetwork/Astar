@@ -303,6 +303,8 @@ pub mod pallet {
         NotActiveStaker,
         /// Transfering nomination to the same contract
         NominationTransferToSameContract,
+        /// Decomission is in progress so this call is not allowed.
+        DecomissionInProgress,
         /// Pallet decomission hasn't been started yet so this call is not allowed.
         DecomissionNotStarted,
     }
@@ -316,7 +318,12 @@ pub mod pallet {
             // a new era is triggered. This code is just a safety net to ensure nothing is broken
             // if we fail to do that.
             if PalletDisabled::<T>::get() || T::ForcePalletDisabled::get() {
-                return T::DbWeight::get().reads(1);
+                return T::DbWeight::get().reads(5);
+            }
+
+            // In case decomissioning has started, we don't allow eras to change anymore.
+            if DecomissionStarted::<T>::get() {
+                return T::DbWeight::get().reads(5);
             }
 
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
@@ -341,9 +348,9 @@ pub mod pallet {
 
                 Self::deposit_event(Event::<T>::NewDappStakingEra(next_era));
 
-                consumed_weight + T::DbWeight::get().reads_writes(5, 3)
+                consumed_weight + T::DbWeight::get().reads_writes(58, 3)
             } else {
-                T::DbWeight::get().reads(4)
+                T::DbWeight::get().reads(7)
             }
         }
     }
@@ -364,6 +371,7 @@ pub mod pallet {
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
+            Self::ensure_not_in_decommision()?;
             ensure_root(origin)?;
 
             ensure!(
@@ -398,6 +406,7 @@ pub mod pallet {
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
+            Self::ensure_not_in_decommision()?;
             ensure_root(origin)?;
 
             let mut dapp_info =
@@ -429,6 +438,7 @@ pub mod pallet {
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
+            Self::ensure_not_in_decommision()?;
             let staker = ensure_signed(origin)?;
 
             // dApp must exist and it has to be unregistered
@@ -491,6 +501,7 @@ pub mod pallet {
             #[pallet::compact] value: Balance,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
+            Self::ensure_not_in_decommision()?;
             let staker = ensure_signed(origin)?;
 
             // Check that contract is ready for staking.
@@ -558,6 +569,7 @@ pub mod pallet {
             #[pallet::compact] value: Balance,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
+            Self::ensure_not_in_decommision()?;
             let staker = ensure_signed(origin)?;
 
             ensure!(value > Zero::zero(), Error::<T>::UnstakingWithNoValue);
@@ -659,6 +671,7 @@ pub mod pallet {
             target_contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
+            Self::ensure_not_in_decommision()?;
             let staker = ensure_signed(origin)?;
 
             // Contracts must differ and both must be active
@@ -732,7 +745,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let staker = ensure_signed(origin)?;
 
-            Self::claim_staker_rewards_for(staker, contract_id, true)
+            Self::internal_claim_staker_for(staker, contract_id)
         }
 
         /// Claim earned dapp rewards for the specified era.
@@ -825,17 +838,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let staker = ensure_signed(origin)?;
-            let mut ledger = Self::ledger(&staker);
 
-            ensure!(!ledger.is_empty(), Error::<T>::NotActiveStaker);
-
-            // this is done directly instead of using update_ledger helper
-            // because there's no need to interact with the Currency locks
-            ledger.reward_destination = reward_destination;
-            Ledger::<T>::insert(&staker, ledger);
-
-            Self::deposit_event(Event::<T>::RewardDestination(staker, reward_destination));
-            Ok(().into())
+            Self::internal_set_reward_destination_for(staker, reward_destination)
         }
 
         /// Used to force set `ContractEraStake` storage values.
@@ -912,9 +916,9 @@ pub mod pallet {
         /// Claim earned staker rewards for the given staker, and the oldest unclaimed era.
         /// In order to claim multiple eras, this call has to be called multiple times.
         ///
-        /// The rewards are always deposited into the staker's free balance.
+        /// This call can only be used during the pallet decomission process.
         #[pallet::call_index(14)]
-        #[pallet::weight(T::WeightInfo::claim_staker_with_restake().max(T::WeightInfo::claim_staker_without_restake()))]
+        #[pallet::weight(T::WeightInfo::claim_staker_without_restake())]
         pub fn claim_staker_for(
             origin: OriginFor<T>,
             staker: T::AccountId,
@@ -927,18 +931,38 @@ pub mod pallet {
             );
             ensure_signed(origin)?;
 
-            // Reward restaking is forbidden for this call.
-            Self::claim_staker_rewards_for(staker, contract_id, false)
+            Self::internal_claim_staker_for(staker, contract_id)
+        }
+
+        /// Used to set reward destination for staker rewards, for the given staker
+        ///
+        #[pallet::call_index(15)]
+        #[pallet::weight(T::WeightInfo::set_reward_destination())]
+        pub fn set_reward_destination_for(
+            origin: OriginFor<T>,
+            staker: T::AccountId,
+            reward_destination: RewardDestination,
+        ) -> DispatchResultWithPostInfo {
+            Self::ensure_pallet_enabled()?;
+            ensure!(
+                DecomissionStarted::<T>::get(),
+                Error::<T>::DecomissionNotStarted
+            );
+            ensure_signed(origin)?;
+
+            Self::internal_set_reward_destination_for(staker, reward_destination)
         }
 
         /// Enable the `decomission` flag for the pallet.
         ///
         /// The dispatch origin must be Root.
-        #[pallet::call_index(15)]
+        #[pallet::call_index(16)]
         #[pallet::weight(T::WeightInfo::maintenance_mode())] // Good enough approximation
         pub fn decomission(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
+            Self::ensure_not_in_decommision()?;
             ensure_root(origin)?;
+
             DecomissionStarted::<T>::put(true);
             Self::deposit_event(Event::<T>::Decomission);
 
@@ -1102,6 +1126,15 @@ pub mod pallet {
             }
         }
 
+        /// `Err` if pallet is undergoing decomission, `Ok` otherwise
+        pub fn ensure_not_in_decommision() -> Result<(), Error<T>> {
+            if DecomissionStarted::<T>::get() {
+                Err(Error::<T>::DecomissionInProgress)
+            } else {
+                Ok(())
+            }
+        }
+
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
         fn update_ledger(staker: &T::AccountId, ledger: AccountLedger) {
@@ -1256,10 +1289,9 @@ pub mod pallet {
         }
 
         /// Claim earned staker rewards for the given staker, and the oldest unclaimed era.
-        fn claim_staker_rewards_for(
+        fn internal_claim_staker_for(
             staker: T::AccountId,
             contract_id: T::SmartContract,
-            restake_allowed: bool,
         ) -> DispatchResultWithPostInfo {
             // Ensure we have something to claim
             let mut staker_info = Self::staker_info(&staker, &contract_id);
@@ -1287,12 +1319,11 @@ pub mod pallet {
 
             let mut ledger = Self::ledger(&staker);
 
-            let should_restake_reward = restake_allowed
-                && Self::should_restake_reward(
-                    ledger.reward_destination,
-                    dapp_info.state,
-                    staker_info.latest_staked_value(),
-                );
+            let should_restake_reward = Self::should_restake_reward(
+                ledger.reward_destination,
+                dapp_info.state,
+                staker_info.latest_staked_value(),
+            );
 
             if should_restake_reward {
                 staker_info
@@ -1350,6 +1381,24 @@ pub mod pallet {
                 T::WeightInfo::claim_staker_without_restake()
             })
             .into())
+        }
+
+        /// Sets the reward destination for the given staker.
+        fn internal_set_reward_destination_for(
+            staker: T::AccountId,
+            reward_destination: RewardDestination,
+        ) -> DispatchResultWithPostInfo {
+            let mut ledger = Self::ledger(&staker);
+
+            ensure!(!ledger.is_empty(), Error::<T>::NotActiveStaker);
+
+            // this is done directly instead of using update_ledger helper
+            // because there's no need to interact with the Currency locks
+            ledger.reward_destination = reward_destination;
+            Ledger::<T>::insert(&staker, ledger);
+
+            Self::deposit_event(Event::<T>::RewardDestination(staker, reward_destination));
+            Ok(().into())
         }
     }
 }

@@ -18,8 +18,8 @@
 
 use super::{pallet::pallet::Error, pallet::pallet::Event, *};
 use frame_support::{
-    assert_noop, assert_ok,
-    traits::{Currency, OnInitialize},
+    assert_noop, assert_ok, assert_storage_noop,
+    traits::{Currency, OnFinalize, OnInitialize},
     weights::Weight,
 };
 use mock::{Balance, Balances, MockSmartContract, *};
@@ -2112,6 +2112,74 @@ fn maintenance_mode_no_change() {
 }
 
 #[test]
+fn decommision_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Init sanity check
+        assert_ok!(DappsStaking::ensure_not_in_decommision());
+        assert!(!DecomissionStarted::<TestRuntime>::exists());
+
+        // Enable decomission mode
+        assert_ok!(DappsStaking::decomission(RuntimeOrigin::root()));
+        assert!(DecomissionStarted::<TestRuntime>::get());
+        System::assert_last_event(mock::RuntimeEvent::DappsStaking(Event::Decomission));
+
+        let account = 1;
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        // Ensure that expected calls no longer work
+        assert_noop!(
+            DappsStaking::register(RuntimeOrigin::root(), account, contract_id),
+            Error::<TestRuntime>::DecomissionInProgress
+        );
+        assert_noop!(
+            DappsStaking::unregister(RuntimeOrigin::root(), contract_id),
+            Error::<TestRuntime>::DecomissionInProgress
+        );
+        assert_noop!(
+            DappsStaking::withdraw_from_unregistered(RuntimeOrigin::signed(account), contract_id),
+            Error::<TestRuntime>::DecomissionInProgress
+        );
+
+        assert_noop!(
+            DappsStaking::bond_and_stake(RuntimeOrigin::signed(account), contract_id, 100),
+            Error::<TestRuntime>::DecomissionInProgress
+        );
+        assert_noop!(
+            DappsStaking::unbond_and_unstake(RuntimeOrigin::signed(account), contract_id, 100),
+            Error::<TestRuntime>::DecomissionInProgress
+        );
+        assert_noop!(
+            DappsStaking::nomination_transfer(
+                RuntimeOrigin::signed(account),
+                contract_id,
+                100,
+                contract_id,
+            ),
+            Error::<TestRuntime>::DecomissionInProgress
+        );
+    })
+}
+
+#[test]
+fn no_era_change_during_decommision() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Enable decomission mode and set the next era to start immediately after this block
+        assert_ok!(DappsStaking::decomission(RuntimeOrigin::root()));
+        NextEraStartingBlock::<TestRuntime>::put(System::block_number() + 1);
+
+        // Ensure nothing happens during on_initialize
+        assert_storage_noop!(DappsStaking::on_finalize(System::block_number()));
+        assert_storage_noop!(DappsStaking::on_initialize(System::block_number() + 1));
+        assert_storage_noop!(DappsStaking::on_finalize(System::block_number() + 1));
+        assert_storage_noop!(DappsStaking::on_initialize(System::block_number() + 2));
+    })
+}
+
+#[test]
 fn dev_stakers_split_util() {
     let base_stakers_reward = 7 * 11 * 13 * 17;
     let base_dapps_reward = 19 * 23 * 31;
@@ -2406,7 +2474,7 @@ fn claim_staker_for_works() {
             Error::<TestRuntime>::DecomissionNotStarted
         );
 
-        // Enable decomission mode
+        // Enable decomission mode & claim the reward
         assert_ok!(DappsStaking::decomission(RuntimeOrigin::root()));
         assert_ok!(DappsStaking::claim_staker_for(
             RuntimeOrigin::signed(claimer),
@@ -2419,5 +2487,44 @@ fn claim_staker_for_works() {
             System::events().last().unwrap().event,
             mock::RuntimeEvent::DappsStaking(Event::Reward(staker, _, _, _)) if staker == staker
         );
+    })
+}
+
+#[test]
+fn set_reward_destination_for_works() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Register a dApp and stake some amount on it
+        let developer = 1;
+        let caller = 2;
+        let staker = caller + 1; // has to be different
+        let smart_contract = MockSmartContract::Evm(H160::repeat_byte(0x02));
+        assert_register(developer, &smart_contract);
+        assert_bond_and_stake(staker, &smart_contract, 17);
+
+        // Claiming for another staker is not possible unless decomission has started
+        assert_noop!(
+            DappsStaking::set_reward_destination_for(
+                RuntimeOrigin::signed(caller),
+                staker,
+                RewardDestination::StakeBalance
+            ),
+            Error::<TestRuntime>::DecomissionNotStarted
+        );
+
+        // Enable decomission mode and set the reward destination
+        assert_ok!(DappsStaking::decomission(RuntimeOrigin::root()));
+        assert_ok!(DappsStaking::set_reward_destination_for(
+            RuntimeOrigin::signed(caller),
+            staker,
+            RewardDestination::StakeBalance
+        ));
+
+        // The reward destination must be set for the staker, not the caller.
+        System::assert_last_event(mock::RuntimeEvent::DappsStaking(Event::RewardDestination(
+            staker,
+            RewardDestination::StakeBalance,
+        )));
     })
 }
