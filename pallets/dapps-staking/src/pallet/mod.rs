@@ -318,12 +318,12 @@ pub mod pallet {
             // a new era is triggered. This code is just a safety net to ensure nothing is broken
             // if we fail to do that.
             if PalletDisabled::<T>::get() || T::ForcePalletDisabled::get() {
-                return T::DbWeight::get().reads(5);
+                return T::DbWeight::get().reads(3);
             }
 
             // In case decomissioning has started, we don't allow eras to change anymore.
             if DecomissionStarted::<T>::get() {
-                return T::DbWeight::get().reads(5);
+                return T::DbWeight::get().reads(3);
             }
 
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
@@ -348,7 +348,7 @@ pub mod pallet {
 
                 Self::deposit_event(Event::<T>::NewDappStakingEra(next_era));
 
-                consumed_weight + T::DbWeight::get().reads_writes(58, 3)
+                consumed_weight + T::DbWeight::get().reads_writes(8, 3)
             } else {
                 T::DbWeight::get().reads(7)
             }
