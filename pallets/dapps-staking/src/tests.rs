@@ -2159,6 +2159,20 @@ fn decommision_is_ok() {
             ),
             Error::<TestRuntime>::DecomissionInProgress
         );
+
+        // Ensure that expected calls still work (or at least don't fail with `DecomissionInProgress` error)
+        assert_noop!(
+            DappsStaking::claim_staker(RuntimeOrigin::signed(account), contract_id,),
+            Error::<TestRuntime>::NotStakedContract
+        );
+        assert_noop!(
+            DappsStaking::claim_dapp(RuntimeOrigin::signed(account), contract_id, 1,),
+            Error::<TestRuntime>::NotOperatedContract
+        );
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(RuntimeOrigin::signed(account),),
+            Error::<TestRuntime>::NothingToWithdraw
+        );
     })
 }
 
