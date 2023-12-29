@@ -630,6 +630,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::withdraw_unbonded())]
         pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
+            Self::ensure_not_in_decommission()?;
             let staker = ensure_signed(origin)?;
 
             let mut ledger = Self::ledger(&staker);
@@ -870,6 +871,7 @@ pub mod pallet {
             #[pallet::compact] era: EraIndex,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
+            Self::ensure_not_in_decommission()?;
             ensure_root(origin)?;
 
             let dapp_info =

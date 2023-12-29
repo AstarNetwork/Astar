@@ -2117,7 +2117,7 @@ fn decommision_is_ok() {
         initialize_first_block();
 
         // Init sanity check
-        assert_ok!(DappsStaking::ensure_not_in_decommision());
+        assert_ok!(DappsStaking::ensure_not_in_decommission());
         assert!(!DecommissionStarted::<TestRuntime>::exists());
 
         // Enable decommission mode
@@ -2159,6 +2159,10 @@ fn decommision_is_ok() {
             ),
             Error::<TestRuntime>::DecommissionInProgress
         );
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(RuntimeOrigin::signed(account)),
+            Error::<TestRuntime>::DecommissionInProgress
+        );
 
         // Ensure that expected calls still work (or at least don't fail with `DecommissionInProgress` error)
         assert_noop!(
@@ -2168,10 +2172,6 @@ fn decommision_is_ok() {
         assert_noop!(
             DappsStaking::claim_dapp(RuntimeOrigin::signed(account), contract_id, 1,),
             Error::<TestRuntime>::NotOperatedContract
-        );
-        assert_noop!(
-            DappsStaking::withdraw_unbonded(RuntimeOrigin::signed(account),),
-            Error::<TestRuntime>::NothingToWithdraw
         );
     })
 }
