@@ -75,4 +75,4 @@ By contributing, you agree that your contributions will be licensed under the [G
 
 ## Community Contribution
 
-As a public blockchain network, Astar Network welcomes any contributions that help our community members and create the best blockchain network. Anyone can interact with the community through our [official forum](https://forum.astar.network/), [discord](https://discord.gg/Z3nC9U4), and [Telegram](https://t.me/PlasmOfficial). You can contribute to the community by actively participating in the forum discussions, helping other members, or sharing Astar Network with others.
+As a public blockchain network, Astar Network welcomes any contributions that help our community members and create the best blockchain network. Anyone can interact with the community through our [official forum](https://forum.astar.network/), [discord](https://discord.gg/astarnetwork), and [Telegram](https://t.me/PlasmOfficial). You can contribute to the community by actively participating in the forum discussions, helping other members, or sharing Astar Network with others.
