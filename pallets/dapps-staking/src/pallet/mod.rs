@@ -132,10 +132,10 @@ pub mod pallet {
     #[pallet::getter(fn pallet_disabled)]
     pub type PalletDisabled<T: Config> = StorageValue<_, bool, ValueQuery>;
 
-    /// Denotes whether pallet decomissioning has started or not.
+    /// Denotes whether pallet decommissioning has started or not.
     #[pallet::storage]
     #[pallet::whitelist_storage]
-    pub type DecomissionStarted<T: Config> = StorageValue<_, bool, ValueQuery>;
+    pub type DecommissionStarted<T: Config> = StorageValue<_, bool, ValueQuery>;
 
     /// General information about the staker (non-smart-contract specific).
     #[pallet::storage]
@@ -249,8 +249,8 @@ pub mod pallet {
         ///
         /// \(developer account, smart contract, era, amount burned\)
         StaleRewardBurned(T::AccountId, T::SmartContract, EraIndex, Balance),
-        /// Pallet is being decomissioned.
-        Decomission,
+        /// Pallet is being decommissioned.
+        Decommission,
     }
 
     #[pallet::error]
@@ -303,10 +303,10 @@ pub mod pallet {
         NotActiveStaker,
         /// Transfering nomination to the same contract
         NominationTransferToSameContract,
-        /// Decomission is in progress so this call is not allowed.
-        DecomissionInProgress,
-        /// Pallet decomission hasn't been started yet so this call is not allowed.
-        DecomissionNotStarted,
+        /// Decommission is in progress so this call is not allowed.
+        DecommissionInProgress,
+        /// Pallet decommission hasn't been started yet so this call is not allowed.
+        DecommissionNotStarted,
     }
 
     #[pallet::hooks]
@@ -321,8 +321,8 @@ pub mod pallet {
                 return T::DbWeight::get().reads(3);
             }
 
-            // In case decomissioning has started, we don't allow eras to change anymore.
-            if DecomissionStarted::<T>::get() {
+            // In case decommissioning has started, we don't allow eras to change anymore.
+            if DecommissionStarted::<T>::get() {
                 return T::DbWeight::get().reads(3);
             }
 
@@ -371,7 +371,7 @@ pub mod pallet {
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommision()?;
+            Self::ensure_not_in_decommission()?;
             ensure_root(origin)?;
 
             ensure!(
@@ -406,7 +406,7 @@ pub mod pallet {
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommision()?;
+            Self::ensure_not_in_decommission()?;
             ensure_root(origin)?;
 
             let mut dapp_info =
@@ -438,7 +438,7 @@ pub mod pallet {
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommision()?;
+            Self::ensure_not_in_decommission()?;
             let staker = ensure_signed(origin)?;
 
             // dApp must exist and it has to be unregistered
@@ -501,7 +501,7 @@ pub mod pallet {
             #[pallet::compact] value: Balance,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommision()?;
+            Self::ensure_not_in_decommission()?;
             let staker = ensure_signed(origin)?;
 
             // Check that contract is ready for staking.
@@ -569,7 +569,7 @@ pub mod pallet {
             #[pallet::compact] value: Balance,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommision()?;
+            Self::ensure_not_in_decommission()?;
             let staker = ensure_signed(origin)?;
 
             ensure!(value > Zero::zero(), Error::<T>::UnstakingWithNoValue);
@@ -671,7 +671,7 @@ pub mod pallet {
             target_contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommision()?;
+            Self::ensure_not_in_decommission()?;
             let staker = ensure_signed(origin)?;
 
             // Contracts must differ and both must be active
@@ -916,7 +916,7 @@ pub mod pallet {
         /// Claim earned staker rewards for the given staker, and the oldest unclaimed era.
         /// In order to claim multiple eras, this call has to be called multiple times.
         ///
-        /// This call can only be used during the pallet decomission process.
+        /// This call can only be used during the pallet decommission process.
         #[pallet::call_index(14)]
         #[pallet::weight(T::WeightInfo::claim_staker_without_restake())]
         pub fn claim_staker_for(
@@ -926,8 +926,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             ensure!(
-                DecomissionStarted::<T>::get(),
-                Error::<T>::DecomissionNotStarted
+                DecommissionStarted::<T>::get(),
+                Error::<T>::DecommissionNotStarted
             );
             ensure_signed(origin)?;
 
@@ -945,26 +945,26 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             ensure!(
-                DecomissionStarted::<T>::get(),
-                Error::<T>::DecomissionNotStarted
+                DecommissionStarted::<T>::get(),
+                Error::<T>::DecommissionNotStarted
             );
             ensure_signed(origin)?;
 
             Self::internal_set_reward_destination_for(staker, reward_destination)
         }
 
-        /// Enable the `decomission` flag for the pallet.
+        /// Enable the `decommission` flag for the pallet.
         ///
         /// The dispatch origin must be Root.
         #[pallet::call_index(16)]
         #[pallet::weight(T::WeightInfo::maintenance_mode())] // Good enough approximation
-        pub fn decomission(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn decommission(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommision()?;
+            Self::ensure_not_in_decommission()?;
             ensure_root(origin)?;
 
-            DecomissionStarted::<T>::put(true);
-            Self::deposit_event(Event::<T>::Decomission);
+            DecommissionStarted::<T>::put(true);
+            Self::deposit_event(Event::<T>::Decommission);
 
             Ok(().into())
         }
@@ -1126,10 +1126,10 @@ pub mod pallet {
             }
         }
 
-        /// `Err` if pallet is undergoing decomission, `Ok` otherwise
-        pub fn ensure_not_in_decommision() -> Result<(), Error<T>> {
-            if DecomissionStarted::<T>::get() {
-                Err(Error::<T>::DecomissionInProgress)
+        /// `Err` if pallet is undergoing decommission, `Ok` otherwise
+        pub fn ensure_not_in_decommission() -> Result<(), Error<T>> {
+            if DecommissionStarted::<T>::get() {
+                Err(Error::<T>::DecommissionInProgress)
             } else {
                 Ok(())
             }
