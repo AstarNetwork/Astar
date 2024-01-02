@@ -63,9 +63,11 @@ interface DappsStaking {
     function register(address) external returns (bool);
 
     /// @notice Stake provided amount on the contract.
+    ///         If the staker has sufficient locked amount to cover the stake, no additional amount is locked.
+    ///         If the staker has insufficient locked amount to cover the stake, an attempt will be made to lock the missing amount.
     function bond_and_stake(address, uint128) external returns (bool);
 
-    /// @notice Start unbonding process and unstake balance from the contract.
+    /// @notice Unstake balance from the smart contract, and begin the unlocking process.
     function unbond_and_unstake(address, uint128) external returns (bool);
 
     /// @notice Withdraw all funds that have completed the unbonding process.
@@ -82,17 +84,17 @@ interface DappsStaking {
     /// @param era: The era to be claimed
     function claim_dapp(address smart_contract, uint128 era) external returns (bool);
 
-    /// @notice Set reward destination for staker rewards
-    /// @param reward_destination: The instruction on how the reward payout should be handled
+    /// @notice This call is deprecated and will always fail.
+    /// @param reward_destination: The instruction on how the reward payout should be handled (ignored)
     function set_reward_destination(RewardDestination reward_destination) external returns (bool);
 
-    /// @notice Withdraw staked funds from an unregistered contract.
+    /// @notice Unstake funds from an unregistered contract.
     /// @param smart_contract: The smart contract address used for staking
     function withdraw_from_unregistered(address smart_contract) external returns (bool);
 
     /// @notice Transfer part or entire nomination from origin smart contract to target smart contract
     /// @param origin_smart_contract: The origin smart contract address
-    /// @param amount: The amount to transfer from origin to target
+    /// @param amount: The amount to transfer from origin to target, must be precise.
     /// @param target_smart_contract: The target smart contract address
     function nomination_transfer(address origin_smart_contract, uint128 amount, address target_smart_contract) external returns (bool);
 }
