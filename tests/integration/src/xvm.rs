@@ -313,8 +313,8 @@ fn calling_wasm_payable_from_evm_works() {
             None,
             vec![],
         ));
-        let recieved = Balances::free_balance(&wasm_payable_callee_addr) - prev_wasm_payable_balance;
-        assert_eq!(recieved, value);
+        let received = Balances::free_balance(&wasm_payable_callee_addr) - prev_wasm_payable_balance;
+        assert_eq!(received, value);
     });
 }
 

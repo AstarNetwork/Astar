@@ -38,7 +38,7 @@ fn transfer_to_h160_via_lookup() {
             UNIT,
         ));
 
-        // evm account should have recieved the funds
+        // evm account should have received the funds
         let (account, _) = EVM::account_basic(&eth_address);
         assert_eq!(account.balance, (UNIT - ExistentialDeposit::get()).into());
     });
