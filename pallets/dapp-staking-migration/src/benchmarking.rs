@@ -106,14 +106,14 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn cleanup_old_storage_success() {
+    fn cleanup_old_storage_success(x: Linear<1, 5>) {
         initial_config::<T>();
 
         #[block]
         {
             // TODO: for some reason, tests always fail here, nothing gets removed from storage.
             // When tested against real runtime, it works just fine.
-            let _ = Migration::<T>::cleanup_old_storage(1);
+            let _ = Migration::<T>::cleanup_old_storage(x.into());
         }
     }
 

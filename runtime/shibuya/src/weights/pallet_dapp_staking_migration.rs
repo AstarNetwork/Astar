@@ -66,8 +66,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `558`
 		//  Estimated: `6112`
-		// Minimum execution time: 46_218_000 picoseconds.
-		Weight::from_parts(47_610_000, 6112)
+		// Minimum execution time: 46_832_000 picoseconds.
+		Weight::from_parts(47_613_000, 6112)
 			.saturating_add(T::DbWeight::get().reads(6_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -77,8 +77,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `3551`
-		// Minimum execution time: 3_385_000 picoseconds.
-		Weight::from_parts(3_552_000, 3551)
+		// Minimum execution time: 6_296_000 picoseconds.
+		Weight::from_parts(6_626_000, 3551)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	/// Storage: DappsStaking Ledger (r:2 w:1)
@@ -97,8 +97,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `1748`
 		//  Estimated: `6472`
-		// Minimum execution time: 69_553_000 picoseconds.
-		Weight::from_parts(70_319_000, 6472)
+		// Minimum execution time: 70_686_000 picoseconds.
+		Weight::from_parts(71_976_000, 6472)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
@@ -108,26 +108,31 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `3731`
-		// Minimum execution time: 2_918_000 picoseconds.
-		Weight::from_parts(3_022_000, 3731)
+		// Minimum execution time: 2_801_000 picoseconds.
+		Weight::from_parts(3_072_000, 3731)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
-	/// Storage: DappsStaking Ledger (r:2 w:1)
+	/// Storage: DappsStaking Ledger (r:6 w:5)
 	/// Proof: DappsStaking Ledger (max_values: None, max_size: Some(266), added: 2741, mode: MaxEncodedLen)
-	fn cleanup_old_storage_success() -> Weight {
+	/// The range of component `x` is `[1, 5]`.
+	fn cleanup_old_storage_success(x: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `739`
-		//  Estimated: `6472`
-		// Minimum execution time: 7_109_000 picoseconds.
-		Weight::from_parts(7_383_000, 6472)
-			.saturating_add(T::DbWeight::get().reads(2_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
+		//  Measured:  `699 + x * (39 ±0)`
+		//  Estimated: `3731 + x * (2741 ±0)`
+		// Minimum execution time: 7_303_000 picoseconds.
+		Weight::from_parts(6_916_878, 3731)
+			// Standard Error: 7_249
+			.saturating_add(Weight::from_parts(675_810, 0).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(x.into())))
+			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(x.into())))
+			.saturating_add(Weight::from_parts(0, 2741).saturating_mul(x.into()))
 	}
 	fn cleanup_old_storage_noop() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 2_095_000 picoseconds.
-		Weight::from_parts(2_213_000, 0)
+		// Minimum execution time: 2_094_000 picoseconds.
+		Weight::from_parts(2_182_000, 0)
 	}
 }

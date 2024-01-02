@@ -148,10 +148,20 @@ fn migrate_call_works() {
                 Some(Weight::from_parts(1, 1))
             ));
 
-            assert!(
-                pallet_dapp_staking_v3::ActiveProtocolState::<Test>::get().maintenance,
-                "Maintenance must always be returned after migrate call finishes."
-            );
+            match MigrationStateStorage::<Test>::get() {
+                MigrationState::RegisteredDApps | MigrationState::Ledgers => {
+                    assert!(
+                        pallet_dapp_staking_v3::ActiveProtocolState::<Test>::get().maintenance,
+                        "Pallet must be in the maintenance mode during old storage migration."
+                    );
+                }
+                _ => {
+                    assert!(
+                        !pallet_dapp_staking_v3::ActiveProtocolState::<Test>::get().maintenance,
+                        "Maintenance mode is disabled during old storage cleanup."
+                    );
+                }
+            }
         }
 
         // Check post-state

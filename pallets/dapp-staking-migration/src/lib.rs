@@ -230,10 +230,10 @@ pub mod pallet {
                     },
                     MigrationState::Cleanup => {
                         // Ensure we don't attempt to delete too much at once.
-                        const SAFETY_MARGIN: u32 = 1000;
+                        const SAFETY_MARGIN: u32 = 2000;
                         let remaining_weight = weight_limit.saturating_sub(consumed_weight);
                         let capacity = match remaining_weight.checked_div_per_component(
-                            &<T as Config>::WeightInfo::cleanup_old_storage_success(),
+                            &<T as Config>::WeightInfo::cleanup_old_storage_success(1),
                         ) {
                             Some(entries_to_delete) => {
                                 SAFETY_MARGIN.min(entries_to_delete.unique_saturated_into())
@@ -271,9 +271,15 @@ pub mod pallet {
                 Self::deposit_event(Event::<T>::EntriesDeleted(entries_deleted));
             }
 
-            // Put the pallet back into maintenance mode.
+            // Put the pallet back into maintenance mode in case we're still migration the old storage over,
+            // otherwise disable the maintenance mode.
             pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
-                state.maintenance = true;
+                state.maintenance = match migration_state {
+                    MigrationState::NotInProgress
+                    | MigrationState::RegisteredDApps
+                    | MigrationState::Ledgers => true,
+                    MigrationState::Cleanup | MigrationState::Finished => false,
+                };
             });
 
             if migration_state != init_migration_state {
@@ -448,8 +454,7 @@ pub mod pallet {
 
             if !done {
                 Ok((
-                    <T as Config>::WeightInfo::cleanup_old_storage_success()
-                        .saturating_mul(keys_removed.into()),
+                    <T as Config>::WeightInfo::cleanup_old_storage_success(keys_removed),
                     keys_removed as u32,
                 ))
             } else {
@@ -494,7 +499,7 @@ pub mod pallet {
             // Consider the weight of all steps
             <T as Config>::WeightInfo::migrate_dapps_success()
                 .max(<T as Config>::WeightInfo::migrate_ledger_success())
-                .max(<T as Config>::WeightInfo::cleanup_old_storage_success())
+                .max(<T as Config>::WeightInfo::cleanup_old_storage_success(1))
                 // and add the weight of updating migration status
                 .saturating_add(T::DbWeight::get().writes(1))
         }
