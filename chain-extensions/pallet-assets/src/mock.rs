@@ -195,7 +195,7 @@ frame_support::construct_runtime!(
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB: AccountId32 = AccountId32::new([2u8; 32]);
-pub const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000,700_000);
+pub const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 700_000);
 pub const ONE: u128 = 1_000_000_000_000_000_000;
 
 impl Convert<Weight, BalanceOf<Self>> for Test {

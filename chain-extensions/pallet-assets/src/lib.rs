@@ -25,14 +25,8 @@ mod tests;
 
 pub use assets_chain_extension_types::Command::{self, *};
 use assets_chain_extension_types::{handle_result, Outcome};
-use frame_support::{
-    traits::fungibles::{
-        approvals::{
-            Inspect as AllowanceInspect,
-        },
-        metadata::Inspect as MetadataInspect,
-        Inspect,
-    },
+use frame_support::traits::fungibles::{
+    approvals::Inspect as AllowanceInspect, metadata::Inspect as MetadataInspect, Inspect,
 };
 use frame_system::RawOrigin;
 use pallet_assets::WeightInfo;
@@ -110,7 +104,10 @@ where
                     destination.into(),
                     amount,
                 );
-                handle_result!(call_result, "pallet-chain-extension-assets::transfer_approved");
+                handle_result!(
+                    call_result,
+                    "pallet-chain-extension-assets::transfer_approved"
+                );
             }
             Mint => {
                 let (id, beneficiary, amount): (
@@ -173,13 +170,7 @@ where
                     delegate.into(),
                     amount,
                 );
-                return match call_result {
-                    Err(e) => {
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
+                handle_result!(call_result, "pallet-chain-extension-assets::approve_transfer");
             }
             BalanceOf => {
                 let (id, who): (<T as pallet_assets::Config>::AssetId, T::AccountId) =
@@ -207,8 +198,10 @@ where
 
                 env.charge_weight(T::DbWeight::get().reads(1_u64))?;
 
-                <pallet_assets::Pallet<T> as AllowanceInspect<T::AccountId>>::allowance(id, &owner, &delegate)
-                    .using_encoded(|r| env.write(r, false, None))?;
+                <pallet_assets::Pallet<T> as AllowanceInspect<T::AccountId>>::allowance(
+                    id, &owner, &delegate,
+                )
+                .using_encoded(|r| env.write(r, false, None))?;
             }
             MetadataName => {
                 let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;

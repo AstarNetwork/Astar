@@ -44,5 +44,5 @@ std = [
 	"sp-runtime/std",
 	"pallet-assets/std",
 	"assets-chain-extension-types/std",
-	"pallet-balances/std"
+	"pallet-balances/std",
 ]

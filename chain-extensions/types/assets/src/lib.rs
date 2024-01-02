@@ -125,19 +125,14 @@ impl From<DispatchError> for Outcome {
 
 #[macro_export]
 macro_rules! handle_result {
-    ($call_result:expr, $target:expr) => {
-        {
-            return match $call_result {
-                Err(e) => {
-                    log::trace!(
-                        target: $target,
-                        "err: {:?}", e
-                    );
-                    let mapped_error = Outcome::from(e);
-                    Ok(RetVal::Converging(mapped_error as u32))
-                }
-                Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-            };
-        }
-    };
+    ($call_result:expr, $target:expr) => {{
+        return match $call_result {
+            Err(e) => {
+                log::trace!(target: $target, "err: {:?}", e);
+                let mapped_error = Outcome::from(e);
+                Ok(RetVal::Converging(mapped_error as u32))
+            }
+            Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
+        };
+    }};
 }

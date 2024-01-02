@@ -150,7 +150,12 @@ fn approve_transfer_and_check_allowance() {
 
             // Arrange - Create and mint 1000 to contract and fund contract with ED
             assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
-            assert_ok!(Assets::mint(RuntimeOrigin::signed(ALICE), 1, addr.clone(), 1000));
+            assert_ok!(Assets::mint(
+                RuntimeOrigin::signed(ALICE),
+                1,
+                addr.clone(),
+                1000
+            ));
             let _ = Balances::deposit_creating(&addr.clone(), 1);
 
             // Act - approve transfer To BOB for 100
@@ -161,7 +166,6 @@ fn approve_transfer_and_check_allowance() {
                 allowance(addr.clone(), 1, addr.clone(), BOB).data[1..],
                 100u128.encode()
             );
-
         });
 }
 
@@ -207,8 +211,19 @@ fn getters_works() {
             // Alice creates & mint token
             assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
             assert_ok!(Assets::mint(RuntimeOrigin::signed(ALICE), 1, ALICE, 1000));
-            assert_ok!(Assets::approve_transfer(RuntimeOrigin::signed(ALICE), 1, BOB, 100));
-            assert_ok!(Assets::set_metadata(RuntimeOrigin::signed(ALICE), 1, "Token".as_bytes().to_vec(), "TKN".as_bytes().to_vec(), 1));
+            assert_ok!(Assets::approve_transfer(
+                RuntimeOrigin::signed(ALICE),
+                1,
+                BOB,
+                100
+            ));
+            assert_ok!(Assets::set_metadata(
+                RuntimeOrigin::signed(ALICE),
+                1,
+                "Token".as_bytes().to_vec(),
+                "TKN".as_bytes().to_vec(),
+                1
+            ));
 
             // Assert - verify state using chain extension getters
             assert_eq!(
@@ -221,18 +236,9 @@ fn getters_works() {
             );
             assert_eq!(total_supply(addr.clone(), 1).data[1..], 1000u128.encode());
             assert_eq!(metadata_decimals(addr.clone(), 1).data[1..], [1u8]);
-            assert_eq!(
-                metadata_name(addr.clone(), 1).data[1..],
-                "Token".encode()
-            );
-            assert_eq!(
-                metadata_symbol(addr.clone(), 1).data[1..],
-                "TKN".encode()
-            );
-            assert_eq!(
-                minimum_balance(addr.clone(), 1).data[1..],
-                1u128.encode()
-            );
+            assert_eq!(metadata_name(addr.clone(), 1).data[1..], "Token".encode());
+            assert_eq!(metadata_symbol(addr.clone(), 1).data[1..], "TKN".encode());
+            assert_eq!(minimum_balance(addr.clone(), 1).data[1..], 1u128.encode());
         });
 }
 
@@ -325,7 +331,7 @@ fn approve_transfer(
         [0x8e, 0x7c, 0x3e, 0xe9].to_vec(),
         (asset_id, delegate, amount).encode(),
     ]
-        .concat();
+    .concat();
     do_bare_call(addr, data, 0)
 }
 
@@ -344,7 +350,7 @@ fn allowance(
         [0x6a, 0x00, 0x16, 0x5e].to_vec(),
         (asset_id, owner, delegate).encode(),
     ]
-        .concat();
+    .concat();
     do_bare_call(addr, data, 0).unwrap()
 }
 
