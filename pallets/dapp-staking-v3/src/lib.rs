@@ -575,7 +575,7 @@ pub mod pallet {
             Self::unlock(origin, value)
         }
 
-        /// Wrapper around _legacy-like_ `claim_unlocked`.
+        /// Wrapper around _legacy-like_ `withdraw_unbonded`.
         ///
         /// Used to support legacy Ledger users so they can reclaim unlocked chunks back into
         /// their _transferable_ free balance.
