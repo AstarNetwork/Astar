@@ -18,6 +18,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+
+pub use assets_chain_extension_types::Command::{self, *};
 use assets_chain_extension_types::Outcome;
 use frame_system::RawOrigin;
 use pallet_assets::WeightInfo;
@@ -27,7 +33,6 @@ use pallet_contracts::chain_extension::{
 use sp_runtime::traits::StaticLookup;
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
-pub use assets_chain_extension_types::Command::{self, *};
 type Weight<T> = <T as pallet_assets::Config>::WeightInfo;
 
 /// Pallet Assets chain extension.
@@ -67,7 +72,7 @@ where
                 env.charge_weight(Weight::<T>::transfer())?;
 
                 let call_result = pallet_assets::Pallet::<T>::transfer(
-                    RawOrigin::Signed(env.ext().address().clone().clone()).into(),
+                    RawOrigin::Signed(env.ext().address().clone()).into(),
                     id.into(),
                     target.into(),
                     amount,
@@ -76,6 +81,101 @@ where
                     Err(e) => {
                         log::trace!(
                             target: "pallet-chain-extension-assets::transfer",
+                            "err: {:?}", e
+                        );
+                        let mapped_error = Outcome::from(e);
+                        Ok(RetVal::Converging(mapped_error as u32))
+                    }
+                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
+                };
+            }
+            TransferApproved => {
+                let (id, owner, destination, amount): (
+                    <T as pallet_assets::Config>::AssetId,
+                    T::AccountId,
+                    T::AccountId,
+                    T::Balance,
+                ) = env.read_as()?;
+
+                log::trace!(target: "pallet-chain-extension-assets::transfer_approved",
+                    "Raw arguments: id: {:?}, owner: {:?}, destination: {:?}, amount: {:?}",
+                      id, owner, destination, amount);
+
+                env.charge_weight(Weight::<T>::transfer_approved())?;
+
+                let call_result = pallet_assets::Pallet::<T>::transfer_approved(
+                    RawOrigin::Signed(env.ext().address().clone()).into(),
+                    id.into(),
+                    owner.into(),
+                    destination.into(),
+                    amount,
+                );
+                return match call_result {
+                    Err(e) => {
+                        log::trace!(
+                            target: "pallet-chain-extension-assets::transfer_approved",
+                            "err: {:?}", e
+                        );
+                        let mapped_error = Outcome::from(e);
+                        Ok(RetVal::Converging(mapped_error as u32))
+                    }
+                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
+                };
+            }
+            Mint => {
+                let (id, beneficiary, amount): (
+                    <T as pallet_assets::Config>::AssetId,
+                    T::AccountId,
+                    T::Balance,
+                ) = env.read_as()?;
+
+                log::trace!(target: "pallet-chain-extension-assets::mint",
+                    "Raw arguments: id: {:?}, beneficiary: {:?}, amount: {:?}",
+                      id, beneficiary, amount);
+
+                env.charge_weight(Weight::<T>::mint())?;
+
+                let call_result = pallet_assets::Pallet::<T>::mint(
+                    RawOrigin::Signed(env.ext().address().clone()).into(),
+                    id.into(),
+                    beneficiary.into(),
+                    amount,
+                );
+                return match call_result {
+                    Err(e) => {
+                        log::trace!(
+                            target: "pallet-chain-extension-assets::mint",
+                            "err: {:?}", e
+                        );
+                        let mapped_error = Outcome::from(e);
+                        Ok(RetVal::Converging(mapped_error as u32))
+                    }
+                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
+                };
+            }
+            Burn => {
+                let (id, who, amount): (
+                    <T as pallet_assets::Config>::AssetId,
+                    T::AccountId,
+                    T::Balance,
+                ) = env.read_as()?;
+
+                log::trace!(target: "pallet-chain-extension-assets::burn",
+                    "Raw arguments: id: {:?}, who: {:?}, amount: {:?}",
+                      id, who, amount);
+
+                env.charge_weight(Weight::<T>::burn())?;
+
+                let call_result = pallet_assets::Pallet::<T>::burn(
+                    RawOrigin::Signed(env.ext().address().clone()).into(),
+                    id.into(),
+                    who.into(),
+                    amount,
+                );
+                return match call_result {
+                    Err(e) => {
+                        log::trace!(
+                            target: "pallet-chain-extension-assets::burn",
                             "err: {:?}", e
                         );
                         let mapped_error = Outcome::from(e);

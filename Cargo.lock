@@ -7469,16 +7469,20 @@ name = "pallet-chain-extension-assets"
 version = "0.1.0"
 dependencies = [
  "assets-chain-extension-types",
+ "env_logger 0.9.3",
  "frame-support",
  "frame-system",
  "log",
  "num-traits",
  "pallet-assets",
+ "pallet-balances",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

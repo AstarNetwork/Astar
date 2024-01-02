@@ -1,7 +1,6 @@
 [package]
 name = "assets-chain-extension-types"
 version = "0.1.0"
-license = "Apache-2.0"
 description = "Types definitions for assets chain-extension"
 authors.workspace = true
 edition.workspace = true

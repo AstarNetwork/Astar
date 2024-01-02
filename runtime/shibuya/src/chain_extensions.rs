@@ -31,9 +31,7 @@ impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime, Xvm, UnifiedAcc
     const ID: u16 = 01;
 }
 
-impl RegisteredChainExtension<Runtime>
-    for AssetsExtension<Runtime>
-{
+impl RegisteredChainExtension<Runtime> for AssetsExtension<Runtime> {
     const ID: u16 = 02;
 }
 
