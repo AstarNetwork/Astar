@@ -28,15 +28,15 @@ pub enum Command {
     Transfer = 0,
     Mint = 1,
     Burn = 2,
-    BalanceOf = 3,
-    TotalSupply = 4,
-    Allowance = 5,
-    ApproveTransfer = 6,
-    TransferApproved = 7,
-    MetadataName = 8,
-    MetadataSymbol = 9,
-    MetadataDecimals = 10,
-    MinimumDecimals = 11,
+    ApproveTransfer = 4,
+    TransferApproved = 5,
+    BalanceOf = 6,
+    TotalSupply = 7,
+    Allowance = 8,
+    MetadataName = 9,
+    MetadataSymbol = 10,
+    MetadataDecimals = 11,
+    MinimumBalance = 12,
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug)]
@@ -121,4 +121,23 @@ impl From<DispatchError> for Outcome {
             _ => Outcome::RuntimeError,
         };
     }
+}
+
+#[macro_export]
+macro_rules! handle_result {
+    ($call_result:expr, $target:expr) => {
+        {
+            return match $call_result {
+                Err(e) => {
+                    log::trace!(
+                        target: $target,
+                        "err: {:?}", e
+                    );
+                    let mapped_error = Outcome::from(e);
+                    Ok(RetVal::Converging(mapped_error as u32))
+                }
+                Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
+            };
+        }
+    };
 }

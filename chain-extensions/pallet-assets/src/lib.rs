@@ -24,13 +24,23 @@ mod mock;
 mod tests;
 
 pub use assets_chain_extension_types::Command::{self, *};
-use assets_chain_extension_types::Outcome;
+use assets_chain_extension_types::{handle_result, Outcome};
+use frame_support::{
+    traits::fungibles::{
+        approvals::{
+            Inspect as AllowanceInspect,
+        },
+        metadata::Inspect as MetadataInspect,
+        Inspect,
+    },
+};
 use frame_system::RawOrigin;
 use pallet_assets::WeightInfo;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, SysConfig,
 };
-use sp_runtime::traits::StaticLookup;
+use parity_scale_codec::Encode;
+use sp_runtime::traits::{Get, StaticLookup};
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
 type Weight<T> = <T as pallet_assets::Config>::WeightInfo;
@@ -77,17 +87,7 @@ where
                     target.into(),
                     amount,
                 );
-                return match call_result {
-                    Err(e) => {
-                        log::trace!(
-                            target: "pallet-chain-extension-assets::transfer",
-                            "err: {:?}", e
-                        );
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
+                handle_result!(call_result, "pallet-chain-extension-assets::transfer");
             }
             TransferApproved => {
                 let (id, owner, destination, amount): (
@@ -110,17 +110,7 @@ where
                     destination.into(),
                     amount,
                 );
-                return match call_result {
-                    Err(e) => {
-                        log::trace!(
-                            target: "pallet-chain-extension-assets::transfer_approved",
-                            "err: {:?}", e
-                        );
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
+                handle_result!(call_result, "pallet-chain-extension-assets::transfer_approved");
             }
             Mint => {
                 let (id, beneficiary, amount): (
@@ -141,17 +131,7 @@ where
                     beneficiary.into(),
                     amount,
                 );
-                return match call_result {
-                    Err(e) => {
-                        log::trace!(
-                            target: "pallet-chain-extension-assets::mint",
-                            "err: {:?}", e
-                        );
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
+                handle_result!(call_result, "pallet-chain-extension-assets::mint");
             }
             Burn => {
                 let (id, who, amount): (
@@ -172,119 +152,23 @@ where
                     who.into(),
                     amount,
                 );
-                return match call_result {
-                    Err(e) => {
-                        log::trace!(
-                            target: "pallet-chain-extension-assets::burn",
-                            "err: {:?}", e
-                        );
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
+                handle_result!(call_result, "pallet-chain-extension-assets::burn");
             }
-            /*            AssetsFunc::Mint => {
-                let (origin, id, beneficiary, amount): (
-                    Origin,
+            ApproveTransfer => {
+                let (id, delegate, amount): (
                     <T as pallet_assets::Config>::AssetId,
                     T::AccountId,
                     T::Balance,
                 ) = env.read_as()?;
 
-                let base_weight = <T as pallet_assets::Config>::WeightInfo::mint();
-                env.charge_weight(base_weight)?;
+                log::trace!(target: "pallet-chain-extension-assets::approve_transfer",
+                    "Raw arguments: id: {:?}, delegate: {:?}, amount: {:?}",
+                      id, delegate, amount);
 
-                let raw_origin = select_origin!(&origin, env.ext().address().clone());
-
-                let call_result = pallet_assets::Pallet::<T>::mint(
-                    raw_origin.into(),
-                    id.into(),
-                    beneficiary.into(),
-                    amount,
-                );
-                return match call_result {
-                    Err(e) => {
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
-            }
-            AssetsFunc::Burn => {
-                let (origin, id, who, amount): (
-                    Origin,
-                    <T as pallet_assets::Config>::AssetId,
-                    T::AccountId,
-                    T::Balance,
-                ) = env.read_as()?;
-
-                let base_weight = <T as pallet_assets::Config>::WeightInfo::burn();
-                env.charge_weight(base_weight)?;
-
-                let raw_origin = select_origin!(&origin, env.ext().address().clone());
-
-                let call_result = pallet_assets::Pallet::<T>::burn(
-                    raw_origin.into(),
-                    id.into(),
-                    who.into(),
-                    amount,
-                );
-                return match call_result {
-                    Err(e) => {
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
-            }
-            AssetsFunc::BalanceOf => {
-                let (id, who): (<T as pallet_assets::Config>::AssetId, T::AccountId) =
-                    env.read_as()?;
-
-                let base_weight = <W as weights::WeightInfo>::balance_of();
-                env.charge_weight(base_weight)?;
-
-                let balance = pallet_assets::Pallet::<T>::balance(id, who);
-                env.write(&balance.encode(), false, None)?;
-            }
-            AssetsFunc::TotalSupply => {
-                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
-
-                let base_weight = <W as weights::WeightInfo>::total_supply();
-                env.charge_weight(base_weight)?;
-
-                let total_supply = pallet_assets::Pallet::<T>::total_supply(id);
-                env.write(&total_supply.encode(), false, None)?;
-            }
-            AssetsFunc::Allowance => {
-                let (id, owner, delegate): (
-                    <T as pallet_assets::Config>::AssetId,
-                    T::AccountId,
-                    T::AccountId,
-                ) = env.read_as()?;
-
-                let base_weight = <W as weights::WeightInfo>::allowance();
-                env.charge_weight(base_weight)?;
-
-                let allowance = pallet_assets::Pallet::<T>::allowance(id, &owner, &delegate);
-                env.write(&allowance.encode(), false, None)?;
-            }
-            AssetsFunc::ApproveTransfer => {
-                let (origin, id, delegate, amount): (
-                    Origin,
-                    <T as pallet_assets::Config>::AssetId,
-                    T::AccountId,
-                    T::Balance,
-                ) = env.read_as()?;
-
-                let base_weight = <T as pallet_assets::Config>::WeightInfo::approve_transfer();
-                env.charge_weight(base_weight)?;
-
-                let raw_origin = select_origin!(&origin, env.ext().address().clone());
+                env.charge_weight(Weight::<T>::approve_transfer())?;
 
                 let call_result = pallet_assets::Pallet::<T>::approve_transfer(
-                    raw_origin.into(),
+                    RawOrigin::Signed(env.ext().address().clone()).into(),
                     id.into(),
                     delegate.into(),
                     amount,
@@ -297,63 +181,67 @@ where
                     Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
                 };
             }
-            AssetsFunc::TransferApproved => {
-                let (origin, id, owner, destination, amount): (
-                    Origin,
+            BalanceOf => {
+                let (id, who): (<T as pallet_assets::Config>::AssetId, T::AccountId) =
+                    env.read_as()?;
+
+                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
+                pallet_assets::Pallet::<T>::balance(id, who)
+                    .using_encoded(|r| env.write(r, false, None))?;
+            }
+            TotalSupply => {
+                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
+
+                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
+                pallet_assets::Pallet::<T>::total_supply(id)
+                    .using_encoded(|r| env.write(r, false, None))?;
+            }
+            Allowance => {
+                let (id, owner, delegate): (
                     <T as pallet_assets::Config>::AssetId,
                     T::AccountId,
                     T::AccountId,
-                    T::Balance,
                 ) = env.read_as()?;
 
-                let base_weight = <T as pallet_assets::Config>::WeightInfo::transfer_approved();
-                env.charge_weight(base_weight)?;
+                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
 
-                let raw_origin = select_origin!(&origin, env.ext().address().clone());
-
-                let call_result = pallet_assets::Pallet::<T>::transfer_approved(
-                    raw_origin.into(),
-                    id.into(),
-                    owner.into(),
-                    destination.into(),
-                    amount,
-                );
-                return match call_result {
-                    Err(e) => {
-                        let mapped_error = Outcome::from(e);
-                        Ok(RetVal::Converging(mapped_error as u32))
-                    }
-                    Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
-                };
+                <pallet_assets::Pallet<T> as AllowanceInspect<T::AccountId>>::allowance(id, &owner, &delegate)
+                    .using_encoded(|r| env.write(r, false, None))?;
             }
-            AssetsFunc::MetadataName => {
+            MetadataName => {
                 let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
 
-                let base_weight = <W as weights::WeightInfo>::metadata_name();
-                env.charge_weight(base_weight)?;
+                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
 
-                let name = pallet_assets::Pallet::<T>::name(id);
-                env.write(&name.encode(), false, None)?;
+                <pallet_assets::Pallet<T> as MetadataInspect<T::AccountId>>::name(id)
+                    .using_encoded(|r| env.write(r, false, None))?;
             }
-            AssetsFunc::MetadataSymbol => {
+            MetadataSymbol => {
                 let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
 
-                let base_weight = <W as weights::WeightInfo>::metadata_symbol();
-                env.charge_weight(base_weight)?;
+                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
 
-                let symbol = pallet_assets::Pallet::<T>::symbol(id);
-                env.write(&symbol.encode(), false, None)?;
+                <pallet_assets::Pallet<T> as MetadataInspect<T::AccountId>>::symbol(id)
+                    .using_encoded(|r| env.write(r, false, None))?;
             }
-            AssetsFunc::MetadataDecimals => {
+            MetadataDecimals => {
                 let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
 
-                let base_weight = <W as weights::WeightInfo>::metadata_decimals();
-                env.charge_weight(base_weight)?;
+                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
 
-                let decimals = pallet_assets::Pallet::<T>::decimals(id);
-                env.write(&decimals.encode(), false, None)?;
-            }*/
-            _ => {}
+                <pallet_assets::Pallet<T> as MetadataInspect<T::AccountId>>::decimals(id)
+                    .using_encoded(|r| env.write(r, false, None))?;
+            }
+            MinimumBalance => {
+                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
+
+                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
+                <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(id)
+                    .using_encoded(|r| env.write(r, false, None))?;
+            }
         }
 
         Ok(RetVal::Converging(Outcome::Success as u32))

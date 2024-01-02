@@ -18,14 +18,12 @@
 
 use crate::mock::*;
 use frame_support::assert_ok;
-use frame_support::traits::fungibles::roles::Inspect;
 use frame_support::traits::Currency;
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
-use pallet_contracts_primitives::{Code, ExecReturnValue, ReturnFlags};
+use pallet_contracts_primitives::{Code, ExecReturnValue};
 use parity_scale_codec::Encode;
 use sp_core::crypto::AccountId32;
 use sp_runtime::DispatchError;
-use std::env;
 use std::fs;
 
 // Those tests use the contract scheduler_example available here:
@@ -121,49 +119,51 @@ fn transfer_works() {
         });
 }
 
-// #[test]
-// fn balance_of_and_total_supply() {
-//     ExtBuilder::default()
-//         .existential_deposit(50)
-//         .build()
-//         .execute_with(|| {
-//             let addr = instantiate();
-//
-//             // Arrange - create & mint 1000 to Alice
-//             assert_ok!(create(addr.clone(), 1, 1));
-//             assert_ok!(mint(addr.clone(), 1, ALICE, 1000));
-//
-//             // Assert - Balance and total supply is 1000
-//             assert_eq!(
-//                 balance_of(addr.clone(), 1, ALICE).data[1..],
-//                 1000u128.encode()
-//             );
-//             assert_eq!(total_supply(addr.clone(), 1).data[1..], 1000u128.encode());
-//         });
-// }
+#[test]
+fn balance_of_and_total_supply() {
+    ExtBuilder::default()
+        .existential_deposit(50)
+        .build()
+        .execute_with(|| {
+            let addr = instantiate();
 
-// #[test]
-// fn approve_transfer_and_check_allowance() {
-//     ExtBuilder::default()
-//         .existential_deposit(50)
-//         .build()
-//         .execute_with(|| {
-//             let addr = instantiate();
-//
-//             // Arrange - Create and mint 1000 to contract
-//             assert_ok!(create(addr.clone(), 1, 1));
-//             assert_ok!(mint(addr.clone(), 1, addr.clone(), 1000));
-//
-//             // Act - approve transfer To BOB for 100
-//             assert_ok!(approve_transfer(addr.clone(), 1, BOB, 100));
-//
-//             // Assert - Bob has 100 allowance
-//             assert_eq!(
-//                 allowance(addr.clone(), 1, addr.clone(), BOB).data[1..],
-//                 100u128.encode()
-//             );
-//         });
-// }
+            // Arrange - create & mint 1000 to Alice
+            assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
+            assert_ok!(Assets::mint(RuntimeOrigin::signed(ALICE), 1, ALICE, 1000));
+
+            // Assert - Balance and total supply is 1000
+            assert_eq!(
+                balance_of(addr.clone(), 1, ALICE).data[1..],
+                1000u128.encode()
+            );
+            assert_eq!(total_supply(addr.clone(), 1).data[1..], 1000u128.encode());
+        });
+}
+
+#[test]
+fn approve_transfer_and_check_allowance() {
+    ExtBuilder::default()
+        .existential_deposit(50)
+        .build()
+        .execute_with(|| {
+            let addr = instantiate();
+
+            // Arrange - Create and mint 1000 to contract and fund contract with ED
+            assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
+            assert_ok!(Assets::mint(RuntimeOrigin::signed(ALICE), 1, addr.clone(), 1000));
+            let _ = Balances::deposit_creating(&addr.clone(), 1);
+
+            // Act - approve transfer To BOB for 100
+            assert_ok!(approve_transfer(addr.clone(), 1, BOB, 100));
+
+            // Assert - Bob has 100 allowance
+            assert_eq!(
+                allowance(addr.clone(), 1, addr.clone(), BOB).data[1..],
+                100u128.encode()
+            );
+
+        });
+}
 
 #[test]
 fn approve_transfer_and_transfer_balance() {
@@ -192,6 +192,47 @@ fn approve_transfer_and_transfer_balance() {
             // Assert - Bob has 900 and Alice 100
             assert_eq!(Assets::balance(1, BOB), 900u128);
             assert_eq!(Assets::balance(1, ALICE), 100u128);
+        });
+}
+
+#[test]
+fn getters_works() {
+    ExtBuilder::default()
+        .existential_deposit(50)
+        .build()
+        .execute_with(|| {
+            let addr = instantiate();
+
+            // Arrange
+            // Alice creates & mint token
+            assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
+            assert_ok!(Assets::mint(RuntimeOrigin::signed(ALICE), 1, ALICE, 1000));
+            assert_ok!(Assets::approve_transfer(RuntimeOrigin::signed(ALICE), 1, BOB, 100));
+            assert_ok!(Assets::set_metadata(RuntimeOrigin::signed(ALICE), 1, "Token".as_bytes().to_vec(), "TKN".as_bytes().to_vec(), 1));
+
+            // Assert - verify state using chain extension getters
+            assert_eq!(
+                allowance(addr.clone(), 1, ALICE, BOB).data[1..],
+                100u128.encode()
+            );
+            assert_eq!(
+                balance_of(addr.clone(), 1, ALICE).data[1..],
+                1000u128.encode()
+            );
+            assert_eq!(total_supply(addr.clone(), 1).data[1..], 1000u128.encode());
+            assert_eq!(metadata_decimals(addr.clone(), 1).data[1..], [1u8]);
+            assert_eq!(
+                metadata_name(addr.clone(), 1).data[1..],
+                "Token".encode()
+            );
+            assert_eq!(
+                metadata_symbol(addr.clone(), 1).data[1..],
+                "TKN".encode()
+            );
+            assert_eq!(
+                minimum_balance(addr.clone(), 1).data[1..],
+                1u128.encode()
+            );
         });
 }
 
@@ -274,62 +315,61 @@ fn burn(
     do_bare_call(addr, data, 0)
 }
 
-// fn set_metadata(
-//     addr: AccountId32,
-//     asset_id: u128,
-//     name: Vec<u8>,
-//     symbol: Vec<u8>,
-//     decimals: u8,
-// ) -> Result<ExecReturnValue, DispatchError> {
-//     let data = [
-//         [0x0b, 0x78, 0x7b, 0xb5].to_vec(),
-//         (asset_id, name, symbol, decimals).encode(),
-//     ]
-//         .concat();
-//     do_bare_call(addr, data, 0)
-// }
+fn approve_transfer(
+    addr: AccountId32,
+    asset_id: u128,
+    delegate: AccountId32,
+    amount: u128,
+) -> Result<ExecReturnValue, DispatchError> {
+    let data = [
+        [0x8e, 0x7c, 0x3e, 0xe9].to_vec(),
+        (asset_id, delegate, amount).encode(),
+    ]
+        .concat();
+    do_bare_call(addr, data, 0)
+}
 
-// fn balance_of(addr: AccountId32, asset_id: u128, who: AccountId32) -> ExecReturnValue {
-//     let data = [[0x0f, 0x75, 0x5a, 0x56].to_vec(), (asset_id, who).encode()].concat();
-//     do_bare_call(addr, data, 0).unwrap()
-// }
-//
-// fn total_supply(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
-//     let data = [[0xdb, 0x63, 0x75, 0xa8].to_vec(), asset_id.encode()].concat();
-//     do_bare_call(addr, data, 0).unwrap()
-// }
+fn balance_of(addr: AccountId32, asset_id: u128, who: AccountId32) -> ExecReturnValue {
+    let data = [[0x0f, 0x75, 0x5a, 0x56].to_vec(), (asset_id, who).encode()].concat();
+    do_bare_call(addr, data, 0).unwrap()
+}
 
-// fn allowance(
-//     addr: AccountId32,
-//     asset_id: u128,
-//     owner: AccountId32,
-//     delegate: AccountId32,
-// ) -> ExecReturnValue {
-//     let data = [
-//         [0x6a, 0x00, 0x16, 0x5e].to_vec(),
-//         (asset_id, owner, delegate).encode(),
-//     ]
-//         .concat();
-//     do_bare_call(addr, data, 0).unwrap()
-// }
-//
-// fn metadata_name(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
-//     let data = [[0xf5, 0xcd, 0xdb, 0xc1].to_vec(), asset_id.encode()].concat();
-//     do_bare_call(addr, data, 0).unwrap()
-// }
-//
-// fn metadata_symbol(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
-//     let data = [[0x7c, 0xdc, 0xaf, 0xc1].to_vec(), asset_id.encode()].concat();
-//     do_bare_call(addr, data, 0).unwrap()
-// }
-//
-// fn metadata_decimals(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
-//     let data = [[0x25, 0x54, 0x47, 0x3b].to_vec(), asset_id.encode()].concat();
-//     do_bare_call(addr, data, 0).unwrap()
-// }
+fn allowance(
+    addr: AccountId32,
+    asset_id: u128,
+    owner: AccountId32,
+    delegate: AccountId32,
+) -> ExecReturnValue {
+    let data = [
+        [0x6a, 0x00, 0x16, 0x5e].to_vec(),
+        (asset_id, owner, delegate).encode(),
+    ]
+        .concat();
+    do_bare_call(addr, data, 0).unwrap()
+}
+
+fn metadata_name(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
+    let data = [[0xf5, 0xcd, 0xdb, 0xc1].to_vec(), asset_id.encode()].concat();
+    do_bare_call(addr, data, 0).unwrap()
+}
+
+fn metadata_symbol(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
+    let data = [[0x7c, 0xdc, 0xaf, 0xc1].to_vec(), asset_id.encode()].concat();
+    do_bare_call(addr, data, 0).unwrap()
+}
+
+fn metadata_decimals(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
+    let data = [[0x25, 0x54, 0x47, 0x3b].to_vec(), asset_id.encode()].concat();
+    do_bare_call(addr, data, 0).unwrap()
+}
 
 fn total_supply(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
     let data = [[0xdb, 0x63, 0x75, 0xa8].to_vec(), asset_id.encode()].concat();
+    do_bare_call(addr, data, 0).unwrap()
+}
+
+fn minimum_balance(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
+    let data = [[0x1a, 0xa4, 0x88, 0x63].to_vec(), asset_id.encode()].concat();
     do_bare_call(addr, data, 0).unwrap()
 }
 

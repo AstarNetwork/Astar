@@ -44,7 +44,7 @@ parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(
-            Weight::from_ref_time(2_000_000_000_000).set_proof_size(u64::MAX),
+            Weight::from_parts(2_000_000_000_000, u64::MAX),
         );
 }
 impl frame_system::Config for Test {
@@ -195,7 +195,7 @@ frame_support::construct_runtime!(
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB: AccountId32 = AccountId32::new([2u8; 32]);
-pub const GAS_LIMIT: Weight = Weight::from_ref_time(100_000_000_000).set_proof_size(700000u64);
+pub const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000,700_000);
 pub const ONE: u128 = 1_000_000_000_000_000_000;
 
 impl Convert<Weight, BalanceOf<Self>> for Test {
