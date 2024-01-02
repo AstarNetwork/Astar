@@ -26,6 +26,7 @@ sp-std = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 
 [dev-dependencies]
+assert_matches = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-session = { workspace = true }
 pallet-timestamp = { workspace = true }
