@@ -13,7 +13,7 @@ interface will have to be expanded.
 
 The logic controlling dApp staking should be upgradable therefore.
 
-## V1 Interface
+## V2 Interface
 
 **ONLY RELEVANT FOR DEVELOPERS WHO USED THE OLD INTERFACE.**
 
@@ -25,12 +25,12 @@ Regardless, in some cases it's simply not possible.
 
 Some examples of this:
 * Since all stakes are reset at the end of each period, developers will need to adapt their smart contract logic for this.
-* Bonus rewards concept was only introduced from the precompile v2 interface, so there's no equivalent call in v1 interface.
+* Bonus rewards concept was only introduced from the precompile v3 interface, so there's no equivalent call in v2 interface.
 * Composite actions like `bond_and_stake`, `unbond_and_unstake` and `nomination_transfer` are implemented as a series of calls to mimic the old logic.
 * Claiming staker rewards is detached from a specific staked dApp (or smart contract), and can result in more than 1 era reward being claimed.
-* Periods & subperiods concept only exists from the v2 interface.
+* Periods & subperiods concept only exists from the v3 interface.
 
-## V2 Interface
+## V3 Interface
 
 Contains functions that _mimic_ the interface of the latest `dApp Staking v3`.
 Developers are encouraged to use this interface to fully utilize dApp staking functionality.
