@@ -935,13 +935,13 @@ pub(crate) fn assert_claim_dapp_reward(
     let pre_total_issuance = <Test as Config>::Currency::total_issuance();
     let pre_free_balance = <Test as Config>::Currency::free_balance(beneficiary);
 
+    let pre_reward_info = pre_snapshot
+        .dapp_tiers
+        .get(&era)
+        .expect("Entry must exist.")
+        .clone();
     let (expected_reward, expected_tier_id) = {
-        let mut info = pre_snapshot
-            .dapp_tiers
-            .get(&era)
-            .expect("Entry must exist.")
-            .clone();
-
+        let mut info = pre_reward_info.clone();
         info.try_claim(dapp_info.id).unwrap()
     };
 
@@ -976,15 +976,20 @@ pub(crate) fn assert_claim_dapp_reward(
     );
 
     let post_snapshot = MemorySnapshot::new();
-    let mut info = post_snapshot
+    let mut post_reward_info = post_snapshot
         .dapp_tiers
         .get(&era)
         .expect("Entry must exist.")
         .clone();
     assert_eq!(
-        info.try_claim(dapp_info.id),
+        post_reward_info.try_claim(dapp_info.id),
         Err(DAppTierError::NoDAppInTiers),
         "It must not be possible to claim the same reward twice!.",
+    );
+    assert_eq!(
+        pre_reward_info.dapps.len(),
+        post_reward_info.dapps.len() + 1,
+        "Entry must have been removed after successfull reward claim."
     );
 }
 
