@@ -170,7 +170,10 @@ where
                     delegate.into(),
                     amount,
                 );
-                handle_result!(call_result, "pallet-chain-extension-assets::approve_transfer");
+                handle_result!(
+                    call_result,
+                    "pallet-chain-extension-assets::approve_transfer"
+                );
             }
             BalanceOf => {
                 let (id, who): (<T as pallet_assets::Config>::AssetId, T::AccountId) =

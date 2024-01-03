@@ -26,13 +26,13 @@ use sp_core::crypto::AccountId32;
 use sp_runtime::DispatchError;
 use std::fs;
 
-// Those tests use the contract scheduler_example available here:
-// https://github.com/AstarNetwork/chain-extension-contracts/blob/main/examples/assets
+// Those tests use the assets chain extension example available here:
+// https://github.com/AstarNetwork/ink-test-contracts
 // It maps chain extension functions to ink! callable messages
 // ex:
 // #[ink(message)]
 // pub fn burn(&mut self, asset_id: u128, who: AccountId, amount: Balance) -> Result<(), AssetsError> {
-//    AssetsExtension::burn(Origin::Caller, asset_id, who, amount)?;
+//    AssetsExtension::burn(asset_id, who, amount)?;
 //     Ok(())
 // }
 
