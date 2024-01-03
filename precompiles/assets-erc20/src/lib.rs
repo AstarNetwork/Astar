@@ -253,8 +253,8 @@ where
             value.try_into().unwrap_or_else(|_| Bounded::max_value());
 
         // Storage item: Approvals:
-        // Blake2_128(16) + AssetId(16) + (2 * Blake2_128(16) + AccountId(20)) + Approval(32)
-        handle.record_db_read::<Runtime>(136)?;
+        // Blake2_128(16) + AssetId(16) + (2 * Blake2_128(16) + AccountId(32)) + Approval(32)
+        handle.record_db_read::<Runtime>(148)?;
 
         // If previous approval exists, we need to clean it
         if pallet_assets::Pallet::<Runtime, Instance>::allowance(asset_id, &owner, &spender)
