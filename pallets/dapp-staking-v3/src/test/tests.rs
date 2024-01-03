@@ -156,6 +156,18 @@ fn maintenace_mode_call_filtering_works() {
             DappStaking::force(RuntimeOrigin::root(), ForcingType::Era),
             Error::<Test>::Disabled
         );
+        assert_noop!(
+            DappStaking::unbond_and_unstake(
+                RuntimeOrigin::signed(1),
+                MockSmartContract::wasm(1 as AccountId),
+                100
+            ),
+            Error::<Test>::Disabled
+        );
+        assert_noop!(
+            DappStaking::withdraw_unbonded(RuntimeOrigin::signed(1),),
+            Error::<Test>::Disabled
+        );
     })
 }
 
@@ -504,6 +516,29 @@ fn lock_with_incorrect_amount_fails() {
 }
 
 #[test]
+fn unbond_and_unstake_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock some amount
+        let account = 2;
+        let lock_amount = 101;
+        assert_lock(account, lock_amount);
+
+        // 'unbond_and_unstake' some amount, assert expected event is emitted
+        let unlock_amount = 19;
+        let dummy_smart_contract = MockSmartContract::Wasm(1);
+        assert_ok!(DappStaking::unbond_and_unstake(
+            RuntimeOrigin::signed(account),
+            dummy_smart_contract,
+            unlock_amount
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::Unlocking {
+            account,
+            amount: unlock_amount,
+        }));
+    })
+}
+
+#[test]
 fn unlock_basic_example_is_ok() {
     ExtBuilder::build().execute_with(|| {
         // Lock some amount
@@ -679,6 +714,29 @@ fn unlock_with_exceeding_unlocking_chunks_storage_limits_fails() {
             DappStaking::unlock(RuntimeOrigin::signed(account), unlock_amount),
             Error::<Test>::TooManyUnlockingChunks,
         );
+    })
+}
+
+#[test]
+fn withdraw_unbonded_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock & immediatelly unlock some amount
+        let account = 2;
+        let lock_amount = 97;
+        let unlock_amount = 11;
+        assert_lock(account, lock_amount);
+        assert_unlock(account, unlock_amount);
+
+        // Run for enough blocks so the chunk becomes claimable
+        let unlocking_blocks = DappStaking::unlocking_period();
+        run_for_blocks(unlocking_blocks);
+        assert_ok!(DappStaking::withdraw_unbonded(RuntimeOrigin::signed(
+            account
+        )));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::ClaimedUnlocked {
+            account,
+            amount: unlock_amount,
+        }));
     })
 }
 
