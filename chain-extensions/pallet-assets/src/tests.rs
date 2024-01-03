@@ -45,20 +45,25 @@ fn mint_works() {
             let addr = instantiate();
 
             // Arrange - create asset and give contract mint permission (Issuer role)
-            assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
+            assert_ok!(Assets::create(
+                RuntimeOrigin::signed(ALICE),
+                ASSET_ID,
+                ALICE,
+                1
+            ));
             assert_ok!(Assets::set_team(
                 RuntimeOrigin::signed(ALICE),
-                1,
+                ASSET_ID,
                 addr.clone(),
                 ALICE,
                 ALICE
             ));
 
             // Act - Mint 1000 assets to Alice
-            assert_ok!(mint(addr.clone(), 1, ALICE, 1000));
+            assert_ok!(mint(addr.clone(), ASSET_ID, ALICE, 1000));
 
             // Assert - Alice balance is 1000
-            assert_eq!(Assets::balance(1, ALICE), 1000);
+            assert_eq!(Assets::balance(ASSET_ID, ALICE), 1000);
         });
 }
 
@@ -71,24 +76,29 @@ fn burn_works() {
             let addr = instantiate();
 
             // Arrange - create asset and give contract mint permission (Issuer role) and burn permission (Admin role)
-            assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
+            assert_ok!(Assets::create(
+                RuntimeOrigin::signed(ALICE),
+                ASSET_ID,
+                ALICE,
+                1
+            ));
             assert_ok!(Assets::set_team(
                 RuntimeOrigin::signed(ALICE),
-                1,
+                ASSET_ID,
                 addr.clone(),
                 addr.clone(),
                 ALICE
             ));
 
             // Act - Mint 1000 assets to Alice
-            assert_ok!(mint(addr.clone(), 1, ALICE, 1000));
-            assert_eq!(Assets::balance(1, ALICE), 1000);
+            assert_ok!(mint(addr.clone(), ASSET_ID, ALICE, 1000));
+            assert_eq!(Assets::balance(ASSET_ID, ALICE), 1000);
 
             // Act - Burn 1000 of Alice tokens
-            assert_ok!(burn(addr.clone(), 1, ALICE, 1000));
+            assert_ok!(burn(addr.clone(), ASSET_ID, ALICE, 1000));
 
             // Assert - Balance of Alice is then 0
-            assert_eq!(Assets::balance(1, ALICE), 0);
+            assert_eq!(Assets::balance(ASSET_ID, ALICE), 0);
         });
 }
 
@@ -101,21 +111,26 @@ fn transfer_works() {
             let addr = instantiate();
 
             // Assert - Create, mint and transfer 1000 to contract
-            assert_ok!(Assets::create(RuntimeOrigin::signed(BOB), 1, BOB, 1));
-            assert_ok!(Assets::mint(RuntimeOrigin::signed(BOB), 1, BOB, 1000));
+            assert_ok!(Assets::create(RuntimeOrigin::signed(BOB), ASSET_ID, BOB, 1));
+            assert_ok!(Assets::mint(
+                RuntimeOrigin::signed(BOB),
+                ASSET_ID,
+                BOB,
+                1000
+            ));
             assert_ok!(Assets::transfer(
                 RuntimeOrigin::signed(BOB),
-                1,
+                ASSET_ID,
                 addr.clone(),
                 1000
             ));
 
             // Act - Transfer 1000 from contract to Alice
-            assert_ok!(transfer(addr.clone(), 1, ALICE, 1000));
+            assert_ok!(transfer(addr.clone(), ASSET_ID, ALICE, 1000));
 
             // Assert - Alice balance is 1000 and contract is zero
-            assert_eq!(Assets::balance(1, ALICE), 1000);
-            assert_eq!(Assets::balance(1, addr.clone()), 0);
+            assert_eq!(Assets::balance(ASSET_ID, ALICE), 1000);
+            assert_eq!(Assets::balance(ASSET_ID, addr.clone()), 0);
         });
 }
 
@@ -128,15 +143,28 @@ fn balance_of_and_total_supply() {
             let addr = instantiate();
 
             // Arrange - create & mint 1000 to Alice
-            assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
-            assert_ok!(Assets::mint(RuntimeOrigin::signed(ALICE), 1, ALICE, 1000));
+            assert_ok!(Assets::create(
+                RuntimeOrigin::signed(ALICE),
+                ASSET_ID,
+                ALICE,
+                1
+            ));
+            assert_ok!(Assets::mint(
+                RuntimeOrigin::signed(ALICE),
+                ASSET_ID,
+                ALICE,
+                1000
+            ));
 
             // Assert - Balance and total supply is 1000
             assert_eq!(
-                balance_of(addr.clone(), 1, ALICE).data[1..],
+                balance_of(addr.clone(), ASSET_ID, ALICE).data[1..],
                 1000u128.encode()
             );
-            assert_eq!(total_supply(addr.clone(), 1).data[1..], 1000u128.encode());
+            assert_eq!(
+                total_supply(addr.clone(), ASSET_ID).data[1..],
+                1000u128.encode()
+            );
         });
 }
 
@@ -149,21 +177,26 @@ fn approve_transfer_and_check_allowance() {
             let addr = instantiate();
 
             // Arrange - Create and mint 1000 to contract and fund contract with ED
-            assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
+            assert_ok!(Assets::create(
+                RuntimeOrigin::signed(ALICE),
+                ASSET_ID,
+                ALICE,
+                1
+            ));
             assert_ok!(Assets::mint(
                 RuntimeOrigin::signed(ALICE),
-                1,
+                ASSET_ID,
                 addr.clone(),
                 1000
             ));
             let _ = Balances::deposit_creating(&addr.clone(), 1);
 
             // Act - approve transfer To BOB for 100
-            assert_ok!(approve_transfer(addr.clone(), 1, BOB, 100));
+            assert_ok!(approve_transfer(addr.clone(), ASSET_ID, BOB, 100));
 
             // Assert - Bob has 100 allowance
             assert_eq!(
-                allowance(addr.clone(), 1, addr.clone(), BOB).data[1..],
+                allowance(addr.clone(), ASSET_ID, addr.clone(), BOB).data[1..],
                 100u128.encode()
             );
         });
@@ -181,21 +214,26 @@ fn approve_transfer_and_transfer_balance() {
             // As transfer_approved() can only be called on behalf of the contract
             // Bob creates & mint token to himself
             // and approve the contract to spend his assets
-            assert_ok!(Assets::create(RuntimeOrigin::signed(BOB), 1, BOB, 1));
-            assert_ok!(Assets::mint(RuntimeOrigin::signed(BOB), 1, BOB, 1000));
+            assert_ok!(Assets::create(RuntimeOrigin::signed(BOB), ASSET_ID, BOB, 1));
+            assert_ok!(Assets::mint(
+                RuntimeOrigin::signed(BOB),
+                ASSET_ID,
+                BOB,
+                1000
+            ));
             assert_ok!(Assets::approve_transfer(
                 RuntimeOrigin::signed(BOB),
-                1,
+                ASSET_ID,
                 addr.clone(),
                 100
             ));
 
             // Act - The contract transfer 100 from Bob to Alice
-            assert_ok!(transfer_approved(addr.clone(), 1, BOB, ALICE, 100));
+            assert_ok!(transfer_approved(addr.clone(), ASSET_ID, BOB, ALICE, 100));
 
             // Assert - Bob has 900 and Alice 100
-            assert_eq!(Assets::balance(1, BOB), 900u128);
-            assert_eq!(Assets::balance(1, ALICE), 100u128);
+            assert_eq!(Assets::balance(ASSET_ID, BOB), 900u128);
+            assert_eq!(Assets::balance(ASSET_ID, ALICE), 100u128);
         });
 }
 
@@ -209,17 +247,27 @@ fn getters_works() {
 
             // Arrange
             // Alice creates & mint token
-            assert_ok!(Assets::create(RuntimeOrigin::signed(ALICE), 1, ALICE, 1));
-            assert_ok!(Assets::mint(RuntimeOrigin::signed(ALICE), 1, ALICE, 1000));
+            assert_ok!(Assets::create(
+                RuntimeOrigin::signed(ALICE),
+                ASSET_ID,
+                ALICE,
+                1
+            ));
+            assert_ok!(Assets::mint(
+                RuntimeOrigin::signed(ALICE),
+                ASSET_ID,
+                ALICE,
+                1000
+            ));
             assert_ok!(Assets::approve_transfer(
                 RuntimeOrigin::signed(ALICE),
-                1,
+                ASSET_ID,
                 BOB,
                 100
             ));
             assert_ok!(Assets::set_metadata(
                 RuntimeOrigin::signed(ALICE),
-                1,
+                ASSET_ID,
                 "Token".as_bytes().to_vec(),
                 "TKN".as_bytes().to_vec(),
                 1
@@ -227,18 +275,30 @@ fn getters_works() {
 
             // Assert - verify state using chain extension getters
             assert_eq!(
-                allowance(addr.clone(), 1, ALICE, BOB).data[1..],
+                allowance(addr.clone(), ASSET_ID, ALICE, BOB).data[1..],
                 100u128.encode()
             );
             assert_eq!(
-                balance_of(addr.clone(), 1, ALICE).data[1..],
+                balance_of(addr.clone(), ASSET_ID, ALICE).data[1..],
                 1000u128.encode()
             );
-            assert_eq!(total_supply(addr.clone(), 1).data[1..], 1000u128.encode());
-            assert_eq!(metadata_decimals(addr.clone(), 1).data[1..], [1u8]);
-            assert_eq!(metadata_name(addr.clone(), 1).data[1..], "Token".encode());
-            assert_eq!(metadata_symbol(addr.clone(), 1).data[1..], "TKN".encode());
-            assert_eq!(minimum_balance(addr.clone(), 1).data[1..], 1u128.encode());
+            assert_eq!(
+                total_supply(addr.clone(), ASSET_ID).data[1..],
+                1000u128.encode()
+            );
+            assert_eq!(metadata_decimals(addr.clone(), ASSET_ID).data[1..], [1u8]);
+            assert_eq!(
+                metadata_name(addr.clone(), ASSET_ID).data[1..],
+                "Token".encode()
+            );
+            assert_eq!(
+                metadata_symbol(addr.clone(), ASSET_ID).data[1..],
+                "TKN".encode()
+            );
+            assert_eq!(
+                minimum_balance(addr.clone(), ASSET_ID).data[1..],
+                1u128.encode()
+            );
         });
 }
 
