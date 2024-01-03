@@ -983,7 +983,7 @@ pub(crate) fn assert_claim_dapp_reward(
         .clone();
     assert_eq!(
         info.try_claim(dapp_info.id),
-        Err(DAppTierError::RewardAlreadyClaimed),
+        Err(DAppTierError::NoDAppInTiers),
         "It must not be possible to claim the same reward twice!.",
     );
 }

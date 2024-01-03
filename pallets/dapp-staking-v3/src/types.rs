@@ -64,14 +64,14 @@
 //! * `DAppTierRewards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
 //!
 
-use frame_support::{pallet_prelude::*, BoundedVec};
+use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec};
 use parity_scale_codec::{Decode, Encode};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
     traits::{CheckedAdd, UniqueSaturatedInto, Zero},
     FixedPointNumber, Permill, Saturating,
 };
-pub use sp_std::{fmt::Debug, vec::Vec};
+pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
 use astar_primitives::{Balance, BlockNumber};
 
@@ -1644,18 +1644,6 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
     }
 }
 
-/// Used to represent into which tier does a particular dApp fall into.
-///
-/// In case tier Id is `None`, it means that either reward was already claimed, or dApp is not eligible for rewards.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-pub struct DAppTier {
-    /// Unique dApp id in dApp staking protocol.
-    #[codec(compact)]
-    pub dapp_id: DAppId,
-    /// `Some(tier_id)` if dApp belongs to tier and has unclaimed rewards, `None` otherwise.
-    pub tier_id: Option<TierId>,
-}
-
 /// Information about all of the dApps that got into tiers, and tier rewards
 #[derive(
     Encode,
@@ -1670,7 +1658,7 @@ pub struct DAppTier {
 #[scale_info(skip_type_params(MD, NT))]
 pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-    pub dapps: BoundedVec<DAppTier, MD>,
+    pub dapps: BoundedBTreeMap<DAppId, TierId, MD>,
     /// Rewards for each tier. First entry refers to the first tier, and so on.
     pub rewards: BoundedVec<Balance, NT>,
     /// Period during which this struct was created.
@@ -1681,7 +1669,7 @@ pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
 impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
     fn default() -> Self {
         Self {
-            dapps: BoundedVec::default(),
+            dapps: BoundedBTreeMap::default(),
             rewards: BoundedVec::default(),
             period: 0,
         }
@@ -1692,15 +1680,11 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
     /// Attempt to construct `DAppTierRewards` struct.
     /// If the provided arguments exceed the allowed capacity, return an error.
     pub fn new(
-        dapps: Vec<DAppTier>,
+        dapps: BTreeMap<DAppId, TierId>,
         rewards: Vec<Balance>,
         period: PeriodNumber,
     ) -> Result<Self, ()> {
-        // Sort by dApp ID, in ascending order (unstable sort should be faster, and stability is "guaranteed" due to lack of duplicated Ids).
-        let mut dapps = dapps;
-        dapps.sort_unstable_by(|first, second| first.dapp_id.cmp(&second.dapp_id));
-
-        let dapps = BoundedVec::try_from(dapps).map_err(|_| ())?;
+        let dapps = BoundedBTreeMap::try_from(dapps).map_err(|_| ())?;
         let rewards = BoundedVec::try_from(rewards).map_err(|_| ())?;
         Ok(Self {
             dapps,
@@ -1713,27 +1697,17 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
     /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
     pub fn try_claim(&mut self, dapp_id: DAppId) -> Result<(Balance, TierId), DAppTierError> {
         // Check if dApp Id exists.
-        let dapp_idx = self
+        let tier_id = self
             .dapps
-            .binary_search_by(|entry| entry.dapp_id.cmp(&dapp_id))
-            .map_err(|_| DAppTierError::NoDAppInTiers)?;
+            .remove(&dapp_id)
+            .ok_or(DAppTierError::NoDAppInTiers)?;
 
-        match self.dapps.get_mut(dapp_idx) {
-            Some(dapp_tier) => {
-                if let Some(tier_id) = dapp_tier.tier_id.take() {
-                    Ok((
-                        self.rewards
-                            .get(tier_id as usize)
-                            .map_or(Balance::zero(), |x| *x),
-                        tier_id,
-                    ))
-                } else {
-                    Err(DAppTierError::RewardAlreadyClaimed)
-                }
-            }
-            // unreachable code, at this point it was proved that index exists
-            _ => Err(DAppTierError::InternalError),
-        }
+        Ok((
+            self.rewards
+                .get(tier_id as usize)
+                .map_or(Balance::zero(), |x| *x),
+            tier_id,
+        ))
     }
 }
 
@@ -1741,8 +1715,6 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
 pub enum DAppTierError {
     /// Specified dApp Id doesn't exist in any tier.
     NoDAppInTiers,
-    /// Reward has already been claimed for this dApp.
-    RewardAlreadyClaimed,
     /// Internal, unexpected error occured.
     InternalError,
 }
