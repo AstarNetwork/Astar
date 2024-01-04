@@ -2262,7 +2262,7 @@ fn force_with_incorrect_origin_fails() {
 }
 
 #[test]
-fn get_dapp_tier_assignment_basic_example_works() {
+fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
     ExtBuilder::build().execute_with(|| {
         // This test will rely on the configuration inside the mock file.
         // If that changes, this test will have to be updated as well.
@@ -2339,7 +2339,7 @@ fn get_dapp_tier_assignment_basic_example_works() {
         // Finally, the actual test
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
-        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment(
+        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment_and_rewards(
             protocol_state.era + 1,
             protocol_state.period_number(),
             dapp_reward_pool,
@@ -2402,7 +2402,7 @@ fn get_dapp_tier_assignment_basic_example_works() {
 }
 
 #[test]
-fn get_dapp_tier_assignment_zero_slots_per_tier_works() {
+fn get_dapp_tier_assignment_and_rewards_zero_slots_per_tier_works() {
     ExtBuilder::build().execute_with(|| {
         // This test will rely on the configuration inside the mock file.
         // If that changes, this test might have to be updated as well.
@@ -2417,7 +2417,7 @@ fn get_dapp_tier_assignment_zero_slots_per_tier_works() {
         // Calculate tier assignment (we don't need dApps for this test)
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
-        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment(
+        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment_and_rewards(
             protocol_state.era,
             protocol_state.period_number(),
             dapp_reward_pool,

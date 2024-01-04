@@ -55,6 +55,9 @@ use astar_primitives::{
     Balance, BlockNumber,
 };
 
+// TODO: remove this after rebase
+use sp_std::collections::btree_map::BTreeMap;
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -1637,6 +1640,30 @@ pub mod pallet {
             T::CycleConfiguration::blocks_per_era().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
+        // TODO: finish this after rebase/merge with latest pending updates
+        // Maybe define an interface for this.
+        pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
+            let protocol_state = ActiveProtocolState::<T>::get();
+
+            let (dapp_tiers, _count) = Self::get_dapp_tier_assignment_and_rewards(
+                protocol_state.era,
+                protocol_state.period_number(),
+                Balance::zero(),
+            );
+
+            dapp_tiers
+                .dapps
+                .into_iter()
+                .filter_map(|dapp_tier| {
+                    if let Some(tier_id) = dapp_tier.tier_id {
+                        Some((dapp_tier.dapp_id, tier_id))
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        }
+
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
         ///
         /// ### Algorithm
@@ -1666,7 +1693,7 @@ pub mod pallet {
         ///
         /// The returned object contains information about each dApp that made it into a tier.
         /// Alongside tier assignment info, number of read DB contract stake entries is returned.
-        pub(crate) fn get_dapp_tier_assignment(
+        pub(crate) fn get_dapp_tier_assignment_and_rewards(
             era: EraNumber,
             period: PeriodNumber,
             dapp_reward_pool: Balance,
@@ -1838,7 +1865,7 @@ pub mod pallet {
                     // To help with benchmarking, it's possible to omit real tier calculation using the `Dummy` approach.
                     // This must never be used in production code, obviously.
                     let (dapp_tier_rewards, counter) = match tier_assignment {
-                        TierAssignment::Real => Self::get_dapp_tier_assignment(
+                        TierAssignment::Real => Self::get_dapp_tier_assignment_and_rewards(
                             current_era,
                             protocol_state.period_number(),
                             dapp_reward_pool,
