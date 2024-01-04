@@ -4951,6 +4951,7 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
+ "assets-chain-extension-types",
  "astar-primitives",
  "astar-runtime",
  "astar-test-utils",

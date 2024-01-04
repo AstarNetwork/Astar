@@ -22,6 +22,8 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{DispatchError, ModuleError};
 
+pub const LOG_TARGET: &str = "pallet-chain-extension-assets";
+
 #[repr(u16)]
 #[derive(TryFromPrimitive, IntoPrimitive, Decode, Encode)]
 pub enum Command {
@@ -125,14 +127,22 @@ impl From<DispatchError> for Outcome {
 
 #[macro_export]
 macro_rules! handle_result {
-    ($call_result:expr, $target:expr) => {{
+    ($call_result:expr) => {{
         return match $call_result {
             Err(e) => {
-                log::trace!(target: $target, "err: {:?}", e);
+                log::trace!(target: LOG_TARGET, "err: {:?}", e);
                 let mapped_error = Outcome::from(e);
                 Ok(RetVal::Converging(mapped_error as u32))
             }
             Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
         };
+    }};
+}
+
+#[macro_export]
+macro_rules! selector_bytes {
+    ($s:expr) => {{
+        let hash = blake2_256($s.as_bytes());
+        [hash[0], hash[1], hash[2], hash[3]]
     }};
 }

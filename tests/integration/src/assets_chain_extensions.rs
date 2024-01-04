@@ -17,22 +17,11 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::setup::*;
+use assets_chain_extension_types::selector_bytes;
 use parity_scale_codec::Encode;
+use sp_io::hashing::blake2_256;
 
 const ASSETS_CE: &'static str = "pallet_assets_extension";
-
-const TRANSFER: [u8; 4] = [0x84, 0xa1, 0x5d, 0xa1];
-const TRANSFER_APPROVED: [u8; 4] = [0x31, 0x05, 0x59, 0x75];
-const MINT: [u8; 4] = [0xcf, 0xdd, 0x9a, 0xa2];
-const BURN: [u8; 4] = [0xb1, 0xef, 0xc1, 0x7b];
-const APPROVE_TRANSFER: [u8; 4] = [0x8e, 0x7c, 0x3e, 0xe9];
-const BALANCE_OF: [u8; 4] = [0x0f, 0x75, 0x5a, 0x56];
-const ALLOWANCE: [u8; 4] = [0x6a, 0x00, 0x16, 0x5e];
-const METADATA_NAME: [u8; 4] = [0xf5, 0xcd, 0xdb, 0xc1];
-const METADATA_SYMBOL: [u8; 4] = [0x7c, 0xdc, 0xaf, 0xc1];
-const METADATA_DECIMALS: [u8; 4] = [0x25, 0x54, 0x47, 0x3b];
-const TOTAL_SUPPLY: [u8; 4] = [0xdb, 0x63, 0x75, 0xa8];
-const MINIMUM_BALANCE: [u8; 4] = [0x1a, 0xa4, 0x88, 0x63];
 
 const ASSET_ID: u128 = 200;
 
@@ -63,7 +52,7 @@ fn mint_transfer_burn_works() {
                 ALICE,
                 contract_id.clone(),
                 [
-                    MINT.to_vec(),
+                    selector_bytes!("mint").to_vec(),
                     ASSET_ID.encode(),
                     contract_id.encode(),
                     1000u128.encode()
@@ -78,7 +67,12 @@ fn mint_transfer_burn_works() {
             call_wasm_contract_method::<u128>(
                 ALICE,
                 contract_id.clone(),
-                [BALANCE_OF.to_vec(), ASSET_ID.encode(), contract_id.encode()].concat()
+                [
+                    selector_bytes!("balance_of").to_vec(),
+                    ASSET_ID.encode(),
+                    contract_id.encode()
+                ]
+                .concat()
             ),
             1000u128
         );
@@ -89,7 +83,7 @@ fn mint_transfer_burn_works() {
                 ALICE,
                 contract_id.clone(),
                 [
-                    TRANSFER.to_vec(),
+                    selector_bytes!("transfer").to_vec(),
                     ASSET_ID.encode(),
                     ALICE.encode(),
                     100u128.encode()
@@ -104,7 +98,12 @@ fn mint_transfer_burn_works() {
             call_wasm_contract_method::<u128>(
                 ALICE,
                 contract_id.clone(),
-                [BALANCE_OF.to_vec(), ASSET_ID.encode(), ALICE.encode()].concat()
+                [
+                    selector_bytes!("balance_of").to_vec(),
+                    ASSET_ID.encode(),
+                    ALICE.encode()
+                ]
+                .concat()
             ),
             100u128
         );
@@ -115,7 +114,7 @@ fn mint_transfer_burn_works() {
                 ALICE,
                 contract_id.clone(),
                 [
-                    BURN.to_vec(),
+                    selector_bytes!("burn").to_vec(),
                     ASSET_ID.encode(),
                     contract_id.encode(),
                     50u128.encode()
@@ -130,7 +129,12 @@ fn mint_transfer_burn_works() {
             call_wasm_contract_method::<u128>(
                 ALICE,
                 contract_id.clone(),
-                [BALANCE_OF.to_vec(), ASSET_ID.encode(), contract_id.encode()].concat()
+                [
+                    selector_bytes!("balance_of").to_vec(),
+                    ASSET_ID.encode(),
+                    contract_id.encode()
+                ]
+                .concat()
             ),
             850u128
         );
@@ -140,7 +144,7 @@ fn mint_transfer_burn_works() {
             call_wasm_contract_method::<u128>(
                 ALICE,
                 contract_id.clone(),
-                [TOTAL_SUPPLY.to_vec(), ASSET_ID.encode()].concat()
+                [selector_bytes!("total_supply").to_vec(), ASSET_ID.encode()].concat()
             ),
             950u128
         );
@@ -172,7 +176,7 @@ fn approve_works() {
                 ALICE,
                 contract_id.clone(),
                 [
-                    APPROVE_TRANSFER.to_vec(),
+                    selector_bytes!("approve_transfer").to_vec(),
                     ASSET_ID.encode(),
                     ALICE.encode(),
                     100u128.encode()
@@ -188,7 +192,7 @@ fn approve_works() {
                 ALICE,
                 contract_id.clone(),
                 [
-                    ALLOWANCE.to_vec(),
+                    selector_bytes!("allowance").to_vec(),
                     ASSET_ID.encode(),
                     contract_id.encode(),
                     ALICE.encode()
@@ -224,7 +228,11 @@ fn getters_works() {
             call_wasm_contract_method::<u8>(
                 ALICE,
                 contract_id.clone(),
-                [METADATA_DECIMALS.to_vec(), ASSET_ID.encode()].concat()
+                [
+                    selector_bytes!("metadata_decimals").to_vec(),
+                    ASSET_ID.encode()
+                ]
+                .concat()
             ),
             1u8
         );
@@ -233,7 +241,7 @@ fn getters_works() {
             call_wasm_contract_method::<Vec<u8>>(
                 ALICE,
                 contract_id.clone(),
-                [METADATA_NAME.to_vec(), ASSET_ID.encode()].concat()
+                [selector_bytes!("metadata_name").to_vec(), ASSET_ID.encode()].concat()
             ),
             "Token".encode()
         );
@@ -242,7 +250,11 @@ fn getters_works() {
             call_wasm_contract_method::<Vec<u8>>(
                 ALICE,
                 contract_id.clone(),
-                [METADATA_SYMBOL.to_vec(), ASSET_ID.encode()].concat()
+                [
+                    selector_bytes!("metadata_symbol").to_vec(),
+                    ASSET_ID.encode()
+                ]
+                .concat()
             ),
             "TKN".encode()
         );
@@ -252,7 +264,11 @@ fn getters_works() {
             call_wasm_contract_method::<u128>(
                 ALICE,
                 contract_id.clone(),
-                [MINIMUM_BALANCE.to_vec(), ASSET_ID.encode()].concat()
+                [
+                    selector_bytes!("minimum_balance").to_vec(),
+                    ASSET_ID.encode()
+                ]
+                .concat()
             ),
             1u128
         );
@@ -293,7 +309,7 @@ fn transfer_approved_works() {
                 ALICE,
                 contract_id.clone(),
                 [
-                    TRANSFER_APPROVED.to_vec(),
+                    selector_bytes!("transfer_approved").to_vec(),
                     ASSET_ID.encode(),
                     ALICE.encode(),
                     contract_id.encode(),
@@ -309,7 +325,12 @@ fn transfer_approved_works() {
             call_wasm_contract_method::<u128>(
                 ALICE,
                 contract_id.clone(),
-                [BALANCE_OF.to_vec(), ASSET_ID.encode(), contract_id.encode()].concat()
+                [
+                    selector_bytes!("balance_of").to_vec(),
+                    ASSET_ID.encode(),
+                    contract_id.encode()
+                ]
+                .concat()
             ),
             100u128
         );
@@ -318,7 +339,12 @@ fn transfer_approved_works() {
             call_wasm_contract_method::<u128>(
                 ALICE,
                 contract_id.clone(),
-                [BALANCE_OF.to_vec(), ASSET_ID.encode(), ALICE.encode()].concat()
+                [
+                    selector_bytes!("balance_of").to_vec(),
+                    ASSET_ID.encode(),
+                    ALICE.encode()
+                ]
+                .concat()
             ),
             900u128
         );

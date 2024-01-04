@@ -17,12 +17,14 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::mock::*;
+use assets_chain_extension_types::selector_bytes;
 use frame_support::assert_ok;
 use frame_support::traits::Currency;
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_contracts_primitives::{Code, ExecReturnValue};
 use parity_scale_codec::Encode;
 use sp_core::crypto::AccountId32;
+use sp_io::hashing::blake2_256;
 use sp_runtime::DispatchError;
 use std::fs;
 
@@ -44,13 +46,14 @@ fn mint_works() {
         .execute_with(|| {
             let addr = instantiate();
 
-            // Arrange - create asset and give contract mint permission (Issuer role)
+            // Arrange - create asset
             assert_ok!(Assets::create(
                 RuntimeOrigin::signed(ALICE),
                 ASSET_ID,
                 ALICE,
                 1
             ));
+            // Arrange - Give contract mint permission (Issuer role)
             assert_ok!(Assets::set_team(
                 RuntimeOrigin::signed(ALICE),
                 ASSET_ID,
@@ -307,7 +310,7 @@ fn instantiate() -> AccountId32 {
         .expect("could not read .wasm file");
     let _ = Balances::deposit_creating(&ALICE, ONE * 1000);
     let _ = Balances::deposit_creating(&BOB, ONE * 1000);
-    let instance_selector: Vec<u8> = [0x9b, 0xae, 0x9d, 0x5e].to_vec();
+    let instance_selector: Vec<u8> = selector_bytes!("new").to_vec();
     Contracts::bare_instantiate(
         ALICE,
         0,
@@ -331,7 +334,7 @@ fn transfer(
     amount: u128,
 ) -> Result<ExecReturnValue, DispatchError> {
     let data = [
-        [0x84, 0xa1, 0x5d, 0xa1].to_vec(),
+        selector_bytes!("transfer").to_vec(),
         (asset_id, target, amount).encode(),
     ]
     .concat();
@@ -346,7 +349,7 @@ fn transfer_approved(
     amount: u128,
 ) -> Result<ExecReturnValue, DispatchError> {
     let data = [
-        [0x31, 0x05, 0x59, 0x75].to_vec(),
+        selector_bytes!("transfer_approved").to_vec(),
         (asset_id, owner, dest, amount).encode(),
     ]
     .concat();
@@ -360,7 +363,7 @@ fn mint(
     amount: u128,
 ) -> Result<ExecReturnValue, DispatchError> {
     let data = [
-        [0xcf, 0xdd, 0x9a, 0xa2].to_vec(),
+        selector_bytes!("mint").to_vec(),
         (asset_id, beneficiary, amount).encode(),
     ]
     .concat();
@@ -374,7 +377,7 @@ fn burn(
     amount: u128,
 ) -> Result<ExecReturnValue, DispatchError> {
     let data = [
-        [0xb1, 0xef, 0xc1, 0x7b].to_vec(),
+        selector_bytes!("burn").to_vec(),
         (asset_id, who, amount).encode(),
     ]
     .concat();
@@ -388,7 +391,7 @@ fn approve_transfer(
     amount: u128,
 ) -> Result<ExecReturnValue, DispatchError> {
     let data = [
-        [0x8e, 0x7c, 0x3e, 0xe9].to_vec(),
+        selector_bytes!("approve_transfer").to_vec(),
         (asset_id, delegate, amount).encode(),
     ]
     .concat();
@@ -396,7 +399,11 @@ fn approve_transfer(
 }
 
 fn balance_of(addr: AccountId32, asset_id: u128, who: AccountId32) -> ExecReturnValue {
-    let data = [[0x0f, 0x75, 0x5a, 0x56].to_vec(), (asset_id, who).encode()].concat();
+    let data = [
+        selector_bytes!("balance_of").to_vec(),
+        (asset_id, who).encode(),
+    ]
+    .concat();
     do_bare_call(addr, data, 0).unwrap()
 }
 
@@ -407,7 +414,7 @@ fn allowance(
     delegate: AccountId32,
 ) -> ExecReturnValue {
     let data = [
-        [0x6a, 0x00, 0x16, 0x5e].to_vec(),
+        selector_bytes!("allowance").to_vec(),
         (asset_id, owner, delegate).encode(),
     ]
     .concat();
@@ -415,27 +422,39 @@ fn allowance(
 }
 
 fn metadata_name(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
-    let data = [[0xf5, 0xcd, 0xdb, 0xc1].to_vec(), asset_id.encode()].concat();
+    let data = [selector_bytes!("metadata_name").to_vec(), asset_id.encode()].concat();
     do_bare_call(addr, data, 0).unwrap()
 }
 
 fn metadata_symbol(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
-    let data = [[0x7c, 0xdc, 0xaf, 0xc1].to_vec(), asset_id.encode()].concat();
+    let data = [
+        selector_bytes!("metadata_symbol").to_vec(),
+        asset_id.encode(),
+    ]
+    .concat();
     do_bare_call(addr, data, 0).unwrap()
 }
 
 fn metadata_decimals(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
-    let data = [[0x25, 0x54, 0x47, 0x3b].to_vec(), asset_id.encode()].concat();
+    let data = [
+        selector_bytes!("metadata_decimals").to_vec(),
+        asset_id.encode(),
+    ]
+    .concat();
     do_bare_call(addr, data, 0).unwrap()
 }
 
 fn total_supply(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
-    let data = [[0xdb, 0x63, 0x75, 0xa8].to_vec(), asset_id.encode()].concat();
+    let data = [selector_bytes!("total_supply").to_vec(), asset_id.encode()].concat();
     do_bare_call(addr, data, 0).unwrap()
 }
 
 fn minimum_balance(addr: AccountId32, asset_id: u128) -> ExecReturnValue {
-    let data = [[0x1a, 0xa4, 0x88, 0x63].to_vec(), asset_id.encode()].concat();
+    let data = [
+        selector_bytes!("minimum_balance").to_vec(),
+        asset_id.encode(),
+    ]
+    .concat();
     do_bare_call(addr, data, 0).unwrap()
 }
 

@@ -23,12 +23,9 @@ use frame_support::{
     traits::{ConstU32, ConstU64, Nothing},
     weights::Weight,
 };
-use pallet_assets::AssetsCallback;
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 use pallet_contracts::{Config, DefaultAddressGenerator, Frame};
-use parity_scale_codec::Encode;
 use sp_core::crypto::AccountId32;
-use sp_io::storage;
 use sp_runtime::generic;
 use sp_runtime::testing::H256;
 use sp_runtime::traits::{BlakeTwo256, Convert, IdentityLookup, Zero};
@@ -142,19 +139,6 @@ impl pallet_timestamp::Config for Test {
     type WeightInfo = ();
 }
 
-pub struct AssetsCallbackHandle;
-impl AssetsCallback<AssetId, AccountId32> for AssetsCallbackHandle {
-    fn created(_id: &AssetId, _owner: &AccountId32) -> Result<(), ()> {
-        storage::set(b"asset_created", &().encode());
-        Ok(())
-    }
-
-    fn destroyed(_id: &AssetId) -> Result<(), ()> {
-        storage::set(b"asset_destroyed", &().encode());
-        Ok(())
-    }
-}
-
 impl pallet_assets::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
@@ -171,7 +155,7 @@ impl pallet_assets::Config for Test {
     type StringLimit = ConstU32<50>;
     type Freezer = ();
     type WeightInfo = ();
-    type CallbackHandle = AssetsCallbackHandle;
+    type CallbackHandle = ();
     type Extra = ();
     type RemoveItemsLimit = ConstU32<5>;
 }

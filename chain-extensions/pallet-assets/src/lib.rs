@@ -24,7 +24,7 @@ mod mock;
 mod tests;
 
 pub use assets_chain_extension_types::Command::{self, *};
-use assets_chain_extension_types::{handle_result, Outcome};
+use assets_chain_extension_types::{handle_result, Outcome, LOG_TARGET};
 use frame_support::traits::fungibles::{
     approvals::Inspect as AllowanceInspect, metadata::Inspect as MetadataInspect, Inspect,
 };
@@ -63,17 +63,21 @@ where
             DispatchError::Other("Unsupported func id in Pallet Assets Chain Extension")
         })? {
             Transfer => {
+                env.charge_weight(Weight::<T>::transfer())?;
+
                 let (id, target, amount): (
                     <T as pallet_assets::Config>::AssetId,
                     T::AccountId,
                     T::Balance,
                 ) = env.read_as()?;
 
-                log::trace!(target: "pallet-chain-extension-assets::transfer",
-                    "Raw arguments: id: {:?}, to: {:?}, amount: {:?}",
-                      id, target, amount);
-
-                env.charge_weight(Weight::<T>::transfer())?;
+                log::trace!(
+                    target: LOG_TARGET,
+                    "transfer: raw arguments: id: {:?}, to: {:?}, amount: {:?}",
+                    id,
+                    target,
+                    amount
+                );
 
                 let call_result = pallet_assets::Pallet::<T>::transfer(
                     RawOrigin::Signed(env.ext().address().clone()).into(),
@@ -81,9 +85,11 @@ where
                     target.into(),
                     amount,
                 );
-                handle_result!(call_result, "pallet-chain-extension-assets::transfer");
+                handle_result!(call_result);
             }
             TransferApproved => {
+                env.charge_weight(Weight::<T>::transfer_approved())?;
+
                 let (id, owner, destination, amount): (
                     <T as pallet_assets::Config>::AssetId,
                     T::AccountId,
@@ -91,11 +97,9 @@ where
                     T::Balance,
                 ) = env.read_as()?;
 
-                log::trace!(target: "pallet-chain-extension-assets::transfer_approved",
-                    "Raw arguments: id: {:?}, owner: {:?}, destination: {:?}, amount: {:?}",
+                log::trace!(target: LOG_TARGET,
+                    "transfer_approved: raw arguments: id: {:?}, owner: {:?}, destination: {:?}, amount: {:?}",
                       id, owner, destination, amount);
-
-                env.charge_weight(Weight::<T>::transfer_approved())?;
 
                 let call_result = pallet_assets::Pallet::<T>::transfer_approved(
                     RawOrigin::Signed(env.ext().address().clone()).into(),
@@ -104,23 +108,24 @@ where
                     destination.into(),
                     amount,
                 );
-                handle_result!(
-                    call_result,
-                    "pallet-chain-extension-assets::transfer_approved"
-                );
+                handle_result!(call_result);
             }
             Mint => {
+                env.charge_weight(Weight::<T>::mint())?;
+
                 let (id, beneficiary, amount): (
                     <T as pallet_assets::Config>::AssetId,
                     T::AccountId,
                     T::Balance,
                 ) = env.read_as()?;
 
-                log::trace!(target: "pallet-chain-extension-assets::mint",
-                    "Raw arguments: id: {:?}, beneficiary: {:?}, amount: {:?}",
-                      id, beneficiary, amount);
-
-                env.charge_weight(Weight::<T>::mint())?;
+                log::trace!(
+                    target: LOG_TARGET,
+                    "mint: raw arguments: id: {:?}, beneficiary: {:?}, amount: {:?}",
+                    id,
+                    beneficiary,
+                    amount
+                );
 
                 let call_result = pallet_assets::Pallet::<T>::mint(
                     RawOrigin::Signed(env.ext().address().clone()).into(),
@@ -128,20 +133,24 @@ where
                     beneficiary.into(),
                     amount,
                 );
-                handle_result!(call_result, "pallet-chain-extension-assets::mint");
+                handle_result!(call_result);
             }
             Burn => {
+                env.charge_weight(Weight::<T>::burn())?;
+
                 let (id, who, amount): (
                     <T as pallet_assets::Config>::AssetId,
                     T::AccountId,
                     T::Balance,
                 ) = env.read_as()?;
 
-                log::trace!(target: "pallet-chain-extension-assets::burn",
-                    "Raw arguments: id: {:?}, who: {:?}, amount: {:?}",
-                      id, who, amount);
-
-                env.charge_weight(Weight::<T>::burn())?;
+                log::trace!(
+                    target: LOG_TARGET,
+                    "burn: raw arguments: id: {:?}, who: {:?}, amount: {:?}",
+                    id,
+                    who,
+                    amount
+                );
 
                 let call_result = pallet_assets::Pallet::<T>::burn(
                     RawOrigin::Signed(env.ext().address().clone()).into(),
@@ -149,20 +158,24 @@ where
                     who.into(),
                     amount,
                 );
-                handle_result!(call_result, "pallet-chain-extension-assets::burn");
+                handle_result!(call_result);
             }
             ApproveTransfer => {
+                env.charge_weight(Weight::<T>::approve_transfer())?;
+
                 let (id, delegate, amount): (
                     <T as pallet_assets::Config>::AssetId,
                     T::AccountId,
                     T::Balance,
                 ) = env.read_as()?;
 
-                log::trace!(target: "pallet-chain-extension-assets::approve_transfer",
-                    "Raw arguments: id: {:?}, delegate: {:?}, amount: {:?}",
-                      id, delegate, amount);
-
-                env.charge_weight(Weight::<T>::approve_transfer())?;
+                log::trace!(
+                    target: LOG_TARGET,
+                    "approve_transfer: raw arguments: id: {:?}, delegate: {:?}, amount: {:?}",
+                    id,
+                    delegate,
+                    amount
+                );
 
                 let call_result = pallet_assets::Pallet::<T>::approve_transfer(
                     RawOrigin::Signed(env.ext().address().clone()).into(),
@@ -170,36 +183,33 @@ where
                     delegate.into(),
                     amount,
                 );
-                handle_result!(
-                    call_result,
-                    "pallet-chain-extension-assets::approve_transfer"
-                );
+                handle_result!(call_result);
             }
             BalanceOf => {
+                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
                 let (id, who): (<T as pallet_assets::Config>::AssetId, T::AccountId) =
                     env.read_as()?;
-
-                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
 
                 pallet_assets::Pallet::<T>::balance(id, who)
                     .using_encoded(|r| env.write(r, false, None))?;
             }
             TotalSupply => {
-                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
-
                 env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
+                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
 
                 pallet_assets::Pallet::<T>::total_supply(id)
                     .using_encoded(|r| env.write(r, false, None))?;
             }
             Allowance => {
+                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
                 let (id, owner, delegate): (
                     <T as pallet_assets::Config>::AssetId,
                     T::AccountId,
                     T::AccountId,
                 ) = env.read_as()?;
-
-                env.charge_weight(T::DbWeight::get().reads(1_u64))?;
 
                 <pallet_assets::Pallet<T> as AllowanceInspect<T::AccountId>>::allowance(
                     id, &owner, &delegate,
@@ -207,33 +217,33 @@ where
                 .using_encoded(|r| env.write(r, false, None))?;
             }
             MetadataName => {
-                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
-
                 env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
+                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
 
                 <pallet_assets::Pallet<T> as MetadataInspect<T::AccountId>>::name(id)
                     .using_encoded(|r| env.write(r, false, None))?;
             }
             MetadataSymbol => {
-                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
-
                 env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
+                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
 
                 <pallet_assets::Pallet<T> as MetadataInspect<T::AccountId>>::symbol(id)
                     .using_encoded(|r| env.write(r, false, None))?;
             }
             MetadataDecimals => {
-                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
-
                 env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
+                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
 
                 <pallet_assets::Pallet<T> as MetadataInspect<T::AccountId>>::decimals(id)
                     .using_encoded(|r| env.write(r, false, None))?;
             }
             MinimumBalance => {
-                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
-
                 env.charge_weight(T::DbWeight::get().reads(1_u64))?;
+
+                let id: <T as pallet_assets::Config>::AssetId = env.read_as()?;
 
                 <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(id)
                     .using_encoded(|r| env.write(r, false, None))?;
