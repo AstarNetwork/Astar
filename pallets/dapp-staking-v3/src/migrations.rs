@@ -166,7 +166,7 @@ impl<MD: Get<u32>, NT: Get<u32>> Default for OldDAppTierRewards<MD, NT> {
 type OldDAppTierRewardsFor<T> =
     OldDAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
 
-/// `OnRuntimeUpgrade` logic used to set & configure init dApp staking v3 storage items.
+/// `OnRuntimeUpgrade` logic used to migrate DApp tiers storage item to BTreeMap.
 pub struct DappStakingV3TierRewardAsTree<T>(PhantomData<T>);
 impl<T: Config> OnRuntimeUpgrade for DappStakingV3TierRewardAsTree<T> {
     fn on_runtime_upgrade() -> Weight {
