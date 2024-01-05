@@ -81,6 +81,7 @@ pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-unified-accounts = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-inflation = { workspace = true }
+pallet-static-price-provider = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 pallet-xvm = { workspace = true }
 
@@ -130,6 +131,7 @@ std = [
 	"pallet-dapp-staking-migration/std",
 	"dapp-staking-v3-runtime-api/std",
 	"pallet-inflation/std",
+	"pallet-static-price-provider/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
@@ -241,6 +243,7 @@ try-runtime = [
 	"pallet-evm/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
 	"pallet-dapp-staking-migration/try-runtime",
+	"pallet-static-price-provider/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

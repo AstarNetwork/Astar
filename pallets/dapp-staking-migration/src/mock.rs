@@ -31,6 +31,7 @@ use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, SmartContract, StakingRewardHandler},
+    oracle::PriceProvider,
     testing::Header,
     Balance, BlockNumber,
 };
@@ -108,7 +109,7 @@ impl pallet_balances::Config for Test {
 }
 
 pub struct DummyPriceProvider;
-impl pallet_dapp_staking_v3::PriceProvider for DummyPriceProvider {
+impl PriceProvider for DummyPriceProvider {
     fn average_price() -> FixedU64 {
         FixedU64::from_rational(1, 10)
     }

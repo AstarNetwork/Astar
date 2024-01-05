@@ -52,6 +52,7 @@ pub use sp_std::vec::Vec;
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, SmartContractHandle, StakingRewardHandler},
+    oracle::PriceProvider,
     Balance, BlockNumber,
 };
 
@@ -68,6 +69,8 @@ mod benchmarking;
 
 mod types;
 pub use types::*;
+
+pub mod migrations;
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -346,8 +349,6 @@ pub mod pallet {
         /// No dApp tier info exists for the specified era. This can be because era has expired
         /// or because during the specified era there were no eligible rewards or protocol wasn't active.
         NoDAppTierInfo,
-        /// dApp reward has already been claimed for this era.
-        DAppRewardAlreadyClaimed,
         /// An unexpected error occured while trying to claim dApp reward.
         InternalClaimDAppError,
         /// Contract is still active, not unregistered.
@@ -1349,7 +1350,6 @@ pub mod pallet {
                     .try_claim(dapp_info.id)
                     .map_err(|error| match error {
                         DAppTierError::NoDAppInTiers => Error::<T>::NoClaimableRewards,
-                        DAppTierError::RewardAlreadyClaimed => Error::<T>::DAppRewardAlreadyClaimed,
                         _ => Error::<T>::InternalClaimDAppError,
                     })?;
 
@@ -1724,7 +1724,7 @@ pub mod pallet {
             // Iterate over configured tier and potential dApps.
             // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
             // and tier capacity hasn't been filled yet.
-            let mut dapp_tiers = Vec::with_capacity(dapp_stakes.len());
+            let mut dapp_tiers = BTreeMap::new();
             let tier_config = TierConfig::<T>::get();
 
             let mut global_idx = 0;
@@ -1744,10 +1744,7 @@ pub mod pallet {
                 for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
                     if tier_threshold.is_satisfied(*stake_amount) {
                         global_idx.saturating_inc();
-                        dapp_tiers.push(DAppTier {
-                            dapp_id: *dapp_id,
-                            tier_id: Some(tier_id),
-                        });
+                        dapp_tiers.insert(*dapp_id, tier_id);
                     } else {
                         break;
                     }
@@ -2037,108 +2034,5 @@ pub mod pallet {
 
             T::WeightInfo::on_idle_cleanup()
         }
-    }
-}
-
-/// `OnRuntimeUpgrade` logic used to set & configure init dApp staking v3 storage items.
-pub struct DAppStakingV3InitConfig<T, G>(PhantomData<(T, G)>);
-impl<
-        T: Config,
-        G: Get<(
-            EraNumber,
-            TierParameters<T::NumberOfTiers>,
-            TiersConfiguration<T::NumberOfTiers>,
-        )>,
-    > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G>
-{
-    fn on_runtime_upgrade() -> Weight {
-        if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
-            return T::DbWeight::get().reads(1);
-        }
-
-        // 0. Unwrap arguments
-        let (init_era, tier_params, init_tier_config) = G::get();
-
-        // 1. Prepare init active protocol state
-        let now = frame_system::Pallet::<T>::block_number();
-        let voting_period_length = Pallet::<T>::blocks_per_voting_period();
-
-        let period_number = 1;
-        let protocol_state = ProtocolState {
-            era: init_era,
-            next_era_start: now.saturating_add(voting_period_length),
-            period_info: PeriodInfo {
-                number: period_number,
-                subperiod: Subperiod::Voting,
-                next_subperiod_start_era: init_era.saturating_add(1),
-            },
-            maintenance: true,
-        };
-
-        // 2. Prepare init current era info - need to set correct eras
-        let init_era_info = EraInfo {
-            total_locked: 0,
-            unlocking: 0,
-            current_stake_amount: StakeAmount {
-                voting: 0,
-                build_and_earn: 0,
-                era: init_era,
-                period: period_number,
-            },
-            next_stake_amount: StakeAmount {
-                voting: 0,
-                build_and_earn: 0,
-                era: init_era.saturating_add(1),
-                period: period_number,
-            },
-        };
-
-        // 3. Write necessary items into storage
-        ActiveProtocolState::<T>::put(protocol_state);
-        StaticTierParams::<T>::put(tier_params);
-        TierConfig::<T>::put(init_tier_config);
-        STORAGE_VERSION.put::<Pallet<T>>();
-        CurrentEraInfo::<T>::put(init_era_info);
-
-        // 4. Emit events to make indexers happy
-        Pallet::<T>::deposit_event(Event::<T>::NewEra { era: init_era });
-        Pallet::<T>::deposit_event(Event::<T>::NewSubperiod {
-            subperiod: Subperiod::Voting,
-            number: 1,
-        });
-
-        log::info!("dApp Staking v3 storage initialized.");
-
-        T::DbWeight::get().reads_writes(2, 5)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-        assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
-        let protocol_state = ActiveProtocolState::<T>::get();
-        assert!(protocol_state.maintenance);
-
-        let number_of_tiers = T::NumberOfTiers::get();
-
-        let tier_params = StaticTierParams::<T>::get();
-        assert_eq!(tier_params.reward_portion.len(), number_of_tiers as usize);
-        assert!(tier_params.is_valid());
-
-        let tier_config = TierConfig::<T>::get();
-        assert_eq!(tier_config.reward_portion.len(), number_of_tiers as usize);
-        assert_eq!(tier_config.slots_per_tier.len(), number_of_tiers as usize);
-        assert_eq!(tier_config.tier_thresholds.len(), number_of_tiers as usize);
-
-        let current_era_info = CurrentEraInfo::<T>::get();
-        assert_eq!(
-            current_era_info.current_stake_amount.era,
-            protocol_state.era
-        );
-        assert_eq!(
-            current_era_info.next_stake_amount.era,
-            protocol_state.era + 1
-        );
-
-        Ok(())
     }
 }
