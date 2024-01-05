@@ -1383,8 +1383,10 @@ impl Get<FixedU64> for InitActivePriceGet {
         FixedU64::from_rational(1, 10)
     }
 }
-pub type Migrations = (pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
-    pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,);
+pub type Migrations = (
+    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
+    pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

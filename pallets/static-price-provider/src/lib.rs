@@ -16,6 +16,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+//! # Static Price Provider Pallet
+//!
+//! A simple pallet that provides a static price for the native currency.
+//! This is a temporary solution before oracle is implemented & operational.
+//!
+//! ## Overview
+//!
+//! The Static Price Provider pallet provides functionality for setting the active native currency price via privileged call.
+//! Only the root can set the price.
+//!
+//! Network maintainers must ensure to update the price at appropriate times so that inflation & dApp Staking rewards are calculated correctly.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
