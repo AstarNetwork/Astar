@@ -1729,19 +1729,3 @@ pub struct CleanupMarker {
     #[codec(compact)]
     pub dapp_tiers_index: EraNumber,
 }
-
-///////////////////////////////////////////////////////////////////////
-////////////   MOVE THIS TO SOME PRIMITIVES CRATE LATER    ////////////
-///////////////////////////////////////////////////////////////////////
-
-/// Interface for fetching price of the native token.
-///
-/// TODO: discussion about below
-/// The assumption is that the underlying implementation will ensure
-/// this price is averaged and/or weighted over a certain period of time.
-/// Alternative is to provide e.g. number of blocks for which an approximately averaged value is needed,
-/// and let the underlying implementation take care converting block range into value best represening it.
-pub trait PriceProvider {
-    /// Get the price of the native token.
-    fn average_price() -> FixedU64;
-}

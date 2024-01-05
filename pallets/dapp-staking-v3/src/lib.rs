@@ -52,6 +52,7 @@ pub use sp_std::vec::Vec;
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, SmartContractHandle, StakingRewardHandler},
+    oracle::PriceProvider,
     Balance, BlockNumber,
 };
 

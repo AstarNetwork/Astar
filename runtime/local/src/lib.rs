@@ -48,7 +48,6 @@ use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
-use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{crypto::KeyTypeId, ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -485,11 +484,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type ForcePalletDisabled = ConstBool<false>; // This will be set to `true` when needed
 }
 
-pub struct DummyPriceProvider;
-impl pallet_dapp_staking_v3::PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU64 {
-        FixedU64::from_rational(1, 10)
-    }
+impl pallet_static_price_provider::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
 }
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -515,7 +511,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type NativePriceProvider = DummyPriceProvider;
+    type NativePriceProvider = StaticPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type EraRewardSpanLength = ConstU32<8>;
@@ -1104,6 +1100,7 @@ construct_runtime!(
         DappStaking: pallet_dapp_staking_v3,
         DappStakingMigration: pallet_dapp_staking_migration,
         Inflation: pallet_inflation,
+        StaticPriceProvider: pallet_static_price_provider,
         BlockReward: pallet_block_rewards_hybrid,
         TransactionPayment: pallet_transaction_payment,
         EVM: pallet_evm,
