@@ -56,9 +56,6 @@ use astar_primitives::{
     Balance, BlockNumber,
 };
 
-// TODO: remove this after rebase
-use sp_std::collections::btree_map::BTreeMap;
-
 pub use pallet::*;
 
 #[cfg(test)]
@@ -1640,8 +1637,7 @@ pub mod pallet {
             T::CycleConfiguration::blocks_per_era().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
-        // TODO: finish this after rebase/merge with latest pending updates
-        // Maybe define an interface for this.
+        /// Returns the dApp tier assignment for the current era, based on the current stake amounts.
         pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
             let protocol_state = ActiveProtocolState::<T>::get();
 
@@ -1651,17 +1647,7 @@ pub mod pallet {
                 Balance::zero(),
             );
 
-            dapp_tiers
-                .dapps
-                .into_iter()
-                .filter_map(|dapp_tier| {
-                    if let Some(tier_id) = dapp_tier.tier_id {
-                        Some((dapp_tier.dapp_id, tier_id))
-                    } else {
-                        None
-                    }
-                })
-                .collect()
+            dapp_tiers.dapps.into_inner()
         }
 
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
