@@ -1377,14 +1377,14 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,);
-
 pub struct InitActivePriceGet;
 impl Get<FixedU64> for InitActivePriceGet {
     fn get() -> FixedU64 {
         FixedU64::from_rational(1, 10)
     }
 }
+pub type Migrations = (pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
+    pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

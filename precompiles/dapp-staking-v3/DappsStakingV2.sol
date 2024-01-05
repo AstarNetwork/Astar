@@ -5,88 +5,96 @@ pragma solidity >=0.8.0;
 /// Predeployed at the address 0x0000000000000000000000000000000000005001
 /// For better understanding check the source code:
 /// repo: https://github.com/AstarNetwork/Astar
-/// code: pallets/dapp-staking-v3
-interface DAppStaking {
+///
+/// **NOTE:** This is a soft-deprecated interface used by the old dApps staking v2.
+///           It is still supported by the network, but doesn't reflect how dApp staking v3 should be used.
+///           Please refer to the `v3` interface for the latest version of the dApp staking precompile.
+///
+///           It is possible that dApp staking feature will once again evolve in the future so all developers are encouraged
+///           to keep their smart contracts which utilize dApp staking precompile interface as upgradable, or implement their logic
+///           in such a way it's relatively simple to migrate to the new version of the interface.
+interface DappsStaking {
 
     // Types
 
-    /// Describes the subperiod in which the protocol currently is.
-    enum Subperiod {Voting, BuildAndEarn}
-
-    /// Describes current smart contract types supported by the network.
-    enum SmartContractType {EVM, WASM}
-
-    /// @notice Describes protocol state.
-    /// @param era: Ongoing era number.
-    /// @param period: Ongoing period number.
-    /// @param subperiod: Ongoing subperiod type.
-    struct ProtocolState {
-        uint256 era;
-        uint256 period;
-        Subperiod subperiod;
-    }
-
-    /// @notice Used to describe smart contract. Astar supports both EVM & WASM smart contracts
-    ///         so it's important to differentiate between the two. This approach also allows
-    ///         easy extensibility in the future.
-    /// @param contract_type: Type of the smart contract to be used
-    struct SmartContract {
-        SmartContractType contract_type;
-        bytes contract_address;
-    }
+    /// Instruction how to handle reward payout for staker.
+    /// `FreeBalance` - Reward will be paid out to the staker (free balance).
+    /// `StakeBalance` - Reward will be paid out to the staker and is immediately restaked (locked balance)
+    enum RewardDestination {FreeBalance, StakeBalance}
 
     // Storage getters
 
-    /// @notice Get the current protocol state.
-    /// @return (current era, current period number, current subperiod type).
-    function protocol_state() external view returns (ProtocolState memory);
+    /// @notice Read current era.
+    /// @return era: The current era
+    function read_current_era() external view returns (uint256);
 
-    /// @notice Get the unlocking period expressed in the number of blocks.
-    /// @return period: The unlocking period expressed in the number of blocks.
-    function unlocking_period() external view returns (uint256);
+    /// @notice Read the unbonding period (or unlocking period) in the number of eras.
+    /// @return period: The unbonding period in eras
+    function read_unbonding_period() external view returns (uint256);
+
+    /// @notice Read Total network reward for the given era - sum of staker & dApp rewards.
+    /// @return reward: Total network reward for the given era
+    function read_era_reward(uint32 era) external view returns (uint128);
+
+    /// @notice Read Total staked amount for the given era
+    /// @return staked: Total staked amount for the given era
+    function read_era_staked(uint32 era) external view returns (uint128);
+
+    /// @notice Read Staked amount for the staker
+    /// @param staker: The staker address in form of 20 or 32 hex bytes
+    /// @return amount: Staked amount by the staker
+    function read_staked_amount(bytes calldata staker) external view returns (uint128);
+
+    /// @notice Read Staked amount on a given contract for the staker
+    /// @param contract_id: The smart contract address used for staking
+    /// @param staker: The staker address in form of 20 or 32 hex bytes
+    /// @return amount: Staked amount by the staker
+    function read_staked_amount_on_contract(address contract_id, bytes calldata staker) external view returns (uint128);
+
+    /// @notice Read the staked amount from the era when the amount was last staked/unstaked
+    /// @return total: The most recent total staked amount on contract
+    function read_contract_stake(address contract_id) external view returns (uint128);
 
 
     // Extrinsic calls
 
-    /// @notice Lock the given amount of tokens into dApp staking protocol.
-    /// @param amount: The amount of tokens to be locked.
-    function lock(uint128 amount) external returns (bool);
+    /// @notice Register is root origin only and not allowed via evm precompile.
+    ///         This should always fail.
+    function register(address) external returns (bool);
 
-    /// @notice Start the unlocking process for the given amount of tokens.
-    /// @param amount: The amount of tokens to be unlocked.
-    function unlock(uint128 amount) external returns (bool);
+    /// @notice Stake provided amount on the contract.
+    ///         If the staker has sufficient locked amount to cover the stake, no additional amount is locked.
+    ///         If the staker has insufficient locked amount to cover the stake, an attempt will be made to lock the missing amount.
+    function bond_and_stake(address, uint128) external returns (bool);
 
-    /// @notice Claims unlocked tokens, if there are any
-    function claim_unlocked() external returns (bool);
+    /// @notice Unstake balance from the smart contract, and begin the unlocking process.
+    function unbond_and_unstake(address, uint128) external returns (bool);
 
-    /// @notice Stake the given amount of tokens on the specified smart contract.
-    ///         The amount specified must be precise, otherwise the call will fail.
-    /// @param smart_contract: The smart contract to be staked on.
-    /// @param amount: The amount of tokens to be staked.
-    function stake(SmartContract calldata smart_contract, uint128 amount) external returns (bool);
+    /// @notice Withdraw all funds that have completed the unbonding process.
+    function withdraw_unbonded() external returns (bool);
 
-    /// @notice Unstake the given amount of tokens from the specified smart contract.
-    ///         The amount specified must be precise, otherwise the call will fail.
-    /// @param smart_contract: The smart contract to be unstaked from.
-    /// @param amount: The amount of tokens to be unstaked.
-    function unstake(SmartContract calldata smart_contract, uint128 amount) external returns (bool);
+    /// @notice Claim earned staker rewards for the oldest unclaimed era.
+    ///         In order to claim multiple eras, this call has to be called multiple times.
+    ///         Staker account is derived from the caller address.
+    /// @param smart_contract: The smart contract address used for staking
+    function claim_staker(address smart_contract) external returns (bool);
 
-    /// @notice Claims one or more pending staker rewards.
-    function claim_staker_rewards() external returns (bool);
+    /// @notice Claim one era of unclaimed dapp rewards for the specified contract and era.
+    /// @param smart_contract: The smart contract address used for staking
+    /// @param era: The era to be claimed
+    function claim_dapp(address smart_contract, uint128 era) external returns (bool);
 
-    /// @notice Claim the bonus reward for the specified smart contract.
-    /// @param smart_contract: The smart contract for which the bonus reward should be claimed.
-    function claim_bonus_reward(SmartContract calldata smart_contract) external returns (bool);
+    /// @notice This call is deprecated and will always fail.
+    /// @param reward_destination: The instruction on how the reward payout should be handled (ignored)
+    function set_reward_destination(RewardDestination reward_destination) external returns (bool);
 
-    /// @notice Claim dApp reward for the specified smart contract & era.
-    /// @param smart_contract: The smart contract for which the dApp reward should be claimed.
-    /// @param era: The era for which the dApp reward should be claimed.
-    function claim_dapp_reward(SmartContract calldata smart_contract, uint256 era) external returns (bool);
+    /// @notice Unstake funds from an unregistered contract.
+    /// @param smart_contract: The smart contract address used for staking
+    function withdraw_from_unregistered(address smart_contract) external returns (bool);
 
-    /// @notice Unstake all funds from the unregistered smart contract.
-    /// @param smart_contract: The smart contract which was unregistered and from which all funds should be unstaked.
-    function unstake_from_unregistered(SmartContract calldata smart_contract) external returns (bool);
-
-    /// @notice Used to cleanup all expired contract stake entries from the caller.
-    function cleanup_expired_entries() external returns (bool);
+    /// @notice Transfer part or entire nomination from origin smart contract to target smart contract
+    /// @param origin_smart_contract: The origin smart contract address
+    /// @param amount: The amount to transfer from origin to target, must be precise.
+    /// @param target_smart_contract: The target smart contract address
+    function nomination_transfer(address origin_smart_contract, uint128 amount, address target_smart_contract) external returns (bool);
 }
