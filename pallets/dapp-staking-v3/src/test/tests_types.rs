@@ -2685,28 +2685,7 @@ fn dapp_tier_rewards_basic_tests() {
     get_u32_type!(NumberOfTiers, 3);
 
     // Example dApps & rewards
-    let dapps = vec![
-        DAppTier {
-            dapp_id: 1,
-            tier_id: Some(0),
-        },
-        DAppTier {
-            dapp_id: 2,
-            tier_id: Some(0),
-        },
-        DAppTier {
-            dapp_id: 3,
-            tier_id: Some(1),
-        },
-        DAppTier {
-            dapp_id: 5,
-            tier_id: Some(1),
-        },
-        DAppTier {
-            dapp_id: 6,
-            tier_id: Some(2),
-        },
-    ];
+    let dapps = BTreeMap::from([(1 as DAppId, 0 as TierId), (2, 0), (3, 1), (5, 1), (6, 2)]);
     let tier_rewards = vec![300, 20, 1];
     let period = 2;
 
@@ -2718,22 +2697,22 @@ fn dapp_tier_rewards_basic_tests() {
     .expect("Bounds are respected.");
 
     // 1st scenario - claim reward for a dApps
-    let tier_id = dapps[0].tier_id.unwrap();
+    let tier_id = dapps[&1];
     assert_eq!(
-        dapp_tier_rewards.try_claim(dapps[0].dapp_id),
+        dapp_tier_rewards.try_claim(1),
         Ok((tier_rewards[tier_id as usize], tier_id))
     );
 
-    let tier_id = dapps[3].tier_id.unwrap();
+    let tier_id = dapps[&5];
     assert_eq!(
-        dapp_tier_rewards.try_claim(dapps[3].dapp_id),
+        dapp_tier_rewards.try_claim(5),
         Ok((tier_rewards[tier_id as usize], tier_id))
     );
 
     // 2nd scenario - try to claim already claimed reward
     assert_eq!(
-        dapp_tier_rewards.try_claim(dapps[0].dapp_id),
-        Err(DAppTierError::RewardAlreadyClaimed),
+        dapp_tier_rewards.try_claim(1),
+        Err(DAppTierError::NoDAppInTiers),
         "Cannot claim the same reward twice."
     );
 
