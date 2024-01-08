@@ -114,8 +114,6 @@ pub enum AccountLedgerError {
     UnstakeAmountLargerThanStake,
     /// Nothing to claim.
     NothingToClaim,
-    /// Rewards have already been claimed
-    AlreadyClaimed,
     /// Attempt to crate the iterator failed due to incorrect data.
     InvalidIterator,
 }
@@ -123,7 +121,7 @@ pub enum AccountLedgerError {
 /// Distinct subperiods in dApp staking protocol.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub enum Subperiod {
-    /// Subperiod during which the focus is on voting.
+    /// Subperiod during which the focus is on voting. No rewards are earned during this subperiod.
     Voting,
     /// Subperiod during which dApps and stakers earn rewards.
     BuildAndEarn,
@@ -160,7 +158,7 @@ impl PeriodInfo {
     }
 }
 
-/// Information describing relevant information for a finished period.
+/// Struct with relevant information for a finished period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct PeriodEndInfo {
     /// Bonus reward pool allocated for 'loyal' stakers
@@ -241,10 +239,9 @@ impl ProtocolState {
         next_subperiod_start_era: EraNumber,
         next_era_start: BlockNumber,
     ) {
-        let period_number = if self.subperiod() == Subperiod::BuildAndEarn {
-            self.period_number().saturating_add(1)
-        } else {
-            self.period_number()
+        let period_number = match self.subperiod() {
+            Subperiod::Voting => self.period_number(),
+            Subperiod::BuildAndEarn => self.period_number().saturating_add(1),
         };
 
         self.period_info = PeriodInfo {
@@ -261,11 +258,11 @@ impl ProtocolState {
 pub enum DAppState {
     /// dApp is registered and active.
     Registered,
-    /// dApp has been unregistered in the contained era
+    /// dApp has been unregistered in the contained era.
     Unregistered(#[codec(compact)] EraNumber),
 }
 
-/// General information about dApp.
+/// General information about a dApp.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct DAppInfo<AccountId> {
     /// Owner of the dApp, default reward beneficiary.
@@ -295,7 +292,7 @@ impl<AccountId> DAppInfo<AccountId> {
 }
 
 /// How much was unlocked in some block.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Default, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct UnlockingChunk {
     /// Amount undergoing the unlocking period.
     #[codec(compact)]
@@ -303,15 +300,6 @@ pub struct UnlockingChunk {
     /// Block in which the unlocking period is finished for this chunk.
     #[codec(compact)]
     pub unlock_block: BlockNumber,
-}
-
-impl Default for UnlockingChunk {
-    fn default() -> Self {
-        Self {
-            amount: Balance::zero(),
-            unlock_block: BlockNumber::zero(),
-        }
-    }
 }
 
 /// General info about an account's lock & stakes.
@@ -535,7 +523,7 @@ where
             .saturating_sub(self.staked_amount(active_period))
     }
 
-    /// Amount that is staked, in respect to currently active period.
+    /// Amount that is staked, in respect to the currently active period.
     pub fn staked_amount(&self, active_period: PeriodNumber) -> Balance {
         // First check the 'future' entry, afterwards check the 'first' entry
         match self.staked_future {
@@ -569,13 +557,16 @@ where
     ) -> Result<(), AccountLedgerError> {
         if !self.staked.is_empty() {
             // In case entry for the current era exists, it must match the era exactly.
+            // No other scenario is possible since stake/unstake is not allowed without claiming rewards first.
             if self.staked.era != current_era {
                 return Err(AccountLedgerError::InvalidEra);
             }
             if self.staked.period != current_period_info.number {
                 return Err(AccountLedgerError::InvalidPeriod);
             }
-            // In case it doesn't (i.e. first time staking), then the future era must either be the current or the next era.
+            // In case only the 'future' entry exists, then the future era must either be the current or the next era.
+            // 'Next era' covers the simple scenario where stake is only valid from the next era.
+            // 'Current era' covers the scenario where stake was made in previous era, and we've moved to the next era.
         } else if let Some(stake_amount) = self.staked_future {
             if stake_amount.era != current_era.saturating_add(1) && stake_amount.era != current_era
             {
@@ -618,7 +609,13 @@ where
         // Update existing entry if it exists, otherwise create it.
         match self.staked_future.as_mut() {
             Some(stake_amount) => {
+                // In case future entry exists, check if it should be moved over to the 'current' entry.
+                if stake_amount.era == current_era {
+                    self.staked = *stake_amount;
+                }
+
                 stake_amount.add(amount, current_period_info.subperiod);
+                stake_amount.era = current_era.saturating_add(1);
             }
             None => {
                 let mut stake_amount = self.staked;

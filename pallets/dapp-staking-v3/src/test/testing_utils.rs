@@ -467,20 +467,44 @@ pub(crate) fn assert_stake(
     let post_staker_info = post_snapshot
         .staker_info
         .get(&(account, *smart_contract))
-        .expect("Entry must exist since 'stake' operation was successfull.");
+        .expect("Entry must exist since 'stake' operation was successful.");
     let post_contract_stake = post_snapshot
         .contract_stake
         .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
-        .expect("Entry must exist since 'stake' operation was successfull.");
+        .expect("Entry must exist since 'stake' operation was successful.");
     let post_era_info = post_snapshot.current_era_info;
 
     // 1. verify ledger
     // =====================
     // =====================
-    assert_eq!(
-        post_ledger.staked, pre_ledger.staked,
-        "Must remain exactly the same."
-    );
+    if is_account_ledger_expired(pre_ledger, stake_period) {
+        assert!(post_ledger.staked.is_empty());
+    } else {
+        match pre_ledger.staked_future {
+            Some(stake_amount) => {
+                if stake_amount.era == pre_snapshot.active_protocol_state.era {
+                    assert_eq!(
+                        post_ledger.staked, stake_amount,
+                        "Future entry must be moved over to the current entry."
+                    );
+                } else if stake_amount.era == pre_snapshot.active_protocol_state.era + 1 {
+                    assert_eq!(
+                        post_ledger.staked, pre_ledger.staked,
+                        "Must remain exactly the same, only future must be updated."
+                    );
+                } else {
+                    panic!("Invalid future entry era.");
+                }
+            }
+            None => {
+                assert_eq!(
+                    post_ledger.staked, pre_ledger.staked,
+                    "Must remain exactly the same since there's nothing to be moved."
+                );
+            }
+        }
+    }
+
     assert_eq!(post_ledger.staked_future.unwrap().period, stake_period);
     assert_eq!(
         post_ledger.staked_amount(stake_period),
@@ -625,7 +649,7 @@ pub(crate) fn assert_unstake(
     let post_contract_stake = post_snapshot
         .contract_stake
         .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
-        .expect("Entry must exist since 'unstake' operation was successfull.");
+        .expect("Entry must exist since 'unstake' operation was successful.");
     let post_era_info = post_snapshot.current_era_info;
 
     // 1. verify ledger
@@ -652,9 +676,11 @@ pub(crate) fn assert_unstake(
         );
     } else {
         let post_staker_info = post_snapshot
-        .staker_info
-        .get(&(account, *smart_contract))
-        .expect("Entry must exist since 'stake' operation was successfull and it wasn't a full unstake.");
+            .staker_info
+            .get(&(account, *smart_contract))
+            .expect(
+            "Entry must exist since 'stake' operation was successful and it wasn't a full unstake.",
+        );
         assert_eq!(post_staker_info.period_number(), unstake_period);
         assert_eq!(
             post_staker_info.total_staked_amount(),
@@ -989,7 +1015,7 @@ pub(crate) fn assert_claim_dapp_reward(
     assert_eq!(
         pre_reward_info.dapps.len(),
         post_reward_info.dapps.len() + 1,
-        "Entry must have been removed after successfull reward claim."
+        "Entry must have been removed after successful reward claim."
     );
 }
 
@@ -1462,4 +1488,16 @@ pub(crate) fn required_number_of_reward_claims(account: AccountId) -> u32 {
         .unwrap();
 
     second - first + 1
+}
+
+// TODO
+pub(crate) fn is_account_ledger_expired(
+    ledger: &AccountLedgerFor<Test>,
+    current_period: PeriodNumber,
+) -> bool {
+    let valid_threshold_period = DappStaking::oldest_claimable_period(current_period);
+    match ledger.staked_period() {
+        Some(staked_period) if staked_period < valid_threshold_period => true,
+        _ => false,
+    }
 }

@@ -507,7 +507,7 @@ fn account_ledger_staked_era_period_works() {
 }
 
 #[test]
-fn account_ledger_add_stake_amount_basic_example_works() {
+fn account_ledger_add_stake_amount_basic_example_with_different_subperiods_works() {
     get_u32_type!(UnlockingDummy, 5);
     let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
@@ -554,6 +554,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
             .period,
         period_1
     );
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_1 + 1);
     assert_eq!(acc_ledger.staked_future.unwrap().voting, stake_amount);
     assert!(acc_ledger.staked_future.unwrap().build_and_earn.is_zero());
     assert_eq!(acc_ledger.staked_amount(period_1), stake_amount);
@@ -566,7 +567,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
         .is_zero());
 
     // Second scenario - stake some more, but to the next period type
-    let snapshot = acc_ledger.staked;
+    let snapshot = acc_ledger.staked_future.unwrap();
     let period_info_2 = PeriodInfo {
         number: period_1,
         subperiod: Subperiod::BuildAndEarn,
@@ -583,6 +584,82 @@ fn account_ledger_add_stake_amount_basic_example_works() {
         acc_ledger.staked_amount_for_type(Subperiod::BuildAndEarn, period_1),
         1
     );
+
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_2 + 1);
+    assert_eq!(acc_ledger.staked_future.unwrap().voting, stake_amount);
+    assert_eq!(acc_ledger.staked_future.unwrap().build_and_earn, 1);
+
+    assert_eq!(acc_ledger.staked, snapshot);
+}
+
+#[test]
+fn account_ledger_add_stake_amount_basic_example_with_same_subperiods_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
+
+    // 1st scenario - stake some amount in first era of the `Build&Earn` subperiod, and ensure values are as expected.
+    let era_1 = 2;
+    let period_1 = 1;
+    let period_info = PeriodInfo {
+        number: period_1,
+        subperiod: Subperiod::BuildAndEarn,
+        next_subperiod_start_era: 100,
+    };
+    let lock_amount = 17;
+    let stake_amount = 11;
+    acc_ledger.add_lock_amount(lock_amount);
+
+    assert!(acc_ledger
+        .add_stake_amount(stake_amount, era_1, period_info)
+        .is_ok());
+
+    assert!(
+        acc_ledger.staked.is_empty(),
+        "Current era must remain unchanged."
+    );
+    assert_eq!(acc_ledger.staked_future.unwrap().period, period_1);
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_1 + 1);
+    assert_eq!(
+        acc_ledger.staked_future.unwrap().build_and_earn,
+        stake_amount
+    );
+    assert!(acc_ledger.staked_future.unwrap().voting.is_zero());
+    assert_eq!(acc_ledger.staked_amount(period_1), stake_amount);
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(Subperiod::BuildAndEarn, period_1),
+        stake_amount
+    );
+    assert!(acc_ledger
+        .staked_amount_for_type(Subperiod::Voting, period_1)
+        .is_zero());
+
+    // 2nd scenario - stake again, in the same era
+    let snapshot = acc_ledger.staked;
+    assert!(acc_ledger.add_stake_amount(1, era_1, period_info).is_ok());
+    assert_eq!(acc_ledger.staked, snapshot);
+    assert_eq!(acc_ledger.staked_amount(period_1), stake_amount + 1);
+
+    // 2nd scenario - advance an era, and stake some more
+    let snapshot = acc_ledger.staked_future.unwrap();
+    let era_2 = era_1 + 1;
+    assert!(acc_ledger.add_stake_amount(1, era_2, period_info).is_ok());
+
+    assert_eq!(acc_ledger.staked_amount(period_1), stake_amount + 2);
+    assert!(acc_ledger
+        .staked_amount_for_type(Subperiod::Voting, period_1)
+        .is_zero(),);
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(Subperiod::BuildAndEarn, period_1),
+        stake_amount + 2
+    );
+    assert_eq!(acc_ledger.staked_future.unwrap().period, period_1);
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_2 + 1);
+    assert_eq!(
+        acc_ledger.staked_future.unwrap().build_and_earn,
+        stake_amount + 2
+    );
+    assert!(acc_ledger.staked_future.unwrap().voting.is_zero());
+
     assert_eq!(acc_ledger.staked, snapshot);
 }
 
