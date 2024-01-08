@@ -478,7 +478,10 @@ pub(crate) fn assert_stake(
     // =====================
     // =====================
     if is_account_ledger_expired(pre_ledger, stake_period) {
-        assert!(post_ledger.staked.is_empty());
+        assert!(
+            post_ledger.staked.is_empty(),
+            "Must be cleaned up if expired."
+        );
     } else {
         match pre_ledger.staked_future {
             Some(stake_amount) => {
@@ -506,6 +509,7 @@ pub(crate) fn assert_stake(
     }
 
     assert_eq!(post_ledger.staked_future.unwrap().period, stake_period);
+    assert_eq!(post_ledger.staked_future.unwrap().era, stake_era);
     assert_eq!(
         post_ledger.staked_amount(stake_period),
         pre_ledger.staked_amount(stake_period) + amount,
@@ -1490,7 +1494,9 @@ pub(crate) fn required_number_of_reward_claims(account: AccountId) -> u32 {
     second - first + 1
 }
 
-// TODO
+/// Check whether the given account ledger's stake rewards have expired.
+///
+/// `true` if expired, `false` otherwise.
 pub(crate) fn is_account_ledger_expired(
     ledger: &AccountLedgerFor<Test>,
     current_period: PeriodNumber,
