@@ -110,7 +110,7 @@ pub(crate) fn assert_register(owner: AccountId, smart_contract: &MockSmartContra
     assert_eq!(dapp_info.state, DAppState::Registered);
     assert_eq!(dapp_info.owner, owner);
     assert_eq!(dapp_info.id, pre_snapshot.next_dapp_id);
-    assert!(dapp_info.reward_destination.is_none());
+    assert!(dapp_info.reward_beneficiary.is_none());
 
     assert_eq!(pre_snapshot.next_dapp_id + 1, NextDAppId::<Test>::get());
     assert_eq!(
@@ -142,7 +142,7 @@ pub(crate) fn assert_set_dapp_reward_beneficiary(
     assert_eq!(
         IntegratedDApps::<Test>::get(&smart_contract)
             .unwrap()
-            .reward_destination,
+            .reward_beneficiary,
         beneficiary
     );
 }

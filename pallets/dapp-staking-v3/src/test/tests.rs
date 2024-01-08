@@ -332,7 +332,7 @@ fn set_dapp_reward_beneficiary_for_contract_is_ok() {
         // Update beneficiary
         assert!(IntegratedDApps::<Test>::get(&smart_contract)
             .unwrap()
-            .reward_destination
+            .reward_beneficiary
             .is_none());
         assert_set_dapp_reward_beneficiary(owner, &smart_contract, Some(3));
         assert_set_dapp_reward_beneficiary(owner, &smart_contract, Some(5));

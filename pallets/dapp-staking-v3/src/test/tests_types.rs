@@ -158,14 +158,14 @@ fn dapp_info_basic_checks() {
         owner,
         id: 7,
         state: DAppState::Registered,
-        reward_destination: None,
+        reward_beneficiary: None,
     };
 
     // Owner receives reward in case no beneficiary is set
     assert_eq!(*dapp_info.reward_beneficiary(), owner);
 
     // Beneficiary receives rewards in case it is set
-    dapp_info.reward_destination = Some(beneficiary);
+    dapp_info.reward_beneficiary = Some(beneficiary);
     assert_eq!(*dapp_info.reward_beneficiary(), beneficiary);
 
     // Check if dApp is registered

@@ -315,7 +315,7 @@ pub mod pallet {
         UnavailableStakeFunds,
         /// There are unclaimed rewards remaining from past eras or periods. They should be claimed before attempting any stake modification again.
         UnclaimedRewards,
-        /// An unexpected error occured while trying to stake.
+        /// An unexpected error occurred while trying to stake.
         InternalStakeError,
         /// Total staked amount on contract is below the minimum required value.
         InsufficientStakeAmount,
@@ -327,7 +327,7 @@ pub mod pallet {
         UnstakeAmountTooLarge,
         /// Account has no staking information for the contract.
         NoStakingInfo,
-        /// An unexpected error occured while trying to unstake.
+        /// An unexpected error occurred while trying to unstake.
         InternalUnstakeError,
         /// Rewards are no longer claimable since they are too old.
         RewardExpired,
@@ -335,18 +335,18 @@ pub mod pallet {
         RewardPayoutFailed,
         /// There are no claimable rewards.
         NoClaimableRewards,
-        /// An unexpected error occured while trying to claim staker rewards.
+        /// An unexpected error occurred while trying to claim staker rewards.
         InternalClaimStakerError,
         /// Account is has no eligible stake amount for bonus reward.
         NotEligibleForBonusReward,
-        /// An unexpected error occured while trying to claim bonus reward.
+        /// An unexpected error occurred while trying to claim bonus reward.
         InternalClaimBonusError,
         /// Claim era is invalid - it must be in history, and rewards must exist for it.
         InvalidClaimEra,
         /// No dApp tier info exists for the specified era. This can be because era has expired
         /// or because during the specified era there were no eligible rewards or protocol wasn't active.
         NoDAppTierInfo,
-        /// An unexpected error occured while trying to claim dApp reward.
+        /// An unexpected error occurred while trying to claim dApp reward.
         InternalClaimDAppError,
         /// Contract is still active, not unregistered.
         ContractStillActive,
@@ -632,7 +632,7 @@ pub mod pallet {
                     owner: owner.clone(),
                     id: dapp_id,
                     state: DAppState::Registered,
-                    reward_destination: None,
+                    reward_beneficiary: None,
                 },
             );
 
@@ -671,7 +671,7 @@ pub mod pallet {
 
                     ensure!(dapp_info.owner == dev_account, Error::<T>::OriginNotOwner);
 
-                    dapp_info.reward_destination = beneficiary.clone();
+                    dapp_info.reward_beneficiary = beneficiary.clone();
 
                     Ok(())
                 },

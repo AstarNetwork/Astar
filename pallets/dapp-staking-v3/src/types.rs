@@ -273,13 +273,13 @@ pub struct DAppInfo<AccountId> {
     /// Current state of the dApp.
     pub state: DAppState,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
-    pub reward_destination: Option<AccountId>,
+    pub reward_beneficiary: Option<AccountId>,
 }
 
 impl<AccountId> DAppInfo<AccountId> {
     /// Reward destination account for this dApp.
     pub fn reward_beneficiary(&self) -> &AccountId {
-        match &self.reward_destination {
+        match &self.reward_beneficiary {
             Some(account_id) => account_id,
             None => &self.owner,
         }
