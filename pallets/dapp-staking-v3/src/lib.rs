@@ -745,10 +745,7 @@ pub mod pallet {
             let mut dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
-            ensure!(
-                dapp_info.state == DAppState::Registered,
-                Error::<T>::NotOperatedDApp
-            );
+            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
 
             ContractStake::<T>::remove(&dapp_info.id);
 
@@ -1681,12 +1678,11 @@ pub mod pallet {
                 counter.saturating_inc();
 
                 // Skip dApps which don't have ANY amount staked
-                let stake_amount = match stake_amount.get(era, period) {
-                    Some(stake_amount) if !stake_amount.total().is_zero() => stake_amount,
-                    _ => continue,
-                };
-
-                dapp_stakes.push((dapp_id, stake_amount.total()));
+                if let Some(stake_amount) = stake_amount.get(era, period) {
+                    if !stake_amount.total().is_zero() {
+                        dapp_stakes.push((dapp_id, stake_amount.total()));
+                    }
+                }
             }
 
             // 2.
