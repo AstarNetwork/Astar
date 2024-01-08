@@ -19,7 +19,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use astar_primitives::BlockNumber;
-use pallet_dapp_staking_v3::EraNumber;
+use pallet_dapp_staking_v3::{DAppId, EraNumber, PeriodNumber, TierId};
+pub use sp_std::collections::btree_map::BTreeMap;
 
 sp_api::decl_runtime_apis! {
 
@@ -27,6 +28,9 @@ sp_api::decl_runtime_apis! {
     ///
     /// Used to provide information otherwise not available via RPC.
     pub trait DappStakingApi {
+
+        /// How many periods are there in one cycle.
+        fn periods_per_cycle() -> PeriodNumber;
 
         /// For how many standard era lengths does the voting subperiod last.
         fn eras_per_voting_subperiod() -> EraNumber;
@@ -36,5 +40,8 @@ sp_api::decl_runtime_apis! {
 
         /// How many blocks are there per standard era.
         fn blocks_per_era() -> BlockNumber;
+
+        /// Get dApp tier assignment for the given dApp.
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId>;
     }
 }
