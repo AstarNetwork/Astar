@@ -19,7 +19,7 @@
 //! # dApp Staking v3 Pallet
 //!
 //! For detailed high level documentation, please refer to the attached README.md file.
-//! The crate level docs will cover overal pallet structure & implementation details.
+//! The crate level docs will cover overall pallet structure & implementation details.
 //!
 //! ## Overview
 //!
@@ -27,9 +27,9 @@
 //! It covers everything from locking, staking, tier configuration & assignment, reward calculation & payout.
 //!
 //! The `types` module contains all of the types used to implement the pallet.
-//! All of these _types_ are exentisvely tested in their dedicated `test_types` module.
+//! All of these _types_ are extensively tested in their dedicated `test_types` module.
 //!
-//! Rest of the pallet logic is concenrated in the lib.rs file.
+//! Rest of the pallet logic is concentrated in the lib.rs file.
 //! This logic is tested in the `tests` module, with the help of extensive `testing_utils`.
 //!
 

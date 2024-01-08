@@ -17,6 +17,6 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 mod mock;
-mod tests_v1;
 mod tests_v2;
+mod tests_v3;
 mod types;
