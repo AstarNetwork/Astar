@@ -1468,6 +1468,8 @@ mod benches {
         [pallet_xvm, Xvm]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [pallet_unified_accounts, UnifiedAccounts]
+        [xcm_benchmarks_generic, XcmGeneric]
+        [xcm_benchmarks_fungible, XcmFungible]
     );
 }
 
@@ -1950,6 +1952,12 @@ impl_runtime_apis! {
             use frame_system_benchmarking::Pallet as SystemBench;
             use baseline::Pallet as BaselineBench;
 
+            // This is defined once again in dispatch_benchmark, because list_benchmarks!
+            // and add_benchmarks! are macros exported by define_benchmarks! macros and those types
+            // are referenced in that call.
+            type XcmFungible = astar_xcm_benchmarks::fungible::benchmarking::XcmFungibleBenchmarks::<Runtime>;
+            type XcmGeneric = astar_xcm_benchmarks::generic::benchmarking::XcmGenericBenchmarks::<Runtime>;
+
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
 
@@ -1961,14 +1969,132 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
             use frame_system_benchmarking::Pallet as SystemBench;
+            use frame_support::{traits::{WhitelistedStorageKeys, tokens::fungible::{ItemOf}}, assert_ok};
             use baseline::Pallet as BaselineBench;
+            use xcm::latest::prelude::*;
+            use xcm_builder::MintLocation;
+            use xcm_config::MaxAssetsIntoHolding;
 
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
-            use frame_support::traits::WhitelistedStorageKeys;
+            // XCM Benchmarks
+            impl astar_xcm_benchmarks::Config for Runtime {}
+            impl astar_xcm_benchmarks::generic::Config for Runtime {}
+            impl astar_xcm_benchmarks::fungible::Config for Runtime {}
+
+            impl pallet_xcm_benchmarks::Config for Runtime {
+                type XcmConfig = xcm_config::XcmConfig;
+                type AccountIdConverter = xcm_config::LocationToAccountId;
+                // destination location to be used in benchmarks
+                fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(MultiLocation::parent())
+                }
+                fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
+                    // max fungible assests with a native asset
+                    let fungibles = MaxAssetsIntoHolding::get() - 1;
+                    let fungibles_amount: u128 = 100;
+                    (0..fungibles).map(|i| {
+                        MultiAsset {
+                            id: Concrete(GeneralIndex(i as u128).into()),
+                            fun: Fungible(fungibles_amount * i as u128),
+                        }
+                    }).chain(
+                        core::iter::once(
+                            MultiAsset {
+                                id: Concrete(MultiLocation::parent()),
+                                fun: Fungible(u128::MAX)
+                            }
+                        )
+                    ).collect::<Vec<_>>().into()
+                }
+            }
+
+            impl pallet_xcm_benchmarks::generic::Config for Runtime {
+                type RuntimeCall = RuntimeCall;
+                fn worst_case_response() -> (u64, Response) {
+                    (0u64, Response::Version(Default::default()))
+                }
+                fn worst_case_asset_exchange()
+                    -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+                fn transact_origin_and_runtime_call()
+                    -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
+                    Ok((MultiLocation::parent(), frame_system::Call::remark_with_event {
+                        remark: vec![]
+                    }.into()))
+                }
+                fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(MultiLocation::parent())
+                }
+                fn claimable_asset()
+                    -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
+                    let origin = MultiLocation::parent();
+                    let assets: MultiAssets = (Concrete(MultiLocation::parent()), 1_000u128)
+                        .into();
+                    let ticket = MultiLocation { parents: 0, interior: Here };
+                    Ok((origin, ticket, assets))
+                }
+                fn unlockable_asset()
+                    -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+                fn export_message_origin_and_destination(
+                ) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+            }
+
+            parameter_types! {
+                pub const NoCheckingAccount: Option<(AccountId, MintLocation)> = None;
+                pub const NoTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+                pub const TransactAssetId: u128 = 1;
+                pub const TransactAssetLocation: MultiLocation = MultiLocation { parents: 0, interior: X1(GeneralIndex(TransactAssetId::get())) };
+            }
+
+            impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+                type TransactAsset = ItemOf<Assets, TransactAssetId, AccountId>;
+                type CheckedAccount = NoCheckingAccount;
+                type TrustedTeleporter = NoTeleporter;
+
+                fn get_multi_asset() -> MultiAsset {
+                    let min_balance = 100u128;
+                    // create the transact asset and make it sufficient
+                    assert_ok!(Assets::force_create(
+                        RuntimeOrigin::root(),
+                        TransactAssetId::get().into(),
+                        Address::Id([0u8; 32].into()),
+                        true,
+                        // min balance
+                        min_balance
+                    ));
+
+                    // convert mapping for asset id
+                    assert_ok!(
+                        XcAssetConfig::register_asset_location(
+                            RuntimeOrigin::root(),
+                            Box::new(TransactAssetLocation::get().into_versioned()),
+                            TransactAssetId::get(),
+                        )
+                    );
+
+                    MultiAsset {
+                        id: Concrete(TransactAssetLocation::get()),
+                        fun: Fungible(min_balance * 100),
+                    }
+                }
+            }
+
+            type XcmFungible = astar_xcm_benchmarks::fungible::benchmarking::XcmFungibleBenchmarks::<Runtime>;
+            type XcmGeneric = astar_xcm_benchmarks::generic::benchmarking::XcmGenericBenchmarks::<Runtime>;
+
             let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();
