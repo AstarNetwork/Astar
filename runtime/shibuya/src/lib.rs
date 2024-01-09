@@ -65,7 +65,7 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
-use sp_std::prelude::*;
+use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, SmartContract},
@@ -413,13 +413,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type ForcePalletDisabled = ConstBool<true>;
 }
 
-// Placeholder until we introduce a pallet for this.
-// Real solution will be an oracle.
-pub struct DummyPriceProvider;
-impl pallet_dapp_staking_v3::PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU64 {
-        FixedU64::from_rational(1, 10)
-    }
+impl pallet_static_price_provider::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
 }
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -449,7 +444,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type NativePriceProvider = DummyPriceProvider;
+    type NativePriceProvider = StaticPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type EraRewardSpanLength = ConstU32<16>;
@@ -1336,6 +1331,8 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
+        // To be removed & cleaned up once proper oracle is implemented
+        StaticPriceProvider: pallet_static_price_provider = 253,
         // To be removed & cleaned up after migration has been finished
         DappStakingMigration: pallet_dapp_staking_migration = 254,
         // Legacy dApps staking v2, to be removed after migration has been finished
@@ -1380,7 +1377,16 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = ();
+pub struct InitActivePriceGet;
+impl Get<FixedU64> for InitActivePriceGet {
+    fn get() -> FixedU64 {
+        FixedU64::from_rational(1, 10)
+    }
+}
+pub type Migrations = (
+    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
+    pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1928,6 +1934,10 @@ impl_runtime_apis! {
     }
 
     impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
+        fn periods_per_cycle() -> pallet_dapp_staking_v3::PeriodNumber {
+            InflationCycleConfig::periods_per_cycle()
+        }
+
         fn eras_per_voting_subperiod() -> pallet_dapp_staking_v3::EraNumber {
             InflationCycleConfig::eras_per_voting_subperiod()
         }
@@ -1938,6 +1948,10 @@ impl_runtime_apis! {
 
         fn blocks_per_era() -> BlockNumber {
             InflationCycleConfig::blocks_per_era()
+        }
+
+        fn get_dapp_tier_assignment() -> BTreeMap<pallet_dapp_staking_v3::DAppId, pallet_dapp_staking_v3::TierId> {
+            DappStaking::get_dapp_tier_assignment()
         }
     }
 

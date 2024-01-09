@@ -39,10 +39,11 @@ extern crate alloc;
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, SmartContract, StakingRewardHandler},
+    oracle::PriceProvider,
     testing::Header,
     AccountId, Balance, BlockNumber,
 };
-use pallet_dapp_staking_v3::{EraNumber, PeriodNumber, PriceProvider, TierThreshold};
+use pallet_dapp_staking_v3::{EraNumber, PeriodNumber, TierThreshold};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;

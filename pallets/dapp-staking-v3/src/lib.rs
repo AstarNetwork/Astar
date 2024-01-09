@@ -52,6 +52,7 @@ pub use sp_std::vec::Vec;
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, SmartContractHandle, StakingRewardHandler},
+    oracle::PriceProvider,
     Balance, BlockNumber,
 };
 
@@ -65,6 +66,8 @@ mod benchmarking;
 
 mod types;
 pub use types::*;
+
+pub mod migrations;
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -343,8 +346,6 @@ pub mod pallet {
         /// No dApp tier info exists for the specified era. This can be because era has expired
         /// or because during the specified era there were no eligible rewards or protocol wasn't active.
         NoDAppTierInfo,
-        /// dApp reward has already been claimed for this era.
-        DAppRewardAlreadyClaimed,
         /// An unexpected error occured while trying to claim dApp reward.
         InternalClaimDAppError,
         /// Contract is still active, not unregistered.
@@ -561,6 +562,30 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Wrapper around _legacy-like_ `unbond_and_unstake`.
+        ///
+        /// Used to support legacy Ledger users so they can start the unlocking process for their funds.
+        #[pallet::call_index(4)]
+        #[pallet::weight(T::WeightInfo::unlock())]
+        pub fn unbond_and_unstake(
+            origin: OriginFor<T>,
+            _contract_id: T::SmartContract,
+            #[pallet::compact] value: Balance,
+        ) -> DispatchResult {
+            // Once new period begins, all stakes are reset to zero, so all it remains to be done is the `unlock`
+            Self::unlock(origin, value)
+        }
+
+        /// Wrapper around _legacy-like_ `withdraw_unbonded`.
+        ///
+        /// Used to support legacy Ledger users so they can reclaim unlocked chunks back into
+        /// their _transferable_ free balance.
+        #[pallet::call_index(5)]
+        #[pallet::weight(T::WeightInfo::claim_unlocked(T::MaxNumberOfStakedContracts::get()))]
+        pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            Self::claim_unlocked(origin)
+        }
+
         /// Used to enable or disable maintenance mode.
         /// Can only be called by manager origin.
         #[pallet::call_index(0)]
@@ -706,7 +731,7 @@ pub mod pallet {
         /// This doesn't remove the dApp completely from the system just yet, but it can no longer be used for staking.
         ///
         /// Can be called by dApp staking manager origin.
-        #[pallet::call_index(4)]
+        #[pallet::call_index(6)]
         #[pallet::weight(T::WeightInfo::unregister())]
         pub fn unregister(
             origin: OriginFor<T>,
@@ -744,7 +769,7 @@ pub mod pallet {
         /// After adjustment, lock amount must be greater than zero and in total must be equal or greater than the minimum locked amount.
         ///
         /// Locked amount can immediately be used for staking.
-        #[pallet::call_index(5)]
+        #[pallet::call_index(7)]
         #[pallet::weight(T::WeightInfo::lock())]
         pub fn lock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
@@ -783,7 +808,7 @@ pub mod pallet {
         /// Only the amount that isn't actively used for staking can be unlocked.
         /// If the amount is greater than the available amount for unlocking, everything is unlocked.
         /// If the remaining locked amount would take the account below the minimum locked amount, everything is unlocked.
-        #[pallet::call_index(6)]
+        #[pallet::call_index(8)]
         #[pallet::weight(T::WeightInfo::unlock())]
         pub fn unlock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
@@ -836,7 +861,7 @@ pub mod pallet {
         }
 
         /// Claims all of fully unlocked chunks, removing the lock from them.
-        #[pallet::call_index(7)]
+        #[pallet::call_index(9)]
         #[pallet::weight(T::WeightInfo::claim_unlocked(T::MaxNumberOfStakedContracts::get()))]
         pub fn claim_unlocked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
@@ -866,7 +891,7 @@ pub mod pallet {
             Ok(Some(T::WeightInfo::claim_unlocked(removed_entries)).into())
         }
 
-        #[pallet::call_index(8)]
+        #[pallet::call_index(10)]
         #[pallet::weight(T::WeightInfo::relock_unlocking())]
         pub fn relock_unlocking(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
@@ -903,7 +928,7 @@ pub mod pallet {
         /// and same for `Build&Earn` subperiod.
         ///
         /// Staked amount is only eligible for rewards from the next era onwards.
-        #[pallet::call_index(9)]
+        #[pallet::call_index(11)]
         #[pallet::weight(T::WeightInfo::stake())]
         pub fn stake(
             origin: OriginFor<T>,
@@ -1030,7 +1055,7 @@ pub mod pallet {
         /// In case amount is unstaked during `Voting` subperiod, the `voting` amount is reduced.
         /// In case amount is unstaked during `Build&Earn` subperiod, first the `build_and_earn` is reduced,
         /// and any spillover is subtracted from the `voting` amount.
-        #[pallet::call_index(10)]
+        #[pallet::call_index(12)]
         #[pallet::weight(T::WeightInfo::unstake())]
         pub fn unstake(
             origin: OriginFor<T>,
@@ -1132,7 +1157,7 @@ pub mod pallet {
 
         /// Claims some staker rewards, if user has any.
         /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening.
-        #[pallet::call_index(11)]
+        #[pallet::call_index(13)]
         #[pallet::weight({
             let max_span_length = T::EraRewardSpanLength::get();
             T::WeightInfo::claim_staker_rewards_ongoing_period(max_span_length)
@@ -1226,7 +1251,7 @@ pub mod pallet {
         }
 
         /// Used to claim bonus reward for a smart contract, if eligible.
-        #[pallet::call_index(12)]
+        #[pallet::call_index(14)]
         #[pallet::weight(T::WeightInfo::claim_bonus_reward())]
         pub fn claim_bonus_reward(
             origin: OriginFor<T>,
@@ -1291,7 +1316,7 @@ pub mod pallet {
         }
 
         /// Used to claim dApp reward for the specified era.
-        #[pallet::call_index(13)]
+        #[pallet::call_index(15)]
         #[pallet::weight(T::WeightInfo::claim_dapp_reward())]
         pub fn claim_dapp_reward(
             origin: OriginFor<T>,
@@ -1322,7 +1347,6 @@ pub mod pallet {
                     .try_claim(dapp_info.id)
                     .map_err(|error| match error {
                         DAppTierError::NoDAppInTiers => Error::<T>::NoClaimableRewards,
-                        DAppTierError::RewardAlreadyClaimed => Error::<T>::DAppRewardAlreadyClaimed,
                         _ => Error::<T>::InternalClaimDAppError,
                     })?;
 
@@ -1347,7 +1371,7 @@ pub mod pallet {
 
         /// Used to unstake funds from a contract that was unregistered after an account staked on it.
         /// This is required if staker wants to re-stake these funds on another active contract during the ongoing period.
-        #[pallet::call_index(14)]
+        #[pallet::call_index(16)]
         #[pallet::weight(T::WeightInfo::unstake_from_unregistered())]
         pub fn unstake_from_unregistered(
             origin: OriginFor<T>,
@@ -1416,7 +1440,7 @@ pub mod pallet {
         /// Entry is considered to be expired if:
         /// 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
         /// 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
-        #[pallet::call_index(15)]
+        #[pallet::call_index(17)]
         #[pallet::weight(T::WeightInfo::cleanup_expired_entries(
             T::MaxNumberOfStakedContracts::get()
         ))]
@@ -1481,7 +1505,7 @@ pub mod pallet {
         /// Not intended to be used in production, except in case of unforseen circumstances.
         ///
         /// Can only be called by manager origin.
-        #[pallet::call_index(16)]
+        #[pallet::call_index(18)]
         #[pallet::weight(T::WeightInfo::force())]
         pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
@@ -1613,6 +1637,19 @@ pub mod pallet {
             T::CycleConfiguration::blocks_per_era().saturating_mul(T::UnlockingPeriod::get().into())
         }
 
+        /// Returns the dApp tier assignment for the current era, based on the current stake amounts.
+        pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
+            let protocol_state = ActiveProtocolState::<T>::get();
+
+            let (dapp_tiers, _count) = Self::get_dapp_tier_assignment_and_rewards(
+                protocol_state.era,
+                protocol_state.period_number(),
+                Balance::zero(),
+            );
+
+            dapp_tiers.dapps.into_inner()
+        }
+
         /// Assign eligible dApps into appropriate tiers, and calculate reward for each tier.
         ///
         /// ### Algorithm
@@ -1642,7 +1679,7 @@ pub mod pallet {
         ///
         /// The returned object contains information about each dApp that made it into a tier.
         /// Alongside tier assignment info, number of read DB contract stake entries is returned.
-        pub(crate) fn get_dapp_tier_assignment(
+        pub(crate) fn get_dapp_tier_assignment_and_rewards(
             era: EraNumber,
             period: PeriodNumber,
             dapp_reward_pool: Balance,
@@ -1673,7 +1710,7 @@ pub mod pallet {
             // Iterate over configured tier and potential dApps.
             // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
             // and tier capacity hasn't been filled yet.
-            let mut dapp_tiers = Vec::with_capacity(dapp_stakes.len());
+            let mut dapp_tiers = BTreeMap::new();
             let tier_config = TierConfig::<T>::get();
 
             let mut global_idx = 0;
@@ -1693,10 +1730,7 @@ pub mod pallet {
                 for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
                     if tier_threshold.is_satisfied(*stake_amount) {
                         global_idx.saturating_inc();
-                        dapp_tiers.push(DAppTier {
-                            dapp_id: *dapp_id,
-                            tier_id: Some(tier_id),
-                        });
+                        dapp_tiers.insert(*dapp_id, tier_id);
                     } else {
                         break;
                     }
@@ -1814,7 +1848,7 @@ pub mod pallet {
                     // To help with benchmarking, it's possible to omit real tier calculation using the `Dummy` approach.
                     // This must never be used in production code, obviously.
                     let (dapp_tier_rewards, counter) = match tier_assignment {
-                        TierAssignment::Real => Self::get_dapp_tier_assignment(
+                        TierAssignment::Real => Self::get_dapp_tier_assignment_and_rewards(
                             current_era,
                             protocol_state.period_number(),
                             dapp_reward_pool,
@@ -1986,108 +2020,5 @@ pub mod pallet {
 
             T::WeightInfo::on_idle_cleanup()
         }
-    }
-}
-
-/// `OnRuntimeUpgrade` logic used to set & configure init dApp staking v3 storage items.
-pub struct DAppStakingV3InitConfig<T, G>(PhantomData<(T, G)>);
-impl<
-        T: Config,
-        G: Get<(
-            EraNumber,
-            TierParameters<T::NumberOfTiers>,
-            TiersConfiguration<T::NumberOfTiers>,
-        )>,
-    > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G>
-{
-    fn on_runtime_upgrade() -> Weight {
-        if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
-            return T::DbWeight::get().reads(1);
-        }
-
-        // 0. Unwrap arguments
-        let (init_era, tier_params, init_tier_config) = G::get();
-
-        // 1. Prepare init active protocol state
-        let now = frame_system::Pallet::<T>::block_number();
-        let voting_period_length = Pallet::<T>::blocks_per_voting_period();
-
-        let period_number = 1;
-        let protocol_state = ProtocolState {
-            era: init_era,
-            next_era_start: now.saturating_add(voting_period_length),
-            period_info: PeriodInfo {
-                number: period_number,
-                subperiod: Subperiod::Voting,
-                next_subperiod_start_era: init_era.saturating_add(1),
-            },
-            maintenance: true,
-        };
-
-        // 2. Prepare init current era info - need to set correct eras
-        let init_era_info = EraInfo {
-            total_locked: 0,
-            unlocking: 0,
-            current_stake_amount: StakeAmount {
-                voting: 0,
-                build_and_earn: 0,
-                era: init_era,
-                period: period_number,
-            },
-            next_stake_amount: StakeAmount {
-                voting: 0,
-                build_and_earn: 0,
-                era: init_era.saturating_add(1),
-                period: period_number,
-            },
-        };
-
-        // 3. Write necessary items into storage
-        ActiveProtocolState::<T>::put(protocol_state);
-        StaticTierParams::<T>::put(tier_params);
-        TierConfig::<T>::put(init_tier_config);
-        STORAGE_VERSION.put::<Pallet<T>>();
-        CurrentEraInfo::<T>::put(init_era_info);
-
-        // 4. Emit events to make indexers happy
-        Pallet::<T>::deposit_event(Event::<T>::NewEra { era: init_era });
-        Pallet::<T>::deposit_event(Event::<T>::NewSubperiod {
-            subperiod: Subperiod::Voting,
-            number: 1,
-        });
-
-        log::info!("dApp Staking v3 storage initialized.");
-
-        T::DbWeight::get().reads_writes(2, 5)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-        assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
-        let protocol_state = ActiveProtocolState::<T>::get();
-        assert!(protocol_state.maintenance);
-
-        let number_of_tiers = T::NumberOfTiers::get();
-
-        let tier_params = StaticTierParams::<T>::get();
-        assert_eq!(tier_params.reward_portion.len(), number_of_tiers as usize);
-        assert!(tier_params.is_valid());
-
-        let tier_config = TierConfig::<T>::get();
-        assert_eq!(tier_config.reward_portion.len(), number_of_tiers as usize);
-        assert_eq!(tier_config.slots_per_tier.len(), number_of_tiers as usize);
-        assert_eq!(tier_config.tier_thresholds.len(), number_of_tiers as usize);
-
-        let current_era_info = CurrentEraInfo::<T>::get();
-        assert_eq!(
-            current_era_info.current_stake_amount.era,
-            protocol_state.era
-        );
-        assert_eq!(
-            current_era_info.next_stake_amount.era,
-            protocol_state.era + 1
-        );
-
-        Ok(())
     }
 }
