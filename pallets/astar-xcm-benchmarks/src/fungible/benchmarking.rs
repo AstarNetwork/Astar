@@ -18,10 +18,12 @@
 
 use super::*;
 use frame_benchmarking::v2::*;
-use frame_support::{dispatch::Weight, traits::fungible::Inspect};
+use frame_support::{
+    dispatch::Weight,
+    traits::{fungible::Inspect, Get},
+};
 use pallet_xcm_benchmarks::{account_and_location, new_executor, AssetTransactorOf};
-use sp_std::vec;
-use sp_std::vec::Vec;
+use sp_std::{vec, vec::Vec};
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, TransactAsset};
 
@@ -127,6 +129,30 @@ mod benchmarks {
         Ok(())
     }
 
+    /// The benchmarks for `reserve_asset_deposited` was added in later versions of
+    /// `pallet-xcm-benchmarks` (in v1.x.x versions).
+    /// TODO: remove this once we uplift to new polkadot release
+    #[benchmark]
+    fn reserve_asset_deposited() -> Result<(), BenchmarkError> {
+        let (trusted_reserve, transferable_reserve_asset) = T::TrustedReserve::get().ok_or(
+            BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)),
+        )?;
+
+        let assets: MultiAssets = vec![transferable_reserve_asset].into();
+
+        let mut executor = new_executor::<T>(trusted_reserve);
+        let instruction = Instruction::ReserveAssetDeposited(assets.clone());
+        let xcm = Xcm(vec![instruction]);
+
+        #[block]
+        {
+            executor.bench_process(xcm)?;
+        }
+
+        assert!(executor.holding().ensure_contains(&assets).is_ok());
+        Ok(())
+    }
+
     #[benchmark]
     fn receive_teleported_asset() -> Result<(), BenchmarkError> {
         #[block]
@@ -152,8 +178,19 @@ where
 {
     fn benchmarks(extra: bool) -> Vec<frame_benchmarking::BenchmarkMetadata> {
         // all the fungible xcm benchmarks
+        use crate::fungible::Pallet as AstarXcmFungibleBench;
         use pallet_xcm_benchmarks::fungible::Pallet as PalletXcmFungibleBench;
-        PalletXcmFungibleBench::<T>::benchmarks(extra)
+
+        let mut benchmarks = PalletXcmFungibleBench::<T>::benchmarks(extra);
+        // append the aditional benchmark
+        // TODO: remove this once we uplift to new polkadot release
+        if let Some(bench) = AstarXcmFungibleBench::<T>::benchmarks(true)
+            .into_iter()
+            .find(|b| b.name == "reserve_asset_deposited".as_bytes().to_vec())
+        {
+            benchmarks.push(bench);
+        }
+        benchmarks
     }
     fn run_benchmark(
         extrinsic: &[u8],

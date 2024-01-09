@@ -235,6 +235,10 @@ parameter_types! {
     pub const TransactAssetId: u128 = 1;
     pub const TransactAssetLocation: MultiLocation = MultiLocation { parents: 0, interior: X1(GeneralIndex(TransactAssetId::get())) };
     pub const WeightPrice: (xcm::latest::AssetId, u128, u128) = (Concrete(TransactAssetLocation::get()), 1_000_000, 1024);
+
+    pub TrustedReserveLocation: MultiLocation = Parent.into();
+    pub TrustedReserveAsset: MultiAsset = MultiAsset { id: Concrete(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
+    pub TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
 }
 
 impl pallet_xcm_benchmarks::fungible::Config for Test {
@@ -261,7 +265,9 @@ impl pallet_xcm_benchmarks::fungible::Config for Test {
     }
 }
 
-impl fungible::Config for Test {}
+impl fungible::Config for Test {
+    type TrustedReserve = TrustedReserve;
+}
 impl Config for Test {}
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -273,17 +279,5 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     .build_storage()
     .unwrap();
 
-    let mut ext = sp_io::TestExternalities::from(t);
-    ext.execute_with(|| {
-        System::set_block_number(1);
-        // assert_ok!(Assets::force_create(
-        //     RuntimeOrigin::root(),
-        //     TransactAssetId::get(),
-        //     0u64,
-        //     true,
-        //     100,
-        // ));
-        // register the transact asset
-    });
-    ext
+    t.into()
 }
