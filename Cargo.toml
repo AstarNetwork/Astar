@@ -255,6 +255,7 @@ polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", 
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.43", default-features = false }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
 xcm-simulator = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.43", default-features = false }
@@ -282,6 +283,7 @@ pallet-ethereum-checked = { path = "./pallets/ethereum-checked", default-feature
 pallet-inflation = { path = "./pallets/inflation", default-features = false }
 pallet-dynamic-evm-base-fee = { path = "./pallets/dynamic-evm-base-fee", default-features = false }
 pallet-unified-accounts = { path = "./pallets/unified-accounts", default-features = false }
+astar-xcm-benchmarks = { path = "./pallets/astar-xcm-benchmarks", default-features = false }
 
 dapp-staking-v3-runtime-api = { path = "./pallets/dapp-staking-v3/rpc/runtime-api", default-features = false }
 
