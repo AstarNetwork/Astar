@@ -1983,7 +1983,9 @@ impl_runtime_apis! {
             // XCM Benchmarks
             impl astar_xcm_benchmarks::Config for Runtime {}
             impl astar_xcm_benchmarks::generic::Config for Runtime {}
-            impl astar_xcm_benchmarks::fungible::Config for Runtime {}
+            impl astar_xcm_benchmarks::fungible::Config for Runtime {
+                type TrustedReserve = TrustedReserve;
+            }
 
             impl pallet_xcm_benchmarks::Config for Runtime {
                 type XcmConfig = xcm_config::XcmConfig;
@@ -2057,6 +2059,10 @@ impl_runtime_apis! {
                 pub const NoTeleporter: Option<(MultiLocation, MultiAsset)> = None;
                 pub const TransactAssetId: u128 = 1;
                 pub const TransactAssetLocation: MultiLocation = MultiLocation { parents: 0, interior: X1(GeneralIndex(TransactAssetId::get())) };
+
+                pub TrustedReserveLocation: MultiLocation = Parent.into();
+                pub TrustedReserveAsset: MultiAsset = MultiAsset { id: Concrete(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
+                pub TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
             }
 
             impl pallet_xcm_benchmarks::fungible::Config for Runtime {

@@ -22,3 +22,4 @@ pub mod pallet_dapp_staking_migration;
 pub mod pallet_dapp_staking_v3;
 pub mod pallet_inflation;
 pub mod pallet_xcm;
+pub mod xcm;
