@@ -65,7 +65,7 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
-use sp_std::prelude::*;
+use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, SmartContract},
@@ -1932,6 +1932,10 @@ impl_runtime_apis! {
     }
 
     impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
+        fn periods_per_cycle() -> pallet_dapp_staking_v3::PeriodNumber {
+            InflationCycleConfig::periods_per_cycle()
+        }
+
         fn eras_per_voting_subperiod() -> pallet_dapp_staking_v3::EraNumber {
             InflationCycleConfig::eras_per_voting_subperiod()
         }
@@ -1942,6 +1946,10 @@ impl_runtime_apis! {
 
         fn blocks_per_era() -> BlockNumber {
             InflationCycleConfig::blocks_per_era()
+        }
+
+        fn get_dapp_tier_assignment() -> BTreeMap<pallet_dapp_staking_v3::DAppId, pallet_dapp_staking_v3::TierId> {
+            DappStaking::get_dapp_tier_assignment()
         }
     }
 

@@ -2442,6 +2442,7 @@ dependencies = [
  "astar-primitives",
  "pallet-dapp-staking-v3",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]
