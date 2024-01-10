@@ -52,7 +52,7 @@ use orml_xcm_support::DisabledParachainFee;
 use astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, DescribeAllTerminal,
     DescribeFamily, FixedRateOfForeignAsset, HashedDescription, ReserveAssetFilter,
-    XcmFungibleFeeHandler,
+    XcmFungibleFeeHandler, MAX_ASSETS,
 };
 
 parameter_types! {
@@ -141,7 +141,7 @@ parameter_types! {
     // For the PoV size, we estimate 4 kB per instruction. This will be changed when we benchmark the instructions.
     pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 4 * 1024);
     pub const MaxInstructions: u32 = 100;
-    pub const MaxAssetsIntoHolding: u32 = 64;
+    pub const MaxAssetsIntoHolding: u32 = MAX_ASSETS;
 }
 
 match_types! {
