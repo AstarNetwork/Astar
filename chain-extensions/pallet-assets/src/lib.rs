@@ -28,6 +28,7 @@ use assets_chain_extension_types::{handle_result, Outcome, LOG_TARGET};
 use frame_support::traits::fungibles::{
     approvals::Inspect as AllowanceInspect, metadata::Inspect as MetadataInspect, Inspect,
 };
+use frame_support::DefaultNoBound;
 use frame_system::RawOrigin;
 use pallet_assets::WeightInfo;
 use pallet_contracts::chain_extension::{
@@ -40,13 +41,8 @@ use sp_std::marker::PhantomData;
 type Weight<T> = <T as pallet_assets::Config>::WeightInfo;
 
 /// Pallet Assets chain extension.
+#[derive(DefaultNoBound)]
 pub struct AssetsExtension<T>(PhantomData<T>);
-
-impl<T> Default for AssetsExtension<T> {
-    fn default() -> Self {
-        AssetsExtension(PhantomData)
-    }
-}
 
 impl<T> ChainExtension<T> for AssetsExtension<T>
 where
