@@ -20,9 +20,6 @@ pub use pallet::*;
 
 pub mod benchmarking;
 
-#[cfg(test)]
-pub mod mock;
-
 #[frame_support::pallet]
 pub mod pallet {
     #[pallet::config]

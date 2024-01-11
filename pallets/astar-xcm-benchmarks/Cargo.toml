@@ -40,7 +40,7 @@ sp-runtime = { workspace = true, features = ["std"] }
 xcm-builder = { workspace = true, features = ["std"] }
 
 [features]
-default = ["std"]
+default = ["std", "runtime-benchmarks"]
 std = [
 	"astar-primitives/std",
 	"frame-benchmarking/std",

@@ -162,11 +162,16 @@ mod benchmarks {
         )))
     }
 
-    impl_benchmark_test_suite!(
-        Pallet,
-        crate::fungible::mock::new_test_ext(),
-        crate::fungible::mock::Test
-    );
+    #[benchmark]
+    fn initiate_teleport() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
+    }
+
+    impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
 
 pub struct XcmFungibleBenchmarks<T>(sp_std::marker::PhantomData<T>);
