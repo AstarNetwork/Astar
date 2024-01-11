@@ -42,7 +42,7 @@ where
         let inner = Inner::benchmarks(extra);
 
         for meta in inner {
-            if outer.iter().find(|m| m.name == meta.name).is_none() {
+            if !outer.iter().any(|m| m.name == meta.name) {
                 outer.push(meta)
             }
         }
