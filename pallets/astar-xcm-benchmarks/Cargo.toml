@@ -17,7 +17,7 @@ serde = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 parity-scale-codec = { workspace = true, optional = true, features = ["derive"] }
-scale-info = { workspace = true, optional = true, features = ["derive"] }
+scale-info = { workspace = true, features = ["derive"] }
 sp-std = { workspace = true }
 
 # Polkadot / XCM
@@ -40,7 +40,7 @@ sp-runtime = { workspace = true, features = ["std"] }
 xcm-builder = { workspace = true, features = ["std"] }
 
 [features]
-default = ["std", "runtime-benchmarks"]
+default = ["std"]
 std = [
 	"astar-primitives/std",
 	"frame-benchmarking/std",
@@ -61,6 +61,5 @@ runtime-benchmarks = [
 	"pallet-assets/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"parity-scale-codec",
-	"scale-info",
 	"xcm-executor/runtime-benchmarks",
 ]

@@ -18,15 +18,48 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "runtime-benchmarks")]
-pub mod generic;
-
-#[cfg(feature = "runtime-benchmarks")]
 pub mod fungible;
+pub mod generic;
 
 #[cfg(test)]
 mod mock;
 
-#[cfg(feature = "runtime-benchmarks")]
+use sp_std::vec::Vec;
+
 /// A base trait for all individual pallets
 pub trait Config: frame_system::Config + pallet_xcm_benchmarks::Config {}
+
+/// This is a wrapper benchmark implementation over `Inner` by `Outer` by merging
+/// the benches from `Inner` if they don't exist in `Outer`.
+pub struct WrappedBenchmark<Outer, Inner>(core::marker::PhantomData<(Outer, Inner)>);
+impl<Outer, Inner> frame_benchmarking::Benchmarking for WrappedBenchmark<Outer, Inner>
+where
+    Outer: frame_benchmarking::Benchmarking,
+    Inner: frame_benchmarking::Benchmarking,
+{
+    fn benchmarks(extra: bool) -> Vec<frame_benchmarking::BenchmarkMetadata> {
+        let mut outer = Outer::benchmarks(extra);
+        let inner = Inner::benchmarks(extra);
+
+        for meta in inner {
+            if outer.iter().find(|m| m.name == meta.name).is_none() {
+                outer.push(meta)
+            }
+        }
+        outer
+    }
+
+    fn run_benchmark(
+        name: &[u8],
+        c: &[(frame_benchmarking::BenchmarkParameter, u32)],
+        whitelist: &[frame_benchmarking::TrackedStorageKey],
+        verify: bool,
+        internal_repeats: u32,
+    ) -> Result<Vec<frame_benchmarking::BenchmarkResult>, frame_benchmarking::BenchmarkError> {
+        if Outer::benchmarks(true).iter().any(|x| x.name == name) {
+            Outer::run_benchmark(name, c, whitelist, verify, internal_repeats)
+        } else {
+            Inner::run_benchmark(name, c, whitelist, verify, internal_repeats)
+        }
+    }
+}

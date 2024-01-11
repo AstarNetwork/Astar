@@ -33,7 +33,6 @@ use sp_core::{ConstU32, ConstU64, Get, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    BuildStorage,
 };
 use xcm::latest::prelude::*;
 use xcm_builder::{AllowUnpaidExecutionFrom, FungiblesAdapter, MintLocation, NoChecking};
@@ -369,7 +368,9 @@ impl fungible::Config for Test {
 impl generic::Config for Test {}
 impl Config for Test {}
 
+#[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext() -> sp_io::TestExternalities {
+    use sp_runtime::BuildStorage;
     let t = GenesisConfig {
         ..Default::default()
     }

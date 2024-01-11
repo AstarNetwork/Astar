@@ -16,14 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use super::*;
+use super::{Pallet as AstarBenchmarks, *};
+use crate::WrappedBenchmark;
 use frame_benchmarking::v2::*;
 use frame_support::{
     dispatch::Weight,
     traits::{fungible::Inspect, Get},
 };
-use pallet_xcm_benchmarks::{account_and_location, new_executor, AssetTransactorOf};
-use sp_std::{vec, vec::Vec};
+use pallet_xcm_benchmarks::{
+    account_and_location, fungible::Pallet as PalletXcmBenchmarks, new_executor, AssetTransactorOf,
+};
+use sp_std::vec;
 use xcm::latest::prelude::*;
 use xcm_executor::traits::{Convert, TransactAsset};
 
@@ -174,61 +177,8 @@ mod benchmarks {
     impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
 
-pub struct XcmFungibleBenchmarks<T>(sp_std::marker::PhantomData<T>);
-// Benchmarks wrapper
-impl<T: Config> frame_benchmarking::Benchmarking for XcmFungibleBenchmarks<T>
-where
-    <<T::TransactAsset as Inspect<T::AccountId>>::Balance as TryInto<u128>>::Error:
-        sp_std::fmt::Debug,
-{
-    fn benchmarks(extra: bool) -> Vec<frame_benchmarking::BenchmarkMetadata> {
-        // all the fungible xcm benchmarks
-        use crate::fungible::Pallet as AstarXcmFungibleBench;
-        use pallet_xcm_benchmarks::fungible::Pallet as PalletXcmFungibleBench;
-
-        let mut benchmarks = PalletXcmFungibleBench::<T>::benchmarks(extra);
-        // append the aditional benchmark
-        // TODO: remove this once we uplift to new polkadot release
-        if let Some(bench) = AstarXcmFungibleBench::<T>::benchmarks(true)
-            .into_iter()
-            .find(|b| b.name == "reserve_asset_deposited".as_bytes().to_vec())
-        {
-            benchmarks.push(bench);
-        }
-        benchmarks
-    }
-    fn run_benchmark(
-        extrinsic: &[u8],
-        c: &[(frame_benchmarking::BenchmarkParameter, u32)],
-        whitelist: &[frame_benchmarking::TrackedStorageKey],
-        verify: bool,
-        internal_repeats: u32,
-    ) -> Result<Vec<frame_benchmarking::BenchmarkResult>, frame_benchmarking::BenchmarkError> {
-        use pallet_xcm_benchmarks::fungible::Pallet as PalletXcmFungibleBench;
-
-        use crate::fungible::Pallet as AstarXcmFungibleBench;
-        if AstarXcmFungibleBench::<T>::benchmarks(true)
-            .iter()
-            .any(|x| x.name == extrinsic)
-        {
-            AstarXcmFungibleBench::<T>::run_benchmark(
-                extrinsic,
-                c,
-                whitelist,
-                verify,
-                internal_repeats,
-            )
-        } else {
-            PalletXcmFungibleBench::<T>::run_benchmark(
-                extrinsic,
-                c,
-                whitelist,
-                verify,
-                internal_repeats,
-            )
-        }
-    }
-}
+// wrapper benchmarks
+pub type XcmFungibleBenchmarks<T> = WrappedBenchmark<AstarBenchmarks<T>, PalletXcmBenchmarks<T>>;
 
 /// Take out the ED from given MultiAsset (if fungible)
 fn take_minimum_balance<T: Config>(

@@ -16,13 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use super::*;
+use super::{Pallet as AstarBenchmarks, *};
+use crate::WrappedBenchmark;
 use frame_benchmarking::v2::*;
-// use frame_benchmarking::{benchmarks, BenchmarkError, BenchmarkResult};
 use frame_support::dispatch::Weight;
-use pallet_xcm_benchmarks::{new_executor, XcmCallOf};
+use pallet_xcm_benchmarks::{generic::Pallet as PalletXcmBenchmarks, new_executor, XcmCallOf};
 use sp_std::vec;
-use sp_std::vec::Vec;
 use xcm::latest::prelude::*;
 
 #[benchmarks]
@@ -147,43 +146,4 @@ mod benchmarks {
     impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
 
-pub struct XcmGenericBenchmarks<T>(sp_std::marker::PhantomData<T>);
-// Benchmarks wrapper
-impl<T: Config> frame_benchmarking::Benchmarking for XcmGenericBenchmarks<T> {
-    fn benchmarks(extra: bool) -> Vec<frame_benchmarking::BenchmarkMetadata> {
-        // all the generic xcm benchmarks
-        use pallet_xcm_benchmarks::generic::Pallet as PalletXcmGenericBench;
-        PalletXcmGenericBench::<T>::benchmarks(extra)
-    }
-    fn run_benchmark(
-        extrinsic: &[u8],
-        c: &[(frame_benchmarking::BenchmarkParameter, u32)],
-        whitelist: &[frame_benchmarking::TrackedStorageKey],
-        verify: bool,
-        internal_repeats: u32,
-    ) -> Result<Vec<frame_benchmarking::BenchmarkResult>, frame_benchmarking::BenchmarkError> {
-        use pallet_xcm_benchmarks::generic::Pallet as PalletXcmGenericBench;
-
-        use crate::generic::Pallet as AstarXcmGenericBench;
-        if AstarXcmGenericBench::<T>::benchmarks(true)
-            .iter()
-            .any(|x| x.name == extrinsic)
-        {
-            AstarXcmGenericBench::<T>::run_benchmark(
-                extrinsic,
-                c,
-                whitelist,
-                verify,
-                internal_repeats,
-            )
-        } else {
-            PalletXcmGenericBench::<T>::run_benchmark(
-                extrinsic,
-                c,
-                whitelist,
-                verify,
-                internal_repeats,
-            )
-        }
-    }
-}
+pub type XcmGenericBenchmarks<T> = WrappedBenchmark<AstarBenchmarks<T>, PalletXcmBenchmarks<T>>;
