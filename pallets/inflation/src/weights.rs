@@ -52,8 +52,8 @@ pub trait WeightInfo {
 	fn force_set_inflation_params() -> Weight;
 	fn force_set_inflation_config() -> Weight;
 	fn force_inflation_recalculation() -> Weight;
-	fn hook_with_recalculation() -> Weight;
-	fn hook_without_recalculation() -> Weight;
+	fn recalculation() -> Weight;
+	fn hooks_without_recalculation() -> Weight;
 }
 
 /// Weights for pallet_inflation using the Substrate node and recommended hardware.
@@ -90,7 +90,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	/// Storage: Inflation InflationParams (r:1 w:0)
 	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
-	fn hook_with_recalculation() -> Weight {
+	fn recalculation() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `232`
 		//  Estimated: `6196`
@@ -101,7 +101,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: System Account (r:2 w:1)
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	fn hook_without_recalculation() -> Weight {
+	fn hooks_without_recalculation() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `174`
 		//  Estimated: `6196`
@@ -145,7 +145,7 @@ impl WeightInfo for () {
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	/// Storage: Inflation InflationParams (r:1 w:0)
 	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
-	fn hook_with_recalculation() -> Weight {
+	fn recalculation() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `232`
 		//  Estimated: `6196`
@@ -156,7 +156,7 @@ impl WeightInfo for () {
 	}
 	/// Storage: System Account (r:2 w:1)
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	fn hook_without_recalculation() -> Weight {
+	fn hooks_without_recalculation() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `174`
 		//  Estimated: `6196`

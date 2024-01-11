@@ -32,7 +32,10 @@ use frame_support::{
 use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
 
-use astar_primitives::{dapp_staking::CycleConfiguration, Balance, BlockNumber};
+use astar_primitives::{
+    dapp_staking::{CycleConfiguration, EraNumber, PeriodNumber},
+    Balance, BlockNumber,
+};
 
 /// Helper struct used to store the entire pallet state snapshot.
 /// Used when comparison of before/after states is required.

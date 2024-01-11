@@ -18,8 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use astar_primitives::dapp_staking::{DAppId, EraNumber, PeriodNumber, TierId};
 use astar_primitives::BlockNumber;
-use pallet_dapp_staking_v3::{DAppId, EraNumber, PeriodNumber, TierId};
 pub use sp_std::collections::btree_map::BTreeMap;
 
 sp_api::decl_runtime_apis! {

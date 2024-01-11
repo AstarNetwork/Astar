@@ -78,7 +78,7 @@ fn force_set_inflation_params_fails() {
 fn force_set_inflation_config_work() {
     ExternalityBuilder::build().execute_with(|| {
         let mut new_config = ActiveInflationConfig::<Test>::get();
-        new_config.recalculation_block = new_config.recalculation_block + 50;
+        new_config.recalculation_era = new_config.recalculation_era + 50;
 
         // Execute call, ensure it works
         assert_ok!(Inflation::force_set_inflation_config(
@@ -97,7 +97,7 @@ fn force_set_inflation_config_work() {
 fn force_set_inflation_config_fails() {
     ExternalityBuilder::build().execute_with(|| {
         let mut new_config = ActiveInflationConfig::<Test>::get();
-        new_config.recalculation_block = new_config.recalculation_block + 50;
+        new_config.recalculation_era = new_config.recalculation_era + 50;
 
         // Make sure action is privileged
         assert_noop!(
@@ -113,8 +113,10 @@ fn force_inflation_recalculation_work() {
         let old_config = ActiveInflationConfig::<Test>::get();
 
         // Execute call, ensure it works
+        let next_era = 100;
         assert_ok!(Inflation::force_inflation_recalculation(
             RuntimeOrigin::root(),
+            next_era,
         ));
 
         let new_config = ActiveInflationConfig::<Test>::get();
@@ -133,34 +135,34 @@ fn force_inflation_fails_due_to_unprivileged_origin() {
     ExternalityBuilder::build().execute_with(|| {
         // Make sure action is privileged
         assert_noop!(
-            Inflation::force_inflation_recalculation(RuntimeOrigin::signed(1)),
+            Inflation::force_inflation_recalculation(RuntimeOrigin::signed(1), 100),
             BadOrigin
         );
     })
 }
 
 #[test]
-fn inflation_recalculation_occurs_when_exepcted() {
+fn inflation_recalculation_occurs_when_expected() {
     ExternalityBuilder::build().execute_with(|| {
         let init_config = ActiveInflationConfig::<Test>::get();
 
-        // Make sure `on_finalize` calls before the expected change are storage noops
-        advance_to_block(init_config.recalculation_block - 3);
-        assert_storage_noop!(Inflation::on_finalize(init_config.recalculation_block - 3));
-        Inflation::on_initialize(
-            init_config.recalculation_block - 2
-        );
-        assert_storage_noop!(Inflation::on_finalize(init_config.recalculation_block - 2));
-        Inflation::on_initialize(
-            init_config.recalculation_block - 1
-        );
+        let recalculation_era = init_config.recalculation_era;
 
-        // One block before recalculation, on_finalize should calculate new inflation config
+
+        // Make sure `on_finalize` calls before the expected change are storage noops
+        Inflation::block_before_new_era(recalculation_era - 2);
+        assert_storage_noop!(Inflation::on_finalize(100));
+
+        Inflation::block_before_new_era(recalculation_era - 1);
+        assert_storage_noop!(Inflation::on_finalize(200));
+
+        // One block before recalculation era starts, on_finalize should calculate new inflation config
+        Inflation::block_before_new_era(recalculation_era);
         let init_config = ActiveInflationConfig::<Test>::get();
         let init_total_issuance = Balances::total_issuance();
 
         // Finally trigger inflation recalculation.
-        Inflation::on_finalize(init_config.recalculation_block - 1);
+        Inflation::on_finalize(300);
 
         let new_config = ActiveInflationConfig::<Test>::get();
         assert_ne!(
@@ -249,7 +251,7 @@ fn inflation_recalucation_works() {
 
         // Verify basics are ok
         assert_eq!(
-            new_config.recalculation_block,
+            new_config.recalculation_era,
             now + <Test as Config>::CycleConfiguration::blocks_per_cycle()
         );
         assert_eq!(
@@ -468,6 +470,6 @@ fn test_genesis_build() {
 
         // Verify state is as expected
         assert_eq!(InflationParams::<Test>::get(), genesis_config.params);
-        assert!(ActiveInflationConfig::<Test>::get().recalculation_block > 0);
+        assert!(ActiveInflationConfig::<Test>::get().recalculation_era > 0);
     })
 }

@@ -51,7 +51,10 @@ use sp_runtime::{
 pub use sp_std::vec::Vec;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContractHandle, StakingRewardHandler},
+    dapp_staking::{
+        CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver, PeriodNumber,
+        SmartContractHandle, StakingRewardHandler, TierId,
+    },
     oracle::PriceProvider,
     Balance, BlockNumber,
 };
@@ -137,6 +140,9 @@ pub mod pallet {
 
         /// Describes era length, subperiods & period length, as well as cycle length.
         type CycleConfiguration: CycleConfiguration;
+
+        /// dApp staking event observers, notified when certain events occur.
+        type Observers: DAppStakingObserver;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]

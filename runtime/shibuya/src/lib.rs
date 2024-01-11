@@ -68,13 +68,13 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContract},
+    dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Index,
 };
-
 pub use astar_primitives::{AccountId, Balance, Signature};
+
 pub use pallet_dapp_staking_v3::TierThreshold;
 pub use pallet_inflation::InflationParameters;
 
@@ -447,6 +447,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = StaticPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
+    type Observers = Inflation;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<2>; // Low enough value so we can get some expired rewards during testing
     type MaxNumberOfContracts = ConstU32<500>;
@@ -474,15 +475,15 @@ impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerB
 
 pub struct InflationCycleConfig;
 impl CycleConfiguration for InflationCycleConfig {
-    fn periods_per_cycle() -> u32 {
+    fn periods_per_cycle() -> PeriodNumber {
         2
     }
 
-    fn eras_per_voting_subperiod() -> u32 {
+    fn eras_per_voting_subperiod() -> EraNumber {
         8
     }
 
-    fn eras_per_build_and_earn_subperiod() -> u32 {
+    fn eras_per_build_and_earn_subperiod() -> EraNumber {
         20
     }
 
@@ -1932,15 +1933,15 @@ impl_runtime_apis! {
     }
 
     impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
-        fn periods_per_cycle() -> pallet_dapp_staking_v3::PeriodNumber {
+        fn periods_per_cycle() -> PeriodNumber {
             InflationCycleConfig::periods_per_cycle()
         }
 
-        fn eras_per_voting_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+        fn eras_per_voting_subperiod() -> EraNumber {
             InflationCycleConfig::eras_per_voting_subperiod()
         }
 
-        fn eras_per_build_and_earn_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+        fn eras_per_build_and_earn_subperiod() -> EraNumber {
             InflationCycleConfig::eras_per_build_and_earn_subperiod()
         }
 
@@ -1948,7 +1949,7 @@ impl_runtime_apis! {
             InflationCycleConfig::blocks_per_era()
         }
 
-        fn get_dapp_tier_assignment() -> BTreeMap<pallet_dapp_staking_v3::DAppId, pallet_dapp_staking_v3::TierId> {
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
             DappStaking::get_dapp_tier_assignment()
         }
     }
