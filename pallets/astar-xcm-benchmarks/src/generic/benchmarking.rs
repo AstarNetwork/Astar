@@ -44,7 +44,9 @@ mod benchmarks {
 
         let instruction = Instruction::<XcmCallOf<T>>::BuyExecution {
             fees: (fee_asset, 100_000_000u128).into(), // should be something inside of holding
-            weight_limit: WeightLimit::Unlimited,
+            // this should not be Unlimited, as xcm-executor will skip buying the
+            // exceution altogether.
+            weight_limit: WeightLimit::Limited(Weight::from_parts(1u64, 1024)),
         };
 
         let xcm = Xcm(vec![instruction]);

@@ -1989,8 +1989,7 @@ impl_runtime_apis! {
             use baseline::Pallet as BaselineBench;
             use xcm::latest::prelude::*;
             use xcm_builder::MintLocation;
-            use xcm_config::MaxAssetsIntoHolding;
-
+            use astar_primitives::benchmarks::XcmBenchmarkHelper;
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
@@ -2009,22 +2008,7 @@ impl_runtime_apis! {
                     Ok(MultiLocation::parent())
                 }
                 fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
-                    // max fungible assests with a native asset
-                    let fungibles = MaxAssetsIntoHolding::get() - 1;
-                    let fungibles_amount: u128 = 100;
-                    (0..fungibles).map(|i| {
-                        MultiAsset {
-                            id: Concrete(GeneralIndex(i as u128).into()),
-                            fun: Fungible(fungibles_amount * i as u128),
-                        }
-                    }).chain(
-                        core::iter::once(
-                            MultiAsset {
-                                id: Concrete(MultiLocation::parent()),
-                                fun: Fungible(u128::MAX)
-                            }
-                        )
-                    ).collect::<Vec<_>>().into()
+                   XcmBenchmarkHelper::<Runtime>::worst_case_holding()
                 }
             }
 
