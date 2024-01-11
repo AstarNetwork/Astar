@@ -16,25 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use super::{Runtime, UnifiedAccounts, Xvm};
+use sp_arithmetic::fixed_point::FixedU64;
 
-/// Registered WASM contracts chain extensions.
-pub use pallet_chain_extension_assets::AssetsExtension;
-use pallet_contracts::chain_extension::RegisteredChainExtension;
-
-pub use pallet_chain_extension_unified_accounts::UnifiedAccountsExtension;
-pub use pallet_chain_extension_xvm::XvmExtension;
-
-// Following impls defines chain extension IDs.
-
-impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime, Xvm, UnifiedAccounts> {
-    const ID: u16 = 01;
-}
-
-impl RegisteredChainExtension<Runtime> for AssetsExtension<Runtime> {
-    const ID: u16 = 02;
-}
-
-impl RegisteredChainExtension<Runtime> for UnifiedAccountsExtension<Runtime, UnifiedAccounts> {
-    const ID: u16 = 03;
+/// Interface for fetching price of the native token.
+///
+/// **NOTE:** This is just a temporary interface, and will be replaced with a proper oracle which will average
+/// the price over a certain period of time.
+pub trait PriceProvider {
+    /// Get the price of the native token.
+    fn average_price() -> FixedU64;
 }

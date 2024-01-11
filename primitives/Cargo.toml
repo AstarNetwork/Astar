@@ -21,6 +21,7 @@ fp-evm = { workspace = true }
 # Substrate dependencies
 frame-support = { workspace = true }
 pallet-assets = { workspace = true }
+sp-arithmetic = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
@@ -66,5 +67,6 @@ std = [
 	"pallet-evm/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-dispatch/std",
+	"sp-arithmetic/std",
 ]
 runtime-benchmarks = ["xcm-builder/runtime-benchmarks", "pallet-assets/runtime-benchmarks"]

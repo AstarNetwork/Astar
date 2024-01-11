@@ -404,8 +404,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 name = "assets-chain-extension-types"
 version = "0.1.0"
 dependencies = [
- "frame-system",
- "pallet-contracts",
+ "num_enum 0.5.11",
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
@@ -531,6 +530,7 @@ dependencies = [
  "pallet-xc-asset-config",
  "parity-scale-codec",
  "scale-info",
+ "sp-arithmetic",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -2441,6 +2441,7 @@ dependencies = [
  "astar-primitives",
  "pallet-dapp-staking-v3",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]
@@ -4952,6 +4953,7 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
+ "assets-chain-extension-types",
  "astar-primitives",
  "astar-runtime",
  "astar-test-utils",
@@ -6061,6 +6063,7 @@ dependencies = [
  "pallet-preimage",
  "pallet-proxy",
  "pallet-scheduler",
+ "pallet-static-price-provider",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -7470,16 +7473,20 @@ name = "pallet-chain-extension-assets"
 version = "0.1.0"
 dependencies = [
  "assets-chain-extension-types",
+ "env_logger 0.9.3",
  "frame-support",
  "frame-system",
  "log",
  "num-traits",
  "pallet-assets",
+ "pallet-balances",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -8696,6 +8703,25 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-static-price-provider"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
  "sp-runtime",
  "sp-std",
 ]
@@ -13209,6 +13235,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
+ "pallet-static-price-provider",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
