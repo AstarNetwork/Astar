@@ -1496,16 +1496,11 @@ pub mod pallet {
             .into())
         }
 
-        // TODO: this call should be removed prior to mainnet launch.
-        // It's super useful for testing purposes, but even though force is used in this pallet & works well,
-        // it won't apply to the inflation recalculation logic - which is wrong.
-        // Probably for this call to make sense, an outside logic should handle both inflation & dApp staking state changes.
-
         /// Used to force a change of era or subperiod.
         /// The effect isn't immediate but will happen on the next block.
         ///
         /// Used for testing purposes, when we want to force an era change, or a subperiod change.
-        /// Not intended to be used in production, except in case of unforseen circumstances.
+        /// Not intended to be used in production, except in case of unforeseen circumstances.
         ///
         /// Can only be called by manager origin.
         #[pallet::call_index(18)]
@@ -1525,6 +1520,10 @@ pub mod pallet {
                         state.period_info.next_subperiod_start_era = state.era.saturating_add(1);
                     }
                 }
+
+                // TODO: Right now it won't account for the full weight incurred by calling this notification.
+                //       It's not a big problem since this call is not expected to be called ever in production.
+                Self::notify_block_before_new_era(&state);
             });
 
             Self::deposit_event(Event::<T>::Force { forcing_type });
@@ -1795,8 +1794,8 @@ pub mod pallet {
 
             // Inform observers about the upcoming new era, if it's the case.
             if protocol_state.next_era_start == now.saturating_add(1) {
-                let next_era = protocol_state.era.saturating_add(1);
-                consumed_weight.saturating_accrue(T::Observers::block_before_new_era(next_era));
+                consumed_weight
+                    .saturating_accrue(Self::notify_block_before_new_era(&protocol_state));
             }
 
             // Nothing to do if it's not new era
@@ -1953,6 +1952,12 @@ pub mod pallet {
             }
 
             consumed_weight
+        }
+
+        /// Used to notify observers about the upcoming new era in the next block.
+        fn notify_block_before_new_era(protocol_state: &ProtocolState) -> Weight {
+            let next_era = protocol_state.era.saturating_add(1);
+            T::Observers::block_before_new_era(next_era)
         }
 
         /// Attempt to cleanup some expired entries, if enough remaining weight & applicable entries exist.

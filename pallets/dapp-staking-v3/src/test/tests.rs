@@ -2663,5 +2663,11 @@ fn observer_pre_new_era_block_works() {
         // 5. Again, check that value is set to the expected one.
         run_for_blocks(1);
         assert_observer_value(3);
+
+        // 6. Force new era, and ensure observer value is set to the next one.
+        run_for_blocks(1);
+        assert_eq!(ActiveProtocolState::<Test>::get().era, 3, "Sanity check.");
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        assert_observer_value(4);
     })
 }
