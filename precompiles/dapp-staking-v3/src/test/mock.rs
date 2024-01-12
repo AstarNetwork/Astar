@@ -38,12 +38,14 @@ use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
 extern crate alloc;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContract, StakingRewardHandler},
+    dapp_staking::{
+        CycleConfiguration, EraNumber, PeriodNumber, SmartContract, StakingRewardHandler,
+    },
     oracle::PriceProvider,
     testing::Header,
     AccountId, Balance, BlockNumber,
 };
-use pallet_dapp_staking_v3::{EraNumber, PeriodNumber, TierThreshold};
+use pallet_dapp_staking_v3::TierThreshold;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -249,6 +251,7 @@ impl pallet_dapp_staking_v3::Config for Test {
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
+    type Observers = ();
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;

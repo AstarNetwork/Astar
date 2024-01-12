@@ -20,7 +20,7 @@
 
 pub use frame_support::{
     assert_noop, assert_ok,
-    traits::{OnFinalize, OnIdle, OnInitialize},
+    traits::{GenesisBuild, OnFinalize, OnIdle, OnInitialize},
     weights::Weight,
 };
 pub use pallet_evm::AddressMapping;
@@ -189,6 +189,13 @@ impl ExtBuilder {
             balances: self.balances,
         }
         .assimilate_storage(&mut t)
+        .unwrap();
+
+        // Needed to trigger initial inflation config setting.
+        <pallet_inflation::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
+            &pallet_inflation::GenesisConfig::default(),
+            &mut t,
+        )
         .unwrap();
 
         let mut ext = sp_io::TestExternalities::new(t);

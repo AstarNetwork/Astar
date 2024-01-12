@@ -322,20 +322,6 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        /// Informs the pallet that the next block will be the first block of a new era.
-        // TODO: make an interface for this
-        pub fn block_before_new_era(new_era: EraNumber) -> Weight {
-            let config = ActiveInflationConfig::<T>::get();
-            if config.recalculation_era <= new_era {
-                DoRecalculation::<T>::put(new_era);
-
-                // Need to account for write into a single whitelisted storage item.
-                T::WeightInfo::recalculation().saturating_add(T::DbWeight::get().writes(1))
-            } else {
-                Weight::zero()
-            }
-        }
-
         /// Payout block rewards to the beneficiaries.
         ///
         /// Return the total amount issued.

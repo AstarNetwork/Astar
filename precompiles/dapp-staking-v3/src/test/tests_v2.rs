@@ -26,7 +26,8 @@ use sp_runtime::traits::Zero;
 
 use assert_matches::assert_matches;
 
-use pallet_dapp_staking_v3::{ActiveProtocolState, EraNumber, EraRewards};
+use astar_primitives::dapp_staking::EraNumber;
+use pallet_dapp_staking_v3::{ActiveProtocolState, EraRewards};
 
 #[test]
 fn read_current_era_is_ok() {

@@ -1793,6 +1793,12 @@ pub mod pallet {
                 return consumed_weight;
             }
 
+            // Inform observers about the upcoming new era, if it's the case.
+            if protocol_state.next_era_start == now.saturating_add(1) {
+                let next_era = protocol_state.era.saturating_add(1);
+                consumed_weight.saturating_accrue(T::Observers::block_before_new_era(next_era));
+            }
+
             // Nothing to do if it's not new era
             if !protocol_state.is_new_era(now) {
                 return consumed_weight;

@@ -4972,6 +4972,7 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-dispatch",
+ "pallet-inflation",
  "pallet-proxy",
  "pallet-unified-accounts",
  "pallet-utility",

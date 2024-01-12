@@ -82,7 +82,7 @@ pub trait CycleConfiguration {
     }
 }
 
-/// TODO
+/// Trait for observers (listeners) of various events related to dApp staking protocol.
 pub trait Observer {
     /// Called in the block right before the next era starts.
     ///
@@ -94,6 +94,8 @@ pub trait Observer {
         Weight::zero()
     }
 }
+
+impl Observer for () {}
 
 /// Interface for staking reward handler.
 ///
