@@ -385,7 +385,7 @@ pub mod pallet {
 
             // 4. Block at which the inflation must be recalculated.
             let recalculation_era =
-                next_era.saturating_add(T::CycleConfiguration::blocks_per_cycle());
+                next_era.saturating_add(T::CycleConfiguration::eras_per_cycle());
 
             // 5. Return calculated values
             InflationConfiguration {

@@ -1496,6 +1496,7 @@ pub mod pallet {
             .into())
         }
 
+        // TODO: make this unavailable in production, to be only used for testing
         /// Used to force a change of era or subperiod.
         /// The effect isn't immediate but will happen on the next block.
         ///
@@ -1521,8 +1522,10 @@ pub mod pallet {
                     }
                 }
 
-                // TODO: Right now it won't account for the full weight incurred by calling this notification.
+                //       Right now it won't account for the full weight incurred by calling this notification.
                 //       It's not a big problem since this call is not expected to be called ever in production.
+                //       Also, in case of subperiod forcing, the alignment will be broken but since this is only call for testing,
+                //       we don't need to concern ourselves with it.
                 Self::notify_block_before_new_era(&state);
             });
 

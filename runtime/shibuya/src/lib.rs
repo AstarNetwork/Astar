@@ -757,7 +757,7 @@ impl WeightToFeePolynomial for WeightToFee {
     }
 }
 
-/// Handles coverting weight consumed by XCM into native currency fee.
+/// Handles converting weight consumed by XCM into native currency fee.
 ///
 /// Similar to standard `WeightToFee` handler, but force uses the minimum multiplier.
 pub struct XcmWeightToFee;

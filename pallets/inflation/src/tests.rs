@@ -239,7 +239,7 @@ fn inflation_parameters_validity_check_works() {
 }
 
 #[test]
-fn inflation_recalucation_works() {
+fn inflation_recalculation_works() {
     ExternalityBuilder::build().execute_with(|| {
         let total_issuance = Balances::total_issuance();
         let params = InflationParams::<Test>::get();
@@ -252,7 +252,7 @@ fn inflation_recalucation_works() {
         // Verify basics are ok
         assert_eq!(
             new_config.recalculation_era,
-            now + <Test as Config>::CycleConfiguration::blocks_per_cycle()
+            now + <Test as Config>::CycleConfiguration::eras_per_cycle()
         );
         assert_eq!(
             new_config.issuance_safety_cap,
@@ -432,7 +432,7 @@ fn payout_reward_fails_when_relaxed_cap_is_exceeded() {
 }
 
 #[test]
-fn cylcle_configuration_works() {
+fn cycle_configuration_works() {
     ExternalityBuilder::build().execute_with(|| {
         type CycleConfig = <Test as Config>::CycleConfiguration;
 

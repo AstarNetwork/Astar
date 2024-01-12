@@ -45,3 +45,6 @@ mod dispatch_precompile_filter_old;
 
 #[cfg(feature = "shibuya")]
 mod unified_accounts;
+
+#[cfg(feature = "shibuya")]
+mod dapp_staking_v3;
