@@ -2055,7 +2055,7 @@ impl_runtime_apis! {
             parameter_types! {
                 pub const NoCheckingAccount: Option<(AccountId, MintLocation)> = None;
                 pub const NoTeleporter: Option<(MultiLocation, MultiAsset)> = None;
-                pub const TransactAssetId: u128 = 1;
+                pub const TransactAssetId: u128 = 1001;
                 pub const TransactAssetLocation: MultiLocation = MultiLocation { parents: 0, interior: X1(GeneralIndex(TransactAssetId::get())) };
 
                 pub TrustedReserveLocation: MultiLocation = Parent.into();
