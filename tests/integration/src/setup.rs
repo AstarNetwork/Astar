@@ -191,6 +191,7 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
+        #[cfg(any(feature = "shibuya"))]
         // Needed to trigger initial inflation config setting.
         <pallet_inflation::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
             &pallet_inflation::GenesisConfig::default(),
