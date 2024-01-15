@@ -2147,20 +2147,12 @@ fn decommision_is_ok() {
             Error::<TestRuntime>::DecommissionInProgress
         );
         assert_noop!(
-            DappsStaking::unbond_and_unstake(RuntimeOrigin::signed(account), contract_id, 100),
-            Error::<TestRuntime>::DecommissionInProgress
-        );
-        assert_noop!(
             DappsStaking::nomination_transfer(
                 RuntimeOrigin::signed(account),
                 contract_id,
                 100,
                 contract_id,
             ),
-            Error::<TestRuntime>::DecommissionInProgress
-        );
-        assert_noop!(
-            DappsStaking::withdraw_unbonded(RuntimeOrigin::signed(account)),
             Error::<TestRuntime>::DecommissionInProgress
         );
 
@@ -2172,6 +2164,14 @@ fn decommision_is_ok() {
         assert_noop!(
             DappsStaking::claim_dapp(RuntimeOrigin::signed(account), contract_id, 1,),
             Error::<TestRuntime>::NotOperatedContract
+        );
+        assert_noop!(
+            DappsStaking::unbond_and_unstake(RuntimeOrigin::signed(account), contract_id, 100),
+            Error::<TestRuntime>::NotOperatedContract
+        );
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(RuntimeOrigin::signed(account)),
+            Error::<TestRuntime>::NothingToWithdraw
         );
     })
 }

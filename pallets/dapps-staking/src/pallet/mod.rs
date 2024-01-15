@@ -569,7 +569,6 @@ pub mod pallet {
             #[pallet::compact] value: Balance,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommission()?;
             let staker = ensure_signed(origin)?;
 
             ensure!(value > Zero::zero(), Error::<T>::UnstakingWithNoValue);
@@ -630,7 +629,6 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::withdraw_unbonded())]
         pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommission()?;
             let staker = ensure_signed(origin)?;
 
             let mut ledger = Self::ledger(&staker);
