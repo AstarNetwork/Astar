@@ -224,8 +224,6 @@ pub mod pallet {
             // ActiveInflationConfig - 1 DB read
             // DoRecalculation - 1 DB read
             <T as frame_system::Config>::DbWeight::get().reads(2)
-
-            // TODO: on_finalize weight!
         }
 
         fn on_finalize(_now: BlockNumber) {
@@ -242,6 +240,8 @@ pub mod pallet {
 
                 Self::deposit_event(Event::<T>::NewInflationConfiguration { config });
             }
+
+            // NOTE: weight of the `on_finalize` logic with recalculation has to be covered by the observer notify call.
         }
 
         fn integrity_test() {
