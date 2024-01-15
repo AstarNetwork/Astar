@@ -2173,11 +2173,18 @@ fn decommision_is_ok() {
             DappsStaking::withdraw_unbonded(RuntimeOrigin::signed(account)),
             Error::<TestRuntime>::NothingToWithdraw
         );
+        assert_noop!(
+            DappsStaking::set_reward_destination(
+                RuntimeOrigin::signed(account),
+                RewardDestination::StakeBalance
+            ),
+            Error::<TestRuntime>::NotActiveStaker
+        );
     })
 }
 
 #[test]
-fn no_era_change_during_decommision() {
+fn no_era_change_during_decommission() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
