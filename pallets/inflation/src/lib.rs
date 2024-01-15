@@ -612,7 +612,7 @@ impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
         }
 
         // 1. Get & set inflation parameters
-        let (inflation_params, next_era) = P::get(); // TODO: re-check this later, whether it will be next or current era
+        let (inflation_params, next_era) = P::get();
         InflationParams::<T>::put(inflation_params.clone());
 
         // 2. Calculation inflation config, set it & deposit event
@@ -649,6 +649,8 @@ impl<T: Config, P: Get<(EraNumber, Weight)>> OnRuntimeUpgrade
             // Both recalculation_era and recalculation_block are of the same `u32` type so no need to do any translation.
             config.recalculation_era = recalculation_era;
         });
+
+        log::info!("Inflation pallet recalculation era set to {}.", recalculation_era);
 
         T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
     }
