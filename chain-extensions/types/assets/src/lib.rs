@@ -17,9 +17,29 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-use parity_scale_codec::MaxEncodedLen;
+
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{DispatchError, ModuleError};
+
+pub const LOG_TARGET: &str = "pallet-chain-extension-assets";
+
+#[repr(u16)]
+#[derive(TryFromPrimitive, IntoPrimitive, Decode, Encode)]
+pub enum Command {
+    Transfer = 0,
+    Mint = 1,
+    Burn = 2,
+    ApproveTransfer = 4,
+    TransferApproved = 5,
+    BalanceOf = 6,
+    TotalSupply = 7,
+    Allowance = 8,
+    MetadataName = 9,
+    MetadataSymbol = 10,
+    MetadataDecimals = 11,
+    MinimumBalance = 12,
+}
 
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -43,9 +63,9 @@ pub enum Outcome {
     /// Minimum balance should be non-zero.
     MinBalanceZero = 8,
     /// Unable to increment the consumer reference counters on the account. Either no provider
-    /// reference exists to allow a non-zero balance of a non-self-sufficient asset, or the
-    /// maximum number of consumers has been reached.
-    NoProvider = 9,
+    /// reference exists to allow a non-zero balance of a non-self-sufficient asset, or one
+    /// fewer then the maximum number of consumers has been reached.
+    UnavailableConsumer = 9,
     /// Invalid metadata given.
     BadMetadata = 10,
     /// No approval exists that would allow the transfer.
@@ -67,8 +87,8 @@ pub enum Outcome {
     IncorrectStatus = 18,
     /// The asset should be frozen before the given operation.
     NotFrozen = 19,
-    /// Origin Caller is not supported
-    OriginCannotBeCaller = 98,
+    /// Callback action resulted in error
+    CallbackFailed = 20,
     /// Unknown error
     RuntimeError = 99,
 }
@@ -88,7 +108,7 @@ impl From<DispatchError> for Outcome {
             Some("InUse") => Outcome::InUse,
             Some("BadWitness") => Outcome::BadWitness,
             Some("MinBalanceZero") => Outcome::MinBalanceZero,
-            Some("NoProvider") => Outcome::NoProvider,
+            Some("UnavailableConsumer") => Outcome::UnavailableConsumer,
             Some("BadMetadata") => Outcome::BadMetadata,
             Some("Unapproved") => Outcome::Unapproved,
             Some("WouldDie") => Outcome::WouldDie,
@@ -99,30 +119,30 @@ impl From<DispatchError> for Outcome {
             Some("AssetNotLive") => Outcome::AssetNotLive,
             Some("IncorrectStatus") => Outcome::IncorrectStatus,
             Some("NotFrozen") => Outcome::NotFrozen,
+            Some("CallbackFailed") => Outcome::CallbackFailed,
             _ => Outcome::RuntimeError,
         };
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-pub enum Origin {
-    Caller,
-    Address,
-}
-
-impl Default for Origin {
-    fn default() -> Self {
-        Self::Address
-    }
+#[macro_export]
+macro_rules! handle_result {
+    ($call_result:expr) => {{
+        return match $call_result {
+            Err(e) => {
+                log::trace!(target: LOG_TARGET, "err: {:?}", e);
+                let mapped_error = Outcome::from(e);
+                Ok(RetVal::Converging(mapped_error as u32))
+            }
+            Ok(_) => Ok(RetVal::Converging(Outcome::Success as u32)),
+        };
+    }};
 }
 
 #[macro_export]
-macro_rules! select_origin {
-    ($origin:expr, $account:expr) => {
-        match $origin {
-            Origin::Caller => return Ok(RetVal::Converging(Outcome::OriginCannotBeCaller as u32)),
-            Origin::Address => RawOrigin::Signed($account),
-        }
-    };
+macro_rules! selector_bytes {
+    ($s:expr) => {{
+        let hash = blake2_256($s.as_bytes());
+        [hash[0], hash[1], hash[2], hash[3]]
+    }};
 }

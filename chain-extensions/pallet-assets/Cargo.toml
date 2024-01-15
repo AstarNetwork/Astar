@@ -23,6 +23,12 @@ sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
+[dev-dependencies]
+env_logger = "0.9"
+pallet-balances = { workspace = true }
+pallet-timestamp = { workspace = true }
+sp-io = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
@@ -38,4 +44,5 @@ std = [
 	"sp-runtime/std",
 	"pallet-assets/std",
 	"assets-chain-extension-types/std",
+	"pallet-balances/std",
 ]

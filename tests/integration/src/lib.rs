@@ -48,3 +48,6 @@ mod unified_accounts;
 
 #[cfg(feature = "shibuya")]
 mod dapp_staking_v3;
+
+#[cfg(any(feature = "shibuya"))]
+mod assets_chain_extensions;

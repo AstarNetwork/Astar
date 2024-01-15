@@ -1,0 +1,1039 @@
+{
+  "source": {
+    "hash": "0x9162ff2905afd5a515781d295a5c44e333f49f0c19f43982b84c29c4609a2098",
+    "language": "ink! 4.3.0",
+    "compiler": "rustc 1.74.0",
+    "build_info": {
+      "build_mode": "Debug",
+      "cargo_contract_version": "3.2.0",
+      "rust_toolchain": "stable-aarch64-apple-darwin",
+      "wasm_opt_settings": {
+        "keep_debug_symbols": false,
+        "optimization_passes": "Z"
+      }
+    }
+  },
+  "contract": {
+    "name": "pallet-assets-extension",
+    "version": "0.1.0",
+    "authors": [
+      "Stake Technologies <devops@stake.co.jp>"
+    ],
+    "repository": "https://github.com/AstarNetwork/ink-test-contracts",
+    "homepage": "https://astar.network/"
+  },
+  "spec": {
+    "constructors": [
+      {
+        "args": [],
+        "default": false,
+        "docs": [],
+        "label": "new",
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink_primitives",
+            "ConstructorResult"
+          ],
+          "type": 0
+        },
+        "selector": "0x9bae9d5e"
+      }
+    ],
+    "docs": [],
+    "environment": {
+      "accountId": {
+        "displayName": [
+          "AccountId"
+        ],
+        "type": 4
+      },
+      "balance": {
+        "displayName": [
+          "Balance"
+        ],
+        "type": 3
+      },
+      "blockNumber": {
+        "displayName": [
+          "BlockNumber"
+        ],
+        "type": 16
+      },
+      "chainExtension": {
+        "displayName": [
+          "ChainExtension"
+        ],
+        "type": 17
+      },
+      "hash": {
+        "displayName": [
+          "Hash"
+        ],
+        "type": 14
+      },
+      "maxEventTopics": 4,
+      "timestamp": {
+        "displayName": [
+          "Timestamp"
+        ],
+        "type": 15
+      }
+    },
+    "events": [],
+    "lang_error": {
+      "displayName": [
+        "ink",
+        "LangError"
+      ],
+      "type": 2
+    },
+    "messages": [
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          },
+          {
+            "label": "beneficiary",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "label": "amount",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "mint",
+        "mutates": true,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 7
+        },
+        "selector": "0xcfdd9aa2"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          },
+          {
+            "label": "who",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "label": "amount",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "burn",
+        "mutates": true,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 7
+        },
+        "selector": "0xb1efc17b"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          },
+          {
+            "label": "target",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "label": "amount",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "transfer",
+        "mutates": true,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 7
+        },
+        "selector": "0x84a15da1"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          },
+          {
+            "label": "delegate",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "label": "amount",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "approve_transfer",
+        "mutates": true,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 7
+        },
+        "selector": "0x8e7c3ee9"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          },
+          {
+            "label": "owner",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "label": "destination",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "label": "amount",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "transfer_approved",
+        "mutates": true,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 7
+        },
+        "selector": "0x31055975"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          },
+          {
+            "label": "who",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "balance_of",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 10
+        },
+        "selector": "0x0f755a56"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "total_supply",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 10
+        },
+        "selector": "0xdb6375a8"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          },
+          {
+            "label": "owner",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "label": "delegate",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "allowance",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 10
+        },
+        "selector": "0x6a00165e"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "metadata_name",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 11
+        },
+        "selector": "0xf5cddbc1"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "metadata_symbol",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 11
+        },
+        "selector": "0x7cdcafc1"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "metadata_decimals",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 13
+        },
+        "selector": "0x2554473b"
+      },
+      {
+        "args": [
+          {
+            "label": "asset_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "minimum_balance",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 10
+        },
+        "selector": "0x1aa48863"
+      }
+    ]
+  },
+  "storage": {
+    "root": {
+      "layout": {
+        "struct": {
+          "fields": [],
+          "name": "Mock"
+        }
+      },
+      "root_key": "0x00000000"
+    }
+  },
+  "types": [
+    {
+      "id": 0,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 1
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 1
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "type": {
+        "def": {
+          "tuple": []
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 1,
+                "name": "CouldNotReadInput"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "LangError"
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": {
+        "def": {
+          "primitive": "u128"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 5,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "AccountId"
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "type": {
+        "def": {
+          "array": {
+            "len": 32,
+            "type": 6
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": {
+        "def": {
+          "primitive": "u8"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 8
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 8
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 1
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 9
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 1
+          },
+          {
+            "name": "E",
+            "type": 9
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 1,
+                "name": "BalanceLow"
+              },
+              {
+                "index": 2,
+                "name": "NoAccount"
+              },
+              {
+                "index": 3,
+                "name": "NoPermission"
+              },
+              {
+                "index": 4,
+                "name": "Unknown"
+              },
+              {
+                "index": 5,
+                "name": "Frozen"
+              },
+              {
+                "index": 6,
+                "name": "InUse"
+              },
+              {
+                "index": 7,
+                "name": "BadWitness"
+              },
+              {
+                "index": 8,
+                "name": "MinBalanceZero"
+              },
+              {
+                "index": 9,
+                "name": "UnavailableConsumer"
+              },
+              {
+                "index": 10,
+                "name": "BadMetadata"
+              },
+              {
+                "index": 11,
+                "name": "Unapproved"
+              },
+              {
+                "index": 12,
+                "name": "WouldDie"
+              },
+              {
+                "index": 13,
+                "name": "AlreadyExists"
+              },
+              {
+                "index": 14,
+                "name": "NoDeposit"
+              },
+              {
+                "index": 15,
+                "name": "WouldBurn"
+              },
+              {
+                "index": 16,
+                "name": "LiveAsset"
+              },
+              {
+                "index": 17,
+                "name": "AssetNotLive"
+              },
+              {
+                "index": 18,
+                "name": "IncorrectStatus"
+              },
+              {
+                "index": 19,
+                "name": "NotFrozen"
+              },
+              {
+                "index": 20,
+                "name": "CallbackFailed"
+              },
+              {
+                "index": 99,
+                "name": "RuntimeError"
+              },
+              {
+                "index": 21,
+                "name": "UnknownStatusCode"
+              },
+              {
+                "index": 22,
+                "name": "InvalidScaleEncoding"
+              }
+            ]
+          }
+        },
+        "path": [
+          "pallet_assets_extension",
+          "helper",
+          "AssetsError"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 3
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 3
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 12
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 12
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 6
+          }
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 6
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 6
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 5,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "Hash"
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "type": {
+        "def": {
+          "primitive": "u64"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": {
+        "def": {
+          "primitive": "u32"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "type": {
+        "def": {
+          "variant": {}
+        },
+        "path": [
+          "ink_env",
+          "types",
+          "NoChainExtension"
+        ]
+      }
+    }
+  ],
+  "version": "4"
+}

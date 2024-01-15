@@ -35,6 +35,7 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 
 # astar dependencies
+assets-chain-extension-types = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }

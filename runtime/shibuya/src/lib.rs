@@ -710,7 +710,7 @@ impl pallet_contracts::Config for Runtime {
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = (
         XvmExtension<Self, Xvm, UnifiedAccounts>,
-        AssetsExtension<Self, pallet_chain_extension_assets::weights::SubstrateWeight<Self>>,
+        AssetsExtension<Self>,
         UnifiedAccountsExtension<Self, UnifiedAccounts>,
     );
     type Schedule = Schedule;
