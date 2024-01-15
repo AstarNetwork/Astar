@@ -19,7 +19,7 @@
 //! # dApp Staking v3 Pallet
 //!
 //! For detailed high level documentation, please refer to the attached README.md file.
-//! The crate level docs will cover overal pallet structure & implementation details.
+//! The crate level docs will cover overall pallet structure & implementation details.
 //!
 //! ## Overview
 //!
@@ -27,9 +27,9 @@
 //! It covers everything from locking, staking, tier configuration & assignment, reward calculation & payout.
 //!
 //! The `types` module contains all of the types used to implement the pallet.
-//! All of these _types_ are exentisvely tested in their dedicated `test_types` module.
+//! All of these _types_ are extensively tested in their dedicated `test_types` module.
 //!
-//! Rest of the pallet logic is concenrated in the lib.rs file.
+//! Rest of the pallet logic is concentrated in the lib.rs file.
 //! This logic is tested in the `tests` module, with the help of extensive `testing_utils`.
 //!
 
@@ -315,7 +315,7 @@ pub mod pallet {
         UnavailableStakeFunds,
         /// There are unclaimed rewards remaining from past eras or periods. They should be claimed before attempting any stake modification again.
         UnclaimedRewards,
-        /// An unexpected error occured while trying to stake.
+        /// An unexpected error occurred while trying to stake.
         InternalStakeError,
         /// Total staked amount on contract is below the minimum required value.
         InsufficientStakeAmount,
@@ -327,7 +327,7 @@ pub mod pallet {
         UnstakeAmountTooLarge,
         /// Account has no staking information for the contract.
         NoStakingInfo,
-        /// An unexpected error occured while trying to unstake.
+        /// An unexpected error occurred while trying to unstake.
         InternalUnstakeError,
         /// Rewards are no longer claimable since they are too old.
         RewardExpired,
@@ -335,18 +335,18 @@ pub mod pallet {
         RewardPayoutFailed,
         /// There are no claimable rewards.
         NoClaimableRewards,
-        /// An unexpected error occured while trying to claim staker rewards.
+        /// An unexpected error occurred while trying to claim staker rewards.
         InternalClaimStakerError,
         /// Account is has no eligible stake amount for bonus reward.
         NotEligibleForBonusReward,
-        /// An unexpected error occured while trying to claim bonus reward.
+        /// An unexpected error occurred while trying to claim bonus reward.
         InternalClaimBonusError,
         /// Claim era is invalid - it must be in history, and rewards must exist for it.
         InvalidClaimEra,
         /// No dApp tier info exists for the specified era. This can be because era has expired
         /// or because during the specified era there were no eligible rewards or protocol wasn't active.
         NoDAppTierInfo,
-        /// An unexpected error occured while trying to claim dApp reward.
+        /// An unexpected error occurred while trying to claim dApp reward.
         InternalClaimDAppError,
         /// Contract is still active, not unregistered.
         ContractStillActive,
@@ -632,7 +632,7 @@ pub mod pallet {
                     owner: owner.clone(),
                     id: dapp_id,
                     state: DAppState::Registered,
-                    reward_destination: None,
+                    reward_beneficiary: None,
                 },
             );
 
@@ -671,7 +671,7 @@ pub mod pallet {
 
                     ensure!(dapp_info.owner == dev_account, Error::<T>::OriginNotOwner);
 
-                    dapp_info.reward_destination = beneficiary.clone();
+                    dapp_info.reward_beneficiary = beneficiary.clone();
 
                     Ok(())
                 },
@@ -745,10 +745,7 @@ pub mod pallet {
             let mut dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
-            ensure!(
-                dapp_info.state == DAppState::Registered,
-                Error::<T>::NotOperatedDApp
-            );
+            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
 
             ContractStake::<T>::remove(&dapp_info.id);
 
@@ -1694,12 +1691,11 @@ pub mod pallet {
                 counter.saturating_inc();
 
                 // Skip dApps which don't have ANY amount staked
-                let stake_amount = match stake_amount.get(era, period) {
-                    Some(stake_amount) if !stake_amount.total().is_zero() => stake_amount,
-                    _ => continue,
-                };
-
-                dapp_stakes.push((dapp_id, stake_amount.total()));
+                if let Some(stake_amount) = stake_amount.get(era, period) {
+                    if !stake_amount.total().is_zero() {
+                        dapp_stakes.push((dapp_id, stake_amount.total()));
+                    }
+                }
             }
 
             // 2.

@@ -37,7 +37,7 @@ fn force_set_inflation_params_work() {
     ExternalityBuilder::build().execute_with(|| {
         let mut new_params = InflationParams::<Test>::get();
         new_params.max_inflation_rate = Perquintill::from_percent(20);
-        assert!(new_params != InflationParams::<Test>::get(), "Sanity check");
+        assert_ne!(new_params, InflationParams::<Test>::get(), "Sanity check");
 
         // Execute call, ensure it works
         assert_ok!(Inflation::force_set_inflation_params(
@@ -118,8 +118,8 @@ fn force_inflation_recalculation_work() {
         ));
 
         let new_config = ActiveInflationConfig::<Test>::get();
-        assert!(
-            old_config != new_config,
+        assert_ne!(
+            old_config, new_config,
             "Config should change, otherwise test doesn't make sense."
         );
 
@@ -163,8 +163,8 @@ fn inflation_recalculation_occurs_when_exepcted() {
         Inflation::on_finalize(init_config.recalculation_block - 1);
 
         let new_config = ActiveInflationConfig::<Test>::get();
-        assert!(
-            new_config != init_config,
+        assert_ne!(
+            new_config, init_config,
             "Recalculation must happen at this point."
         );
         System::assert_last_event(Event::NewInflationConfiguration { config: new_config }.into());

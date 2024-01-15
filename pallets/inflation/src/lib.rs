@@ -69,9 +69,9 @@
 //!
 //! ## Rewards
 //!
-//! ### Staker & Treasury Rewards
+//! ### Collator & Treasury Rewards
 //!
-//! These are paid out at the begininng of each block & are fixed amounts.
+//! These are paid out at the beginning of each block & are fixed amounts.
 //!
 //! ### Staker Rewards
 //!
@@ -177,7 +177,7 @@ pub mod pallet {
         InvalidInflationParameters,
     }
 
-    /// Active inflation configuration parameteres.
+    /// Active inflation configuration parameters.
     /// They describe current rewards, when inflation needs to be recalculated, etc.
     #[pallet::storage]
     #[pallet::whitelist_storage]
@@ -219,7 +219,7 @@ pub mod pallet {
                     T::WeightInfo::hook_without_recalculation()
                 };
 
-            // Benchmarks won't acount for whitelisted storage access so this needs to be added manually.
+            // Benchmarks won't account for the whitelisted storage access so this needs to be added manually.
             //
             // ActiveInflationConfig - 1 DB read
             let whitelisted_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
@@ -257,7 +257,7 @@ pub mod pallet {
         ///
         /// Must be called by `root` origin.
         ///
-        /// Purpose of the call is testing & handling unforseen circumstances.
+        /// Purpose of the call is testing & handling unforeseen circumstances.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::force_set_inflation_params())]
         pub fn force_set_inflation_params(
@@ -279,7 +279,7 @@ pub mod pallet {
         ///
         /// Must be called by `root` origin.
         ///
-        /// Purpose of the call is testing & handling unforseen circumstances.
+        /// Purpose of the call is testing & handling unforeseen circumstances.
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::force_inflation_recalculation())]
         pub fn force_inflation_recalculation(origin: OriginFor<T>) -> DispatchResult {
@@ -299,7 +299,7 @@ pub mod pallet {
         ///
         /// Must be called by `root` origin.
         ///
-        /// Purpose of the call is testing & handling unforseen circumstances.
+        /// Purpose of the call is testing & handling unforeseen circumstances.
         ///
         /// **NOTE:** and a TODO, remove this before deploying on mainnet.
         #[pallet::call_index(2)]
@@ -368,23 +368,13 @@ pub mod pallet {
             // 3.0 Convert all 'per cycle' values to the correct type (Balance).
             // Also include a safety check that none of the values is zero since this would cause a division by zero.
             // The configuration & integration tests must ensure this never happens, so the following code is just an additional safety measure.
-            let blocks_per_cycle = match T::CycleConfiguration::blocks_per_cycle() {
-                0 => Balance::MAX,
-                blocks_per_cycle => Balance::from(blocks_per_cycle),
-            };
-
+            let blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle().max(1));
             let build_and_earn_eras_per_cycle =
-                match T::CycleConfiguration::build_and_earn_eras_per_cycle() {
-                    0 => Balance::MAX,
-                    build_and_earn_eras_per_cycle => Balance::from(build_and_earn_eras_per_cycle),
-                };
+                Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle().max(1));
+            let periods_per_cycle =
+                Balance::from(T::CycleConfiguration::periods_per_cycle().max(1));
 
-            let periods_per_cycle = match T::CycleConfiguration::periods_per_cycle() {
-                0 => Balance::MAX,
-                periods_per_cycle => Balance::from(periods_per_cycle),
-            };
-
-            // 3.1. Collator & Treausry rewards per block
+            // 3.1. Collator & Treasury rewards per block
             let collator_reward_per_block = collators_emission / blocks_per_cycle;
             let treasury_reward_per_block = treasury_emission / blocks_per_cycle;
 
@@ -500,7 +490,7 @@ pub struct InflationConfiguration {
     /// Base staker reward pool per era - this is always provided to stakers, regardless of the total value staked.
     #[codec(compact)]
     pub base_staker_reward_pool_per_era: Balance,
-    /// Adjustabke staker rewards, based on the total value staked.
+    /// Adjustable staker rewards, based on the total value staked.
     /// This is provided to the stakers according to formula: 'pool * min(1, total_staked / ideal_staked)'.
     #[codec(compact)]
     pub adjustable_staker_reward_pool_per_era: Balance,
@@ -612,7 +602,7 @@ impl<T: Config, P: Get<InflationParameters>> OnRuntimeUpgrade for PalletInflatio
         let inflation_params = P::get();
         InflationParams::<T>::put(inflation_params.clone());
 
-        // 2. Calculation inflation config, set it & depossit event
+        // 2. Calculation inflation config, set it & deposit event
         let now = frame_system::Pallet::<T>::block_number();
         let config = Pallet::<T>::recalculate_inflation(now);
         ActiveInflationConfig::<T>::put(config.clone());
