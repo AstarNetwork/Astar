@@ -650,7 +650,10 @@ impl<T: Config, P: Get<(EraNumber, Weight)>> OnRuntimeUpgrade
             config.recalculation_era = recalculation_era;
         });
 
-        log::info!("Inflation pallet recalculation era set to {}.", recalculation_era);
+        log::info!(
+            "Inflation pallet recalculation era set to {}.",
+            recalculation_era
+        );
 
         T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
     }
