@@ -91,6 +91,14 @@ pub(super) fn force_advance_to_next_period<T: Config>() {
     }
 }
 
+/// Advance to the specified period, using the `force` approach.
+pub(super) fn force_advance_to_period<T: Config>(period: PeriodNumber) {
+    assert!(period >= ActiveProtocolState::<T>::get().period_number());
+    while ActiveProtocolState::<T>::get().period_number() < period {
+        force_advance_to_next_subperiod::<T>();
+    }
+}
+
 /// Use the `force` approach to advance to the next subperiod immediately in the next block.
 pub(super) fn force_advance_to_next_subperiod<T: Config>() {
     assert_ok!(DappStaking::<T>::force(

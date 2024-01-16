@@ -840,6 +840,12 @@ mod benchmarks {
         // Register & stake contracts, just so we don't have empty stakes.
         prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
 
+        // Force advance enough periods into the future so we can ensure that history
+        // cleanup marker will be updated on the next period change.
+        let period_before_expiry_starts =
+            ActiveProtocolState::<T>::get().period_number() + T::RewardRetentionInPeriods::get();
+        force_advance_to_period::<T>(period_before_expiry_starts);
+
         // Advance to build&earn subperiod
         force_advance_to_next_subperiod::<T>();
         let snapshot_state = ActiveProtocolState::<T>::get();
@@ -853,7 +859,7 @@ mod benchmarks {
         );
         run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
 
-        // Some sanity checks, we should still be in the build&earn subperiod, and in the first period.
+        // Some sanity checks, we should still be in the build&earn subperiod, and in the same period as when snapshot was taken.
         assert_eq!(
             ActiveProtocolState::<T>::get().subperiod(),
             Subperiod::BuildAndEarn
@@ -867,6 +873,8 @@ mod benchmarks {
         DappStaking::<T>::on_finalize(new_era_start_block - 1);
         System::<T>::set_block_number(new_era_start_block);
 
+        let pre_cleanup_marker = HistoryCleanupMarker::<T>::get();
+
         #[block]
         {
             DappStaking::<T>::era_and_period_handler(new_era_start_block, TierAssignment::Dummy);
@@ -879,6 +887,9 @@ mod benchmarks {
         assert_eq!(
             ActiveProtocolState::<T>::get().period_number(),
             snapshot_state.period_number() + 1,
+        );
+        assert!(
+            HistoryCleanupMarker::<T>::get().oldest_valid_era > pre_cleanup_marker.oldest_valid_era
         );
     }
 
