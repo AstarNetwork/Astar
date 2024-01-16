@@ -60,6 +60,7 @@ pub(crate) struct MemorySnapshot {
     era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
     period_end: HashMap<PeriodNumber, PeriodEndInfo>,
     dapp_tiers: HashMap<EraNumber, DAppTierRewardsFor<Test>>,
+    cleanup_marker: CleanupMarker,
 }
 
 impl MemorySnapshot {
@@ -78,6 +79,7 @@ impl MemorySnapshot {
             era_rewards: EraRewards::<Test>::iter().collect(),
             period_end: PeriodEnd::<Test>::iter().collect(),
             dapp_tiers: DAppTiers::<Test>::iter().collect(),
+            cleanup_marker: HistoryCleanupMarker::<Test>::get(),
         }
     }
 
@@ -1349,7 +1351,34 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
         );
     }
 
-    // 5. Verify event(s)
+    // 5. Verify history cleanup market update
+    let period_has_advanced = pre_protoc_state.period_number() < post_protoc_state.period_number();
+    if period_has_advanced {
+        let reward_retention_in_periods: PeriodNumber =
+            <Test as Config>::RewardRetentionInPeriods::get();
+
+        let pre_marker = pre_snapshot.cleanup_marker;
+        let post_marker = post_snapshot.cleanup_marker;
+
+        if let Some(expired_period) = pre_protoc_state
+            .period_number()
+            .checked_sub(reward_retention_in_periods)
+        {
+            if let Some(period_end_info) = pre_snapshot.period_end.get(&expired_period) {
+                let oldest_valid_era = period_end_info.final_era + 1;
+
+                assert_eq!(post_marker.oldest_valid_era, oldest_valid_era);
+                assert_eq!(post_marker.dapp_tiers_index, pre_marker.dapp_tiers_index);
+                assert_eq!(post_marker.era_reward_index, pre_marker.era_reward_index);
+            } else {
+                assert_eq!(pre_marker, post_marker, "Must remain unchanged.");
+            }
+        } else {
+            assert_eq!(pre_marker, post_marker, "Must remain unchanged.");
+        }
+    }
+
+    // 6. Verify event(s)
     if is_new_subperiod {
         let events = dapp_staking_events();
         assert!(

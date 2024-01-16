@@ -1967,7 +1967,9 @@ pub mod pallet {
             T::Observers::block_before_new_era(next_era)
         }
 
-        /// TODO
+        /// Updates the cleanup marker with the new oldest valid era if possible.
+        ///
+        /// It's possible that the call will be a no-op since we haven't advanced enough periods yet.
         fn update_cleanup_marker(new_period_number: PeriodNumber) {
             // 1. Find out the latest expired period; rewards can no longer be claimed for it or any older period.
             let latest_expired_period = match new_period_number
