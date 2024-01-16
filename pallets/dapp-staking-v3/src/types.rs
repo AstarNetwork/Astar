@@ -1715,11 +1715,11 @@ pub enum DAppTierError {
 pub struct CleanupMarker {
     /// Era reward span index that should be checked & cleaned up next.
     #[codec(compact)]
-    pub era_reward_index: EraNumber,
+    pub(crate) era_reward_index: EraNumber,
     /// dApp tier rewards index that should be checked & cleaned up next.
     #[codec(compact)]
-    pub dapp_tiers_index: EraNumber,
+    pub(crate) dapp_tiers_index: EraNumber,
     /// TODO
     #[codec(compact)]
-    pub oldest_valid_era: EraNumber,
+    pub(crate) oldest_valid_era: EraNumber,
 }

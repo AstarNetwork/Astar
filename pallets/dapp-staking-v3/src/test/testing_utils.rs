@@ -25,7 +25,7 @@ use crate::{
 };
 
 use frame_support::{
-    assert_ok, assert_storage_noop,
+    assert_ok,
     traits::{fungible::InspectFreeze, Get, OnIdle},
     weights::Weight,
 };
@@ -1380,45 +1380,17 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
 pub(crate) fn assert_on_idle_cleanup() {
     // Pre-data snapshot (limited to speed up testing)
     let pre_cleanup_marker = HistoryCleanupMarker::<Test>::get();
-    let pre_era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>> =
-        EraRewards::<Test>::iter().collect();
-    let pre_period_ends: HashMap<PeriodNumber, PeriodEndInfo> = PeriodEnd::<Test>::iter().collect();
 
-    // Calculated the oldest era which is valid (not expired)
-    let protocol_state = ActiveProtocolState::<Test>::get();
-    let retention_period: PeriodNumber = <Test as Config>::RewardRetentionInPeriods::get();
-
-    let oldest_valid_era = match protocol_state
-        .period_number()
-        .checked_sub(retention_period + 1)
-    {
-        Some(expired_period) if expired_period > 0 => {
-            pre_period_ends[&expired_period].final_era + 1
-        }
-        _ => {
-            // No cleanup so no storage changes are expected
-            assert_storage_noop!(DappStaking::on_idle(System::block_number(), Weight::MAX));
-            return;
-        }
-    };
-
-    // Check if any span or tiers cleanup is needed.
+    // Check if any span or tier reward cleanup is needed.
+    let pre_span_exists = EraRewards::<Test>::contains_key(&pre_cleanup_marker.era_reward_index);
     let is_era_span_cleanup_expected =
-        pre_era_rewards[&pre_cleanup_marker.era_reward_index].last_era() < oldest_valid_era;
-    let is_dapp_tiers_cleanup_expected = pre_cleanup_marker.dapp_tiers_index > 0
-        && pre_cleanup_marker.dapp_tiers_index < oldest_valid_era;
-
-    // Check if period end info should be cleaned up
-    let maybe_period_end_cleanup = match protocol_state
-        .period_number()
-        .checked_sub(retention_period + 2)
-    {
-        Some(period) if period > 0 => Some(period),
-        _ => None,
-    };
+        EraRewards::<Test>::get(&pre_cleanup_marker.era_reward_index)
+            .map(|span| span.last_era() < pre_cleanup_marker.oldest_valid_era)
+            .unwrap_or(false);
+    let is_dapp_tiers_cleanup_expected =
+        pre_cleanup_marker.dapp_tiers_index < pre_cleanup_marker.oldest_valid_era;
 
     // Cleanup and verify post state.
-
     DappStaking::on_idle(System::block_number(), Weight::MAX);
 
     // Post checks
@@ -1433,21 +1405,32 @@ pub(crate) fn assert_on_idle_cleanup() {
             post_cleanup_marker.era_reward_index,
             pre_cleanup_marker.era_reward_index + span_length
         );
-    }
-    if is_dapp_tiers_cleanup_expected {
-        assert!(
-            !DAppTiers::<Test>::contains_key(pre_cleanup_marker.dapp_tiers_index),
-            "Sanity check."
+    } else if !pre_span_exists
+        && pre_cleanup_marker.oldest_valid_era > pre_cleanup_marker.era_reward_index
+    {
+        // If span doesn't exists, but no cleanup is expected, we should increment the era reward index anyway.
+        // This is because the span was never created in the first place since dApp staking v3 wasn't active then.
+        let span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
+        assert_eq!(
+            post_cleanup_marker.era_reward_index,
+            pre_cleanup_marker.era_reward_index + span_length
         );
+    }
+
+    if is_dapp_tiers_cleanup_expected {
+        assert!(!DAppTiers::<Test>::contains_key(
+            pre_cleanup_marker.dapp_tiers_index
+        ));
         assert_eq!(
             post_cleanup_marker.dapp_tiers_index,
             pre_cleanup_marker.dapp_tiers_index + 1
-        )
+        );
     }
 
-    if let Some(period) = maybe_period_end_cleanup {
-        assert!(!PeriodEnd::<Test>::contains_key(period));
-    }
+    assert_eq!(
+        post_cleanup_marker.oldest_valid_era, pre_cleanup_marker.oldest_valid_era,
+        "Sanity check, must remain unchanged."
+    );
 }
 
 /// Returns from which starting era to which ending era can rewards be claimed for the specified account.

@@ -1973,9 +1973,9 @@ pub mod pallet {
             let latest_expired_period = match new_period_number
                 .checked_sub(T::RewardRetentionInPeriods::get().saturating_add(1))
             {
-                Some(period) => period,
+                Some(period) if !period.is_zero() => period,
                 // Haven't advanced enough periods to have any expired entries.
-                None => return,
+                _ => return,
             };
 
             // 2. Find the oldest valid era for which rewards can still be claimed.
@@ -2019,6 +2019,9 @@ pub mod pallet {
                     // If oldest valid era comes AFTER this span, it's safe to delete it.
                     if era_reward.last_era() < cleanup_marker.oldest_valid_era {
                         EraRewards::<T>::remove(cleanup_marker.era_reward_index);
+                        cleanup_marker
+                            .era_reward_index
+                            .saturating_accrue(T::EraRewardSpanLength::get());
                     }
                 } else {
                     // Can happen if the entry is part of history before dApp staking v3
@@ -2027,18 +2030,16 @@ pub mod pallet {
                         "Era rewards span for era {} is missing, but cleanup marker is set.",
                         cleanup_marker.era_reward_index
                     );
+                    cleanup_marker
+                        .era_reward_index
+                        .saturating_accrue(T::EraRewardSpanLength::get());
                 }
-
-                // Always increment the cleanup marker
-                cleanup_marker
-                    .era_reward_index
-                    .saturating_accrue(T::EraRewardSpanLength::get());
 
                 // TODO: update consumed weight
             }
 
             // 2. Attempt to cleanup one expired `DAppTiers` entry.
-            if cleanup_marker.dapp_tiers_index <= cleanup_marker.oldest_valid_era {
+            if cleanup_marker.dapp_tiers_index < cleanup_marker.oldest_valid_era {
                 DAppTiers::<T>::remove(cleanup_marker.dapp_tiers_index);
                 cleanup_marker.dapp_tiers_index.saturating_inc();
                 // TODO: update consumed weight
