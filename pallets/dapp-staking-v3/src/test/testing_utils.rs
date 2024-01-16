@@ -1370,6 +1370,11 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
                 assert_eq!(post_marker.oldest_valid_era, oldest_valid_era);
                 assert_eq!(post_marker.dapp_tiers_index, pre_marker.dapp_tiers_index);
                 assert_eq!(post_marker.era_reward_index, pre_marker.era_reward_index);
+
+                assert!(
+                    !post_snapshot.period_end.contains_key(&expired_period),
+                    "Expired entry should have been removed."
+                );
             } else {
                 assert_eq!(pre_marker, post_marker, "Must remain unchanged.");
             }
