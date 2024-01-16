@@ -202,6 +202,7 @@ impl<T: Config> OnRuntimeUpgrade for DappStakingV3TierRewardAsTree<T> {
 }
 
 /// We just set it to default value (all zeros) and let the pallet itself do the history cleanup.
+/// Only needed for Shibuya, can be removed later.
 pub struct DappStakingV3HistoryCleanupMarkerReset<T>(PhantomData<T>);
 impl<T: Config> OnRuntimeUpgrade for DappStakingV3HistoryCleanupMarkerReset<T> {
     fn on_runtime_upgrade() -> Weight {

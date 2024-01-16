@@ -1723,3 +1723,11 @@ pub struct CleanupMarker {
     #[codec(compact)]
     pub(crate) oldest_valid_era: EraNumber,
 }
+
+impl CleanupMarker {
+    /// Used to check whether there are any pending cleanups, according to marker values.
+    pub(crate) fn has_pending_cleanups(&self) -> bool {
+        self.era_reward_index != self.oldest_valid_era
+            || self.dapp_tiers_index != self.oldest_valid_era
+    }
+}

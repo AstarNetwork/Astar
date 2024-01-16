@@ -2012,8 +2012,11 @@ pub mod pallet {
                 return Weight::zero();
             }
 
-            // Get the cleanup marker
+            // Get the cleanup marker and ensure we have pending cleanups.
             let mut cleanup_marker = HistoryCleanupMarker::<T>::get();
+            if !cleanup_marker.has_pending_cleanups() {
+                return T::DbWeight::get().reads(1);
+            }
 
             // 1. Attempt to cleanup one expired `EraRewards` entry.
             if cleanup_marker.era_reward_index < cleanup_marker.oldest_valid_era {
@@ -2036,15 +2039,12 @@ pub mod pallet {
                         .era_reward_index
                         .saturating_accrue(T::EraRewardSpanLength::get());
                 }
-
-                // TODO: update consumed weight
             }
 
             // 2. Attempt to cleanup one expired `DAppTiers` entry.
             if cleanup_marker.dapp_tiers_index < cleanup_marker.oldest_valid_era {
                 DAppTiers::<T>::remove(cleanup_marker.dapp_tiers_index);
                 cleanup_marker.dapp_tiers_index.saturating_inc();
-                // TODO: update consumed weight
             }
 
             // Store the updated cleanup marker
@@ -2054,7 +2054,7 @@ pub mod pallet {
             // we opt for the simpler solution where only 1 entry per block is cleaned up.
             // It can be changed though.
 
-            // TODO: improve & optimize weight measurement here
+            // It could end up being less than this weight, but this won't occur often enough to be important.
             T::WeightInfo::on_idle_cleanup()
         }
     }
