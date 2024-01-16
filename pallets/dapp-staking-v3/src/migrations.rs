@@ -200,3 +200,12 @@ impl<T: Config> OnRuntimeUpgrade for DappStakingV3TierRewardAsTree<T> {
         T::DbWeight::get().reads_writes(counter, counter)
     }
 }
+
+/// We just set it to default value (all zeros) and let the pallet itself do the history cleanup.
+pub struct DappStakingV3HistoryCleanupMarkerReset<T>(PhantomData<T>);
+impl<T: Config> OnRuntimeUpgrade for DappStakingV3HistoryCleanupMarkerReset<T> {
+    fn on_runtime_upgrade() -> Weight {
+        HistoryCleanupMarker::<T>::put(CleanupMarker::default());
+        T::DbWeight::get().writes(1)
+    }
+}
