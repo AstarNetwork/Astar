@@ -1351,7 +1351,7 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
         );
     }
 
-    // 5. Verify history cleanup market update
+    // 5. Verify history cleanup marker update
     let period_has_advanced = pre_protoc_state.period_number() < post_protoc_state.period_number();
     if period_has_advanced {
         let reward_retention_in_periods: PeriodNumber =
@@ -1411,13 +1411,20 @@ pub(crate) fn assert_on_idle_cleanup() {
     let pre_cleanup_marker = HistoryCleanupMarker::<Test>::get();
 
     // Check if any span or tier reward cleanup is needed.
-    let pre_span_exists = EraRewards::<Test>::contains_key(&pre_cleanup_marker.era_reward_index);
     let is_era_span_cleanup_expected =
         EraRewards::<Test>::get(&pre_cleanup_marker.era_reward_index)
             .map(|span| span.last_era() < pre_cleanup_marker.oldest_valid_era)
             .unwrap_or(false);
     let is_dapp_tiers_cleanup_expected =
         pre_cleanup_marker.dapp_tiers_index < pre_cleanup_marker.oldest_valid_era;
+
+    // If span doesn't exists, but no cleanup is expected, we should increment the era reward index anyway.
+    // This is because the span was never created in the first place since dApp staking v3 wasn't active then.
+    //
+    // In case of cleanup, we always increment the index.
+    let is_era_reward_index_increase = is_era_span_cleanup_expected
+        || !EraRewards::<Test>::contains_key(&pre_cleanup_marker.era_reward_index)
+            && pre_cleanup_marker.oldest_valid_era > pre_cleanup_marker.era_reward_index;
 
     // Cleanup and verify post state.
     DappStaking::on_idle(System::block_number(), Weight::MAX);
@@ -1429,16 +1436,9 @@ pub(crate) fn assert_on_idle_cleanup() {
         assert!(!EraRewards::<Test>::contains_key(
             pre_cleanup_marker.era_reward_index
         ));
-        let span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
-        assert_eq!(
-            post_cleanup_marker.era_reward_index,
-            pre_cleanup_marker.era_reward_index + span_length
-        );
-    } else if !pre_span_exists
-        && pre_cleanup_marker.oldest_valid_era > pre_cleanup_marker.era_reward_index
-    {
-        // If span doesn't exists, but no cleanup is expected, we should increment the era reward index anyway.
-        // This is because the span was never created in the first place since dApp staking v3 wasn't active then.
+    }
+
+    if is_era_reward_index_increase {
         let span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
         assert_eq!(
             post_cleanup_marker.era_reward_index,

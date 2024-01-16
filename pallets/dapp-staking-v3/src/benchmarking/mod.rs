@@ -972,7 +972,7 @@ mod benchmarks {
         initial_config::<T>();
 
         // Hack
-        // Prepare state prior to the cleanup manually to ensure worst case.
+        // Manually prepare state prior to the cleanup to ensure worst case.
         let cleanup_marker = CleanupMarker {
             era_reward_index: 0,
             dapp_tiers_index: 0,
