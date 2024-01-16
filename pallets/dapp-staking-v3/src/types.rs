@@ -1719,4 +1719,7 @@ pub struct CleanupMarker {
     /// dApp tier rewards index that should be checked & cleaned up next.
     #[codec(compact)]
     pub dapp_tiers_index: EraNumber,
+    /// TODO
+    #[codec(compact)]
+    pub oldest_valid_era: EraNumber,
 }

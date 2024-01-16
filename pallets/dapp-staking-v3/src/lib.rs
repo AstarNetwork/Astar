@@ -1904,6 +1904,10 @@ pub mod pallet {
                             TierConfig::<T>::get().calculate_new(average_price, &tier_params);
                         TierConfig::<T>::put(new_tier_config);
 
+                        // Update historical cleanup marker.
+                        // Must be called with the new period number.
+                        Self::update_cleanup_marker(protocol_state.period_number());
+
                         consumed_weight.saturating_accrue(
                             T::WeightInfo::on_initialize_build_and_earn_to_voting(),
                         );
@@ -1963,11 +1967,45 @@ pub mod pallet {
             T::Observers::block_before_new_era(next_era)
         }
 
+        /// TODO
+        fn update_cleanup_marker(new_period_number: PeriodNumber) {
+            // 1. Find out the latest expired period; rewards can no longer be claimed for it or any older period.
+            let latest_expired_period = match new_period_number
+                .checked_sub(T::RewardRetentionInPeriods::get().saturating_add(1))
+            {
+                Some(period) => period,
+                // Haven't advanced enough periods to have any expired entries.
+                None => return,
+            };
+
+            // 2. Find the oldest valid era for which rewards can still be claimed.
+            //    Technically, this will be `Voting` subperiod era but it doesn't matter.
+            //
+            //    Also, remove the expired `PeriodEnd` entry since it's no longer needed.
+            let oldest_valid_era = match PeriodEnd::<T>::take(latest_expired_period) {
+                Some(period_end_info) => period_end_info.final_era.saturating_add(1),
+                None => {
+                    // Should never happen but nothing we can do if it does.
+                    log::error!(
+                        target: LOG_TARGET,
+                        "No `PeriodEnd` entry for the expired period: {}",
+                        latest_expired_period
+                    );
+                    return;
+                }
+            };
+
+            // 3. Update the cleanup marker with the new oldest valid era.
+            HistoryCleanupMarker::<T>::mutate(|marker| {
+                marker.oldest_valid_era = oldest_valid_era;
+            });
+        }
+
         /// Attempt to cleanup some expired entries, if enough remaining weight & applicable entries exist.
         ///
         /// Returns consumed weight.
         fn expired_entry_cleanup(remaining_weight: &Weight) -> Weight {
-            // Need to be able to process full pass
+            // Need to be able to process one full pass
             if remaining_weight.any_lt(T::WeightInfo::on_idle_cleanup()) {
                 return Weight::zero();
             }
@@ -1975,56 +2013,35 @@ pub mod pallet {
             // Get the cleanup marker
             let mut cleanup_marker = HistoryCleanupMarker::<T>::get();
 
-            // Whitelisted storage, no need to account for the read.
-            let protocol_state = ActiveProtocolState::<T>::get();
-            let latest_expired_period = match protocol_state
-                .period_number()
-                .checked_sub(T::RewardRetentionInPeriods::get().saturating_add(1))
-            {
-                Some(latest_expired_period) => latest_expired_period,
-                None => {
-                    // Protocol hasn't advanced enough to have any expired entries.
-                    return T::WeightInfo::on_idle_cleanup();
+            // 1. Attempt to cleanup one expired `EraRewards` entry.
+            if cleanup_marker.era_reward_index < cleanup_marker.oldest_valid_era {
+                if let Some(era_reward) = EraRewards::<T>::get(cleanup_marker.era_reward_index) {
+                    // If oldest valid era comes AFTER this span, it's safe to delete it.
+                    if era_reward.last_era() < cleanup_marker.oldest_valid_era {
+                        EraRewards::<T>::remove(cleanup_marker.era_reward_index);
+                    }
+                } else {
+                    // Can happen if the entry is part of history before dApp staking v3
+                    log::warn!(
+                        target: LOG_TARGET,
+                        "Era rewards span for era {} is missing, but cleanup marker is set.",
+                        cleanup_marker.era_reward_index
+                    );
                 }
-            };
 
-            // Get the oldest valid era - any era before it is safe to be cleaned up.
-            let oldest_valid_era = match PeriodEnd::<T>::get(latest_expired_period) {
-                Some(period_end_info) => period_end_info.final_era.saturating_add(1),
-                None => {
-                    // Can happen if it's period 0 or if the entry has already been cleaned up.
-                    return T::WeightInfo::on_idle_cleanup();
-                }
-            };
+                // Always increment the cleanup marker
+                cleanup_marker
+                    .era_reward_index
+                    .saturating_accrue(T::EraRewardSpanLength::get());
 
-            // Attempt to cleanup one expired `EraRewards` entry.
-            if let Some(era_reward) = EraRewards::<T>::get(cleanup_marker.era_reward_index) {
-                // If oldest valid era comes AFTER this span, it's safe to delete it.
-                if era_reward.last_era() < oldest_valid_era {
-                    EraRewards::<T>::remove(cleanup_marker.era_reward_index);
-                    cleanup_marker
-                        .era_reward_index
-                        .saturating_accrue(T::EraRewardSpanLength::get());
-                }
-            } else {
-                // Should never happen, but if it does, log an error and move on.
-                log::error!(
-                    target: LOG_TARGET,
-                    "Era rewards span for era {} is missing, but cleanup marker is set.",
-                    cleanup_marker.era_reward_index
-                );
+                // TODO: update consumed weight
             }
 
-            // Attempt to cleanup one expired `DAppTiers` entry.
-            if cleanup_marker.dapp_tiers_index < oldest_valid_era {
+            // 2. Attempt to cleanup one expired `DAppTiers` entry.
+            if cleanup_marker.dapp_tiers_index <= cleanup_marker.oldest_valid_era {
                 DAppTiers::<T>::remove(cleanup_marker.dapp_tiers_index);
                 cleanup_marker.dapp_tiers_index.saturating_inc();
-            }
-
-            // One extra grace period before we cleanup period end info.
-            // This so we can always read the `final_era` of that period.
-            if let Some(period_end_cleanup) = latest_expired_period.checked_sub(1) {
-                PeriodEnd::<T>::remove(period_end_cleanup);
+                // TODO: update consumed weight
             }
 
             // Store the updated cleanup marker
@@ -2034,6 +2051,7 @@ pub mod pallet {
             // we opt for the simpler solution where only 1 entry per block is cleaned up.
             // It can be changed though.
 
+            // TODO: improve & optimize weight measurement here
             T::WeightInfo::on_idle_cleanup()
         }
     }
