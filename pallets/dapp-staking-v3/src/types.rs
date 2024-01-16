@@ -1045,8 +1045,10 @@ impl SingularStakingInfo {
         self.staked.era = self.staked.era.max(current_era);
 
         self.loyal_staker = self.loyal_staker
-            && (subperiod == Subperiod::Voting
-                || subperiod == Subperiod::BuildAndEarn && self.staked.voting == snapshot.voting);
+            && match subperiod {
+                Subperiod::Voting => !self.staked.voting.is_zero(),
+                Subperiod::BuildAndEarn => self.staked.voting == snapshot.voting,
+            };
 
         // Amount that was unstaked
         (
