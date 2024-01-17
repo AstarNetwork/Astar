@@ -228,7 +228,7 @@ parameter_types! {
     pub const MaxInstructions: u32 = 100;
     pub const MaxAssetsIntoHolding: u32 = 64;
 
-    pub const WeightPrice: (xcm::latest::AssetId, u128, u128) = (Concrete(TransactAssetLocation::get()), 1_000_000, 1024);
+    pub WeightPrice: (xcm::latest::AssetId, u128, u128) = (Concrete(Parent.into()), 1_000_000, 1024);
     pub const UnitWeightCost: u64 = 10;
 }
 
