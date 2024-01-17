@@ -171,7 +171,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 118,
+    spec_version: 119,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -380,39 +380,6 @@ impl pallet_preimage::Config for Runtime {
     type ByteDeposit = PreimageByteDeposit;
 }
 
-parameter_types! {
-    pub const BlockPerEra: BlockNumber = 4 * HOURS;
-    pub const RegisterDeposit: Balance = 100 * SBY;
-    pub const MaxNumberOfStakersPerContract: u32 = 2048;
-    pub const MinimumStakingAmount: Balance = 5 * SBY;
-    pub const MinimumRemainingAmount: Balance = SBY;
-    pub const MaxEraStakeValues: u32 = 5;
-    pub const MaxUnlockingChunks: u32 = 32;
-    pub const UnbondingPeriod: u32 = 2;
-}
-
-impl pallet_dapps_staking::Config for Runtime {
-    type Currency = Balances;
-    type BlockPerEra = BlockPerEra;
-    type SmartContract = SmartContract<AccountId>;
-    type RegisterDeposit = RegisterDeposit;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
-    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
-    type MinimumStakingAmount = MinimumStakingAmount;
-    type PalletId = DappsStakingPalletId;
-    type MaxUnlockingChunks = MaxUnlockingChunks;
-    type UnbondingPeriod = UnbondingPeriod;
-    type MinimumRemainingAmount = MinimumRemainingAmount;
-    type MaxEraStakeValues = MaxEraStakeValues;
-    type UnregisteredDappRewardRetention = ConstU32<10>;
-    // Needed so benchmark can use the pallets extrinsics
-    #[cfg(feature = "runtime-benchmarks")]
-    type ForcePalletDisabled = ConstBool<false>;
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type ForcePalletDisabled = ConstBool<true>;
-}
-
 impl pallet_static_price_provider::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
 }
@@ -438,6 +405,10 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
     }
 }
 
+parameter_types! {
+    pub const MinimumStakingAmount: Balance = 5 * SBY;
+}
+
 impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -452,7 +423,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RewardRetentionInPeriods = ConstU32<2>; // Low enough value so we can get some expired rewards during testing
     type MaxNumberOfContracts = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
-    type MinimumLockedAmount = MinimumStakingAmount; // Keep the same as the old pallet
+    type MinimumLockedAmount = MinimumStakingAmount;
     type UnlockingPeriod = ConstU32<4>; // Keep it low so it's easier to test
     type MaxNumberOfStakedContracts = ConstU32<8>;
     type MinimumStakeAmount = MinimumStakingAmount;
@@ -498,11 +469,6 @@ impl pallet_inflation::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_inflation::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_dapp_staking_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -1114,7 +1080,7 @@ pub enum ProxyType {
     Balances,
     /// All Runtime calls from Pallet Assets allowed for proxy account
     Assets,
-    /// Only Runtime Calls related to goverance for proxy account
+    /// Only Runtime Calls related to governance for proxy account
     /// To know exact calls check InstanceFilter implementation for ProxyTypes
     Governance,
     /// Only provide_judgement call from pallet identity allowed for proxy account
@@ -1334,10 +1300,6 @@ construct_runtime!(
 
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
-        // To be removed & cleaned up after migration has been finished
-        DappStakingMigration: pallet_dapp_staking_migration = 254,
-        // Legacy dApps staking v2, to be removed after migration has been finished
-        DappsStaking: pallet_dapps_staking = 255,
     }
 );
 
@@ -1384,11 +1346,25 @@ impl Get<FixedU64> for InitActivePriceGet {
         FixedU64::from_rational(1, 10)
     }
 }
+
+parameter_types! {
+    pub const DappsStakingV2Name: &'static str = "DappsStaking";
+    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
+}
+
 pub type Migrations = (
     pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
     pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,
     pallet_dapp_staking_v3::migrations::DappStakingV3HistoryCleanupMarkerReset<Runtime>,
     pallet_inflation::PalletInflationShibuyaMigration<Runtime, NextEraProvider>,
+    frame_support::migrations::RemovePallet<
+        DappsStakingV2Name,
+        <Runtime as frame_system::Config>::DbWeight,
+    >,
+    frame_support::migrations::RemovePallet<
+        DappStakingMigrationName,
+        <Runtime as frame_system::Config>::DbWeight,
+    >,
 );
 
 pub struct NextEraProvider;
@@ -1514,10 +1490,8 @@ mod benches {
         [pallet_assets, Assets]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapps_staking, DappsStaking]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
-        [pallet_dapp_staking_migration, DappStakingMigration]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
