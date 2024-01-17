@@ -1717,8 +1717,19 @@ pub enum DAppTierError {
 pub struct CleanupMarker {
     /// Era reward span index that should be checked & cleaned up next.
     #[codec(compact)]
-    pub era_reward_index: EraNumber,
+    pub(crate) era_reward_index: EraNumber,
     /// dApp tier rewards index that should be checked & cleaned up next.
     #[codec(compact)]
-    pub dapp_tiers_index: EraNumber,
+    pub(crate) dapp_tiers_index: EraNumber,
+    /// Oldest valid era or earliest era in the oldest valid period.
+    #[codec(compact)]
+    pub(crate) oldest_valid_era: EraNumber,
+}
+
+impl CleanupMarker {
+    /// Used to check whether there are any pending cleanups, according to marker values.
+    pub(crate) fn has_pending_cleanups(&self) -> bool {
+        self.era_reward_index != self.oldest_valid_era
+            || self.dapp_tiers_index != self.oldest_valid_era
+    }
 }

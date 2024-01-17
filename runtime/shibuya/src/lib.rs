@@ -1387,6 +1387,7 @@ impl Get<FixedU64> for InitActivePriceGet {
 pub type Migrations = (
     pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
     pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,
+    pallet_dapp_staking_v3::migrations::DappStakingV3HistoryCleanupMarkerReset<Runtime>,
     pallet_inflation::PalletInflationShibuyaMigration<Runtime, NextEraProvider>,
 );
 

@@ -490,7 +490,7 @@ mod benchmarks {
         #[extrinsic_call]
         claim_staker_rewards(RawOrigin::Signed(staker.clone()));
 
-        // No need to do precise check of values, but predetermiend amount of 'Reward' events is expected.
+        // No need to do precise check of values, but predetermined amount of 'Reward' events is expected.
         let dapp_staking_events = dapp_staking_events::<T>();
         assert_eq!(dapp_staking_events.len(), x as usize);
         dapp_staking_events.iter().for_each(|e| {
@@ -561,7 +561,7 @@ mod benchmarks {
         #[extrinsic_call]
         claim_staker_rewards(RawOrigin::Signed(staker.clone()));
 
-        // No need to do precise check of values, but predetermiend amount of 'Reward' events is expected.
+        // No need to do precise check of values, but predetermined amount of 'Reward' events is expected.
         let dapp_staking_events = dapp_staking_events::<T>();
         assert_eq!(dapp_staking_events.len(), x as usize);
         dapp_staking_events.iter().for_each(|e| {
@@ -662,7 +662,7 @@ mod benchmarks {
         // Advance enough eras so dApp reward can be claimed.
         force_advance_to_next_subperiod::<T>();
 
-        // This is a hacky part to ensure we accomodate max number of contracts.
+        // This is a hacky part to ensure we accommodate max number of contracts.
         TierConfig::<T>::mutate(|config| {
             let max_number_of_contracts: u16 = T::MaxNumberOfContracts::get().try_into().unwrap();
             config.number_of_slots = max_number_of_contracts;
@@ -840,6 +840,12 @@ mod benchmarks {
         // Register & stake contracts, just so we don't have empty stakes.
         prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
 
+        // Force advance enough periods into the future so we can ensure that history
+        // cleanup marker will be updated on the next period change.
+        let period_before_expiry_starts =
+            ActiveProtocolState::<T>::get().period_number() + T::RewardRetentionInPeriods::get();
+        force_advance_to_period::<T>(period_before_expiry_starts);
+
         // Advance to build&earn subperiod
         force_advance_to_next_subperiod::<T>();
         let snapshot_state = ActiveProtocolState::<T>::get();
@@ -853,7 +859,7 @@ mod benchmarks {
         );
         run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
 
-        // Some sanity checks, we should still be in the build&earn subperiod, and in the first period.
+        // Some sanity checks, we should still be in the build&earn subperiod, and in the same period as when snapshot was taken.
         assert_eq!(
             ActiveProtocolState::<T>::get().subperiod(),
             Subperiod::BuildAndEarn
@@ -867,6 +873,8 @@ mod benchmarks {
         DappStaking::<T>::on_finalize(new_era_start_block - 1);
         System::<T>::set_block_number(new_era_start_block);
 
+        let pre_cleanup_marker = HistoryCleanupMarker::<T>::get();
+
         #[block]
         {
             DappStaking::<T>::era_and_period_handler(new_era_start_block, TierAssignment::Dummy);
@@ -879,6 +887,9 @@ mod benchmarks {
         assert_eq!(
             ActiveProtocolState::<T>::get().period_number(),
             snapshot_state.period_number() + 1,
+        );
+        assert!(
+            HistoryCleanupMarker::<T>::get().oldest_valid_era > pre_cleanup_marker.oldest_valid_era
         );
     }
 
@@ -928,7 +939,7 @@ mod benchmarks {
 
     // Investigate why the PoV size is so large here, even after removing read of `IntegratedDApps` storage.
     // Relevant file: polkadot-sdk/substrate/utils/frame/benchmarking-cli/src/pallet/writer.rs
-    // UPDATE: after some investigation, it seems that PoV size benchmarks are very unprecise
+    // UPDATE: after some investigation, it seems that PoV size benchmarks are very imprecise
     // - the worst case measured is usually very far off the actual value that is consumed on chain.
     // There's an ongoing item to improve it (mentioned on roundtable meeting).
     #[benchmark]
@@ -960,39 +971,57 @@ mod benchmarks {
         // Prepare init config (protocol state, tier params & config, etc.)
         initial_config::<T>();
 
-        // Advance to era just after the last era covered by the first span.
-        // This is sufficient to completely fill up the first span with entries for the ongoing era.
-        force_advance_to_era::<T>(T::EraRewardSpanLength::get());
+        // Hack
+        // Manually prepare state prior to the cleanup to ensure worst case.
+        let cleanup_marker = CleanupMarker {
+            era_reward_index: 0,
+            dapp_tiers_index: 0,
+            oldest_valid_era: T::EraRewardSpanLength::get().into(),
+        };
+        HistoryCleanupMarker::<T>::put(cleanup_marker);
 
-        // Advance enough periods to make cleanup feasible.
-        let retention_period = T::RewardRetentionInPeriods::get();
-        force_advance_to_period::<T>(
-            ActiveProtocolState::<T>::get().period_number() + retention_period + 2,
+        // Prepare completely filled up reward span and insert it into storage.
+        let mut reward_span = EraRewardSpan::<_>::new();
+        (0..T::EraRewardSpanLength::get()).for_each(|era| {
+            assert_ok!(reward_span.push(
+                era as EraNumber,
+                EraReward {
+                    staker_reward_pool: 1_000_000_000_000,
+                    staked: 1_000_000_000_000,
+                    dapp_reward_pool: 1_000_000_000_000,
+                },
+            ));
+        });
+        EraRewards::<T>::insert(&cleanup_marker.era_reward_index, reward_span);
+
+        // Prepare completely filled up tier rewards and insert it into storage.
+        DAppTiers::<T>::insert(
+            &cleanup_marker.dapp_tiers_index,
+            DAppTierRewardsFor::<T> {
+                dapps: (0..T::MaxNumberOfContracts::get())
+                    .map(|dapp_id| (dapp_id as DAppId, 0))
+                    .collect::<BTreeMap<DAppId, TierId>>()
+                    .try_into()
+                    .expect("Using `MaxNumberOfContracts` as length; QED."),
+                rewards: vec![1_000_000_000_000; T::NumberOfTiers::get() as usize]
+                    .try_into()
+                    .expect("Using `NumberOfTiers` as length; QED."),
+                period: 1,
+            },
         );
 
-        let first_era_span_index = 0;
-        assert!(
-            EraRewards::<T>::contains_key(first_era_span_index),
-            "Sanity check - era reward span entry must exist."
-        );
-        let first_period = 1;
-        assert!(
-            PeriodEnd::<T>::contains_key(first_period),
-            "Sanity check - period end info must exist."
-        );
         let block_number = System::<T>::block_number();
-
         #[block]
         {
             DappStaking::<T>::on_idle(block_number, Weight::MAX);
         }
 
         assert!(
-            !EraRewards::<T>::contains_key(first_era_span_index),
-            "Entry should have been cleaned up."
+            !EraRewards::<T>::contains_key(cleanup_marker.era_reward_index),
+            "Reward span should have been cleaned up."
         );
         assert!(
-            !PeriodEnd::<T>::contains_key(first_period),
+            !DAppTiers::<T>::contains_key(cleanup_marker.dapp_tiers_index),
             "Period end info should have been cleaned up."
         );
     }

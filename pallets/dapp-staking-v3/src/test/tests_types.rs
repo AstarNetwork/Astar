@@ -2803,3 +2803,39 @@ fn dapp_tier_rewards_basic_tests() {
         "dApp doesn't exist in the list so no rewards can be claimed."
     );
 }
+
+#[test]
+fn cleanup_marker_works() {
+    let cleanup_marker = CleanupMarker::default();
+    assert!(!cleanup_marker.has_pending_cleanups());
+
+    let cleanup_marker = CleanupMarker {
+        era_reward_index: 1,
+        dapp_tiers_index: 2,
+        oldest_valid_era: 3,
+    };
+    assert!(
+        cleanup_marker.has_pending_cleanups(),
+        "There are pending cleanups for both era rewards and dApp tiers."
+    );
+
+    let cleanup_marker = CleanupMarker {
+        era_reward_index: 7,
+        dapp_tiers_index: 6,
+        oldest_valid_era: 7,
+    };
+    assert!(
+        cleanup_marker.has_pending_cleanups(),
+        "There are pending cleanups for dApp tiers."
+    );
+
+    let cleanup_marker = CleanupMarker {
+        era_reward_index: 9,
+        dapp_tiers_index: 11,
+        oldest_valid_era: 11,
+    };
+    assert!(
+        cleanup_marker.has_pending_cleanups(),
+        "There are pending cleanups for era reward spans."
+    );
+}
