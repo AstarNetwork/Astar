@@ -76,6 +76,7 @@ use frame_support::{
     },
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
+pub use pallet::*;
 use pallet_evm::AddressMapping;
 use precompile_utils::keccak256;
 use sp_core::{H160, H256, U256};
@@ -85,8 +86,6 @@ use sp_runtime::{
     MultiAddress,
 };
 use sp_std::marker::PhantomData;
-
-pub use pallet::*;
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -296,12 +295,14 @@ impl<T: Config> Pallet<T> {
         keccak_256(&payload)
     }
 
-    pub fn verify_signature(who: &T::AccountId, sig: &EvmSignature) -> Option<EvmAddress> {
+    pub fn recover_pubkey(who: &T::AccountId, sig: &EvmSignature) -> Option<[u8; 64]> {
         let payload_hash = Self::build_signing_payload(who);
+        sp_io::crypto::secp256k1_ecdsa_recover(sig, &payload_hash).ok()
+    }
 
-        sp_io::crypto::secp256k1_ecdsa_recover(sig, &payload_hash)
+    pub fn verify_signature(who: &T::AccountId, sig: &EvmSignature) -> Option<EvmAddress> {
+        Self::recover_pubkey(who, sig)
             .map(|pubkey| H160::from(H256::from_slice(&keccak_256(&pubkey))))
-            .ok()
     }
 
     fn build_domain_separator() -> [u8; 32] {

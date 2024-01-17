@@ -8029,6 +8029,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-precompile-rescue-lockdrop"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "derive_more",
+ "ethers",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal",
+ "libsecp256k1",
+ "log",
+ "num_enum 0.5.11",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-timestamp",
+ "pallet-unified-accounts",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.43#a5481542518ec420352d263adcb2f78835ac9bc2"
@@ -8858,6 +8887,7 @@ dependencies = [
  "parity-scale-codec",
  "precompile-utils",
  "scale-info",
+ "signature 1.6.4",
  "sp-core",
  "sp-io",
  "sp-runtime",

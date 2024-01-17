@@ -397,3 +397,35 @@ fn charging_storage_fee_should_not_reap_account() {
         );
     });
 }
+
+#[test]
+fn recover_public_key_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        let claim = Claim {
+            substrate_address: ALICE.encode().into(),
+        };
+
+        let claim_hash = UnifiedAccounts::build_signing_payload(&ALICE);
+        // assert signing payload is correct
+        assert_eq!(
+            claim.encode_eip712().unwrap(),
+            claim_hash,
+            "signing payload should match"
+        );
+
+        // sign the payload
+        let signature = UnifiedAccounts::eth_sign_prehash(&claim_hash, &alice_secret());
+
+        let expected_pubkey =
+            &libsecp256k1::PublicKey::from_secret_key(&alice_secret()).serialize()[1..65];
+
+        // assert public key recovery works
+        assert_eq!(
+            expected_pubkey,
+            UnifiedAccounts::recover_pubkey(&ALICE, &signature)
+                .unwrap()
+                .as_ref(),
+            "recover public key should work"
+        );
+    });
+}
