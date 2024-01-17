@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.28.0"
+version = "5.29.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -101,9 +101,7 @@ astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-collator-selection = { workspace = true }
-pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
-pallet-dapps-staking = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
@@ -193,9 +191,7 @@ std = [
 	"pallet-evm-precompile-xcm/std",
 	"pallet-evm-precompile-xvm/std",
 	"pallet-evm-precompile-unified-accounts/std",
-	"pallet-dapps-staking/std",
 	"pallet-dapp-staking-v3/std",
-	"pallet-dapp-staking-migration/std",
 	"dapp-staking-v3-runtime-api/std",
 	"pallet-inflation/std",
 	"pallet-static-price-provider/std",
@@ -256,9 +252,7 @@ runtime-benchmarks = [
 	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
-	"pallet-dapps-staking/runtime-benchmarks",
 	"pallet-dapp-staking-v3/runtime-benchmarks",
-	"pallet-dapp-staking-migration/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
@@ -286,9 +280,7 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
-	"pallet-dapps-staking/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
-	"pallet-dapp-staking-migration/try-runtime",
 	"pallet-inflation/try-runtime",
 	"pallet-static-price-provider/try-runtime",
 	"pallet-sudo/try-runtime",
