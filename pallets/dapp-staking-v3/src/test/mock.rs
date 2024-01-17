@@ -36,7 +36,11 @@ use sp_runtime::{
 };
 use sp_std::cell::RefCell;
 
-use astar_primitives::{dapp_staking::SmartContract, testing::Header, Balance, BlockNumber};
+use astar_primitives::{
+    dapp_staking::{Observer as DappStakingObserver, SmartContract},
+    testing::Header,
+    Balance, BlockNumber,
+};
 
 pub(crate) type AccountId = u64;
 
@@ -117,6 +121,7 @@ impl PriceProvider for DummyPriceProvider {
 
 thread_local! {
     pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
+    pub(crate) static BLOCK_BEFORE_NEW_ERA: RefCell<EraNumber> = RefCell::new(0);
 }
 
 pub struct DummyStakingRewardHandler;
@@ -180,6 +185,14 @@ impl CycleConfiguration for DummyCycleConfiguration {
     }
 }
 
+pub struct DummyDappStakingObserver;
+impl DappStakingObserver for DummyDappStakingObserver {
+    fn block_before_new_era(next_era: EraNumber) -> Weight {
+        BLOCK_BEFORE_NEW_ERA.with(|v| *v.borrow_mut() = next_era);
+        Weight::from_parts(1, 2)
+    }
+}
+
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -189,6 +202,7 @@ impl pallet_dapp_staking::Config for Test {
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
+    type Observers = DummyDappStakingObserver;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;

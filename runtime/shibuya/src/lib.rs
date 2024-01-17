@@ -68,13 +68,13 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContract},
+    dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Index,
 };
-
 pub use astar_primitives::{AccountId, Balance, Signature};
+
 pub use pallet_dapp_staking_v3::TierThreshold;
 pub use pallet_inflation::InflationParameters;
 
@@ -447,6 +447,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = StaticPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
+    type Observers = Inflation;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<2>; // Low enough value so we can get some expired rewards during testing
     type MaxNumberOfContracts = ConstU32<500>;
@@ -474,15 +475,15 @@ impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerB
 
 pub struct InflationCycleConfig;
 impl CycleConfiguration for InflationCycleConfig {
-    fn periods_per_cycle() -> u32 {
+    fn periods_per_cycle() -> PeriodNumber {
         2
     }
 
-    fn eras_per_voting_subperiod() -> u32 {
+    fn eras_per_voting_subperiod() -> EraNumber {
         8
     }
 
-    fn eras_per_build_and_earn_subperiod() -> u32 {
+    fn eras_per_build_and_earn_subperiod() -> EraNumber {
         20
     }
 
@@ -756,7 +757,7 @@ impl WeightToFeePolynomial for WeightToFee {
     }
 }
 
-/// Handles coverting weight consumed by XCM into native currency fee.
+/// Handles converting weight consumed by XCM into native currency fee.
 ///
 /// Similar to standard `WeightToFee` handler, but force uses the minimum multiplier.
 pub struct XcmWeightToFee;
@@ -1386,7 +1387,56 @@ impl Get<FixedU64> for InitActivePriceGet {
 pub type Migrations = (
     pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
     pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,
+    pallet_inflation::PalletInflationShibuyaMigration<Runtime, NextEraProvider>,
 );
+
+pub struct NextEraProvider;
+impl Get<(EraNumber, Weight)> for NextEraProvider {
+    fn get() -> (EraNumber, Weight) {
+        // Prior to executing the migration, `recalculation_era` is still set to the old `recalculation_block`
+        let target_block =
+            pallet_inflation::ActiveInflationConfig::<Runtime>::get().recalculation_era;
+
+        let state = pallet_dapp_staking_v3::ActiveProtocolState::<Runtime>::get();
+
+        // Best case scenario, the target era is the first era of the next period.
+        use pallet_dapp_staking_v3::Subperiod;
+        let mut target_era = match state.subperiod() {
+            Subperiod::Voting => state.era.saturating_add(
+                InflationCycleConfig::eras_per_build_and_earn_subperiod().saturating_add(1),
+            ),
+            Subperiod::BuildAndEarn => state.next_subperiod_start_era(),
+        };
+
+        // Adding the whole period length in blocks to the current block number, and comparing it with the target
+        // is good enough to find the target era.
+        let period_length_in_blocks = InflationCycleConfig::blocks_per_cycle()
+            / InflationCycleConfig::periods_per_cycle().max(1);
+        let mut block = System::block_number().saturating_add(period_length_in_blocks);
+
+        // Max number of iterations is the number of periods per cycle, it's not possible for more than that to occur.
+        let mut limit = InflationCycleConfig::periods_per_cycle();
+
+        use sp_runtime::traits::Saturating;
+        while block < target_block && limit > 0 {
+            target_era.saturating_accrue(InflationCycleConfig::eras_per_period());
+            block.saturating_accrue(period_length_in_blocks);
+
+            limit.saturating_dec()
+        }
+
+        #[cfg(feature = "try-runtime")]
+        if block < target_block {
+            panic!("Failed to find target era for migration, please check for errors");
+        }
+
+        // A bit overestimated weight, but it's fine since we have some calculations to execute in this function which consume some time.
+        (
+            target_era,
+            <Runtime as frame_system::Config>::DbWeight::get().reads(3),
+        )
+    }
+}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1934,15 +1984,15 @@ impl_runtime_apis! {
     }
 
     impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
-        fn periods_per_cycle() -> pallet_dapp_staking_v3::PeriodNumber {
+        fn periods_per_cycle() -> PeriodNumber {
             InflationCycleConfig::periods_per_cycle()
         }
 
-        fn eras_per_voting_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+        fn eras_per_voting_subperiod() -> EraNumber {
             InflationCycleConfig::eras_per_voting_subperiod()
         }
 
-        fn eras_per_build_and_earn_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+        fn eras_per_build_and_earn_subperiod() -> EraNumber {
             InflationCycleConfig::eras_per_build_and_earn_subperiod()
         }
 
@@ -1950,7 +2000,7 @@ impl_runtime_apis! {
             InflationCycleConfig::blocks_per_era()
         }
 
-        fn get_dapp_tier_assignment() -> BTreeMap<pallet_dapp_staking_v3::DAppId, pallet_dapp_staking_v3::TierId> {
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
             DappStaking::get_dapp_tier_assignment()
         }
     }

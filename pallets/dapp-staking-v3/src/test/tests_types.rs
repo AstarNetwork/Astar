@@ -382,7 +382,7 @@ fn account_ledger_staked_amount_for_type_works() {
         build_and_earn_1
     );
 
-    // Inocrrect period should simply return 0
+    // Incorrect period should simply return 0
     assert!(acc_ledger
         .staked_amount_for_type(Subperiod::Voting, period - 1)
         .is_zero());
@@ -816,7 +816,7 @@ fn account_ledger_add_stake_amount_too_large_amount_fails() {
         Err(AccountLedgerError::UnavailableStakeFunds)
     );
 
-    // Additional check - have some active stake, and then try to overstake
+    // Additional check - have some active stake, and then try to stake more than available
     assert!(acc_ledger
         .add_stake_amount(lock_amount - 2, era_1, period_info_1)
         .is_ok());
@@ -2113,7 +2113,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         "Stake era should remain valid."
     );
 
-    // Fully unstake, attempting to undersaturate, and ensure loyalty flag is still true.
+    // Fully unstake, attempting to underflow, and ensure loyalty flag has been removed.
     let era_2 = era_1 + 2;
     let remaining_stake = staking_info.total_staked_amount();
     assert_eq!(
@@ -2121,7 +2121,10 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         (remaining_stake, Balance::zero())
     );
     assert!(staking_info.total_staked_amount().is_zero());
-    assert!(staking_info.is_loyal());
+    assert!(
+        !staking_info.is_loyal(),
+        "Loyalty flag should have been removed since it was full unstake."
+    );
     assert_eq!(staking_info.era(), era_2);
 }
 
@@ -2507,7 +2510,7 @@ fn contract_stake_amount_unstake_is_ok() {
     );
     assert!(
         contract_stake.staked_future.is_none(),
-        "future enry should remain 'None'"
+        "future entry should remain 'None'"
     );
 
     // 4th scenario - do a full unstake with existing future entry, expect a cleanup

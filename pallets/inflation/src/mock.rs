@@ -53,7 +53,7 @@ pub const INIT_PARAMS: InflationParameters = InflationParameters {
 
 /// Initial inflation config set by the mock.
 pub const INIT_CONFIG: InflationConfiguration = InflationConfiguration {
-    recalculation_block: 100,
+    recalculation_era: 100,
     issuance_safety_cap: 1_000_000,
     collator_reward_per_block: 1000,
     treasury_reward_per_block: 1500,
@@ -194,15 +194,5 @@ impl ExternalityBuilder {
             Inflation::on_initialize(1);
         });
         ext
-    }
-}
-
-/// Advance to the specified block number.
-/// Function assumes first block has been initialized.
-pub(crate) fn advance_to_block(n: BlockNumber) {
-    while System::block_number() < n {
-        Inflation::on_finalize(System::block_number());
-        System::set_block_number(System::block_number() + 1);
-        Inflation::on_initialize(System::block_number());
     }
 }

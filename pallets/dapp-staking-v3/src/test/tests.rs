@@ -30,12 +30,12 @@ use frame_support::{
 use sp_runtime::traits::Zero;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContractHandle},
+    dapp_staking::{CycleConfiguration, EraNumber, SmartContractHandle},
     Balance, BlockNumber,
 };
 
 #[test]
-fn maintenace_mode_works() {
+fn maintenances_mode_works() {
     ExtBuilder::build().execute_with(|| {
         // Check that maintenance mode is disabled by default
         assert!(!ActiveProtocolState::<Test>::get().maintenance);
@@ -63,7 +63,7 @@ fn maintenace_mode_works() {
 }
 
 #[test]
-fn maintenace_mode_call_filtering_works() {
+fn maintenance_mode_call_filtering_works() {
     ExtBuilder::build().execute_with(|| {
         // Enable maintenance mode & check post-state
         assert_ok!(DappStaking::maintenance_mode(RuntimeOrigin::root(), true));
@@ -237,7 +237,7 @@ fn on_initialize_base_state_change_works() {
             assert_eq!(protocol_state.era, era + 1);
         }
 
-        // Finaly advance over to the next era and ensure we're back to voting period
+        // Finally advance over to the next era and ensure we're back to voting period
         advance_to_next_era();
         let protocol_state = ActiveProtocolState::<Test>::get();
         assert_eq!(protocol_state.subperiod(), Subperiod::Voting);
@@ -356,7 +356,7 @@ fn set_dapp_reward_beneficiary_fails() {
             Error::<Test>::ContractNotFound
         );
 
-        // Non-owner cannnot change reward destination
+        // Non-owner cannot change reward destination
         assert_register(owner, &smart_contract);
         assert_noop!(
             DappStaking::set_dapp_reward_beneficiary(
@@ -582,7 +582,7 @@ fn unlock_with_remaining_amount_below_threshold_is_ok() {
 }
 
 #[test]
-fn unlock_with_amount_higher_than_avaiable_is_ok() {
+fn unlock_with_amount_higher_than_available_is_ok() {
     ExtBuilder::build().execute_with(|| {
         // Lock some amount in a few eras
         let account = 2;
@@ -720,7 +720,7 @@ fn unlock_with_exceeding_unlocking_chunks_storage_limits_fails() {
 #[test]
 fn withdraw_unbonded_is_ok() {
     ExtBuilder::build().execute_with(|| {
-        // Lock & immediatelly unlock some amount
+        // Lock & immediately unlock some amount
         let account = 2;
         let lock_amount = 97;
         let unlock_amount = 11;
@@ -1523,7 +1523,7 @@ fn claim_staker_rewards_fails_due_to_payout_failure() {
         // Advance into Build&Earn period, and allow one era to pass.
         advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
 
-        // Disable successfull reward payout
+        // Disable successful reward payout
         DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = false);
         assert_noop!(
             DappStaking::claim_staker_rewards(RuntimeOrigin::signed(account)),
@@ -1705,7 +1705,7 @@ fn claim_bonus_reward_fails_due_to_payout_failure() {
         // Advance to next period so we can claim bonus reward
         advance_to_next_period();
 
-        // Disable successfull reward payout
+        // Disable successful reward payout
         DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = false);
         assert_noop!(
             DappStaking::claim_bonus_reward(RuntimeOrigin::signed(account), smart_contract),
@@ -1904,7 +1904,7 @@ fn claim_dapp_reward_fails_due_to_payout_failure() {
         // Advance 2 eras so we have an entry for reward claiming
         advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
 
-        // Disable successfull reward payout
+        // Disable successful reward payout
         DOES_PAYOUT_SUCCEED.with(|v| *v.borrow_mut() = false);
         assert_noop!(
             DappStaking::claim_dapp_reward(
@@ -2438,11 +2438,6 @@ fn advance_for_some_periods_works() {
     })
 }
 
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-/////// More complex & composite scenarios, maybe move them into a separate file
-
 #[test]
 fn unlock_after_staked_period_ends_is_ok() {
     ExtBuilder::build().execute_with(|| {
@@ -2571,7 +2566,7 @@ fn stake_after_period_ends_with_max_staked_contracts() {
 }
 
 #[test]
-fn post_unlock_balance_cannot_be_transfered() {
+fn post_unlock_balance_cannot_be_transferred() {
     ExtBuilder::build().execute_with(|| {
         let staker = 2;
 
@@ -2626,5 +2621,53 @@ fn post_unlock_balance_cannot_be_transfered() {
             "Everything should have been transferred."
         );
         assert!(Balances::free_balance(&staker).is_zero());
+    })
+}
+
+#[test]
+fn observer_pre_new_era_block_works() {
+    ExtBuilder::build().execute_with(|| {
+        fn assert_observer_value(expected: EraNumber) {
+            BLOCK_BEFORE_NEW_ERA.with(|v| assert_eq!(expected, *v.borrow()));
+        }
+
+        // 1. Sanity check
+        assert_observer_value(0);
+
+        // 2. Advance to the block right before the observer value should be set.
+        //    No modifications should happen.
+        BLOCK_BEFORE_NEW_ERA.with(|v| {
+            let _lock = v.borrow();
+            run_to_block(ActiveProtocolState::<Test>::get().next_era_start - 2);
+        });
+
+        // 3. Advance to the next block, when observer value is expected to be set to the next era.
+        run_for_blocks(1);
+        assert_observer_value(2);
+
+        // 4. Advance again, until the same similar scenario
+        BLOCK_BEFORE_NEW_ERA.with(|v| {
+            let _lock = v.borrow();
+            run_for_blocks(1);
+            assert_eq!(
+                ActiveProtocolState::<Test>::get().subperiod(),
+                Subperiod::BuildAndEarn,
+                "Sanity check."
+            );
+
+            run_to_block(ActiveProtocolState::<Test>::get().next_era_start - 2);
+            assert_eq!(ActiveProtocolState::<Test>::get().era, 2, "Sanity check.");
+            assert_observer_value(2);
+        });
+
+        // 5. Again, check that value is set to the expected one.
+        run_for_blocks(1);
+        assert_observer_value(3);
+
+        // 6. Force new era, and ensure observer value is set to the next one.
+        run_for_blocks(1);
+        assert_eq!(ActiveProtocolState::<Test>::get().era, 3, "Sanity check.");
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        assert_observer_value(4);
     })
 }

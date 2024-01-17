@@ -51,7 +51,10 @@ use sp_runtime::{
 pub use sp_std::vec::Vec;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContractHandle, StakingRewardHandler},
+    dapp_staking::{
+        CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver, PeriodNumber,
+        SmartContractHandle, StakingRewardHandler, TierId,
+    },
     oracle::PriceProvider,
     Balance, BlockNumber,
 };
@@ -137,6 +140,9 @@ pub mod pallet {
 
         /// Describes era length, subperiods & period length, as well as cycle length.
         type CycleConfiguration: CycleConfiguration;
+
+        /// dApp staking event observers, notified when certain events occur.
+        type Observers: DAppStakingObserver;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -1490,16 +1496,12 @@ pub mod pallet {
             .into())
         }
 
-        // TODO: this call should be removed prior to mainnet launch.
-        // It's super useful for testing purposes, but even though force is used in this pallet & works well,
-        // it won't apply to the inflation recalculation logic - which is wrong.
-        // Probably for this call to make sense, an outside logic should handle both inflation & dApp staking state changes.
-
+        // TODO: make this unavailable in production, to be only used for testing
         /// Used to force a change of era or subperiod.
         /// The effect isn't immediate but will happen on the next block.
         ///
         /// Used for testing purposes, when we want to force an era change, or a subperiod change.
-        /// Not intended to be used in production, except in case of unforseen circumstances.
+        /// Not intended to be used in production, except in case of unforeseen circumstances.
         ///
         /// Can only be called by manager origin.
         #[pallet::call_index(18)]
@@ -1519,6 +1521,12 @@ pub mod pallet {
                         state.period_info.next_subperiod_start_era = state.era.saturating_add(1);
                     }
                 }
+
+                //       Right now it won't account for the full weight incurred by calling this notification.
+                //       It's not a big problem since this call is not expected to be called ever in production.
+                //       Also, in case of subperiod forcing, the alignment will be broken but since this is only call for testing,
+                //       we don't need to concern ourselves with it.
+                Self::notify_block_before_new_era(&state);
             });
 
             Self::deposit_event(Event::<T>::Force { forcing_type });
@@ -1787,6 +1795,12 @@ pub mod pallet {
                 return consumed_weight;
             }
 
+            // Inform observers about the upcoming new era, if it's the case.
+            if protocol_state.next_era_start == now.saturating_add(1) {
+                consumed_weight
+                    .saturating_accrue(Self::notify_block_before_new_era(&protocol_state));
+            }
+
             // Nothing to do if it's not new era
             if !protocol_state.is_new_era(now) {
                 return consumed_weight;
@@ -1941,6 +1955,12 @@ pub mod pallet {
             }
 
             consumed_weight
+        }
+
+        /// Used to notify observers about the upcoming new era in the next block.
+        fn notify_block_before_new_era(protocol_state: &ProtocolState) -> Weight {
+            let next_era = protocol_state.era.saturating_add(1);
+            T::Observers::block_before_new_era(next_era)
         }
 
         /// Attempt to cleanup some expired entries, if enough remaining weight & applicable entries exist.

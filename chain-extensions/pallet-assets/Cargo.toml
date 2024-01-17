@@ -46,3 +46,5 @@ std = [
 	"assets-chain-extension-types/std",
 	"pallet-balances/std",
 ]
+try-runtime = ["frame-support/try-runtime"]
+runtime-benchmarks = ["pallet-assets/runtime-benchmarks"]

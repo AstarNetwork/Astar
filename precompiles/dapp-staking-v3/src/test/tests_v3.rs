@@ -25,8 +25,11 @@ use sp_core::H160;
 
 use assert_matches::assert_matches;
 
-use astar_primitives::{dapp_staking::CycleConfiguration, BlockNumber};
-use pallet_dapp_staking_v3::{ActiveProtocolState, EraNumber};
+use astar_primitives::{
+    dapp_staking::{CycleConfiguration, EraNumber},
+    BlockNumber,
+};
+use pallet_dapp_staking_v3::ActiveProtocolState;
 
 #[test]
 fn protocol_state_is_ok() {

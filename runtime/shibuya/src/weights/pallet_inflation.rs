@@ -57,48 +57,45 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 9_036_000 picoseconds.
-		Weight::from_parts(9_186_000, 0)
+		// Minimum execution time: 9_487_000 picoseconds.
+		Weight::from_parts(9_652_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	fn force_set_inflation_config() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 9_073_000 picoseconds.
-		Weight::from_parts(9_411_000, 0)
+		// Minimum execution time: 9_168_000 picoseconds.
+		Weight::from_parts(9_436_000, 0)
 	}
 	/// Storage: Inflation InflationParams (r:1 w:0)
 	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
 	fn force_inflation_recalculation() -> Weight {
 		// Proof Size summary in bytes:
+		//  Measured:  `40`
+		//  Estimated: `1549`
+		// Minimum execution time: 13_496_000 picoseconds.
+		Weight::from_parts(13_762_000, 1549)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
+	/// Storage: Inflation InflationParams (r:1 w:0)
+	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
+	fn recalculation() -> Weight {
+		// Proof Size summary in bytes:
 		//  Measured:  `58`
 		//  Estimated: `1549`
-		// Minimum execution time: 14_839_000 picoseconds.
-		Weight::from_parts(15_198_000, 1549)
+		// Minimum execution time: 13_811_000 picoseconds.
+		Weight::from_parts(13_995_000, 1549)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	/// Storage: System Account (r:2 w:1)
 	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: Inflation InflationParams (r:1 w:0)
-	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
-	fn hook_with_recalculation() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `232`
-		//  Estimated: `6196`
-		// Minimum execution time: 31_965_000 picoseconds.
-		Weight::from_parts(32_498_000, 6196)
-			.saturating_add(T::DbWeight::get().reads(3_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
-	/// Storage: System Account (r:2 w:1)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	fn hook_without_recalculation() -> Weight {
+	fn hooks_without_recalculation() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `174`
 		//  Estimated: `6196`
-		// Minimum execution time: 22_235_000 picoseconds.
-		Weight::from_parts(22_378_000, 6196)
+		// Minimum execution time: 21_351_000 picoseconds.
+		Weight::from_parts(21_749_000, 6196)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}

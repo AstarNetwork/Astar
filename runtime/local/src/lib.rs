@@ -61,7 +61,7 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContract},
+    dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     Address, AssetId, Balance, BlockNumber, Hash, Header, Index,
 };
@@ -514,6 +514,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = StaticPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
+    type Observers = Inflation;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<100>;
@@ -541,15 +542,15 @@ impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerB
 
 pub struct InflationCycleConfig;
 impl CycleConfiguration for InflationCycleConfig {
-    fn periods_per_cycle() -> u32 {
+    fn periods_per_cycle() -> PeriodNumber {
         4
     }
 
-    fn eras_per_voting_subperiod() -> u32 {
+    fn eras_per_voting_subperiod() -> EraNumber {
         2
     }
 
-    fn eras_per_build_and_earn_subperiod() -> u32 {
+    fn eras_per_build_and_earn_subperiod() -> EraNumber {
         22
     }
 
@@ -962,13 +963,13 @@ pub enum ProxyType {
     Balances,
     /// All Runtime calls from Pallet Assets allowed for proxy account
     Assets,
-    /// Only Runtime Calls related to goverance for proxy account
+    /// Only Runtime Calls related to governance for proxy account
     /// To know exact calls check InstanceFilter implementation for ProxyTypes
     Governance,
     /// Only reject_announcement call from pallet proxy allowed for proxy account
     CancelProxy,
     /// All runtime calls from pallet DappStaking allowed for proxy account
-    DappsStaking,
+    DappStaking,
     /// Only claim_staker call from pallet DappStaking allowed for proxy account
     StakerRewardClaim,
 }
@@ -1036,13 +1037,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                 )
             }
             // All runtime calls from pallet DappStaking allowed for proxy account
-            ProxyType::DappsStaking => {
-                matches!(c, RuntimeCall::DappsStaking(..))
+            ProxyType::DappStaking => {
+                matches!(c, RuntimeCall::DappStaking(..))
             }
             ProxyType::StakerRewardClaim => {
                 matches!(
                     c,
-                    RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
+                    RuntimeCall::DappStaking(
+                        pallet_dapp_staking_v3::Call::claim_staker_rewards { .. }
+                    )
                 )
             }
         }
@@ -1054,7 +1057,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             (ProxyType::Any, _) => true,
             (_, ProxyType::Any) => false,
             (ProxyType::NonTransfer, _) => true,
-            (ProxyType::DappsStaking, ProxyType::StakerRewardClaim) => true,
+            (ProxyType::DappStaking, ProxyType::StakerRewardClaim) => true,
             _ => false,
         }
     }
@@ -1728,15 +1731,15 @@ impl_runtime_apis! {
     }
 
     impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
-        fn periods_per_cycle() -> pallet_dapp_staking_v3::PeriodNumber {
+        fn periods_per_cycle() -> PeriodNumber {
             InflationCycleConfig::periods_per_cycle()
         }
 
-        fn eras_per_voting_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+        fn eras_per_voting_subperiod() -> EraNumber {
             InflationCycleConfig::eras_per_voting_subperiod()
         }
 
-        fn eras_per_build_and_earn_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+        fn eras_per_build_and_earn_subperiod() -> EraNumber {
             InflationCycleConfig::eras_per_build_and_earn_subperiod()
         }
 
@@ -1744,7 +1747,7 @@ impl_runtime_apis! {
             InflationCycleConfig::blocks_per_era()
         }
 
-        fn get_dapp_tier_assignment() -> BTreeMap<pallet_dapp_staking_v3::DAppId, pallet_dapp_staking_v3::TierId> {
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
             DappStaking::get_dapp_tier_assignment()
         }
     }

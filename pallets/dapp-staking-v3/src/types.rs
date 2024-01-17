@@ -73,7 +73,10 @@ use sp_runtime::{
 };
 pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
-use astar_primitives::{Balance, BlockNumber};
+use astar_primitives::{
+    dapp_staking::{DAppId, EraNumber, PeriodNumber, TierId},
+    Balance, BlockNumber,
+};
 
 use crate::pallet::Config;
 
@@ -89,15 +92,6 @@ pub type EraRewardSpanFor<T> = EraRewardSpan<<T as Config>::EraRewardSpanLength>
 
 // Convenience type for `DAppInfo` usage.
 pub type DAppInfoFor<T> = DAppInfo<<T as frame_system::Config>::AccountId>;
-
-/// Era number type
-pub type EraNumber = u32;
-/// Period number type
-pub type PeriodNumber = u32;
-/// Dapp Id type
-pub type DAppId = u16;
-/// Tier Id type
-pub type TierId = u8;
 
 /// Simple enum representing errors possible when using sparse bounded vector.
 #[derive(Debug, PartialEq, Eq)]
@@ -1051,8 +1045,10 @@ impl SingularStakingInfo {
         self.staked.era = self.staked.era.max(current_era);
 
         self.loyal_staker = self.loyal_staker
-            && (subperiod == Subperiod::Voting
-                || subperiod == Subperiod::BuildAndEarn && self.staked.voting == snapshot.voting);
+            && match subperiod {
+                Subperiod::Voting => !self.staked.voting.is_zero(),
+                Subperiod::BuildAndEarn => self.staked.voting == snapshot.voting,
+            };
 
         // Amount that was unstaked
         (
