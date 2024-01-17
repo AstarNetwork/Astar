@@ -43,7 +43,7 @@ mod benchmarks {
         let fee_asset = Concrete(MultiLocation::parent());
 
         let instruction = Instruction::<XcmCallOf<T>>::BuyExecution {
-            fees: (fee_asset, 100_000_000u128).into(), // should be something inside of holding
+            fees: (fee_asset, u128::MAX).into(), // should be something inside of holding
             // this should not be Unlimited, as xcm-executor will skip buying the
             // exceution altogether.
             weight_limit: WeightLimit::Limited(Weight::from_parts(1u64, 1024)),
