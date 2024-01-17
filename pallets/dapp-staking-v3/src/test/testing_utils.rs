@@ -703,9 +703,14 @@ pub(crate) fn assert_unstake(
         );
 
         let is_loyal = pre_staker_info.is_loyal()
-            && !(unstake_subperiod == Subperiod::BuildAndEarn
-                && post_staker_info.staked_amount(Subperiod::Voting)
-                    < pre_staker_info.staked_amount(Subperiod::Voting));
+            && match unstake_subperiod {
+                Subperiod::Voting => !post_staker_info.staked_amount(Subperiod::Voting).is_zero(),
+                Subperiod::BuildAndEarn => {
+                    post_staker_info.staked_amount(Subperiod::Voting)
+                        == pre_staker_info.staked_amount(Subperiod::Voting)
+                }
+            };
+
         assert_eq!(
             post_staker_info.is_loyal(),
             is_loyal,
@@ -782,7 +787,7 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
         .earliest_staked_era()
         .expect("Entry must exist, otherwise 'claim' is invalid.");
 
-    // Get the apprropriate era rewards span for the 'first era'
+    // Get the appropriate era rewards span for the 'first era'
     let era_span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
     let era_span_index = first_claim_era - (first_claim_era % era_span_length);
     let era_rewards_span = pre_snapshot
