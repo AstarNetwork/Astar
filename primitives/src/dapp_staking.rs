@@ -20,9 +20,18 @@ use super::{Balance, BlockNumber};
 
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
-use frame_support::RuntimeDebug;
+use frame_support::{pallet_prelude::Weight, RuntimeDebug};
 use sp_core::H160;
 use sp_std::hash::Hash;
+
+/// Era number type
+pub type EraNumber = u32;
+/// Period number type
+pub type PeriodNumber = u32;
+/// Dapp Id type
+pub type DAppId = u16;
+/// Tier Id type
+pub type TierId = u8;
 
 /// Configuration for cycles, periods, subperiods & eras.
 ///
@@ -35,17 +44,17 @@ pub trait CycleConfiguration {
     /// How many different periods are there in a cycle (a 'year').
     ///
     /// This value has to be at least 1.
-    fn periods_per_cycle() -> u32;
+    fn periods_per_cycle() -> PeriodNumber;
 
     /// For how many standard era lengths does the voting subperiod last.
     ///
     /// This value has to be at least 1.
-    fn eras_per_voting_subperiod() -> u32;
+    fn eras_per_voting_subperiod() -> EraNumber;
 
     /// How many standard eras are there in the build&earn subperiod.
     ///
     /// This value has to be at least 1.
-    fn eras_per_build_and_earn_subperiod() -> u32;
+    fn eras_per_build_and_earn_subperiod() -> EraNumber;
 
     /// How many blocks are there per standard era.
     ///
@@ -53,12 +62,12 @@ pub trait CycleConfiguration {
     fn blocks_per_era() -> BlockNumber;
 
     /// For how many standard era lengths does the period last.
-    fn eras_per_period() -> u32 {
+    fn eras_per_period() -> EraNumber {
         Self::eras_per_voting_subperiod().saturating_add(Self::eras_per_build_and_earn_subperiod())
     }
 
-    /// For how many standard era lengths does the cylce (a 'year') last.
-    fn eras_per_cycle() -> u32 {
+    /// For how many standard era lengths does the cycle (a 'year') last.
+    fn eras_per_cycle() -> EraNumber {
         Self::eras_per_period().saturating_mul(Self::periods_per_cycle())
     }
 
@@ -68,10 +77,25 @@ pub trait CycleConfiguration {
     }
 
     /// For how many standard era lengths do all the build&earn subperiods in a cycle last.    
-    fn build_and_earn_eras_per_cycle() -> u32 {
+    fn build_and_earn_eras_per_cycle() -> EraNumber {
         Self::eras_per_build_and_earn_subperiod().saturating_mul(Self::periods_per_cycle())
     }
 }
+
+/// Trait for observers (listeners) of various events related to dApp staking protocol.
+pub trait Observer {
+    /// Called in the block right before the next era starts.
+    ///
+    /// Returns the weight consumed by the call.
+    ///
+    /// # Arguments
+    /// * `next_era` - Era number of the next era.
+    fn block_before_new_era(_next_era: EraNumber) -> Weight {
+        Weight::zero()
+    }
+}
+
+impl Observer for () {}
 
 /// Interface for staking reward handler.
 ///

@@ -16,7 +16,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-mod mock;
-mod tests_v2;
-mod tests_v3;
-mod types;
+pub use pallet::*;
+
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
+
+#[frame_support::pallet]
+pub mod pallet {
+    #[pallet::config]
+    pub trait Config<I: 'static = ()>:
+        frame_system::Config + crate::Config + pallet_xcm_benchmarks::fungible::Config
+    {
+        /// A trusted location where reserve assets are stored, and the asset we allow to be
+        /// reserves.
+        type TrustedReserve: frame_support::traits::Get<
+            Option<(xcm::latest::MultiLocation, xcm::latest::MultiAsset)>,
+        >;
+    }
+
+    #[pallet::pallet]
+    pub struct Pallet<T, I = ()>(_);
+}

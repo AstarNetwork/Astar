@@ -120,9 +120,11 @@ impl<T: Config, P: Get<FixedU64>> OnRuntimeUpgrade for InitActivePrice<T, P> {
     fn on_runtime_upgrade() -> Weight {
         let init_price = P::get().max(FixedU64::from_rational(1, FixedU64::DIV.into()));
 
-        log::info!("Setting initial active price to {:?}", init_price);
+        log::info!("Setting initial active price to {}", init_price);
         ActivePrice::<T>::put(init_price);
 
-        T::DbWeight::get().writes(1)
+        STORAGE_VERSION.put::<Pallet<T>>();
+
+        T::DbWeight::get().writes(2)
     }
 }

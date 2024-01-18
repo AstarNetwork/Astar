@@ -19,7 +19,7 @@
 //! # dApp Staking v3 Pallet
 //!
 //! For detailed high level documentation, please refer to the attached README.md file.
-//! The crate level docs will cover overal pallet structure & implementation details.
+//! The crate level docs will cover overall pallet structure & implementation details.
 //!
 //! ## Overview
 //!
@@ -27,9 +27,9 @@
 //! It covers everything from locking, staking, tier configuration & assignment, reward calculation & payout.
 //!
 //! The `types` module contains all of the types used to implement the pallet.
-//! All of these _types_ are exentisvely tested in their dedicated `test_types` module.
+//! All of these _types_ are extensively tested in their dedicated `test_types` module.
 //!
-//! Rest of the pallet logic is concenrated in the lib.rs file.
+//! Rest of the pallet logic is concentrated in the lib.rs file.
 //! This logic is tested in the `tests` module, with the help of extensive `testing_utils`.
 //!
 
@@ -51,7 +51,10 @@ use sp_runtime::{
 pub use sp_std::vec::Vec;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContractHandle, StakingRewardHandler},
+    dapp_staking::{
+        CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver, PeriodNumber,
+        SmartContractHandle, StakingRewardHandler, TierId,
+    },
     oracle::PriceProvider,
     Balance, BlockNumber,
 };
@@ -137,6 +140,9 @@ pub mod pallet {
 
         /// Describes era length, subperiods & period length, as well as cycle length.
         type CycleConfiguration: CycleConfiguration;
+
+        /// dApp staking event observers, notified when certain events occur.
+        type Observers: DAppStakingObserver;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -315,7 +321,7 @@ pub mod pallet {
         UnavailableStakeFunds,
         /// There are unclaimed rewards remaining from past eras or periods. They should be claimed before attempting any stake modification again.
         UnclaimedRewards,
-        /// An unexpected error occured while trying to stake.
+        /// An unexpected error occurred while trying to stake.
         InternalStakeError,
         /// Total staked amount on contract is below the minimum required value.
         InsufficientStakeAmount,
@@ -327,7 +333,7 @@ pub mod pallet {
         UnstakeAmountTooLarge,
         /// Account has no staking information for the contract.
         NoStakingInfo,
-        /// An unexpected error occured while trying to unstake.
+        /// An unexpected error occurred while trying to unstake.
         InternalUnstakeError,
         /// Rewards are no longer claimable since they are too old.
         RewardExpired,
@@ -335,18 +341,18 @@ pub mod pallet {
         RewardPayoutFailed,
         /// There are no claimable rewards.
         NoClaimableRewards,
-        /// An unexpected error occured while trying to claim staker rewards.
+        /// An unexpected error occurred while trying to claim staker rewards.
         InternalClaimStakerError,
         /// Account is has no eligible stake amount for bonus reward.
         NotEligibleForBonusReward,
-        /// An unexpected error occured while trying to claim bonus reward.
+        /// An unexpected error occurred while trying to claim bonus reward.
         InternalClaimBonusError,
         /// Claim era is invalid - it must be in history, and rewards must exist for it.
         InvalidClaimEra,
         /// No dApp tier info exists for the specified era. This can be because era has expired
         /// or because during the specified era there were no eligible rewards or protocol wasn't active.
         NoDAppTierInfo,
-        /// An unexpected error occured while trying to claim dApp reward.
+        /// An unexpected error occurred while trying to claim dApp reward.
         InternalClaimDAppError,
         /// Contract is still active, not unregistered.
         ContractStillActive,
@@ -632,7 +638,7 @@ pub mod pallet {
                     owner: owner.clone(),
                     id: dapp_id,
                     state: DAppState::Registered,
-                    reward_destination: None,
+                    reward_beneficiary: None,
                 },
             );
 
@@ -671,7 +677,7 @@ pub mod pallet {
 
                     ensure!(dapp_info.owner == dev_account, Error::<T>::OriginNotOwner);
 
-                    dapp_info.reward_destination = beneficiary.clone();
+                    dapp_info.reward_beneficiary = beneficiary.clone();
 
                     Ok(())
                 },
@@ -745,10 +751,7 @@ pub mod pallet {
             let mut dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
-            ensure!(
-                dapp_info.state == DAppState::Registered,
-                Error::<T>::NotOperatedDApp
-            );
+            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
 
             ContractStake::<T>::remove(&dapp_info.id);
 
@@ -1493,16 +1496,12 @@ pub mod pallet {
             .into())
         }
 
-        // TODO: this call should be removed prior to mainnet launch.
-        // It's super useful for testing purposes, but even though force is used in this pallet & works well,
-        // it won't apply to the inflation recalculation logic - which is wrong.
-        // Probably for this call to make sense, an outside logic should handle both inflation & dApp staking state changes.
-
+        // TODO: make this unavailable in production, to be only used for testing
         /// Used to force a change of era or subperiod.
         /// The effect isn't immediate but will happen on the next block.
         ///
         /// Used for testing purposes, when we want to force an era change, or a subperiod change.
-        /// Not intended to be used in production, except in case of unforseen circumstances.
+        /// Not intended to be used in production, except in case of unforeseen circumstances.
         ///
         /// Can only be called by manager origin.
         #[pallet::call_index(18)]
@@ -1522,6 +1521,12 @@ pub mod pallet {
                         state.period_info.next_subperiod_start_era = state.era.saturating_add(1);
                     }
                 }
+
+                //       Right now it won't account for the full weight incurred by calling this notification.
+                //       It's not a big problem since this call is not expected to be called ever in production.
+                //       Also, in case of subperiod forcing, the alignment will be broken but since this is only call for testing,
+                //       we don't need to concern ourselves with it.
+                Self::notify_block_before_new_era(&state);
             });
 
             Self::deposit_event(Event::<T>::Force { forcing_type });
@@ -1694,12 +1699,11 @@ pub mod pallet {
                 counter.saturating_inc();
 
                 // Skip dApps which don't have ANY amount staked
-                let stake_amount = match stake_amount.get(era, period) {
-                    Some(stake_amount) if !stake_amount.total().is_zero() => stake_amount,
-                    _ => continue,
-                };
-
-                dapp_stakes.push((dapp_id, stake_amount.total()));
+                if let Some(stake_amount) = stake_amount.get(era, period) {
+                    if !stake_amount.total().is_zero() {
+                        dapp_stakes.push((dapp_id, stake_amount.total()));
+                    }
+                }
             }
 
             // 2.
@@ -1789,6 +1793,12 @@ pub mod pallet {
             // enabled in case some misbehavior or corrupted storage is detected.
             if protocol_state.maintenance {
                 return consumed_weight;
+            }
+
+            // Inform observers about the upcoming new era, if it's the case.
+            if protocol_state.next_era_start == now.saturating_add(1) {
+                consumed_weight
+                    .saturating_accrue(Self::notify_block_before_new_era(&protocol_state));
             }
 
             // Nothing to do if it's not new era
@@ -1894,6 +1904,10 @@ pub mod pallet {
                             TierConfig::<T>::get().calculate_new(average_price, &tier_params);
                         TierConfig::<T>::put(new_tier_config);
 
+                        // Update historical cleanup marker.
+                        // Must be called with the new period number.
+                        Self::update_cleanup_marker(protocol_state.period_number());
+
                         consumed_weight.saturating_accrue(
                             T::WeightInfo::on_initialize_build_and_earn_to_voting(),
                         );
@@ -1947,68 +1961,90 @@ pub mod pallet {
             consumed_weight
         }
 
+        /// Used to notify observers about the upcoming new era in the next block.
+        fn notify_block_before_new_era(protocol_state: &ProtocolState) -> Weight {
+            let next_era = protocol_state.era.saturating_add(1);
+            T::Observers::block_before_new_era(next_era)
+        }
+
+        /// Updates the cleanup marker with the new oldest valid era if possible.
+        ///
+        /// It's possible that the call will be a no-op since we haven't advanced enough periods yet.
+        fn update_cleanup_marker(new_period_number: PeriodNumber) {
+            // 1. Find out the latest expired period; rewards can no longer be claimed for it or any older period.
+            let latest_expired_period = match new_period_number
+                .checked_sub(T::RewardRetentionInPeriods::get().saturating_add(1))
+            {
+                Some(period) if !period.is_zero() => period,
+                // Haven't advanced enough periods to have any expired entries.
+                _ => return,
+            };
+
+            // 2. Find the oldest valid era for which rewards can still be claimed.
+            //    Technically, this will be `Voting` subperiod era but it doesn't matter.
+            //
+            //    Also, remove the expired `PeriodEnd` entry since it's no longer needed.
+            let oldest_valid_era = match PeriodEnd::<T>::take(latest_expired_period) {
+                Some(period_end_info) => period_end_info.final_era.saturating_add(1),
+                None => {
+                    // Should never happen but nothing we can do if it does.
+                    log::error!(
+                        target: LOG_TARGET,
+                        "No `PeriodEnd` entry for the expired period: {}",
+                        latest_expired_period
+                    );
+                    return;
+                }
+            };
+
+            // 3. Update the cleanup marker with the new oldest valid era.
+            HistoryCleanupMarker::<T>::mutate(|marker| {
+                marker.oldest_valid_era = oldest_valid_era;
+            });
+        }
+
         /// Attempt to cleanup some expired entries, if enough remaining weight & applicable entries exist.
         ///
         /// Returns consumed weight.
         fn expired_entry_cleanup(remaining_weight: &Weight) -> Weight {
-            // Need to be able to process full pass
+            // Need to be able to process one full pass
             if remaining_weight.any_lt(T::WeightInfo::on_idle_cleanup()) {
                 return Weight::zero();
             }
 
-            // Get the cleanup marker
+            // Get the cleanup marker and ensure we have pending cleanups.
             let mut cleanup_marker = HistoryCleanupMarker::<T>::get();
+            if !cleanup_marker.has_pending_cleanups() {
+                return T::DbWeight::get().reads(1);
+            }
 
-            // Whitelisted storage, no need to account for the read.
-            let protocol_state = ActiveProtocolState::<T>::get();
-            let latest_expired_period = match protocol_state
-                .period_number()
-                .checked_sub(T::RewardRetentionInPeriods::get().saturating_add(1))
-            {
-                Some(latest_expired_period) => latest_expired_period,
-                None => {
-                    // Protocol hasn't advanced enough to have any expired entries.
-                    return T::WeightInfo::on_idle_cleanup();
-                }
-            };
-
-            // Get the oldest valid era - any era before it is safe to be cleaned up.
-            let oldest_valid_era = match PeriodEnd::<T>::get(latest_expired_period) {
-                Some(period_end_info) => period_end_info.final_era.saturating_add(1),
-                None => {
-                    // Can happen if it's period 0 or if the entry has already been cleaned up.
-                    return T::WeightInfo::on_idle_cleanup();
-                }
-            };
-
-            // Attempt to cleanup one expired `EraRewards` entry.
-            if let Some(era_reward) = EraRewards::<T>::get(cleanup_marker.era_reward_index) {
-                // If oldest valid era comes AFTER this span, it's safe to delete it.
-                if era_reward.last_era() < oldest_valid_era {
-                    EraRewards::<T>::remove(cleanup_marker.era_reward_index);
+            // 1. Attempt to cleanup one expired `EraRewards` entry.
+            if cleanup_marker.era_reward_index < cleanup_marker.oldest_valid_era {
+                if let Some(era_reward) = EraRewards::<T>::get(cleanup_marker.era_reward_index) {
+                    // If oldest valid era comes AFTER this span, it's safe to delete it.
+                    if era_reward.last_era() < cleanup_marker.oldest_valid_era {
+                        EraRewards::<T>::remove(cleanup_marker.era_reward_index);
+                        cleanup_marker
+                            .era_reward_index
+                            .saturating_accrue(T::EraRewardSpanLength::get());
+                    }
+                } else {
+                    // Can happen if the entry is part of history before dApp staking v3
+                    log::warn!(
+                        target: LOG_TARGET,
+                        "Era rewards span for era {} is missing, but cleanup marker is set.",
+                        cleanup_marker.era_reward_index
+                    );
                     cleanup_marker
                         .era_reward_index
                         .saturating_accrue(T::EraRewardSpanLength::get());
                 }
-            } else {
-                // Should never happen, but if it does, log an error and move on.
-                log::error!(
-                    target: LOG_TARGET,
-                    "Era rewards span for era {} is missing, but cleanup marker is set.",
-                    cleanup_marker.era_reward_index
-                );
             }
 
-            // Attempt to cleanup one expired `DAppTiers` entry.
-            if cleanup_marker.dapp_tiers_index < oldest_valid_era {
+            // 2. Attempt to cleanup one expired `DAppTiers` entry.
+            if cleanup_marker.dapp_tiers_index < cleanup_marker.oldest_valid_era {
                 DAppTiers::<T>::remove(cleanup_marker.dapp_tiers_index);
                 cleanup_marker.dapp_tiers_index.saturating_inc();
-            }
-
-            // One extra grace period before we cleanup period end info.
-            // This so we can always read the `final_era` of that period.
-            if let Some(period_end_cleanup) = latest_expired_period.checked_sub(1) {
-                PeriodEnd::<T>::remove(period_end_cleanup);
             }
 
             // Store the updated cleanup marker
@@ -2018,6 +2054,7 @@ pub mod pallet {
             // we opt for the simpler solution where only 1 entry per block is cleaned up.
             // It can be changed though.
 
+            // It could end up being less than this weight, but this won't occur often enough to be important.
             T::WeightInfo::on_idle_cleanup()
         }
     }

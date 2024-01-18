@@ -34,7 +34,7 @@
 //! E.g. if 'yearly' inflation is set to be 7%, and total issuance is 200 ASTR, then the max inflation for that cycle will be 14 ASTR.
 //!
 //! Each cycle consists of one or more `periods`.
-//! Periods are integral part of dApp staking protocol, allowing dApps to promotove themselves, attract stakers and earn rewards.
+//! Periods are integral part of dApp staking protocol, allowing dApps to promote themselves, attract stakers and earn rewards.
 //! At the end of each period, all stakes are reset, and dApps need to repeat the process.
 //!
 //! Each period consists of two subperiods: `Voting` and `Build&Earn`.
@@ -69,9 +69,9 @@
 //!
 //! ## Rewards
 //!
-//! ### Staker & Treasury Rewards
+//! ### Collator & Treasury Rewards
 //!
-//! These are paid out at the begininng of each block & are fixed amounts.
+//! These are paid out at the beginning of each block & are fixed amounts.
 //!
 //! ### Staker Rewards
 //!
@@ -99,7 +99,9 @@
 pub use pallet::*;
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, StakingRewardHandler},
+    dapp_staking::{
+        CycleConfiguration, EraNumber, Observer as DappStakingObserver, StakingRewardHandler,
+    },
     Balance, BlockNumber,
 };
 use frame_support::{
@@ -177,7 +179,7 @@ pub mod pallet {
         InvalidInflationParameters,
     }
 
-    /// Active inflation configuration parameteres.
+    /// Active inflation configuration parameters.
     /// They describe current rewards, when inflation needs to be recalculated, etc.
     #[pallet::storage]
     #[pallet::whitelist_storage]
@@ -186,6 +188,11 @@ pub mod pallet {
     /// Static inflation parameters - used to calculate active inflation configuration at certain points in time.
     #[pallet::storage]
     pub type InflationParams<T: Config> = StorageValue<_, InflationParameters, ValueQuery>;
+
+    /// Flag indicating whether on the first possible opportunity, recalculation of the inflation config should be done.
+    #[pallet::storage]
+    #[pallet::whitelist_storage]
+    pub type DoRecalculation<T: Config> = StorageValue<_, EraNumber, OptionQuery>;
 
     #[pallet::genesis_config]
     #[cfg_attr(feature = "std", derive(Default))]
@@ -199,8 +206,8 @@ pub mod pallet {
         fn build(&self) {
             assert!(self.params.is_valid());
 
-            let now = frame_system::Pallet::<T>::block_number();
-            let config = Pallet::<T>::recalculate_inflation(now);
+            let starting_era = 1;
+            let config = Pallet::<T>::recalculate_inflation(starting_era);
 
             ActiveInflationConfig::<T>::put(config);
             InflationParams::<T>::put(self.params);
@@ -209,37 +216,32 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
-        fn on_initialize(now: BlockNumber) -> Weight {
+        fn on_initialize(_now: BlockNumber) -> Weight {
             Self::payout_block_rewards();
 
-            let recalculation_weight =
-                if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
-                    T::WeightInfo::hook_with_recalculation()
-                } else {
-                    T::WeightInfo::hook_without_recalculation()
-                };
-
-            // Benchmarks won't acount for whitelisted storage access so this needs to be added manually.
+            // Benchmarks won't account for the whitelisted storage access so this needs to be added manually.
             //
             // ActiveInflationConfig - 1 DB read
-            let whitelisted_weight = <T as frame_system::Config>::DbWeight::get().reads(1);
-
-            recalculation_weight.saturating_add(whitelisted_weight)
+            // DoRecalculation - 1 DB read
+            <T as frame_system::Config>::DbWeight::get().reads(2)
         }
 
-        fn on_finalize(now: BlockNumber) {
-            // Recalculation is done at the block right before the re-calculation is supposed to happen.
+        fn on_finalize(_now: BlockNumber) {
+            // Recalculation is done at the block right before a new cycle starts.
             // This is to ensure all the rewards are paid out according to the new inflation configuration from next block.
             //
             // If this was done in `on_initialize`, collator & treasury would receive incorrect rewards for that one block.
             //
             // This should be done as late as possible, to ensure all operations that modify issuance are done.
-            if Self::is_recalculation_in_next_block(now, &ActiveInflationConfig::<T>::get()) {
-                let config = Self::recalculate_inflation(now);
+            if let Some(next_era) = DoRecalculation::<T>::get() {
+                let config = Self::recalculate_inflation(next_era);
                 ActiveInflationConfig::<T>::put(config.clone());
+                DoRecalculation::<T>::kill();
 
                 Self::deposit_event(Event::<T>::NewInflationConfiguration { config });
             }
+
+            // NOTE: weight of the `on_finalize` logic with recalculation has to be covered by the observer notify call.
         }
 
         fn integrity_test() {
@@ -257,7 +259,7 @@ pub mod pallet {
         ///
         /// Must be called by `root` origin.
         ///
-        /// Purpose of the call is testing & handling unforseen circumstances.
+        /// Purpose of the call is testing & handling unforeseen circumstances.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::force_set_inflation_params())]
         pub fn force_set_inflation_params(
@@ -279,13 +281,16 @@ pub mod pallet {
         ///
         /// Must be called by `root` origin.
         ///
-        /// Purpose of the call is testing & handling unforseen circumstances.
+        /// Purpose of the call is testing & handling unforeseen circumstances.
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::force_inflation_recalculation())]
-        pub fn force_inflation_recalculation(origin: OriginFor<T>) -> DispatchResult {
+        pub fn force_inflation_recalculation(
+            origin: OriginFor<T>,
+            next_era: EraNumber,
+        ) -> DispatchResult {
             ensure_root(origin)?;
 
-            let config = Self::recalculate_inflation(frame_system::Pallet::<T>::block_number());
+            let config = Self::recalculate_inflation(next_era);
 
             ActiveInflationConfig::<T>::put(config.clone());
 
@@ -299,7 +304,7 @@ pub mod pallet {
         ///
         /// Must be called by `root` origin.
         ///
-        /// Purpose of the call is testing & handling unforseen circumstances.
+        /// Purpose of the call is testing & handling unforeseen circumstances.
         ///
         /// **NOTE:** and a TODO, remove this before deploying on mainnet.
         #[pallet::call_index(2)]
@@ -319,16 +324,6 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        /// Used to check if inflation recalculation is supposed to happen on the next block.
-        ///
-        /// This will be true even if recalculation is overdue, e.g. it should have happened in the current or older block.
-        fn is_recalculation_in_next_block(
-            now: BlockNumber,
-            config: &InflationConfiguration,
-        ) -> bool {
-            config.recalculation_block.saturating_sub(now) <= 1
-        }
-
         /// Payout block rewards to the beneficiaries.
         ///
         /// Return the total amount issued.
@@ -347,7 +342,7 @@ pub mod pallet {
         /// Recalculates the inflation based on the total issuance & inflation parameters.
         ///
         /// Returns the new inflation configuration.
-        pub(crate) fn recalculate_inflation(now: BlockNumber) -> InflationConfiguration {
+        pub(crate) fn recalculate_inflation(next_era: EraNumber) -> InflationConfiguration {
             let params = InflationParams::<T>::get();
             let total_issuance = T::Currency::total_issuance();
 
@@ -368,23 +363,13 @@ pub mod pallet {
             // 3.0 Convert all 'per cycle' values to the correct type (Balance).
             // Also include a safety check that none of the values is zero since this would cause a division by zero.
             // The configuration & integration tests must ensure this never happens, so the following code is just an additional safety measure.
-            let blocks_per_cycle = match T::CycleConfiguration::blocks_per_cycle() {
-                0 => Balance::MAX,
-                blocks_per_cycle => Balance::from(blocks_per_cycle),
-            };
-
+            let blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle().max(1));
             let build_and_earn_eras_per_cycle =
-                match T::CycleConfiguration::build_and_earn_eras_per_cycle() {
-                    0 => Balance::MAX,
-                    build_and_earn_eras_per_cycle => Balance::from(build_and_earn_eras_per_cycle),
-                };
+                Balance::from(T::CycleConfiguration::build_and_earn_eras_per_cycle().max(1));
+            let periods_per_cycle =
+                Balance::from(T::CycleConfiguration::periods_per_cycle().max(1));
 
-            let periods_per_cycle = match T::CycleConfiguration::periods_per_cycle() {
-                0 => Balance::MAX,
-                periods_per_cycle => Balance::from(periods_per_cycle),
-            };
-
-            // 3.1. Collator & Treausry rewards per block
+            // 3.1. Collator & Treasury rewards per block
             let collator_reward_per_block = collators_emission / blocks_per_cycle;
             let treasury_reward_per_block = treasury_emission / blocks_per_cycle;
 
@@ -401,11 +386,12 @@ pub mod pallet {
             let bonus_reward_pool_per_period = bonus_emission / periods_per_cycle;
 
             // 4. Block at which the inflation must be recalculated.
-            let recalculation_block = now.saturating_add(T::CycleConfiguration::blocks_per_cycle());
+            let recalculation_era =
+                next_era.saturating_add(T::CycleConfiguration::eras_per_cycle());
 
             // 5. Return calculated values
             InflationConfiguration {
-                recalculation_block,
+                recalculation_era,
                 issuance_safety_cap,
                 collator_reward_per_block,
                 treasury_reward_per_block,
@@ -439,6 +425,21 @@ pub mod pallet {
         }
     }
 
+    impl<T: Config> DappStakingObserver for Pallet<T> {
+        /// Informs the pallet that the next block will be the first block of a new era.
+        fn block_before_new_era(new_era: EraNumber) -> Weight {
+            let config = ActiveInflationConfig::<T>::get();
+            if config.recalculation_era <= new_era {
+                DoRecalculation::<T>::put(new_era);
+
+                // Need to account for write into a single whitelisted storage item.
+                T::WeightInfo::recalculation().saturating_add(T::DbWeight::get().writes(1))
+            } else {
+                Weight::zero()
+            }
+        }
+    }
+
     impl<T: Config> StakingRewardHandler<T::AccountId> for Pallet<T> {
         fn staker_and_dapp_reward_pools(total_value_staked: Balance) -> (Balance, Balance) {
             let config = ActiveInflationConfig::<T>::get();
@@ -468,7 +469,7 @@ pub mod pallet {
 
             // This can fail only if the amount is below existential deposit & the account doesn't exist,
             // or if the account has no provider references.
-            // In both cases, the reward is lost but this can be ignored since it's extremelly unlikely
+            // In both cases, the reward is lost but this can be ignored since it's extremely unlikely
             // to appear and doesn't bring any real harm.
             T::Currency::deposit_creating(account, reward);
             Ok(())
@@ -481,9 +482,9 @@ pub mod pallet {
 #[derive(Encode, Decode, MaxEncodedLen, Default, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct InflationConfiguration {
-    /// Block number at which the inflation must be recalculated, based on the total issuance at that block.
+    /// Era number at which the inflation configuration must be recalculated, based on the total issuance at that block.
     #[codec(compact)]
-    pub recalculation_block: BlockNumber,
+    pub recalculation_era: EraNumber,
     /// Maximum amount of issuance we can have during this cycle.
     #[codec(compact)]
     pub issuance_safety_cap: Balance,
@@ -500,7 +501,7 @@ pub struct InflationConfiguration {
     /// Base staker reward pool per era - this is always provided to stakers, regardless of the total value staked.
     #[codec(compact)]
     pub base_staker_reward_pool_per_era: Balance,
-    /// Adjustabke staker rewards, based on the total value staked.
+    /// Adjustable staker rewards, based on the total value staked.
     /// This is provided to the stakers according to formula: 'pool * min(1, total_staked / ideal_staked)'.
     #[codec(compact)]
     pub adjustable_staker_reward_pool_per_era: Balance,
@@ -602,19 +603,20 @@ pub trait PayoutPerBlock<Imbalance> {
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 pub struct PalletInflationInitConfig<T, P>(PhantomData<(T, P)>);
-impl<T: Config, P: Get<InflationParameters>> OnRuntimeUpgrade for PalletInflationInitConfig<T, P> {
+impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
+    for PalletInflationInitConfig<T, P>
+{
     fn on_runtime_upgrade() -> Weight {
         if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
             return T::DbWeight::get().reads(1);
         }
 
         // 1. Get & set inflation parameters
-        let inflation_params = P::get();
+        let (inflation_params, next_era) = P::get();
         InflationParams::<T>::put(inflation_params.clone());
 
-        // 2. Calculation inflation config, set it & depossit event
-        let now = frame_system::Pallet::<T>::block_number();
-        let config = Pallet::<T>::recalculate_inflation(now);
+        // 2. Calculation inflation config, set it & deposit event
+        let config = Pallet::<T>::recalculate_inflation(next_era);
         ActiveInflationConfig::<T>::put(config.clone());
 
         Pallet::<T>::deposit_event(Event::<T>::NewInflationConfiguration { config });
@@ -624,8 +626,7 @@ impl<T: Config, P: Get<InflationParameters>> OnRuntimeUpgrade for PalletInflatio
 
         log::info!("Inflation pallet storage initialized.");
 
-        T::WeightInfo::hook_with_recalculation()
-            .saturating_add(T::DbWeight::get().reads_writes(1, 2))
+        T::WeightInfo::recalculation().saturating_add(T::DbWeight::get().reads_writes(1, 2))
     }
 
     #[cfg(feature = "try-runtime")]
@@ -634,5 +635,26 @@ impl<T: Config, P: Get<InflationParameters>> OnRuntimeUpgrade for PalletInflatio
         assert!(InflationParams::<T>::get().is_valid());
 
         Ok(())
+    }
+}
+
+/// To be used just for Shibuya, can be removed after migration has been executed.
+pub struct PalletInflationShibuyaMigration<T, P>(PhantomData<(T, P)>);
+impl<T: Config, P: Get<(EraNumber, Weight)>> OnRuntimeUpgrade
+    for PalletInflationShibuyaMigration<T, P>
+{
+    fn on_runtime_upgrade() -> Weight {
+        let (recalculation_era, weight) = P::get();
+        ActiveInflationConfig::<T>::mutate(|config| {
+            // Both recalculation_era and recalculation_block are of the same `u32` type so no need to do any translation.
+            config.recalculation_era = recalculation_era;
+        });
+
+        log::info!(
+            "Inflation pallet recalculation era set to {}.",
+            recalculation_era
+        );
+
+        T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
     }
 }
