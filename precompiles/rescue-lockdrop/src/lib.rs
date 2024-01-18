@@ -108,7 +108,16 @@ where
         }
 
         // 3. Derive the AccountId from the ECDSA compressed Public key
-        let origin = Self::get_account_id_from_pubkey(pubkey);
+        let origin = match Self::get_account_id_from_pubkey(pubkey) {
+            Some(a) => a,
+            None => {
+                log::trace!(
+                    target: "rescue-lockdrop-precompile:claim_lock_drop_account",
+                    "Error: could not derive AccountId from pubkey"
+                );
+                return Ok(false);
+            }
+        };
 
         // 4. Call to Claim EVM address - it will populate the mapping between the EVM address and the derived AccountId
         // As sufficient checks has been done:
@@ -132,14 +141,10 @@ where
         }
     }
 
-    fn get_account_id_from_pubkey(pubkey: [u8; 64]) -> <R as Config>::AccountId {
-        sp_io::hashing::blake2_256(
-            libsecp256k1::PublicKey::parse_slice(&pubkey, None)
-                .unwrap()
-                .serialize_compressed()
-                .as_ref(),
-        )
-        .into()
+    fn get_account_id_from_pubkey(pubkey: [u8; 64]) -> Option<<R as Config>::AccountId> {
+        libsecp256k1::PublicKey::parse_slice(&pubkey, None)
+            .map(|k| sp_io::hashing::blake2_256(k.serialize_compressed().as_ref()).into())
+            .ok()
     }
 
     fn parse_signature(signature_bytes: &Vec<u8>) -> Option<Signature> {
