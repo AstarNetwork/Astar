@@ -28,6 +28,7 @@ use pallet_evm_precompile_dapp_staking_v3::DappStakingV3Precompile;
 use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_ed25519::Ed25519Verify;
 use pallet_evm_precompile_modexp::Modexp;
+use pallet_evm_precompile_rescue_lockdrop::UnifyLockdropPrecompile;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
@@ -116,6 +117,7 @@ pub type LocalPrecompilesSetAt<R> = (
         UnifiedAccountsPrecompile<R, UnifiedAccounts>,
         (CallableByContract, CallableByPrecompile),
     >,
+    PrecompileAt<AddressU64<20487>, UnifyLockdropPrecompile<R>, ()>,
 );
 
 pub type LocalPrecompiles<R> = PrecompileSetBuilder<

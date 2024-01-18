@@ -33,6 +33,7 @@ use sp_core::ecdsa;
 use sp_core::ecdsa::Signature;
 use sp_core::{crypto::AccountId32, H160, H256};
 use sp_io::hashing::keccak_256;
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod mock;
@@ -72,8 +73,17 @@ where
         let signature_bytes: Vec<u8> = signature.into();
         let account_id = AccountId32::new(account_id.into()).into();
 
-        let signature_opt = Self::parse_signature(&signature_bytes);
-
+        // 1. Recover the ECDSA Public key from the signature
+        let signature_opt = match Self::parse_signature(&signature_bytes) {
+            Some(s) => s,
+            None => {
+                log::trace!(
+                    target: "rescue-lockdrop-precompile:claim_lock_drop_account",
+                    "Error: could not parse signature"
+                );
+                return Ok(false);
+            }
+        };
         let pubkey = match <pallet_unified_accounts::Pallet<R>>::recover_pubkey(
             &account_id,
             signature_opt.as_ref(),
@@ -88,6 +98,7 @@ where
             }
         };
 
+        // 2. Ensure that the caller matches the recovered EVM address from the signature
         if caller != Self::get_evm_address_from_pubkey(&pubkey) {
             log::trace!(
                 target: "rescue-lockdrop-precompile:claim_lock_drop_account",
@@ -96,8 +107,13 @@ where
             return Ok(false);
         }
 
+        // 3. Derive the AccountId from the ECDSA compressed Public key
         let origin = Self::get_account_id_from_pubkey(pubkey);
 
+        // 4. Call to Claim EVM address - it will populate the mapping between the EVM address and the derived AccountId
+        // As sufficient checks has been done:
+        // - the caller matches the recovered EVM address from the signature
+        // - the AccountId is derived from the recovered ECDSA Public key
         let call = pallet_unified_accounts::Call::<R>::claim_evm_address {
             evm_address: caller,
             signature: signature_opt.into(),
@@ -117,14 +133,17 @@ where
     }
 
     fn get_account_id_from_pubkey(pubkey: [u8; 64]) -> <R as Config>::AccountId {
-        let origin =
-            sp_io::hashing::blake2_256(ecdsa::Public::from_full(pubkey.as_ref()).unwrap().as_ref())
-                .into();
-        origin
+        sp_io::hashing::blake2_256(
+            libsecp256k1::PublicKey::parse_slice(&pubkey, None)
+                .unwrap()
+                .serialize_compressed()
+                .as_ref(),
+        )
+        .into()
     }
 
-    fn parse_signature(signature_bytes: &Vec<u8>) -> Signature {
-        ecdsa::Signature::from_slice(&signature_bytes[..]).unwrap()
+    fn parse_signature(signature_bytes: &Vec<u8>) -> Option<Signature> {
+        ecdsa::Signature::from_slice(&signature_bytes[..])
     }
 
     fn get_evm_address_from_pubkey(pubkey: &[u8]) -> H160 {
