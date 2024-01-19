@@ -260,6 +260,10 @@ fn inflation_recalculation_works() {
         );
 
         // Verify collator rewards are as expected
+        assert!(
+            !new_config.collator_reward_per_block.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.collator_reward_per_block,
             params.collators_part * max_emission
@@ -267,6 +271,10 @@ fn inflation_recalculation_works() {
         );
 
         // Verify treasury rewards are as expected
+        assert!(
+            !new_config.treasury_reward_per_block.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.treasury_reward_per_block,
             params.treasury_part * max_emission
@@ -274,6 +282,10 @@ fn inflation_recalculation_works() {
         );
 
         // Verify dApp rewards are as expected
+        assert!(
+            !new_config.dapp_reward_pool_per_era.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.dapp_reward_pool_per_era,
             params.dapps_part * max_emission
@@ -283,12 +295,20 @@ fn inflation_recalculation_works() {
         );
 
         // Verify base & adjustable staker rewards are as expected
+        assert!(
+            !new_config.base_staker_reward_pool_per_era.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.base_staker_reward_pool_per_era,
             params.base_stakers_part * max_emission
                 / Balance::from(
                     <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle()
                 ),
+        );
+        assert!(
+            !new_config.adjustable_staker_reward_pool_per_era.is_zero(),
+            "Not wrong, but all test values should be non-zero."
         );
         assert_eq!(
             new_config.adjustable_staker_reward_pool_per_era,
@@ -299,6 +319,10 @@ fn inflation_recalculation_works() {
         );
 
         // Verify bonus rewards are as expected
+        assert!(
+            !new_config.bonus_reward_pool_per_period.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.bonus_reward_pool_per_period,
             params.bonus_part * max_emission
