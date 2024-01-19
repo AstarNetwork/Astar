@@ -370,20 +370,21 @@ pub mod pallet {
                 Balance::from(T::CycleConfiguration::periods_per_cycle().max(1));
 
             // 3.1. Collator & Treasury rewards per block
-            let collator_reward_per_block = collators_emission / blocks_per_cycle;
-            let treasury_reward_per_block = treasury_emission / blocks_per_cycle;
+            let collator_reward_per_block = collators_emission.saturating_div(blocks_per_cycle);
+            let treasury_reward_per_block = treasury_emission.saturating_div(blocks_per_cycle);
 
             // 3.2. dApp reward pool per era
-            let dapp_reward_pool_per_era = dapps_emission / build_and_earn_eras_per_cycle;
+            let dapp_reward_pool_per_era =
+                dapps_emission.saturating_div(build_and_earn_eras_per_cycle);
 
             // 3.3. Staking reward pools per era
             let base_staker_reward_pool_per_era =
-                base_stakers_emission / build_and_earn_eras_per_cycle;
+                base_stakers_emission.saturating_div(build_and_earn_eras_per_cycle);
             let adjustable_staker_reward_pool_per_era =
-                adjustable_stakers_emission / build_and_earn_eras_per_cycle;
+                adjustable_stakers_emission.saturating_div(build_and_earn_eras_per_cycle);
 
             // 3.4. Bonus reward pool per period
-            let bonus_reward_pool_per_period = bonus_emission / periods_per_cycle;
+            let bonus_reward_pool_per_period = bonus_emission.saturating_div(periods_per_cycle);
 
             // 4. Block at which the inflation must be recalculated.
             let recalculation_era =
