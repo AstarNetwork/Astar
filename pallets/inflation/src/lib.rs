@@ -109,7 +109,10 @@ use frame_support::{
     traits::{Currency, GetStorageVersion, OnRuntimeUpgrade},
 };
 use frame_system::{ensure_root, pallet_prelude::*};
-use sp_runtime::{traits::CheckedAdd, Perquintill};
+use sp_runtime::{
+    traits::{CheckedAdd, Zero},
+    Perquintill,
+};
 use sp_std::marker::PhantomData;
 
 pub mod weights;
@@ -315,6 +318,7 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
+            config.sanity_check();
             ActiveInflationConfig::<T>::put(config.clone());
 
             Self::deposit_event(Event::<T>::InflationConfigurationForceChanged { config });
@@ -370,27 +374,28 @@ pub mod pallet {
                 Balance::from(T::CycleConfiguration::periods_per_cycle().max(1));
 
             // 3.1. Collator & Treasury rewards per block
-            let collator_reward_per_block = collators_emission / blocks_per_cycle;
-            let treasury_reward_per_block = treasury_emission / blocks_per_cycle;
+            let collator_reward_per_block = collators_emission.saturating_div(blocks_per_cycle);
+            let treasury_reward_per_block = treasury_emission.saturating_div(blocks_per_cycle);
 
             // 3.2. dApp reward pool per era
-            let dapp_reward_pool_per_era = dapps_emission / build_and_earn_eras_per_cycle;
+            let dapp_reward_pool_per_era =
+                dapps_emission.saturating_div(build_and_earn_eras_per_cycle);
 
             // 3.3. Staking reward pools per era
             let base_staker_reward_pool_per_era =
-                base_stakers_emission / build_and_earn_eras_per_cycle;
+                base_stakers_emission.saturating_div(build_and_earn_eras_per_cycle);
             let adjustable_staker_reward_pool_per_era =
-                adjustable_stakers_emission / build_and_earn_eras_per_cycle;
+                adjustable_stakers_emission.saturating_div(build_and_earn_eras_per_cycle);
 
             // 3.4. Bonus reward pool per period
-            let bonus_reward_pool_per_period = bonus_emission / periods_per_cycle;
+            let bonus_reward_pool_per_period = bonus_emission.saturating_div(periods_per_cycle);
 
             // 4. Block at which the inflation must be recalculated.
             let recalculation_era =
                 next_era.saturating_add(T::CycleConfiguration::eras_per_cycle());
 
-            // 5. Return calculated values
-            InflationConfiguration {
+            // 5. Prepare config & do sanity check of its values.
+            let new_inflation_config = InflationConfiguration {
                 recalculation_era,
                 issuance_safety_cap,
                 collator_reward_per_block,
@@ -400,7 +405,10 @@ pub mod pallet {
                 adjustable_staker_reward_pool_per_era,
                 bonus_reward_pool_per_period,
                 ideal_staking_rate: params.ideal_staking_rate,
-            }
+            };
+            new_inflation_config.sanity_check();
+
+            new_inflation_config
         }
 
         /// Check if payout cap limit would be reached after payout.
@@ -512,6 +520,32 @@ pub struct InflationConfiguration {
     /// Used to derive exact amount of adjustable staker rewards.
     #[codec(compact)]
     pub ideal_staking_rate: Perquintill,
+}
+
+impl InflationConfiguration {
+    /// Sanity check that does rudimentary checks on the configuration and prints warnings if something is unexpected.
+    ///
+    /// There are no strict checks, since the configuration values aren't strictly bounded like those of the parameters.
+    pub fn sanity_check(&self) {
+        if self.collator_reward_per_block.is_zero() {
+            log::warn!("Collator reward per block is zero. If this is not expected, please report this to Astar team.");
+        }
+        if self.treasury_reward_per_block.is_zero() {
+            log::warn!("Treasury reward per block is zero. If this is not expected, please report this to Astar team.");
+        }
+        if self.dapp_reward_pool_per_era.is_zero() {
+            log::warn!("dApp reward pool per era is zero. If this is not expected, please report this to Astar team.");
+        }
+        if self.base_staker_reward_pool_per_era.is_zero() {
+            log::warn!("Base staker reward pool per era is zero.  If this is not expected, please report this to Astar team.");
+        }
+        if self.adjustable_staker_reward_pool_per_era.is_zero() {
+            log::warn!("Adjustable staker reward pool per era is zero.  If this is not expected, please report this to Astar team.");
+        }
+        if self.bonus_reward_pool_per_period.is_zero() {
+            log::warn!("Bonus reward pool per period is zero.  If this is not expected, please report this to Astar team.");
+        }
+    }
 }
 
 /// Inflation parameters.
