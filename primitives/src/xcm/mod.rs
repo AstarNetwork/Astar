@@ -36,8 +36,8 @@ use frame_support::{
     traits::{tokens::fungibles, ContainsPair, Get},
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
-use sp_runtime::traits::{Bounded, Convert, Zero};
-use sp_std::{borrow::Borrow, marker::PhantomData, vec::Vec};
+use sp_runtime::traits::{Bounded, Convert, MaybeEquivalence, Zero};
+use sp_std::marker::PhantomData;
 
 // Polkadot imports
 use xcm::latest::{prelude::*, Weight};
@@ -60,26 +60,18 @@ pub const MAX_ASSETS: u32 = 64;
 /// This implementation relies on `XcAssetConfig` pallet to handle mapping.
 /// In case asset location hasn't been mapped, it means the asset isn't supported (yet).
 pub struct AssetLocationIdConverter<AssetId, AssetMapper>(PhantomData<(AssetId, AssetMapper)>);
-impl<AssetId, AssetMapper> xcm_executor::traits::Convert<MultiLocation, AssetId>
+impl<AssetId, AssetMapper> MaybeEquivalence<MultiLocation, AssetId>
     for AssetLocationIdConverter<AssetId, AssetMapper>
 where
     AssetId: Clone + Eq + Bounded,
     AssetMapper: XcAssetLocation<AssetId>,
 {
-    fn convert_ref(location: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
-        if let Some(asset_id) = AssetMapper::get_asset_id(location.borrow().clone()) {
-            Ok(asset_id)
-        } else {
-            Err(())
-        }
+    fn convert(location: &MultiLocation) -> Option<AssetId> {
+        AssetMapper::get_asset_id(location.clone())
     }
 
-    fn reverse_ref(id: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-        if let Some(multilocation) = AssetMapper::get_xc_asset_location(id.borrow().clone()) {
-            Ok(multilocation)
-        } else {
-            Err(())
-        }
+    fn convert_back(id: &AssetId) -> Option<MultiLocation> {
+        AssetMapper::get_xc_asset_location(id.clone())
     }
 }
 
@@ -111,6 +103,7 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
         &mut self,
         weight: Weight,
         payment: xcm_executor::Assets,
+        _: &XcmContext,
     ) -> Result<xcm_executor::Assets, XcmError> {
         log::trace!(
             target: "xcm::weight",
@@ -166,7 +159,7 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
         }
     }
 
-    fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
+    fn refund_weight(&mut self, weight: Weight, _: &XcmContext) -> Option<MultiAsset> {
         log::trace!(target: "xcm::weight", "FixedRateOfForeignAsset::refund_weight weight: {:?}", weight);
 
         if let Some((asset_location, units_per_second)) =
@@ -270,121 +263,6 @@ impl<
                     "XcmFeeHandler:take_revenue failed to match fungible asset, it has been burned."
                 );
             }
-        }
-    }
-}
-
-// TODO: remove this after uplift to `polkadot-v0.9.44` or beyond, and replace it with code in XCM builder.
-
-use parity_scale_codec::{Compact, Encode};
-use sp_io::hashing::blake2_256;
-use sp_std::prelude::*;
-use xcm_executor::traits::Convert as XcmConvert;
-
-/// Means of converting a location into a stable and unique descriptive identifier.
-pub trait DescribeLocation {
-    /// Create a description of the given `location` if possible. No two locations should have the
-    /// same descriptor.
-    fn describe_location(location: &MultiLocation) -> Option<Vec<u8>>;
-}
-
-#[impl_trait_for_tuples::impl_for_tuples(30)]
-impl DescribeLocation for Tuple {
-    fn describe_location(l: &MultiLocation) -> Option<Vec<u8>> {
-        for_tuples!( #(
-			match Tuple::describe_location(l) {
-				Some(result) => return Some(result),
-				None => {},
-			}
-		)* );
-        None
-    }
-}
-
-pub struct DescribeTerminus;
-impl DescribeLocation for DescribeTerminus {
-    fn describe_location(l: &MultiLocation) -> Option<Vec<u8>> {
-        match (l.parents, &l.interior) {
-            (0, Here) => Some(Vec::new()),
-            _ => return None,
-        }
-    }
-}
-
-pub struct DescribePalletTerminal;
-impl DescribeLocation for DescribePalletTerminal {
-    fn describe_location(l: &MultiLocation) -> Option<Vec<u8>> {
-        match (l.parents, &l.interior) {
-            (0, X1(PalletInstance(i))) => {
-                Some((b"Pallet", Compact::<u32>::from(*i as u32)).encode())
-            }
-            _ => return None,
-        }
-    }
-}
-
-pub struct DescribeAccountId32Terminal;
-impl DescribeLocation for DescribeAccountId32Terminal {
-    fn describe_location(l: &MultiLocation) -> Option<Vec<u8>> {
-        match (l.parents, &l.interior) {
-            (0, X1(AccountId32 { id, .. })) => Some((b"AccountId32", id).encode()),
-            _ => return None,
-        }
-    }
-}
-
-pub struct DescribeAccountKey20Terminal;
-impl DescribeLocation for DescribeAccountKey20Terminal {
-    fn describe_location(l: &MultiLocation) -> Option<Vec<u8>> {
-        match (l.parents, &l.interior) {
-            (0, X1(AccountKey20 { key, .. })) => Some((b"AccountKey20", key).encode()),
-            _ => return None,
-        }
-    }
-}
-
-pub type DescribeAccountIdTerminal = (DescribeAccountId32Terminal, DescribeAccountKey20Terminal);
-
-pub type DescribeAllTerminal = (
-    DescribeTerminus,
-    DescribePalletTerminal,
-    DescribeAccountId32Terminal,
-    DescribeAccountKey20Terminal,
-);
-
-pub struct DescribeFamily<DescribeInterior>(PhantomData<DescribeInterior>);
-impl<Suffix: DescribeLocation> DescribeLocation for DescribeFamily<Suffix> {
-    fn describe_location(l: &MultiLocation) -> Option<Vec<u8>> {
-        match (l.parents, l.interior.first()) {
-            (0, Some(Parachain(index))) => {
-                let tail = l.interior.split_first().0;
-                let interior = Suffix::describe_location(&tail.into())?;
-                Some((b"ChildChain", Compact::<u32>::from(*index), interior).encode())
-            }
-            (1, Some(Parachain(index))) => {
-                let tail = l.interior.split_first().0;
-                let interior = Suffix::describe_location(&tail.into())?;
-                Some((b"SiblingChain", Compact::<u32>::from(*index), interior).encode())
-            }
-            (1, _) => {
-                let tail = l.interior.into();
-                let interior = Suffix::describe_location(&tail)?;
-                Some((b"ParentChain", interior).encode())
-            }
-            _ => return None,
-        }
-    }
-}
-
-pub struct HashedDescription<AccountId, Describe>(PhantomData<(AccountId, Describe)>);
-impl<AccountId: From<[u8; 32]> + Clone, Describe: DescribeLocation>
-    XcmConvert<MultiLocation, AccountId> for HashedDescription<AccountId, Describe>
-{
-    fn convert(value: MultiLocation) -> Result<AccountId, MultiLocation> {
-        if let Some(description) = Describe::describe_location(&value) {
-            Ok(blake2_256(&description).into())
-        } else {
-            Err(value)
         }
     }
 }
