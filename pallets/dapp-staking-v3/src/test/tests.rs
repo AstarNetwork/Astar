@@ -463,7 +463,7 @@ fn unregister_fails() {
         assert_unregister(&smart_contract);
         assert_noop!(
             DappStaking::unregister(RuntimeOrigin::root(), smart_contract),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
     })
 }
@@ -961,7 +961,7 @@ fn stake_on_invalid_dapp_fails() {
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_noop!(
             DappStaking::stake(RuntimeOrigin::signed(account), smart_contract, 100),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
 
         // Try to stake on unregistered smart contract
@@ -969,7 +969,7 @@ fn stake_on_invalid_dapp_fails() {
         assert_unregister(&smart_contract);
         assert_noop!(
             DappStaking::stake(RuntimeOrigin::signed(account), smart_contract, 100),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
     })
 }
@@ -1237,7 +1237,7 @@ fn unstake_on_invalid_dapp_fails() {
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_noop!(
             DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, 100),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
 
         // Try to unstake from unregistered smart contract
@@ -1246,7 +1246,7 @@ fn unstake_on_invalid_dapp_fails() {
         assert_unregister(&smart_contract);
         assert_noop!(
             DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, 100),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
     })
 }

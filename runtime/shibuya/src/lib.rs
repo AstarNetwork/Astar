@@ -53,7 +53,6 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -1340,80 +1339,8 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub struct InitActivePriceGet;
-impl Get<FixedU64> for InitActivePriceGet {
-    fn get() -> FixedU64 {
-        FixedU64::from_rational(1, 10)
-    }
-}
-
-parameter_types! {
-    pub const DappsStakingV2Name: &'static str = "DappsStaking";
-    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
-}
-
-pub type Migrations = (
-    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
-    pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,
-    pallet_dapp_staking_v3::migrations::DappStakingV3HistoryCleanupMarkerReset<Runtime>,
-    pallet_inflation::PalletInflationShibuyaMigration<Runtime, NextEraProvider>,
-    frame_support::migrations::RemovePallet<
-        DappsStakingV2Name,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    frame_support::migrations::RemovePallet<
-        DappStakingMigrationName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-);
-
-pub struct NextEraProvider;
-impl Get<(EraNumber, Weight)> for NextEraProvider {
-    fn get() -> (EraNumber, Weight) {
-        // Prior to executing the migration, `recalculation_era` is still set to the old `recalculation_block`
-        let target_block =
-            pallet_inflation::ActiveInflationConfig::<Runtime>::get().recalculation_era;
-
-        let state = pallet_dapp_staking_v3::ActiveProtocolState::<Runtime>::get();
-
-        // Best case scenario, the target era is the first era of the next period.
-        use pallet_dapp_staking_v3::Subperiod;
-        let mut target_era = match state.subperiod() {
-            Subperiod::Voting => state.era.saturating_add(
-                InflationCycleConfig::eras_per_build_and_earn_subperiod().saturating_add(1),
-            ),
-            Subperiod::BuildAndEarn => state.next_subperiod_start_era(),
-        };
-
-        // Adding the whole period length in blocks to the current block number, and comparing it with the target
-        // is good enough to find the target era.
-        let period_length_in_blocks = InflationCycleConfig::blocks_per_cycle()
-            / InflationCycleConfig::periods_per_cycle().max(1);
-        let mut block = System::block_number().saturating_add(period_length_in_blocks);
-
-        // Max number of iterations is the number of periods per cycle, it's not possible for more than that to occur.
-        let mut limit = InflationCycleConfig::periods_per_cycle();
-
-        use sp_runtime::traits::Saturating;
-        while block < target_block && limit > 0 {
-            target_era.saturating_accrue(InflationCycleConfig::eras_per_period());
-            block.saturating_accrue(period_length_in_blocks);
-
-            limit.saturating_dec()
-        }
-
-        #[cfg(feature = "try-runtime")]
-        if block < target_block {
-            panic!("Failed to find target era for migration, please check for errors");
-        }
-
-        // A bit overestimated weight, but it's fine since we have some calculations to execute in this function which consume some time.
-        (
-            target_era,
-            <Runtime as frame_system::Config>::DbWeight::get().reads(3),
-        )
-    }
-}
+pub type Migrations =
+    (pallet_dapp_staking_v3::migrations::DAppStakingV3IntegratedDAppsMigration<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

@@ -157,7 +157,6 @@ fn dapp_info_basic_checks() {
     let mut dapp_info = DAppInfo {
         owner,
         id: 7,
-        state: DAppState::Registered,
         reward_beneficiary: None,
     };
 
@@ -167,12 +166,6 @@ fn dapp_info_basic_checks() {
     // Beneficiary receives rewards in case it is set
     dapp_info.reward_beneficiary = Some(beneficiary);
     assert_eq!(*dapp_info.reward_beneficiary(), beneficiary);
-
-    // Check if dApp is registered
-    assert!(dapp_info.is_registered());
-
-    dapp_info.state = DAppState::Unregistered(10);
-    assert!(!dapp_info.is_registered());
 }
 
 #[test]
