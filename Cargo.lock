@@ -6074,6 +6074,7 @@ dependencies = [
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapp-staking-v3",
  "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-rescue-lockdrop",
@@ -8034,6 +8035,31 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "pallet-evm",
+]
+
+[[package]]
+name = "pallet-evm-precompile-dispatch-lockdrop"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "ethers",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "libsecp256k1",
+ "log",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-evm-precompile-dispatch",
+ "pallet-timestamp",
+ "pallet-unified-accounts",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

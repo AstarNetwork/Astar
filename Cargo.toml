@@ -300,6 +300,7 @@ pallet-evm-precompile-dapps-staking = { path = "./precompiles/dapps-staking", de
 pallet-evm-precompile-dapp-staking-v3 = { path = "./precompiles/dapp-staking-v3", default-features = false }
 pallet-evm-precompile-unified-accounts = { path = "./precompiles/unified-accounts", default-features = false }
 pallet-evm-precompile-rescue-lockdrop = { path = "./precompiles/rescue-lockdrop", default-features = false }
+pallet-evm-precompile-dispatch-lockdrop = { path = "./precompiles/dispatch-lockdrop", default-features = false }
 
 pallet-chain-extension-xvm = { path = "./chain-extensions/xvm", default-features = false }
 pallet-chain-extension-assets = { path = "./chain-extensions/pallet-assets", default-features = false }
