@@ -30,6 +30,7 @@ use frame_support::{
 };
 use frame_system::Config;
 use pallet_evm::GasWeightMapping;
+use pallet_evm_precompile_dispatch::DispatchValidateT;
 use precompile_utils::prelude::{BoundedBytes, UnboundedBytes};
 use precompile_utils::EvmResult;
 use sp_core::ecdsa;
@@ -37,7 +38,6 @@ use sp_core::ecdsa::Signature;
 use sp_core::{crypto::AccountId32, H160, H256};
 use sp_io::hashing::keccak_256;
 use sp_std::vec::Vec;
-use pallet_evm_precompile_dispatch::DispatchValidateT;
 
 #[cfg(test)]
 mod mock;
@@ -63,7 +63,8 @@ where
     Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
     <Runtime as Config>::AccountId: IsType<AccountId32>,
     <Runtime as Config>::AccountId: From<[u8; 32]>,
-    DispatchValidator: DispatchValidateT<<Runtime as Config>::AccountId, <Runtime as Config>::RuntimeCall>,
+    DispatchValidator:
+        DispatchValidateT<<Runtime as Config>::AccountId, <Runtime as Config>::RuntimeCall>,
     DecodeLimit: Get<u32>,
 {
     #[precompile::public("dispatch_lockdrop_call(bytes,bytes32,bytes)")]

@@ -20,8 +20,8 @@
 
 use crate::{RuntimeCall, UnifiedAccounts};
 use astar_primitives::precompiles::DispatchFilterValidate;
-use frame_support::{parameter_types, traits::Contains};
 use frame_support::pallet_prelude::ConstU32;
+use frame_support::{parameter_types, traits::Contains};
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
@@ -30,7 +30,6 @@ use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_dispatch_lockdrop::DispatchLockdrop;
 use pallet_evm_precompile_ed25519::Ed25519Verify;
 use pallet_evm_precompile_modexp::Modexp;
-use pallet_evm_precompile_rescue_lockdrop::UnifyLockdropPrecompile;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
@@ -119,9 +118,8 @@ pub type LocalPrecompilesSetAt<R> = (
         UnifiedAccountsPrecompile<R, UnifiedAccounts>,
         (CallableByContract, CallableByPrecompile),
     >,
-    PrecompileAt<AddressU64<20487>, UnifyLockdropPrecompile<R>, ()>,
     PrecompileAt<
-        AddressU64<20488>,
+        AddressU64<20487>,
         DispatchLockdrop<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>, ConstU32<8>>,
         // Not callable from smart contract nor precompiled, only EOA accounts
         (),
@@ -134,7 +132,7 @@ pub type LocalPrecompiles<R> = PrecompileSetBuilder<
         // Skip precompiles if out of range.
         PrecompilesInRangeInclusive<
             // We take range as last precompile index, UPDATE this once new precompile is added
-            (AddressU64<1>, AddressU64<20488>),
+            (AddressU64<1>, AddressU64<20487>),
             LocalPrecompilesSetAt<R>,
         >,
         // Prefixed precompile sets (XC20)

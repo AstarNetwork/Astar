@@ -106,7 +106,6 @@ pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
-pallet-evm-precompile-rescue-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-unified-accounts = { workspace = true }
@@ -230,7 +229,6 @@ std = [
 	"cumulus-pallet-dmp-queue/std",
 	"cumulus-pallet-xcmp-queue/std",
 	"cumulus-pallet-xcm/std",
-	"pallet-evm-precompile-rescue-lockdrop/std",
 	"pallet-collator-selection/std",
 	"frame-benchmarking/std",
 	"frame-try-runtime/std",

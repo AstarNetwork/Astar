@@ -6077,7 +6077,6 @@ dependencies = [
  "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
- "pallet-evm-precompile-rescue-lockdrop",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
@@ -8078,30 +8077,6 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.43#a
 dependencies = [
  "fp-evm",
  "num",
-]
-
-[[package]]
-name = "pallet-evm-precompile-rescue-lockdrop"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "ethers",
- "fp-evm",
- "frame-support",
- "frame-system",
- "libsecp256k1",
- "log",
- "pallet-balances",
- "pallet-evm",
- "pallet-timestamp",
- "pallet-unified-accounts",
- "parity-scale-codec",
- "precompile-utils",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -13295,7 +13270,6 @@ dependencies = [
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
- "pallet-evm-precompile-rescue-lockdrop",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
