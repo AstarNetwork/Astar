@@ -2671,3 +2671,31 @@ fn observer_pre_new_era_block_works() {
         assert_observer_value(4);
     })
 }
+
+#[test]
+fn unregister_after_max_number_of_contracts_allows_register_again() {
+    ExtBuilder::build().execute_with(|| {
+        let max_number_of_contracts = <Test as Config>::MaxNumberOfContracts::get();
+        let developer = 2;
+
+        // Reach max number of contracts
+        for id in 0..max_number_of_contracts {
+            assert_register(developer, &MockSmartContract::Wasm(id.into()));
+        }
+
+        // Ensure we cannot register more contracts
+        assert_noop!(
+            DappStaking::register(
+                RuntimeOrigin::root(),
+                developer,
+                MockSmartContract::Wasm((max_number_of_contracts).into())
+            ),
+            Error::<Test>::ExceededMaxNumberOfContracts
+        );
+
+        // Unregister one contract, and ensure register works again
+        let smart_contract = MockSmartContract::Wasm(0);
+        assert_unregister(&smart_contract);
+        assert_register(developer, &smart_contract);
+    })
+}
