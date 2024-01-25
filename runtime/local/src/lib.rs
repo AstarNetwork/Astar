@@ -482,6 +482,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<3>;
     type ForcePalletDisabled = ConstBool<false>; // This will be set to `true` when needed
+    type DelegateClaimFee = ConstU128<1>; // TODO
 }
 
 impl pallet_static_price_provider::Config for Runtime {

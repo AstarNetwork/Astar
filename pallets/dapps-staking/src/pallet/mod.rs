@@ -119,6 +119,11 @@ pub mod pallet {
         #[pallet::constant]
         type ForcePalletDisabled: Get<bool>;
 
+        /// The fee that will be charged for claiming rewards on behalf of a staker.
+        /// This amount will be transferred from the staker over to the caller.
+        #[pallet::constant]
+        type DelegateClaimFee: Get<Balance>;
+
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -927,11 +932,9 @@ pub mod pallet {
 
             let result = Self::internal_claim_staker_for(staker.clone(), contract_id)?;
 
-            let fixed_amount = 057_950_348_114_187_155 as Balance; // TODO: make this a configurable parameter
-
             let delegated_claim_fee = T::Currency::withdraw(
                 &staker,
-                fixed_amount,
+                T::DelegateClaimFee::get(),
                 WithdrawReasons::TRANSFER,
                 ExistenceRequirement::KeepAlive,
             )?;
@@ -942,7 +945,6 @@ pub mod pallet {
             // - staker: to deposit the reward
             //
             // Which means we don't need to add new benchmarks just for this (given the fact pallet will be obsolete soon)
-
             Ok(result)
         }
 

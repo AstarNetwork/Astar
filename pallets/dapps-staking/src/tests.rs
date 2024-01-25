@@ -19,7 +19,7 @@
 use super::{pallet::pallet::Error, pallet::pallet::Event, *};
 use frame_support::{
     assert_noop, assert_ok, assert_storage_noop,
-    traits::{Currency, OnFinalize, OnInitialize},
+    traits::{Currency, Get, OnFinalize, OnInitialize},
     weights::Weight,
 };
 use mock::{Balance, Balances, MockSmartContract, *};
@@ -2485,16 +2485,36 @@ fn claim_staker_for_works() {
         // Advance to next era so we can claim rewards for it
         advance_to_era(DappsStaking::current_era() + 1);
 
+        System::reset_events();
         assert_ok!(DappsStaking::claim_staker_for(
             RuntimeOrigin::signed(claimer),
             staker,
             smart_contract.clone()
         ));
 
-        // The reward must be claimed for the staker, not the claimer!
+        // We expect 5 events in total
+        // - 2 events related to reward withdraw & deposit
+        // - 1 event related to dApps staking reward
+        // - 2 events related to delegated claim fee withdraw & deposit
+        let events: Vec<_> = System::events();
+        assert_eq!(events.len(), 5);
+
         assert_matches!(
-            System::events().last().unwrap().event,
+            events[2].event,
             mock::RuntimeEvent::DappsStaking(Event::Reward(staker, _, _, _)) if staker == staker
+        );
+
+        // Withdraw fee amount from the staker
+        let fee_amount = <TestRuntime as Config>::DelegateClaimFee::get();
+        assert_matches!(
+            events[3].event,
+            mock::RuntimeEvent::Balances(pallet_balances::Event::Withdraw{who, amount}) if who == staker && amount == fee_amount
+        );
+
+        // ...and deposit it to the caller
+        assert_matches!(
+            events[4].event,
+            mock::RuntimeEvent::Balances(pallet_balances::Event::Deposit{who, amount}) if who == claimer && amount == fee_amount
         );
     })
 }

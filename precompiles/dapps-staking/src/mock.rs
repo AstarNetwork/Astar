@@ -310,6 +310,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<2>;
     type ForcePalletDisabled = ConstBool<false>;
+    type DelegateClaimFee = ConstU128<1>;
 }
 
 pub struct ExternalityBuilder {

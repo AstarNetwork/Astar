@@ -28,7 +28,7 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
         InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
@@ -340,6 +340,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<7>;
     type ForcePalletDisabled = ConstBool<false>;
+    // Fee required to claim rewards for another account. Calculated & tested manually.
+    type DelegateClaimFee = ConstU128<000_579_268_481_141_871>;
 }
 
 /// Multi-VM pointer to smart contract instance.
