@@ -916,16 +916,34 @@ pub mod pallet {
         ///
         /// This call can only be used during the pallet decommission process.
         #[pallet::call_index(14)]
-        #[pallet::weight(T::WeightInfo::claim_staker_without_restake())]
+        #[pallet::weight(T::WeightInfo::claim_staker_with_restake().max(T::WeightInfo::claim_staker_without_restake()))]
         pub fn claim_staker_for(
             origin: OriginFor<T>,
             staker: T::AccountId,
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            ensure_signed(origin)?;
+            let caller = ensure_signed(origin)?;
 
-            Self::internal_claim_staker_for(staker, contract_id)
+            let result = Self::internal_claim_staker_for(staker.clone(), contract_id)?;
+
+            let fixed_amount = 057_950_348_114_187_155 as Balance; // TODO: make this a configurable parameter
+
+            let delegated_claim_fee = T::Currency::withdraw(
+                &staker,
+                fixed_amount,
+                WithdrawReasons::TRANSFER,
+                ExistenceRequirement::KeepAlive,
+            )?;
+            T::Currency::resolve_creating(&caller, delegated_claim_fee);
+
+            // Weight-wise these two ops are almost free since both accounts balances have already been read & written to.
+            // - caller: to pay for the transaction fee
+            // - staker: to deposit the reward
+            //
+            // Which means we don't need to add new benchmarks just for this (given the fact pallet will be obsolete soon)
+
+            Ok(result)
         }
 
         /// Used to set reward destination for staker rewards, for the given staker
