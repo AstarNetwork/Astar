@@ -1459,7 +1459,7 @@ fn claim_staker_rewards_no_claimable_rewards_fails() {
 }
 
 #[test]
-fn claim_staker_rewards_after_expiry_fails() {
+fn claim_staker_rewards_era_after_expiry_works() {
     ExtBuilder::build().execute_with(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
@@ -1486,17 +1486,34 @@ fn claim_staker_rewards_after_expiry_fails() {
                 .next_subperiod_start_era
                 - 1,
         );
-        assert_claim_staker_rewards(account);
 
-        // Ensure we're still in the first period for the sake of test validity
-        assert_eq!(
-            Ledger::<Test>::get(&account).staked.period,
-            1,
-            "Sanity check."
+        // Claim must still work
+        assert_claim_staker_rewards(account);
+    })
+}
+
+#[test]
+fn claim_staker_rewards_after_expiry_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let lock_amount = 300;
+        assert_lock(account, lock_amount);
+        let stake_amount = 93;
+        assert_stake(account, &smart_contract, stake_amount);
+
+        let reward_retention_in_periods: PeriodNumber =
+            <Test as Config>::RewardRetentionInPeriods::get();
+
+        // Advance to the period at which rewards expire.
+        advance_to_period(
+            ActiveProtocolState::<Test>::get().period_number() + reward_retention_in_periods + 1,
         );
 
-        // Trigger next period, rewards should be marked as expired
-        advance_to_next_era();
         assert_eq!(
             ActiveProtocolState::<Test>::get().period_number(),
             reward_retention_in_periods + 2

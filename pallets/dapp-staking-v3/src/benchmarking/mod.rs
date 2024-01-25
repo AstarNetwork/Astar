@@ -426,7 +426,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn claim_staker_rewards_past_period(x: Linear<1, { T::EraRewardSpanLength::get() }>) {
+    fn claim_staker_rewards_past_period(x: Linear<1, { max_claim_size_past_period::<T>() }>) {
         initial_config::<T>();
 
         // Prepare staker & register smart contract
@@ -452,15 +452,16 @@ mod benchmarks {
             amount
         ));
 
-        // Advance to era just after the last era covered by the first span
-        force_advance_to_era::<T>(T::EraRewardSpanLength::get());
+        // Hacky era advancement to ensure we have the exact number of eras to claim, but are already in the next period.
+        force_advance_to_era::<T>(max_claim_size_past_period::<T>() - 1);
+        force_advance_to_next_period::<T>();
 
-        // Hack - modify staker's stake so it seems as if stake was valid from the 'first stake era'/
+        // Hack - modify staker's stake so it seems as if stake was valid from the 'first stake era'.
         // Also fill up the reward span.
         //
         // This allows us to easily control how many rewards are claimed, without having to advance large amount of blocks/eras/periods
         // to find an appropriate scenario.
-        let first_stake_era = T::EraRewardSpanLength::get() - x;
+        let first_stake_era = max_claim_size_past_period::<T>() - x;
         Ledger::<T>::mutate(&staker, |ledger| {
             ledger.staked = ledger.staked_future.unwrap();
             ledger.staked_future = None;
@@ -481,9 +482,6 @@ mod benchmarks {
         }
         EraRewards::<T>::insert(&0, reward_span);
 
-        // This ensures we claim from the past period.
-        force_advance_to_next_period::<T>();
-
         // For testing purposes
         System::<T>::reset_events();
 
@@ -499,7 +497,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn claim_staker_rewards_ongoing_period(x: Linear<1, { T::EraRewardSpanLength::get() }>) {
+    fn claim_staker_rewards_ongoing_period(x: Linear<1, { max_claim_size_ongoing_period::<T>() }>) {
         initial_config::<T>();
 
         // Prepare staker & register smart contract
@@ -525,16 +523,20 @@ mod benchmarks {
             amount
         ));
 
-        // Advance to era just after the last era covered by the first span
-        // This means we'll be able to claim all of the rewards from the previous span.
-        force_advance_to_era::<T>(T::EraRewardSpanLength::get());
+        // Advance to era at the end of the first period or first span.
+        force_advance_to_era::<T>(max_claim_size_ongoing_period::<T>());
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            1,
+            "Sanity check, we must still be in the first period."
+        );
 
         // Hack - modify staker's stake so it seems as if stake was valid from the 'first stake era'/
         // Also fill up the reward span.
         //
         // This allows us to easily control how many rewards are claimed, without having to advance large amount of blocks/eras/periods
         // to find an appropriate scenario.
-        let first_stake_era = T::EraRewardSpanLength::get() - x;
+        let first_stake_era = max_claim_size_ongoing_period::<T>() - x;
         Ledger::<T>::mutate(&staker, |ledger| {
             ledger.staked = ledger.staked_future.unwrap();
             ledger.staked_future = None;
