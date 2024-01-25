@@ -305,8 +305,6 @@ pub mod pallet {
         NominationTransferToSameContract,
         /// Decommission is in progress so this call is not allowed.
         DecommissionInProgress,
-        /// Pallet decommission hasn't been started yet so this call is not allowed.
-        DecommissionNotStarted,
     }
 
     #[pallet::hooks]
@@ -925,10 +923,6 @@ pub mod pallet {
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            ensure!(
-                DecommissionStarted::<T>::get(),
-                Error::<T>::DecommissionNotStarted
-            );
             ensure_signed(origin)?;
 
             Self::internal_claim_staker_for(staker, contract_id)
@@ -944,10 +938,7 @@ pub mod pallet {
             reward_destination: RewardDestination,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            ensure!(
-                DecommissionStarted::<T>::get(),
-                Error::<T>::DecommissionNotStarted
-            );
+
             ensure_signed(origin)?;
 
             Self::internal_set_reward_destination_for(staker, reward_destination)
