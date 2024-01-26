@@ -48,6 +48,7 @@ pub const PRECOMPILE_ADDRESS: H160 = H160::repeat_byte(0x7B);
 
 pub const ONE: u128 = 1_000_000_000_000_000_000;
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
+pub const DUMMY: AccountId32 = AccountId32::new([2u8; 32]);
 
 pub fn alice_secret() -> libsecp256k1::SecretKey {
     libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
@@ -55,13 +56,13 @@ pub fn alice_secret() -> libsecp256k1::SecretKey {
 /// EIP712 Payload struct
 #[derive(Eip712, EthAbiType, Clone)]
 #[eip712(
-name = "Astar EVM Claim",
+name = "Astar EVM dispatch",
 version = "1",
 chain_id = 1024,
 // mock genisis hash
 raw_salt = "0x4545454545454545454545454545454545454545454545454545454545454545"
 )]
-struct Claim {
+struct Dispatch {
     substrate_address: ethers::core::types::Bytes,
 }
 
@@ -69,7 +70,7 @@ struct Claim {
 pub fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
     // sign the payload
     UnifiedAccounts::eth_sign_prehash(
-        &Claim {
+        &Dispatch {
             substrate_address: who.encode().into(),
         }
         .encode_eip712()
@@ -111,11 +112,14 @@ impl frame_system::Config for TestRuntime {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-pub struct WhitelistedCalls<T>(PhantomData<T>);
+pub struct WhitelistedCalls;
 
-impl<T> Contains<T> for WhitelistedCalls<T> {
-    fn contains(_t: &T) -> bool {
-        true
+impl Contains<RuntimeCall> for WhitelistedCalls {
+    fn contains(call: &RuntimeCall) -> bool {
+        match call {
+            RuntimeCall::Balances(_) => true,
+            _ => false,
+        }
     }
 }
 
@@ -125,14 +129,13 @@ pub struct TestPrecompileSet<R>(PhantomData<R>);
 impl<R> PrecompileSet for TestPrecompileSet<R>
 where
     R: pallet_evm::Config,
-    DispatchLockdrop<R, DispatchFilterValidate<R::RuntimeCall, WhitelistedCalls<R::RuntimeCall>>>:
-        Precompile,
+    DispatchLockdrop<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>: Precompile,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         match handle.code_address() {
             a if a == PRECOMPILE_ADDRESS => Some(DispatchLockdrop::<
                 R,
-                DispatchFilterValidate<R::RuntimeCall, WhitelistedCalls<R::RuntimeCall>>,
+                DispatchFilterValidate<RuntimeCall, WhitelistedCalls>,
             >::execute(handle)),
             _ => None,
         }
@@ -185,10 +188,7 @@ parameter_types! {
 
 pub type PrecompileCall = DispatchLockdropCall<
     TestRuntime,
-    DispatchFilterValidate<
-        <TestRuntime as Config>::RuntimeCall,
-        WhitelistedCalls<<TestRuntime as Config>::RuntimeCall>,
-    >,
+    DispatchFilterValidate<<TestRuntime as Config>::RuntimeCall, WhitelistedCalls>,
     ConstU32<8>,
 >;
 

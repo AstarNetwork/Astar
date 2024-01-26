@@ -16,9 +16,11 @@ log = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
 pallet-unified-accounts = { workspace = true }
+parity-scale-codec = { workspace = true }
 precompile-utils = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
+sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
 [dev-dependencies]
@@ -27,7 +29,6 @@ ethers = { workspace = true }
 frame-system = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-timestamp = { workspace = true }
-parity-scale-codec = { package = "parity-scale-codec", workspace = true }
 precompile-utils = { workspace = true, features = ["testing"] }
 scale-info = { workspace = true }
 sp-core = { workspace = true }
@@ -47,6 +48,7 @@ std = [
 	"sp-core/std",
 	"sp-std/std",
 	"sp-io/std",
+	"sp-runtime/std",
 	"libsecp256k1/std",
 	"pallet-evm/std",
 	"pallet-evm-precompile-dispatch/std",

@@ -192,7 +192,8 @@ pub mod pallet {
             );
 
             // recover evm address from signature
-            let address = Self::verify_signature(&who, &signature)
+            let payload_hash = Self::build_signing_payload(&who);
+            let address = Self::verify_signature(&signature, payload_hash)
                 .ok_or(Error::<T>::UnexpectedSignatureFormat)?;
 
             ensure!(evm_address == address, Error::<T>::InvalidSignature);
@@ -295,13 +296,12 @@ impl<T: Config> Pallet<T> {
         keccak_256(&payload)
     }
 
-    pub fn recover_pubkey(who: &T::AccountId, sig: &EvmSignature) -> Option<[u8; 64]> {
-        let payload_hash = Self::build_signing_payload(who);
+    pub fn recover_pubkey(sig: &EvmSignature, payload_hash: [u8; 32]) -> Option<[u8; 64]> {
         sp_io::crypto::secp256k1_ecdsa_recover(sig, &payload_hash).ok()
     }
 
-    pub fn verify_signature(who: &T::AccountId, sig: &EvmSignature) -> Option<EvmAddress> {
-        Self::recover_pubkey(who, sig)
+    pub fn verify_signature(sig: &EvmSignature, payload_hash: [u8; 32]) -> Option<EvmAddress> {
+        Self::recover_pubkey(sig, payload_hash)
             .map(|pubkey| H160::from(H256::from_slice(&keccak_256(&pubkey))))
     }
 

@@ -31,7 +31,7 @@ fn precompiles() -> TestPrecompileSet<TestRuntime> {
 }
 
 #[test]
-fn unify_lockdrop_account_works() {
+fn dispatch_calls_on_behalf_of_lockdrop_works() {
     ExtBuilder::default().build().execute_with(|| {
         // Transfer balance to Alice
         let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
@@ -65,6 +65,76 @@ fn unify_lockdrop_account_works() {
 
         // Get Balance of ALICE in pallet balances
         assert_eq!(Balances::free_balance(ALICE), 15 * ONE);
+    });
+}
+
+#[test]
+fn account_id_from_payload_hash_should_match_derived_account_id_of_caller() {
+    ExtBuilder::default().build().execute_with(|| {
+        // Transfer balance to Alice
+        let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
+            dest: ALICE,
+            value: 15 * ONE,
+        });
+        // Sanity check - Alice holds no Balance
+        assert_eq!(Balances::free_balance(ALICE), 0);
+
+        // Get Alice EVM address based on the Public Key
+        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+        // Dummy AccountId to sign the EIP712 payload with
+        let account_id = DUMMY;
+        // Fund this dummy account
+        let _ = Balances::deposit_creating(&account_id, ONE * 20);
+        // Sign the EIP712 payload with this dummy account
+        let sig = get_evm_signature(&account_id, &alice_secret());
+
+        precompiles()
+            .prepare_test(
+                alice_eth,
+                PRECOMPILE_ADDRESS,
+                PrecompileCall::dispatch_lockdrop_call {
+                    call: call.encode().into(),
+                    account_id: H256::from_slice(account_id.as_ref()),
+                    signature: sig.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(false);
+
+        // Get Balance of ALICE in pallet balances and ensure it has not received any funds
+        assert_eq!(Balances::free_balance(ALICE), 0);
+    });
+}
+
+#[test]
+fn only_whitelisted_calls_can_be_dispatched() {
+    ExtBuilder::default().build().execute_with(|| {
+        // Transfer balance to Alice
+        let call = RuntimeCall::System(frame_system::Call::remark_with_event {
+            remark: b"Hello World".to_vec(),
+        });
+
+        // Get Alice EVM address based on the Public Key
+        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+        // Get derived AccountId from the Blake2b hash of the compressed ECDSA Public key
+        let account_id = crate::tests::account_id(&alice_secret());
+        // Fund this account (fund the lockdrop account)
+        let _ = Balances::deposit_creating(&account_id, ONE * 20);
+        // Sign the EIP712 payload
+        let sig = get_evm_signature(&account_id, &alice_secret());
+
+        precompiles()
+            .prepare_test(
+                alice_eth,
+                PRECOMPILE_ADDRESS,
+                PrecompileCall::dispatch_lockdrop_call {
+                    call: call.encode().into(),
+                    account_id: H256::from_slice(account_id.as_ref()),
+                    signature: sig.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(false);
     });
 }
 

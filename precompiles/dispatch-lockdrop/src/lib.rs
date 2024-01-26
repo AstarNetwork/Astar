@@ -31,12 +31,14 @@ use frame_support::{
 use frame_system::Config;
 use pallet_evm::GasWeightMapping;
 use pallet_evm_precompile_dispatch::DispatchValidateT;
+use parity_scale_codec::Encode;
 use precompile_utils::prelude::{BoundedBytes, UnboundedBytes};
-use precompile_utils::EvmResult;
-use sp_core::ecdsa;
+use precompile_utils::{keccak256, EvmResult};
 use sp_core::ecdsa::Signature;
 use sp_core::{crypto::AccountId32, H160, H256};
+use sp_core::{ecdsa, U256};
 use sp_io::hashing::keccak_256;
+use sp_runtime::traits::Zero;
 use sp_std::vec::Vec;
 
 #[cfg(test)]
@@ -127,9 +129,10 @@ where
                 return Ok(false);
             }
         };
+        let payload_hash = Self::build_signing_payload(&account_id);
         let pubkey = match <pallet_unified_accounts::Pallet<Runtime>>::recover_pubkey(
-            &account_id,
             signature_opt.as_ref(),
+            payload_hash,
         ) {
             Some(k) => k,
             None => {
@@ -216,5 +219,39 @@ where
 
     fn get_evm_address_from_pubkey(pubkey: &[u8]) -> H160 {
         H160::from(H256::from_slice(&keccak_256(pubkey)))
+    }
+
+    fn build_signing_payload(who: &<Runtime as Config>::AccountId) -> [u8; 32] {
+        let domain_separator = Self::build_domain_separator();
+        let args_hash = Self::build_args_hash(who);
+
+        let mut payload = b"\x19\x01".to_vec();
+        payload.extend_from_slice(&domain_separator);
+        payload.extend_from_slice(&args_hash);
+        keccak_256(&payload)
+    }
+
+    fn build_domain_separator() -> [u8; 32] {
+        let mut domain =
+            keccak256!("EIP712Domain(string name,string version,uint256 chainId,bytes32 salt)")
+                .to_vec();
+        domain.extend_from_slice(&keccak256!("Astar EVM dispatch")); // name
+        domain.extend_from_slice(&keccak256!("1")); // version
+        domain.extend_from_slice(
+            &(<[u8; 32]>::from(U256::from(
+                <Runtime as pallet_unified_accounts::Config>::ChainId::get(),
+            ))),
+        ); // chain id
+        domain.extend_from_slice(
+            frame_system::Pallet::<Runtime>::block_hash(<Runtime as Config>::BlockNumber::zero())
+                .as_ref(),
+        ); // genesis block hash
+        keccak_256(domain.as_slice())
+    }
+
+    fn build_args_hash(account: &<Runtime as Config>::AccountId) -> [u8; 32] {
+        let mut args_hash = keccak256!("Dispatch(bytes substrateAddress)").to_vec();
+        args_hash.extend_from_slice(&keccak_256(&account.encode()));
+        keccak_256(args_hash.as_slice())
     }
 }

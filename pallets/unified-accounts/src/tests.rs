@@ -83,7 +83,7 @@ fn eip712_signature_verify_works() {
         let sig = UnifiedAccounts::eth_sign_prehash(&claim_hash, &alice_secret());
         assert_eq!(
             Some(UnifiedAccounts::eth_address(&alice_secret())),
-            UnifiedAccounts::verify_signature(&ALICE, &sig),
+            UnifiedAccounts::verify_signature(&sig, claim_hash),
             "signature verification should work"
         );
     });
@@ -422,7 +422,7 @@ fn recover_public_key_works() {
         // assert public key recovery works
         assert_eq!(
             expected_pubkey,
-            UnifiedAccounts::recover_pubkey(&ALICE, &signature)
+            UnifiedAccounts::recover_pubkey(&signature, claim_hash)
                 .unwrap()
                 .as_ref(),
             "recover public key should work"
