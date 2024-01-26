@@ -46,6 +46,8 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+pub const LOG_TARGET: &str = "dispatch-lockdrop-precompile";
+
 // ECDSA signature bytes
 type ECDSASignatureBytes = ConstU32<65>;
 
@@ -77,7 +79,7 @@ where
         signature: BoundedBytes<ECDSASignatureBytes>,
     ) -> EvmResult<bool> {
         log::trace!(
-            target: "dispatch-lockdrop",
+            target: LOG_TARGET,
             "raw arguments: call: {:?}, account_id: {:?}, signature: {:?}",
             call,
             account_id,
@@ -85,7 +87,6 @@ where
         );
 
         let target_gas = handle.gas_limit();
-
         let caller: H160 = handle.context().caller.into();
         let input: Vec<u8> = call.into();
         let signature_bytes: Vec<u8> = signature.into();
@@ -97,7 +98,7 @@ where
                 Ok(c) => c,
                 Err(_) => {
                     log::trace!(
-                        target: "dispatch-lockdrop",
+                        target: LOG_TARGET,
                         "Error: could not decode call"
                     );
                     return Ok(false);
@@ -111,7 +112,7 @@ where
                 <= Runtime::GasWeightMapping::gas_to_weight(gas, false).ref_time();
             if !valid_weight {
                 log::trace!(
-                    target: "dispatch-lockdrop",
+                    target: LOG_TARGET,
                     "Error: gas limit exceeded"
                 );
                 return Ok(false);
@@ -123,7 +124,7 @@ where
             Some(s) => s,
             None => {
                 log::trace!(
-                    target: "dispatch-lockdrop",
+                    target: LOG_TARGET,
                     "Error: could not parse signature"
                 );
                 return Ok(false);
@@ -137,7 +138,7 @@ where
             Some(k) => k,
             None => {
                 log::trace!(
-                    target: "dispatch-lockdrop",
+                    target: LOG_TARGET,
                     "Error: could not recover pubkey from signature"
                 );
                 return Ok(false);
@@ -147,7 +148,7 @@ where
         // 4. Ensure that the caller matches the recovered EVM address from the signature
         if caller != Self::get_evm_address_from_pubkey(&pubkey) {
             log::trace!(
-                target: "dispatch-lockdrop",
+                target: LOG_TARGET,
                 "Error: caller does not match calculated EVM address"
             );
             return Ok(false);
@@ -158,7 +159,7 @@ where
             Some(a) => a,
             None => {
                 log::trace!(
-                    target: "dispatch-lockdrop",
+                    target: LOG_TARGET,
                     "Error: could not derive AccountId from pubkey"
                 );
                 return Ok(false);
@@ -198,7 +199,7 @@ where
             }
             Err(e) => {
                 log::trace!(
-                    target: "rescue-lockdrop-precompile:claim_lock_drop_account",
+                    target: LOG_TARGET,
                     "Error: {:?}",
                     e
                 );
