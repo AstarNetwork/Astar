@@ -21,7 +21,7 @@ use super::*;
 use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstBool, ConstU64, Currency, OnFinalize, OnInitialize},
+    traits::{ConstBool, ConstU128, ConstU64, Currency, OnFinalize, OnInitialize},
     weights::{RuntimeDbWeight, Weight},
     PalletId,
 };
