@@ -1323,19 +1323,6 @@ pub mod pallet {
                 staker_info.latest_staked_value(),
             );
 
-            if should_restake_reward {
-                staker_info
-                    .stake(current_era, max_staker_reward)
-                    .map_err(|_| Error::<T>::UnexpectedStakeInfoEra)?;
-
-                // Restaking will, in the worst case, remove one, and add one record,
-                // so it's fine if the vector is full
-                ensure!(
-                    staker_info.len() <= T::MaxEraStakeValues::get(),
-                    Error::<T>::TooManyEraStakeValues
-                );
-            }
-
             // Withdraw reward funds from the dapps staking pot
             let total_imbalance = T::Currency::withdraw(
                 &Self::account_id(),
@@ -1352,6 +1339,20 @@ pub mod pallet {
             };
 
             let staker_reward = reward_imbalance.peek();
+
+            if should_restake_reward {
+                staker_info
+                    .stake(current_era, staker_reward)
+                    .map_err(|_| Error::<T>::UnexpectedStakeInfoEra)?;
+
+                // Restaking will, in the worst case, remove one, and add one record,
+                // so it's fine if the vector is full
+                ensure!(
+                    staker_info.len() <= T::MaxEraStakeValues::get(),
+                    Error::<T>::TooManyEraStakeValues
+                );
+            }
+
             if should_restake_reward {
                 ledger.locked = ledger.locked.saturating_add(staker_reward);
                 Self::update_ledger(&staker, ledger);
