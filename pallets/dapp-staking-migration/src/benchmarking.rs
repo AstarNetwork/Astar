@@ -32,7 +32,10 @@ fn smart_contract<T: pallet_dapps_staking::Config>(index: u8) -> T::SmartContrac
 }
 
 /// Initialize the old dApp staking pallet with some storage.
-pub(super) fn initial_config<T: Config>() {
+pub(super) fn initial_config<T: Config>()
+where
+    BlockNumberFor<T>: IsType<BlockNumber>,
+{
     let dapps_number = <T as pallet_dapp_staking_v3::Config>::MaxNumberOfContracts::get();
     let dapps_number = (dapps_number as u8).min(100);
 
@@ -65,7 +68,10 @@ pub(super) fn initial_config<T: Config>() {
     }
 }
 
-#[benchmarks]
+#[benchmarks(
+    where
+        BlockNumberFor<T>: IsType<BlockNumber>,
+)]
 mod benchmarks {
     use super::*;
 

@@ -23,17 +23,16 @@ use crate::{
 
 use frame_support::{
     construct_runtime, parameter_types,
-    sp_io::TestExternalities,
     traits::Currency,
     traits::{ConstU128, ConstU32, Hooks},
     weights::Weight,
     PalletId,
 };
-
 use sp_core::H256;
+use sp_io::TestExternalities;
 use sp_runtime::{
     traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
-    Perquintill,
+    BuildStorage, Perquintill,
 };
 
 use astar_primitives::{testing::Header, Balance, BlockNumber};
@@ -64,8 +63,7 @@ pub const INIT_CONFIG: InflationConfiguration = InflationConfiguration {
     ideal_staking_rate: Perquintill::from_percent(50),
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
@@ -78,14 +76,13 @@ impl frame_system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -110,7 +107,7 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ConstU128<1>;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
@@ -158,12 +155,7 @@ impl pallet_inflation::Config for Test {
 }
 
 construct_runtime!(
-    pub struct Test
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub struct Test {
         System: frame_system,
         Balances: pallet_balances,
         Inflation: pallet_inflation,
@@ -173,8 +165,8 @@ construct_runtime!(
 pub struct ExternalityBuilder;
 impl ExternalityBuilder {
     pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut storage = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .unwrap();
 
         // This will cause some initial issuance

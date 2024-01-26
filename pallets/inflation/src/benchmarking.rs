@@ -65,7 +65,10 @@ fn initial_config<T: Config>() {
     T::Currency::make_free_balance_be(&dummy_account, 1_000_000_000_000_000_000_000);
 }
 
-#[benchmarks]
+#[benchmarks(
+    where
+        BlockNumberFor<T>: IsType<BlockNumber>
+)]
 mod benchmarks {
     use super::*;
 
@@ -114,7 +117,7 @@ mod benchmarks {
         #[block]
         {
             Pallet::<T>::block_before_new_era(init_recalculation_era);
-            Pallet::<T>::on_finalize(1);
+            Pallet::<T>::on_finalize(1.into());
         }
 
         assert!(ActiveInflationConfig::<T>::get().recalculation_era > init_recalculation_era);
@@ -128,7 +131,7 @@ mod benchmarks {
         let init_issuance = T::Currency::total_issuance();
         DoRecalculation::<T>::kill();
 
-        let block = 1;
+        let block = 1.into();
         #[block]
         {
             Pallet::<T>::on_initialize(block);
@@ -151,7 +154,7 @@ mod benchmarks {
 #[cfg(test)]
 mod tests {
     use crate::mock;
-    use frame_support::sp_io::TestExternalities;
+    use sp_io::TestExternalities;
 
     pub fn new_test_ext() -> TestExternalities {
         mock::ExternalityBuilder::build()

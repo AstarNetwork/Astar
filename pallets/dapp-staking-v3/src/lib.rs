@@ -106,7 +106,10 @@ pub mod pallet {
     }
 
     #[pallet::config]
-    pub trait Config: frame_system::Config<BlockNumber = BlockNumber> {
+    pub trait Config: frame_system::Config
+    where
+        BlockNumberFor<Self>: IsType<BlockNumber>,
+    {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>
@@ -192,7 +195,10 @@ pub mod pallet {
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
-    pub enum Event<T: Config> {
+    pub enum Event<T: Config>
+    where
+        BlockNumberFor<T>: IsType<BlockNumber>,
+    {
         /// Maintenance mode has been either enabled or disabled.
         MaintenanceMode { enabled: bool },
         /// New era has started.
@@ -457,15 +463,19 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
-    pub struct GenesisConfig {
+    pub struct GenesisConfig<T> {
         pub reward_portion: Vec<Permill>,
         pub slot_distribution: Vec<Permill>,
         pub tier_thresholds: Vec<TierThreshold>,
         pub slots_per_tier: Vec<u16>,
+        _config: PhantomData<T>,
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T>
+    where
+        BlockNumberFor<T>: IsType<BlockNumber>,
+    {
         fn build(&self) {
             // Prepare tier parameters & verify their correctness
             let tier_params = TierParameters::<T::NumberOfTiers> {
@@ -527,9 +537,12 @@ pub mod pallet {
     }
 
     #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
-        fn on_initialize(now: BlockNumber) -> Weight {
-            Self::era_and_period_handler(now, TierAssignment::Real)
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T>
+    where
+        BlockNumberFor<T>: IsType<BlockNumber>,
+    {
+        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
+            Self::era_and_period_handler(now.into(), TierAssignment::Real)
         }
 
         fn on_idle(_block: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
@@ -567,7 +580,10 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T> {
+    impl<T: Config> Pallet<T>
+    where
+        BlockNumberFor<T>: IsType<BlockNumber>,
+    {
         /// Wrapper around _legacy-like_ `unbond_and_unstake`.
         ///
         /// Used to support legacy Ledger users so they can start the unlocking process for their funds.
@@ -844,9 +860,9 @@ pub mod pallet {
             ledger.subtract_lock_amount(amount_to_unlock);
 
             let current_block = frame_system::Pallet::<T>::block_number();
-            let unlock_block = current_block.saturating_add(Self::unlocking_period());
+            let unlock_block = current_block.saturating_add(Self::unlocking_period().into());
             ledger
-                .add_unlocking_chunk(amount_to_unlock, unlock_block)
+                .add_unlocking_chunk(amount_to_unlock, unlock_block.into())
                 .map_err(|_| Error::<T>::TooManyUnlockingChunks)?;
 
             // Update storage
@@ -873,7 +889,7 @@ pub mod pallet {
             let mut ledger = Ledger::<T>::get(&account);
 
             let current_block = frame_system::Pallet::<T>::block_number();
-            let amount = ledger.claim_unlocked(current_block);
+            let amount = ledger.claim_unlocked(current_block.into());
             ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
 
             // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
@@ -1513,7 +1529,7 @@ pub mod pallet {
             // Ensure a 'change' happens on the next block
             ActiveProtocolState::<T>::mutate(|state| {
                 let current_block = frame_system::Pallet::<T>::block_number();
-                state.next_era_start = current_block.saturating_add(One::one());
+                state.next_era_start = current_block.saturating_add(One::one()).into();
 
                 match forcing_type {
                     ForcingType::Era => (),
@@ -1566,7 +1582,10 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> Pallet<T> {
+    impl<T: Config> Pallet<T>
+    where
+        BlockNumberFor<T>: IsType<BlockNumber>,
+    {
         /// `Err` if pallet disabled for maintenance, `Ok` otherwise.
         pub(crate) fn ensure_pallet_enabled() -> Result<(), Error<T>> {
             if ActiveProtocolState::<T>::get().maintenance {
@@ -1667,7 +1686,7 @@ pub mod pallet {
         /// 3. Read in tier configuration. This contains information about how many slots per tier there are,
         ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
         ///    Iterate over tier thresholds & capacities, starting from the top tier, and assign dApps to them.
-        ///    
+        ///
         ///    ```text
         ////   for each tier:
         ///        for each unassigned dApp:

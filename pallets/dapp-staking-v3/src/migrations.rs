@@ -28,6 +28,8 @@ impl<
             TiersConfiguration<T::NumberOfTiers>,
         )>,
     > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G>
+where
+    BlockNumberFor<T>: IsType<BlockNumber>,
 {
     fn on_runtime_upgrade() -> Weight {
         if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
@@ -44,7 +46,7 @@ impl<
         let period_number = 1;
         let protocol_state = ProtocolState {
             era: init_era,
-            next_era_start: now.saturating_add(voting_period_length),
+            next_era_start: now.saturating_add(voting_period_length.into()).into(),
             period_info: PeriodInfo {
                 number: period_number,
                 subperiod: Subperiod::Voting,
@@ -168,7 +170,10 @@ type OldDAppTierRewardsFor<T> =
 
 /// `OnRuntimeUpgrade` logic used to migrate DApp tiers storage item to BTreeMap.
 pub struct DappStakingV3TierRewardAsTree<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for DappStakingV3TierRewardAsTree<T> {
+impl<T: Config> OnRuntimeUpgrade for DappStakingV3TierRewardAsTree<T>
+where
+    BlockNumberFor<T>: IsType<BlockNumber>,
+{
     fn on_runtime_upgrade() -> Weight {
         let mut counter = 0;
         let mut translate = |pre: OldDAppTierRewardsFor<T>| -> DAppTierRewardsFor<T> {
@@ -204,7 +209,10 @@ impl<T: Config> OnRuntimeUpgrade for DappStakingV3TierRewardAsTree<T> {
 /// We just set it to default value (all zeros) and let the pallet itself do the history cleanup.
 /// Only needed for Shibuya, can be removed later.
 pub struct DappStakingV3HistoryCleanupMarkerReset<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for DappStakingV3HistoryCleanupMarkerReset<T> {
+impl<T: Config> OnRuntimeUpgrade for DappStakingV3HistoryCleanupMarkerReset<T>
+where
+    BlockNumberFor<T>: IsType<BlockNumber>,
+{
     fn on_runtime_upgrade() -> Weight {
         HistoryCleanupMarker::<T>::put(CleanupMarker::default());
         T::DbWeight::get().writes(1)

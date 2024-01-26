@@ -34,7 +34,10 @@ use utils::*;
 //
 // Without this optimization, benchmarks can take hours to execute for production runtimes.
 
-#[benchmarks]
+#[benchmarks(
+    where
+        BlockNumberFor<T>: IsType<BlockNumber>,
+)]
 mod benchmarks {
     use super::*;
 
@@ -271,7 +274,7 @@ mod benchmarks {
         let mut counter = 1;
         Ledger::<T>::mutate(&staker, |ledger| {
             ledger.unlocking.iter_mut().for_each(|unlocking| {
-                unlocking.unlock_block = System::<T>::block_number() + counter;
+                unlocking.unlock_block = (System::<T>::block_number() + counter.into()).into();
             });
             counter += 1;
         });
@@ -285,7 +288,7 @@ mod benchmarks {
             .last()
             .expect("At least one entry must exist.")
             .unlock_block;
-        run_to_block::<T>(unlock_block);
+        run_to_block::<T>(unlock_block.into());
 
         #[extrinsic_call]
         _(RawOrigin::Signed(staker.clone()));
@@ -811,9 +814,9 @@ mod benchmarks {
         // Register & stake contracts, just so we don't have empty stakes.
         prepare_contracts_for_tier_assignment::<T>(max_number_of_contracts::<T>());
 
-        run_to_block::<T>(state.next_era_start - 1);
-        DappStaking::<T>::on_finalize(state.next_era_start - 1);
-        System::<T>::set_block_number(state.next_era_start);
+        run_to_block::<T>((state.next_era_start - 1).into());
+        DappStaking::<T>::on_finalize((state.next_era_start - 1).into());
+        System::<T>::set_block_number(state.next_era_start.into());
 
         #[block]
         {
@@ -857,7 +860,7 @@ mod benchmarks {
                 .next_subperiod_start_era
                 - 1,
         );
-        run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
+        run_to_block::<T>((ActiveProtocolState::<T>::get().next_era_start - 1).into());
 
         // Some sanity checks, we should still be in the build&earn subperiod, and in the same period as when snapshot was taken.
         assert_eq!(
@@ -870,8 +873,8 @@ mod benchmarks {
         );
 
         let new_era_start_block = ActiveProtocolState::<T>::get().next_era_start;
-        DappStaking::<T>::on_finalize(new_era_start_block - 1);
-        System::<T>::set_block_number(new_era_start_block);
+        DappStaking::<T>::on_finalize((new_era_start_block - 1).into());
+        System::<T>::set_block_number(new_era_start_block.into());
 
         let pre_cleanup_marker = HistoryCleanupMarker::<T>::get();
 
@@ -906,7 +909,7 @@ mod benchmarks {
 
         // Advance over to the next era, and then again to the last block of that era.
         force_advance_to_next_era::<T>();
-        run_to_block::<T>(ActiveProtocolState::<T>::get().next_era_start - 1);
+        run_to_block::<T>((ActiveProtocolState::<T>::get().next_era_start - 1).into());
 
         // Some sanity checks, we should still be in the build&earn subperiod, and in the first period.
         assert_eq!(
@@ -919,8 +922,8 @@ mod benchmarks {
         );
 
         let new_era_start_block = ActiveProtocolState::<T>::get().next_era_start;
-        DappStaking::<T>::on_finalize(new_era_start_block - 1);
-        System::<T>::set_block_number(new_era_start_block);
+        DappStaking::<T>::on_finalize((new_era_start_block - 1).into());
+        System::<T>::set_block_number(new_era_start_block.into());
 
         #[block]
         {

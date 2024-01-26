@@ -25,17 +25,15 @@ use ethereum_types::H256;
 
 use frame_support::{
     assert_ok, construct_runtime, parameter_types,
-    sp_io::TestExternalities,
     traits::{ConstU128, ConstU64, FindAuthor},
     weights::Weight,
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{AddressMapping, FeeCalculator};
-use sp_io::hashing::blake2_256;
+use sp_io::{hashing::blake2_256, TestExternalities};
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    AccountId32, ConsensusEngineId,
+    AccountId32, BuildStorage, ConsensusEngineId,
 };
 
 parameter_types! {
@@ -48,14 +46,13 @@ impl frame_system::Config for TestRuntime {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU64<250>;
     type DbWeight = ();
@@ -80,7 +77,7 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ConstU128<2>;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
@@ -211,22 +208,16 @@ impl pallet_ethereum_checked::Config for TestRuntime {
 }
 
 pub(crate) type AccountId = AccountId32;
-pub(crate) type BlockNumber = u64;
 pub(crate) type Balance = u128;
 
 pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
 pub const BOB: AccountId32 = AccountId32::new([1u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([2u8; 32]);
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 construct_runtime!(
     pub struct TestRuntime
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system,
         Timestamp: pallet_timestamp,
@@ -289,8 +280,8 @@ impl Default for ExtBuilder {
 
 impl ExtBuilder {
     pub fn build(self) -> TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
+        let mut t = frame_system::GenesisConfig::<TestRuntime>::default()
+            .build_storage()
             .unwrap();
 
         pallet_balances::GenesisConfig::<TestRuntime> {

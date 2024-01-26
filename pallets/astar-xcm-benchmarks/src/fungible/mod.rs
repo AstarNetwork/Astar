@@ -27,11 +27,6 @@ pub mod pallet {
     pub trait Config<I: 'static = ()>:
         frame_system::Config + crate::Config + pallet_xcm_benchmarks::fungible::Config
     {
-        /// A trusted location where reserve assets are stored, and the asset we allow to be
-        /// reserves.
-        type TrustedReserve: frame_support::traits::Get<
-            Option<(xcm::latest::MultiLocation, xcm::latest::MultiAsset)>,
-        >;
     }
 
     #[pallet::pallet]

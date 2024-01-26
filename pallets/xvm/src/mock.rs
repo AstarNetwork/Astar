@@ -28,14 +28,13 @@ use frame_support::{
     dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
     pallet_prelude::*,
     parameter_types,
-    sp_io::TestExternalities,
     traits::{ConstBool, ConstU128, ConstU64, Nothing},
 };
 use sp_core::{H160, H256};
+use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
     traits::{AccountIdLookup, BlakeTwo256},
-    AccountId32,
+    AccountId32, BuildStorage, Perbill,
 };
 use sp_std::cell::RefCell;
 
@@ -49,14 +48,13 @@ impl frame_system::Config for TestRuntime {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = AccountIdLookup<Self::AccountId, ()>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU64<250>;
     type DbWeight = ();
@@ -81,7 +79,7 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ConstU128<2>;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
@@ -100,6 +98,8 @@ parameter_types! {
     pub const DepositPerItem: Balance = 1_000;
     pub const DepositPerByte: Balance = 1_000;
     pub const DefaultDepositLimit: Balance = 1_000;
+    pub const MaxDelegateDependencies: u32 = 32;
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
     pub Schedule: pallet_contracts::Schedule<TestRuntime> = Default::default();
 }
 
@@ -109,6 +109,7 @@ impl pallet_contracts::Config for TestRuntime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+    type RuntimeHoldReason = RuntimeHoldReason;
     type CallFilter = Nothing;
     type DepositPerItem = DepositPerItem;
     type DepositPerByte = DepositPerByte;
@@ -123,6 +124,11 @@ impl pallet_contracts::Config for TestRuntime {
     type MaxStorageKeyLen = ConstU32<128>;
     type UnsafeUnstableInterface = ConstBool<true>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+    type MaxDelegateDependencies = MaxDelegateDependencies;
+    type Migrations = ();
+    type Debug = ();
+    type Environment = ();
 }
 
 thread_local! {
@@ -179,18 +185,11 @@ impl pallet_xvm::Config for TestRuntime {
 }
 
 pub(crate) type AccountId = AccountId32;
-pub(crate) type BlockNumber = u64;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 construct_runtime!(
-    pub struct TestRuntime
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub struct TestRuntime {
         System: frame_system,
         Timestamp: pallet_timestamp,
         Balances: pallet_balances,
@@ -210,8 +209,8 @@ impl ExtBuilder {
     pub fn build(self) -> TestExternalities {
         TRANSACTED.with(|v| *v.borrow_mut() = None);
 
-        let t = frame_system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
+        let t = frame_system::GenesisConfig::<TestRuntime>::default()
+            .build_storage()
             .unwrap();
 
         let mut ext = TestExternalities::from(t);

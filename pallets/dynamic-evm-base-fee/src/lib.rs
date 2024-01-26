@@ -151,11 +151,11 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_: T::BlockNumber) -> Weight {
+        fn on_initialize(_: BlockNumberFor<T>) -> Weight {
             T::WeightInfo::base_fee_per_gas_adjustment()
         }
 
-        fn on_finalize(_n: <T as frame_system::Config>::BlockNumber) {
+        fn on_finalize(_n: BlockNumberFor<T>) {
             BaseFeePerGas::<T>::mutate(|base_fee_per_gas| {
                 let old_bfpg = *base_fee_per_gas;
 

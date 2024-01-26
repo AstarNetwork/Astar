@@ -9,6 +9,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+log = { workspace = true }
 parity-scale-codec = { workspace = true }
 serde = { workspace = true }
 
@@ -19,6 +20,7 @@ scale-info = { workspace = true }
 sp-arithmetic = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
+sp-io = { workspace = true }
 
 frame-benchmarking = { workspace = true, optional = true }
 
@@ -34,7 +36,9 @@ std = [
 	"sp-core/std",
 	"scale-info/std",
 	"sp-std/std",
+	"sp-io/std",
 	"serde/std",
+	"log/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-timestamp/std",
