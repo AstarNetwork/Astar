@@ -97,10 +97,7 @@ where
             match Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input) {
                 Ok(c) => c,
                 Err(_) => {
-                    log::trace!(
-                        target: LOG_TARGET,
-                        "Error: could not decode call"
-                    );
+                    log::trace!(target: LOG_TARGET, "Error: could not decode call");
                     return Ok(false);
                 }
             };
@@ -111,10 +108,7 @@ where
             let valid_weight = info.weight.ref_time()
                 <= Runtime::GasWeightMapping::gas_to_weight(gas, false).ref_time();
             if !valid_weight {
-                log::trace!(
-                    target: LOG_TARGET,
-                    "Error: gas limit exceeded"
-                );
+                log::trace!(target: LOG_TARGET, "Error: gas limit exceeded");
                 return Ok(false);
             }
         }
@@ -123,10 +117,7 @@ where
         let signature_opt = match Self::parse_signature(&signature_bytes) {
             Some(s) => s,
             None => {
-                log::trace!(
-                    target: LOG_TARGET,
-                    "Error: could not parse signature"
-                );
+                log::trace!(target: LOG_TARGET, "Error: could not parse signature");
                 return Ok(false);
             }
         };
@@ -198,11 +189,7 @@ where
                 Ok(true)
             }
             Err(e) => {
-                log::trace!(
-                    target: LOG_TARGET,
-                    "Error: {:?}",
-                    e
-                );
+                log::trace!(target: LOG_TARGET, "Error: {:?}", e);
                 Ok(false)
             }
         }
