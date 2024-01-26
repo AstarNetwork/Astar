@@ -2551,6 +2551,32 @@ fn claim_staker_for_works() {
 }
 
 #[test]
+fn claim_staker_for_fails_if_caller_is_same_as_staker() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Register a dApp and stake some amount on it
+        let developer = 1;
+        let staker = 2;
+        let smart_contract = MockSmartContract::Evm(H160::repeat_byte(0x02));
+        assert_register(developer, &smart_contract);
+        assert_bond_and_stake(staker, &smart_contract, 13);
+
+        // Advance to next era so we can claim rewards for it
+        advance_to_era(DappsStaking::current_era() + 1);
+
+        assert_noop!(
+            DappsStaking::claim_staker_for(
+                RuntimeOrigin::signed(staker),
+                staker,
+                smart_contract.clone()
+            ),
+            Error::<TestRuntime>::ClaimForCallerAccount
+        );
+    })
+}
+
+#[test]
 fn set_reward_destination_for_works() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();

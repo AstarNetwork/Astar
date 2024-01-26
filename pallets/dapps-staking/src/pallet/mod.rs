@@ -310,6 +310,8 @@ pub mod pallet {
         NominationTransferToSameContract,
         /// Decommission is in progress so this call is not allowed.
         DecommissionInProgress,
+        /// Delegated claim call is not allowed if both the staker & caller are the same accounts.
+        ClaimForCallerAccount,
     }
 
     #[pallet::hooks]
@@ -929,6 +931,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let caller = ensure_signed(origin)?;
+
+            ensure!(caller != staker, Error::<T>::ClaimForCallerAccount);
 
             Self::internal_claim_staker_for(caller, staker, contract_id, true)
         }
