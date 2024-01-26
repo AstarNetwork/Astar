@@ -1315,14 +1315,6 @@ pub mod pallet {
             let max_staker_reward =
                 Perbill::from_rational(staked, staking_info.total) * stakers_joint_reward;
 
-            let mut ledger = Self::ledger(&staker);
-
-            let should_restake_reward = Self::should_restake_reward(
-                ledger.reward_destination,
-                dapp_info.state,
-                staker_info.latest_staked_value(),
-            );
-
             // Withdraw reward funds from the dapps staking pot
             let total_imbalance = T::Currency::withdraw(
                 &Self::account_id(),
@@ -1340,6 +1332,14 @@ pub mod pallet {
 
             let staker_reward = reward_imbalance.peek();
 
+            let mut ledger = Self::ledger(&staker);
+
+            let should_restake_reward = Self::should_restake_reward(
+                ledger.reward_destination,
+                dapp_info.state,
+                staker_info.latest_staked_value(),
+            );
+
             if should_restake_reward {
                 staker_info
                     .stake(current_era, staker_reward)
@@ -1351,9 +1351,7 @@ pub mod pallet {
                     staker_info.len() <= T::MaxEraStakeValues::get(),
                     Error::<T>::TooManyEraStakeValues
                 );
-            }
 
-            if should_restake_reward {
                 ledger.locked = ledger.locked.saturating_add(staker_reward);
                 Self::update_ledger(&staker, ledger);
 
