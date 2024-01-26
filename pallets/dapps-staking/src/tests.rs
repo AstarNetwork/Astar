@@ -2485,35 +2485,47 @@ fn claim_staker_for_works() {
         // Advance to next era so we can claim rewards for it
         advance_to_era(DappsStaking::current_era() + 1);
 
+        // 1. Call regular claim, and check the reward amount
         System::reset_events();
+        assert_ok!(DappsStaking::claim_staker(
+            RuntimeOrigin::signed(staker),
+            smart_contract.clone()
+        ));
+
+        let (event_staker, expected_reward) = match &System::events()[2].event {
+            mock::RuntimeEvent::DappsStaking(Event::Reward(staker, _, _, reward)) => (*staker, *reward),
+            _ => panic!("Unexpected event"),
+        };
+        assert_eq!(event_staker, staker);
+
+        // 2. Check that delegated claim works as expected
+        advance_to_era(DappsStaking::current_era() + 1);
+        System::reset_events();
+
         assert_ok!(DappsStaking::claim_staker_for(
             RuntimeOrigin::signed(claimer),
             staker,
             smart_contract.clone()
         ));
 
-        // We expect 5 events in total
+        // We expect 4 events in total
         // - 2 events related to reward withdraw & deposit
+        // - 1 events related to delegated claim fee deposit
         // - 1 event related to dApps staking reward
-        // - 2 events related to delegated claim fee withdraw & deposit
-        let events: Vec<_> = System::events();
-        assert_eq!(events.len(), 5);
+        let events = System::events();
+        assert_eq!(events.len(), 4);
 
+        // Deposit the reward to the caller. Reward must be reduced by the delegate claim fee amount.
+        let fee_amount = <TestRuntime as Config>::DelegateClaimFee::get();
+        assert!(expected_reward > fee_amount, "Reward must be greater than fee amount");
         assert_matches!(
             events[2].event,
-            mock::RuntimeEvent::DappsStaking(Event::Reward(staker, _, _, _)) if staker == staker
+            mock::RuntimeEvent::DappsStaking(Event::Reward(staker, _, _, reward)) if staker == staker && reward == (expected_reward - fee_amount)
         );
 
-        // Withdraw fee amount from the staker
-        let fee_amount = <TestRuntime as Config>::DelegateClaimFee::get();
+        // Deposit the call refund fee to the caller.
         assert_matches!(
             events[3].event,
-            mock::RuntimeEvent::Balances(pallet_balances::Event::Withdraw{who, amount}) if who == staker && amount == fee_amount
-        );
-
-        // ...and deposit it to the caller
-        assert_matches!(
-            events[4].event,
             mock::RuntimeEvent::Balances(pallet_balances::Event::Deposit{who, amount}) if who == claimer && amount == fee_amount
         );
     })
