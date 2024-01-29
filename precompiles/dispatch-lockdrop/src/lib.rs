@@ -20,8 +20,9 @@
 
 extern crate alloc;
 
+use alloc::format;
 use core::marker::PhantomData;
-use fp_evm::PrecompileHandle;
+use fp_evm::{ExitError, PrecompileFailure, PrecompileHandle};
 use frame_support::pallet_prelude::IsType;
 use frame_support::{codec::DecodeLimit as _, dispatch::Pays, traits::Get};
 use frame_support::{
@@ -54,7 +55,7 @@ type ECDSASignatureBytes = ConstU32<65>;
 // `DecodeLimit` specifies the max depth a call can use when decoding, as unbounded depth
 // can be used to overflow the stack.
 // Default value is 8, which is the same as in XCM call decoding.
-pub struct DispatchLockdrop<Runtime, DispatchValidator = (), DecodeLimit = ConstU32<8>>(
+pub struct DispatchLockdrop<Runtime, DispatchValidator, DecodeLimit = ConstU32<8>>(
     PhantomData<(Runtime, DispatchValidator, DecodeLimit)>,
 );
 
@@ -62,7 +63,7 @@ pub struct DispatchLockdrop<Runtime, DispatchValidator = (), DecodeLimit = Const
 impl<Runtime, DispatchValidator, DecodeLimit>
     DispatchLockdrop<Runtime, DispatchValidator, DecodeLimit>
 where
-    Runtime: pallet_evm::Config + pallet_unified_accounts::Config,
+    Runtime: pallet_evm::Config,
     <Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<Runtime::AccountId>>,
     Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
     <Runtime as Config>::AccountId: IsType<AccountId32>,
@@ -86,7 +87,6 @@ where
             signature
         );
 
-        let target_gas = handle.gas_limit();
         let caller: H160 = handle.context().caller.into();
         let input: Vec<u8> = call.into();
         let signature_bytes: Vec<u8> = signature.into();
@@ -97,74 +97,62 @@ where
             match Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input) {
                 Ok(c) => c,
                 Err(_) => {
-                    log::trace!(target: LOG_TARGET, "Error: could not decode call");
-                    return Ok(false);
+                    let message: &str = "Error: could not decode call";
+                    log::trace!(target: LOG_TARGET, "{}", message);
+                    return Err(PrecompileFailure::Error {
+                        exit_status: ExitError::Other(message.into()),
+                    });
                 }
             };
 
-        // 2. Check that gas limit is not exceeded
         let info = call.get_dispatch_info();
-        if let Some(gas) = target_gas {
-            let valid_weight = info.weight.ref_time()
-                <= Runtime::GasWeightMapping::gas_to_weight(gas, false).ref_time();
-            if !valid_weight {
-                log::trace!(target: LOG_TARGET, "Error: gas limit exceeded");
-                return Ok(false);
-            }
-        }
-
-        // 3. Recover the ECDSA Public key from the signature
-        let signature_opt = match Self::parse_signature(&signature_bytes) {
-            Some(s) => s,
-            None => {
-                log::trace!(target: LOG_TARGET, "Error: could not parse signature");
-                return Ok(false);
-            }
-        };
-        let payload_hash = Self::build_signing_payload(&account_id);
-        let pubkey = match <pallet_unified_accounts::Pallet<Runtime>>::recover_pubkey(
-            signature_opt.as_ref(),
-            payload_hash,
-        ) {
-            Some(k) => k,
-            None => {
-                log::trace!(
-                    target: LOG_TARGET,
-                    "Error: could not recover pubkey from signature"
-                );
-                return Ok(false);
-            }
-        };
-
-        // 4. Ensure that the caller matches the recovered EVM address from the signature
-        if caller != Self::get_evm_address_from_pubkey(&pubkey) {
-            log::trace!(
-                target: LOG_TARGET,
-                "Error: caller does not match calculated EVM address"
-            );
-            return Ok(false);
-        }
-
-        // 5. Derive the AccountId from the ECDSA compressed Public key
-        let origin = match Self::get_account_id_from_pubkey(pubkey) {
-            Some(a) => a,
-            None => {
-                log::trace!(
-                    target: LOG_TARGET,
-                    "Error: could not derive AccountId from pubkey"
-                );
-                return Ok(false);
-            }
-        };
-
-        // 6. validate the call
-        if let Some(_) = DispatchValidator::validate_before_dispatch(&origin, &call) {
-            return Ok(false);
-        }
-
         handle
             .record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()))?;
 
+        // 2. Recover the ECDSA Public key from the signature
+        let signature_opt = unwrap_or_err!(
+            Self::parse_signature(&signature_bytes),
+            "Error: could not parse signature"
+        );
+
+        let payload_hash = Self::build_signing_payload(&account_id);
+        let pubkey = unwrap_or_err!(
+            sp_io::crypto::secp256k1_ecdsa_recover(signature_opt.as_ref(), &payload_hash).ok(),
+            "Error: could not recover pubkey from signature"
+        );
+
+        // 3. Ensure that the caller matches the recovered EVM address from the signature
+        if caller != Self::get_evm_address_from_pubkey(&pubkey) {
+            let message: &str = "Error: caller does not match calculated EVM address";
+            log::trace!(target: LOG_TARGET, "{}", message);
+            return Err(PrecompileFailure::Error {
+                exit_status: ExitError::Other(message.into()),
+            });
+        }
+
+        // 4. Derive the AccountId from the ECDSA compressed Public key
+        let origin = unwrap_or_err!(
+            Self::get_account_id_from_pubkey(pubkey),
+            "Error: could not derive AccountId from pubkey"
+        );
+
+        if origin != account_id {
+            let message: &str =
+                "Error: AccountId parsed from signature does not match the one provided";
+            log::trace!(target: LOG_TARGET, "{}", message);
+            return Err(PrecompileFailure::Error {
+                exit_status: ExitError::Other(message.into()),
+            });
+        }
+
+        // 5. validate the call
+        if let Some(err) = DispatchValidator::validate_before_dispatch(&origin, &call) {
+            let message: &str = "Error: could not validate call";
+            log::trace!(target: LOG_TARGET, "{}", message);
+            return Err(err);
+        }
+
+        // 6. Dispatch the callÒ
         match call.dispatch(Some(origin).into()) {
             Ok(post_info) => {
                 if post_info.pays_fee(&info) == Pays::Yes {
@@ -189,8 +177,12 @@ where
                 Ok(true)
             }
             Err(e) => {
-                log::trace!(target: LOG_TARGET, "Error: {:?}", e);
-                Ok(false)
+                log::trace!(target: LOG_TARGET, "{:?}", e);
+                Err(PrecompileFailure::Error {
+                    exit_status: ExitError::Other(
+                        format!("dispatch execution failed: {}", <&'static str>::from(e)).into(),
+                    ),
+                })
             }
         }
     }
@@ -226,9 +218,7 @@ where
         domain.extend_from_slice(&keccak256!("Astar EVM dispatch")); // name
         domain.extend_from_slice(&keccak256!("1")); // version
         domain.extend_from_slice(
-            &(<[u8; 32]>::from(U256::from(
-                <Runtime as pallet_unified_accounts::Config>::ChainId::get(),
-            ))),
+            &(<[u8; 32]>::from(U256::from(<Runtime as pallet_evm::Config>::ChainId::get()))),
         ); // chain id
         domain.extend_from_slice(
             frame_system::Pallet::<Runtime>::block_hash(<Runtime as Config>::BlockNumber::zero())
@@ -242,4 +232,20 @@ where
         args_hash.extend_from_slice(&keccak_256(&account.encode()));
         keccak_256(args_hash.as_slice())
     }
+}
+
+#[macro_export]
+macro_rules! unwrap_or_err {
+    ($option_expr:expr, $error_msg:expr) => {
+        match $option_expr {
+            Some(value) => value,
+            None => {
+                let message: &str = $error_msg;
+                log::trace!(target: LOG_TARGET, "{}", message);
+                return Err(PrecompileFailure::Error {
+                    exit_status: ExitError::Other(message.into()),
+                });
+            }
+        }
+    };
 }

@@ -66,6 +66,24 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
         }
     }
 }
+
+/// Filter that only allows whitelisted runtime call to pass through dispatch-lockdrop precompile
+pub struct WhitelistedLockdropCalls;
+
+impl Contains<RuntimeCall> for WhitelistedLockdropCalls {
+    fn contains(t: &RuntimeCall) -> bool {
+        match t {
+            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => calls
+                .iter()
+                .all(|call| WhitelistedLockdropCalls::contains(call)),
+            RuntimeCall::DappsStaking(_) => true,
+            RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
+            _ => false,
+        }
+    }
+}
+
 /// The PrecompileSet installed in the Local runtime.
 #[precompile_utils::precompile_name_from_address]
 pub type LocalPrecompilesSetAt<R> = (
@@ -120,7 +138,11 @@ pub type LocalPrecompilesSetAt<R> = (
     >,
     PrecompileAt<
         AddressU64<20487>,
-        DispatchLockdrop<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>, ConstU32<8>>,
+        DispatchLockdrop<
+            R,
+            DispatchFilterValidate<RuntimeCall, WhitelistedLockdropCalls>,
+            ConstU32<8>,
+        >,
         // Not callable from smart contract nor precompiled, only EOA accounts
         (),
     >,

@@ -15,7 +15,6 @@ libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
 log = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
-pallet-unified-accounts = { workspace = true }
 parity-scale-codec = { workspace = true }
 precompile-utils = { workspace = true }
 sp-core = { workspace = true }
@@ -39,17 +38,19 @@ sp-std = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"pallet-unified-accounts/std",
-	"fp-evm/std",
-	"frame-support/std",
-	"frame-system/std",
-	"pallet-evm/std",
-	"precompile-utils/std",
-	"sp-core/std",
+	"log/std",
+	"libsecp256k1/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
 	"sp-std/std",
+	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"libsecp256k1/std",
+	"frame-support/std",
+	"frame-system/std",
+	"astar-primitives/std",
+	"precompile-utils/std",
 	"pallet-evm/std",
-	"pallet-evm-precompile-dispatch/std",
+	"pallet-balances/std",
+	"pallet-timestamp/std",
 ]

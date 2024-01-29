@@ -37,7 +37,6 @@ use ethers::prelude::transaction::eip712::Eip712;
 
 use frame_support::traits::Contains;
 
-use astar_primitives::evm::HashedDefaultMappings;
 use astar_primitives::precompiles::DispatchFilterValidate;
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -69,7 +68,7 @@ struct Dispatch {
 /// Build the signature payload for given native account and eth private key
 pub fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
     // sign the payload
-    UnifiedAccounts::eth_sign_prehash(
+    eth_sign_prehash(
         &Dispatch {
             substrate_address: who.encode().into(),
         }
@@ -77,6 +76,14 @@ pub fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) ->
         .unwrap(),
         secret,
     )
+}
+
+pub fn eth_sign_prehash(prehash: &[u8; 32], secret: &libsecp256k1::SecretKey) -> [u8; 65] {
+    let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(prehash), secret);
+    let mut r = [0u8; 65];
+    r[0..64].copy_from_slice(&sig.serialize()[..]);
+    r[64] = recovery_id.serialize();
+    r
 }
 
 parameter_types! {
@@ -192,13 +199,25 @@ pub type PrecompileCall = DispatchLockdropCall<
     ConstU32<8>,
 >;
 
+pub struct AddressMapper;
+impl AddressMapping<astar_primitives::AccountId> for AddressMapper {
+    fn into_account_id(account: H160) -> astar_primitives::AccountId {
+        let mut account_id = [0u8; 32];
+        account_id[0..20].clone_from_slice(&account.as_bytes());
+
+        account_id
+            .try_into()
+            .expect("H160 is 20 bytes long so it must fit into 32 bytes; QED")
+    }
+}
+
 impl pallet_evm::Config for TestRuntime {
     type FeeCalculator = ();
     type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
     type WeightPerGas = WeightPerGas;
     type CallOrigin = EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
-    type AddressMapping = UnifiedAccounts;
+    type AddressMapping = AddressMapper;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
@@ -221,15 +240,6 @@ parameter_types! {
     pub ChainId: u64 = 1024;
 }
 
-impl pallet_unified_accounts::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type DefaultMappings = HashedDefaultMappings<BlakeTwo256>;
-    type ChainId = ChainId;
-    type AccountMappingStorageFee = AccountMappingStorageFee;
-    type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
-}
-
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
     pub enum TestRuntime where
@@ -239,7 +249,6 @@ construct_runtime!(
     {
         System: frame_system,
         Evm: pallet_evm,
-        UnifiedAccounts: pallet_unified_accounts,
         Balances : pallet_balances,
         Timestamp: pallet_timestamp,
     }

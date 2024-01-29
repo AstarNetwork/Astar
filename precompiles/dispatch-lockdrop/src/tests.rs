@@ -17,11 +17,13 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use ethers::prelude::H256;
+use fp_evm::ExitError;
 use frame_support::traits::Currency;
 use sp_core::crypto::AccountId32;
 
 use crate::mock::*;
 
+use astar_primitives::evm::EvmAddress;
 use parity_scale_codec::Encode;
 use precompile_utils::testing::*;
 use sp_core::ecdsa;
@@ -42,7 +44,7 @@ fn dispatch_calls_on_behalf_of_lockdrop_works() {
         assert_eq!(Balances::free_balance(ALICE), 0);
 
         // Get Alice EVM address based on the Public Key
-        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+        let alice_eth = crate::tests::eth_address(&alice_secret());
         // Get derived AccountId from the Blake2b hash of the compressed ECDSA Public key
         let account_id = account_id(&alice_secret());
         // Fund this account (fund the lockdrop account)
@@ -80,7 +82,7 @@ fn account_id_from_payload_hash_should_match_derived_account_id_of_caller() {
         assert_eq!(Balances::free_balance(ALICE), 0);
 
         // Get Alice EVM address based on the Public Key
-        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+        let alice_eth = crate::tests::eth_address(&alice_secret());
         // Dummy AccountId to sign the EIP712 payload with
         let account_id = DUMMY;
         // Fund this dummy account
@@ -99,7 +101,9 @@ fn account_id_from_payload_hash_should_match_derived_account_id_of_caller() {
                 },
             )
             .expect_no_logs()
-            .execute_returns(false);
+            .execute_error(ExitError::Other(
+                "Error: AccountId parsed from signature does not match the one provided".into(),
+            ));
 
         // Get Balance of ALICE in pallet balances and ensure it has not received any funds
         assert_eq!(Balances::free_balance(ALICE), 0);
@@ -115,7 +119,7 @@ fn only_whitelisted_calls_can_be_dispatched() {
         });
 
         // Get Alice EVM address based on the Public Key
-        let alice_eth = UnifiedAccounts::eth_address(&alice_secret());
+        let alice_eth = crate::tests::eth_address(&alice_secret());
         // Get derived AccountId from the Blake2b hash of the compressed ECDSA Public key
         let account_id = crate::tests::account_id(&alice_secret());
         // Fund this account (fund the lockdrop account)
@@ -134,7 +138,7 @@ fn only_whitelisted_calls_can_be_dispatched() {
                 },
             )
             .expect_no_logs()
-            .execute_returns(false);
+            .execute_error(ExitError::Other("call filtered out".into()))
     });
 }
 
@@ -147,4 +151,12 @@ fn account_id(secret: &libsecp256k1::SecretKey) -> AccountId32 {
         .as_ref(),
     )
     .into()
+}
+
+fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
+    EvmAddress::from_slice(
+        &sp_io::hashing::keccak_256(
+            &libsecp256k1::PublicKey::from_secret_key(secret).serialize()[1..65],
+        )[12..],
+    )
 }
