@@ -93,17 +93,10 @@ where
         let account_id = AccountId32::new(account_id.into()).into();
 
         // 1. Decode the call
-        let call =
-            match Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input) {
-                Ok(c) => c,
-                Err(_) => {
-                    let message: &str = "Error: could not decode call";
-                    log::trace!(target: LOG_TARGET, "{}", message);
-                    return Err(PrecompileFailure::Error {
-                        exit_status: ExitError::Other(message.into()),
-                    });
-                }
-            };
+        let call = unwrap_or_err!(
+            Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input).ok(),
+            "Error: could not decode call"
+        );
 
         let info = call.get_dispatch_info();
         handle
