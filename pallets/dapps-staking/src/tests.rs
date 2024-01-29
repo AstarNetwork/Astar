@@ -2485,18 +2485,6 @@ fn claim_staker_for_works() {
         // Advance to next era so we can claim rewards for it
         advance_to_era(DappsStaking::current_era() + 1);
 
-        // Claiming for another staker is not possible unless decommission has started
-        assert_noop!(
-            DappsStaking::claim_staker_for(
-                RuntimeOrigin::signed(claimer),
-                staker,
-                smart_contract.clone()
-            ),
-            Error::<TestRuntime>::DecommissionNotStarted
-        );
-
-        // Enable decommission mode & claim the reward
-        assert_ok!(DappsStaking::decommission(RuntimeOrigin::root()));
         assert_ok!(DappsStaking::claim_staker_for(
             RuntimeOrigin::signed(claimer),
             staker,
@@ -2524,18 +2512,6 @@ fn set_reward_destination_for_works() {
         assert_register(developer, &smart_contract);
         assert_bond_and_stake(staker, &smart_contract, 17);
 
-        // Claiming for another staker is not possible unless decommission has started
-        assert_noop!(
-            DappsStaking::set_reward_destination_for(
-                RuntimeOrigin::signed(caller),
-                staker,
-                RewardDestination::StakeBalance
-            ),
-            Error::<TestRuntime>::DecommissionNotStarted
-        );
-
-        // Enable decommission mode and set the reward destination
-        assert_ok!(DappsStaking::decommission(RuntimeOrigin::root()));
         assert_ok!(DappsStaking::set_reward_destination_for(
             RuntimeOrigin::signed(caller),
             staker,
