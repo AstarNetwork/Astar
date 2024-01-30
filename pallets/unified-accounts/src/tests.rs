@@ -32,12 +32,12 @@ use sp_runtime::{traits::StaticLookup, AccountId32, MultiAddress};
 /// EIP712 Payload struct
 #[derive(Eip712, EthAbiType, Clone)]
 #[eip712(
-        name = "Astar EVM Claim",
-        version = "1",
-        chain_id = 1024,
-        // mock genisis hash
-        raw_salt = "0x4545454545454545454545454545454545454545454545454545454545454545"
-    )]
+name = "Astar EVM Claim",
+version = "1",
+chain_id = 1024,
+// mock genisis hash
+raw_salt = "0x4545454545454545454545454545454545454545454545454545454545454545"
+)]
 struct Claim {
     substrate_address: Bytes,
 }
@@ -83,7 +83,7 @@ fn eip712_signature_verify_works() {
         let sig = UnifiedAccounts::eth_sign_prehash(&claim_hash, &alice_secret());
         assert_eq!(
             Some(UnifiedAccounts::eth_address(&alice_secret())),
-            UnifiedAccounts::verify_signature(&sig, claim_hash),
+            UnifiedAccounts::verify_signature(&ALICE, &sig),
             "signature verification should work"
         );
     });
@@ -394,38 +394,6 @@ fn charging_storage_fee_should_not_reap_account() {
                 alice_signature
             ),
             Error::<TestRuntime>::FundsUnavailable
-        );
-    });
-}
-
-#[test]
-fn recover_public_key_works() {
-    ExtBuilder::default().build().execute_with(|| {
-        let claim = Claim {
-            substrate_address: ALICE.encode().into(),
-        };
-
-        let claim_hash = UnifiedAccounts::build_signing_payload(&ALICE);
-        // assert signing payload is correct
-        assert_eq!(
-            claim.encode_eip712().unwrap(),
-            claim_hash,
-            "signing payload should match"
-        );
-
-        // sign the payload
-        let signature = UnifiedAccounts::eth_sign_prehash(&claim_hash, &alice_secret());
-
-        let expected_pubkey =
-            &libsecp256k1::PublicKey::from_secret_key(&alice_secret()).serialize()[1..65];
-
-        // assert public key recovery works
-        assert_eq!(
-            expected_pubkey,
-            UnifiedAccounts::recover_pubkey(&signature, claim_hash)
-                .unwrap()
-                .as_ref(),
-            "recover public key should work"
         );
     });
 }

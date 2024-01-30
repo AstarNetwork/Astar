@@ -76,7 +76,6 @@ use frame_support::{
     },
 };
 use frame_system::{ensure_signed, pallet_prelude::*};
-pub use pallet::*;
 use pallet_evm::AddressMapping;
 use precompile_utils::keccak256;
 use sp_core::{H160, H256, U256};
@@ -86,6 +85,8 @@ use sp_runtime::{
     MultiAddress,
 };
 use sp_std::marker::PhantomData;
+
+pub use pallet::*;
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -192,8 +193,7 @@ pub mod pallet {
             );
 
             // recover evm address from signature
-            let payload_hash = Self::build_signing_payload(&who);
-            let address = Self::verify_signature(&signature, payload_hash)
+            let address = Self::verify_signature(&who, &signature)
                 .ok_or(Error::<T>::UnexpectedSignatureFormat)?;
 
             ensure!(evm_address == address, Error::<T>::InvalidSignature);
@@ -296,13 +296,12 @@ impl<T: Config> Pallet<T> {
         keccak_256(&payload)
     }
 
-    pub fn recover_pubkey(sig: &EvmSignature, payload_hash: [u8; 32]) -> Option<[u8; 64]> {
-        sp_io::crypto::secp256k1_ecdsa_recover(sig, &payload_hash).ok()
-    }
+    pub fn verify_signature(who: &T::AccountId, sig: &EvmSignature) -> Option<EvmAddress> {
+        let payload_hash = Self::build_signing_payload(who);
 
-    pub fn verify_signature(sig: &EvmSignature, payload_hash: [u8; 32]) -> Option<EvmAddress> {
-        Self::recover_pubkey(sig, payload_hash)
+        sp_io::crypto::secp256k1_ecdsa_recover(sig, &payload_hash)
             .map(|pubkey| H160::from(H256::from_slice(&keccak_256(&pubkey))))
+            .ok()
     }
 
     fn build_domain_separator() -> [u8; 32] {
