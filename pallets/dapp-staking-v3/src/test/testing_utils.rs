@@ -112,7 +112,6 @@ pub(crate) fn assert_register(owner: AccountId, smart_contract: &MockSmartContra
 
     // Verify post-state
     let dapp_info = IntegratedDApps::<Test>::get(smart_contract).unwrap();
-    assert_eq!(dapp_info.state, DAppState::Registered);
     assert_eq!(dapp_info.owner, owner);
     assert_eq!(dapp_info.id, pre_snapshot.next_dapp_id);
     assert!(dapp_info.reward_beneficiary.is_none());
@@ -194,12 +193,14 @@ pub(crate) fn assert_unregister(smart_contract: &MockSmartContract) {
     }));
 
     // Verify post-state
+    assert!(!IntegratedDApps::<Test>::contains_key(&smart_contract));
     assert_eq!(
-        IntegratedDApps::<Test>::get(&smart_contract).unwrap().state,
-        DAppState::Unregistered(pre_snapshot.active_protocol_state.era),
+        pre_snapshot.integrated_dapps.len() - 1,
+        IntegratedDApps::<Test>::count() as usize
     );
+
     assert!(!ContractStake::<Test>::contains_key(
-        &IntegratedDApps::<Test>::get(&smart_contract).unwrap().id
+        &pre_snapshot.integrated_dapps[&smart_contract].id
     ));
 }
 

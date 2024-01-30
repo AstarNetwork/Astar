@@ -463,7 +463,7 @@ fn unregister_fails() {
         assert_unregister(&smart_contract);
         assert_noop!(
             DappStaking::unregister(RuntimeOrigin::root(), smart_contract),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
     })
 }
@@ -961,7 +961,7 @@ fn stake_on_invalid_dapp_fails() {
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_noop!(
             DappStaking::stake(RuntimeOrigin::signed(account), smart_contract, 100),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
 
         // Try to stake on unregistered smart contract
@@ -969,7 +969,7 @@ fn stake_on_invalid_dapp_fails() {
         assert_unregister(&smart_contract);
         assert_noop!(
             DappStaking::stake(RuntimeOrigin::signed(account), smart_contract, 100),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
     })
 }
@@ -1237,7 +1237,7 @@ fn unstake_on_invalid_dapp_fails() {
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_noop!(
             DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, 100),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
 
         // Try to unstake from unregistered smart contract
@@ -1246,7 +1246,7 @@ fn unstake_on_invalid_dapp_fails() {
         assert_unregister(&smart_contract);
         assert_noop!(
             DappStaking::unstake(RuntimeOrigin::signed(account), smart_contract, 100),
-            Error::<Test>::NotOperatedDApp
+            Error::<Test>::ContractNotFound
         );
     })
 }
@@ -1459,7 +1459,7 @@ fn claim_staker_rewards_no_claimable_rewards_fails() {
 }
 
 #[test]
-fn claim_staker_rewards_after_expiry_fails() {
+fn claim_staker_rewards_era_after_expiry_works() {
     ExtBuilder::build().execute_with(|| {
         // Register smart contract, lock&stake some amount
         let dev_account = 1;
@@ -1486,17 +1486,34 @@ fn claim_staker_rewards_after_expiry_fails() {
                 .next_subperiod_start_era
                 - 1,
         );
-        assert_claim_staker_rewards(account);
 
-        // Ensure we're still in the first period for the sake of test validity
-        assert_eq!(
-            Ledger::<Test>::get(&account).staked.period,
-            1,
-            "Sanity check."
+        // Claim must still work
+        assert_claim_staker_rewards(account);
+    })
+}
+
+#[test]
+fn claim_staker_rewards_after_expiry_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+
+        let account = 2;
+        let lock_amount = 300;
+        assert_lock(account, lock_amount);
+        let stake_amount = 93;
+        assert_stake(account, &smart_contract, stake_amount);
+
+        let reward_retention_in_periods: PeriodNumber =
+            <Test as Config>::RewardRetentionInPeriods::get();
+
+        // Advance to the period at which rewards expire.
+        advance_to_period(
+            ActiveProtocolState::<Test>::get().period_number() + reward_retention_in_periods + 1,
         );
 
-        // Trigger next period, rewards should be marked as expired
-        advance_to_next_era();
         assert_eq!(
             ActiveProtocolState::<Test>::get().period_number(),
             reward_retention_in_periods + 2
@@ -2669,5 +2686,33 @@ fn observer_pre_new_era_block_works() {
         assert_eq!(ActiveProtocolState::<Test>::get().era, 3, "Sanity check.");
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
         assert_observer_value(4);
+    })
+}
+
+#[test]
+fn unregister_after_max_number_of_contracts_allows_register_again() {
+    ExtBuilder::build().execute_with(|| {
+        let max_number_of_contracts = <Test as Config>::MaxNumberOfContracts::get();
+        let developer = 2;
+
+        // Reach max number of contracts
+        for id in 0..max_number_of_contracts {
+            assert_register(developer, &MockSmartContract::Wasm(id.into()));
+        }
+
+        // Ensure we cannot register more contracts
+        assert_noop!(
+            DappStaking::register(
+                RuntimeOrigin::root(),
+                developer,
+                MockSmartContract::Wasm((max_number_of_contracts).into())
+            ),
+            Error::<Test>::ExceededMaxNumberOfContracts
+        );
+
+        // Unregister one contract, and ensure register works again
+        let smart_contract = MockSmartContract::Wasm(0);
+        assert_unregister(&smart_contract);
+        assert_register(developer, &smart_contract);
     })
 }

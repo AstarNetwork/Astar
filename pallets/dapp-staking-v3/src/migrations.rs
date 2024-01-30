@@ -121,92 +121,47 @@ impl<
     }
 }
 
-/// Legacy struct type
-/// Should be deleted after the migration
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-struct OldDAppTier {
+/// State in which some dApp is in.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+pub enum OldDAppState {
+    /// dApp is registered and active.
+    Registered,
+    /// dApp has been unregistered in the contained era.
+    Unregistered(#[codec(compact)] EraNumber),
+}
+
+/// General information about a dApp.
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+pub struct OldDAppInfo<AccountId> {
+    /// Owner of the dApp, default reward beneficiary.
+    pub owner: AccountId,
+    /// dApp's unique identifier in dApp staking.
     #[codec(compact)]
-    pub dapp_id: DAppId,
-    pub tier_id: Option<TierId>,
+    pub id: DAppId,
+    /// Current state of the dApp.
+    pub state: OldDAppState,
+    // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
+    pub reward_beneficiary: Option<AccountId>,
 }
 
-/// Information about all of the dApps that got into tiers, and tier rewards
-#[derive(
-    Encode,
-    Decode,
-    MaxEncodedLen,
-    RuntimeDebugNoBound,
-    PartialEqNoBound,
-    EqNoBound,
-    CloneNoBound,
-    TypeInfo,
-)]
-#[scale_info(skip_type_params(MD, NT))]
-struct OldDAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
-    /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-    pub dapps: BoundedVec<OldDAppTier, MD>,
-    /// Rewards for each tier. First entry refers to the first tier, and so on.
-    pub rewards: BoundedVec<Balance, NT>,
-    /// Period during which this struct was created.
-    #[codec(compact)]
-    pub period: PeriodNumber,
-}
-
-impl<MD: Get<u32>, NT: Get<u32>> Default for OldDAppTierRewards<MD, NT> {
-    fn default() -> Self {
-        Self {
-            dapps: BoundedVec::default(),
-            rewards: BoundedVec::default(),
-            period: 0,
-        }
-    }
-}
-
-// Legacy convenience type for `DAppTierRewards` usage.
-type OldDAppTierRewardsFor<T> =
-    OldDAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
-
-/// `OnRuntimeUpgrade` logic used to migrate DApp tiers storage item to BTreeMap.
-pub struct DappStakingV3TierRewardAsTree<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for DappStakingV3TierRewardAsTree<T> {
+/// To be only used for Shibuya, can be removed later.
+pub struct DAppStakingV3IntegratedDAppsMigration<T>(PhantomData<T>);
+impl<T: Config> OnRuntimeUpgrade for DAppStakingV3IntegratedDAppsMigration<T> {
     fn on_runtime_upgrade() -> Weight {
-        let mut counter = 0;
-        let mut translate = |pre: OldDAppTierRewardsFor<T>| -> DAppTierRewardsFor<T> {
-            let mut dapps_tree = BTreeMap::new();
-            for dapp_tier in &pre.dapps {
-                if let Some(tier_id) = dapp_tier.tier_id {
-                    dapps_tree.insert(dapp_tier.dapp_id, tier_id);
-                }
+        let mut translated = 0_u64;
+        IntegratedDApps::<T>::translate::<OldDAppInfo<T::AccountId>, _>(|_key, old_value| {
+            translated.saturating_inc();
+
+            match old_value.state {
+                OldDAppState::Registered => Some(DAppInfo {
+                    owner: old_value.owner,
+                    id: old_value.id,
+                    reward_beneficiary: old_value.reward_beneficiary,
+                }),
+                OldDAppState::Unregistered(_) => None,
             }
+        });
 
-            let result = DAppTierRewardsFor::<T>::new(dapps_tree, pre.rewards.to_vec(), pre.period);
-            if result.is_err() {
-                // Tests should ensure this never happens...
-                log::error!("Failed to migrate dApp tier rewards: {:?}", pre);
-            }
-
-            // For weight calculation purposes
-            counter.saturating_inc();
-
-            // ...if it does happen, there's not much to do except create an empty map
-            result.unwrap_or(
-                DAppTierRewardsFor::<T>::new(BTreeMap::new(), pre.rewards.to_vec(), pre.period)
-                    .unwrap_or_default(),
-            )
-        };
-
-        DAppTiers::<T>::translate(|_key, value: OldDAppTierRewardsFor<T>| Some(translate(value)));
-
-        T::DbWeight::get().reads_writes(counter, counter)
-    }
-}
-
-/// We just set it to default value (all zeros) and let the pallet itself do the history cleanup.
-/// Only needed for Shibuya, can be removed later.
-pub struct DappStakingV3HistoryCleanupMarkerReset<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for DappStakingV3HistoryCleanupMarkerReset<T> {
-    fn on_runtime_upgrade() -> Weight {
-        HistoryCleanupMarker::<T>::put(CleanupMarker::default());
-        T::DbWeight::get().writes(1)
+        T::DbWeight::get().reads_writes(translated, translated + 1 /* counted map */)
     }
 }

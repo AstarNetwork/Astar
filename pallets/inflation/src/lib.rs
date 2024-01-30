@@ -671,24 +671,3 @@ impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
         Ok(())
     }
 }
-
-/// To be used just for Shibuya, can be removed after migration has been executed.
-pub struct PalletInflationShibuyaMigration<T, P>(PhantomData<(T, P)>);
-impl<T: Config, P: Get<(EraNumber, Weight)>> OnRuntimeUpgrade
-    for PalletInflationShibuyaMigration<T, P>
-{
-    fn on_runtime_upgrade() -> Weight {
-        let (recalculation_era, weight) = P::get();
-        ActiveInflationConfig::<T>::mutate(|config| {
-            // Both recalculation_era and recalculation_block are of the same `u32` type so no need to do any translation.
-            config.recalculation_era = recalculation_era;
-        });
-
-        log::info!(
-            "Inflation pallet recalculation era set to {}.",
-            recalculation_era
-        );
-
-        T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
-    }
-}

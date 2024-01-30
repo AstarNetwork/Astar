@@ -303,8 +303,6 @@ pub mod pallet {
         ContractNotFound,
         /// Call origin is not dApp owner.
         OriginNotOwner,
-        /// dApp is part of dApp staking but isn't active anymore.
-        NotOperatedDApp,
         /// Performing locking or staking with 0 amount.
         ZeroAmount,
         /// Total locked amount for staker is below minimum threshold.
@@ -637,7 +635,6 @@ pub mod pallet {
                 DAppInfo {
                     owner: owner.clone(),
                     id: dapp_id,
-                    state: DAppState::Registered,
                     reward_beneficiary: None,
                 },
             );
@@ -746,18 +743,13 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let current_era = ActiveProtocolState::<T>::get().era;
-
-            let mut dapp_info =
+            let dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
-            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
-
             ContractStake::<T>::remove(&dapp_info.id);
+            IntegratedDApps::<T>::remove(&smart_contract);
 
-            dapp_info.state = DAppState::Unregistered(current_era);
-            IntegratedDApps::<T>::insert(&smart_contract, dapp_info);
-
+            let current_era = ActiveProtocolState::<T>::get().era;
             Self::deposit_event(Event::<T>::DAppUnregistered {
                 smart_contract,
                 era: current_era,
@@ -944,8 +936,7 @@ pub mod pallet {
             ensure!(amount > 0, Error::<T>::ZeroAmount);
 
             let dapp_info =
-                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
-            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_era = protocol_state.era;
@@ -1071,8 +1062,7 @@ pub mod pallet {
             ensure!(amount > 0, Error::<T>::ZeroAmount);
 
             let dapp_info =
-                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
-            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_era = protocol_state.era;
@@ -1159,7 +1149,7 @@ pub mod pallet {
         }
 
         /// Claims some staker rewards, if user has any.
-        /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening.
+        /// In the case of a successful call, at least one era will be claimed, with the possibility of multiple claims happening.
         #[pallet::call_index(13)]
         #[pallet::weight({
             let max_span_length = T::EraRewardSpanLength::get();
@@ -1384,7 +1374,7 @@ pub mod pallet {
             let account = ensure_signed(origin)?;
 
             ensure!(
-                !Self::is_registered(&smart_contract),
+                !IntegratedDApps::<T>::contains_key(&smart_contract),
                 Error::<T>::ContractStillActive
             );
 
@@ -1618,12 +1608,6 @@ pub mod pallet {
         pub(crate) fn blocks_per_voting_period() -> BlockNumber {
             T::CycleConfiguration::blocks_per_era()
                 .saturating_mul(T::CycleConfiguration::eras_per_voting_subperiod().into())
-        }
-
-        /// `true` if smart contract is registered, `false` otherwise.
-        pub(crate) fn is_registered(smart_contract: &T::SmartContract) -> bool {
-            IntegratedDApps::<T>::get(smart_contract)
-                .map_or(false, |dapp_info| dapp_info.is_registered())
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.

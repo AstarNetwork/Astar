@@ -247,15 +247,6 @@ impl ProtocolState {
     }
 }
 
-/// State in which some dApp is in.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub enum DAppState {
-    /// dApp is registered and active.
-    Registered,
-    /// dApp has been unregistered in the contained era.
-    Unregistered(#[codec(compact)] EraNumber),
-}
-
 /// General information about a dApp.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct DAppInfo<AccountId> {
@@ -264,8 +255,6 @@ pub struct DAppInfo<AccountId> {
     /// dApp's unique identifier in dApp staking.
     #[codec(compact)]
     pub id: DAppId,
-    /// Current state of the dApp.
-    pub state: DAppState,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
     pub reward_beneficiary: Option<AccountId>,
 }
@@ -277,11 +266,6 @@ impl<AccountId> DAppInfo<AccountId> {
             Some(account_id) => account_id,
             None => &self.owner,
         }
-    }
-
-    /// `true` if dApp is registered, `false` otherwise.
-    pub fn is_registered(&self) -> bool {
-        self.state == DAppState::Registered
     }
 }
 
