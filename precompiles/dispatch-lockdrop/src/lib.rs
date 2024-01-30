@@ -32,14 +32,10 @@ use frame_support::{
 use frame_system::Config;
 use pallet_evm::GasWeightMapping;
 use pallet_evm_precompile_dispatch::DispatchValidateT;
-use parity_scale_codec::Encode;
-use precompile_utils::prelude::{BoundedBytes, UnboundedBytes};
-use precompile_utils::{keccak256, EvmResult};
-use sp_core::ecdsa::Signature;
+use precompile_utils::prelude::{revert, BoundedBytes, UnboundedBytes};
+use precompile_utils::EvmResult;
 use sp_core::{crypto::AccountId32, H160, H256};
-use sp_core::{ecdsa, U256};
 use sp_io::hashing::keccak_256;
-use sp_runtime::traits::Zero;
 use sp_std::vec::Vec;
 
 #[cfg(test)]
@@ -47,10 +43,10 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-pub const LOG_TARGET: &str = "dispatch-lockdrop-precompile";
+pub const LOG_TARGET: &str = "precompile::dispatch-lockdrop";
 
-// ECDSA signature bytes
-type ECDSASignatureBytes = ConstU32<65>;
+// ECDSA PublicKey
+type ECDSAPublic = ConstU32<64>;
 
 // `DecodeLimit` specifies the max depth a call can use when decoding, as unbounded depth
 // can be used to overflow the stack.
@@ -72,80 +68,51 @@ where
         DispatchValidateT<<Runtime as Config>::AccountId, <Runtime as Config>::RuntimeCall>,
     DecodeLimit: Get<u32>,
 {
-    #[precompile::public("dispatch_lockdrop_call(bytes,bytes32,bytes)")]
+    #[precompile::public("dispatch_lockdrop_call(bytes,bytes)")]
     fn dispatch_lockdrop_call(
         handle: &mut impl PrecompileHandle,
         call: UnboundedBytes,
-        account_id: H256,
-        signature: BoundedBytes<ECDSASignatureBytes>,
+        pubkey: BoundedBytes<ECDSAPublic>,
     ) -> EvmResult<bool> {
         log::trace!(
             target: LOG_TARGET,
-            "raw arguments: call: {:?}, account_id: {:?}, signature: {:?}",
+            "raw arguments: call: {:?}, pubkey: {:?}",
             call,
-            account_id,
-            signature
+            pubkey
         );
 
         let caller: H160 = handle.context().caller.into();
         let input: Vec<u8> = call.into();
-        let signature_bytes: Vec<u8> = signature.into();
-        let account_id = AccountId32::new(account_id.into()).into();
 
         // 1. Decode the call
-        let call = unwrap_or_err!(
-            Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input).ok(),
-            "Error: could not decode call"
-        );
+        let call = Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input)
+            .map_err(|_| revert("could not decode call"))?;
 
         let info = call.get_dispatch_info();
         handle
             .record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()))?;
 
-        // 2. Recover the ECDSA Public key from the signature
-        let signature_opt = unwrap_or_err!(
-            Self::parse_signature(&signature_bytes),
-            "Error: could not parse signature"
-        );
-
-        let payload_hash = Self::build_signing_payload(&account_id);
-        let pubkey = unwrap_or_err!(
-            sp_io::crypto::secp256k1_ecdsa_recover(signature_opt.as_ref(), &payload_hash).ok(),
-            "Error: could not recover pubkey from signature"
-        );
-
-        // 3. Ensure that the caller matches the recovered EVM address from the signature
-        if caller != Self::get_evm_address_from_pubkey(&pubkey) {
-            let message: &str = "Error: caller does not match calculated EVM address";
+        // 2. Ensure that the caller matches the public key
+        if caller != Self::get_evm_address_from_pubkey(pubkey.as_bytes()) {
+            let message: &str = "caller does not match the public key";
             log::trace!(target: LOG_TARGET, "{}", message);
             return Err(PrecompileFailure::Error {
                 exit_status: ExitError::Other(message.into()),
             });
         }
 
-        // 4. Derive the AccountId from the ECDSA compressed Public key
-        let origin = unwrap_or_err!(
-            Self::get_account_id_from_pubkey(pubkey),
-            "Error: could not derive AccountId from pubkey"
-        );
+        // 3. Derive the AccountId from the ECDSA compressed Public key
+        let origin = Self::get_account_id_from_pubkey(pubkey.as_bytes())
+            .ok_or_else(|| revert("could not derive AccountId from pubkey"))?;
 
-        if origin != account_id {
-            let message: &str =
-                "Error: AccountId parsed from signature does not match the one provided";
-            log::trace!(target: LOG_TARGET, "{}", message);
-            return Err(PrecompileFailure::Error {
-                exit_status: ExitError::Other(message.into()),
-            });
-        }
-
-        // 5. validate the call
+        // 4. validate the call
         if let Some(err) = DispatchValidator::validate_before_dispatch(&origin, &call) {
             let message: &str = "Error: could not validate call";
             log::trace!(target: LOG_TARGET, "{}", message);
             return Err(err);
         }
 
-        // 6. Dispatch the callÒ
+        // 5. Dispatch the call
         match call.dispatch(Some(origin).into()) {
             Ok(post_info) => {
                 if post_info.pays_fee(&info) == Pays::Yes {
@@ -180,65 +147,13 @@ where
         }
     }
 
-    fn get_account_id_from_pubkey(pubkey: [u8; 64]) -> Option<<Runtime as Config>::AccountId> {
-        libsecp256k1::PublicKey::parse_slice(&pubkey, None)
+    fn get_account_id_from_pubkey(pubkey: &[u8]) -> Option<<Runtime as Config>::AccountId> {
+        libsecp256k1::PublicKey::parse_slice(pubkey, None)
             .map(|k| sp_io::hashing::blake2_256(k.serialize_compressed().as_ref()).into())
             .ok()
-    }
-
-    fn parse_signature(signature_bytes: &Vec<u8>) -> Option<Signature> {
-        ecdsa::Signature::from_slice(&signature_bytes[..])
     }
 
     fn get_evm_address_from_pubkey(pubkey: &[u8]) -> H160 {
         H160::from(H256::from_slice(&keccak_256(pubkey)))
     }
-
-    fn build_signing_payload(who: &<Runtime as Config>::AccountId) -> [u8; 32] {
-        let domain_separator = Self::build_domain_separator();
-        let args_hash = Self::build_args_hash(who);
-
-        let mut payload = b"\x19\x01".to_vec();
-        payload.extend_from_slice(&domain_separator);
-        payload.extend_from_slice(&args_hash);
-        keccak_256(&payload)
-    }
-
-    fn build_domain_separator() -> [u8; 32] {
-        let mut domain =
-            keccak256!("EIP712Domain(string name,string version,uint256 chainId,bytes32 salt)")
-                .to_vec();
-        domain.extend_from_slice(&keccak256!("Astar EVM dispatch")); // name
-        domain.extend_from_slice(&keccak256!("1")); // version
-        domain.extend_from_slice(
-            &(<[u8; 32]>::from(U256::from(<Runtime as pallet_evm::Config>::ChainId::get()))),
-        ); // chain id
-        domain.extend_from_slice(
-            frame_system::Pallet::<Runtime>::block_hash(<Runtime as Config>::BlockNumber::zero())
-                .as_ref(),
-        ); // genesis block hash
-        keccak_256(domain.as_slice())
-    }
-
-    fn build_args_hash(account: &<Runtime as Config>::AccountId) -> [u8; 32] {
-        let mut args_hash = keccak256!("Dispatch(bytes substrateAddress)").to_vec();
-        args_hash.extend_from_slice(&keccak_256(&account.encode()));
-        keccak_256(args_hash.as_slice())
-    }
-}
-
-#[macro_export]
-macro_rules! unwrap_or_err {
-    ($option_expr:expr, $error_msg:expr) => {
-        match $option_expr {
-            Some(value) => value,
-            None => {
-                let message: &str = $error_msg;
-                log::trace!(target: LOG_TARGET, "{}", message);
-                return Err(PrecompileFailure::Error {
-                    exit_status: ExitError::Other(message.into()),
-                });
-            }
-        }
-    };
 }

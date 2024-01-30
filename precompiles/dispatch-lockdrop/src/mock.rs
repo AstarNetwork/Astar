@@ -24,16 +24,12 @@ use frame_support::{construct_runtime, parameter_types, traits::ConstU64, weight
 pub use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use parity_scale_codec::Encode;
 use sp_core::{keccak_256, H160, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, ConstU32, IdentityLookup},
     AccountId32,
 };
-
-use ethers::contract::{Eip712, EthAbiType};
-use ethers::prelude::transaction::eip712::Eip712;
 
 use frame_support::traits::Contains;
 
@@ -51,39 +47,6 @@ pub const DUMMY: AccountId32 = AccountId32::new([2u8; 32]);
 
 pub fn alice_secret() -> libsecp256k1::SecretKey {
     libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
-}
-/// EIP712 Payload struct
-#[derive(Eip712, EthAbiType, Clone)]
-#[eip712(
-name = "Astar EVM dispatch",
-version = "1",
-chain_id = 1024,
-// mock genisis hash
-raw_salt = "0x4545454545454545454545454545454545454545454545454545454545454545"
-)]
-struct Dispatch {
-    substrate_address: ethers::core::types::Bytes,
-}
-
-/// Build the signature payload for given native account and eth private key
-pub fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
-    // sign the payload
-    eth_sign_prehash(
-        &Dispatch {
-            substrate_address: who.encode().into(),
-        }
-        .encode_eip712()
-        .unwrap(),
-        secret,
-    )
-}
-
-pub fn eth_sign_prehash(prehash: &[u8; 32], secret: &libsecp256k1::SecretKey) -> [u8; 65] {
-    let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(prehash), secret);
-    let mut r = [0u8; 65];
-    r[0..64].copy_from_slice(&sig.serialize()[..]);
-    r[64] = recovery_id.serialize();
-    r
 }
 
 parameter_types! {

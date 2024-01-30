@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use ethers::prelude::H256;
 use fp_evm::ExitError;
 use frame_support::traits::Currency;
 use sp_core::crypto::AccountId32;
@@ -49,8 +48,8 @@ fn dispatch_calls_on_behalf_of_lockdrop_works() {
         let account_id = account_id(&alice_secret());
         // Fund this account (fund the lockdrop account)
         let _ = Balances::deposit_creating(&account_id, ONE * 20);
-        // Sign the EIP712 payload
-        let sig = get_evm_signature(&account_id, &alice_secret());
+        // Get the full 64 bytes ECDSA Public key
+        let pubkey = crate::tests::public_key_full(&alice_secret());
 
         precompiles()
             .prepare_test(
@@ -58,8 +57,7 @@ fn dispatch_calls_on_behalf_of_lockdrop_works() {
                 PRECOMPILE_ADDRESS,
                 PrecompileCall::dispatch_lockdrop_call {
                     call: call.encode().into(),
-                    account_id: H256::from_slice(account_id.as_ref()),
-                    signature: sig.into(),
+                    pubkey: pubkey.into(),
                 },
             )
             .expect_no_logs()
@@ -71,7 +69,7 @@ fn dispatch_calls_on_behalf_of_lockdrop_works() {
 }
 
 #[test]
-fn account_id_from_payload_hash_should_match_derived_account_id_of_caller() {
+fn pubkey_does_not_match_caller_address() {
     ExtBuilder::default().build().execute_with(|| {
         // Transfer balance to Alice
         let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
@@ -87,8 +85,8 @@ fn account_id_from_payload_hash_should_match_derived_account_id_of_caller() {
         let account_id = DUMMY;
         // Fund this dummy account
         let _ = Balances::deposit_creating(&account_id, ONE * 20);
-        // Sign the EIP712 payload with this dummy account
-        let sig = get_evm_signature(&account_id, &alice_secret());
+        // Create a dummy pubkey
+        let pubkey = [10u8; 64];
 
         precompiles()
             .prepare_test(
@@ -96,13 +94,12 @@ fn account_id_from_payload_hash_should_match_derived_account_id_of_caller() {
                 PRECOMPILE_ADDRESS,
                 PrecompileCall::dispatch_lockdrop_call {
                     call: call.encode().into(),
-                    account_id: H256::from_slice(account_id.as_ref()),
-                    signature: sig.into(),
+                    pubkey: pubkey.into(),
                 },
             )
             .expect_no_logs()
             .execute_error(ExitError::Other(
-                "Error: AccountId parsed from signature does not match the one provided".into(),
+                "caller does not match the public key".into(),
             ));
 
         // Get Balance of ALICE in pallet balances and ensure it has not received any funds
@@ -124,8 +121,8 @@ fn only_whitelisted_calls_can_be_dispatched() {
         let account_id = crate::tests::account_id(&alice_secret());
         // Fund this account (fund the lockdrop account)
         let _ = Balances::deposit_creating(&account_id, ONE * 20);
-        // Sign the EIP712 payload
-        let sig = get_evm_signature(&account_id, &alice_secret());
+        // Get the full 64 bytes ECDSA Public key
+        let pubkey = crate::tests::public_key_full(&alice_secret());
 
         precompiles()
             .prepare_test(
@@ -133,8 +130,7 @@ fn only_whitelisted_calls_can_be_dispatched() {
                 PRECOMPILE_ADDRESS,
                 PrecompileCall::dispatch_lockdrop_call {
                     call: call.encode().into(),
-                    account_id: H256::from_slice(account_id.as_ref()),
-                    signature: sig.into(),
+                    pubkey: pubkey.into(),
                 },
             )
             .expect_no_logs()
@@ -159,4 +155,10 @@ fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
             &libsecp256k1::PublicKey::from_secret_key(secret).serialize()[1..65],
         )[12..],
     )
+}
+
+fn public_key_full(secret: &libsecp256k1::SecretKey) -> [u8; 64] {
+    libsecp256k1::PublicKey::from_secret_key(secret).serialize()[1..65]
+        .try_into()
+        .unwrap()
 }
