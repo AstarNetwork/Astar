@@ -312,6 +312,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxEraStakeValues = ConstU32<4>;
     type UnregisteredDappRewardRetention = ConstU32<7>;
     type ForcePalletDisabled = ConstBool<false>;
+    type DelegateClaimFee = ConstU128<1>;
 }
 
 /// The type used to represent the kinds of proxying allowed.

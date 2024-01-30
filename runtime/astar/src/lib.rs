@@ -33,8 +33,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
-        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, Contains, Currency, FindAuthor, Get,
+        Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -337,6 +337,8 @@ impl pallet_dapps_staking::Config for Runtime {
     // Not allowed on Astar yet
     type UnregisteredDappRewardRetention = ConstU32<{ u32::MAX }>;
     type ForcePalletDisabled = ConstBool<false>;
+    // Fee required to claim rewards for another account. Calculated & tested manually.
+    type DelegateClaimFee = ConstU128<057_950_348_114_187_155>;
 }
 
 /// Multi-VM pointer to smart contract instance.

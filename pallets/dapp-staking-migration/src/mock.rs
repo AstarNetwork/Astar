@@ -216,6 +216,7 @@ impl pallet_dapps_staking::Config for Test {
     type MaxEraStakeValues = ConstU32<10>;
     type UnregisteredDappRewardRetention = ConstU32<10>;
     type ForcePalletDisabled = ConstBool<false>;
+    type DelegateClaimFee = ConstU128<1>;
 }
 
 impl pallet_dapp_staking_migration::Config for Test {
