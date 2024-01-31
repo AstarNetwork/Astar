@@ -36,10 +36,10 @@ use pallet_evm::{
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use sp_core::{ConstU32, H160, H256};
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
 };
-use sp_std::{borrow::Borrow, cell::RefCell};
+use sp_std::cell::RefCell;
 
 use xcm::prelude::XcmVersion;
 use xcm_builder::{
@@ -54,8 +54,6 @@ use orml_xcm_support::DisabledParachainFee;
 pub type AccountId = TestAccount;
 pub type AssetId = u128;
 pub type Balance = u128;
-pub type BlockNumber = u64;
-pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 pub type Block = frame_system::mocking::MockBlock<Runtime>;
 pub type CurrencyId = u128;
 
@@ -219,14 +217,13 @@ impl frame_system::Config for Runtime {
     type BaseCallFilter = Everything;
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -295,7 +292,7 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ();
     type MaxFreezes = ();
@@ -336,22 +333,24 @@ impl pallet_assets::Config for Runtime {
 }
 
 pub struct AssetIdConverter<AssetId>(PhantomData<AssetId>);
-impl<AssetId> xcm_executor::traits::Convert<MultiLocation, AssetId> for AssetIdConverter<AssetId>
+impl<AssetId> sp_runtime::traits::MaybeEquivalence<MultiLocation, AssetId>
+    for AssetIdConverter<AssetId>
 where
     AssetId: Clone + Eq + From<u8>,
 {
-    fn convert_ref(id: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
-        if id.borrow().eq(&MultiLocation::parent()) {
-            Ok(AssetId::from(1u8))
+    fn convert(a: &MultiLocation) -> Option<AssetId> {
+        if a.eq(&MultiLocation::parent()) {
+            Some(AssetId::from(1u8))
         } else {
-            Err(())
+            None
         }
     }
-    fn reverse_ref(what: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-        if what.borrow().eq(&AssetId::from(1u8)) {
-            Ok(MultiLocation::parent())
+
+    fn convert_back(b: &AssetId) -> Option<MultiLocation> {
+        if b.eq(&AssetId::from(1u8)) {
+            Some(MultiLocation::parent())
         } else {
-            Err(())
+            None
         }
     }
 }
@@ -448,6 +447,7 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = Nothing;
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
+    type Aliasers = ();
 }
 
 parameter_types! {
@@ -555,10 +555,7 @@ impl orml_xtokens::Config for Runtime {
 
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Runtime
     {
         System: frame_system,
         Balances: pallet_balances,
@@ -575,8 +572,8 @@ pub(crate) struct ExtBuilder;
 
 impl ExtBuilder {
     pub(crate) fn build(self) -> sp_io::TestExternalities {
-        let t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let t = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         let mut ext = sp_io::TestExternalities::new(t);

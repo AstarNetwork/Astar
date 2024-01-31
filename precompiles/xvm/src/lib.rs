@@ -23,9 +23,9 @@ use alloc::format;
 
 use astar_primitives::xvm::{Context, FailureReason, VmId, XvmCall};
 use fp_evm::{ExitRevert, PrecompileFailure, PrecompileHandle};
-use frame_support::dispatch::Dispatchable;
 use pallet_evm::{AddressMapping, GasWeightMapping};
 use sp_core::U256;
+use sp_runtime::traits::Dispatchable;
 use sp_std::marker::PhantomData;
 
 use precompile_utils::prelude::*;

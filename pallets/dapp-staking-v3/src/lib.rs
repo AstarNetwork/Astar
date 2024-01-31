@@ -468,7 +468,7 @@ pub mod pallet {
         pub slot_distribution: Vec<Permill>,
         pub tier_thresholds: Vec<TierThreshold>,
         pub slots_per_tier: Vec<u16>,
-        _config: PhantomData<T>,
+        pub _config: PhantomData<T>,
     }
 
     #[pallet::genesis_build]

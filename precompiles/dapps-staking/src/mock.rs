@@ -34,9 +34,8 @@ use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, ConstU32, IdentityLookup},
-    AccountId32,
+    AccountId32, BuildStorage,
 };
 extern crate alloc;
 
@@ -48,7 +47,6 @@ pub(crate) const AST: Balance = 1_000 * MILLIAST;
 
 pub(crate) const TEST_CONTRACT: H160 = H160::repeat_byte(0x09);
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
@@ -160,14 +158,13 @@ impl frame_system::Config for TestRuntime {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId32;
     type Lookup = IdentityLookup<AccountId32>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = TestWeights;
@@ -195,7 +192,7 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ();
     type MaxFreezes = ();
@@ -324,8 +321,8 @@ impl Default for ExternalityBuilder {
 
 impl ExternalityBuilder {
     pub fn build(self) -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
+        let mut storage = frame_system::GenesisConfig::<TestRuntime>::default()
+            .build_storage()
             .unwrap();
 
         pallet_balances::GenesisConfig::<TestRuntime> {
@@ -346,12 +343,7 @@ impl ExternalityBuilder {
 }
 
 construct_runtime!(
-    pub struct TestRuntime
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub struct TestRuntime {
         System: frame_system,
         Balances: pallet_balances,
         Evm: pallet_evm,

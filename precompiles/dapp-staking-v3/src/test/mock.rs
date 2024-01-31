@@ -23,7 +23,7 @@ use frame_support::{
     assert_ok, construct_runtime, parameter_types,
     traits::{
         fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
-        ConstU128, ConstU64, GenesisBuild, Hooks,
+        ConstU128, ConstU64, Hooks,
     },
     weights::{RuntimeDbWeight, Weight},
 };
@@ -34,7 +34,10 @@ use pallet_evm::{
 use sp_arithmetic::{fixed_point::FixedU64, Permill};
 use sp_core::{H160, H256};
 use sp_io::TestExternalities;
-use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup};
+use sp_runtime::{
+    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    BuildStorage,
+};
 extern crate alloc;
 
 use astar_primitives::{
@@ -42,13 +45,11 @@ use astar_primitives::{
         CycleConfiguration, EraNumber, PeriodNumber, SmartContract, StakingRewardHandler,
     },
     oracle::PriceProvider,
-    testing::Header,
     AccountId, Balance, BlockNumber,
 };
 use pallet_dapp_staking_v3::TierThreshold;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 pub struct AddressMapper;
 impl AddressMapping<AccountId> for AddressMapper {
@@ -80,14 +81,13 @@ impl frame_system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
     type Hash = H256;
+    type Block = Block;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -111,7 +111,7 @@ impl pallet_balances::Config for Test {
     type DustRemoval = ();
     type ExistentialDeposit = ConstU128<1>;
     type AccountStore = System;
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<1>;
@@ -267,12 +267,7 @@ impl pallet_dapp_staking_v3::Config for Test {
 }
 
 construct_runtime!(
-    pub struct Test
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub struct Test {
         System: frame_system,
         Balances: pallet_balances,
         Evm: pallet_evm,
@@ -284,12 +279,12 @@ construct_runtime!(
 pub struct ExternalityBuilder;
 impl ExternalityBuilder {
     pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut storage = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .unwrap();
 
-        <pallet_dapp_staking_v3::GenesisConfig as GenesisBuild<Test>>::assimilate_storage(
-            &pallet_dapp_staking_v3::GenesisConfig {
+        pallet_dapp_staking_v3::GenesisConfig::<Test>::assimilate_storage(
+            &pallet_dapp_staking_v3::GenesisConfig::<Test> {
                 reward_portion: vec![
                     Permill::from_percent(40),
                     Permill::from_percent(30),
@@ -318,6 +313,7 @@ impl ExternalityBuilder {
                     TierThreshold::FixedTvlAmount { amount: 10 },
                 ],
                 slots_per_tier: vec![10, 20, 30, 40],
+                _config: PhantomData,
             },
             &mut storage,
         )
