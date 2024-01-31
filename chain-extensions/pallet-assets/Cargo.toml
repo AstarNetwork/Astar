@@ -20,6 +20,7 @@ pallet-contracts-primitives = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-core = { workspace = true }
+sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
@@ -27,7 +28,6 @@ sp-std = { workspace = true }
 env_logger = "0.9"
 pallet-balances = { workspace = true }
 pallet-timestamp = { workspace = true }
-sp-io = { workspace = true }
 
 [features]
 default = ["std"]
@@ -40,6 +40,7 @@ std = [
 	"pallet-contracts-primitives/std",
 	"scale-info/std",
 	"sp-std/std",
+	"sp-io/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"pallet-assets/std",

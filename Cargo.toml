@@ -41,10 +41,6 @@ exclude = ["vendor"]
 # Astar runtime requires unwinding.
 panic = "unwind"
 
-[patch."https://github.com/paritytech/polkadot-sdk"]
-pallet-contracts = { git = "https://github.com/AstarNetwork/substrate", branch = "astar-polkadot-v0.9.43" }
-pallet-contracts-primitives = { git = "https://github.com/AstarNetwork/substrate", branch = "astar-polkadot-v0.9.43" }
-
 [workspace.package]
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
