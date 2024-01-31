@@ -20,7 +20,7 @@
 
 use crate::{RuntimeCall, UnifiedAccounts};
 use astar_primitives::precompiles::DispatchFilterValidate;
-use frame_support::pallet_prelude::ConstU32;
+use frame_support::traits::ConstU32;
 use frame_support::{parameter_types, traits::Contains};
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_blake2::Blake2F;
@@ -77,7 +77,13 @@ impl Contains<RuntimeCall> for WhitelistedLockdropCalls {
             | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => calls
                 .iter()
                 .all(|call| WhitelistedLockdropCalls::contains(call)),
-            RuntimeCall::DappsStaking(_) => true,
+            RuntimeCall::DappStaking(pallet_dapp_staking_v3::Call::unbond_and_unstake {
+                ..
+            }) => true,
+            RuntimeCall::DappStaking(pallet_dapp_staking_v3::Call::withdraw_unbonded {
+                ..
+            }) => true,
+            RuntimeCall::Balances(pallet_balances::Call::transfer { .. }) => true,
             RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
             _ => false,
         }

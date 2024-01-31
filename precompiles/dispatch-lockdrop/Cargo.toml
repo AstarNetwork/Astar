@@ -28,6 +28,7 @@ ethers = { workspace = true }
 frame-system = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-timestamp = { workspace = true }
+pallet-utility = { workspace = true }
 precompile-utils = { workspace = true, features = ["testing"] }
 scale-info = { workspace = true }
 sp-core = { workspace = true }

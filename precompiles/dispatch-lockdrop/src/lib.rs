@@ -88,31 +88,43 @@ where
         let call = Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input)
             .map_err(|_| revert("could not decode call"))?;
 
-        let info = call.get_dispatch_info();
-        handle
-            .record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()))?;
+        // 2. Check if dispatching the call will not exceed the gas limit
+        let mut gas_limit = handle.remaining_gas();
+        // If caller specified a gas limit, make sure it's not exceeded.
+        if let Some(user_limit) = handle.gas_limit() {
+            gas_limit = gas_limit.min(user_limit);
+        }
 
-        // 2. Ensure that the caller matches the public key
-        if caller != Self::get_evm_address_from_pubkey(pubkey.as_bytes()) {
-            let message: &str = "caller does not match the public key";
-            log::trace!(target: LOG_TARGET, "{}", message);
+        let info = call.get_dispatch_info();
+
+        // Charge the weight of the call to dispatch AND the overhead weight
+        // corresponding to the blake2b Hash and the keccak256 Hash
+        // based on the weight of UA::claim_default_evm_address()
+        let weight = info.weight.ref_time().saturating_add(40_000_000u64);
+        if !(weight <= Runtime::GasWeightMapping::gas_to_weight(gas_limit, false).ref_time()) {
             return Err(PrecompileFailure::Error {
-                exit_status: ExitError::Other(message.into()),
+                exit_status: ExitError::OutOfGas,
             });
         }
 
-        // 3. Derive the AccountId from the ECDSA compressed Public key
-        let origin = Self::get_account_id_from_pubkey(pubkey.as_bytes())
-            .ok_or_else(|| revert("could not derive AccountId from pubkey"))?;
+        handle.record_external_cost(Some(weight), Some(info.weight.proof_size()))?;
 
-        // 4. validate the call
-        if let Some(err) = DispatchValidator::validate_before_dispatch(&origin, &call) {
-            let message: &str = "Error: could not validate call";
+        // 3. Ensure that the caller matches the public key
+        if caller != Self::get_evm_address_from_pubkey(pubkey.as_bytes()) {
+            let message: &str = "caller does not match the public key";
             log::trace!(target: LOG_TARGET, "{}", message);
-            return Err(err);
+            return Err(revert(message));
         }
 
-        // 5. Dispatch the call
+        // 4. Derive the AccountId from the ECDSA compressed Public key
+        let origin = Self::get_account_id_from_pubkey(pubkey.as_bytes())
+            .ok_or(revert("could not derive AccountId from pubkey"))?;
+
+        // 5. validate the call
+        DispatchValidator::validate_before_dispatch(&origin, &call)
+            .map_or_else(|| Ok(()), |_| Err(revert("could not validate call")))?;
+
+        // 6. Dispatch the call
         match call.dispatch(Some(origin).into()) {
             Ok(post_info) => {
                 if post_info.pays_fee(&info) == Pays::Yes {
@@ -138,11 +150,10 @@ where
             }
             Err(e) => {
                 log::trace!(target: LOG_TARGET, "{:?}", e);
-                Err(PrecompileFailure::Error {
-                    exit_status: ExitError::Other(
-                        format!("dispatch execution failed: {}", <&'static str>::from(e)).into(),
-                    ),
-                })
+                Err(revert(format!(
+                    "dispatch execution failed: {}",
+                    <&'static str>::from(e)
+                )))
             }
         }
     }

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use fp_evm::ExitError;
+use core::str::from_utf8;
 use frame_support::traits::Currency;
 use sp_core::crypto::AccountId32;
 
@@ -98,12 +98,83 @@ fn pubkey_does_not_match_caller_address() {
                 },
             )
             .expect_no_logs()
-            .execute_error(ExitError::Other(
-                "caller does not match the public key".into(),
-            ));
+            .execute_reverts(|output| output == b"caller does not match the public key");
 
         // Get Balance of ALICE in pallet balances and ensure it has not received any funds
         assert_eq!(Balances::free_balance(ALICE), 0);
+    });
+}
+
+#[test]
+fn decode_limit_too_high() {
+    ExtBuilder::default().build().execute_with(|| {
+        let mut nested_call =
+            RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() });
+
+        // More than 8 depth
+        for _ in 0..9 {
+            nested_call = RuntimeCall::Utility(pallet_utility::Call::as_derivative {
+                index: 0,
+                call: Box::new(nested_call),
+            });
+        }
+
+        // Get Alice EVM address based on the Public Key
+        let alice_eth = crate::tests::eth_address(&alice_secret());
+        // Get derived AccountId from the Blake2b hash of the compressed ECDSA Public key
+        let account_id = account_id(&alice_secret());
+        // Fund this account (fund the lockdrop account)
+        let _ = Balances::deposit_creating(&account_id, ONE * 20);
+        // Get the full 64 bytes ECDSA Public key
+        let pubkey = crate::tests::public_key_full(&alice_secret());
+
+        precompiles()
+            .prepare_test(
+                alice_eth,
+                PRECOMPILE_ADDRESS,
+                PrecompileCall::dispatch_lockdrop_call {
+                    call: nested_call.encode().into(),
+                    pubkey: pubkey.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_reverts(|output| from_utf8(output).unwrap().contains("could not decode call"));
+    });
+}
+
+#[test]
+fn decode_limit_ok() {
+    ExtBuilder::default().build().execute_with(|| {
+        let mut nested_call =
+            RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() });
+
+        for _ in 0..8 {
+            nested_call = RuntimeCall::Utility(pallet_utility::Call::as_derivative {
+                index: 0,
+                call: Box::new(nested_call),
+            });
+        }
+
+        // Get Alice EVM address based on the Public Key
+        let alice_eth = crate::tests::eth_address(&alice_secret());
+        // Get derived AccountId from the Blake2b hash of the compressed ECDSA Public key
+        let account_id = account_id(&alice_secret());
+        // Fund this account (fund the lockdrop account)
+        let _ = Balances::deposit_creating(&account_id, ONE * 20);
+        // Get the full 64 bytes ECDSA Public key
+        let pubkey = crate::tests::public_key_full(&alice_secret());
+
+        precompiles()
+            .prepare_test(
+                alice_eth,
+                PRECOMPILE_ADDRESS,
+                PrecompileCall::dispatch_lockdrop_call {
+                    call: nested_call.encode().into(),
+                    pubkey: pubkey.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
     });
 }
 
@@ -134,7 +205,7 @@ fn only_whitelisted_calls_can_be_dispatched() {
                 },
             )
             .expect_no_logs()
-            .execute_error(ExitError::Other("call filtered out".into()))
+            .execute_reverts(|output| output == b"could not validate call");
     });
 }
 

@@ -8051,6 +8051,7 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-precompile-dispatch",
  "pallet-timestamp",
+ "pallet-utility",
  "parity-scale-codec",
  "precompile-utils",
  "scale-info",

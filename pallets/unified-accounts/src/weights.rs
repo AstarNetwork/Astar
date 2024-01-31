@@ -96,7 +96,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn to_account_id() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `170`
-		//  Estimated: `3533`
+		//  Estimated: `	3533`
 		// Minimum execution time: 5_478_000 picoseconds.
 		Weight::from_parts(5_661_000, 3533)
 			.saturating_add(T::DbWeight::get().reads(1_u64))

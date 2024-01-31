@@ -87,7 +87,9 @@ pub struct WhitelistedCalls;
 impl Contains<RuntimeCall> for WhitelistedCalls {
     fn contains(call: &RuntimeCall) -> bool {
         match call {
-            RuntimeCall::Balances(_) => true,
+            RuntimeCall::Balances(pallet_balances::Call::transfer { .. }) => true,
+            RuntimeCall::System(frame_system::Call::remark { .. }) => true,
+            RuntimeCall::Utility(_) => true,
             _ => false,
         }
     }
@@ -197,6 +199,13 @@ impl pallet_evm::Config for TestRuntime {
     type GasLimitPovSizeRatio = ConstU64<4>;
 }
 
+impl pallet_utility::Config for TestRuntime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type PalletsOrigin = OriginCaller;
+    type WeightInfo = ();
+}
+
 parameter_types! {
     // 2 storage items with value size 20 and 32
     pub const AccountMappingStorageFee: u128 = 0;
@@ -214,6 +223,7 @@ construct_runtime!(
         Evm: pallet_evm,
         Balances : pallet_balances,
         Timestamp: pallet_timestamp,
+        Utility: pallet_utility,
     }
 );
 
