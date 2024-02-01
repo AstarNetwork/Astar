@@ -81,6 +81,7 @@ where
             pubkey
         );
 
+        let target_gas = handle.gas_limit();
         let caller: H160 = handle.context().caller.into();
         let input: Vec<u8> = call.into();
 
@@ -88,23 +89,19 @@ where
         let call = Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input)
             .map_err(|_| revert("could not decode call"))?;
 
-        // 2. Check if dispatching the call will not exceed the gas limit
-        let mut gas_limit = handle.remaining_gas();
-        // If caller specified a gas limit, make sure it's not exceeded.
-        if let Some(user_limit) = handle.gas_limit() {
-            gas_limit = gas_limit.min(user_limit);
-        }
-
+        // 2. Charge the max amount of weight ref_time and
+        // later when call is successfully dispatched,
+        // charge proof_size and refund the ref_time difference.
+        // Note: adding hard coded ref_time corresponding to the blake2b Hash
+        // and the keccak256 Hash based on the weight of UA::claim_default_evm_address()
         let info = call.get_dispatch_info();
-
-        // Charge the weight of the call to dispatch AND the overhead weight
-        // corresponding to the blake2b Hash and the keccak256 Hash
-        // based on the weight of UA::claim_default_evm_address()
         let weight = info.weight.ref_time().saturating_add(40_000_000u64);
-        if !(weight <= Runtime::GasWeightMapping::gas_to_weight(gas_limit, false).ref_time()) {
-            return Err(PrecompileFailure::Error {
-                exit_status: ExitError::OutOfGas,
-            });
+        if let Some(gas) = target_gas {
+            if !(weight <= Runtime::GasWeightMapping::gas_to_weight(gas, false).ref_time()) {
+                return Err(PrecompileFailure::Error {
+                    exit_status: ExitError::OutOfGas,
+                });
+            }
         }
         handle.record_external_cost(Some(weight), None)?;
 
@@ -128,7 +125,6 @@ where
             Ok(post_info) => {
                 if post_info.pays_fee(&info) == Pays::Yes {
                     let actual_weight = post_info.actual_weight.unwrap_or(info.weight);
-                    let cost = Runtime::GasWeightMapping::weight_to_gas(actual_weight);
                     handle.record_external_cost(None, Some(info.weight.proof_size()))?;
 
                     handle.refund_external_cost(
