@@ -106,8 +106,7 @@ where
                 exit_status: ExitError::OutOfGas,
             });
         }
-
-        handle.record_external_cost(Some(weight), Some(info.weight.proof_size()))?;
+        handle.record_external_cost(Some(weight), None)?;
 
         // 3. Ensure that the caller matches the public key
         if caller != Self::get_evm_address_from_pubkey(pubkey.as_bytes()) {
@@ -130,7 +129,7 @@ where
                 if post_info.pays_fee(&info) == Pays::Yes {
                     let actual_weight = post_info.actual_weight.unwrap_or(info.weight);
                     let cost = Runtime::GasWeightMapping::weight_to_gas(actual_weight);
-                    handle.record_cost(cost)?;
+                    handle.record_external_cost(None, Some(info.weight.proof_size()))?;
 
                     handle.refund_external_cost(
                         Some(
@@ -138,11 +137,7 @@ where
                                 .ref_time()
                                 .saturating_sub(actual_weight.ref_time()),
                         ),
-                        Some(
-                            info.weight
-                                .proof_size()
-                                .saturating_sub(actual_weight.proof_size()),
-                        ),
+                        None,
                     );
                 }
 
