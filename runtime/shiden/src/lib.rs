@@ -1133,6 +1133,7 @@ pub type Migrations = (
     pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
 );
 
+use sp_arithmetic::fixed_point::FixedU64;
 pub struct InitActivePriceGet;
 impl Get<FixedU64> for InitActivePriceGet {
     fn get() -> FixedU64 {
@@ -1143,8 +1144,8 @@ impl Get<FixedU64> for InitActivePriceGet {
 
 /// Used to initialize inflation parameters for the runtime.
 pub struct InitInflationParamsHelper;
-impl Get<(pallet_inflation::InflationParameters, EraNumber)> for InitInflationParamsHelper {
-    fn get() -> (pallet_inflation::InflationParameters, EraNumber) {
+impl Get<(pallet_inflation::InflationParameters, EraNumber, Weight)> for InitInflationParamsHelper {
+    fn get() -> (pallet_inflation::InflationParameters, EraNumber, Weight) {
         (
             pallet_inflation::InflationParameters {
                 // Recalculation is done every two weeks, hence the small %.
@@ -1158,7 +1159,7 @@ impl Get<(pallet_inflation::InflationParameters, EraNumber)> for InitInflationPa
                 ideal_staking_rate: Perquintill::from_percent(50),
             },
             pallet_dapps_staking::CurrentEra::<Runtime>::get().saturating_add(1),
-            T::DbWeight::get().reads(1),
+            <Runtime as frame_system::Config>::DbWeight::get().reads(1),
         )
     }
 }
