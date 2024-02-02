@@ -52,7 +52,6 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -68,7 +67,7 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
-    evm::{EvmRevertCodeHandler, HashedDefaultMappings},
+    evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Index,
 };
@@ -1138,19 +1137,22 @@ pub type Migrations = (
 
 /// Used to initialize inflation parameters for the runtime.
 pub struct InitInflationParams;
-impl Get<pallet_inflation::InflationParameters> for InitInflationParams {
-    fn get() -> pallet_inflation::InflationParameters {
-        pallet_inflation::InflationParameters {
-            // Recalculation is done every two weeks, hence the small %.
-            max_inflation_rate: Perquintill::from_percent(7),
-            treasury_part: Perquintill::from_percent(5),
-            collators_part: Perquintill::from_rational(32_u64, 1000),
-            dapps_part: Perquintill::from_percent(13),
-            base_stakers_part: Perquintill::from_percent(10),
-            adjustable_stakers_part: Perquintill::from_rational(588_u64, 1000),
-            bonus_part: Perquintill::from_percent(10),
-            ideal_staking_rate: Perquintill::from_percent(50),
-        }
+impl Get<(pallet_inflation::InflationParameters, EraNumber)> for InitInflationParams {
+    fn get() -> (pallet_inflation::InflationParameters, EraNumber) {
+        (
+            pallet_inflation::InflationParameters {
+                // Recalculation is done every two weeks, hence the small %.
+                max_inflation_rate: Perquintill::from_percent(7),
+                treasury_part: Perquintill::from_percent(5),
+                collators_part: Perquintill::from_rational(32_u64, 1000),
+                dapps_part: Perquintill::from_percent(13),
+                base_stakers_part: Perquintill::from_percent(10),
+                adjustable_stakers_part: Perquintill::from_rational(588_u64, 1000),
+                bonus_part: Perquintill::from_percent(10),
+                ideal_staking_rate: Perquintill::from_percent(50),
+            },
+            pallet_dapps_staking::CurrentEra::<Runtime>::get().saturating_add(1),
+        )
     }
 }
 
