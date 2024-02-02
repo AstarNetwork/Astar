@@ -20,11 +20,11 @@
 
 extern crate alloc;
 
-use alloc::format;
 use core::marker::PhantomData;
-use fp_evm::{ExitError, PrecompileFailure, PrecompileHandle};
+use fp_evm::PrecompileHandle;
 use frame_support::pallet_prelude::IsType;
-use frame_support::{codec::DecodeLimit as _, dispatch::Pays, traits::Get};
+use frame_support::weights::Weight;
+use frame_support::{codec::DecodeLimit as _, traits::Get};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
     traits::ConstU32,
@@ -32,7 +32,7 @@ use frame_support::{
 use frame_system::Config;
 use pallet_evm::GasWeightMapping;
 use pallet_evm_precompile_dispatch::DispatchValidateT;
-use precompile_utils::prelude::{revert, BoundedBytes, UnboundedBytes};
+use precompile_utils::prelude::{revert, BoundedBytes, RuntimeHelper, UnboundedBytes};
 use precompile_utils::EvmResult;
 use sp_core::{crypto::AccountId32, H160, H256};
 use sp_io::hashing::keccak_256;
@@ -81,72 +81,37 @@ where
             pubkey
         );
 
-        let target_gas = handle.gas_limit();
         let caller: H160 = handle.context().caller.into();
         let input: Vec<u8> = call.into();
 
-        // 1. Decode the call
-        let call = Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input)
-            .map_err(|_| revert("could not decode call"))?;
+        // Record the cost of the call to ensure there is no free execution
+        handle.record_cost(Runtime::GasWeightMapping::weight_to_gas(
+            Weight::from_parts(1_000_000u64, 0),
+        ))?;
 
-        // 2. Charge the max amount of weight ref_time and
-        // later when call is successfully dispatched,
-        // charge proof_size and refund the ref_time difference.
-        // Note: adding hard coded ref_time corresponding to the blake2b Hash
-        // and the keccak256 Hash based on the weight of UA::claim_default_evm_address()
-        let info = call.get_dispatch_info();
-        let weight = info.weight.ref_time().saturating_add(40_000_000u64);
-        if let Some(gas) = target_gas {
-            if !(weight <= Runtime::GasWeightMapping::gas_to_weight(gas, false).ref_time()) {
-                return Err(PrecompileFailure::Error {
-                    exit_status: ExitError::OutOfGas,
-                });
-            }
-        }
-        handle.record_external_cost(Some(weight), None)?;
-
-        // 3. Ensure that the caller matches the public key
+        // Ensure that the caller matches the public key
         if caller != Self::get_evm_address_from_pubkey(pubkey.as_bytes()) {
             let message: &str = "caller does not match the public key";
             log::trace!(target: LOG_TARGET, "{}", message);
             return Err(revert(message));
         }
 
-        // 4. Derive the AccountId from the ECDSA compressed Public key
+        // Derive the account id from the public key
         let origin = Self::get_account_id_from_pubkey(pubkey.as_bytes())
             .ok_or(revert("could not derive AccountId from pubkey"))?;
 
-        // 5. validate the call
+        // Decode the call
+        let call = Runtime::RuntimeCall::decode_with_depth_limit(DecodeLimit::get(), &mut &*input)
+            .map_err(|_| revert("could not decode call"))?;
+
+        // Validate the call - ensure that the call is allowed in filter
         DispatchValidator::validate_before_dispatch(&origin, &call)
             .map_or_else(|| Ok(()), |_| Err(revert("could not validate call")))?;
 
-        // 6. Dispatch the call
-        match call.dispatch(Some(origin).into()) {
-            Ok(post_info) => {
-                if post_info.pays_fee(&info) == Pays::Yes {
-                    let actual_weight = post_info.actual_weight.unwrap_or(info.weight);
-                    handle.record_external_cost(None, Some(info.weight.proof_size()))?;
+        // Dispatch the call and handle the cost
+        RuntimeHelper::<Runtime>::try_dispatch_runtime_call(handle, Some(origin).into(), call)?;
 
-                    handle.refund_external_cost(
-                        Some(
-                            info.weight
-                                .ref_time()
-                                .saturating_sub(actual_weight.ref_time()),
-                        ),
-                        None,
-                    );
-                }
-
-                Ok(true)
-            }
-            Err(e) => {
-                log::trace!(target: LOG_TARGET, "{:?}", e);
-                Err(revert(format!(
-                    "dispatch execution failed: {}",
-                    <&'static str>::from(e)
-                )))
-            }
-        }
+        Ok(true)
     }
 
     fn get_account_id_from_pubkey(pubkey: &[u8]) -> Option<<Runtime as Config>::AccountId> {
