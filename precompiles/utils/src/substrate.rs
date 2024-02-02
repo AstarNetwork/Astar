@@ -112,25 +112,6 @@ where
         Runtime::RuntimeCall: From<Call>,
     {
         let call = Runtime::RuntimeCall::from(call);
-        Self::do_try_dispatch(handle, origin, call)
-    }
-
-    /// Try to dispatch a Runtime call.
-    /// Return an error if there are not enough gas, or if the call fails.
-    /// If successful returns the used gas using the Runtime GasWeightMapping.
-    pub fn try_dispatch_runtime_call(
-        handle: &mut impl PrecompileHandle,
-        origin: <Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin,
-        call: Runtime::RuntimeCall,
-    ) -> Result<PostDispatchInfo, TryDispatchError> {
-        Self::do_try_dispatch(handle, origin, call)
-    }
-
-    fn do_try_dispatch(
-        handle: &mut impl PrecompileHandle,
-        origin: <Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin,
-        call: Runtime::RuntimeCall,
-    ) -> Result<PostDispatchInfo, TryDispatchError> {
         let dispatch_info = call.get_dispatch_info();
 
         Self::record_weight_v2_cost(handle, dispatch_info.weight).map_err(TryDispatchError::Evm)?;

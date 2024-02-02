@@ -109,7 +109,11 @@ where
             .map_or_else(|| Ok(()), |_| Err(revert("could not validate call")))?;
 
         // Dispatch the call and handle the cost
-        RuntimeHelper::<Runtime>::try_dispatch_runtime_call(handle, Some(origin).into(), call)?;
+        RuntimeHelper::<Runtime>::try_dispatch::<Runtime::RuntimeCall>(
+            handle,
+            Some(origin).into(),
+            call,
+        )?;
 
         Ok(true)
     }
