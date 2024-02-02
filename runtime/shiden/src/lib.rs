@@ -644,7 +644,6 @@ impl pallet_vesting::Config for Runtime {
     const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
-// TODO: changing depost per item and per byte to `deposit` function will require storage migration it seems
 parameter_types! {
     pub const DepositPerItem: Balance = contracts_deposit(1, 0);
     pub const DepositPerByte: Balance = contracts_deposit(0, 1);
@@ -1122,7 +1121,7 @@ parameter_types! {
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParams>,
+    pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParamsHelper>,
     pallet_dapp_staking_v3::migrations::DAppStakingV3InitConfig<Runtime, InitDappStakingV3Params>,
     frame_support::migrations::RemovePallet<
         BlockRewardName,
@@ -1131,13 +1130,20 @@ pub type Migrations = (
     // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode.
     // But it's most important for testing with try-runtime.
     pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
+    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
 );
 
-// TODO: add static price provider migration too
+pub struct InitActivePriceGet;
+impl Get<FixedU64> for InitActivePriceGet {
+    fn get() -> FixedU64 {
+        // TODO: set this to the correct value
+        FixedU64::from_rational(1, 10)
+    }
+}
 
 /// Used to initialize inflation parameters for the runtime.
-pub struct InitInflationParams;
-impl Get<(pallet_inflation::InflationParameters, EraNumber)> for InitInflationParams {
+pub struct InitInflationParamsHelper;
+impl Get<(pallet_inflation::InflationParameters, EraNumber)> for InitInflationParamsHelper {
     fn get() -> (pallet_inflation::InflationParameters, EraNumber) {
         (
             pallet_inflation::InflationParameters {
@@ -1152,6 +1158,7 @@ impl Get<(pallet_inflation::InflationParameters, EraNumber)> for InitInflationPa
                 ideal_staking_rate: Perquintill::from_percent(50),
             },
             pallet_dapps_staking::CurrentEra::<Runtime>::get().saturating_add(1),
+            T::DbWeight::get().reads(1),
         )
     }
 }
