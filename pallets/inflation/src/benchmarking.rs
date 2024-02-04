@@ -98,7 +98,6 @@ mod benchmarks {
             bonus_reward_pool_per_period: 123987,
             ideal_staking_rate: Perquintill::from_percent(37),
         };
-    
 
         #[extrinsic_call]
         _(RawOrigin::Root, config.clone());
