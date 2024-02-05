@@ -439,15 +439,13 @@ impl pallet_inflation::Config for Runtime {
     type PayoutPerBlock = InflationPayoutPerBlock;
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_inflation::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_inflation::SubstrateWeight<Runtime>;
 }
 
 impl pallet_dapp_staking_migration::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Runtime>;
 }
-
-// TODO: use benchmarked values for the new pallets!
 
 impl pallet_utility::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -1137,8 +1135,9 @@ use sp_arithmetic::fixed_point::FixedU64;
 pub struct InitActivePriceGet;
 impl Get<FixedU64> for InitActivePriceGet {
     fn get() -> FixedU64 {
-        // TODO: set this to the correct value
-        FixedU64::from_rational(1, 10)
+        // SDN is now around 0.4 USD, but to provide meaningful rewards with the current implementation, we hardcode it to 0.01 USD.
+        // This means there will be less available slots, but the rewards will be higher, compensating for low SDN value compared to its total issuance.
+        FixedU64::from_rational(1, 100)
     }
 }
 

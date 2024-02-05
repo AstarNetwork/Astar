@@ -28,7 +28,6 @@ fn dapp_staking_triggers_inflation_recalculation() {
         let init_inflation_config = pallet_inflation::ActiveInflationConfig::<Runtime>::get();
 
         let recalculation_era = init_inflation_config.recalculation_era;
-        println!("Recalculation era: {}", recalculation_era);
 
         // It's not feasible to run through all the blocks needed to trigger all the eras.
         // Instead, we force the era to change on a block by block basis.
