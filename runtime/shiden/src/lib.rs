@@ -1030,6 +1030,7 @@ construct_runtime!(
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
+        // Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
         Inflation: pallet_inflation = 5,
 
         System: frame_system = 10,
