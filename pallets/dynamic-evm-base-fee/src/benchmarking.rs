@@ -22,6 +22,7 @@ use fp_evm::FeeCalculator;
 use frame_benchmarking::v2::*;
 use frame_support::traits::Hooks;
 use frame_system::{pallet_prelude::*, RawOrigin};
+use sp_std::prelude::*;
 
 #[benchmarks(
     where

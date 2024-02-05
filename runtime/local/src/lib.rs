@@ -63,7 +63,7 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
-    Address, AssetId, Balance, BlockNumber, Hash, Header, Index,
+    Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
 
 pub use astar_primitives::{AccountId, Signature};
@@ -207,7 +207,7 @@ impl frame_system::Config for Runtime {
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     type Lookup = (AccountIdLookup<AccountId, ()>, UnifiedAccounts);
     /// The index type for storing how many extrinsics an account has signed.
-    type Nonce = Index;
+    type Nonce = Nonce;
     /// The index type for blocks.
     type Block = Block;
     /// The type for hashing blocks and tries.
@@ -1365,8 +1365,8 @@ impl_runtime_apis! {
         }
     }
 
-    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-        fn account_nonce(account: AccountId) -> Index {
+    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+        fn account_nonce(account: AccountId) -> Nonce {
             System::account_nonce(account)
         }
     }

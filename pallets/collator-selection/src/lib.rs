@@ -95,6 +95,7 @@ pub mod pallet {
     use pallet_session::SessionManager;
     use sp_runtime::{traits::Convert, Perbill};
     use sp_staking::SessionIndex;
+    use sp_std::prelude::*;
 
     type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -223,7 +224,7 @@ pub mod pallet {
             let duplicate_invulnerables = self
                 .invulnerables
                 .iter()
-                .collect::<std::collections::BTreeSet<_>>();
+                .collect::<sp_std::collections::btree_set::BTreeSet<_>>();
             assert!(
                 duplicate_invulnerables.len() == self.invulnerables.len(),
                 "duplicate invulnerables in genesis."

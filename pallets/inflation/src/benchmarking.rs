@@ -21,6 +21,7 @@ use super::*;
 use astar_primitives::BlockNumber;
 use frame_benchmarking::v2::*;
 use frame_system::{Pallet as System, RawOrigin};
+use sp_std::prelude::*;
 
 /// Assert that the last event equals the provided one.
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {

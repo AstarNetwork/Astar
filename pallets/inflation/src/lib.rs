@@ -110,6 +110,7 @@ use frame_support::{
     DefaultNoBound,
 };
 use frame_system::{ensure_root, pallet_prelude::*};
+use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, Perquintill};
 use sp_std::marker::PhantomData;
 
@@ -518,8 +519,20 @@ pub struct InflationConfiguration {
 /// Inflation parameters.
 ///
 /// The parts of the inflation that go towards different purposes must add up to exactly 100%.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    TypeInfo,
+    Serialize,
+    Deserialize,
+)]
+// #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct InflationParameters {
     /// Maximum possible inflation rate, based on the total issuance at some point in time.
     /// From this value, all the other inflation parameters are derived.

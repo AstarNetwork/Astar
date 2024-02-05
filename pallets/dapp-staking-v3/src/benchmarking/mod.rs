@@ -23,6 +23,7 @@ use frame_benchmarking::v2::*;
 
 use frame_support::assert_ok;
 use frame_system::{Pallet as System, RawOrigin};
+use sp_std::prelude::*;
 
 use ::assert_matches::assert_matches;
 

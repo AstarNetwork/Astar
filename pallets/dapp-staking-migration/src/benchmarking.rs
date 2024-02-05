@@ -20,6 +20,7 @@ use super::{Pallet as Migration, *};
 
 use frame_benchmarking::{account as benchmark_account, v2::*};
 use frame_support::{assert_ok, traits::Currency};
+use sp_std::prelude::*;
 
 /// Generate an unique smart contract using the provided index as a sort-of indetifier
 fn smart_contract<T: pallet_dapps_staking::Config>(index: u8) -> T::SmartContract {

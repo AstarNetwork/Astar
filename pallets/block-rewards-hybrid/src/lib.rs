@@ -82,6 +82,7 @@ use astar_primitives::Balance;
 use frame_support::pallet_prelude::*;
 use frame_support::traits::{Currency, Get, Imbalance, OnTimestampSet};
 use frame_system::{ensure_root, pallet_prelude::*};
+use serde::{Deserialize, Serialize};
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
     Perbill,
@@ -279,8 +280,18 @@ pub mod pallet {
 ///
 /// Note that if `ideal_dapps_staking_tvl` is set to `Zero`, entire `adjustable_percent` goes to the stakers.
 ///
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[derive(
+    PartialEq,
+    Eq,
+    Clone,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    TypeInfo,
+    MaxEncodedLen,
+    Serialize,
+    Deserialize,
+)]
 pub struct RewardDistributionConfig {
     /// Base percentage of reward that goes to treasury
     #[codec(compact)]
