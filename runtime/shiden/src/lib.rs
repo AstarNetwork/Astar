@@ -1030,6 +1030,8 @@ construct_runtime!(
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
+        Inflation: pallet_inflation = 5,
+
         System: frame_system = 10,
         Utility: pallet_utility = 11,
         Identity: pallet_identity = 12,
@@ -1044,7 +1046,6 @@ construct_runtime!(
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
         DappStaking: pallet_dapp_staking_v3 = 34,
-        Inflation: pallet_inflation = 35,
         Assets: pallet_assets = 36,
 
         Authorship: pallet_authorship = 40,
@@ -1119,16 +1120,20 @@ parameter_types! {
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
+    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
     pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParamsHelper>,
-    pallet_dapp_staking_v3::migrations::DAppStakingV3InitConfig<Runtime, InitDappStakingV3Params>,
-    frame_support::migrations::RemovePallet<
-        BlockRewardName,
-        <Runtime as frame_system::Config>::DbWeight,
+    pallet_dapp_staking_v3::migrations::DAppStakingV3InitConfig<
+        Runtime,
+        InitDappStakingV3Params,
+        InitActivePriceGet,
     >,
     // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode.
     // But it's most important for testing with try-runtime.
     pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
-    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
+    frame_support::migrations::RemovePallet<
+        BlockRewardName,
+        <Runtime as frame_system::Config>::DbWeight,
+    >,
 );
 
 use sp_arithmetic::fixed_point::FixedU64;
@@ -1194,7 +1199,6 @@ impl
         ])
         .unwrap_or_default();
 
-        // TODO: check if this is automatically adjusted post-upgrade!
         // Tier thresholds adjusted according to numbers observed on Shibuya
         let tier_thresholds = BoundedVec::try_from(vec![
             TierThreshold::DynamicTvlAmount {

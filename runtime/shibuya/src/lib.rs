@@ -1339,8 +1339,7 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations =
-    (pallet_dapp_staking_v3::migrations::DAppStakingV3IntegratedDAppsMigration<Runtime>,);
+pub type Migrations =();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

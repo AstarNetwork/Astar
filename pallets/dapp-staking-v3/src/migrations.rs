@@ -17,9 +17,10 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use sp_arithmetic::fixed_point::FixedU64;
 
 /// `OnRuntimeUpgrade` logic used to set & configure init dApp staking v3 storage items.
-pub struct DAppStakingV3InitConfig<T, G>(PhantomData<(T, G)>);
+pub struct DAppStakingV3InitConfig<T, G, P>(PhantomData<(T, G, P)>);
 impl<
         T: Config,
         G: Get<(
@@ -27,7 +28,8 @@ impl<
             TierParameters<T::NumberOfTiers>,
             TiersConfiguration<T::NumberOfTiers>,
         )>,
-    > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G>
+        P: Get<FixedU64>,
+    > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G, P>
 {
     fn on_runtime_upgrade() -> Weight {
         if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
@@ -35,7 +37,7 @@ impl<
         }
 
         // 0. Unwrap arguments
-        let (init_era, tier_params, init_tier_config) = G::get();
+        let (init_era, tier_params, base_tier_config) = G::get();
 
         // 1. Prepare init active protocol state
         let now = frame_system::Pallet::<T>::block_number();
@@ -70,6 +72,9 @@ impl<
                 period: period_number,
             },
         };
+
+        let average_price = P::get();
+        let init_tier_config = base_tier_config.calculate_new(average_price, &tier_params);
 
         // 3. Write necessary items into storage
         ActiveProtocolState::<T>::put(protocol_state);
@@ -118,50 +123,5 @@ impl<
         );
 
         Ok(())
-    }
-}
-
-/// State in which some dApp is in.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub enum OldDAppState {
-    /// dApp is registered and active.
-    Registered,
-    /// dApp has been unregistered in the contained era.
-    Unregistered(#[codec(compact)] EraNumber),
-}
-
-/// General information about a dApp.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub struct OldDAppInfo<AccountId> {
-    /// Owner of the dApp, default reward beneficiary.
-    pub owner: AccountId,
-    /// dApp's unique identifier in dApp staking.
-    #[codec(compact)]
-    pub id: DAppId,
-    /// Current state of the dApp.
-    pub state: OldDAppState,
-    // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
-    pub reward_beneficiary: Option<AccountId>,
-}
-
-/// To be only used for Shibuya, can be removed later.
-pub struct DAppStakingV3IntegratedDAppsMigration<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for DAppStakingV3IntegratedDAppsMigration<T> {
-    fn on_runtime_upgrade() -> Weight {
-        let mut translated = 0_u64;
-        IntegratedDApps::<T>::translate::<OldDAppInfo<T::AccountId>, _>(|_key, old_value| {
-            translated.saturating_inc();
-
-            match old_value.state {
-                OldDAppState::Registered => Some(DAppInfo {
-                    owner: old_value.owner,
-                    id: old_value.id,
-                    reward_beneficiary: old_value.reward_beneficiary,
-                }),
-                OldDAppState::Unregistered(_) => None,
-            }
-        });
-
-        T::DbWeight::get().reads_writes(translated, translated + 1 /* counted map */)
     }
 }
