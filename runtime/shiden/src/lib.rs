@@ -147,7 +147,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 117,
+    spec_version: 118,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1140,9 +1140,8 @@ use sp_arithmetic::fixed_point::FixedU64;
 pub struct InitActivePriceGet;
 impl Get<FixedU64> for InitActivePriceGet {
     fn get() -> FixedU64 {
-        // SDN is now around 0.4 USD, but to provide meaningful rewards with the current implementation, we hardcode it to 0.01 USD.
-        // This means there will be less available slots, but the rewards will be higher, compensating for low SDN value compared to its total issuance.
-        FixedU64::from_rational(1, 100)
+        // Roughly the average price, taken from CoinMarketCap data.
+        FixedU64::from_rational(32, 100)
     }
 }
 
