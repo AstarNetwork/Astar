@@ -11,6 +11,7 @@ repository.workspace = true
 fp-evm = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+hex-literal = { workspace = true }
 libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
 log = { workspace = true }
 pallet-evm = { workspace = true }

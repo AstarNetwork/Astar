@@ -84,9 +84,9 @@ where
         let caller: H160 = handle.context().caller.into();
         let input: Vec<u8> = call.into();
 
-        // Record the cost of the call to ensure there is no free execution
+        // Record a fixed amount of weight to ensure there is no free execution
         handle.record_cost(Runtime::GasWeightMapping::weight_to_gas(
-            Weight::from_parts(1_000_000u64, 0),
+            Weight::from_parts(1_000_000_000u64, 0),
         ))?;
 
         // Ensure that the caller matches the public key
@@ -106,7 +106,7 @@ where
 
         // Validate the call - ensure that the call is allowed in filter
         DispatchValidator::validate_before_dispatch(&origin, &call)
-            .map_or_else(|| Ok(()), |_| Err(revert("could not validate call")))?;
+            .map_or_else(|| Ok(()), |_| Err(revert("invalid Call")))?;
 
         // Dispatch the call and handle the cost
         RuntimeHelper::<Runtime>::try_dispatch::<Runtime::RuntimeCall>(

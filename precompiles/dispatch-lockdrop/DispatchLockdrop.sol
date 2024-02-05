@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
  */
 
 /// Interface to dispatch lockdrop calls precompiled contract
-/// PRedeployed at the address 0x0000000000000000000000000000000000005007
+/// Pre-deployed at the address 0x0000000000000000000000000000000000005007
 interface RescueLockdrop {
     /**
     * @dev Dispatch lockdrop call
@@ -14,7 +14,7 @@ interface RescueLockdrop {
     * @return boolean confirming whether the call got successfully dispatched
     */
     function dispatch_lockdrop_call(
-        bytes call,
-        bytes pubkey
+        bytes calldata call,
+        bytes calldata pubkey
     ) external returns (bool);
 }

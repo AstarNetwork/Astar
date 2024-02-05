@@ -8045,6 +8045,7 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
+ "hex-literal",
  "libsecp256k1",
  "log",
  "pallet-balances",
