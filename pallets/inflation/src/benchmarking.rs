@@ -18,6 +18,7 @@
 
 use super::*;
 
+use astar_primitives::BlockNumber;
 use frame_benchmarking::v2::*;
 use frame_system::{Pallet as System, RawOrigin};
 

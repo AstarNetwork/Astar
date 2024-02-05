@@ -102,7 +102,7 @@ use astar_primitives::{
     dapp_staking::{
         CycleConfiguration, EraNumber, Observer as DappStakingObserver, StakingRewardHandler,
     },
-    Balance, BlockNumber,
+    Balance,
 };
 use frame_support::{
     pallet_prelude::*,

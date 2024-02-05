@@ -207,15 +207,13 @@ impl frame_system::Config for Runtime {
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     type Lookup = (AccountIdLookup<AccountId, ()>, UnifiedAccounts);
     /// The index type for storing how many extrinsics an account has signed.
-    type Index = Index;
+    type Nonce = Index;
     /// The index type for blocks.
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     /// The type for hashing blocks and tries.
     type Hash = Hash;
     /// The hashing algorithm used.
     type Hashing = BlakeTwo256;
-    /// The header type.
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// The ubiquitous event type.
     type RuntimeEvent = RuntimeEvent;
     /// The ubiquitous origin type.
@@ -253,6 +251,7 @@ impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<50>;
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 impl pallet_grandpa::Config for Runtime {
@@ -264,6 +263,7 @@ impl pallet_grandpa::Config for Runtime {
     type WeightInfo = ();
     type MaxAuthorities = MaxAuthorities;
     type MaxSetIdSessionEntries = ConstU64<0>;
+    type MaxNominators = ConstU32<0>;
 }
 
 parameter_types! {
@@ -297,7 +297,7 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<1>;
@@ -652,7 +652,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * WEIGHT_REF_TIME_PER_SECOND / WEIGHT_PER_GAS
     );
-    pub PrecompilesValue: Precompiles = LocalPrecompiles::<_>::new();
+    pub PrecompilesValue: Precompiles = LocalPrecompiles::<Runtime>::new();
     pub WeightPerGas: Weight = Weight::from_parts(WEIGHT_PER_GAS, 0);
     /// The amount of gas per PoV size. Value is calculated as:
     ///
@@ -897,6 +897,8 @@ parameter_types! {
     pub const DepositPerByte: Balance = deposit(0, 1);
     // Fallback value if storage deposit limit not set by the user
     pub const DefaultDepositLimit: Balance = deposit(16, 16 * 1024);
+    pub const MaxDelegateDependencies: u32 = 32;
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
@@ -906,6 +908,7 @@ impl pallet_contracts::Config for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+    type RuntimeHoldReason = RuntimeHoldReason;
     /// The safest default is to allow no calls at all.
     ///
     /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -931,6 +934,11 @@ impl pallet_contracts::Config for Runtime {
     type MaxStorageKeyLen = ConstU32<128>;
     type UnsafeUnstableInterface = ConstBool<true>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+    type MaxDelegateDependencies = MaxDelegateDependencies;
+    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+    type Debug = ();
+    type Environment = ();
+    type Migrations = ();
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -1082,15 +1090,8 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = ConstU128<{ MILLIAST * 660 }>;
 }
 
-// TODO: remove this once https://github.com/paritytech/substrate/issues/12161 is resolved
-#[rustfmt::skip]
 construct_runtime!(
-    pub struct Runtime
-    where
-        Block = Block,
-        NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub struct Runtime {
         System: frame_system,
         Utility: pallet_utility,
         Timestamp: pallet_timestamp,
@@ -1114,8 +1115,8 @@ construct_runtime!(
         Assets: pallet_assets,
         Scheduler: pallet_scheduler,
         Democracy: pallet_democracy,
-        Council: pallet_collective::<Instance1>,
-        TechnicalCommittee: pallet_collective::<Instance2>,
+        Council: pallet_collective<Instance1>,
+        TechnicalCommittee: pallet_collective<Instance2>,
         Treasury: pallet_treasury,
         Xvm: pallet_xvm,
         Proxy: pallet_proxy,
