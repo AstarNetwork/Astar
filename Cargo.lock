@@ -4989,6 +4989,7 @@ dependencies = [
  "libsecp256k1",
  "pallet-assets",
  "pallet-balances",
+ "pallet-collator-selection",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapp-staking-v3",
