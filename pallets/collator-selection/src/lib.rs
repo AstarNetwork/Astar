@@ -502,6 +502,11 @@ pub mod pallet {
                 })
                 .collect::<Vec<_>>()
         }
+
+        /// Check whether an account is a candidate.
+        pub fn is_account_candidate(account: &T::AccountId) -> bool {
+            Self::candidates().iter().any(|c| &c.who == account)
+        }
     }
 
     /// Keep track of number of authored blocks per authority, uncles are counted as well since

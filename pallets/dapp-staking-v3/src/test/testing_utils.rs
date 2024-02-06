@@ -26,7 +26,7 @@ use crate::{
 
 use frame_support::{
     assert_ok,
-    traits::{fungible::InspectFreeze, Get, OnIdle},
+    traits::{fungible::InspectFreeze, Currency, Get, OnIdle},
     weights::Weight,
 };
 use sp_runtime::{traits::Zero, Perbill};
@@ -208,11 +208,11 @@ pub(crate) fn assert_unregister(smart_contract: &MockSmartContract) {
 pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
     let pre_snapshot = MemorySnapshot::new();
 
-    let free_balance = Balances::free_balance(&account);
+    let total_balance = Balances::total_balance(&account);
     let locked_balance = pre_snapshot.locked_balance(&account);
     let init_frozen_balance = Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account);
 
-    let available_balance = free_balance
+    let available_balance = total_balance
         .checked_sub(locked_balance)
         .expect("Locked amount cannot be greater than available free balance");
     let expected_lock_amount = available_balance.min(amount);

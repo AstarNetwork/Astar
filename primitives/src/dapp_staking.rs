@@ -160,3 +160,15 @@ impl<AccountId> SmartContractHandle<AccountId> for SmartContract<AccountId> {
         Self::Wasm(address)
     }
 }
+
+/// Used to check whether an account is allowed to participate in dApp staking or not.
+pub trait AccountCheck<AccountId> {
+    /// `true` if the account is allowed to stake, `false` otherwise.
+    fn allowed_to_stake(account: &AccountId) -> bool;
+}
+
+impl<AccountId> AccountCheck<AccountId> for () {
+    fn allowed_to_stake(_account: &AccountId) -> bool {
+        true
+    }
+}

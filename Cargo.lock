@@ -7711,7 +7711,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapp-staking-v3"
-version = "0.0.1-alpha"
+version = "0.1.0"
 dependencies = [
  "assert_matches",
  "astar-primitives",

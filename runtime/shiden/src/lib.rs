@@ -66,7 +66,10 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
+    dapp_staking::{
+        AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
+        PeriodNumber, SmartContract, TierId,
+    },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Index,
@@ -380,6 +383,13 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
     }
 }
 
+pub struct AccountCheck;
+impl DappStakingAccountCheck<AccountId> for AccountCheck {
+    fn allowed_to_stake(account: &AccountId) -> bool {
+        !CollatorSelection::is_account_candidate(account)
+    }
+}
+
 impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -390,6 +400,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
+    type AccountCheck = AccountCheck;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<3>;
     type MaxNumberOfContracts = ConstU32<500>;
@@ -1030,9 +1041,6 @@ construct_runtime!(
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        // Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
-        Inflation: pallet_inflation = 5,
-
         System: frame_system = 10,
         Utility: pallet_utility = 11,
         Identity: pallet_identity = 12,
@@ -1046,6 +1054,11 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment = 30,
         Balances: pallet_balances = 31,
         Vesting: pallet_vesting = 32,
+        // Inflation needs to execute `on_initialize` as soon as possible, and `on_finalize` as late as possible.
+        // However, we need to execute Balance genesis before Inflation genesis, otherwise we'll have zero issuance when Inflation
+        // logic is executed.
+        // TODO: Address this later. It would be best if Inflation was first pallet.
+        Inflation: pallet_inflation = 33,
         DappStaking: pallet_dapp_staking_v3 = 34,
         Assets: pallet_assets = 36,
 

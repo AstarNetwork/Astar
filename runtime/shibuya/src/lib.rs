@@ -67,7 +67,10 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
+    dapp_staking::{
+        AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
+        PeriodNumber, SmartContract, TierId,
+    },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Index,
@@ -404,6 +407,13 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
     }
 }
 
+pub struct AccountCheck;
+impl DappStakingAccountCheck<AccountId> for AccountCheck {
+    fn allowed_to_stake(account: &AccountId) -> bool {
+        !CollatorSelection::is_account_candidate(account)
+    }
+}
+
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 5 * SBY;
 }
@@ -418,12 +428,13 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
+    type AccountCheck = AccountCheck;
     type EraRewardSpanLength = ConstU32<16>;
-    type RewardRetentionInPeriods = ConstU32<2>; // Low enough value so we can get some expired rewards during testing
+    type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
     type MinimumLockedAmount = MinimumStakingAmount;
-    type UnlockingPeriod = ConstU32<4>; // Keep it low so it's easier to test
+    type UnlockingPeriod = ConstU32<4>;
     type MaxNumberOfStakedContracts = ConstU32<8>;
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;

@@ -151,7 +151,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn lock() {
+    fn lock_new_account() {
         initial_config::<T>();
 
         let staker: T::AccountId = whitelisted_caller();
@@ -167,12 +167,45 @@ mod benchmarks {
         T::BenchmarkHelper::set_balance(&staker, amount);
 
         #[extrinsic_call]
-        _(RawOrigin::Signed(staker.clone()), amount);
+        lock(RawOrigin::Signed(staker.clone()), amount);
 
         assert_last_event::<T>(
             Event::<T>::Locked {
                 account: staker,
                 amount,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn lock_existing_account() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount_1 = T::MinimumLockedAmount::get();
+        let amount_2 = 19;
+        T::BenchmarkHelper::set_balance(&staker, amount_1 + amount_2);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount_1,
+        ));
+
+        #[extrinsic_call]
+        lock(RawOrigin::Signed(staker.clone()), amount_2);
+
+        assert_last_event::<T>(
+            Event::<T>::Locked {
+                account: staker,
+                amount: amount_2,
             }
             .into(),
         );

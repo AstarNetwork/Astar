@@ -52,8 +52,8 @@ pub use sp_std::vec::Vec;
 
 use astar_primitives::{
     dapp_staking::{
-        CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver, PeriodNumber,
-        SmartContractHandle, StakingRewardHandler, TierId,
+        AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
+        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -143,6 +143,9 @@ pub mod pallet {
 
         /// dApp staking event observers, notified when certain events occur.
         type Observers: DAppStakingObserver;
+
+        /// Used to check whether an account is allowed to participate in dApp staking.
+        type AccountCheck: AccountCheck<Self::AccountId>;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -307,6 +310,8 @@ pub mod pallet {
         ZeroAmount,
         /// Total locked amount for staker is below minimum threshold.
         LockedAmountBelowThreshold,
+        /// Account is not allowed to participate in dApp staking due to some external reason (e.g. account is already a collator).
+        AccountNotAvailableForDappStaking,
         /// Cannot add additional unlocking chunks due to capacity limit.
         TooManyUnlockingChunks,
         /// Remaining stake prevents entire balance of starting the unlocking process.
@@ -765,16 +770,30 @@ pub mod pallet {
         ///
         /// Locked amount can immediately be used for staking.
         #[pallet::call_index(7)]
-        #[pallet::weight(T::WeightInfo::lock())]
-        pub fn lock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
+        #[pallet::weight(T::WeightInfo::lock_new_account().max(T::WeightInfo::lock_existing_account()))]
+        pub fn lock(
+            origin: OriginFor<T>,
+            #[pallet::compact] amount: Balance,
+        ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
             let mut ledger = Ledger::<T>::get(&account);
 
+            // Only do the check for new accounts.
+            // External logic should ensure that accounts which are already participating in dApp staking aren't
+            // allowed to participate elsewhere where they shouldn't.
+            let is_new_account = ledger.is_empty();
+            if is_new_account {
+                ensure!(
+                    T::AccountCheck::allowed_to_stake(&account),
+                    Error::<T>::AccountNotAvailableForDappStaking
+                );
+            }
+
             // Calculate & check amount available for locking
             let available_balance =
-                T::Currency::balance(&account).saturating_sub(ledger.active_locked_amount());
+                T::Currency::total_balance(&account).saturating_sub(ledger.active_locked_amount());
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 
@@ -795,7 +814,12 @@ pub mod pallet {
                 amount: amount_to_lock,
             });
 
-            Ok(())
+            Ok(Some(if is_new_account {
+                T::WeightInfo::lock_new_account()
+            } else {
+                T::WeightInfo::lock_existing_account()
+            })
+            .into())
         }
 
         /// Attempts to start the unlocking process for the specified amount.

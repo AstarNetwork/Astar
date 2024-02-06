@@ -55,11 +55,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 8_765_000 picoseconds.
-		Weight::from_parts(9_104_000, 0)
+		// Minimum execution time: 13_000_000 picoseconds.
+		Weight::from_parts(13_000_000, 0)
 	}
 	/// Storage: DappStaking IntegratedDApps (r:1 w:1)
-	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(121), added: 2101, mode: MaxEncodedLen)
+	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(116), added: 2096, mode: MaxEncodedLen)
 	/// Storage: DappStaking CounterForIntegratedDApps (r:1 w:1)
 	/// Proof: DappStaking CounterForIntegratedDApps (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	/// Storage: DappStaking NextDAppId (r:1 w:1)
@@ -67,46 +67,67 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn register() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
-		//  Estimated: `3091`
-		// Minimum execution time: 17_156_000 picoseconds.
-		Weight::from_parts(17_426_000, 3091)
+		//  Estimated: `3086`
+		// Minimum execution time: 25_000_000 picoseconds.
+		Weight::from_parts(25_000_000, 3086)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	/// Storage: DappStaking IntegratedDApps (r:1 w:1)
-	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(121), added: 2101, mode: MaxEncodedLen)
+	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(116), added: 2096, mode: MaxEncodedLen)
 	fn set_dapp_reward_beneficiary() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `75`
-		//  Estimated: `3091`
-		// Minimum execution time: 13_565_000 picoseconds.
-		Weight::from_parts(13_804_000, 3091)
+		//  Measured:  `74`
+		//  Estimated: `3086`
+		// Minimum execution time: 16_000_000 picoseconds.
+		Weight::from_parts(16_000_000, 3086)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: DappStaking IntegratedDApps (r:1 w:1)
-	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(121), added: 2101, mode: MaxEncodedLen)
+	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(116), added: 2096, mode: MaxEncodedLen)
 	fn set_dapp_owner() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `75`
-		//  Estimated: `3091`
-		// Minimum execution time: 13_824_000 picoseconds.
-		Weight::from_parts(14_132_000, 3091)
+		//  Measured:  `74`
+		//  Estimated: `3086`
+		// Minimum execution time: 15_000_000 picoseconds.
+		Weight::from_parts(15_000_000, 3086)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: DappStaking IntegratedDApps (r:1 w:1)
-	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(121), added: 2101, mode: MaxEncodedLen)
+	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(116), added: 2096, mode: MaxEncodedLen)
+	/// Storage: DappStaking CounterForIntegratedDApps (r:1 w:1)
+	/// Proof: DappStaking CounterForIntegratedDApps (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	/// Storage: DappStaking ContractStake (r:0 w:1)
 	/// Proof: DappStaking ContractStake (max_values: Some(65535), max_size: Some(91), added: 2071, mode: MaxEncodedLen)
 	fn unregister() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `75`
-		//  Estimated: `3091`
-		// Minimum execution time: 17_255_000 picoseconds.
-		Weight::from_parts(17_659_000, 3091)
-			.saturating_add(T::DbWeight::get().reads(1_u64))
-			.saturating_add(T::DbWeight::get().writes(2_u64))
+		//  Measured:  `74`
+		//  Estimated: `3086`
+		// Minimum execution time: 22_000_000 picoseconds.
+		Weight::from_parts(22_000_000, 3086)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
+	/// Storage: DappStaking Ledger (r:1 w:1)
+	/// Proof: DappStaking Ledger (max_values: None, max_size: Some(310), added: 2785, mode: MaxEncodedLen)
+	/// Storage: CollatorSelection Candidates (r:1 w:0)
+	/// Proof Skipped: CollatorSelection Candidates (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Balances Freezes (r:1 w:1)
+	/// Proof: Balances Freezes (max_values: None, max_size: Some(67), added: 2542, mode: MaxEncodedLen)
+	/// Storage: Balances Locks (r:1 w:0)
+	/// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
+	/// Storage: DappStaking CurrentEraInfo (r:1 w:1)
+	/// Proof: DappStaking CurrentEraInfo (max_values: Some(1), max_size: Some(112), added: 607, mode: MaxEncodedLen)
+	fn lock_new_account() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `138`
+		//  Estimated: `4764`
+		// Minimum execution time: 43_000_000 picoseconds.
+		Weight::from_parts(43_000_000, 4764)
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	/// Storage: DappStaking Ledger (r:1 w:1)
 	/// Proof: DappStaking Ledger (max_values: None, max_size: Some(310), added: 2785, mode: MaxEncodedLen)
@@ -116,12 +137,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	/// Storage: DappStaking CurrentEraInfo (r:1 w:1)
 	/// Proof: DappStaking CurrentEraInfo (max_values: Some(1), max_size: Some(112), added: 607, mode: MaxEncodedLen)
-	fn lock() -> Weight {
+	fn lock_existing_account() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `12`
+		//  Measured:  `156`
 		//  Estimated: `4764`
-		// Minimum execution time: 33_281_000 picoseconds.
-		Weight::from_parts(33_759_000, 4764)
+		// Minimum execution time: 43_000_000 picoseconds.
+		Weight::from_parts(43_000_000, 4764)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -137,8 +158,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `156`
 		//  Estimated: `4764`
-		// Minimum execution time: 34_451_000 picoseconds.
-		Weight::from_parts(34_926_000, 4764)
+		// Minimum execution time: 41_000_000 picoseconds.
+		Weight::from_parts(41_000_000, 4764)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -153,12 +174,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `x` is `[0, 8]`.
 	fn claim_unlocked(x: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `187`
+		//  Measured:  `186`
 		//  Estimated: `4764`
-		// Minimum execution time: 37_641_000 picoseconds.
-		Weight::from_parts(38_890_045, 4764)
-			// Standard Error: 7_639
-			.saturating_add(Weight::from_parts(183_994, 0).saturating_mul(x.into()))
+		// Minimum execution time: 42_000_000 picoseconds.
+		Weight::from_parts(40_400_000, 4764)
+			// Standard Error: 616_441
+			.saturating_add(Weight::from_parts(1_300_000, 0).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -174,13 +195,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `182`
 		//  Estimated: `4764`
-		// Minimum execution time: 33_528_000 picoseconds.
-		Weight::from_parts(33_929_000, 4764)
+		// Minimum execution time: 38_000_000 picoseconds.
+		Weight::from_parts(38_000_000, 4764)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	/// Storage: DappStaking IntegratedDApps (r:1 w:0)
-	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(121), added: 2101, mode: MaxEncodedLen)
+	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(116), added: 2096, mode: MaxEncodedLen)
 	/// Storage: DappStaking Ledger (r:1 w:1)
 	/// Proof: DappStaking Ledger (max_values: None, max_size: Some(310), added: 2785, mode: MaxEncodedLen)
 	/// Storage: DappStaking StakerInfo (r:1 w:1)
@@ -195,15 +216,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn stake() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `250`
+		//  Measured:  `249`
 		//  Estimated: `4764`
-		// Minimum execution time: 45_984_000 picoseconds.
-		Weight::from_parts(46_329_000, 4764)
+		// Minimum execution time: 50_000_000 picoseconds.
+		Weight::from_parts(50_000_000, 4764)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 	/// Storage: DappStaking IntegratedDApps (r:1 w:0)
-	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(121), added: 2101, mode: MaxEncodedLen)
+	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(116), added: 2096, mode: MaxEncodedLen)
 	/// Storage: DappStaking Ledger (r:1 w:1)
 	/// Proof: DappStaking Ledger (max_values: None, max_size: Some(310), added: 2785, mode: MaxEncodedLen)
 	/// Storage: DappStaking StakerInfo (r:1 w:1)
@@ -218,10 +239,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn unstake() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `427`
+		//  Measured:  `426`
 		//  Estimated: `4764`
-		// Minimum execution time: 48_584_000 picoseconds.
-		Weight::from_parts(49_635_000, 4764)
+		// Minimum execution time: 54_000_000 picoseconds.
+		Weight::from_parts(54_000_000, 4764)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -238,12 +259,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `x` is `[1, 16]`.
 	fn claim_staker_rewards_past_period(x: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `560`
+		//  Measured:  `522`
 		//  Estimated: `4764`
-		// Minimum execution time: 51_711_000 picoseconds.
-		Weight::from_parts(50_255_137, 4764)
-			// Standard Error: 5_418
-			.saturating_add(Weight::from_parts(3_166_243, 0).saturating_mul(x.into()))
+		// Minimum execution time: 61_000_000 picoseconds.
+		Weight::from_parts(55_805_248, 4764)
+			// Standard Error: 284_158
+			.saturating_add(Weight::from_parts(4_609_116, 0).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(5_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -260,10 +281,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `501`
 		//  Estimated: `4764`
-		// Minimum execution time: 48_656_000 picoseconds.
-		Weight::from_parts(46_590_994, 4764)
-			// Standard Error: 4_829
-			.saturating_add(Weight::from_parts(3_197_956, 0).saturating_mul(x.into()))
+		// Minimum execution time: 60_000_000 picoseconds.
+		Weight::from_parts(54_186_464, 4764)
+			// Standard Error: 118_535
+			.saturating_add(Weight::from_parts(4_587_016, 0).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -277,26 +298,26 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `267`
 		//  Estimated: `3775`
-		// Minimum execution time: 41_921_000 picoseconds.
-		Weight::from_parts(42_440_000, 3775)
+		// Minimum execution time: 46_000_000 picoseconds.
+		Weight::from_parts(46_000_000, 3775)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	/// Storage: DappStaking IntegratedDApps (r:1 w:0)
-	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(121), added: 2101, mode: MaxEncodedLen)
+	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(116), added: 2096, mode: MaxEncodedLen)
 	/// Storage: DappStaking DAppTiers (r:1 w:1)
 	/// Proof: DappStaking DAppTiers (max_values: None, max_size: Some(1583), added: 4058, mode: MaxEncodedLen)
 	fn claim_dapp_reward() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `2585`
+		//  Measured:  `2584`
 		//  Estimated: `5048`
-		// Minimum execution time: 58_409_000 picoseconds.
-		Weight::from_parts(60_103_000, 5048)
+		// Minimum execution time: 90_000_000 picoseconds.
+		Weight::from_parts(90_000_000, 5048)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: DappStaking IntegratedDApps (r:1 w:0)
-	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(121), added: 2101, mode: MaxEncodedLen)
+	/// Proof: DappStaking IntegratedDApps (max_values: Some(65535), max_size: Some(116), added: 2096, mode: MaxEncodedLen)
 	/// Storage: DappStaking StakerInfo (r:1 w:1)
 	/// Proof: DappStaking StakerInfo (max_values: None, max_size: Some(138), added: 2613, mode: MaxEncodedLen)
 	/// Storage: DappStaking Ledger (r:1 w:1)
@@ -309,10 +330,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn unstake_from_unregistered() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `389`
+		//  Measured:  `313`
 		//  Estimated: `4764`
-		// Minimum execution time: 43_579_000 picoseconds.
-		Weight::from_parts(44_128_000, 4764)
+		// Minimum execution time: 64_000_000 picoseconds.
+		Weight::from_parts(64_000_000, 4764)
 			.saturating_add(T::DbWeight::get().reads(6_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
@@ -327,12 +348,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `x` is `[1, 8]`.
 	fn cleanup_expired_entries(x: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `255 + x * (69 ±0)`
+		//  Measured:  `250 + x * (69 ±0)`
 		//  Estimated: `4764 + x * (2613 ±0)`
-		// Minimum execution time: 43_019_000 picoseconds.
-		Weight::from_parts(39_628_074, 4764)
-			// Standard Error: 15_327
-			.saturating_add(Weight::from_parts(4_990_892, 0).saturating_mul(x.into()))
+		// Minimum execution time: 55_000_000 picoseconds.
+		Weight::from_parts(48_774_390, 4764)
+			// Standard Error: 2_201_253
+			.saturating_add(Weight::from_parts(6_006_097, 0).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(x.into())))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
@@ -343,8 +364,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 11_301_000 picoseconds.
-		Weight::from_parts(11_607_000, 0)
+		// Minimum execution time: 18_000_000 picoseconds.
+		Weight::from_parts(18_000_000, 0)
 	}
 	/// Storage: DappStaking CurrentEraInfo (r:1 w:1)
 	/// Proof: DappStaking CurrentEraInfo (max_values: Some(1), max_size: Some(112), added: 607, mode: MaxEncodedLen)
@@ -354,8 +375,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `16`
 		//  Estimated: `4254`
-		// Minimum execution time: 17_997_000 picoseconds.
-		Weight::from_parts(18_491_000, 4254)
+		// Minimum execution time: 29_000_000 picoseconds.
+		Weight::from_parts(29_000_000, 4254)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -377,8 +398,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `627`
 		//  Estimated: `4254`
-		// Minimum execution time: 45_396_000 picoseconds.
-		Weight::from_parts(46_230_000, 4254)
+		// Minimum execution time: 74_000_000 picoseconds.
+		Weight::from_parts(74_000_000, 4254)
 			.saturating_add(T::DbWeight::get().reads(6_u64))
 			.saturating_add(T::DbWeight::get().writes(7_u64))
 	}
@@ -392,8 +413,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `68`
 		//  Estimated: `4254`
-		// Minimum execution time: 24_161_000 picoseconds.
-		Weight::from_parts(24_565_000, 4254)
+		// Minimum execution time: 37_000_000 picoseconds.
+		Weight::from_parts(37_000_000, 4254)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -404,12 +425,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `x` is `[0, 100]`.
 	fn dapp_tier_assignment(x: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `152 + x * (32 ±0)`
+		//  Measured:  `149 + x * (32 ±0)`
 		//  Estimated: `3061 + x * (2071 ±0)`
-		// Minimum execution time: 7_878_000 picoseconds.
-		Weight::from_parts(12_213_692, 3061)
-			// Standard Error: 3_051
-			.saturating_add(Weight::from_parts(2_363_936, 0).saturating_mul(x.into()))
+		// Minimum execution time: 9_000_000 picoseconds.
+		Weight::from_parts(6_000_000, 3061)
+			// Standard Error: 187_047
+			.saturating_add(Weight::from_parts(3_240_000, 0).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(x.into())))
 			.saturating_add(Weight::from_parts(0, 2071).saturating_mul(x.into()))
@@ -424,8 +445,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `293`
 		//  Estimated: `4254`
-		// Minimum execution time: 8_839_000 picoseconds.
-		Weight::from_parts(8_975_000, 4254)
+		// Minimum execution time: 11_000_000 picoseconds.
+		Weight::from_parts(11_000_000, 4254)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}

@@ -516,6 +516,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
+    type AccountCheck = ();
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<100>;
