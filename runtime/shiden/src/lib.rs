@@ -527,6 +527,13 @@ parameter_types! {
     pub const KickThreshold: BlockNumber = 2 * HOURS; // 2 SessionPeriod
 }
 
+pub struct CollatorSelectionAccountCheck;
+impl pallet_collator_selection::AccountCheck<AccountId> for CollatorSelectionAccountCheck {
+    fn allowed_candidacy(account: &AccountId) -> bool {
+        !DappStaking::is_staker(account)
+    }
+}
+
 impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -541,6 +548,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type SlashRatio = SlashRatio;
+    type AccountCheck = CollatorSelectionAccountCheck;
     type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 

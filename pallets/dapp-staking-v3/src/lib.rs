@@ -1581,6 +1581,11 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        /// `true` if the account is a staker, `false` otherwise.
+        pub fn is_staker(account: &T::AccountId) -> bool {
+            Ledger::<T>::contains_key(account)
+        }
+
         /// `Err` if pallet disabled for maintenance, `Ok` otherwise.
         pub(crate) fn ensure_pallet_enabled() -> Result<(), Error<T>> {
             if ActiveProtocolState::<T>::get().maintenance {
