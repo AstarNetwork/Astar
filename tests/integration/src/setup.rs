@@ -231,6 +231,7 @@ pub fn run_to_block(n: BlockNumber) {
         AuraExt::on_finalize(block_number);
         PolkadotXcm::on_finalize(block_number);
         Ethereum::on_finalize(block_number);
+        CollatorSelection::on_finalize(block_number);
         DynamicEvmBaseFee::on_finalize(block_number);
         #[cfg(any(feature = "shibuya", feature = "shiden"))]
         Inflation::on_finalize(block_number);
@@ -249,6 +250,7 @@ pub fn run_to_block(n: BlockNumber) {
         Authorship::on_initialize(block_number);
         Aura::on_initialize(block_number);
         AuraExt::on_initialize(block_number);
+        CollatorSelection::on_initialize(block_number);
         Ethereum::on_initialize(block_number);
         DynamicEvmBaseFee::on_initialize(block_number);
         #[cfg(any(feature = "shibuya", feature = "shiden"))]

@@ -138,7 +138,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 77,
+    spec_version: 78,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -427,6 +427,14 @@ parameter_types! {
     pub const KickThreshold: BlockNumber = 2 * HOURS; // 2 SessionPeriod
 }
 
+pub struct CollatorSelectionAccountCheck;
+impl pallet_collator_selection::AccountCheck<AccountId> for CollatorSelectionAccountCheck {
+    fn allowed_candidacy(_account: &AccountId) -> bool {
+        // TODO: update this when dApp staking v3 is integrated
+        true
+    }
+}
+
 impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -441,6 +449,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type SlashRatio = SlashRatio;
+    type AccountCheck = CollatorSelectionAccountCheck;
     type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 

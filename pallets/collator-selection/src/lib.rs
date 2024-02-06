@@ -109,6 +109,12 @@ pub mod pallet {
         }
     }
 
+    /// Used to check whether an account is allowed to be a candidate.
+    pub trait AccountCheck<AccountId> {
+        /// `true` if the account is allowed to be a candidate, `false` otherwise.
+        fn allowed_candidacy(account: &AccountId) -> bool;
+    }
+
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -156,6 +162,9 @@ pub mod pallet {
 
         /// How many in perc kicked collators should be slashed (set 0 to disable)
         type SlashRatio: Get<Perbill>;
+
+        /// Used to check whether an account is allowed to be a candidate.
+        type AccountCheck: AccountCheck<Self::AccountId>;
 
         /// The weight information of this pallet.
         type WeightInfo: WeightInfo;
@@ -287,6 +296,8 @@ pub mod pallet {
         NoAssociatedValidatorId,
         /// Validator ID is not yet registered
         ValidatorNotRegistered,
+        /// Account is now allowed to be a candidate due to an external reason (e.g. it might be participating in dApp staking)
+        NotAllowedCandidate,
     }
 
     #[pallet::hooks]
@@ -374,6 +385,10 @@ pub mod pallet {
             ensure!(
                 !Self::invulnerables().contains(&who),
                 Error::<T>::AlreadyInvulnerable
+            );
+            ensure!(
+                T::AccountCheck::allowed_candidacy(&who),
+                Error::<T>::NotAllowedCandidate
             );
 
             let validator_key = T::ValidatorIdOf::convert(who.clone())
@@ -501,6 +516,11 @@ pub mod pallet {
                     }
                 })
                 .collect::<Vec<_>>()
+        }
+
+        /// Check whether an account is a candidate.
+        pub fn is_account_candidate(account: &T::AccountId) -> bool {
+            Self::candidates().iter().any(|c| &c.who == account)
         }
     }
 

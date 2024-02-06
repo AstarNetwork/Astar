@@ -212,6 +212,15 @@ impl ValidatorRegistration<u64> for IsRegistered {
     }
 }
 
+pub(crate) const BLACKLISTED_ACCOUNT: u64 = 987654321;
+
+pub struct DummyAccountCheck;
+impl AccountCheck<u64> for DummyAccountCheck {
+    fn allowed_candidacy(account: &u64) -> bool {
+        *account != BLACKLISTED_ACCOUNT
+    }
+}
+
 impl Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -225,6 +234,7 @@ impl Config for Test {
     type ValidatorIdOf = IdentityCollator;
     type ValidatorRegistration = IsRegistered;
     type SlashRatio = SlashRatio;
+    type AccountCheck = DummyAccountCheck;
     type WeightInfo = ();
 }
 
