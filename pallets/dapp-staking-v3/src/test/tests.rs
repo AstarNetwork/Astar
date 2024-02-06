@@ -25,7 +25,10 @@ use crate::{
 use frame_support::{
     assert_noop, assert_ok, assert_storage_noop,
     error::BadOrigin,
-    traits::{fungible::Unbalanced as FunUnbalanced, Currency, Get, OnFinalize, OnInitialize},
+    traits::{
+        fungible::Unbalanced as FunUnbalanced, Currency, Get, OnFinalize, OnInitialize,
+        ReservableCurrency,
+    },
 };
 use sp_runtime::traits::Zero;
 
@@ -473,7 +476,7 @@ fn lock_is_ok() {
     ExtBuilder::build().execute_with(|| {
         // Lock some amount
         let locker = 2;
-        let free_balance = Balances::free_balance(&locker);
+        let free_balance = Balances::total_balance(&locker);
         assert!(free_balance > 500, "Sanity check");
         assert_lock(locker, 100);
         assert_lock(locker, 200);
@@ -484,6 +487,25 @@ fn lock_is_ok() {
         // Ensure minimum lock amount works
         let locker = 3;
         assert_lock(locker, <Test as Config>::MinimumLockedAmount::get());
+    })
+}
+
+#[test]
+fn lock_with_reserve_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Prepare locker account
+        let locker = 30;
+        let minimum_locked_amount: Balance = <Test as Config>::MinimumLockedAmount::get();
+        Balances::make_free_balance_be(&locker, minimum_locked_amount);
+        assert_ok!(Balances::reserve(&locker, 1));
+        assert_eq!(
+            Balances::free_balance(&locker),
+            minimum_locked_amount - 1,
+            "Sanity check post-reserve."
+        );
+
+        // Lock must still work since account is not blacklisted and has enough total balance to cover the lock requirement
+        assert_lock(locker, minimum_locked_amount);
     })
 }
 
@@ -499,7 +521,7 @@ fn lock_with_incorrect_amount_fails() {
         // Attempting to lock something after everything has been locked is same
         // as attempting to lock with "nothing"
         let locker = 1;
-        assert_lock(locker, Balances::free_balance(&locker));
+        assert_lock(locker, Balances::total_balance(&locker));
         assert_noop!(
             DappStaking::lock(RuntimeOrigin::signed(locker), 1),
             Error::<Test>::ZeroAmount,
@@ -511,6 +533,18 @@ fn lock_with_incorrect_amount_fails() {
         assert_noop!(
             DappStaking::lock(RuntimeOrigin::signed(locker), minimum_locked_amount - 1),
             Error::<Test>::LockedAmountBelowThreshold,
+        );
+    })
+}
+
+#[test]
+fn lock_with_blacklisted_account_fails() {
+    ExtBuilder::build().execute_with(|| {
+        Balances::make_free_balance_be(&BLACKLISTED_ACCOUNT, 100000);
+
+        assert_noop!(
+            DappStaking::lock(RuntimeOrigin::signed(BLACKLISTED_ACCOUNT), 1000),
+            Error::<Test>::AccountNotAvailableForDappStaking,
         );
     })
 }

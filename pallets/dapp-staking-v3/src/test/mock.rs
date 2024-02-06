@@ -193,6 +193,14 @@ impl DappStakingObserver for DummyDappStakingObserver {
     }
 }
 
+pub(crate) const BLACKLISTED_ACCOUNT: AccountId = 789456123;
+pub struct DummyAccountCheck;
+impl AccountCheck<AccountId> for DummyAccountCheck {
+    fn allowed_to_stake(account: &AccountId) -> bool {
+        *account != BLACKLISTED_ACCOUNT
+    }
+}
+
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -203,6 +211,7 @@ impl pallet_dapp_staking::Config for Test {
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = DummyDappStakingObserver;
+    type AccountCheck = DummyAccountCheck;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;

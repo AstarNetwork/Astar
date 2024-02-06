@@ -21,6 +21,8 @@ use super::*;
 use frame_benchmarking::v2::*;
 use frame_system::{Pallet as System, RawOrigin};
 
+const UNIT: u128 = 1_000_000_000_000_000_000;
+
 /// Assert that the last event equals the provided one.
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     System::<T>::assert_last_event(generic_event.into());
@@ -48,12 +50,12 @@ fn initial_config<T: Config>() {
     let config = InflationConfiguration {
         recalculation_era: 123,
         issuance_safety_cap,
-        collator_reward_per_block: 11111,
-        treasury_reward_per_block: 33333,
-        dapp_reward_pool_per_era: 55555,
-        base_staker_reward_pool_per_era: 77777,
-        adjustable_staker_reward_pool_per_era: 99999,
-        bonus_reward_pool_per_period: 123987,
+        collator_reward_per_block: 11111 * UNIT,
+        treasury_reward_per_block: 33333 * UNIT,
+        dapp_reward_pool_per_era: 55555 * UNIT,
+        base_staker_reward_pool_per_era: 77777 * UNIT,
+        adjustable_staker_reward_pool_per_era: 99999 * UNIT,
+        bonus_reward_pool_per_period: 123987 * UNIT,
         ideal_staking_rate: Perquintill::from_percent(50),
     };
 
@@ -85,7 +87,17 @@ mod benchmarks {
     #[benchmark]
     fn force_set_inflation_config() {
         initial_config::<T>();
-        let config = InflationConfiguration::default();
+        let config = InflationConfiguration {
+            recalculation_era: 456,
+            issuance_safety_cap: 112233,
+            collator_reward_per_block: 777,
+            treasury_reward_per_block: 444,
+            dapp_reward_pool_per_era: 55555,
+            base_staker_reward_pool_per_era: 77777,
+            adjustable_staker_reward_pool_per_era: 99999,
+            bonus_reward_pool_per_period: 123987,
+            ideal_staking_rate: Perquintill::from_percent(37),
+        };
 
         #[extrinsic_call]
         _(RawOrigin::Root, config.clone());

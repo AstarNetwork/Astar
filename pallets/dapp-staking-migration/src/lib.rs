@@ -168,7 +168,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Execute migrations steps until the specified weight limit has been consumed.
         ///
-        /// Depending on the number of entries migrated and/or deleted, appropriate events are emited.
+        /// Depending on the number of entries migrated and/or deleted, appropriate events are emitted.
         ///
         /// In case at least some progress is made, `Ok(_)` is returned.
         /// If no progress is made, `Err(_)` is returned.
@@ -295,7 +295,7 @@ pub mod pallet {
         /// Steps:
         /// 1. Attempt to `drain` a single DB entry from the old storage. If it's unregistered, move on.
         /// 2. Unreserve the old `RegisterDeposit` amount from the developer account.
-        /// 2. Re-decode old smart contract type into new one. Operation should be infalible in practice since the same underlying type is used.
+        /// 2. Re-decode old smart contract type into new one. Operation should be infallible in practice since the same underlying type is used.
         /// 3. `register` the old-new smart contract into dApp staking v3 pallet.
         ///
         /// Returns `Ok(_)` if an entry was migrated, `Err(_)` if there are no more entries to migrate.
@@ -348,13 +348,6 @@ pub mod pallet {
                                 smart_contract,
                                 error,
                             );
-
-                            // This should never happen, but if it does, we want to know about it.
-                            #[cfg(feature = "try-runtime")]
-                            panic!(
-                                "Failed to register smart contract: {:?} with error: {:?}.",
-                                smart_contract, error
-                            );
                         }
                     }
 
@@ -383,7 +376,7 @@ pub mod pallet {
                     let locked = old_account_ledger.locked;
 
                     // Old unbonding amount can just be released, to keep things simple.
-                    // Alternative is to re-calculat this into unlocking chunks.
+                    // Alternative is to re-calculate this into unlocking chunks.
                     let _total_unbonding = old_account_ledger.unbonding_info.sum();
 
                     <T as pallet_dapps_staking::Config>::Currency::remove_lock(
@@ -430,7 +423,7 @@ pub mod pallet {
         /// Used to remove one entry from the old _dapps_staking_v2_ storage.
         ///
         /// If there are no more entries to remove, returns `Err(_)` with consumed weight and number of deleted entries.
-        /// Otherwise returns `Ok(_)` with consumed weight and number of consumed enries.
+        /// Otherwise returns `Ok(_)` with consumed weight and number of consumed entries.
         pub(crate) fn cleanup_old_storage(limit: u32) -> Result<(Weight, u32), (Weight, u32)> {
             let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
 
@@ -474,8 +467,8 @@ pub mod pallet {
 
         /// Min allowed weight that migration should be allowed to consume.
         ///
-        /// This serves as a safety marging, to prevent accidental overspending, due to
-        /// inprecision in implementation or benchmarks, when small weight limit is specified.
+        /// This serves as a safety margin, to prevent accidental overspending, due to
+        /// imprecision in implementation or benchmarks, when small weight limit is specified.
         pub(crate) fn min_call_weight() -> Weight {
             // 5% of block should be fine
             T::BlockWeights::get().max_block / 10

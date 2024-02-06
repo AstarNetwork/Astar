@@ -59,6 +59,7 @@ std = [
 	"pallet-authorship/std",
 	"pallet-session/std",
 	"pallet-aura/std",
+	"pallet-balances/std",
 ]
 
 try-runtime = ["frame-support/try-runtime"]

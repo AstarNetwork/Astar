@@ -636,8 +636,8 @@ pub trait PayoutPerBlock<Imbalance> {
 /// `OnRuntimeUpgrade` logic for integrating this pallet into the live network.
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
-pub struct PalletInflationInitConfig<T, P>(PhantomData<(T, P)>);
-impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
+pub struct PalletInflationInitConfig<T, P>(PhantomData<(T, P, Weight)>);
+impl<T: Config, P: Get<(InflationParameters, EraNumber, Weight)>> OnRuntimeUpgrade
     for PalletInflationInitConfig<T, P>
 {
     fn on_runtime_upgrade() -> Weight {
@@ -646,7 +646,7 @@ impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
         }
 
         // 1. Get & set inflation parameters
-        let (inflation_params, next_era) = P::get();
+        let (inflation_params, next_era, extra_weight) = P::get();
         InflationParams::<T>::put(inflation_params.clone());
 
         // 2. Calculation inflation config, set it & deposit event
@@ -660,7 +660,9 @@ impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
 
         log::info!("Inflation pallet storage initialized.");
 
-        T::WeightInfo::recalculation().saturating_add(T::DbWeight::get().reads_writes(1, 2))
+        T::WeightInfo::recalculation()
+            .saturating_add(T::DbWeight::get().reads_writes(1, 2))
+            .saturating_add(extra_weight)
     }
 
     #[cfg(feature = "try-runtime")]
