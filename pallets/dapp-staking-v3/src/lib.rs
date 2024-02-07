@@ -463,6 +463,9 @@ pub mod pallet {
         !cfg!(feature = "runtime-benchmarks") && !cfg!(test)
     }
 
+    /// Safeguard to prevent unwanted operations in production.
+    /// Kept as a storage without extrinsic setter, so we can still enable it for some
+    /// chain-fork debugging if required.
     #[pallet::storage]
     pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
 
