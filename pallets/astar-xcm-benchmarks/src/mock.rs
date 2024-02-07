@@ -245,7 +245,7 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = Nothing;
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
-    type Aliasers = ();
+    type Aliasers = Nothing;
 }
 
 impl pallet_xcm_benchmarks::Config for Test {

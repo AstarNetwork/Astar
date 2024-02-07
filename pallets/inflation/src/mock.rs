@@ -35,7 +35,7 @@ use sp_runtime::{
     BuildStorage, Perquintill,
 };
 
-use astar_primitives::{testing::Header, Balance, BlockNumber};
+use astar_primitives::{Balance, BlockNumber};
 pub(crate) type AccountId = u64;
 
 /// Initial inflation params set by the mock.
