@@ -39,8 +39,7 @@ use frame_system::{
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::H256;
 use sp_runtime::{
-    testing::Header,
-    traits::{AccountIdConversion, Convert, Get, IdentityLookup},
+    traits::{AccountIdConversion, Convert, Get, IdentityLookup, MaybeEquivalence},
     AccountId32, Perbill, RuntimeDebug,
 };
 use sp_std::marker::PhantomData;
@@ -60,10 +59,7 @@ use xcm_builder::{
 use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_xcm_support::DisabledParachainFee;
 
-use xcm_executor::{
-    traits::{Convert as XcmConvert, JustTry},
-    XcmExecutor,
-};
+use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::xcm::{
     AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
@@ -84,13 +80,12 @@ parameter_types! {
 impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = u64;
+    type Nonce = u64;
+    type Block = Block;
     type Hash = H256;
     type Hashing = sp_runtime::traits::BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type BlockWeights = ();
@@ -124,9 +119,9 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
-    type HoldIdentifier = ();
-    type FreezeIdentifier = ();
-    type MaxHolds = ConstU32<0>;
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type FreezeIdentifier = RuntimeFreezeReason;
+    type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<0>;
 }
 
@@ -213,6 +208,8 @@ parameter_types! {
     pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
     pub const DepositPerByte: Balance = MILLISDN / 1_000_000;
     pub const DefaultDepositLimit: Balance = 1000 * MILLISDN;
+    pub const MaxDelegateDependencies: u32 = 32;
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
@@ -240,6 +237,7 @@ impl pallet_contracts::Config for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+    type RuntimeHoldReason = RuntimeHoldReason;
     /// The safest default is to allow no calls at all.
     ///
     /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -261,6 +259,11 @@ impl pallet_contracts::Config for Runtime {
     type MaxStorageKeyLen = ConstU32<128>;
     type UnsafeUnstableInterface = ConstBool<true>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+    type MaxDelegateDependencies = MaxDelegateDependencies;
+    type Migrations = ();
+    type Debug = ();
+    type Environment = ();
 }
 
 pub struct BurnFees;
@@ -553,6 +556,7 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = Nothing;
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
+    type Aliasers = Nothing;
 }
 
 impl mock_msg_queue::Config for Runtime {
@@ -626,7 +630,7 @@ parameter_types! {
 pub struct AssetIdConvert;
 impl Convert<AssetId, Option<MultiLocation>> for AssetIdConvert {
     fn convert(asset_id: AssetId) -> Option<MultiLocation> {
-        ShidenAssetLocationIdConverter::reverse_ref(&asset_id).ok()
+        ShidenAssetLocationIdConverter::convert_back(&asset_id)
     }
 }
 
@@ -665,28 +669,23 @@ impl orml_xtokens::Config for Runtime {
     type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShidenLocationAbsolute>;
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 construct_runtime!(
-    pub struct Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        MsgQueue: mock_msg_queue::{Pallet, Storage, Event<T>},
-        PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
-        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-        XcAssetConfig: pallet_xc_asset_config::{Pallet, Call, Storage, Event<T>},
-        CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
-        DappsStaking: pallet_dapps_staking::{Pallet, Call, Event<T>},
-        Proxy: pallet_proxy::{Pallet, Call, Event<T>},
-        Utility: pallet_utility::{Pallet, Call, Event},
-        Randomness: pallet_insecure_randomness_collective_flip::{Pallet, Storage},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
-        Xtokens: orml_xtokens::{Pallet, Storage, Call, Event<T>},
+    pub struct Runtime {
+        System: frame_system,
+        Balances: pallet_balances,
+        MsgQueue: mock_msg_queue,
+        PolkadotXcm: pallet_xcm,
+        Assets: pallet_assets,
+        XcAssetConfig: pallet_xc_asset_config,
+        CumulusXcm: cumulus_pallet_xcm,
+        DappsStaking: pallet_dapps_staking,
+        Proxy: pallet_proxy,
+        Utility: pallet_utility,
+        Randomness: pallet_insecure_randomness_collective_flip,
+        Timestamp: pallet_timestamp,
+        Contracts: pallet_contracts,
+        Xtokens: orml_xtokens,
     }
 );
