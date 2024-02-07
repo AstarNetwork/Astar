@@ -62,23 +62,33 @@ pub trait CycleConfiguration {
     fn blocks_per_era() -> BlockNumber;
 
     /// For how many standard era lengths does the period last.
-    fn eras_per_period() -> EraNumber {
+    fn period_in_era_lengths() -> EraNumber {
         Self::eras_per_voting_subperiod().saturating_add(Self::eras_per_build_and_earn_subperiod())
     }
 
     /// For how many standard era lengths does the cycle (a 'year') last.
-    fn eras_per_cycle() -> EraNumber {
-        Self::eras_per_period().saturating_mul(Self::periods_per_cycle())
+    fn cycle_in_era_lengths() -> EraNumber {
+        Self::period_in_era_lengths().saturating_mul(Self::periods_per_cycle())
     }
 
     /// How many blocks are there per cycle (a 'year').
     fn blocks_per_cycle() -> BlockNumber {
-        Self::blocks_per_era().saturating_mul(Self::eras_per_cycle())
+        Self::blocks_per_era().saturating_mul(Self::cycle_in_era_lengths())
     }
 
     /// For how many standard era lengths do all the build&earn subperiods in a cycle last.    
     fn build_and_earn_eras_per_cycle() -> EraNumber {
         Self::eras_per_build_and_earn_subperiod().saturating_mul(Self::periods_per_cycle())
+    }
+
+    /// How many distinct eras are there in a single period.
+    fn eras_per_period() -> EraNumber {
+        Self::eras_per_build_and_earn_subperiod().saturating_add(1)
+    }
+
+    /// How many distinct eras are there in a cycle.
+    fn eras_per_cycle() -> EraNumber {
+        Self::eras_per_period().saturating_mul(Self::periods_per_cycle())
     }
 }
 
