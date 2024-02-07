@@ -580,10 +580,13 @@ pub mod pallet {
 
             // Get the stakers and their active locked (staked) amount.
 
+            use sp_runtime::traits::Zero;
+            let mut total_locked = Balance::zero();
             let min_lock_amount: Balance =
                 <T as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get();
             let stakers: Vec<_> = pallet_dapps_staking::Ledger::<T>::iter()
                 .filter_map(|(staker, ledger)| {
+                    total_locked.saturating_accrue(ledger.locked);
                     if ledger.locked >= min_lock_amount {
                         Some((staker, ledger.locked))
                     } else {
@@ -591,6 +594,12 @@ pub mod pallet {
                     }
                 })
                 .collect();
+
+            log::info!(
+                target: LOG_TARGET,
+                "Total locked amount in the old pallet: {:?}.",
+                total_locked,
+            );
 
             log::info!(
                 target: LOG_TARGET,
