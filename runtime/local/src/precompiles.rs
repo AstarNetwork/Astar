@@ -83,7 +83,7 @@ impl Contains<RuntimeCall> for WhitelistedLockdropCalls {
             RuntimeCall::DappStaking(pallet_dapp_staking_v3::Call::withdraw_unbonded {
                 ..
             }) => true,
-            RuntimeCall::Balances(pallet_balances::Call::transfer { .. }) => true,
+            RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,
             RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) => true,
             RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
             _ => false,

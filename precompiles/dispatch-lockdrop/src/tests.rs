@@ -38,7 +38,7 @@ fn precompiles() -> TestPrecompileSet<TestRuntime> {
 fn dispatch_calls_on_behalf_of_lockdrop_works() {
     ExtBuilder::default().build().execute_with(|| {
         // Transfer balance to Alice
-        let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
+        let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE,
             value: 15 * ONE,
         });
@@ -74,7 +74,7 @@ fn dispatch_calls_on_behalf_of_lockdrop_works() {
 #[test]
 fn proper_gas_is_charged() {
     ExtBuilder::default().build().execute_with(|| {
-        let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
+        let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE,
             value: 15 * ONE,
         });
@@ -111,7 +111,7 @@ fn proper_gas_is_charged() {
 fn pubkey_does_not_match_caller_address() {
     ExtBuilder::default().build().execute_with(|| {
         // Transfer balance to Alice
-        let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
+        let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE,
             value: 15 * ONE,
         });
@@ -148,7 +148,7 @@ fn pubkey_does_not_match_caller_address() {
 fn pubkey_derive_to_proper_ss58() {
     ExtBuilder::default().build().execute_with(|| {
         // Transfer balance to Alice
-        let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
+        let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE,
             value: 15 * ONE,
         });

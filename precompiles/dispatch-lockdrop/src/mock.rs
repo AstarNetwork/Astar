@@ -87,7 +87,7 @@ pub struct WhitelistedCalls;
 impl Contains<RuntimeCall> for WhitelistedCalls {
     fn contains(call: &RuntimeCall) -> bool {
         match call {
-            RuntimeCall::Balances(pallet_balances::Call::transfer { .. }) => true,
+            RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) => true,
             RuntimeCall::System(frame_system::Call::remark { .. }) => true,
             RuntimeCall::Utility(_) => true,
             _ => false,
