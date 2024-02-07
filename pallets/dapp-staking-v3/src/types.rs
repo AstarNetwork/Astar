@@ -66,7 +66,7 @@
 
 use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec};
 use parity_scale_codec::{Decode, Encode};
-use serde::{Serialize, Deserialize}
+use serde::{Serialize, Deserialize};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
     traits::{CheckedAdd, UniqueSaturatedInto, Zero},
