@@ -28,7 +28,7 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
         InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
@@ -323,41 +323,6 @@ impl pallet_multisig::Config for Runtime {
     type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    pub const BlockPerEra: BlockNumber = DAYS;
-    pub const RegisterDeposit: Balance = 100 * SDN;
-    pub const MaxNumberOfStakersPerContract: u32 = 1024;
-    pub const MinimumStakingAmount: Balance = 50 * SDN;
-    pub const MinimumRemainingAmount: Balance = SDN;
-    pub const MaxUnlockingChunks: u32 = 5;
-    pub const UnbondingPeriod: u32 = 5;
-    pub const MaxEraStakeValues: u32 = 5;
-}
-
-impl pallet_dapps_staking::Config for Runtime {
-    type Currency = Balances;
-    type BlockPerEra = BlockPerEra;
-    type SmartContract = SmartContract<AccountId>;
-    type RegisterDeposit = RegisterDeposit;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
-    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
-    type MinimumStakingAmount = MinimumStakingAmount;
-    type PalletId = DappsStakingPalletId;
-    type MinimumRemainingAmount = MinimumRemainingAmount;
-    type MaxUnlockingChunks = MaxUnlockingChunks;
-    type UnbondingPeriod = UnbondingPeriod;
-    type MaxEraStakeValues = MaxEraStakeValues;
-    type UnregisteredDappRewardRetention = ConstU32<7>;
-    // Needed so benchmark can use the pallets extrinsics
-    #[cfg(feature = "runtime-benchmarks")]
-    type ForcePalletDisabled = ConstBool<false>;
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type ForcePalletDisabled = ConstBool<true>;
-    // Fee required to claim rewards for another account. Calculated & tested manually.
-    type DelegateClaimFee = ConstU128<000_579_268_481_141_871>;
-}
-
 impl pallet_static_price_provider::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
 }
@@ -388,6 +353,10 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
     fn allowed_to_stake(account: &AccountId) -> bool {
         !CollatorSelection::is_account_candidate(account)
     }
+}
+
+parameter_types! {
+    pub const MinimumStakingAmount: Balance = 50 * SDN;
 }
 
 impl pallet_dapp_staking_v3::Config for Runtime {
@@ -451,11 +420,6 @@ impl pallet_inflation::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = weights::pallet_inflation::SubstrateWeight<Runtime>;
-}
-
-impl pallet_dapp_staking_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -554,7 +518,6 @@ impl pallet_collator_selection::Config for Runtime {
 
 parameter_types! {
     pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
-    pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
@@ -1094,10 +1057,6 @@ construct_runtime!(
 
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
-        // To be removed & cleaned up after migration has been finished
-        DappStakingMigration: pallet_dapp_staking_migration = 254,
-        // Legacy dApps staking v2, to be removed after migration has been finished
-        DappsStaking: pallet_dapps_staking = 255,
     }
 );
 
@@ -1136,135 +1095,18 @@ pub type Executive = frame_executive::Executive<
 >;
 
 parameter_types! {
-    pub const BlockRewardName: &'static str = "BlockReward";
+    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
 }
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
-    pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParamsHelper>,
-    pallet_dapp_staking_v3::migrations::DAppStakingV3InitConfig<
-        Runtime,
-        InitDappStakingV3Params,
-        InitActivePriceGet,
-    >,
-    // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode.
-    // But it's most important for testing with try-runtime.
-    pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
+    // Part of shiden-119
     frame_support::migrations::RemovePallet<
-        BlockRewardName,
+        DappStakingMigrationName,
         <Runtime as frame_system::Config>::DbWeight,
     >,
 );
-
-use sp_arithmetic::fixed_point::FixedU64;
-pub struct InitActivePriceGet;
-impl Get<FixedU64> for InitActivePriceGet {
-    fn get() -> FixedU64 {
-        // Roughly the average price, taken from CoinMarketCap data.
-        FixedU64::from_rational(32, 100)
-    }
-}
-
-/// Used to initialize inflation parameters for the runtime.
-pub struct InitInflationParamsHelper;
-impl Get<(pallet_inflation::InflationParameters, EraNumber, Weight)> for InitInflationParamsHelper {
-    fn get() -> (pallet_inflation::InflationParameters, EraNumber, Weight) {
-        (
-            pallet_inflation::InflationParameters {
-                // Recalculation is done every two weeks, hence the small %.
-                max_inflation_rate: Perquintill::from_percent(7),
-                treasury_part: Perquintill::from_percent(5),
-                collators_part: Perquintill::from_rational(32_u64, 1000),
-                dapps_part: Perquintill::from_percent(13),
-                base_stakers_part: Perquintill::from_percent(10),
-                adjustable_stakers_part: Perquintill::from_rational(588_u64, 1000),
-                bonus_part: Perquintill::from_percent(10),
-                ideal_staking_rate: Perquintill::from_percent(50),
-            },
-            pallet_dapps_staking::CurrentEra::<Runtime>::get().saturating_add(1),
-            <Runtime as frame_system::Config>::DbWeight::get().reads(1),
-        )
-    }
-}
-
-use frame_support::BoundedVec;
-use pallet_dapp_staking_v3::{TierParameters, TiersConfiguration};
-type NumberOfTiers = <Runtime as pallet_dapp_staking_v3::Config>::NumberOfTiers;
-/// Used to initialize dApp staking parameters for the runtime.
-pub struct InitDappStakingV3Params;
-impl
-    Get<(
-        EraNumber,
-        TierParameters<NumberOfTiers>,
-        TiersConfiguration<NumberOfTiers>,
-    )> for InitDappStakingV3Params
-{
-    fn get() -> (
-        EraNumber,
-        TierParameters<NumberOfTiers>,
-        TiersConfiguration<NumberOfTiers>,
-    ) {
-        // 1. Prepare init values
-
-        // Init era of dApp staking v3 should be the next era after dApp staking v2
-        let init_era = pallet_dapps_staking::CurrentEra::<Runtime>::get().saturating_add(1);
-
-        // Reward portions according to the Tokenomics 2.0 report
-        let reward_portion = BoundedVec::try_from(vec![
-            Permill::from_percent(25),
-            Permill::from_percent(47),
-            Permill::from_percent(25),
-            Permill::from_percent(3),
-        ])
-        .unwrap_or_default();
-
-        // Tier thresholds adjusted according to numbers observed on Shibuya
-        let tier_thresholds = BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: SDN.saturating_mul(3_000_000),
-                minimum_amount: SDN.saturating_mul(2_000_000),
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: SDN.saturating_mul(750_000),
-                minimum_amount: SDN.saturating_mul(500_000),
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: SDN.saturating_mul(200_000),
-                minimum_amount: SDN.saturating_mul(150_000),
-            },
-            TierThreshold::FixedTvlAmount {
-                amount: SDN.saturating_mul(50_000),
-            },
-        ])
-        .unwrap_or_default();
-
-        // 2. Tier params
-        let tier_params =
-            TierParameters::<<Runtime as pallet_dapp_staking_v3::Config>::NumberOfTiers> {
-                reward_portion: reward_portion.clone(),
-                slot_distribution: BoundedVec::try_from(vec![
-                    Permill::from_percent(5),
-                    Permill::from_percent(20),
-                    Permill::from_percent(30),
-                    Permill::from_percent(45),
-                ])
-                .unwrap_or_default(),
-                tier_thresholds: tier_thresholds.clone(),
-            };
-
-        // 3. Init tier config
-        let init_tier_config = TiersConfiguration {
-            number_of_slots: 100,
-            slots_per_tier: BoundedVec::try_from(vec![5, 20, 30, 45]).unwrap_or_default(),
-            reward_portion,
-            tier_thresholds,
-        };
-
-        (init_era, tier_params, init_tier_config)
-    }
-}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1341,10 +1183,8 @@ mod benches {
         [pallet_assets, Assets]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapps_staking, DappsStaking]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
-        [pallet_dapp_staking_migration, DappStakingMigration]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
