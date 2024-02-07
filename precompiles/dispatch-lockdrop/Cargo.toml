@@ -1,0 +1,58 @@
+[package]
+name = "pallet-evm-precompile-dispatch-lockdrop"
+description = "Evm Precompile to dispatch calls for lockdrop accounts"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+fp-evm = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+hex-literal = { workspace = true }
+libsecp256k1 = { workspace = true, features = ["hmac", "static-context"] }
+log = { workspace = true }
+pallet-evm = { workspace = true }
+pallet-evm-precompile-dispatch = { workspace = true }
+parity-scale-codec = { workspace = true }
+precompile-utils = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+[dev-dependencies]
+astar-primitives = { workspace = true }
+ethers = { workspace = true }
+frame-system = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-timestamp = { workspace = true }
+pallet-utility = { workspace = true }
+precompile-utils = { workspace = true, features = ["testing"] }
+scale-info = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"log/std",
+	"libsecp256k1/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-std/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+	"astar-primitives/std",
+	"precompile-utils/std",
+	"pallet-evm/std",
+	"pallet-balances/std",
+	"pallet-timestamp/std",
+]

@@ -106,6 +106,7 @@ pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
+pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-unified-accounts = { workspace = true }
@@ -191,6 +192,7 @@ std = [
 	"pallet-evm-precompile-xcm/std",
 	"pallet-evm-precompile-xvm/std",
 	"pallet-evm-precompile-unified-accounts/std",
+	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-dapp-staking-v3/std",
 	"dapp-staking-v3-runtime-api/std",
 	"pallet-inflation/std",
