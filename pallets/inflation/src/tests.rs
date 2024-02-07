@@ -75,39 +75,6 @@ fn force_set_inflation_params_fails() {
 }
 
 #[test]
-fn force_set_inflation_config_work() {
-    ExternalityBuilder::build().execute_with(|| {
-        let mut new_config = ActiveInflationConfig::<Test>::get();
-        new_config.recalculation_era = new_config.recalculation_era + 50;
-
-        // Execute call, ensure it works
-        assert_ok!(Inflation::force_set_inflation_config(
-            RuntimeOrigin::root(),
-            new_config
-        ));
-        System::assert_last_event(
-            Event::InflationConfigurationForceChanged { config: new_config }.into(),
-        );
-
-        assert_eq!(ActiveInflationConfig::<Test>::get(), new_config);
-    })
-}
-
-#[test]
-fn force_set_inflation_config_fails() {
-    ExternalityBuilder::build().execute_with(|| {
-        let mut new_config = ActiveInflationConfig::<Test>::get();
-        new_config.recalculation_era = new_config.recalculation_era + 50;
-
-        // Make sure action is privileged
-        assert_noop!(
-            Inflation::force_set_inflation_config(RuntimeOrigin::signed(1), new_config),
-            BadOrigin
-        );
-    })
-}
-
-#[test]
 fn force_inflation_recalculation_work() {
     ExternalityBuilder::build().execute_with(|| {
         let old_config = ActiveInflationConfig::<Test>::get();

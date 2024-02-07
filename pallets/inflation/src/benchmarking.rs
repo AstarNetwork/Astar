@@ -85,27 +85,6 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn force_set_inflation_config() {
-        initial_config::<T>();
-        let config = InflationConfiguration {
-            recalculation_era: 456,
-            issuance_safety_cap: 112233,
-            collator_reward_per_block: 777,
-            treasury_reward_per_block: 444,
-            dapp_reward_pool_per_era: 55555,
-            base_staker_reward_pool_per_era: 77777,
-            adjustable_staker_reward_pool_per_era: 99999,
-            bonus_reward_pool_per_period: 123987,
-            ideal_staking_rate: Perquintill::from_percent(37),
-        };
-
-        #[extrinsic_call]
-        _(RawOrigin::Root, config.clone());
-
-        assert_last_event::<T>(Event::<T>::InflationConfigurationForceChanged { config }.into());
-    }
-
-    #[benchmark]
     fn force_inflation_recalculation() {
         initial_config::<T>();
 
