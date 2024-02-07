@@ -1106,7 +1106,26 @@ pub type Migrations = (
         DappStakingMigrationName,
         <Runtime as frame_system::Config>::DbWeight,
     >,
+    // Part of shiden-119
+    RecalculationEraFix,
 );
+
+use frame_support::traits::OnRuntimeUpgrade;
+pub struct RecalculationEraFix;
+impl OnRuntimeUpgrade for RecalculationEraFix {
+    fn on_runtime_upgrade() -> Weight {
+        let first_dapp_staking_v3_era = 743;
+
+        let expected_recalculation_era =
+            InflationCycleConfig::eras_per_cycle().saturating_add(first_dapp_staking_v3_era);
+
+        pallet_inflation::ActiveInflationConfig::<Runtime>::mutate(|config| {
+            config.recalculation_era = expected_recalculation_era;
+        });
+
+        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+    }
+}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

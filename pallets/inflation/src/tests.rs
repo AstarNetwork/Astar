@@ -460,14 +460,20 @@ fn cycle_configuration_works() {
     ExternalityBuilder::build().execute_with(|| {
         type CycleConfig = <Test as Config>::CycleConfiguration;
 
-        let eras_per_period = CycleConfig::eras_per_voting_subperiod()
-            + CycleConfig::eras_per_build_and_earn_subperiod();
+        let eras_per_period = CycleConfig::eras_per_build_and_earn_subperiod() + 1;
         assert_eq!(CycleConfig::eras_per_period(), eras_per_period);
+
+        let period_in_era_lengths = CycleConfig::eras_per_voting_subperiod()
+            + CycleConfig::eras_per_build_and_earn_subperiod();
+        assert_eq!(CycleConfig::period_in_era_lengths(), period_in_era_lengths);
 
         let eras_per_cycle = eras_per_period * CycleConfig::periods_per_cycle();
         assert_eq!(CycleConfig::eras_per_cycle(), eras_per_cycle);
 
-        let blocks_per_cycle = eras_per_cycle * CycleConfig::blocks_per_era();
+        let cycle_in_era_lengths = period_in_era_lengths * CycleConfig::periods_per_cycle();
+        assert_eq!(CycleConfig::cycle_in_era_lengths(), cycle_in_era_lengths);
+
+        let blocks_per_cycle = cycle_in_era_lengths * CycleConfig::blocks_per_era();
         assert_eq!(CycleConfig::blocks_per_cycle(), blocks_per_cycle);
 
         let build_and_earn_eras_per_cycle =
