@@ -19,7 +19,8 @@
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
     pallet::Config, ActiveProtocolState, DAppId, EraRewards, Error, Event, ForcingType,
-    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, StakerInfo, Subperiod, TierConfig,
+    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo, Subperiod,
+    TierConfig,
 };
 
 use frame_support::{
@@ -2308,6 +2309,17 @@ fn force_with_incorrect_origin_fails() {
         assert_noop!(
             DappStaking::force(RuntimeOrigin::signed(1), ForcingType::Era),
             BadOrigin
+        );
+    })
+}
+
+#[test]
+fn force_with_safeguard_on_fails() {
+    ExtBuilder::build().execute_with(|| {
+        Safeguard::<Test>::put(true);
+        assert_noop!(
+            DappStaking::force(RuntimeOrigin::root(), ForcingType::Era),
+            Error::<Test>::ForceNotAllowed
         );
     })
 }
