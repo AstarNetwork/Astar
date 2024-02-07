@@ -2762,3 +2762,15 @@ fn unregister_after_max_number_of_contracts_allows_register_again() {
         assert_register(developer, &smart_contract);
     })
 }
+
+#[test]
+fn safeguard_on_by_default() {
+    let storage = frame_system::GenesisConfig::default()
+        .build_storage::<Test>()
+        .unwrap();
+
+    let mut ext = sp_io::TestExternalities::from(storage);
+    ext.execute_with(|| {
+        assert!(Safeguard::<Test>::get());
+    });
+}
