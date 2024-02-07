@@ -53,7 +53,6 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -68,13 +67,16 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContract},
+    dapp_staking::{
+        AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
+        PeriodNumber, SmartContract, TierId,
+    },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Index,
 };
-
 pub use astar_primitives::{AccountId, Balance, Signature};
+
 pub use pallet_dapp_staking_v3::TierThreshold;
 pub use pallet_inflation::InflationParameters;
 
@@ -171,7 +173,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 118,
+    spec_version: 121,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -380,39 +382,6 @@ impl pallet_preimage::Config for Runtime {
     type ByteDeposit = PreimageByteDeposit;
 }
 
-parameter_types! {
-    pub const BlockPerEra: BlockNumber = 4 * HOURS;
-    pub const RegisterDeposit: Balance = 100 * SBY;
-    pub const MaxNumberOfStakersPerContract: u32 = 2048;
-    pub const MinimumStakingAmount: Balance = 5 * SBY;
-    pub const MinimumRemainingAmount: Balance = SBY;
-    pub const MaxEraStakeValues: u32 = 5;
-    pub const MaxUnlockingChunks: u32 = 32;
-    pub const UnbondingPeriod: u32 = 2;
-}
-
-impl pallet_dapps_staking::Config for Runtime {
-    type Currency = Balances;
-    type BlockPerEra = BlockPerEra;
-    type SmartContract = SmartContract<AccountId>;
-    type RegisterDeposit = RegisterDeposit;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
-    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
-    type MinimumStakingAmount = MinimumStakingAmount;
-    type PalletId = DappsStakingPalletId;
-    type MaxUnlockingChunks = MaxUnlockingChunks;
-    type UnbondingPeriod = UnbondingPeriod;
-    type MinimumRemainingAmount = MinimumRemainingAmount;
-    type MaxEraStakeValues = MaxEraStakeValues;
-    type UnregisteredDappRewardRetention = ConstU32<10>;
-    // Needed so benchmark can use the pallets extrinsics
-    #[cfg(feature = "runtime-benchmarks")]
-    type ForcePalletDisabled = ConstBool<false>;
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type ForcePalletDisabled = ConstBool<true>;
-}
-
 impl pallet_static_price_provider::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
 }
@@ -438,6 +407,17 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
     }
 }
 
+pub struct AccountCheck;
+impl DappStakingAccountCheck<AccountId> for AccountCheck {
+    fn allowed_to_stake(account: &AccountId) -> bool {
+        !CollatorSelection::is_account_candidate(account)
+    }
+}
+
+parameter_types! {
+    pub const MinimumStakingAmount: Balance = 5 * SBY;
+}
+
 impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -447,12 +427,14 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type NativePriceProvider = StaticPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
+    type Observers = Inflation;
+    type AccountCheck = AccountCheck;
     type EraRewardSpanLength = ConstU32<16>;
-    type RewardRetentionInPeriods = ConstU32<2>; // Low enough value so we can get some expired rewards during testing
+    type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
-    type MinimumLockedAmount = MinimumStakingAmount; // Keep the same as the old pallet
-    type UnlockingPeriod = ConstU32<4>; // Keep it low so it's easier to test
+    type MinimumLockedAmount = MinimumStakingAmount;
+    type UnlockingPeriod = ConstU32<4>;
     type MaxNumberOfStakedContracts = ConstU32<8>;
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
@@ -474,15 +456,15 @@ impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerB
 
 pub struct InflationCycleConfig;
 impl CycleConfiguration for InflationCycleConfig {
-    fn periods_per_cycle() -> u32 {
+    fn periods_per_cycle() -> PeriodNumber {
         2
     }
 
-    fn eras_per_voting_subperiod() -> u32 {
+    fn eras_per_voting_subperiod() -> EraNumber {
         8
     }
 
-    fn eras_per_build_and_earn_subperiod() -> u32 {
+    fn eras_per_build_and_earn_subperiod() -> EraNumber {
         20
     }
 
@@ -497,11 +479,6 @@ impl pallet_inflation::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_inflation::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_dapp_staking_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -574,6 +551,13 @@ parameter_types! {
     pub const KickThreshold: BlockNumber = 2 * HOURS; // 2 SessionPeriod
 }
 
+pub struct CollatorSelectionAccountCheck;
+impl pallet_collator_selection::AccountCheck<AccountId> for CollatorSelectionAccountCheck {
+    fn allowed_candidacy(account: &AccountId) -> bool {
+        !DappStaking::is_staker(account)
+    }
+}
+
 impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -588,6 +572,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type SlashRatio = SlashRatio;
+    type AccountCheck = CollatorSelectionAccountCheck;
     type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
@@ -756,7 +741,7 @@ impl WeightToFeePolynomial for WeightToFee {
     }
 }
 
-/// Handles coverting weight consumed by XCM into native currency fee.
+/// Handles converting weight consumed by XCM into native currency fee.
 ///
 /// Similar to standard `WeightToFee` handler, but force uses the minimum multiplier.
 pub struct XcmWeightToFee;
@@ -1113,7 +1098,7 @@ pub enum ProxyType {
     Balances,
     /// All Runtime calls from Pallet Assets allowed for proxy account
     Assets,
-    /// Only Runtime Calls related to goverance for proxy account
+    /// Only Runtime Calls related to governance for proxy account
     /// To know exact calls check InstanceFilter implementation for ProxyTypes
     Governance,
     /// Only provide_judgement call from pallet identity allowed for proxy account
@@ -1333,10 +1318,6 @@ construct_runtime!(
 
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
-        // To be removed & cleaned up after migration has been finished
-        DappStakingMigration: pallet_dapp_staking_migration = 254,
-        // Legacy dApps staking v2, to be removed after migration has been finished
-        DappsStaking: pallet_dapps_staking = 255,
     }
 );
 
@@ -1377,16 +1358,7 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub struct InitActivePriceGet;
-impl Get<FixedU64> for InitActivePriceGet {
-    fn get() -> FixedU64 {
-        FixedU64::from_rational(1, 10)
-    }
-}
-pub type Migrations = (
-    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
-    pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,
-);
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1463,10 +1435,8 @@ mod benches {
         [pallet_assets, Assets]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapps_staking, DappsStaking]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
-        [pallet_dapp_staking_migration, DappStakingMigration]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
@@ -1474,6 +1444,8 @@ mod benches {
         [pallet_xvm, Xvm]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [pallet_unified_accounts, UnifiedAccounts]
+        [xcm_benchmarks_generic, XcmGeneric]
+        [xcm_benchmarks_fungible, XcmFungible]
     );
 }
 
@@ -1932,15 +1904,15 @@ impl_runtime_apis! {
     }
 
     impl dapp_staking_v3_runtime_api::DappStakingApi<Block> for Runtime {
-        fn periods_per_cycle() -> pallet_dapp_staking_v3::PeriodNumber {
+        fn periods_per_cycle() -> PeriodNumber {
             InflationCycleConfig::periods_per_cycle()
         }
 
-        fn eras_per_voting_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+        fn eras_per_voting_subperiod() -> EraNumber {
             InflationCycleConfig::eras_per_voting_subperiod()
         }
 
-        fn eras_per_build_and_earn_subperiod() -> pallet_dapp_staking_v3::EraNumber {
+        fn eras_per_build_and_earn_subperiod() -> EraNumber {
             InflationCycleConfig::eras_per_build_and_earn_subperiod()
         }
 
@@ -1948,7 +1920,7 @@ impl_runtime_apis! {
             InflationCycleConfig::blocks_per_era()
         }
 
-        fn get_dapp_tier_assignment() -> BTreeMap<pallet_dapp_staking_v3::DAppId, pallet_dapp_staking_v3::TierId> {
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
             DappStaking::get_dapp_tier_assignment()
         }
     }
@@ -1964,6 +1936,12 @@ impl_runtime_apis! {
             use frame_system_benchmarking::Pallet as SystemBench;
             use baseline::Pallet as BaselineBench;
 
+            // This is defined once again in dispatch_benchmark, because list_benchmarks!
+            // and add_benchmarks! are macros exported by define_benchmarks! macros and those types
+            // are referenced in that call.
+            type XcmFungible = astar_xcm_benchmarks::fungible::benchmarking::XcmFungibleBenchmarks::<Runtime>;
+            type XcmGeneric = astar_xcm_benchmarks::generic::benchmarking::XcmGenericBenchmarks::<Runtime>;
+
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
 
@@ -1975,14 +1953,122 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
             use frame_system_benchmarking::Pallet as SystemBench;
+            use frame_support::{traits::{WhitelistedStorageKeys, tokens::fungible::{ItemOf}}, assert_ok};
             use baseline::Pallet as BaselineBench;
-
+            use xcm::latest::prelude::*;
+            use xcm_builder::MintLocation;
+            use astar_primitives::benchmarks::XcmBenchmarkHelper;
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
-            use frame_support::traits::WhitelistedStorageKeys;
+            // XCM Benchmarks
+            impl astar_xcm_benchmarks::Config for Runtime {}
+            impl astar_xcm_benchmarks::generic::Config for Runtime {}
+            impl astar_xcm_benchmarks::fungible::Config for Runtime {
+                type TrustedReserve = TrustedReserve;
+            }
+
+            impl pallet_xcm_benchmarks::Config for Runtime {
+                type XcmConfig = xcm_config::XcmConfig;
+                type AccountIdConverter = xcm_config::LocationToAccountId;
+                // destination location to be used in benchmarks
+                fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(MultiLocation::parent())
+                }
+                fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
+                   XcmBenchmarkHelper::<Runtime>::worst_case_holding()
+                }
+            }
+
+            impl pallet_xcm_benchmarks::generic::Config for Runtime {
+                type RuntimeCall = RuntimeCall;
+                fn worst_case_response() -> (u64, Response) {
+                    (0u64, Response::Version(Default::default()))
+                }
+                fn worst_case_asset_exchange()
+                    -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+                fn transact_origin_and_runtime_call()
+                    -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
+                    Ok((MultiLocation::parent(), frame_system::Call::remark_with_event {
+                        remark: vec![]
+                    }.into()))
+                }
+                fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(MultiLocation::parent())
+                }
+                fn claimable_asset()
+                    -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
+                    let origin = MultiLocation::parent();
+                    let assets: MultiAssets = (Concrete(MultiLocation::parent()), 1_000u128)
+                        .into();
+                    let ticket = MultiLocation { parents: 0, interior: Here };
+                    Ok((origin, ticket, assets))
+                }
+                fn unlockable_asset()
+                    -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+                fn export_message_origin_and_destination(
+                ) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+            }
+
+            parameter_types! {
+                pub const NoCheckingAccount: Option<(AccountId, MintLocation)> = None;
+                pub const NoTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+                pub const TransactAssetId: u128 = 1001;
+                pub const TransactAssetLocation: MultiLocation = MultiLocation { parents: 0, interior: X1(GeneralIndex(TransactAssetId::get())) };
+
+                pub TrustedReserveLocation: MultiLocation = Parent.into();
+                pub TrustedReserveAsset: MultiAsset = MultiAsset { id: Concrete(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
+                pub TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
+            }
+
+            impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+                type TransactAsset = ItemOf<Assets, TransactAssetId, AccountId>;
+                type CheckedAccount = NoCheckingAccount;
+                type TrustedTeleporter = NoTeleporter;
+
+                fn get_multi_asset() -> MultiAsset {
+                    let min_balance = 100u128;
+                    // create the transact asset and make it sufficient
+                    assert_ok!(Assets::force_create(
+                        RuntimeOrigin::root(),
+                        TransactAssetId::get().into(),
+                        Address::Id([0u8; 32].into()),
+                        true,
+                        // min balance
+                        min_balance
+                    ));
+
+                    // convert mapping for asset id
+                    assert_ok!(
+                        XcAssetConfig::register_asset_location(
+                            RuntimeOrigin::root(),
+                            Box::new(TransactAssetLocation::get().into_versioned()),
+                            TransactAssetId::get(),
+                        )
+                    );
+
+                    MultiAsset {
+                        id: Concrete(TransactAssetLocation::get()),
+                        fun: Fungible(min_balance * 100),
+                    }
+                }
+            }
+
+            type XcmFungible = astar_xcm_benchmarks::fungible::benchmarking::XcmFungibleBenchmarks::<Runtime>;
+            type XcmGeneric = astar_xcm_benchmarks::generic::benchmarking::XcmGenericBenchmarks::<Runtime>;
+
             let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();

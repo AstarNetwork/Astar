@@ -21,6 +21,8 @@ use super::*;
 use frame_benchmarking::v2::*;
 use frame_system::{Pallet as System, RawOrigin};
 
+const UNIT: u128 = 1_000_000_000_000_000_000;
+
 /// Assert that the last event equals the provided one.
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     System::<T>::assert_last_event(generic_event.into());
@@ -46,14 +48,14 @@ fn initial_config<T: Config>() {
     let issuance_safety_cap =
         total_issuance.saturating_add(params.max_inflation_rate * total_issuance);
     let config = InflationConfiguration {
-        recalculation_block: 123,
+        recalculation_era: 123,
         issuance_safety_cap,
-        collator_reward_per_block: 11111,
-        treasury_reward_per_block: 33333,
-        dapp_reward_pool_per_era: 55555,
-        base_staker_reward_pool_per_era: 77777,
-        adjustable_staker_reward_pool_per_era: 99999,
-        bonus_reward_pool_per_period: 123987,
+        collator_reward_per_block: 11111 * UNIT,
+        treasury_reward_per_block: 33333 * UNIT,
+        dapp_reward_pool_per_era: 55555 * UNIT,
+        base_staker_reward_pool_per_era: 77777 * UNIT,
+        adjustable_staker_reward_pool_per_era: 99999 * UNIT,
+        bonus_reward_pool_per_period: 123987 * UNIT,
         ideal_staking_rate: Perquintill::from_percent(50),
     };
 
@@ -85,7 +87,17 @@ mod benchmarks {
     #[benchmark]
     fn force_set_inflation_config() {
         initial_config::<T>();
-        let config = InflationConfiguration::default();
+        let config = InflationConfiguration {
+            recalculation_era: 456,
+            issuance_safety_cap: 112233,
+            collator_reward_per_block: 777,
+            treasury_reward_per_block: 444,
+            dapp_reward_pool_per_era: 55555,
+            base_staker_reward_pool_per_era: 77777,
+            adjustable_staker_reward_pool_per_era: 99999,
+            bonus_reward_pool_per_period: 123987,
+            ideal_staking_rate: Perquintill::from_percent(37),
+        };
 
         #[extrinsic_call]
         _(RawOrigin::Root, config.clone());
@@ -98,46 +110,37 @@ mod benchmarks {
         initial_config::<T>();
 
         #[extrinsic_call]
-        _(RawOrigin::Root);
+        _(RawOrigin::Root, 123);
 
         let config = ActiveInflationConfig::<T>::get();
         assert_last_event::<T>(Event::<T>::ForcedInflationRecalculation { config }.into());
     }
 
     #[benchmark]
-    fn hook_with_recalculation() {
+    fn recalculation() {
         initial_config::<T>();
 
-        ActiveInflationConfig::<T>::mutate(|config| {
-            config.recalculation_block = 0;
-        });
-        let init_issuance = T::Currency::total_issuance();
+        let init_recalculation_era = ActiveInflationConfig::<T>::get().recalculation_era;
+        DoRecalculation::<T>::put(init_recalculation_era);
 
-        let block = 1;
         #[block]
         {
-            Pallet::<T>::on_initialize(block);
-            Pallet::<T>::on_finalize(block);
+            Pallet::<T>::block_before_new_era(init_recalculation_era);
+            Pallet::<T>::on_finalize(1);
         }
 
-        assert!(ActiveInflationConfig::<T>::get().recalculation_block > 0);
-
-        // The 'sane' assumption is that at least something will be issued for treasury & collators
-        assert!(T::Currency::total_issuance() > init_issuance);
+        assert!(ActiveInflationConfig::<T>::get().recalculation_era > init_recalculation_era);
     }
 
     #[benchmark]
-    fn hook_without_recalculation() {
+    fn hooks_without_recalculation() {
         initial_config::<T>();
 
-        ActiveInflationConfig::<T>::mutate(|config| {
-            config.recalculation_block = 2;
-        });
         let init_config = ActiveInflationConfig::<T>::get();
         let init_issuance = T::Currency::total_issuance();
+        DoRecalculation::<T>::kill();
 
-        // Has to be at least 2 blocks less than the recalculation block.
-        let block = 0;
+        let block = 1;
         #[block]
         {
             Pallet::<T>::on_initialize(block);

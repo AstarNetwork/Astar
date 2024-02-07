@@ -35,10 +35,10 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
-    EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
+    EnsureXcmOrigin, FungiblesAdapter, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{Convert as XcmConvert, JustTry},
@@ -52,7 +52,7 @@ use orml_xcm_support::DisabledParachainFee;
 use astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, DescribeAllTerminal,
     DescribeFamily, FixedRateOfForeignAsset, HashedDescription, ReserveAssetFilter,
-    XcmFungibleFeeHandler,
+    XcmFungibleFeeHandler, MAX_ASSETS,
 };
 
 parameter_types! {
@@ -141,6 +141,7 @@ parameter_types! {
     // For the PoV size, we estimate 4 kB per instruction. This will be changed when we benchmark the instructions.
     pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 4 * 1024);
     pub const MaxInstructions: u32 = 100;
+    pub const MaxAssetsIntoHolding: u32 = MAX_ASSETS;
 }
 
 match_types! {
@@ -171,7 +172,8 @@ pub type ShibuyaXcmFungibleFeeHandler = XcmFungibleFeeHandler<
     TreasuryAccountId,
 >;
 
-pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+pub type Weigher =
+    WeightInfoBounds<weights::xcm::XcmWeight<Runtime, RuntimeCall>, RuntimeCall, MaxInstructions>;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -194,7 +196,7 @@ impl xcm_executor::Config for XcmConfig {
     type SubscriptionService = PolkadotXcm;
 
     type PalletInstancesInfo = AllPalletsWithSystem;
-    type MaxAssetsIntoHolding = ConstU32<64>;
+    type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
     type AssetLocker = ();
     type AssetExchanger = ();
     type FeeManager = ();

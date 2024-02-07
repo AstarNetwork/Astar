@@ -119,6 +119,11 @@ pub mod pallet {
         #[pallet::constant]
         type ForcePalletDisabled: Get<bool>;
 
+        /// The fee that will be charged for claiming rewards on behalf of a staker.
+        /// This amount will be transferred from the staker over to the caller.
+        #[pallet::constant]
+        type DelegateClaimFee: Get<Balance>;
+
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -305,8 +310,8 @@ pub mod pallet {
         NominationTransferToSameContract,
         /// Decommission is in progress so this call is not allowed.
         DecommissionInProgress,
-        /// Pallet decommission hasn't been started yet so this call is not allowed.
-        DecommissionNotStarted,
+        /// Delegated claim call is not allowed if both the staker & caller are the same accounts.
+        ClaimForCallerAccount,
     }
 
     #[pallet::hooks]
@@ -569,7 +574,6 @@ pub mod pallet {
             #[pallet::compact] value: Balance,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommission()?;
             let staker = ensure_signed(origin)?;
 
             ensure!(value > Zero::zero(), Error::<T>::UnstakingWithNoValue);
@@ -630,7 +634,6 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::withdraw_unbonded())]
         pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            Self::ensure_not_in_decommission()?;
             let staker = ensure_signed(origin)?;
 
             let mut ledger = Self::ledger(&staker);
@@ -746,7 +749,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let staker = ensure_signed(origin)?;
 
-            Self::internal_claim_staker_for(staker, contract_id)
+            Self::internal_claim_staker_for(staker.clone(), staker, contract_id, false)
         }
 
         /// Claim earned dapp rewards for the specified era.
@@ -920,20 +923,18 @@ pub mod pallet {
         ///
         /// This call can only be used during the pallet decommission process.
         #[pallet::call_index(14)]
-        #[pallet::weight(T::WeightInfo::claim_staker_without_restake())]
+        #[pallet::weight(T::WeightInfo::claim_staker_with_restake().max(T::WeightInfo::claim_staker_without_restake()))]
         pub fn claim_staker_for(
             origin: OriginFor<T>,
             staker: T::AccountId,
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            ensure!(
-                DecommissionStarted::<T>::get(),
-                Error::<T>::DecommissionNotStarted
-            );
-            ensure_signed(origin)?;
+            let caller = ensure_signed(origin)?;
 
-            Self::internal_claim_staker_for(staker, contract_id)
+            ensure!(caller != staker, Error::<T>::ClaimForCallerAccount);
+
+            Self::internal_claim_staker_for(caller, staker, contract_id, true)
         }
 
         /// Used to set reward destination for staker rewards, for the given staker
@@ -946,10 +947,7 @@ pub mod pallet {
             reward_destination: RewardDestination,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-            ensure!(
-                DecommissionStarted::<T>::get(),
-                Error::<T>::DecommissionNotStarted
-            );
+
             ensure_signed(origin)?;
 
             Self::internal_set_reward_destination_for(staker, reward_destination)
@@ -1292,8 +1290,10 @@ pub mod pallet {
 
         /// Claim earned staker rewards for the given staker, and the oldest unclaimed era.
         fn internal_claim_staker_for(
+            caller: T::AccountId,
             staker: T::AccountId,
             contract_id: T::SmartContract,
+            refund_caller: bool,
         ) -> DispatchResultWithPostInfo {
             // Ensure we have something to claim
             let mut staker_info = Self::staker_info(&staker, &contract_id);
@@ -1316,8 +1316,25 @@ pub mod pallet {
 
             let (_, stakers_joint_reward) =
                 Self::dev_stakers_split(&staking_info, &reward_and_stake);
-            let staker_reward =
+            let max_staker_reward =
                 Perbill::from_rational(staked, staking_info.total) * stakers_joint_reward;
+
+            // Withdraw reward funds from the dapps staking pot
+            let total_imbalance = T::Currency::withdraw(
+                &Self::account_id(),
+                max_staker_reward,
+                WithdrawReasons::TRANSFER,
+                ExistenceRequirement::AllowDeath,
+            )?;
+
+            let (refund_imbalance, reward_imbalance) = if refund_caller {
+                let claim_fee = T::DelegateClaimFee::get();
+                total_imbalance.split(claim_fee)
+            } else {
+                (NegativeImbalanceOf::<T>::zero(), total_imbalance)
+            };
+
+            let staker_reward = reward_imbalance.peek();
 
             let mut ledger = Self::ledger(&staker);
 
@@ -1338,17 +1355,7 @@ pub mod pallet {
                     staker_info.len() <= T::MaxEraStakeValues::get(),
                     Error::<T>::TooManyEraStakeValues
                 );
-            }
 
-            // Withdraw reward funds from the dapps staking pot
-            let reward_imbalance = T::Currency::withdraw(
-                &Self::account_id(),
-                staker_reward,
-                WithdrawReasons::TRANSFER,
-                ExistenceRequirement::AllowDeath,
-            )?;
-
-            if should_restake_reward {
                 ledger.locked = ledger.locked.saturating_add(staker_reward);
                 Self::update_ledger(&staker, ledger);
 
@@ -1375,7 +1382,16 @@ pub mod pallet {
 
             T::Currency::resolve_creating(&staker, reward_imbalance);
             Self::update_staker_info(&staker, &contract_id, staker_info);
+
             Self::deposit_event(Event::<T>::Reward(staker, contract_id, era, staker_reward));
+
+            // Weight-wise this operation is essentially free since it caller balance is already updated to due to the fee.
+            //
+            // We also do this operation AFTER depositing the reward event since it's possible some off-chain logic relies on
+            // event counting, and we want to avoid breaking it.
+            if refund_caller {
+                T::Currency::resolve_creating(&caller, refund_imbalance);
+            }
 
             Ok(Some(if should_restake_reward {
                 T::WeightInfo::claim_staker_with_restake()

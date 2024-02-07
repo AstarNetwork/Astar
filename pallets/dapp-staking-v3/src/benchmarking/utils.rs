@@ -53,7 +53,7 @@ pub(super) fn advance_to_era<T: Config>(era: EraNumber) {
 ///
 /// Relies on the `force` approach to advance one era per block.
 pub(super) fn force_advance_to_era<T: Config>(era: EraNumber) {
-    assert!(era >= ActiveProtocolState::<T>::get().era);
+    assert!(era > ActiveProtocolState::<T>::get().era);
     while ActiveProtocolState::<T>::get().era < era {
         assert_ok!(DappStaking::<T>::force(
             RawOrigin::Root.into(),
@@ -77,29 +77,6 @@ pub(crate) fn force_advance_to_next_era<T: Config>() {
     run_for_blocks::<T>(One::one());
 }
 
-/// Advance blocks until the specified period has been reached.
-///
-/// Function has no effect if period is already passed.
-pub(super) fn _advance_to_period<T: Config>(period: PeriodNumber) {
-    assert!(period >= ActiveProtocolState::<T>::get().period_number());
-    while ActiveProtocolState::<T>::get().period_number() < period {
-        run_for_blocks::<T>(One::one());
-    }
-}
-
-/// Advance to the specified period, using the `force` approach.
-pub(super) fn force_advance_to_period<T: Config>(period: PeriodNumber) {
-    assert!(period >= ActiveProtocolState::<T>::get().period_number());
-    while ActiveProtocolState::<T>::get().period_number() < period {
-        force_advance_to_next_subperiod::<T>();
-    }
-}
-
-/// Advance blocks until next period has been reached.
-pub(super) fn _advance_to_next_period<T: Config>() {
-    _advance_to_period::<T>(ActiveProtocolState::<T>::get().period_number() + 1);
-}
-
 /// Advance blocks until next period has been reached.
 ///
 /// Relies on the `force` approach to advance one subperiod per block.
@@ -114,11 +91,11 @@ pub(super) fn force_advance_to_next_period<T: Config>() {
     }
 }
 
-/// Advance blocks until next period type has been reached.
-pub(super) fn _advance_to_next_subperiod<T: Config>() {
-    let subperiod = ActiveProtocolState::<T>::get().subperiod();
-    while ActiveProtocolState::<T>::get().subperiod() == subperiod {
-        run_for_blocks::<T>(One::one());
+/// Advance to the specified period, using the `force` approach.
+pub(super) fn force_advance_to_period<T: Config>(period: PeriodNumber) {
+    assert!(period >= ActiveProtocolState::<T>::get().period_number());
+    while ActiveProtocolState::<T>::get().period_number() < period {
+        force_advance_to_next_subperiod::<T>();
     }
 }
 
@@ -282,4 +259,19 @@ fn trivial_fisher_yates_shuffle<T>(vector: &mut Vec<T>, random_seed: u64) {
         vector.swap(i, j);
         rng = (rng.wrapping_mul(8427637) + 1) as usize; // Some random number generation
     }
+}
+
+/// Returns max amount of rewards that can be claimed in a single claim reward call from a past period.
+///
+/// Bounded by era reward span length & number of eras per period (not length but absolute number).
+pub(super) fn max_claim_size_past_period<T: Config>() -> u32 {
+    T::EraRewardSpanLength::get().min(T::CycleConfiguration::eras_per_build_and_earn_subperiod())
+}
+
+/// Returns max amount of rewards that can be claimed in a single claim reward call from an ongoing period.
+///
+/// Bounded by era reward span length & number of eras per period (not length but absolute number).
+pub(super) fn max_claim_size_ongoing_period<T: Config>() -> u32 {
+    T::EraRewardSpanLength::get()
+        .min(T::CycleConfiguration::eras_per_build_and_earn_subperiod() - 1)
 }

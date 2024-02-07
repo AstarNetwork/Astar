@@ -33,8 +33,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
-        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, Contains, Currency, FindAuthor, Get,
+        Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -138,7 +138,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 75,
+    spec_version: 78,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -337,6 +337,8 @@ impl pallet_dapps_staking::Config for Runtime {
     // Not allowed on Astar yet
     type UnregisteredDappRewardRetention = ConstU32<{ u32::MAX }>;
     type ForcePalletDisabled = ConstBool<false>;
+    // Fee required to claim rewards for another account. Calculated & tested manually.
+    type DelegateClaimFee = ConstU128<057_950_348_114_187_155>;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -425,6 +427,14 @@ parameter_types! {
     pub const KickThreshold: BlockNumber = 2 * HOURS; // 2 SessionPeriod
 }
 
+pub struct CollatorSelectionAccountCheck;
+impl pallet_collator_selection::AccountCheck<AccountId> for CollatorSelectionAccountCheck {
+    fn allowed_candidacy(_account: &AccountId) -> bool {
+        // TODO: update this when dApp staking v3 is integrated
+        true
+    }
+}
+
 impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -439,6 +449,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type SlashRatio = SlashRatio;
+    type AccountCheck = CollatorSelectionAccountCheck;
     type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 

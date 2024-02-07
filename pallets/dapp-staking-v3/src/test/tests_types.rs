@@ -157,22 +157,15 @@ fn dapp_info_basic_checks() {
     let mut dapp_info = DAppInfo {
         owner,
         id: 7,
-        state: DAppState::Registered,
-        reward_destination: None,
+        reward_beneficiary: None,
     };
 
     // Owner receives reward in case no beneficiary is set
     assert_eq!(*dapp_info.reward_beneficiary(), owner);
 
     // Beneficiary receives rewards in case it is set
-    dapp_info.reward_destination = Some(beneficiary);
+    dapp_info.reward_beneficiary = Some(beneficiary);
     assert_eq!(*dapp_info.reward_beneficiary(), beneficiary);
-
-    // Check if dApp is registered
-    assert!(dapp_info.is_registered());
-
-    dapp_info.state = DAppState::Unregistered(10);
-    assert!(!dapp_info.is_registered());
 }
 
 #[test]
@@ -382,7 +375,7 @@ fn account_ledger_staked_amount_for_type_works() {
         build_and_earn_1
     );
 
-    // Inocrrect period should simply return 0
+    // Incorrect period should simply return 0
     assert!(acc_ledger
         .staked_amount_for_type(Subperiod::Voting, period - 1)
         .is_zero());
@@ -507,7 +500,7 @@ fn account_ledger_staked_era_period_works() {
 }
 
 #[test]
-fn account_ledger_add_stake_amount_basic_example_works() {
+fn account_ledger_add_stake_amount_basic_example_with_different_subperiods_works() {
     get_u32_type!(UnlockingDummy, 5);
     let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
 
@@ -554,6 +547,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
             .period,
         period_1
     );
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_1 + 1);
     assert_eq!(acc_ledger.staked_future.unwrap().voting, stake_amount);
     assert!(acc_ledger.staked_future.unwrap().build_and_earn.is_zero());
     assert_eq!(acc_ledger.staked_amount(period_1), stake_amount);
@@ -566,7 +560,7 @@ fn account_ledger_add_stake_amount_basic_example_works() {
         .is_zero());
 
     // Second scenario - stake some more, but to the next period type
-    let snapshot = acc_ledger.staked;
+    let snapshot = acc_ledger.staked_future.unwrap();
     let period_info_2 = PeriodInfo {
         number: period_1,
         subperiod: Subperiod::BuildAndEarn,
@@ -583,6 +577,82 @@ fn account_ledger_add_stake_amount_basic_example_works() {
         acc_ledger.staked_amount_for_type(Subperiod::BuildAndEarn, period_1),
         1
     );
+
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_2 + 1);
+    assert_eq!(acc_ledger.staked_future.unwrap().voting, stake_amount);
+    assert_eq!(acc_ledger.staked_future.unwrap().build_and_earn, 1);
+
+    assert_eq!(acc_ledger.staked, snapshot);
+}
+
+#[test]
+fn account_ledger_add_stake_amount_basic_example_with_same_subperiods_works() {
+    get_u32_type!(UnlockingDummy, 5);
+    let mut acc_ledger = AccountLedger::<UnlockingDummy>::default();
+
+    // 1st scenario - stake some amount in first era of the `Build&Earn` subperiod, and ensure values are as expected.
+    let era_1 = 2;
+    let period_1 = 1;
+    let period_info = PeriodInfo {
+        number: period_1,
+        subperiod: Subperiod::BuildAndEarn,
+        next_subperiod_start_era: 100,
+    };
+    let lock_amount = 17;
+    let stake_amount = 11;
+    acc_ledger.add_lock_amount(lock_amount);
+
+    assert!(acc_ledger
+        .add_stake_amount(stake_amount, era_1, period_info)
+        .is_ok());
+
+    assert!(
+        acc_ledger.staked.is_empty(),
+        "Current era must remain unchanged."
+    );
+    assert_eq!(acc_ledger.staked_future.unwrap().period, period_1);
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_1 + 1);
+    assert_eq!(
+        acc_ledger.staked_future.unwrap().build_and_earn,
+        stake_amount
+    );
+    assert!(acc_ledger.staked_future.unwrap().voting.is_zero());
+    assert_eq!(acc_ledger.staked_amount(period_1), stake_amount);
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(Subperiod::BuildAndEarn, period_1),
+        stake_amount
+    );
+    assert!(acc_ledger
+        .staked_amount_for_type(Subperiod::Voting, period_1)
+        .is_zero());
+
+    // 2nd scenario - stake again, in the same era
+    let snapshot = acc_ledger.staked;
+    assert!(acc_ledger.add_stake_amount(1, era_1, period_info).is_ok());
+    assert_eq!(acc_ledger.staked, snapshot);
+    assert_eq!(acc_ledger.staked_amount(period_1), stake_amount + 1);
+
+    // 2nd scenario - advance an era, and stake some more
+    let snapshot = acc_ledger.staked_future.unwrap();
+    let era_2 = era_1 + 1;
+    assert!(acc_ledger.add_stake_amount(1, era_2, period_info).is_ok());
+
+    assert_eq!(acc_ledger.staked_amount(period_1), stake_amount + 2);
+    assert!(acc_ledger
+        .staked_amount_for_type(Subperiod::Voting, period_1)
+        .is_zero(),);
+    assert_eq!(
+        acc_ledger.staked_amount_for_type(Subperiod::BuildAndEarn, period_1),
+        stake_amount + 2
+    );
+    assert_eq!(acc_ledger.staked_future.unwrap().period, period_1);
+    assert_eq!(acc_ledger.staked_future.unwrap().era, era_2 + 1);
+    assert_eq!(
+        acc_ledger.staked_future.unwrap().build_and_earn,
+        stake_amount + 2
+    );
+    assert!(acc_ledger.staked_future.unwrap().voting.is_zero());
+
     assert_eq!(acc_ledger.staked, snapshot);
 }
 
@@ -739,7 +809,7 @@ fn account_ledger_add_stake_amount_too_large_amount_fails() {
         Err(AccountLedgerError::UnavailableStakeFunds)
     );
 
-    // Additional check - have some active stake, and then try to overstake
+    // Additional check - have some active stake, and then try to stake more than available
     assert!(acc_ledger
         .add_stake_amount(lock_amount - 2, era_1, period_info_1)
         .is_ok());
@@ -2036,7 +2106,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         "Stake era should remain valid."
     );
 
-    // Fully unstake, attempting to undersaturate, and ensure loyalty flag is still true.
+    // Fully unstake, attempting to underflow, and ensure loyalty flag has been removed.
     let era_2 = era_1 + 2;
     let remaining_stake = staking_info.total_staked_amount();
     assert_eq!(
@@ -2044,7 +2114,10 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         (remaining_stake, Balance::zero())
     );
     assert!(staking_info.total_staked_amount().is_zero());
-    assert!(staking_info.is_loyal());
+    assert!(
+        !staking_info.is_loyal(),
+        "Loyalty flag should have been removed since it was full unstake."
+    );
     assert_eq!(staking_info.era(), era_2);
 }
 
@@ -2430,7 +2503,7 @@ fn contract_stake_amount_unstake_is_ok() {
     );
     assert!(
         contract_stake.staked_future.is_none(),
-        "future enry should remain 'None'"
+        "future entry should remain 'None'"
     );
 
     // 4th scenario - do a full unstake with existing future entry, expect a cleanup
@@ -2721,5 +2794,41 @@ fn dapp_tier_rewards_basic_tests() {
         dapp_tier_rewards.try_claim(4),
         Err(DAppTierError::NoDAppInTiers),
         "dApp doesn't exist in the list so no rewards can be claimed."
+    );
+}
+
+#[test]
+fn cleanup_marker_works() {
+    let cleanup_marker = CleanupMarker::default();
+    assert!(!cleanup_marker.has_pending_cleanups());
+
+    let cleanup_marker = CleanupMarker {
+        era_reward_index: 1,
+        dapp_tiers_index: 2,
+        oldest_valid_era: 3,
+    };
+    assert!(
+        cleanup_marker.has_pending_cleanups(),
+        "There are pending cleanups for both era rewards and dApp tiers."
+    );
+
+    let cleanup_marker = CleanupMarker {
+        era_reward_index: 7,
+        dapp_tiers_index: 6,
+        oldest_valid_era: 7,
+    };
+    assert!(
+        cleanup_marker.has_pending_cleanups(),
+        "There are pending cleanups for dApp tiers."
+    );
+
+    let cleanup_marker = CleanupMarker {
+        era_reward_index: 9,
+        dapp_tiers_index: 11,
+        oldest_valid_era: 11,
+    };
+    assert!(
+        cleanup_marker.has_pending_cleanups(),
+        "There are pending cleanups for era reward spans."
     );
 }

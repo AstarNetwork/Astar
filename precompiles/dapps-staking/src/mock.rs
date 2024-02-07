@@ -21,7 +21,7 @@ use super::*;
 use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstBool, ConstU64, Currency, OnFinalize, OnInitialize},
+    traits::{ConstBool, ConstU128, ConstU64, Currency, OnFinalize, OnInitialize},
     weights::{RuntimeDbWeight, Weight},
     PalletId,
 };
@@ -310,6 +310,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<2>;
     type ForcePalletDisabled = ConstBool<false>;
+    type DelegateClaimFee = ConstU128<1>;
 }
 
 pub struct ExternalityBuilder {

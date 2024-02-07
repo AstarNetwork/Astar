@@ -181,6 +181,8 @@ impl pallet_dapp_staking_v3::Config for Test {
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
+    type Observers = ();
+    type AccountCheck = ();
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -215,6 +217,7 @@ impl pallet_dapps_staking::Config for Test {
     type MaxEraStakeValues = ConstU32<10>;
     type UnregisteredDappRewardRetention = ConstU32<10>;
     type ForcePalletDisabled = ConstBool<false>;
+    type DelegateClaimFee = ConstU128<1>;
 }
 
 impl pallet_dapp_staking_migration::Config for Test {

@@ -73,7 +73,10 @@ use sp_runtime::{
 };
 pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
-use astar_primitives::{Balance, BlockNumber};
+use astar_primitives::{
+    dapp_staking::{DAppId, EraNumber, PeriodNumber, TierId},
+    Balance, BlockNumber,
+};
 
 use crate::pallet::Config;
 
@@ -90,15 +93,6 @@ pub type EraRewardSpanFor<T> = EraRewardSpan<<T as Config>::EraRewardSpanLength>
 // Convenience type for `DAppInfo` usage.
 pub type DAppInfoFor<T> = DAppInfo<<T as frame_system::Config>::AccountId>;
 
-/// Era number type
-pub type EraNumber = u32;
-/// Period number type
-pub type PeriodNumber = u32;
-/// Dapp Id type
-pub type DAppId = u16;
-/// Tier Id type
-pub type TierId = u8;
-
 /// Simple enum representing errors possible when using sparse bounded vector.
 #[derive(Debug, PartialEq, Eq)]
 pub enum AccountLedgerError {
@@ -114,8 +108,6 @@ pub enum AccountLedgerError {
     UnstakeAmountLargerThanStake,
     /// Nothing to claim.
     NothingToClaim,
-    /// Rewards have already been claimed
-    AlreadyClaimed,
     /// Attempt to crate the iterator failed due to incorrect data.
     InvalidIterator,
 }
@@ -123,7 +115,7 @@ pub enum AccountLedgerError {
 /// Distinct subperiods in dApp staking protocol.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub enum Subperiod {
-    /// Subperiod during which the focus is on voting.
+    /// Subperiod during which the focus is on voting. No rewards are earned during this subperiod.
     Voting,
     /// Subperiod during which dApps and stakers earn rewards.
     BuildAndEarn,
@@ -160,13 +152,13 @@ impl PeriodInfo {
     }
 }
 
-/// Information describing relevant information for a finished period.
+/// Struct with relevant information for a finished period.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct PeriodEndInfo {
     /// Bonus reward pool allocated for 'loyal' stakers
     #[codec(compact)]
     pub bonus_reward_pool: Balance,
-    /// Total amount staked (remaining) from the voting period.
+    /// Total amount staked (remaining) from the voting subperiod.
     #[codec(compact)]
     pub total_vp_stake: Balance,
     /// Final era, inclusive, in which the period ended.
@@ -241,10 +233,9 @@ impl ProtocolState {
         next_subperiod_start_era: EraNumber,
         next_era_start: BlockNumber,
     ) {
-        let period_number = if self.subperiod() == Subperiod::BuildAndEarn {
-            self.period_number().saturating_add(1)
-        } else {
-            self.period_number()
+        let period_number = match self.subperiod() {
+            Subperiod::Voting => self.period_number(),
+            Subperiod::BuildAndEarn => self.period_number().saturating_add(1),
         };
 
         self.period_info = PeriodInfo {
@@ -256,16 +247,7 @@ impl ProtocolState {
     }
 }
 
-/// State in which some dApp is in.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub enum DAppState {
-    /// dApp is registered and active.
-    Registered,
-    /// dApp has been unregistered in the contained era
-    Unregistered(#[codec(compact)] EraNumber),
-}
-
-/// General information about dApp.
+/// General information about a dApp.
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct DAppInfo<AccountId> {
     /// Owner of the dApp, default reward beneficiary.
@@ -273,29 +255,22 @@ pub struct DAppInfo<AccountId> {
     /// dApp's unique identifier in dApp staking.
     #[codec(compact)]
     pub id: DAppId,
-    /// Current state of the dApp.
-    pub state: DAppState,
     // If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
-    pub reward_destination: Option<AccountId>,
+    pub reward_beneficiary: Option<AccountId>,
 }
 
 impl<AccountId> DAppInfo<AccountId> {
     /// Reward destination account for this dApp.
     pub fn reward_beneficiary(&self) -> &AccountId {
-        match &self.reward_destination {
+        match &self.reward_beneficiary {
             Some(account_id) => account_id,
             None => &self.owner,
         }
     }
-
-    /// `true` if dApp is registered, `false` otherwise.
-    pub fn is_registered(&self) -> bool {
-        self.state == DAppState::Registered
-    }
 }
 
 /// How much was unlocked in some block.
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
+#[derive(Encode, Decode, MaxEncodedLen, Clone, Default, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct UnlockingChunk {
     /// Amount undergoing the unlocking period.
     #[codec(compact)]
@@ -303,15 +278,6 @@ pub struct UnlockingChunk {
     /// Block in which the unlocking period is finished for this chunk.
     #[codec(compact)]
     pub unlock_block: BlockNumber,
-}
-
-impl Default for UnlockingChunk {
-    fn default() -> Self {
-        Self {
-            amount: Balance::zero(),
-            unlock_block: BlockNumber::zero(),
-        }
-    }
 }
 
 /// General info about an account's lock & stakes.
@@ -535,7 +501,7 @@ where
             .saturating_sub(self.staked_amount(active_period))
     }
 
-    /// Amount that is staked, in respect to currently active period.
+    /// Amount that is staked, in respect to the currently active period.
     pub fn staked_amount(&self, active_period: PeriodNumber) -> Balance {
         // First check the 'future' entry, afterwards check the 'first' entry
         match self.staked_future {
@@ -569,13 +535,16 @@ where
     ) -> Result<(), AccountLedgerError> {
         if !self.staked.is_empty() {
             // In case entry for the current era exists, it must match the era exactly.
+            // No other scenario is possible since stake/unstake is not allowed without claiming rewards first.
             if self.staked.era != current_era {
                 return Err(AccountLedgerError::InvalidEra);
             }
             if self.staked.period != current_period_info.number {
                 return Err(AccountLedgerError::InvalidPeriod);
             }
-            // In case it doesn't (i.e. first time staking), then the future era must either be the current or the next era.
+            // In case only the 'future' entry exists, then the future era must either be the current or the next era.
+            // 'Next era' covers the simple scenario where stake is only valid from the next era.
+            // 'Current era' covers the scenario where stake was made in previous era, and we've moved to the next era.
         } else if let Some(stake_amount) = self.staked_future {
             if stake_amount.era != current_era.saturating_add(1) && stake_amount.era != current_era
             {
@@ -618,7 +587,13 @@ where
         // Update existing entry if it exists, otherwise create it.
         match self.staked_future.as_mut() {
             Some(stake_amount) => {
+                // In case future entry exists, check if it should be moved over to the 'current' entry.
+                if stake_amount.era == current_era {
+                    self.staked = *stake_amount;
+                }
+
                 stake_amount.add(amount, current_period_info.subperiod);
+                stake_amount.era = current_era.saturating_add(1);
             }
             None => {
                 let mut stake_amount = self.staked;
@@ -771,7 +746,7 @@ where
 
 /// Helper internal struct for iterating over `(era, stake amount)` pairs.
 ///
-/// Due to how `AccountLedger` is implemented, few scenarios are possible when claming rewards:
+/// Due to how `AccountLedger` is implemented, few scenarios are possible when claiming rewards:
 ///
 /// 1. `staked` has some amount, `staked_future` is `None`
 ///   * `maybe_first` is `None`, span describes the entire range
@@ -785,7 +760,7 @@ pub struct EraStakePairIter {
     maybe_first: Option<(EraNumber, Balance)>,
     /// Starting era of the span.
     start_era: EraNumber,
-    /// Ending era of the span.
+    /// Ending era of the span, inclusive.
     end_era: EraNumber,
     /// Staked amount in the span.
     amount: Balance,
@@ -841,10 +816,10 @@ impl Iterator for EraStakePairIter {
 /// Describes stake amount in an particular era/period.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct StakeAmount {
-    /// Amount of staked funds accounting for the voting period.
+    /// Amount of staked funds accounting for the voting subperiod.
     #[codec(compact)]
     pub voting: Balance,
-    /// Amount of staked funds accounting for the build&earn period.
+    /// Amount of staked funds accounting for the build&earn subperiod.
     #[codec(compact)]
     pub build_and_earn: Balance,
     /// Era to which this stake amount refers to.
@@ -884,10 +859,10 @@ impl StakeAmount {
 
     /// Unstake the specified `amount` for the specified `subperiod`.
     ///
-    /// In case subperiod is `Voting`, the amount is subtracted from the voting period.
+    /// In case subperiod is `Voting`, the amount is subtracted from the voting subperiod.
     ///
     /// In case subperiod is `Build&Earn`, the amount is first subtracted from the
-    /// build&earn amount, and any rollover is subtracted from the voting period.
+    /// build&earn amount, and any rollover is subtracted from the voting subperiod.
     pub fn subtract(&mut self, amount: Balance, subperiod: Subperiod) {
         match subperiod {
             Subperiod::Voting => self.voting.saturating_reduce(amount),
@@ -909,7 +884,7 @@ impl StakeAmount {
     }
 }
 
-/// Info about current era, including the rewards, how much is locked, unlocking, etc.
+/// Info about an era, including the rewards, how much is locked, unlocking, etc.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct EraInfo {
     /// How much balance is locked in dApp staking.
@@ -969,7 +944,7 @@ impl EraInfo {
         self.next_stake_amount.total()
     }
 
-    /// Staked amount of specifeid `type` in the next era.
+    /// Staked amount of specified `type` in the next era.
     pub fn staked_amount_next_era(&self, subperiod: Subperiod) -> Balance {
         self.next_stake_amount.for_type(subperiod)
     }
@@ -980,7 +955,7 @@ impl EraInfo {
     /// `next_subperiod` - `None` if no subperiod change, `Some(type)` if `type` is starting from the next era.
     pub fn migrate_to_next_era(&mut self, next_subperiod: Option<Subperiod>) {
         match next_subperiod {
-            // If next era marks start of new voting period period, it means we're entering a new period
+            // If next era marks start of new voting subperiod period, it means we're entering a new period
             Some(Subperiod::Voting) => {
                 for stake_amount in [&mut self.current_stake_amount, &mut self.next_stake_amount] {
                     stake_amount.voting = Zero::zero();
@@ -999,7 +974,7 @@ impl EraInfo {
 
 /// Information about how much a particular staker staked on a particular smart contract.
 ///
-/// Keeps track of amount staked in the 'voting period', as well as 'build&earn period'.
+/// Keeps track of amount staked in the 'voting subperiod', as well as 'build&earn subperiod'.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct SingularStakingInfo {
     /// Staked amount
@@ -1023,7 +998,7 @@ impl SingularStakingInfo {
                 era: 0,
                 period,
             },
-            // Loyalty staking is only possible if stake is first made during the voting period.
+            // Loyalty staking is only possible if stake is first made during the voting subperiod.
             loyal_staker: subperiod == Subperiod::Voting,
         }
     }
@@ -1037,10 +1012,10 @@ impl SingularStakingInfo {
 
     /// Unstakes some of the specified amount from the contract.
     ///
-    /// In case the `amount` being unstaked is larger than the amount staked in the `voting period`,
-    /// and `voting period` has passed, this will remove the _loyalty_ flag from the staker.
+    /// In case the `amount` being unstaked is larger than the amount staked in the `Voting` subperiod,
+    /// and `Voting` subperiod has passed, this will remove the _loyalty_ flag from the staker.
     ///
-    /// Returns the amount that was unstaked from the `voting period` stake, and from the `build&earn period` stake.
+    /// Returns the amount that was unstaked from the `Voting` subperiod stake, and from the `Build&Earn` subperiod stake.
     pub fn unstake(
         &mut self,
         amount: Balance,
@@ -1054,8 +1029,10 @@ impl SingularStakingInfo {
         self.staked.era = self.staked.era.max(current_era);
 
         self.loyal_staker = self.loyal_staker
-            && (subperiod == Subperiod::Voting
-                || subperiod == Subperiod::BuildAndEarn && self.staked.voting == snapshot.voting);
+            && match subperiod {
+                Subperiod::Voting => !self.staked.voting.is_zero(),
+                Subperiod::BuildAndEarn => self.staked.voting == snapshot.voting,
+            };
 
         // Amount that was unstaked
         (
@@ -1076,7 +1053,7 @@ impl SingularStakingInfo {
         self.staked.for_type(subperiod)
     }
 
-    /// If `true` staker has staked during voting period and has never reduced their sta
+    /// If `true` staker has staked during voting subperiod and has never reduced their sta
     pub fn is_loyal(&self) -> bool {
         self.loyal_staker
     }
@@ -1194,7 +1171,7 @@ impl ContractStakeAmount {
                 stake_amount.add(amount, period_info.subperiod);
                 return;
             }
-            // Future entry has older era, but periods match so overwrite the 'current' entry with it
+            // Future entry has an older era, but periods match so overwrite the 'current' entry with it
             Some(stake_amount) if stake_amount.period == period_info.number => {
                 self.staked = *stake_amount;
             }
@@ -1247,7 +1224,7 @@ impl ContractStakeAmount {
             stake_amount.subtract(amount, period_info.subperiod);
         }
 
-        // Conevnience cleanup
+        // Convenience cleanup
         if self.staked.is_empty() {
             self.staked = Default::default();
         }
@@ -1338,7 +1315,7 @@ where
     }
 
     /// Push new `EraReward` entry into the span.
-    /// If span is non-empty, the provided `era` must be exactly one era after the last one in the span.
+    /// If span is not empty, the provided `era` must be exactly one era after the last one in the span.
     pub fn push(
         &mut self,
         era: EraNumber,
@@ -1534,7 +1511,7 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
     pub fn is_valid(&self) -> bool {
         let number_of_tiers: usize = NT::get() as usize;
         number_of_tiers == self.slots_per_tier.len()
-            // All vecs length must match number of tiers.
+            // All vector length must match number of tiers.
             && number_of_tiers == self.reward_portion.len()
             && number_of_tiers == self.tier_thresholds.len()
             // Total number of slots must match the sum of slots per tier. 
@@ -1715,7 +1692,7 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
 pub enum DAppTierError {
     /// Specified dApp Id doesn't exist in any tier.
     NoDAppInTiers,
-    /// Internal, unexpected error occured.
+    /// Internal, unexpected error occurred.
     InternalError,
 }
 
@@ -1724,8 +1701,19 @@ pub enum DAppTierError {
 pub struct CleanupMarker {
     /// Era reward span index that should be checked & cleaned up next.
     #[codec(compact)]
-    pub era_reward_index: EraNumber,
+    pub(crate) era_reward_index: EraNumber,
     /// dApp tier rewards index that should be checked & cleaned up next.
     #[codec(compact)]
-    pub dapp_tiers_index: EraNumber,
+    pub(crate) dapp_tiers_index: EraNumber,
+    /// Oldest valid era or earliest era in the oldest valid period.
+    #[codec(compact)]
+    pub(crate) oldest_valid_era: EraNumber,
+}
+
+impl CleanupMarker {
+    /// Used to check whether there are any pending cleanups, according to marker values.
+    pub(crate) fn has_pending_cleanups(&self) -> bool {
+        self.era_reward_index != self.oldest_valid_era
+            || self.dapp_tiers_index != self.oldest_valid_era
+    }
 }

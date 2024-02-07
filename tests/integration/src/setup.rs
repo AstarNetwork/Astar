@@ -20,7 +20,7 @@
 
 pub use frame_support::{
     assert_noop, assert_ok,
-    traits::{OnFinalize, OnIdle, OnInitialize},
+    traits::{GenesisBuild, OnFinalize, OnIdle, OnInitialize},
     weights::Weight,
 };
 pub use pallet_evm::AddressMapping;
@@ -28,7 +28,7 @@ pub use sp_core::{H160, H256, U256};
 pub use sp_io::hashing::keccak_256;
 pub use sp_runtime::{AccountId32, MultiAddress};
 
-pub use astar_primitives::evm::UnifiedAddressMapper;
+pub use astar_primitives::{evm::UnifiedAddressMapper, BlockNumber};
 
 #[cfg(feature = "shibuya")]
 pub use shibuya::*;
@@ -191,6 +191,14 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
+        #[cfg(any(feature = "shibuya", feature = "shiden"))]
+        // Needed to trigger initial inflation config setting.
+        <pallet_inflation::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
+            &pallet_inflation::GenesisConfig::default(),
+            &mut t,
+        )
+        .unwrap();
+
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
@@ -210,37 +218,39 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 // Block time: 12 seconds.
 pub const BLOCK_TIME: u64 = 12_000;
 
-pub fn run_to_block(n: u32) {
+pub fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
         let block_number = System::block_number();
         TransactionPayment::on_finalize(block_number);
-        #[cfg(any(feature = "shibuya"))]
+        #[cfg(any(feature = "shibuya", feature = "shiden"))]
         DappStaking::on_finalize(block_number);
-        #[cfg(any(feature = "astar", feature = "shiden"))]
+        #[cfg(any(feature = "astar"))]
         DappsStaking::on_finalize(block_number);
         Authorship::on_finalize(block_number);
         Session::on_finalize(block_number);
         AuraExt::on_finalize(block_number);
         PolkadotXcm::on_finalize(block_number);
         Ethereum::on_finalize(block_number);
+        CollatorSelection::on_finalize(block_number);
         DynamicEvmBaseFee::on_finalize(block_number);
-        #[cfg(any(feature = "shibuya"))]
+        #[cfg(any(feature = "shibuya", feature = "shiden"))]
         Inflation::on_finalize(block_number);
 
         System::set_block_number(block_number + 1);
         let block_number = System::block_number();
 
-        #[cfg(any(feature = "shibuya"))]
+        #[cfg(any(feature = "shibuya", feature = "shiden"))]
         Inflation::on_initialize(block_number);
         Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
         TransactionPayment::on_initialize(block_number);
-        #[cfg(any(feature = "shibuya"))]
+        #[cfg(any(feature = "shibuya", feature = "shiden"))]
         DappStaking::on_initialize(block_number);
-        #[cfg(any(feature = "astar", feature = "shiden"))]
+        #[cfg(any(feature = "astar"))]
         DappsStaking::on_initialize(block_number);
         Authorship::on_initialize(block_number);
         Aura::on_initialize(block_number);
         AuraExt::on_initialize(block_number);
+        CollatorSelection::on_initialize(block_number);
         Ethereum::on_initialize(block_number);
         DynamicEvmBaseFee::on_initialize(block_number);
         #[cfg(any(feature = "shibuya", feature = "shiden"))]
@@ -250,6 +260,10 @@ pub fn run_to_block(n: u32) {
         DmpQueue::on_idle(block_number, Weight::MAX);
         Contracts::on_idle(block_number, Weight::MAX);
     }
+}
+
+pub fn run_for_blocks(n: BlockNumber) {
+    run_to_block(System::block_number() + n)
 }
 
 fn last_events(n: usize) -> Vec<RuntimeEvent> {

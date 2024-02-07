@@ -37,7 +37,7 @@ fn force_set_inflation_params_work() {
     ExternalityBuilder::build().execute_with(|| {
         let mut new_params = InflationParams::<Test>::get();
         new_params.max_inflation_rate = Perquintill::from_percent(20);
-        assert!(new_params != InflationParams::<Test>::get(), "Sanity check");
+        assert_ne!(new_params, InflationParams::<Test>::get(), "Sanity check");
 
         // Execute call, ensure it works
         assert_ok!(Inflation::force_set_inflation_params(
@@ -78,7 +78,7 @@ fn force_set_inflation_params_fails() {
 fn force_set_inflation_config_work() {
     ExternalityBuilder::build().execute_with(|| {
         let mut new_config = ActiveInflationConfig::<Test>::get();
-        new_config.recalculation_block = new_config.recalculation_block + 50;
+        new_config.recalculation_era = new_config.recalculation_era + 50;
 
         // Execute call, ensure it works
         assert_ok!(Inflation::force_set_inflation_config(
@@ -97,7 +97,7 @@ fn force_set_inflation_config_work() {
 fn force_set_inflation_config_fails() {
     ExternalityBuilder::build().execute_with(|| {
         let mut new_config = ActiveInflationConfig::<Test>::get();
-        new_config.recalculation_block = new_config.recalculation_block + 50;
+        new_config.recalculation_era = new_config.recalculation_era + 50;
 
         // Make sure action is privileged
         assert_noop!(
@@ -113,13 +113,15 @@ fn force_inflation_recalculation_work() {
         let old_config = ActiveInflationConfig::<Test>::get();
 
         // Execute call, ensure it works
+        let next_era = 100;
         assert_ok!(Inflation::force_inflation_recalculation(
             RuntimeOrigin::root(),
+            next_era,
         ));
 
         let new_config = ActiveInflationConfig::<Test>::get();
-        assert!(
-            old_config != new_config,
+        assert_ne!(
+            old_config, new_config,
             "Config should change, otherwise test doesn't make sense."
         );
 
@@ -133,38 +135,38 @@ fn force_inflation_fails_due_to_unprivileged_origin() {
     ExternalityBuilder::build().execute_with(|| {
         // Make sure action is privileged
         assert_noop!(
-            Inflation::force_inflation_recalculation(RuntimeOrigin::signed(1)),
+            Inflation::force_inflation_recalculation(RuntimeOrigin::signed(1), 100),
             BadOrigin
         );
     })
 }
 
 #[test]
-fn inflation_recalculation_occurs_when_exepcted() {
+fn inflation_recalculation_occurs_when_expected() {
     ExternalityBuilder::build().execute_with(|| {
         let init_config = ActiveInflationConfig::<Test>::get();
 
-        // Make sure `on_finalize` calls before the expected change are storage noops
-        advance_to_block(init_config.recalculation_block - 3);
-        assert_storage_noop!(Inflation::on_finalize(init_config.recalculation_block - 3));
-        Inflation::on_initialize(
-            init_config.recalculation_block - 2
-        );
-        assert_storage_noop!(Inflation::on_finalize(init_config.recalculation_block - 2));
-        Inflation::on_initialize(
-            init_config.recalculation_block - 1
-        );
+        let recalculation_era = init_config.recalculation_era;
 
-        // One block before recalculation, on_finalize should calculate new inflation config
+
+        // Make sure `on_finalize` calls before the expected change are storage noops
+        Inflation::block_before_new_era(recalculation_era - 2);
+        assert_storage_noop!(Inflation::on_finalize(100));
+
+        Inflation::block_before_new_era(recalculation_era - 1);
+        assert_storage_noop!(Inflation::on_finalize(200));
+
+        // One block before recalculation era starts, on_finalize should calculate new inflation config
+        Inflation::block_before_new_era(recalculation_era);
         let init_config = ActiveInflationConfig::<Test>::get();
         let init_total_issuance = Balances::total_issuance();
 
         // Finally trigger inflation recalculation.
-        Inflation::on_finalize(init_config.recalculation_block - 1);
+        Inflation::on_finalize(300);
 
         let new_config = ActiveInflationConfig::<Test>::get();
-        assert!(
-            new_config != init_config,
+        assert_ne!(
+            new_config, init_config,
             "Recalculation must happen at this point."
         );
         System::assert_last_event(Event::NewInflationConfiguration { config: new_config }.into());
@@ -237,7 +239,7 @@ fn inflation_parameters_validity_check_works() {
 }
 
 #[test]
-fn inflation_recalucation_works() {
+fn inflation_recalculation_works() {
     ExternalityBuilder::build().execute_with(|| {
         let total_issuance = Balances::total_issuance();
         let params = InflationParams::<Test>::get();
@@ -249,8 +251,8 @@ fn inflation_recalucation_works() {
 
         // Verify basics are ok
         assert_eq!(
-            new_config.recalculation_block,
-            now + <Test as Config>::CycleConfiguration::blocks_per_cycle()
+            new_config.recalculation_era,
+            now + <Test as Config>::CycleConfiguration::eras_per_cycle()
         );
         assert_eq!(
             new_config.issuance_safety_cap,
@@ -258,6 +260,10 @@ fn inflation_recalucation_works() {
         );
 
         // Verify collator rewards are as expected
+        assert!(
+            !new_config.collator_reward_per_block.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.collator_reward_per_block,
             params.collators_part * max_emission
@@ -265,6 +271,10 @@ fn inflation_recalucation_works() {
         );
 
         // Verify treasury rewards are as expected
+        assert!(
+            !new_config.treasury_reward_per_block.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.treasury_reward_per_block,
             params.treasury_part * max_emission
@@ -272,6 +282,10 @@ fn inflation_recalucation_works() {
         );
 
         // Verify dApp rewards are as expected
+        assert!(
+            !new_config.dapp_reward_pool_per_era.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.dapp_reward_pool_per_era,
             params.dapps_part * max_emission
@@ -281,12 +295,20 @@ fn inflation_recalucation_works() {
         );
 
         // Verify base & adjustable staker rewards are as expected
+        assert!(
+            !new_config.base_staker_reward_pool_per_era.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.base_staker_reward_pool_per_era,
             params.base_stakers_part * max_emission
                 / Balance::from(
                     <Test as Config>::CycleConfiguration::build_and_earn_eras_per_cycle()
                 ),
+        );
+        assert!(
+            !new_config.adjustable_staker_reward_pool_per_era.is_zero(),
+            "Not wrong, but all test values should be non-zero."
         );
         assert_eq!(
             new_config.adjustable_staker_reward_pool_per_era,
@@ -297,6 +319,10 @@ fn inflation_recalucation_works() {
         );
 
         // Verify bonus rewards are as expected
+        assert!(
+            !new_config.bonus_reward_pool_per_period.is_zero(),
+            "Not wrong, but all test values should be non-zero."
+        );
         assert_eq!(
             new_config.bonus_reward_pool_per_period,
             params.bonus_part * max_emission
@@ -430,7 +456,7 @@ fn payout_reward_fails_when_relaxed_cap_is_exceeded() {
 }
 
 #[test]
-fn cylcle_configuration_works() {
+fn cycle_configuration_works() {
     ExternalityBuilder::build().execute_with(|| {
         type CycleConfig = <Test as Config>::CycleConfiguration;
 
@@ -468,6 +494,6 @@ fn test_genesis_build() {
 
         // Verify state is as expected
         assert_eq!(InflationParams::<Test>::get(), genesis_config.params);
-        assert!(ActiveInflationConfig::<Test>::get().recalculation_block > 0);
+        assert!(ActiveInflationConfig::<Test>::get().recalculation_era > 0);
     })
 }

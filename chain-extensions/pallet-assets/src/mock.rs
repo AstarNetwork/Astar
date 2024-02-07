@@ -158,6 +158,8 @@ impl pallet_assets::Config for Test {
     type CallbackHandle = ();
     type Extra = ();
     type RemoveItemsLimit = ConstU32<5>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;

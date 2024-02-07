@@ -176,7 +176,6 @@ fn make_genesis(
                 Permill::from_percent(30),
                 Permill::from_percent(40),
             ],
-            // TODO: adjust this if needed
             tier_thresholds: vec![
                 TierThreshold::DynamicTvlAmount {
                     amount: 100 * SBY,
@@ -194,7 +193,6 @@ fn make_genesis(
             ],
             slots_per_tier: vec![10, 20, 30, 40],
         },
-        // TODO: adjust this if needed
         inflation: InflationConfig {
             params: InflationParameters::default(),
         },

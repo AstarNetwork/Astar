@@ -15,13 +15,11 @@ sp-api = { workspace = true }
 sp-std = { workspace = true }
 
 astar-primitives = { workspace = true }
-pallet-dapp-staking-v3 = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
 	"sp-api/std",
 	"sp-std/std",
-	"pallet-dapp-staking-v3/std",
 	"astar-primitives/std",
 ]

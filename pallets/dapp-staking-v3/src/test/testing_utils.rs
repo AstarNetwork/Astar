@@ -25,14 +25,17 @@ use crate::{
 };
 
 use frame_support::{
-    assert_ok, assert_storage_noop,
-    traits::{fungible::InspectFreeze, Get, OnIdle},
+    assert_ok,
+    traits::{fungible::InspectFreeze, Currency, Get, OnIdle},
     weights::Weight,
 };
 use sp_runtime::{traits::Zero, Perbill};
 use std::collections::HashMap;
 
-use astar_primitives::{dapp_staking::CycleConfiguration, Balance, BlockNumber};
+use astar_primitives::{
+    dapp_staking::{CycleConfiguration, EraNumber, PeriodNumber},
+    Balance, BlockNumber,
+};
 
 /// Helper struct used to store the entire pallet state snapshot.
 /// Used when comparison of before/after states is required.
@@ -57,6 +60,7 @@ pub(crate) struct MemorySnapshot {
     era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>>,
     period_end: HashMap<PeriodNumber, PeriodEndInfo>,
     dapp_tiers: HashMap<EraNumber, DAppTierRewardsFor<Test>>,
+    cleanup_marker: CleanupMarker,
 }
 
 impl MemorySnapshot {
@@ -75,6 +79,7 @@ impl MemorySnapshot {
             era_rewards: EraRewards::<Test>::iter().collect(),
             period_end: PeriodEnd::<Test>::iter().collect(),
             dapp_tiers: DAppTiers::<Test>::iter().collect(),
+            cleanup_marker: HistoryCleanupMarker::<Test>::get(),
         }
     }
 
@@ -107,10 +112,9 @@ pub(crate) fn assert_register(owner: AccountId, smart_contract: &MockSmartContra
 
     // Verify post-state
     let dapp_info = IntegratedDApps::<Test>::get(smart_contract).unwrap();
-    assert_eq!(dapp_info.state, DAppState::Registered);
     assert_eq!(dapp_info.owner, owner);
     assert_eq!(dapp_info.id, pre_snapshot.next_dapp_id);
-    assert!(dapp_info.reward_destination.is_none());
+    assert!(dapp_info.reward_beneficiary.is_none());
 
     assert_eq!(pre_snapshot.next_dapp_id + 1, NextDAppId::<Test>::get());
     assert_eq!(
@@ -142,7 +146,7 @@ pub(crate) fn assert_set_dapp_reward_beneficiary(
     assert_eq!(
         IntegratedDApps::<Test>::get(&smart_contract)
             .unwrap()
-            .reward_destination,
+            .reward_beneficiary,
         beneficiary
     );
 }
@@ -189,12 +193,14 @@ pub(crate) fn assert_unregister(smart_contract: &MockSmartContract) {
     }));
 
     // Verify post-state
+    assert!(!IntegratedDApps::<Test>::contains_key(&smart_contract));
     assert_eq!(
-        IntegratedDApps::<Test>::get(&smart_contract).unwrap().state,
-        DAppState::Unregistered(pre_snapshot.active_protocol_state.era),
+        pre_snapshot.integrated_dapps.len() - 1,
+        IntegratedDApps::<Test>::count() as usize
     );
+
     assert!(!ContractStake::<Test>::contains_key(
-        &IntegratedDApps::<Test>::get(&smart_contract).unwrap().id
+        &pre_snapshot.integrated_dapps[&smart_contract].id
     ));
 }
 
@@ -202,11 +208,11 @@ pub(crate) fn assert_unregister(smart_contract: &MockSmartContract) {
 pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
     let pre_snapshot = MemorySnapshot::new();
 
-    let free_balance = Balances::free_balance(&account);
+    let total_balance = Balances::total_balance(&account);
     let locked_balance = pre_snapshot.locked_balance(&account);
     let init_frozen_balance = Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account);
 
-    let available_balance = free_balance
+    let available_balance = total_balance
         .checked_sub(locked_balance)
         .expect("Locked amount cannot be greater than available free balance");
     let expected_lock_amount = available_balance.min(amount);
@@ -467,21 +473,49 @@ pub(crate) fn assert_stake(
     let post_staker_info = post_snapshot
         .staker_info
         .get(&(account, *smart_contract))
-        .expect("Entry must exist since 'stake' operation was successfull.");
+        .expect("Entry must exist since 'stake' operation was successful.");
     let post_contract_stake = post_snapshot
         .contract_stake
         .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
-        .expect("Entry must exist since 'stake' operation was successfull.");
+        .expect("Entry must exist since 'stake' operation was successful.");
     let post_era_info = post_snapshot.current_era_info;
 
     // 1. verify ledger
     // =====================
     // =====================
-    assert_eq!(
-        post_ledger.staked, pre_ledger.staked,
-        "Must remain exactly the same."
-    );
+    if is_account_ledger_expired(pre_ledger, stake_period) {
+        assert!(
+            post_ledger.staked.is_empty(),
+            "Must be cleaned up if expired."
+        );
+    } else {
+        match pre_ledger.staked_future {
+            Some(stake_amount) => {
+                if stake_amount.era == pre_snapshot.active_protocol_state.era {
+                    assert_eq!(
+                        post_ledger.staked, stake_amount,
+                        "Future entry must be moved over to the current entry."
+                    );
+                } else if stake_amount.era == pre_snapshot.active_protocol_state.era + 1 {
+                    assert_eq!(
+                        post_ledger.staked, pre_ledger.staked,
+                        "Must remain exactly the same, only future must be updated."
+                    );
+                } else {
+                    panic!("Invalid future entry era.");
+                }
+            }
+            None => {
+                assert_eq!(
+                    post_ledger.staked, pre_ledger.staked,
+                    "Must remain exactly the same since there's nothing to be moved."
+                );
+            }
+        }
+    }
+
     assert_eq!(post_ledger.staked_future.unwrap().period, stake_period);
+    assert_eq!(post_ledger.staked_future.unwrap().era, stake_era);
     assert_eq!(
         post_ledger.staked_amount(stake_period),
         pre_ledger.staked_amount(stake_period) + amount,
@@ -625,7 +659,7 @@ pub(crate) fn assert_unstake(
     let post_contract_stake = post_snapshot
         .contract_stake
         .get(&pre_snapshot.integrated_dapps[&smart_contract].id)
-        .expect("Entry must exist since 'unstake' operation was successfull.");
+        .expect("Entry must exist since 'unstake' operation was successful.");
     let post_era_info = post_snapshot.current_era_info;
 
     // 1. verify ledger
@@ -652,9 +686,11 @@ pub(crate) fn assert_unstake(
         );
     } else {
         let post_staker_info = post_snapshot
-        .staker_info
-        .get(&(account, *smart_contract))
-        .expect("Entry must exist since 'stake' operation was successfull and it wasn't a full unstake.");
+            .staker_info
+            .get(&(account, *smart_contract))
+            .expect(
+            "Entry must exist since 'stake' operation was successful and it wasn't a full unstake.",
+        );
         assert_eq!(post_staker_info.period_number(), unstake_period);
         assert_eq!(
             post_staker_info.total_staked_amount(),
@@ -670,9 +706,14 @@ pub(crate) fn assert_unstake(
         );
 
         let is_loyal = pre_staker_info.is_loyal()
-            && !(unstake_subperiod == Subperiod::BuildAndEarn
-                && post_staker_info.staked_amount(Subperiod::Voting)
-                    < pre_staker_info.staked_amount(Subperiod::Voting));
+            && match unstake_subperiod {
+                Subperiod::Voting => !post_staker_info.staked_amount(Subperiod::Voting).is_zero(),
+                Subperiod::BuildAndEarn => {
+                    post_staker_info.staked_amount(Subperiod::Voting)
+                        == pre_staker_info.staked_amount(Subperiod::Voting)
+                }
+            };
+
         assert_eq!(
             post_staker_info.is_loyal(),
             is_loyal,
@@ -749,7 +790,7 @@ pub(crate) fn assert_claim_staker_rewards(account: AccountId) {
         .earliest_staked_era()
         .expect("Entry must exist, otherwise 'claim' is invalid.");
 
-    // Get the apprropriate era rewards span for the 'first era'
+    // Get the appropriate era rewards span for the 'first era'
     let era_span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
     let era_span_index = first_claim_era - (first_claim_era % era_span_length);
     let era_rewards_span = pre_snapshot
@@ -989,7 +1030,7 @@ pub(crate) fn assert_claim_dapp_reward(
     assert_eq!(
         pre_reward_info.dapps.len(),
         post_reward_info.dapps.len() + 1,
-        "Entry must have been removed after successfull reward claim."
+        "Entry must have been removed after successful reward claim."
     );
 }
 
@@ -1316,7 +1357,39 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
         );
     }
 
-    // 5. Verify event(s)
+    // 5. Verify history cleanup marker update
+    let period_has_advanced = pre_protoc_state.period_number() < post_protoc_state.period_number();
+    if period_has_advanced {
+        let reward_retention_in_periods: PeriodNumber =
+            <Test as Config>::RewardRetentionInPeriods::get();
+
+        let pre_marker = pre_snapshot.cleanup_marker;
+        let post_marker = post_snapshot.cleanup_marker;
+
+        if let Some(expired_period) = pre_protoc_state
+            .period_number()
+            .checked_sub(reward_retention_in_periods)
+        {
+            if let Some(period_end_info) = pre_snapshot.period_end.get(&expired_period) {
+                let oldest_valid_era = period_end_info.final_era + 1;
+
+                assert_eq!(post_marker.oldest_valid_era, oldest_valid_era);
+                assert_eq!(post_marker.dapp_tiers_index, pre_marker.dapp_tiers_index);
+                assert_eq!(post_marker.era_reward_index, pre_marker.era_reward_index);
+
+                assert!(
+                    !post_snapshot.period_end.contains_key(&expired_period),
+                    "Expired entry should have been removed."
+                );
+            } else {
+                assert_eq!(pre_marker, post_marker, "Must remain unchanged.");
+            }
+        } else {
+            assert_eq!(pre_marker, post_marker, "Must remain unchanged.");
+        }
+    }
+
+    // 6. Verify event(s)
     if is_new_subperiod {
         let events = dapp_staking_events();
         assert!(
@@ -1347,45 +1420,24 @@ pub(crate) fn assert_block_bump(pre_snapshot: &MemorySnapshot) {
 pub(crate) fn assert_on_idle_cleanup() {
     // Pre-data snapshot (limited to speed up testing)
     let pre_cleanup_marker = HistoryCleanupMarker::<Test>::get();
-    let pre_era_rewards: HashMap<EraNumber, EraRewardSpan<<Test as Config>::EraRewardSpanLength>> =
-        EraRewards::<Test>::iter().collect();
-    let pre_period_ends: HashMap<PeriodNumber, PeriodEndInfo> = PeriodEnd::<Test>::iter().collect();
 
-    // Calculated the oldest era which is valid (not expired)
-    let protocol_state = ActiveProtocolState::<Test>::get();
-    let retention_period: PeriodNumber = <Test as Config>::RewardRetentionInPeriods::get();
-
-    let oldest_valid_era = match protocol_state
-        .period_number()
-        .checked_sub(retention_period + 1)
-    {
-        Some(expired_period) if expired_period > 0 => {
-            pre_period_ends[&expired_period].final_era + 1
-        }
-        _ => {
-            // No cleanup so no storage changes are expected
-            assert_storage_noop!(DappStaking::on_idle(System::block_number(), Weight::MAX));
-            return;
-        }
-    };
-
-    // Check if any span or tiers cleanup is needed.
+    // Check if any span or tier reward cleanup is needed.
     let is_era_span_cleanup_expected =
-        pre_era_rewards[&pre_cleanup_marker.era_reward_index].last_era() < oldest_valid_era;
-    let is_dapp_tiers_cleanup_expected = pre_cleanup_marker.dapp_tiers_index > 0
-        && pre_cleanup_marker.dapp_tiers_index < oldest_valid_era;
+        EraRewards::<Test>::get(&pre_cleanup_marker.era_reward_index)
+            .map(|span| span.last_era() < pre_cleanup_marker.oldest_valid_era)
+            .unwrap_or(false);
+    let is_dapp_tiers_cleanup_expected =
+        pre_cleanup_marker.dapp_tiers_index < pre_cleanup_marker.oldest_valid_era;
 
-    // Check if period end info should be cleaned up
-    let maybe_period_end_cleanup = match protocol_state
-        .period_number()
-        .checked_sub(retention_period + 2)
-    {
-        Some(period) if period > 0 => Some(period),
-        _ => None,
-    };
+    // If span doesn't exists, but no cleanup is expected, we should increment the era reward index anyway.
+    // This is because the span was never created in the first place since dApp staking v3 wasn't active then.
+    //
+    // In case of cleanup, we always increment the index.
+    let is_era_reward_index_increase = is_era_span_cleanup_expected
+        || !EraRewards::<Test>::contains_key(&pre_cleanup_marker.era_reward_index)
+            && pre_cleanup_marker.oldest_valid_era > pre_cleanup_marker.era_reward_index;
 
     // Cleanup and verify post state.
-
     DappStaking::on_idle(System::block_number(), Weight::MAX);
 
     // Post checks
@@ -1395,26 +1447,30 @@ pub(crate) fn assert_on_idle_cleanup() {
         assert!(!EraRewards::<Test>::contains_key(
             pre_cleanup_marker.era_reward_index
         ));
+    }
+
+    if is_era_reward_index_increase {
         let span_length: EraNumber = <Test as Config>::EraRewardSpanLength::get();
         assert_eq!(
             post_cleanup_marker.era_reward_index,
             pre_cleanup_marker.era_reward_index + span_length
         );
     }
+
     if is_dapp_tiers_cleanup_expected {
-        assert!(
-            !DAppTiers::<Test>::contains_key(pre_cleanup_marker.dapp_tiers_index),
-            "Sanity check."
-        );
+        assert!(!DAppTiers::<Test>::contains_key(
+            pre_cleanup_marker.dapp_tiers_index
+        ));
         assert_eq!(
             post_cleanup_marker.dapp_tiers_index,
             pre_cleanup_marker.dapp_tiers_index + 1
-        )
+        );
     }
 
-    if let Some(period) = maybe_period_end_cleanup {
-        assert!(!PeriodEnd::<Test>::contains_key(period));
-    }
+    assert_eq!(
+        post_cleanup_marker.oldest_valid_era, pre_cleanup_marker.oldest_valid_era,
+        "Sanity check, must remain unchanged."
+    );
 }
 
 /// Returns from which starting era to which ending era can rewards be claimed for the specified account.
@@ -1462,4 +1518,18 @@ pub(crate) fn required_number_of_reward_claims(account: AccountId) -> u32 {
         .unwrap();
 
     second - first + 1
+}
+
+/// Check whether the given account ledger's stake rewards have expired.
+///
+/// `true` if expired, `false` otherwise.
+pub(crate) fn is_account_ledger_expired(
+    ledger: &AccountLedgerFor<Test>,
+    current_period: PeriodNumber,
+) -> bool {
+    let valid_threshold_period = DappStaking::oldest_claimable_period(current_period);
+    match ledger.staked_period() {
+        Some(staked_period) if staked_period < valid_threshold_period => true,
+        _ => false,
+    }
 }

@@ -23,11 +23,11 @@
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod setup;
 
-#[cfg(any(feature = "shibuya"))]
+#[cfg(any(feature = "shibuya", feature = "shiden"))]
 mod proxy_new;
 
 // Remove this once dApp staking v3 is integrated into Shiden & Astar
-#[cfg(any(feature = "shiden", feature = "astar"))]
+#[cfg(any(feature = "astar"))]
 mod proxy_old;
 
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
@@ -36,15 +36,18 @@ mod assets;
 #[cfg(feature = "shibuya")]
 mod xvm;
 
-#[cfg(any(feature = "shibuya"))]
+#[cfg(any(feature = "shibuya", feature = "shiden"))]
 mod dispatch_precompile_filter_new;
 
 // Remove this once dApp staking v3 is integrated into Shiden & Astar
-#[cfg(any(feature = "shiden", feature = "astar"))]
+#[cfg(any(feature = "astar"))]
 mod dispatch_precompile_filter_old;
 
 #[cfg(feature = "shibuya")]
 mod unified_accounts;
+
+#[cfg(any(feature = "shibuya", feature = "shiden"))]
+mod dapp_staking_v3;
 
 #[cfg(any(feature = "shibuya"))]
 mod assets_chain_extensions;

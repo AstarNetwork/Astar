@@ -412,7 +412,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.28.0"
+version = "5.31.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -520,6 +520,7 @@ dependencies = [
  "ethereum-types",
  "fp-evm",
  "frame-support",
+ "frame-system",
  "impl-trait-for-tuples",
  "log",
  "orml-traits",
@@ -542,7 +543,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.28.0"
+version = "5.31.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -646,6 +647,30 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
+]
+
+[[package]]
+name = "astar-xcm-benchmarks"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-xcm-benchmarks",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -2439,7 +2464,6 @@ name = "dapp-staking-v3-runtime-api"
 version = "0.0.1-alpha"
 dependencies = [
  "astar-primitives",
- "pallet-dapp-staking-v3",
  "sp-api",
  "sp-std",
 ]
@@ -4965,6 +4989,7 @@ dependencies = [
  "libsecp256k1",
  "pallet-assets",
  "pallet-balances",
+ "pallet-collator-selection",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapp-staking-v3",
@@ -4973,6 +4998,7 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-dispatch",
+ "pallet-inflation",
  "pallet-proxy",
  "pallet-unified-accounts",
  "pallet-utility",
@@ -6007,7 +6033,7 @@ checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
 
 [[package]]
 name = "local-runtime"
-version = "5.28.0"
+version = "5.31.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -6049,6 +6075,7 @@ dependencies = [
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapp-staking-v3",
  "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
@@ -7686,7 +7713,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapp-staking-v3"
-version = "0.0.1-alpha"
+version = "0.1.0"
 dependencies = [
  "assert_matches",
  "astar-primitives",
@@ -8008,6 +8035,32 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "pallet-evm",
+]
+
+[[package]]
+name = "pallet-evm-precompile-dispatch-lockdrop"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "ethers",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "libsecp256k1",
+ "log",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-evm-precompile-dispatch",
+ "pallet-timestamp",
+ "pallet-utility",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -13163,10 +13216,11 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.28.0"
+version = "5.31.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
+ "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -13204,9 +13258,7 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-dapp-staking-migration",
  "pallet-dapp-staking-v3",
- "pallet-dapps-staking",
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
@@ -13218,6 +13270,7 @@ dependencies = [
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapp-staking-v3",
  "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
@@ -13246,6 +13299,7 @@ dependencies = [
  "pallet-vesting",
  "pallet-xc-asset-config",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "pallet-xvm",
  "parachain-info",
  "parity-scale-codec",
@@ -13277,7 +13331,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.28.0"
+version = "5.31.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -13289,6 +13343,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "dapp-staking-v3-runtime-api",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -13310,11 +13365,12 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-rewards-hybrid",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-migration",
+ "pallet-dapp-staking-v3",
  "pallet-dapps-staking",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
@@ -13322,7 +13378,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dapps-staking",
+ "pallet-evm-precompile-dapp-staking-v3",
  "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
@@ -13332,10 +13388,12 @@ dependencies = [
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-evm-precompile-xcm",
  "pallet-identity",
+ "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
  "pallet-proxy",
  "pallet-session",
+ "pallet-static-price-provider",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -13353,6 +13411,7 @@ dependencies = [
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",
@@ -13373,9 +13432,9 @@ dependencies = [
 
 [[package]]
 name = "shlex"
-version = "1.1.0"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
+checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "signal-hook-registry"
