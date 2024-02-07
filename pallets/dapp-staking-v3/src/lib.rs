@@ -460,7 +460,7 @@ pub mod pallet {
     #[pallet::type_value]
     pub fn DefaultSafeguard<T: Config>() -> bool {
         // In production, safeguard is enabled by default.
-        !cfg!(feature = "runtime-benchmarks") && !cfg!(test)
+        true
     }
 
     /// Safeguard to prevent unwanted operations in production.

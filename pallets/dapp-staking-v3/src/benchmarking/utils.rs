@@ -203,6 +203,8 @@ pub(super) fn initial_config<T: Config>() {
 
     StaticTierParams::<T>::put(tier_params);
     TierConfig::<T>::put(init_tier_config.clone());
+
+    Safeguard::<T>::put(false);
 }
 
 /// Maximum number of contracts that 'makes sense' - considers both contract number limit & number of slots.

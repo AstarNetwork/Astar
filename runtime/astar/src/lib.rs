@@ -1100,12 +1100,12 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
-// To be removed & cleaned up once proper oracle is implemented
-StaticPriceProvider: pallet_static_price_provider = 253,
-// To be removed & cleaned up after migration has been finished
-DappStakingMigration: pallet_dapp_staking_migration = 254,
-// Legacy dApps staking v2, to be removed after migration has been finished
-DappsStaking: pallet_dapps_staking = 255,
+        // To be removed & cleaned up once proper oracle is implemented
+        StaticPriceProvider: pallet_static_price_provider = 253,
+        // To be removed & cleaned up after migration has been finished
+        DappStakingMigration: pallet_dapp_staking_migration = 254,
+        // Legacy dApps staking v2, to be removed after migration has been finished
+        DappsStaking: pallet_dapps_staking = 255,
     }
 );
 
