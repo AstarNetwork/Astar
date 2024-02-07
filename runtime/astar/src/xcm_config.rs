@@ -28,7 +28,7 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::EnsureRoot;
-use sp_runtime::traits::Convert;
+use sp_runtime::traits::{Convert, MaybeEquivalence};
 
 // Polkadot imports
 use xcm::latest::prelude::*;
@@ -41,7 +41,7 @@ use xcm_builder::{
     SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{
-    traits::{Convert as XcmConvert, JustTry, WithOriginFilter},
+    traits::{JustTry, WithOriginFilter},
     XcmExecutor,
 };
 
@@ -268,6 +268,7 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = Nothing;
     type CallDispatcher = WithOriginFilter<SafeCallFilter>;
     type SafeCallFilter = SafeCallFilter;
+    type Aliasers = Nothing;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -360,7 +361,7 @@ parameter_types! {
 pub struct AssetIdConvert;
 impl Convert<AssetId, Option<MultiLocation>> for AssetIdConvert {
     fn convert(asset_id: AssetId) -> Option<MultiLocation> {
-        AstarAssetLocationIdConverter::reverse_ref(&asset_id).ok()
+        AstarAssetLocationIdConverter::convert_back(&asset_id)
     }
 }
 
