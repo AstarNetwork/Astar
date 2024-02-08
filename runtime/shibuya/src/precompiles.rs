@@ -86,6 +86,7 @@ impl Contains<RuntimeCall> for WhitelistedLockdropCalls {
             }) => true,
             RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,
             RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) => true,
+            RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) => true,
             RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
             _ => false,
         }
