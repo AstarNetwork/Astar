@@ -1,6 +1,0 @@
-(function() {var implementors = {};
-implementors["astar_runtime"] = [{"text":"impl BaseFeeThreshold for <a class=\"struct\" href=\"astar_runtime/struct.BaseFeeThreshold.html\" title=\"struct astar_runtime::BaseFeeThreshold\">BaseFeeThreshold</a>","synthetic":false,"types":["astar_runtime::BaseFeeThreshold"]}];
-implementors["local_runtime"] = [{"text":"impl BaseFeeThreshold for <a class=\"struct\" href=\"local_runtime/struct.BaseFeeThreshold.html\" title=\"struct local_runtime::BaseFeeThreshold\">BaseFeeThreshold</a>","synthetic":false,"types":["local_runtime::BaseFeeThreshold"]}];
-implementors["shibuya_runtime"] = [{"text":"impl BaseFeeThreshold for <a class=\"struct\" href=\"shibuya_runtime/struct.BaseFeeThreshold.html\" title=\"struct shibuya_runtime::BaseFeeThreshold\">BaseFeeThreshold</a>","synthetic":false,"types":["shibuya_runtime::BaseFeeThreshold"]}];
-implementors["shiden_runtime"] = [{"text":"impl BaseFeeThreshold for <a class=\"struct\" href=\"shiden_runtime/struct.BaseFeeThreshold.html\" title=\"struct shiden_runtime::BaseFeeThreshold\">BaseFeeThreshold</a>","synthetic":false,"types":["shiden_runtime::BaseFeeThreshold"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

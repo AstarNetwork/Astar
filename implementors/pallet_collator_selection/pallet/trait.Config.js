@@ -1,5 +1,5 @@
-(function() {var implementors = {};
-implementors["astar_runtime"] = [{"text":"impl Config for <a class=\"struct\" href=\"astar_runtime/struct.Runtime.html\" title=\"struct astar_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["astar_runtime::Runtime"]}];
-implementors["shibuya_runtime"] = [{"text":"impl Config for <a class=\"struct\" href=\"shibuya_runtime/struct.Runtime.html\" title=\"struct shibuya_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["shibuya_runtime::Runtime"]}];
-implementors["shiden_runtime"] = [{"text":"impl Config for <a class=\"struct\" href=\"shiden_runtime/struct.Runtime.html\" title=\"struct shiden_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["shiden_runtime::Runtime"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"astar_runtime":[["impl <a class=\"trait\" href=\"pallet_collator_selection/pallet/trait.Config.html\" title=\"trait pallet_collator_selection::pallet::Config\">Config</a> for <a class=\"struct\" href=\"astar_runtime/struct.Runtime.html\" title=\"struct astar_runtime::Runtime\">Runtime</a>"]],
+"shibuya_runtime":[["impl <a class=\"trait\" href=\"pallet_collator_selection/pallet/trait.Config.html\" title=\"trait pallet_collator_selection::pallet::Config\">Config</a> for <a class=\"struct\" href=\"shibuya_runtime/struct.Runtime.html\" title=\"struct shibuya_runtime::Runtime\">Runtime</a>"]],
+"shiden_runtime":[["impl <a class=\"trait\" href=\"pallet_collator_selection/pallet/trait.Config.html\" title=\"trait pallet_collator_selection::pallet::Config\">Config</a> for <a class=\"struct\" href=\"shiden_runtime/struct.Runtime.html\" title=\"struct shiden_runtime::Runtime\">Runtime</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

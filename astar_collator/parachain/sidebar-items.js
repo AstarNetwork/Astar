@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["chain_spec","Parachain specs."],["service","Parachain specified service. Parachain Service and ServiceFactory implementation."]]});
+window.SIDEBAR_ITEMS = {"mod":["chain_spec","service"]};

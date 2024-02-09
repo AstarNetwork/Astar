@@ -1,5 +1,0 @@
-(function() {var implementors = {};
-implementors["astar_runtime"] = [{"text":"impl WeightToFeePolynomial for <a class=\"struct\" href=\"astar_runtime/struct.WeightToFee.html\" title=\"struct astar_runtime::WeightToFee\">WeightToFee</a>","synthetic":false,"types":["astar_runtime::WeightToFee"]}];
-implementors["shibuya_runtime"] = [{"text":"impl WeightToFeePolynomial for <a class=\"struct\" href=\"shibuya_runtime/struct.WeightToFee.html\" title=\"struct shibuya_runtime::WeightToFee\">WeightToFee</a>","synthetic":false,"types":["shibuya_runtime::WeightToFee"]}];
-implementors["shiden_runtime"] = [{"text":"impl WeightToFeePolynomial for <a class=\"struct\" href=\"shiden_runtime/struct.WeightToFee.html\" title=\"struct shiden_runtime::WeightToFee\">WeightToFee</a>","synthetic":false,"types":["shiden_runtime::WeightToFee"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

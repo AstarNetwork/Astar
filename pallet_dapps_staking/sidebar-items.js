@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DAppState","Forcing","RewardDestination","Version"],"mod":["pallet","weights"],"struct":["AccountLedger","ContractStakeInfo","DAppInfo","EraInfo","EraStake","RewardInfo","StakerInfo","UnbondingInfo","UnlockingChunk"],"type":["EraIndex"]};

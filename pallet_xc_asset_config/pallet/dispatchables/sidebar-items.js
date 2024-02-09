@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["change_existing_asset_location","register_asset_location","remove_asset","remove_payment_asset","set_asset_units_per_second"]};

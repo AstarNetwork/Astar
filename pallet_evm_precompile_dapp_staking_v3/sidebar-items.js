@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["STAKER_BYTES_LIMIT"],"enum":["DappStakingV3PrecompileCall"],"struct":["DappStakingV3Precompile","SmartContractV2"],"type":["DynamicAddress"]};

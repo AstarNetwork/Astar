@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["leave_intent","register_as_candidate","set_candidacy_bond","set_desired_candidates","set_invulnerables"]};

@@ -1,0 +1,4 @@
+(function() {var implementors = {
+"assets_chain_extension_types":[["impl TryFromPrimitive for <a class=\"enum\" href=\"assets_chain_extension_types/enum.Command.html\" title=\"enum assets_chain_extension_types::Command\">Command</a>"]],
+"unified_accounts_chain_extension_types":[["impl TryFromPrimitive for <a class=\"enum\" href=\"unified_accounts_chain_extension_types/enum.Command.html\" title=\"enum unified_accounts_chain_extension_types::Command\">Command</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

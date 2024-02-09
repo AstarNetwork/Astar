@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Executor","Shibuya runtime executor."],["RuntimeApi",""]]});
+window.SIDEBAR_ITEMS = {"struct":["Executor","RuntimeApi"]};

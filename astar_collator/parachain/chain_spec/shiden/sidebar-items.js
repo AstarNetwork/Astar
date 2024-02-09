@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["get_chain_spec","Gen Shiden chain specification for given parachain id."]],"type":[["ShidenChainSpec","Specialized `ChainSpec` for Shiden Network."]]});
+window.SIDEBAR_ITEMS = {"fn":["get_chain_spec"],"type":["ShidenChainSpec"]};

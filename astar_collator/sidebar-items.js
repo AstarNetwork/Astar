@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Subcommand","Possible subcommands of the main binary."]],"fn":[["run","Parse command line arguments into service configuration."]],"mod":[["local","Development node support. Support for local development node."],["parachain","Parachain node support. Support for Astar ecosystem parachains."]],"struct":[["Cli","An overarching CLI command definition."],["RelayChainCli",""],["RunCmd",""]]});
+window.SIDEBAR_ITEMS = {"enum":["Subcommand"],"fn":["run"],"mod":["local","parachain"],"struct":["Cli","RelayChainCli"]};

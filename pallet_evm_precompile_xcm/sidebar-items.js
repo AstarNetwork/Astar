@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["XcmPrecompileCall"],"struct":["Currency","EvmMultiAsset","GetMaxAssets","WeightV2","XcmPrecompile"],"type":["XBalanceOf"]};

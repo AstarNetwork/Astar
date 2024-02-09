@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["astar","Astar chain specifications."],["shibuya","Shibuya chain specifications."],["shiden","Shiden chain specifications."]],"struct":[["Extensions","Node `ChainSpec` extensions."]]});
+window.SIDEBAR_ITEMS = {"mod":["astar","shibuya","shiden"],"struct":["Extensions"]};

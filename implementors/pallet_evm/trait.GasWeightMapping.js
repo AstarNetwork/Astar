@@ -1,6 +1,0 @@
-(function() {var implementors = {};
-implementors["astar_runtime"] = [{"text":"impl GasWeightMapping for <a class=\"struct\" href=\"astar_runtime/struct.GasWeightMapping.html\" title=\"struct astar_runtime::GasWeightMapping\">GasWeightMapping</a>","synthetic":false,"types":["astar_runtime::GasWeightMapping"]}];
-implementors["local_runtime"] = [{"text":"impl GasWeightMapping for <a class=\"struct\" href=\"local_runtime/struct.LocalGasWeightMapping.html\" title=\"struct local_runtime::LocalGasWeightMapping\">LocalGasWeightMapping</a>","synthetic":false,"types":["local_runtime::LocalGasWeightMapping"]}];
-implementors["shibuya_runtime"] = [{"text":"impl GasWeightMapping for <a class=\"struct\" href=\"shibuya_runtime/struct.ShidenGasWeightMapping.html\" title=\"struct shibuya_runtime::ShidenGasWeightMapping\">ShidenGasWeightMapping</a>","synthetic":false,"types":["shibuya_runtime::ShidenGasWeightMapping"]}];
-implementors["shiden_runtime"] = [{"text":"impl GasWeightMapping for <a class=\"struct\" href=\"shiden_runtime/struct.ShidenGasWeightMapping.html\" title=\"struct shiden_runtime::ShidenGasWeightMapping\">ShidenGasWeightMapping</a>","synthetic":false,"types":["shiden_runtime::ShidenGasWeightMapping"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CreateScheme","EvmEvent"],"struct":["Transfer"]};

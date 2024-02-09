@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Executor","Shiden runtime executor."],["RuntimeApi",""]]});
+window.SIDEBAR_ITEMS = {"struct":["Executor","RuntimeApi"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["set_base_fee_per_gas"]};

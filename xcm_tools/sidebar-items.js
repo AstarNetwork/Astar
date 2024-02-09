@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["main",""]],"mod":[["cli",""],["command","Astar XCM CLI handlers."]]});
+window.SIDEBAR_ITEMS = {"fn":["main"],"mod":["cli","command"]};

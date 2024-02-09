@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["FunctionModifier"],"fn":["check_function_modifier"]};

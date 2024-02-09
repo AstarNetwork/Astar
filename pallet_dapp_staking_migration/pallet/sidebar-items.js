@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Call","Event","MigrationState"],"mod":["dispatchables","storage_types"],"struct":["DappStakingMigrationHandler","Pallet"],"trait":["Config"],"type":["MigrationStateStorage","Module"]};

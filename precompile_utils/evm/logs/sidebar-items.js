@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["log0","log1","log2","log3","log4"],"trait":["LogExt"]};

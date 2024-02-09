@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["EVM_REVERT_CODE"],"enum":["UnifiedAddress"],"struct":["EvmRevertCodeHandler","HashedDefaultMappings"],"trait":["UnifiedAddressMapper"],"type":["EvmAddress"]};

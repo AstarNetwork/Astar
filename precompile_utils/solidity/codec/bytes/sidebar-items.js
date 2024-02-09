@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["BoundedBytesString","BytesKind","StringKind"],"type":["BoundedBytes","BoundedString","UnboundedBytes","UnboundedString"]};

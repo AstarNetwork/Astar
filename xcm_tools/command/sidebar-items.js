@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["run","Parse command line arguments into service configuration."]],"type":[["Error","CLI error type."]]});
+window.SIDEBAR_ITEMS = {"constant":["ASSET_PRECOMPILE_ADDRESS_PREFIX"],"fn":["run"],"type":["Error"]};

@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"pallet_static_price_provider":[["impl&lt;T: <a class=\"trait\" href=\"pallet_static_price_provider/pallet/trait.Config.html\" title=\"trait pallet_static_price_provider::pallet::Config\">Config</a>&gt; PriceProvider for <a class=\"struct\" href=\"pallet_static_price_provider/pallet/struct.Pallet.html\" title=\"struct pallet_static_price_provider::pallet::Pallet\">Pallet</a>&lt;T&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

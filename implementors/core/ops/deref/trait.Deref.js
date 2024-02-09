@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["astar_collator"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.Deref.html\" title=\"trait core::ops::deref::Deref\">Deref</a> for <a class=\"struct\" href=\"astar_collator/struct.RunCmd.html\" title=\"struct astar_collator::RunCmd\">RunCmd</a>","synthetic":false,"types":["astar_collator::cli::RunCmd"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Sr25519PrecompileCall"],"struct":["Sr25519Precompile"]};

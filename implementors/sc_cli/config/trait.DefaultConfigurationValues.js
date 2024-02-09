@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["astar_collator"] = [{"text":"impl DefaultConfigurationValues for <a class=\"struct\" href=\"astar_collator/struct.RelayChainCli.html\" title=\"struct astar_collator::RelayChainCli\">RelayChainCli</a>","synthetic":false,"types":["astar_collator::cli::RelayChainCli"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"astar_collator":[["impl DefaultConfigurationValues for <a class=\"struct\" href=\"astar_collator/struct.RelayChainCli.html\" title=\"struct astar_collator::RelayChainCli\">RelayChainCli</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

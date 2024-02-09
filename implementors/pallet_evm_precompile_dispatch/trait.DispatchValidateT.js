@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"astar_primitives":[["impl&lt;AccountId, RuntimeCall: GetDispatchInfo, Filter: Contains&lt;RuntimeCall&gt;&gt; DispatchValidateT&lt;AccountId, RuntimeCall&gt; for <a class=\"struct\" href=\"astar_primitives/precompiles/struct.DispatchFilterValidate.html\" title=\"struct astar_primitives::precompiles::DispatchFilterValidate\">DispatchFilterValidate</a>&lt;RuntimeCall, Filter&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

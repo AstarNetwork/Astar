@@ -1,6 +1,6 @@
-(function() {var implementors = {};
-implementors["astar_runtime"] = [{"text":"impl OriginTrait for <a class=\"struct\" href=\"astar_runtime/struct.Origin.html\" title=\"struct astar_runtime::Origin\">Origin</a>","synthetic":false,"types":["astar_runtime::Origin"]}];
-implementors["local_runtime"] = [{"text":"impl OriginTrait for <a class=\"struct\" href=\"local_runtime/struct.Origin.html\" title=\"struct local_runtime::Origin\">Origin</a>","synthetic":false,"types":["local_runtime::Origin"]}];
-implementors["shibuya_runtime"] = [{"text":"impl OriginTrait for <a class=\"struct\" href=\"shibuya_runtime/struct.Origin.html\" title=\"struct shibuya_runtime::Origin\">Origin</a>","synthetic":false,"types":["shibuya_runtime::Origin"]}];
-implementors["shiden_runtime"] = [{"text":"impl OriginTrait for <a class=\"struct\" href=\"shiden_runtime/struct.Origin.html\" title=\"struct shiden_runtime::Origin\">Origin</a>","synthetic":false,"types":["shiden_runtime::Origin"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"astar_runtime":[["impl OriginTrait for <a class=\"struct\" href=\"astar_runtime/struct.RuntimeOrigin.html\" title=\"struct astar_runtime::RuntimeOrigin\">RuntimeOrigin</a>"]],
+"local_runtime":[["impl OriginTrait for <a class=\"struct\" href=\"local_runtime/struct.RuntimeOrigin.html\" title=\"struct local_runtime::RuntimeOrigin\">RuntimeOrigin</a>"]],
+"shibuya_runtime":[["impl OriginTrait for <a class=\"struct\" href=\"shibuya_runtime/struct.RuntimeOrigin.html\" title=\"struct shibuya_runtime::RuntimeOrigin\">RuntimeOrigin</a>"]],
+"shiden_runtime":[["impl OriginTrait for <a class=\"struct\" href=\"shiden_runtime/struct.RuntimeOrigin.html\" title=\"struct shiden_runtime::RuntimeOrigin\">RuntimeOrigin</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

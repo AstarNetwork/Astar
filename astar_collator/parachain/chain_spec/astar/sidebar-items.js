@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["get_chain_spec","Gen Astar chain specification for given parachain id."]],"type":[["AstarChainSpec","Specialized `ChainSpec` for Astar Network."]]});
+window.SIDEBAR_ITEMS = {"fn":["get_chain_spec"],"type":["AstarChainSpec"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Call","Error","Event"],"fn":["__type_value_for_default_base_fee_per_gas"],"mod":["dispatchables","storage_types"],"struct":["DefaultBaseFeePerGas","Pallet"],"trait":["Config"],"type":["BaseFeePerGas","Module"]};
