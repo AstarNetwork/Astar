@@ -118,3 +118,4 @@ Defining _features_ in the root `Cargo.toml` is additive with the features defin
 * [Substrate Glossary](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary)
 * [Substrate Client Library Documentation](https://polkadot.js.org/docs/)
 * [Astar Network Audit Reports](https://github.com/AstarNetwork/Audits)
+* [Astar Code Documentation](https://astarnetwork.github.io/Astar/)
