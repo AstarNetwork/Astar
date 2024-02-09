@@ -27,7 +27,6 @@ use pallet_dapp_staking_v3::*;
 fn dapp_staking_triggers_inflation_recalculation() {
     new_test_ext().execute_with(|| {
         let init_inflation_config = pallet_inflation::ActiveInflationConfig::<Runtime>::get();
-
         let recalculation_era = init_inflation_config.recalculation_era;
 
         // It's not feasible to run through all the blocks needed to trigger all the eras.

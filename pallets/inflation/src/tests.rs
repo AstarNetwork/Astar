@@ -75,39 +75,6 @@ fn force_set_inflation_params_fails() {
 }
 
 #[test]
-fn force_set_inflation_config_work() {
-    ExternalityBuilder::build().execute_with(|| {
-        let mut new_config = ActiveInflationConfig::<Test>::get();
-        new_config.recalculation_era = new_config.recalculation_era + 50;
-
-        // Execute call, ensure it works
-        assert_ok!(Inflation::force_set_inflation_config(
-            RuntimeOrigin::root(),
-            new_config
-        ));
-        System::assert_last_event(
-            Event::InflationConfigurationForceChanged { config: new_config }.into(),
-        );
-
-        assert_eq!(ActiveInflationConfig::<Test>::get(), new_config);
-    })
-}
-
-#[test]
-fn force_set_inflation_config_fails() {
-    ExternalityBuilder::build().execute_with(|| {
-        let mut new_config = ActiveInflationConfig::<Test>::get();
-        new_config.recalculation_era = new_config.recalculation_era + 50;
-
-        // Make sure action is privileged
-        assert_noop!(
-            Inflation::force_set_inflation_config(RuntimeOrigin::signed(1), new_config),
-            BadOrigin
-        );
-    })
-}
-
-#[test]
 fn force_inflation_recalculation_work() {
     ExternalityBuilder::build().execute_with(|| {
         let old_config = ActiveInflationConfig::<Test>::get();
@@ -460,14 +427,20 @@ fn cycle_configuration_works() {
     ExternalityBuilder::build().execute_with(|| {
         type CycleConfig = <Test as Config>::CycleConfiguration;
 
-        let eras_per_period = CycleConfig::eras_per_voting_subperiod()
-            + CycleConfig::eras_per_build_and_earn_subperiod();
+        let eras_per_period = CycleConfig::eras_per_build_and_earn_subperiod() + 1;
         assert_eq!(CycleConfig::eras_per_period(), eras_per_period);
+
+        let period_in_era_lengths = CycleConfig::eras_per_voting_subperiod()
+            + CycleConfig::eras_per_build_and_earn_subperiod();
+        assert_eq!(CycleConfig::period_in_era_lengths(), period_in_era_lengths);
 
         let eras_per_cycle = eras_per_period * CycleConfig::periods_per_cycle();
         assert_eq!(CycleConfig::eras_per_cycle(), eras_per_cycle);
 
-        let blocks_per_cycle = eras_per_cycle * CycleConfig::blocks_per_era();
+        let cycle_in_era_lengths = period_in_era_lengths * CycleConfig::periods_per_cycle();
+        assert_eq!(CycleConfig::cycle_in_era_lengths(), cycle_in_era_lengths);
+
+        let blocks_per_cycle = cycle_in_era_lengths * CycleConfig::blocks_per_era();
         assert_eq!(CycleConfig::blocks_per_cycle(), blocks_per_cycle);
 
         let build_and_earn_eras_per_cycle =

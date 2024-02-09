@@ -245,6 +245,8 @@ mod benchmarks {
 
     #[benchmark]
     fn claim_unlocked(x: Linear<0, { T::MaxNumberOfStakedContracts::get() }>) {
+        initial_config::<T>();
+
         // Prepare staker account and lock some amount
         let staker: T::AccountId = whitelisted_caller();
         let amount = (T::MinimumStakeAmount::get() + 1)

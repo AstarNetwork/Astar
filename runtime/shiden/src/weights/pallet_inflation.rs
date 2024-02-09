@@ -61,13 +61,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(9_303_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	fn force_set_inflation_config() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 9_559_000 picoseconds.
-		Weight::from_parts(9_789_000, 0)
-	}
 	/// Storage: Inflation InflationParams (r:1 w:0)
 	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
 	fn force_inflation_recalculation() -> Weight {

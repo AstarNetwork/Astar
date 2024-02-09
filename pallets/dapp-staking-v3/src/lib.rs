@@ -363,9 +363,8 @@ pub mod pallet {
         TooManyStakedContracts,
         /// There are no expired entries to cleanup for the account.
         NoExpiredEntries,
-        // TODO: remove this prior to the launch
-        /// Tier parameters aren't valid.
-        InvalidTierParameters,
+        /// Force call is not allowed in production.
+        ForceNotAllowed,
     }
 
     /// General information about dApp staking protocol state.
@@ -457,6 +456,18 @@ pub mod pallet {
     /// History cleanup marker - holds information about which DB entries should be cleaned up next, when applicable.
     #[pallet::storage]
     pub type HistoryCleanupMarker<T: Config> = StorageValue<_, CleanupMarker, ValueQuery>;
+
+    #[pallet::type_value]
+    pub fn DefaultSafeguard<T: Config>() -> bool {
+        // In production, safeguard is enabled by default.
+        true
+    }
+
+    /// Safeguard to prevent unwanted operations in production.
+    /// Kept as a storage without extrinsic setter, so we can still enable it for some
+    /// chain-fork debugging if required.
+    #[pallet::storage]
+    pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
 
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
@@ -1510,7 +1521,6 @@ pub mod pallet {
             .into())
         }
 
-        // TODO: make this unavailable in production, to be only used for testing
         /// Used to force a change of era or subperiod.
         /// The effect isn't immediate but will happen on the next block.
         ///
@@ -1523,6 +1533,8 @@ pub mod pallet {
         pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
+
+            ensure!(!Safeguard::<T>::get(), Error::<T>::ForceNotAllowed);
 
             // Ensure a 'change' happens on the next block
             ActiveProtocolState::<T>::mutate(|state| {
@@ -1544,37 +1556,6 @@ pub mod pallet {
             });
 
             Self::deposit_event(Event::<T>::Force { forcing_type });
-
-            Ok(())
-        }
-
-        // TODO: remove this prior to Astar launch, to be only used for testing
-        #[pallet::call_index(100)]
-        #[pallet::weight(T::DbWeight::get().writes(1))]
-        pub fn force_set_tier_params(
-            origin: OriginFor<T>,
-            value: TierParameters<T::NumberOfTiers>,
-        ) -> DispatchResult {
-            Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
-            ensure!(value.is_valid(), Error::<T>::InvalidTierParameters);
-
-            StaticTierParams::<T>::put(value);
-
-            Ok(())
-        }
-
-        // TODO: remove this prior to Astar launch, to be only used for testing
-        #[pallet::call_index(101)]
-        #[pallet::weight(T::DbWeight::get().writes(1))]
-        pub fn force_set_tier_config(
-            origin: OriginFor<T>,
-            value: TiersConfiguration<T::NumberOfTiers>,
-        ) -> DispatchResult {
-            Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
-
-            TierConfig::<T>::put(value);
 
             Ok(())
         }

@@ -326,6 +326,7 @@ impl ExtBuilder {
 
             pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);
             pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());
+            pallet_dapp_staking::Safeguard::<Test>::put(false);
 
             DappStaking::on_initialize(System::block_number());
         });
