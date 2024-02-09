@@ -1170,8 +1170,7 @@ use sp_arithmetic::fixed_point::FixedU64;
 pub struct InitActivePriceGet;
 impl Get<FixedU64> for InitActivePriceGet {
     fn get() -> FixedU64 {
-        // TODO: calculate this!
-        FixedU64::from_rational(15, 100)
+        FixedU64::from_rational(18, 100)
     }
 }
 
