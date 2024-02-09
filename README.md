@@ -87,7 +87,7 @@ For key management and validator rewards, consult our [validator guide online](h
 
 ## Run RPC Tests
 
-RPC tests suite can be run for any release. To run tests go to https://github.com/AstarNetwork/Astar/actions/workflows/rpcTest.yml. Click Run workflow, in the dropdown input the release version tag you want to run the test suite. Then click the green Run workflow button to start the test suite. 
+RPC tests suite can be run for any release. To run tests go to <https://github.com/AstarNetwork/Astar/actions/workflows/rpcTest.yml>. Click Run workflow, in the dropdown input the release version tag you want to run the test suite. Then click the green Run workflow button to start the test suite.
 
 ![Screenshot from 2022-07-07 15-28-46](https://user-images.githubusercontent.com/874046/177785570-330c6613-237d-4190-bfed-69876209daf6.png)
 
@@ -102,19 +102,20 @@ Also `package` imports aren't properly propagated from root to sub-crates, so de
 Defining _features_ in the root `Cargo.toml` is additive with the features defined in concrete crate's `Cargo.toml`.
 
 **Adding Dependency**
+
 1. Check if the dependency is already defined in the root `Cargo.toml`
     1. if **yes**, nothing to do, just take note of the enabled features
     2. if **no**, add it (make sure to use `default-features = false` if dependency is used in _no_std_ context)
 2. Add `new_dependecy = { workspace = true }` to the required crate
 3. In case dependency is defined with `default-features = false` but you need it in _std_ context, add `features = ["std"]` to the required crate.
- 
 
 ## Further Reading
 
 * [Official Documentation](https://docs.astar.network/)
 * [Whitepaper](https://github.com/AstarNetwork/plasmdocs/blob/master/wp/en.pdf)
 * [Whitepaper(JP)](https://github.com/AstarNetwork/plasmdocs/blob/master/wp/jp.pdf)
-* [Subtrate Developer Hub](https://substrate.dev/docs/en/)
+* [Substrate Developer Hub](https://substrate.dev/docs/en/)
 * [Substrate Glossary](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary)
 * [Substrate Client Library Documentation](https://polkadot.js.org/docs/)
 * [Astar Network Audit Reports](https://github.com/AstarNetwork/Audits)
+* [Astar Code Documentation](https://astarnetwork.github.io/Astar/)
