@@ -301,30 +301,6 @@ pub mod pallet {
 
             Ok(().into())
         }
-
-        /// Used to force-set the inflation configuration.
-        /// The parameters aren't checked for validity, since essentially anything can be valid.
-        ///
-        /// Must be called by `root` origin.
-        ///
-        /// Purpose of the call is testing & handling unforeseen circumstances.
-        ///
-        /// **NOTE:** and a TODO, remove this before deploying on mainnet.
-        #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::force_set_inflation_config())]
-        pub fn force_set_inflation_config(
-            origin: OriginFor<T>,
-            config: InflationConfiguration,
-        ) -> DispatchResult {
-            ensure_root(origin)?;
-
-            config.sanity_check();
-            ActiveInflationConfig::<T>::put(config.clone());
-
-            Self::deposit_event(Event::<T>::InflationConfigurationForceChanged { config });
-
-            Ok(().into())
-        }
     }
 
     impl<T: Config> Pallet<T> {

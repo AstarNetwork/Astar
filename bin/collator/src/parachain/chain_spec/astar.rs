@@ -19,15 +19,16 @@
 //! Astar chain specifications.
 
 use astar_runtime::{
-    wasm_binary_unwrap, AccountId, AuraId, Balance, BlockRewardConfig, EVMConfig,
-    ParachainInfoConfig, Precompiles, RewardDistributionConfig, Signature, SystemConfig, ASTR,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, DappStakingConfig, EVMConfig, InflationConfig,
+    InflationParameters, ParachainInfoConfig, Precompiles, Signature, SystemConfig, TierThreshold,
+    ASTR,
 };
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
-    Perbill,
+    Permill,
 };
 
 use super::{get_from_seed, Extensions};
@@ -110,17 +111,6 @@ fn make_genesis(
         },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: astar_runtime::BalancesConfig { balances },
-        block_reward: BlockRewardConfig {
-            // Make sure sum is 100
-            reward_config: RewardDistributionConfig {
-                treasury_percent: Perbill::from_percent(10),
-                base_staker_percent: Perbill::from_percent(20),
-                dapps_percent: Perbill::from_percent(20),
-                collators_percent: Perbill::from_percent(5),
-                adjustable_percent: Perbill::from_percent(45),
-                ideal_dapps_staking_tvl: Perbill::from_percent(40),
-            },
-        },
         vesting: astar_runtime::VestingConfig { vesting: vec![] },
         session: astar_runtime::SessionConfig {
             keys: authorities
@@ -159,6 +149,41 @@ fn make_genesis(
         assets: Default::default(),
         parachain_system: Default::default(),
         transaction_payment: Default::default(),
+        dapp_staking: DappStakingConfig {
+            reward_portion: vec![
+                Permill::from_percent(40),
+                Permill::from_percent(30),
+                Permill::from_percent(20),
+                Permill::from_percent(10),
+            ],
+            slot_distribution: vec![
+                Permill::from_percent(10),
+                Permill::from_percent(20),
+                Permill::from_percent(30),
+                Permill::from_percent(40),
+            ],
+            tier_thresholds: vec![
+                TierThreshold::DynamicTvlAmount {
+                    amount: 30000 * ASTR,
+                    minimum_amount: 20000 * ASTR,
+                },
+                TierThreshold::DynamicTvlAmount {
+                    amount: 7500 * ASTR,
+                    minimum_amount: 5000 * ASTR,
+                },
+                TierThreshold::DynamicTvlAmount {
+                    amount: 20000 * ASTR,
+                    minimum_amount: 15000 * ASTR,
+                },
+                TierThreshold::FixedTvlAmount {
+                    amount: 5000 * ASTR,
+                },
+            ],
+            slots_per_tier: vec![10, 20, 30, 40],
+        },
+        inflation: InflationConfig {
+            params: InflationParameters::default(),
+        },
     }
 }
 

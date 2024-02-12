@@ -164,7 +164,7 @@ impl SafeCallFilter {
             | RuntimeCall::Identity(..)
             | RuntimeCall::Balances(..)
             | RuntimeCall::Vesting(..)
-            | RuntimeCall::DappsStaking(..)
+            | RuntimeCall::DappStaking(..)
             | RuntimeCall::Assets(..)
             | RuntimeCall::PolkadotXcm(..)
             | RuntimeCall::Session(..)

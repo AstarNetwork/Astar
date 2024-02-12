@@ -19,7 +19,8 @@
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
     pallet::Config, ActiveProtocolState, DAppId, EraRewards, Error, Event, ForcingType,
-    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, StakerInfo, Subperiod, TierConfig,
+    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo, Subperiod,
+    TierConfig,
 };
 
 use frame_support::{
@@ -2313,6 +2314,17 @@ fn force_with_incorrect_origin_fails() {
 }
 
 #[test]
+fn force_with_safeguard_on_fails() {
+    ExtBuilder::build().execute_with(|| {
+        Safeguard::<Test>::put(true);
+        assert_noop!(
+            DappStaking::force(RuntimeOrigin::root(), ForcingType::Era),
+            Error::<Test>::ForceNotAllowed
+        );
+    })
+}
+
+#[test]
 fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
     ExtBuilder::build().execute_with(|| {
         // This test will rely on the configuration inside the mock file.
@@ -2749,4 +2761,16 @@ fn unregister_after_max_number_of_contracts_allows_register_again() {
         assert_unregister(&smart_contract);
         assert_register(developer, &smart_contract);
     })
+}
+
+#[test]
+fn safeguard_on_by_default() {
+    let storage = frame_system::GenesisConfig::default()
+        .build_storage::<Test>()
+        .unwrap();
+
+    let mut ext = sp_io::TestExternalities::from(storage);
+    ext.execute_with(|| {
+        assert!(Safeguard::<Test>::get());
+    });
 }
