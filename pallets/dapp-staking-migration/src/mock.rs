@@ -38,6 +38,8 @@ use astar_primitives::{
 
 pub(crate) type AccountId = u64;
 
+pub(crate) const UNBONDING_ACCOUNT: AccountId = 10;
+
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(crate) const MINIMUM_LOCK_AMOUNT: Balance = 10;
 
@@ -233,7 +235,7 @@ impl ExtBuilder {
             .build_storage::<Test>()
             .unwrap();
 
-        let balances = vec![1000; 9]
+        let balances = vec![1000; 11]
             .into_iter()
             .enumerate()
             .map(|(idx, amount)| (idx as u64 + 1, amount))
@@ -277,4 +279,15 @@ pub fn init() {
             1_000,
         ));
     }
+
+    assert_ok!(pallet_dapps_staking::Pallet::<Test>::bond_and_stake(
+        RawOrigin::Signed(UNBONDING_ACCOUNT).into(),
+        MockSmartContract::Wasm(0),
+        2000
+    ));
+    assert_ok!(pallet_dapps_staking::Pallet::<Test>::unbond_and_unstake(
+        RawOrigin::Signed(UNBONDING_ACCOUNT).into(),
+        MockSmartContract::Wasm(0),
+        500
+    ));
 }

@@ -78,7 +78,12 @@ fn migrate_ledgers_check() {
     ExtBuilder::build().execute_with(|| {
         init();
 
-        // Cleanup all enries, check pre and post states.
+        // Check for unbonding accounts
+        let init_unbonding_ledger = pallet_dapps_staking::Ledger::<Test>::get(&UNBONDING_ACCOUNT);
+        let unbonding_account_init_locked_amount = init_unbonding_ledger.locked;
+        let unbonding_account_unbonding_amount = init_unbonding_ledger.unbonding_info.sum();
+
+        // Cleanup all entries, check pre and post states.
         let init_old_count = pallet_dapps_staking::Ledger::<Test>::iter().count();
         assert!(init_old_count > 0, "Sanity check.");
 
@@ -112,6 +117,12 @@ fn migrate_ledgers_check() {
         assert_eq!(
             DappStakingMigration::migrate_ledger(),
             Err(<Test as Config>::WeightInfo::migrate_ledger_noop())
+        );
+
+        let post_unbonding_ledger = pallet_dapp_staking_v3::Ledger::<Test>::get(&UNBONDING_ACCOUNT);
+        assert_eq!(
+            post_unbonding_ledger.locked,
+            unbonding_account_init_locked_amount - unbonding_account_unbonding_amount
         );
     });
 }
