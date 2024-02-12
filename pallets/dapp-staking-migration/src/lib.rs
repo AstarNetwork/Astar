@@ -373,16 +373,18 @@ pub mod pallet {
         pub(crate) fn migrate_ledger() -> Result<Weight, Weight> {
             match OldLedger::<T>::drain().next() {
                 Some((staker, old_account_ledger)) => {
-                    let locked = old_account_ledger.locked;
+                    let old_locked = old_account_ledger.locked;
 
                     // Old unbonding amount can just be released, to keep things simple.
                     // Alternative is to re-calculate this into unlocking chunks.
-                    let _total_unbonding = old_account_ledger.unbonding_info.sum();
+                    let total_unbonding = old_account_ledger.unbonding_info.sum();
 
                     <T as pallet_dapps_staking::Config>::Currency::remove_lock(
                         pallet_dapps_staking::pallet::STAKING_ID,
                         &staker,
                     );
+
+                    let locked = old_locked.saturating_sub(total_unbonding);
 
                     // No point in attempting to lock the old amount into dApp staking v3 if amount is insufficient.
                     if locked >= <T as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get() {
@@ -587,8 +589,11 @@ pub mod pallet {
             let stakers: Vec<_> = pallet_dapps_staking::Ledger::<T>::iter()
                 .filter_map(|(staker, ledger)| {
                     total_locked.saturating_accrue(ledger.locked);
-                    if ledger.locked >= min_lock_amount {
-                        Some((staker, ledger.locked))
+                    total_locked.saturating_reduce(ledger.unbonding_info.sum());
+
+                    let new_lock_amount = ledger.locked.saturating_sub(ledger.unbonding_info.sum());
+                    if new_lock_amount >= min_lock_amount {
+                        Some((staker, new_lock_amount))
                     } else {
                         None
                     }
@@ -661,7 +666,7 @@ pub mod pallet {
 
             for (staker, old_locked) in &helper.stakers {
                 let new_locked = pallet_dapp_staking_v3::Ledger::<T>::get(&staker).locked;
-                assert_eq!(*old_locked, new_locked);
+                assert!(*old_locked >= new_locked);
             }
 
             let total_locked = helper
