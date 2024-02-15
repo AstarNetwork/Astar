@@ -66,7 +66,7 @@
 
 use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec};
 use parity_scale_codec::{Decode, Encode};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
     traits::{CheckedAdd, UniqueSaturatedInto, Zero},
@@ -1384,7 +1384,6 @@ where
     Serialize,
     Deserialize,
 )]
-// #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum TierThreshold {
     /// Entry into tier is mandated by minimum amount of staked funds.
     /// Value is fixed, and is not expected to change in between periods.

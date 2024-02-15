@@ -35,7 +35,8 @@ use super::{get_from_seed, Extensions};
 const PARA_ID: u32 = 2006;
 
 /// Specialized `ChainSpec` for Astar Network.
-pub type AstarChainSpec = sc_service::GenericChainSpec<astar_runtime::GenesisConfig, Extensions>;
+pub type AstarChainSpec =
+    sc_service::GenericChainSpec<astar_runtime::RuntimeGenesisConfig, Extensions>;
 
 /// Gen Astar chain specification for given parachain id.
 pub fn get_chain_spec() -> AstarChainSpec {
@@ -78,12 +79,12 @@ fn session_keys(aura: AuraId) -> astar_runtime::SessionKeys {
     astar_runtime::SessionKeys { aura }
 }
 
-/// Helper function to create GenesisConfig.
+/// Helper function to create RuntimeGenesisConfig.
 fn make_genesis(
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     parachain_id: ParaId,
-) -> astar_runtime::GenesisConfig {
+) -> astar_runtime::RuntimeGenesisConfig {
     let authorities = vec![
         (
             get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -101,14 +102,18 @@ fn make_genesis(
     // (PUSH1 0x00 PUSH1 0x00 REVERT)
     let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
 
-    astar_runtime::GenesisConfig {
+    astar_runtime::RuntimeGenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
+            ..Default::default()
         },
         sudo: astar_runtime::SudoConfig {
             key: Some(root_key),
         },
-        parachain_info: ParachainInfoConfig { parachain_id },
+        parachain_info: ParachainInfoConfig {
+            parachain_id,
+            ..Default::default()
+        },
         balances: astar_runtime::BalancesConfig { balances },
         block_reward: BlockRewardConfig {
             // Make sure sum is 100
@@ -120,6 +125,7 @@ fn make_genesis(
                 adjustable_percent: Perbill::from_percent(45),
                 ideal_dapps_staking_tvl: Perbill::from_percent(40),
             },
+            ..Default::default()
         },
         vesting: astar_runtime::VestingConfig { vesting: vec![] },
         session: astar_runtime::SessionConfig {
@@ -153,6 +159,7 @@ fn make_genesis(
                     )
                 })
                 .collect(),
+            ..Default::default()
         },
         ethereum: Default::default(),
         polkadot_xcm: Default::default(),

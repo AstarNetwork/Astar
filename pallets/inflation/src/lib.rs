@@ -199,7 +199,7 @@ pub mod pallet {
     #[derive(DefaultNoBound)]
     pub struct GenesisConfig<T> {
         pub params: InflationParameters,
-        _config: sp_std::marker::PhantomData<T>,
+        pub _config: sp_std::marker::PhantomData<T>,
     }
 
     /// This should be executed **AFTER** other pallets that cause issuance to increase have been initialized.
@@ -532,7 +532,6 @@ pub struct InflationConfiguration {
     Serialize,
     Deserialize,
 )]
-// #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct InflationParameters {
     /// Maximum possible inflation rate, based on the total issuance at some point in time.
     /// From this value, all the other inflation parameters are derived.

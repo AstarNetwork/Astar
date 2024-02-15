@@ -43,7 +43,7 @@ use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::Block as BlockT;
 use std::net::SocketAddr;
 
-#[cfg(feature = "frame-benchmarking-cli")]
+#[cfg(feature = "runtime-benchmarks")]
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
 trait IdentifyChain {
@@ -147,8 +147,10 @@ impl SubstrateCli for Cli {
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
         load_spec(id)
     }
+}
 
-    fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+impl Cli {
+    fn runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
         if chain_spec.is_dev() {
             &local_runtime::VERSION
         } else if chain_spec.is_astar() {
@@ -201,10 +203,6 @@ impl SubstrateCli for RelayChainCli {
         } else {
             polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
         }
-    }
-
-    fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        polkadot_cli::Cli::native_runtime_version(chain_spec)
     }
 }
 
@@ -459,12 +457,36 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::ExportGenesisState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
+            let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
 
-            runner.sync_run(|_config| {
-                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
-                let state_version = Cli::native_runtime_version(&spec).state_version();
-                cmd.run::<Block>(&*spec, state_version)
-            })
+            if runner.config().chain_spec.is_astar() {
+                runner.sync_run(|config| {
+                    let PartialComponents { client, .. } =
+                        parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                            &config,
+                            parachain::build_import_queue,
+                        )?;
+                    cmd.run::<Block>(&*spec, &*client)
+                })
+            } else if runner.config().chain_spec.is_shiden() {
+                runner.sync_run(|config| {
+                    let PartialComponents { client, .. } =
+                        parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                            &config,
+                            parachain::build_import_queue,
+                        )?;
+                    cmd.run::<Block>(&*spec, &*client)
+                })
+            } else {
+                runner.sync_run(|config| {
+                    let PartialComponents { client, .. } =
+                        parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                            &config,
+                            parachain::build_import_queue,
+                        )?;
+                    cmd.run::<Block>(&*spec, &*client)
+                })
+            }
         }
         Some(Subcommand::ExportGenesisWasm(cmd)) => {
             let runner = cli.create_runner(cmd)?;
@@ -478,7 +500,7 @@ pub fn run() -> Result<()> {
         Some(Subcommand::Sign(cmd)) => cmd.run(),
         Some(Subcommand::Verify(cmd)) => cmd.run(),
         Some(Subcommand::Vanity(cmd)) => cmd.run(),
-        #[cfg(feature = "frame-benchmarking-cli")]
+        #[cfg(feature = "runtime-benchmarks")]
         Some(Subcommand::Benchmark(cmd)) => {
             use crate::benchmarking::*;
             use sp_keyring::Sr25519Keyring;
@@ -490,18 +512,18 @@ pub fn run() -> Result<()> {
                 BenchmarkCmd::Pallet(cmd) => {
                     if chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            cmd.run::<astar_runtime::Block, astar::Executor>(config)
+                            cmd.run::<astar_runtime::Block, parachain::HostFunctions>(config)
                         })
                     } else if chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            cmd.run::<shiden_runtime::Block, shiden::Executor>(config)
+                            cmd.run::<shiden_runtime::Block, parachain::HostFunctions>(config)
                         })
                     } else if chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            cmd.run::<shibuya_runtime::Block, shibuya::Executor>(config)
+                            cmd.run::<shibuya_runtime::Block, parachain::HostFunctions>(config)
                         })
                     } else {
-                        runner.sync_run(|config| cmd.run::<Block, local::Executor>(config))
+                        runner.sync_run(|config| cmd.run::<Block, local::HostFunctions>(config))
                     }
                 }
                 BenchmarkCmd::Block(cmd) => {
@@ -763,84 +785,12 @@ pub fn run() -> Result<()> {
                 }
             }
         }
-        #[cfg(feature = "try-runtime")]
-        Some(Subcommand::TryRuntime(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
-            let chain_spec = &runner.config().chain_spec;
-
-            use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
-            type HostFunctionsOf<E> = ExtendedHostFunctions<
-                sp_io::SubstrateHostFunctions,
-                <E as NativeExecutionDispatch>::ExtendHostFunctions,
-            >;
-
-            if chain_spec.is_shiden() {
-                runner.async_run(|config| {
-                    let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-                    let info_provider =
-                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
-                    let task_manager =
-                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-                            .map_err(|e| {
-                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
-                            })?;
-                    Ok((
-                        cmd.run::<shiden_runtime::Block, HostFunctionsOf<shiden::Executor>, _>(
-                            Some(info_provider),
-                        ),
-                        task_manager,
-                    ))
-                })
-            } else if chain_spec.is_shibuya() {
-                runner.async_run(|config| {
-                    let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-                    let info_provider =
-                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
-                    let task_manager =
-                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-                            .map_err(|e| {
-                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
-                            })?;
-                    Ok((
-                        cmd.run::<shibuya_runtime::Block, HostFunctionsOf<shibuya::Executor>, _>(
-                            Some(info_provider),
-                        ),
-                        task_manager,
-                    ))
-                })
-            } else if chain_spec.is_astar() {
-                runner.async_run(|config| {
-                    let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-                    let info_provider =
-                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
-                    let task_manager =
-                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-                            .map_err(|e| {
-                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
-                            })?;
-                    Ok((
-                        cmd.run::<astar_runtime::Block, HostFunctionsOf<astar::Executor>, _>(Some(
-                            info_provider,
-                        )),
-                        task_manager,
-                    ))
-                })
-            } else {
-                runner.async_run(|config| {
-                    let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-                    let info_provider =
-                        try_runtime_cli::block_building_info::timestamp_with_aura_info(6000);
-                    let task_manager =
-                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-                            .map_err(|e| {
-                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
-                            })?;
-                    Ok((
-                        cmd.run::<Block, HostFunctionsOf<local::Executor>, _>(Some(info_provider)),
-                        task_manager,
-                    ))
-                })
-            }
+        Some(Subcommand::TryRuntime(_)) => {
+            Err("The `try-runtime` subcommand has been migrated to a \
+        standalone CLI (https://github.com/paritytech/try-runtime-cli). It is no longer \
+        being maintained here and will be removed entirely some time after January 2024. \
+        Please remove this subcommand from your runtime and use the standalone CLI."
+                .into())
         }
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
@@ -885,7 +835,7 @@ pub fn run() -> Result<()> {
                 let parachain_account =
                     AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&para_id);
 
-                let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
+                let state_version = Cli::runtime_version(&config.chain_spec).state_version();
                 let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
                     .map_err(|e| format!("{:?}", e))?;
                 let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));

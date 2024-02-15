@@ -643,7 +643,6 @@ impl pallet_contracts::Config for Runtime {
     type Environment = ();
     // TODO: re-vist to make sure migration sequence is correct
     type Migrations = (
-        pallet_contracts::migration::v11::Migration<Runtime>,
         pallet_contracts::migration::v12::Migration<Runtime, Balances>,
         pallet_contracts::migration::v13::Migration<Runtime>,
         pallet_contracts::migration::v14::Migration<Runtime, Balances>,

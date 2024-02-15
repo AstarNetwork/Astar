@@ -35,5 +35,6 @@ ethereum-types = { workspace = true, features = ["std"] }
 fc-consensus = { workspace = true }
 fc-db = { workspace = true }
 fc-rpc = { workspace = true, features = ["rpc-binary-search-estimate"] }
+fc-api = { workspace = true }
 fc-storage = { workspace = true }
 fp-rpc = { workspace = true }

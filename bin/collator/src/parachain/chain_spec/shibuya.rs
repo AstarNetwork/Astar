@@ -23,8 +23,8 @@ use sc_service::ChainType;
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
     CollatorSelectionConfig, CouncilConfig, DappStakingConfig, DemocracyConfig, EVMChainIdConfig,
-    EVMConfig, GenesisConfig, InflationConfig, InflationParameters, ParachainInfoConfig,
-    Precompiles, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig,
+    EVMConfig, InflationConfig, InflationParameters, ParachainInfoConfig, Precompiles,
+    RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig,
     TechnicalCommitteeConfig, TierThreshold, TreasuryConfig, VestingConfig, SBY,
 };
 use sp_core::{sr25519, Pair, Public};
@@ -39,7 +39,7 @@ use super::{get_from_seed, Extensions};
 const PARA_ID: u32 = 1000;
 
 /// Specialized `ChainSpec` for Shibuya testnet.
-pub type ShibuyaChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
+pub type ShibuyaChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
 
 /// Gen Shibuya chain specification for given parachain id.
 pub fn get_chain_spec() -> ShibuyaChainSpec {
@@ -82,12 +82,12 @@ fn session_keys(aura: AuraId) -> SessionKeys {
     SessionKeys { aura }
 }
 
-/// Helper function to create Shibuya GenesisConfig.
+/// Helper function to create Shibuya RuntimeGenesisConfig.
 fn make_genesis(
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     parachain_id: ParaId,
-) -> GenesisConfig {
+) -> RuntimeGenesisConfig {
     let authorities = vec![
         (
             get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -105,14 +105,18 @@ fn make_genesis(
     // (PUSH1 0x00 PUSH1 0x00 REVERT)
     let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
 
-    GenesisConfig {
+    RuntimeGenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
+            ..Default::default()
         },
         sudo: SudoConfig {
             key: Some(root_key),
         },
-        parachain_info: ParachainInfoConfig { parachain_id },
+        parachain_info: ParachainInfoConfig {
+            parachain_id,
+            ..Default::default()
+        },
         balances: BalancesConfig { balances },
         vesting: VestingConfig { vesting: vec![] },
         session: SessionConfig {
@@ -146,8 +150,12 @@ fn make_genesis(
                     )
                 })
                 .collect(),
+            ..Default::default()
         },
-        evm_chain_id: EVMChainIdConfig { chain_id: 0x51 },
+        evm_chain_id: EVMChainIdConfig {
+            chain_id: 0x51,
+            ..Default::default()
+        },
         ethereum: Default::default(),
         polkadot_xcm: Default::default(),
         assets: Default::default(),
@@ -193,10 +201,12 @@ fn make_genesis(
                 TierThreshold::FixedTvlAmount { amount: 10 * SBY },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
+            ..Default::default()
         },
         // TODO: adjust this if needed
         inflation: InflationConfig {
             params: InflationParameters::default(),
+            ..Default::default()
         },
     }
 }

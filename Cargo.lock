@@ -638,6 +638,7 @@ dependencies = [
  "cumulus-relay-chain-minimal-node",
  "cumulus-relay-chain-rpc-interface",
  "cumulus-test-relay-sproof-builder",
+ "fc-api",
  "fc-consensus",
  "fc-db",
  "fc-mapping-sync",
@@ -7170,6 +7171,7 @@ version = "0.1.0"
 dependencies = [
  "ethereum",
  "ethereum-types",
+ "fc-api",
  "fc-consensus",
  "fc-db",
  "fc-rpc",

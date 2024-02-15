@@ -20,17 +20,19 @@
 
 use astar_primitives::*;
 use cumulus_client_cli::CollatorOptions;
+#[allow(deprecated)]
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{ParachainBlockImport, ParachainConsensus};
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
+#[allow(deprecated)]
 use cumulus_client_service::{
-    prepare_node_config, start_collator, start_full_node, BuildNetworkParams, StartCollatorParams,
-    StartFullNodeParams,
+    prepare_node_config, start_collator, start_relay_chain_tasks, BuildNetworkParams,
+    DARecoveryProfile, StartCollatorParams, StartRelayChainTasksParams,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
+use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::{lock::Mutex, StreamExt};
@@ -43,7 +45,7 @@ use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
 use sp_keystore::KeystorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use sp_runtime::Percent;
@@ -57,17 +59,21 @@ use crate::evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig};
 #[cfg(feature = "evm-tracing")]
 use crate::rpc::tracing;
 
+/// Extra host functions
+pub type HostFunctions = (
+    frame_benchmarking::benchmarking::HostFunctions,
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+);
+
 /// Astar network runtime executor.
 pub mod astar {
+    use super::HostFunctions;
     pub use astar_runtime::RuntimeApi;
 
     /// Shibuya runtime executor.
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
-        type ExtendHostFunctions = (
-            frame_benchmarking::benchmarking::HostFunctions,
-            moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-        );
+        type ExtendHostFunctions = HostFunctions;
 
         fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
             astar_runtime::api::dispatch(method, data)
@@ -81,15 +87,13 @@ pub mod astar {
 
 /// Shiden network runtime executor.
 pub mod shiden {
+    use super::HostFunctions;
     pub use shiden_runtime::RuntimeApi;
 
     /// Shiden runtime executor.
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
-        type ExtendHostFunctions = (
-            frame_benchmarking::benchmarking::HostFunctions,
-            moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-        );
+        type ExtendHostFunctions = HostFunctions;
 
         fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
             shiden_runtime::api::dispatch(method, data)
@@ -103,15 +107,13 @@ pub mod shiden {
 
 /// Shibuya network runtime executor.
 pub mod shibuya {
+    use super::HostFunctions;
     pub use shibuya_runtime::RuntimeApi;
 
     /// Shibuya runtime executor.
     pub struct Executor;
     impl sc_executor::NativeExecutionDispatch for Executor {
-        type ExtendHostFunctions = (
-            frame_benchmarking::benchmarking::HostFunctions,
-            moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-        );
+        type ExtendHostFunctions = HostFunctions;
 
         fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
             shibuya_runtime::api::dispatch(method, data)
@@ -135,10 +137,7 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
         TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
         TFullBackend<Block>,
         (),
-        sc_consensus::DefaultImportQueue<
-            Block,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
+        sc_consensus::DefaultImportQueue<Block>,
         sc_transaction_pool::FullPool<
             Block,
             TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
@@ -168,10 +167,8 @@ where
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
         + sp_api::Metadata<Block>
         + sp_session::SessionKeys<Block>
-        + sp_api::ApiExt<
-            Block,
-            StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-        > + sp_offchain::OffchainWorkerApi<Block>
+        + sp_api::ApiExt<Block>
+        + sp_offchain::OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
@@ -190,13 +187,7 @@ where
         &Configuration,
         Option<TelemetryHandle>,
         &TaskManager,
-    ) -> Result<
-        sc_consensus::DefaultImportQueue<
-            Block,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
-        sc_service::Error,
-    >,
+    ) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>,
 {
     let telemetry = config
         .telemetry_endpoints
@@ -279,13 +270,11 @@ async fn build_relay_chain_interface(
     Arc<(dyn RelayChainInterface + 'static)>,
     Option<CollatorPair>,
 )> {
-    if !collator_options.relay_chain_rpc_urls.is_empty() {
-        build_minimal_relay_chain_node(
-            polkadot_config,
-            task_manager,
-            collator_options.relay_chain_rpc_urls,
-        )
-        .await
+    if let cumulus_client_cli::RelayChainMode::ExternalRpc(rpc_target_urls) =
+        collator_options.relay_chain_mode
+    {
+        build_minimal_relay_chain_node_with_rpc(polkadot_config, task_manager, rpc_target_urls)
+            .await
     } else {
         build_inprocess_relay_chain(
             polkadot_config,
@@ -321,16 +310,15 @@ where
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
         + sp_api::Metadata<Block>
         + sp_session::SessionKeys<Block>
-        + sp_api::ApiExt<
-            Block,
-            StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-        > + sp_offchain::OffchainWorkerApi<Block>
+        + sp_api::ApiExt<Block>
+        + sp_offchain::OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>
         + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
-        + cumulus_primitives_core::CollectCollationInfo<Block>,
+        + cumulus_primitives_core::CollectCollationInfo<Block>
+        + AuraApi<Block, AuraId>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
@@ -347,13 +335,7 @@ where
         &Configuration,
         Option<TelemetryHandle>,
         &TaskManager,
-    ) -> Result<
-        sc_consensus::DefaultImportQueue<
-            Block,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
-        sc_service::Error,
-    >,
+    ) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>,
     BIC: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         ParachainBlockImport<
@@ -416,6 +398,7 @@ where
             spawn_handle: task_manager.spawn_handle(),
             import_queue: params.import_queue,
             relay_chain_interface: relay_chain_interface.clone(),
+            sybil_resistance_level: cumulus_client_service::CollatorSybilResistance::Resistant,
         })
         .await?;
 
@@ -511,8 +494,17 @@ where
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            crate::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
-                .map_err(Into::into)
+            let pending_consensus_data_provider = Box::new(
+                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
+            );
+
+            crate::rpc::create_full(
+                deps,
+                subscription,
+                pubsub_notification_sinks.clone(),
+                pending_consensus_data_provider,
+            )
+            .map_err(Into::into)
         })
     };
 
@@ -575,9 +567,10 @@ where
             sync_service,
         };
 
+        #[allow(deprecated)]
         start_collator(params).await?;
     } else {
-        let params = StartFullNodeParams {
+        let params = StartRelayChainTasksParams {
             client: client.clone(),
             announce_block,
             task_manager: &mut task_manager,
@@ -587,9 +580,10 @@ where
             import_queue: import_queue_service,
             recovery_handle: Box::new(overseer_handle),
             sync_service,
+            da_recovery_profile: DARecoveryProfile::FullNode,
         };
 
-        start_full_node(params)?;
+        start_relay_chain_tasks(params)?;
     }
 
     start_network.start_network();
@@ -963,13 +957,7 @@ pub fn build_import_queue<RuntimeApi, Executor>(
     config: &Configuration,
     telemetry_handle: Option<TelemetryHandle>,
     task_manager: &TaskManager,
-) -> Result<
-    sc_consensus::DefaultImportQueue<
-        Block,
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-    >,
-    sc_service::Error,
->
+) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -978,10 +966,8 @@ where
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
         + sp_api::Metadata<Block>
         + sp_session::SessionKeys<Block>
-        + sp_api::ApiExt<
-            Block,
-            StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-        > + sp_offchain::OffchainWorkerApi<Block>
+        + sp_api::ApiExt<Block>
+        + sp_offchain::OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + sp_consensus_aura::AuraApi<Block, AuraId>,
@@ -1254,6 +1240,7 @@ pub async fn start_astar_node(
 
             let relay_chain_for_aura = relay_chain_interface.clone();
 
+            #[allow(deprecated)]
             Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
                 _,
@@ -1508,7 +1495,6 @@ pub async fn start_shiden_node(
             let block_import2 = block_import.clone();
             let sync_oracle2 = sync_oracle.clone();
             let keystore2 = keystore.clone();
-
             let aura_consensus = BuildOnAccess::Uninitialized(Some(
                 Box::new(move || {
                     let slot_duration =
@@ -1526,6 +1512,7 @@ pub async fn start_shiden_node(
                     proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
                     proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
+                    #[allow(deprecated)]
                     AuraConsensus::build::<
                         sp_consensus_aura::sr25519::AuthorityPair,
                         _,
@@ -1844,6 +1831,7 @@ pub async fn start_shibuya_node(
             proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
             proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
+            #[allow(deprecated)]
             Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
                 _,

@@ -20,13 +20,14 @@
 
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
-use futures::StreamExt;
-use sc_client_api::{BlockBackend, BlockchainEvents};
+use futures::{FutureExt, StreamExt};
+use sc_client_api::{Backend, BlockBackend, BlockchainEvents};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_consensus_grandpa::SharedVoterState;
 use sc_executor::NativeElseWasmExecutor;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
+use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
@@ -34,14 +35,21 @@ pub use local_runtime::RuntimeApi;
 
 use astar_primitives::*;
 
+const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
+
+/// Extra host functions
+pub type HostFunctions = (
+    // benchmarking host functions
+    frame_benchmarking::benchmarking::HostFunctions,
+    // evm tracing host functions
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+);
+
 /// Local runtime native executor.
 pub struct Executor;
 
 impl sc_executor::NativeExecutionDispatch for Executor {
-    type ExtendHostFunctions = (
-        frame_benchmarking::benchmarking::HostFunctions,
-        moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-    );
+    type ExtendHostFunctions = HostFunctions;
 
     fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
         local_runtime::api::dispatch(method, data)
@@ -64,7 +72,7 @@ pub fn new_partial(
         FullClient,
         FullBackend,
         FullSelectChain,
-        sc_consensus::DefaultImportQueue<Block, FullClient>,
+        sc_consensus::DefaultImportQueue<Block>,
         sc_transaction_pool::FullPool<Block, FullClient>,
         (
             FrontierBlockImport<
@@ -120,6 +128,7 @@ pub fn new_partial(
     );
     let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
         client.clone(),
+        GRANDPA_JUSTIFICATION_PERIOD,
         &(client.clone() as Arc<_>),
         select_chain.clone(),
         telemetry.as_ref().map(|x| x.handle()),
@@ -428,7 +437,7 @@ pub fn start_node(
     let grandpa_config = sc_consensus_grandpa::Config {
         // FIXME #1578 make this available through chainspec
         gossip_duration: Duration::from_millis(333),
-        justification_period: 512,
+        justification_period: GRANDPA_JUSTIFICATION_PERIOD,
         name: Some(name),
         observer_enabled: false,
         keystore,
@@ -505,11 +514,23 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         })?;
 
     if config.offchain_worker.enabled {
-        sc_service::build_offchain_workers(
-            &config,
-            task_manager.spawn_handle(),
-            client.clone(),
-            network.clone(),
+        task_manager.spawn_handle().spawn(
+            "offchain-workers-runner",
+            "offchain-work",
+            sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+                runtime_api_provider: client.clone(),
+                keystore: Some(keystore_container.keystore()),
+                offchain_db: backend.offchain_storage(),
+                transaction_pool: Some(OffchainTransactionPoolFactory::new(
+                    transaction_pool.clone(),
+                )),
+                network_provider: network.clone(),
+                is_validator: config.role.is_authority(),
+                enable_http_requests: true,
+                custom_extensions: move |_| vec![],
+            })
+            .run(client.clone(), task_manager.spawn_handle())
+            .boxed(),
         );
     }
 
@@ -613,8 +634,16 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
             };
 
-            crate::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
-                .map_err::<ServiceError, _>(Into::into)
+            let pending_consensus_data_provider = Box::new(
+                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
+            );
+            crate::rpc::create_full(
+                deps,
+                subscription,
+                pubsub_notification_sinks.clone(),
+                pending_consensus_data_provider,
+            )
+            .map_err::<ServiceError, _>(Into::into)
         })
     };
 
@@ -637,7 +666,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         let proposer_factory = sc_basic_authorship::ProposerFactory::new(
             task_manager.spawn_handle(),
             client.clone(),
-            transaction_pool,
+            transaction_pool.clone(),
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|x| x.handle()),
         );
@@ -692,7 +721,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     let grandpa_config = sc_consensus_grandpa::Config {
         // FIXME #1578 make this available through chainspec
         gossip_duration: Duration::from_millis(333),
-        justification_period: 512,
+        justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
         name: Some(name),
         observer_enabled: false,
         keystore,
@@ -717,6 +746,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             prometheus_registry,
             shared_voter_state: SharedVoterState::empty(),
             telemetry: telemetry.as_ref().map(|x| x.handle()),
+            offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool),
         };
 
         // the GRANDPA voter task is considered infallible, i.e.

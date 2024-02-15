@@ -206,8 +206,9 @@ fp-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polk
 # (native)
 fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.1.0" }
 fc-db = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.1.0" }
+fc-api = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.1.0" }
 fc-mapping-sync = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.1.0" }
-fc-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.1.0", features = ["rpc-binary-search-estimate"] }
+fc-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.1.0", features = ["rpc-binary-search-estimate", "txpool"] }
 fc-rpc-core = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.1.0" }
 fp-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.1.0" }
 fp-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v1.1.0" }
