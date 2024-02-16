@@ -1119,6 +1119,8 @@ pub type Migrations = (
     >,
     // Part of shiden-119
     RecalculationEraFix,
+    // part of shiden-119
+    SetNewTierConfig,
 );
 
 use frame_support::traits::OnRuntimeUpgrade;
@@ -1135,6 +1137,38 @@ impl OnRuntimeUpgrade for RecalculationEraFix {
         });
 
         <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+    }
+}
+
+pub struct SetNewTierConfig;
+impl OnRuntimeUpgrade for SetNewTierConfig {
+    fn on_runtime_upgrade() -> Weight {
+        use astar_primitives::oracle::PriceProvider;
+        use frame_support::BoundedVec;
+
+        // Set new init tier config values according to the forum post
+        let mut init_tier_config = pallet_dapp_staking_v3::TierConfig::<Runtime>::get();
+        init_tier_config.number_of_slots = 55;
+        init_tier_config.slots_per_tier =
+            BoundedVec::try_from(vec![2, 11, 16, 24]).unwrap_or_default();
+
+        #[cfg(feature = "try-runtime")]
+        {
+            assert!(
+                init_tier_config.number_of_slots >= init_tier_config.slots_per_tier.iter().sum::<u16>() as u16,
+                "Safety check, sum of slots per tier must be equal or less than max number of slots (due to possible rounding)"
+            );
+        }
+
+        // Based on the new init config, calculate the new tier config based on the 'average' price
+        let price = StaticPriceProvider::average_price();
+        let tier_params = pallet_dapp_staking_v3::StaticTierParams::<Runtime>::get();
+
+        let new_tier_config = init_tier_config.calculate_new(price, &tier_params);
+
+        pallet_dapp_staking_v3::TierConfig::<Runtime>::put(new_tier_config);
+
+        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(3, 1)
     }
 }
 
