@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use astar_primitives::Balance;
+use astar_primitives::{dapp_staking::TierSlots as TierSlotsFunc, Balance};
 use frame_support::assert_ok;
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::Permill;
@@ -2731,12 +2731,20 @@ fn tier_configuration_basic_tests() {
     };
     assert!(params.is_valid(), "Example params must be valid!");
 
+    struct DummyTierSlots;
+    impl TierSlotsFunc for DummyTierSlots {
+        fn number_of_slots(_price: FixedU64) -> u16 {
+            100
+        }
+    }
+
     // Create a configuration with some values
-    let init_config = TiersConfiguration::<TiersNum> {
+    let init_config = TiersConfiguration::<TiersNum, DummyTierSlots> {
         number_of_slots: 100,
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),
         tier_thresholds: params.tier_thresholds.clone(),
+        _phantom: Default::default(),
     };
     assert!(init_config.is_valid(), "Init config must be valid!");
 

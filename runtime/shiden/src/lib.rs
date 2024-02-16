@@ -52,6 +52,7 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -68,7 +69,7 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, TierId,
+        PeriodNumber, SmartContract, TierId, TierSlots as TierSlotsFunc,
     },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
@@ -355,6 +356,14 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
     }
 }
 
+pub struct ShidenTierSlots;
+impl TierSlotsFunc for ShidenTierSlots {
+    fn number_of_slots(price: FixedU64) -> u16 {
+        let result: u64 = price.saturating_mul_int(100_u64).saturating_add(50);
+        result.unique_saturated_into()
+    }
+}
+
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 50 * SDN;
 }
@@ -370,6 +379,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
+    type TierSlots = ShidenTierSlots;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<3>;
     type MaxNumberOfContracts = ConstU32<500>;

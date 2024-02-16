@@ -61,7 +61,10 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
+    dapp_staking::{
+        CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, StandardTierSlots,
+        TierId,
+    },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     Address, AssetId, Balance, BlockNumber, Hash, Header, Index,
 };
@@ -517,6 +520,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = ();
+    type TierSlots = StandardTierSlots;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<100>;

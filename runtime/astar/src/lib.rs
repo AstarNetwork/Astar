@@ -69,7 +69,7 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, TierId,
+        PeriodNumber, SmartContract, StandardTierSlots, TierId,
     },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
@@ -398,6 +398,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
+    type TierSlots = StandardTierSlots;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<4>;
     type MaxNumberOfContracts = ConstU32<500>;
