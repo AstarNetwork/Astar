@@ -219,11 +219,23 @@ pub fn start_node(
         })?;
 
     if config.offchain_worker.enabled {
-        sc_service::build_offchain_workers(
-            &config,
-            task_manager.spawn_handle(),
-            client.clone(),
-            network.clone(),
+        task_manager.spawn_handle().spawn(
+            "offchain-workers-runner",
+            "offchain-work",
+            sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+                runtime_api_provider: client.clone(),
+                keystore: Some(keystore_container.keystore()),
+                offchain_db: backend.offchain_storage(),
+                transaction_pool: Some(OffchainTransactionPoolFactory::new(
+                    transaction_pool.clone(),
+                )),
+                network_provider: network.clone(),
+                is_validator: config.role.is_authority(),
+                enable_http_requests: true,
+                custom_extensions: move |_| vec![],
+            })
+            .run(client.clone(), task_manager.spawn_handle())
+            .boxed(),
         );
     }
 
@@ -353,10 +365,15 @@ pub fn start_node(
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
             };
 
+            let pending_consensus_data_provider = Box::new(
+                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
+            );
+
             crate::rpc::create_full(
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
+                pending_consensus_data_provider,
                 rpc_config.clone(),
             )
             .map_err::<ServiceError, _>(Into::into)
@@ -382,7 +399,7 @@ pub fn start_node(
         let proposer_factory = sc_basic_authorship::ProposerFactory::new(
             task_manager.spawn_handle(),
             client.clone(),
-            transaction_pool,
+            transaction_pool.clone(),
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|x| x.handle()),
         );
@@ -437,7 +454,7 @@ pub fn start_node(
     let grandpa_config = sc_consensus_grandpa::Config {
         // FIXME #1578 make this available through chainspec
         gossip_duration: Duration::from_millis(333),
-        justification_period: GRANDPA_JUSTIFICATION_PERIOD,
+        justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
         name: Some(name),
         observer_enabled: false,
         keystore,
@@ -462,6 +479,7 @@ pub fn start_node(
             prometheus_registry,
             shared_voter_state: SharedVoterState::empty(),
             telemetry: telemetry.as_ref().map(|x| x.handle()),
+            offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool),
         };
 
         // the GRANDPA voter task is considered infallible, i.e.
@@ -637,6 +655,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             let pending_consensus_data_provider = Box::new(
                 fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
             );
+
             crate::rpc::create_full(
                 deps,
                 subscription,

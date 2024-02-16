@@ -633,10 +633,8 @@ where
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
         + sp_api::Metadata<Block>
         + sp_session::SessionKeys<Block>
-        + sp_api::ApiExt<
-            Block,
-            StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-        > + sp_offchain::OffchainWorkerApi<Block>
+        + sp_api::ApiExt<Block>
+        + sp_offchain::OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>
         + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
@@ -644,7 +642,8 @@ where
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
-        + cumulus_primitives_core::CollectCollationInfo<Block>,
+        + cumulus_primitives_core::CollectCollationInfo<Block>
+        + AuraApi<Block, AuraId>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
@@ -661,13 +660,7 @@ where
         &Configuration,
         Option<TelemetryHandle>,
         &TaskManager,
-    ) -> Result<
-        sc_consensus::DefaultImportQueue<
-            Block,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
-        sc_service::Error,
-    >,
+    ) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>,
     BIC: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         ParachainBlockImport<
@@ -730,6 +723,7 @@ where
             spawn_handle: task_manager.spawn_handle(),
             import_queue: params.import_queue,
             relay_chain_interface: relay_chain_interface.clone(),
+            sybil_resistance_level: cumulus_client_service::CollatorSybilResistance::Resistant,
         })
         .await?;
 
@@ -851,10 +845,15 @@ where
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
+            let pending_consensus_data_provider = Box::new(
+                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
+            );
+
             crate::rpc::create_full(
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
+                pending_consensus_data_provider,
                 rpc_config.clone(),
             )
             .map_err(Into::into)
@@ -919,10 +918,10 @@ where
             recovery_handle: Box::new(overseer_handle),
             sync_service,
         };
-
+        #[allow(deprecated)]
         start_collator(params).await?;
     } else {
-        let params = StartFullNodeParams {
+        let params = StartRelayChainTasksParams {
             client: client.clone(),
             announce_block,
             task_manager: &mut task_manager,
@@ -932,9 +931,10 @@ where
             import_queue: import_queue_service,
             recovery_handle: Box::new(overseer_handle),
             sync_service,
+            da_recovery_profile: DARecoveryProfile::FullNode,
         };
 
-        start_full_node(params)?;
+        start_relay_chain_tasks(params)?;
     }
 
     start_network.start_network();
@@ -1106,6 +1106,7 @@ pub async fn start_astar_node(
 
             let relay_chain_for_aura = relay_chain_interface.clone();
 
+            #[allow(deprecated)]
             Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
                 _,
@@ -1350,6 +1351,7 @@ pub async fn start_shiden_node(
                     proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
                     proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
+                    #[allow(deprecated)]
                     AuraConsensus::build::<
                         sp_consensus_aura::sr25519::AuthorityPair,
                         _,
@@ -1699,6 +1701,7 @@ pub async fn start_shibuya_node(
             proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
             proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
+            #[allow(deprecated)]
             Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
                 _,
