@@ -359,6 +359,7 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
 pub struct ShidenTierSlots;
 impl TierSlotsFunc for ShidenTierSlots {
     fn number_of_slots(price: FixedU64) -> u16 {
+        // According to the forum proposal, the original formula's factor is reduced from 1000x to 100x.
         let result: u64 = price.saturating_mul_int(100_u64).saturating_add(50);
         result.unique_saturated_into()
     }
