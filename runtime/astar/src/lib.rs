@@ -138,7 +138,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 76,
+    spec_version: 81,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1072,7 +1072,7 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-pub type Migrations = ();
+pub type Migrations = (pallet_contracts::Migration<Runtime, true>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

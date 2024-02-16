@@ -171,7 +171,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 119,
+    spec_version: 123,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1366,20 +1366,7 @@ parameter_types! {
     pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
 }
 
-pub type Migrations = (
-    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
-    pallet_dapp_staking_v3::migrations::DappStakingV3TierRewardAsTree<Runtime>,
-    pallet_dapp_staking_v3::migrations::DappStakingV3HistoryCleanupMarkerReset<Runtime>,
-    pallet_inflation::PalletInflationShibuyaMigration<Runtime, NextEraProvider>,
-    frame_support::migrations::RemovePallet<
-        DappsStakingV2Name,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    frame_support::migrations::RemovePallet<
-        DappStakingMigrationName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-);
+pub type Migrations = (pallet_contracts::Migration<Runtime>,);
 
 pub struct NextEraProvider;
 impl Get<(EraNumber, Weight)> for NextEraProvider {
