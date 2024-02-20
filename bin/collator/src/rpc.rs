@@ -29,7 +29,9 @@ use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 use polkadot_primitives::PersistedValidationData;
-use sc_client_api::{AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider};
+use sc_client_api::{
+    AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
+};
 use sc_network::NetworkService;
 use sc_network_sync::SyncingService;
 use sc_rpc::dev::DevApiServer;
@@ -41,6 +43,7 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
+use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
 use sp_runtime::traits::BlakeTwo256;
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
@@ -221,6 +224,7 @@ pub fn create_full<C, P, BE, A>(
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + UsageProvider<Block>
         + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
@@ -234,7 +238,8 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
-        + BlockBuilder<Block>,
+        + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
@@ -261,6 +266,7 @@ fn create_full_rpc<C, P, BE, A>(
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
+        + UsageProvider<Block>
         + HeaderBackend<Block>
         + CallApiAt<Block>
         + AuxStore
@@ -275,7 +281,8 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
-        + BlockBuilder<Block>,
+        + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
@@ -310,8 +317,16 @@ where
 
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
+    let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
     let pending_create_inherent_data_providers = move |_, _| async move {
-        let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+        let current = sp_timestamp::InherentDataProvider::from_system_time();
+        let next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
+        let timestamp = sp_timestamp::InherentDataProvider::new(next_slot.into());
+        let slot =
+            sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                *timestamp,
+                slot_duration,
+            );
         // Create a dummy parachain inherent data provider which is required to pass
         // the checks by the para chain system. We use dummy values because in the 'pending context'
         // neither do we have access to the real values nor do we need them.
@@ -330,7 +345,7 @@ where
             downward_messages: Default::default(),
             horizontal_messages: Default::default(),
         };
-        Ok((timestamp, parachain_inherent_data))
+        Ok((slot, timestamp, parachain_inherent_data))
     };
 
     io.merge(
