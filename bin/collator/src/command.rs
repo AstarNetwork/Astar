@@ -41,7 +41,7 @@ use sc_service::{
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::Block as BlockT;
-use std::net::SocketAddr;
+use std::{io::Write, net::SocketAddr};
 
 #[cfg(feature = "runtime-benchmarks")]
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
@@ -456,37 +456,22 @@ pub fn run() -> Result<()> {
             }
         }
         Some(Subcommand::ExportGenesisState(cmd)) => {
-            let runner = cli.create_runner(cmd)?;
             let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+            let state_version = Cli::runtime_version(&spec).state_version();
 
-            if runner.config().chain_spec.is_astar() {
-                runner.sync_run(|config| {
-                    let PartialComponents { client, .. } =
-                        parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
-                            &config,
-                            parachain::build_import_queue,
-                        )?;
-                    cmd.run::<Block>(&*spec, &*client)
-                })
-            } else if runner.config().chain_spec.is_shiden() {
-                runner.sync_run(|config| {
-                    let PartialComponents { client, .. } =
-                        parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                            &config,
-                            parachain::build_import_queue,
-                        )?;
-                    cmd.run::<Block>(&*spec, &*client)
-                })
+            let block: Block = generate_genesis_block(&*spec, state_version)?;
+            let raw_header = block.header().encode();
+            let output_buf = if cmd.raw {
+                raw_header
             } else {
-                runner.sync_run(|config| {
-                    let PartialComponents { client, .. } =
-                        parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
-                            &config,
-                            parachain::build_import_queue,
-                        )?;
-                    cmd.run::<Block>(&*spec, &*client)
-                })
+                format!("0x{:?}", HexDisplay::from(&block.header().encode())).into_bytes()
+            };
+            if let Some(output) = &cmd.output {
+                std::fs::write(output, output_buf)?;
+            } else {
+                std::io::stdout().write_all(&output_buf)?;
             }
+            Ok(())
         }
         Some(Subcommand::ExportGenesisWasm(cmd)) => {
             let runner = cli.create_runner(cmd)?;
