@@ -719,6 +719,11 @@
 <a href="#719" id="719">719</a>
 <a href="#720" id="720">720</a>
 <a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
 </pre><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -1094,16 +1099,18 @@
         </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_ledger() -&gt; <span class="prelude-ty">Result</span>&lt;Weight, Weight&gt; {
             <span class="kw">match </span>OldLedger::&lt;T&gt;::drain().next() {
                 <span class="prelude-val">Some</span>((staker, old_account_ledger)) =&gt; {
-                    <span class="kw">let </span>locked = old_account_ledger.locked;
+                    <span class="kw">let </span>old_locked = old_account_ledger.locked;
 
                     <span class="comment">// Old unbonding amount can just be released, to keep things simple.
                     // Alternative is to re-calculate this into unlocking chunks.
-                    </span><span class="kw">let </span>_total_unbonding = old_account_ledger.unbonding_info.sum();
+                    </span><span class="kw">let </span>total_unbonding = old_account_ledger.unbonding_info.sum();
 
                     &lt;T <span class="kw">as </span>pallet_dapps_staking::Config&gt;::Currency::remove_lock(
                         pallet_dapps_staking::pallet::STAKING_ID,
                         <span class="kw-2">&amp;</span>staker,
                     );
+
+                    <span class="kw">let </span>locked = old_locked.saturating_sub(total_unbonding);
 
                     <span class="comment">// No point in attempting to lock the old amount into dApp staking v3 if amount is insufficient.
                     </span><span class="kw">if </span>locked &gt;= &lt;T <span class="kw">as </span>pallet_dapp_staking_v3::Config&gt;::MinimumLockedAmount::get() {
@@ -1308,8 +1315,11 @@
             <span class="kw">let </span>stakers: Vec&lt;<span class="kw">_</span>&gt; = pallet_dapps_staking::Ledger::&lt;T&gt;::iter()
                 .filter_map(|(staker, ledger)| {
                     total_locked.saturating_accrue(ledger.locked);
-                    <span class="kw">if </span>ledger.locked &gt;= min_lock_amount {
-                        <span class="prelude-val">Some</span>((staker, ledger.locked))
+                    total_locked.saturating_reduce(ledger.unbonding_info.sum());
+
+                    <span class="kw">let </span>new_lock_amount = ledger.locked.saturating_sub(ledger.unbonding_info.sum());
+                    <span class="kw">if </span>new_lock_amount &gt;= min_lock_amount {
+                        <span class="prelude-val">Some</span>((staker, new_lock_amount))
                     } <span class="kw">else </span>{
                         <span class="prelude-val">None
                     </span>}
@@ -1382,7 +1392,7 @@
 
             <span class="kw">for </span>(staker, old_locked) <span class="kw">in </span><span class="kw-2">&amp;</span>helper.stakers {
                 <span class="kw">let </span>new_locked = pallet_dapp_staking_v3::Ledger::&lt;T&gt;::get(<span class="kw-2">&amp;</span>staker).locked;
-                <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>old_locked, new_locked);
+                <span class="macro">assert!</span>(<span class="kw-2">*</span>old_locked &gt;= new_locked);
             }
 
             <span class="kw">let </span>total_locked = helper
