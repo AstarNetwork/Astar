@@ -35,11 +35,11 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
-    DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin, FungiblesAdapter, HashedDescription,
-    IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
-    WeightInfoBounds, WithComputedOrigin,
+    DescribeFamily, EnsureXcmOrigin, FungiblesAdapter, HashedDescription, IsConcrete, NoChecking,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+    WithComputedOrigin,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -48,8 +48,8 @@ use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
 use astar_primitives::xcm::{
-    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, FixedRateOfForeignAsset,
-    ReserveAssetFilter, XcmFungibleFeeHandler, MAX_ASSETS,
+    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, DescribeAllTerminal,
+    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler, MAX_ASSETS,
 };
 
 parameter_types! {

@@ -20,6 +20,7 @@
 
 use crate::cli::*;
 
+use astar_primitives::xcm::DescribeAllTerminal;
 use clap::Parser;
 use cumulus_primitives_core::ParaId;
 use polkadot_parachain::primitives::Sibling;
@@ -27,10 +28,7 @@ use polkadot_primitives::AccountId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
-use xcm_builder::{
-    DescribeAllTerminal, DescribeFamily, HashedDescription, ParentIsPreset,
-    SiblingParachainConvertsVia,
-};
+use xcm_builder::{DescribeFamily, HashedDescription, ParentIsPreset, SiblingParachainConvertsVia};
 use xcm_executor::traits::ConvertLocation;
 
 /// CLI error type.

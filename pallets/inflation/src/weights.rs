@@ -50,7 +50,6 @@ use core::marker::PhantomData;
 /// Weight functions needed for pallet_inflation.
 pub trait WeightInfo {
 	fn force_set_inflation_params() -> Weight;
-	fn force_set_inflation_config() -> Weight;
 	fn force_inflation_recalculation() -> Weight;
 	fn recalculation() -> Weight;
 	fn hooks_without_recalculation() -> Weight;
@@ -68,13 +67,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Minimum execution time: 9_487_000 picoseconds.
 		Weight::from_parts(9_652_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
-	fn force_set_inflation_config() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 9_168_000 picoseconds.
-		Weight::from_parts(9_436_000, 0)
 	}
 	/// Storage: Inflation InflationParams (r:1 w:0)
 	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)
@@ -120,13 +112,6 @@ impl WeightInfo for () {
 		// Minimum execution time: 9_487_000 picoseconds.
 		Weight::from_parts(9_652_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
-	}
-	fn force_set_inflation_config() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 9_168_000 picoseconds.
-		Weight::from_parts(9_436_000, 0)
 	}
 	/// Storage: Inflation InflationParams (r:1 w:0)
 	/// Proof: Inflation InflationParams (max_values: Some(1), max_size: Some(64), added: 559, mode: MaxEncodedLen)

@@ -17,8 +17,8 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    self as pallet_inflation, ActiveInflationConfig, CycleConfiguration, InflationConfiguration,
-    InflationParameters, InflationParams, NegativeImbalanceOf, PayoutPerBlock,
+    self as pallet_inflation, ActiveInflationConfig, CycleConfiguration, InflationParameters,
+    InflationParams, NegativeImbalanceOf, PayoutPerBlock,
 };
 
 use frame_support::{
@@ -47,19 +47,6 @@ pub const INIT_PARAMS: InflationParameters = InflationParameters {
     base_stakers_part: Perquintill::from_percent(25),
     adjustable_stakers_part: Perquintill::from_percent(35),
     bonus_part: Perquintill::from_percent(12),
-    ideal_staking_rate: Perquintill::from_percent(50),
-};
-
-/// Initial inflation config set by the mock.
-pub const INIT_CONFIG: InflationConfiguration = InflationConfiguration {
-    recalculation_era: 100,
-    issuance_safety_cap: 1_000_000,
-    collator_reward_per_block: 1000,
-    treasury_reward_per_block: 1500,
-    dapp_reward_pool_per_era: 3000,
-    base_staker_reward_pool_per_era: 5000,
-    adjustable_staker_reward_pool_per_era: 7000,
-    bonus_reward_pool_per_period: 4000,
     ideal_staking_rate: Perquintill::from_percent(50),
 };
 
@@ -169,9 +156,10 @@ impl ExternalityBuilder {
             .build_storage()
             .unwrap();
 
+        let unit = 1_000_000_000_000_000_000;
         // This will cause some initial issuance
         pallet_balances::GenesisConfig::<Test> {
-            balances: vec![(1, 9000), (2, 800), (3, 10000)],
+            balances: vec![(1, 9 * unit), (2, 7 * unit), (3, 5 * unit)],
         }
         .assimilate_storage(&mut storage)
         .ok();
@@ -179,8 +167,9 @@ impl ExternalityBuilder {
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| {
             // Set initial pallet inflation values
-            ActiveInflationConfig::<Test>::put(INIT_CONFIG);
             InflationParams::<Test>::put(INIT_PARAMS);
+            let config = Inflation::recalculate_inflation(1);
+            ActiveInflationConfig::<Test>::put(config);
 
             System::set_block_number(1);
             Inflation::on_initialize(1);

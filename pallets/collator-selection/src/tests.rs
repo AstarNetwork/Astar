@@ -215,6 +215,16 @@ fn cannot_register_as_candidate_if_poor() {
 }
 
 #[test]
+fn cannot_register_candidate_if_externally_blacklisted() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            CollatorSelection::register_as_candidate(RuntimeOrigin::signed(BLACKLISTED_ACCOUNT)),
+            Error::<Test>::NotAllowedCandidate,
+        );
+    })
+}
+
+#[test]
 fn register_as_candidate_works() {
     new_test_ext().execute_with(|| {
         // given

@@ -24,7 +24,7 @@ use frame_support::{
     weights::Weight,
     PalletId,
 };
-use sp_core::{H160, H256};
+use sp_core::{ConstU128, H160, H256};
 
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_io::TestExternalities;
@@ -160,6 +160,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<REWARD_RETENTION_PERIOD>;
     type ForcePalletDisabled = ConstBool<false>;
+    type DelegateClaimFee = ConstU128<7>;
 }
 
 #[derive(

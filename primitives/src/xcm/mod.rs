@@ -36,8 +36,9 @@ use frame_support::{
     traits::{tokens::fungibles, ContainsPair, Get},
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
+use parity_scale_codec::Encode;
 use sp_runtime::traits::{Bounded, Convert, MaybeEquivalence, Zero};
-use sp_std::marker::PhantomData;
+use sp_std::{marker::PhantomData, vec::Vec};
 
 // Polkadot imports
 use xcm::latest::{prelude::*, Weight};
@@ -295,3 +296,23 @@ impl<AbsoluteLocation: Get<MultiLocation>> Reserve
         })
     }
 }
+
+// TODO: remove this after uplift to v1.1.3 or above and use directly from xcm-builder
+
+pub struct DescribeBodyTerminal;
+impl xcm_builder::DescribeLocation for DescribeBodyTerminal {
+    fn describe_location(l: &MultiLocation) -> Option<Vec<u8>> {
+        match (l.parents, &l.interior) {
+            (0, X1(Plurality { id, part })) => Some((b"Body", id, part).encode()),
+            _ => return None,
+        }
+    }
+}
+
+pub type DescribeAllTerminal = (
+    xcm_builder::DescribeTerminus,
+    xcm_builder::DescribePalletTerminal,
+    xcm_builder::DescribeAccountId32Terminal,
+    xcm_builder::DescribeAccountKey20Terminal,
+    DescribeBodyTerminal,
+);

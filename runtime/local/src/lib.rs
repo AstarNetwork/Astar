@@ -483,6 +483,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<3>;
     type ForcePalletDisabled = ConstBool<false>; // This will be set to `true` when needed
+    type DelegateClaimFee = ConstU128<1>;
 }
 
 impl pallet_static_price_provider::Config for Runtime {
@@ -516,6 +517,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
+    type AccountCheck = ();
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<100>;

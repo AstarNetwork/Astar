@@ -28,7 +28,9 @@ pub use sp_core::{H160, H256, U256};
 pub use sp_io::hashing::keccak_256;
 pub use sp_runtime::{AccountId32, MultiAddress};
 
-pub use astar_primitives::{evm::UnifiedAddressMapper, BlockNumber};
+pub use astar_primitives::{
+    dapp_staking::CycleConfiguration, evm::UnifiedAddressMapper, BlockNumber,
+};
 
 #[cfg(feature = "shibuya")]
 pub use shibuya::*;
@@ -191,7 +193,6 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
-        #[cfg(any(feature = "shibuya"))]
         // Needed to trigger initial inflation config setting.
         <pallet_inflation::GenesisConfig<Runtime> as BuildStorage>::assimilate_storage(
             &pallet_inflation::GenesisConfig::default(),
@@ -200,7 +201,25 @@ impl ExtBuilder {
         .unwrap();
 
         let mut ext = sp_io::TestExternalities::new(t);
-        ext.execute_with(|| System::set_block_number(1));
+        ext.execute_with(|| {
+            System::set_block_number(1);
+
+            let era_length = <Runtime as pallet_dapp_staking_v3::Config>::CycleConfiguration::blocks_per_era();
+            let voting_period_length_in_eras =
+            <Runtime as pallet_dapp_staking_v3::Config>::CycleConfiguration::eras_per_voting_subperiod();
+
+            pallet_dapp_staking_v3::ActiveProtocolState::<Runtime>::put(pallet_dapp_staking_v3::ProtocolState {
+                era: 1,
+                next_era_start: era_length.saturating_mul(voting_period_length_in_eras.into()) + 1,
+                period_info: pallet_dapp_staking_v3::PeriodInfo {
+                    number: 1,
+                    subperiod: pallet_dapp_staking_v3::Subperiod::Voting,
+                    next_subperiod_start_era: 2,
+                },
+                maintenance: false,
+            });
+            pallet_dapp_staking_v3::Safeguard::<Runtime>::put(false);
+        });
         ext
     }
 }
@@ -222,33 +241,27 @@ pub fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
         let block_number = System::block_number();
         TransactionPayment::on_finalize(block_number);
-        #[cfg(any(feature = "shibuya"))]
         DappStaking::on_finalize(block_number);
-        #[cfg(any(feature = "astar", feature = "shiden"))]
-        DappsStaking::on_finalize(block_number);
         Authorship::on_finalize(block_number);
         Session::on_finalize(block_number);
         AuraExt::on_finalize(block_number);
         PolkadotXcm::on_finalize(block_number);
         Ethereum::on_finalize(block_number);
+        CollatorSelection::on_finalize(block_number);
         DynamicEvmBaseFee::on_finalize(block_number);
-        #[cfg(any(feature = "shibuya"))]
         Inflation::on_finalize(block_number);
 
         System::set_block_number(block_number + 1);
         let block_number = System::block_number();
 
-        #[cfg(any(feature = "shibuya"))]
         Inflation::on_initialize(block_number);
         Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
         TransactionPayment::on_initialize(block_number);
-        #[cfg(any(feature = "shibuya"))]
         DappStaking::on_initialize(block_number);
-        #[cfg(any(feature = "astar", feature = "shiden"))]
-        DappsStaking::on_initialize(block_number);
         Authorship::on_initialize(block_number);
         Aura::on_initialize(block_number);
         AuraExt::on_initialize(block_number);
+        CollatorSelection::on_initialize(block_number);
         Ethereum::on_initialize(block_number);
         DynamicEvmBaseFee::on_initialize(block_number);
         #[cfg(any(feature = "shibuya", feature = "shiden"))]

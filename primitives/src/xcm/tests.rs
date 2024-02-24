@@ -17,9 +17,10 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use crate::xcm::DescribeAllTerminal;
 use frame_support::assert_ok;
 use sp_runtime::traits::{MaybeEquivalence, Zero};
-use xcm_builder::{DescribeAllTerminal, DescribeFamily, HashedDescription};
+use xcm_builder::{DescribeFamily, HashedDescription};
 use xcm_executor::traits::ConvertLocation;
 
 type AssetId = u128;
