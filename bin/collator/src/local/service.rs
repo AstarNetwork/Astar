@@ -35,6 +35,8 @@ pub use local_runtime::RuntimeApi;
 
 use astar_primitives::*;
 
+/// The minimum period of blocks on which justifications will be
+/// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
 /// Extra host functions

@@ -92,7 +92,6 @@ orml-xtokens = { workspace = true }
 array-bytes = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-system-benchmarking = { workspace = true, optional = true }
-pallet-collective = { workspace = true, optional = true }
 
 # try-runtime
 frame-try-runtime = { workspace = true, optional = true }
@@ -174,7 +173,6 @@ std = [
 	"pallet-sudo/std",
 	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
-	'pallet-collective/std',
 	"pallet-xcm/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
@@ -213,7 +211,6 @@ runtime-benchmarks = [
 	'pallet-balances/runtime-benchmarks',
 	"pallet-proxy/runtime-benchmarks",
 	'pallet-timestamp/runtime-benchmarks',
-	'pallet-collective/runtime-benchmarks',
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-dapps-staking/runtime-benchmarks",
 	"pallet-block-rewards-hybrid/runtime-benchmarks",

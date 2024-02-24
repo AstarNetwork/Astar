@@ -382,16 +382,15 @@ impl parachain_info::Config for Runtime {}
 
 parameter_types! {
     pub const MaxAuthorities: u32 = 250;
-    // Should be only enabled (`true`) when async backing is enabled
-    // otherwise set to `false`
-    pub const AllowMultipleBlocksPerSlot: bool = false;
 }
 
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = MaxAuthorities;
-    type AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
+    // Should be only enabled (`true`) when async backing is enabled
+    // otherwise set to `false`
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -1072,7 +1071,7 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-pub type Migrations = (pallet_contracts::Migration<Runtime, true>,);
+pub type Migrations = (pallet_contracts::Migration<Runtime, false>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
