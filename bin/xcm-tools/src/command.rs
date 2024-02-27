@@ -27,11 +27,9 @@ use polkadot_primitives::AccountId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
-use xcm_builder::{
-    DescribeAllTerminal, DescribeFamily, HashedDescription, ParentIsPreset,
-    SiblingParachainConvertsVia,
-};
+use xcm_builder::{DescribeFamily, HashedDescription, ParentIsPreset, SiblingParachainConvertsVia};
 use xcm_executor::traits::ConvertLocation;
+use astar_primitives::xcm::DescribeAllTerminal;
 
 /// CLI error type.
 pub type Error = String;

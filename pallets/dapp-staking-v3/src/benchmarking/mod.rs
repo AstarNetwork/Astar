@@ -155,7 +155,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn lock() {
+    fn lock_new_account() {
         initial_config::<T>();
 
         let staker: T::AccountId = whitelisted_caller();
@@ -171,12 +171,45 @@ mod benchmarks {
         T::BenchmarkHelper::set_balance(&staker, amount);
 
         #[extrinsic_call]
-        _(RawOrigin::Signed(staker.clone()), amount);
+        lock(RawOrigin::Signed(staker.clone()), amount);
 
         assert_last_event::<T>(
             Event::<T>::Locked {
                 account: staker,
                 amount,
+            }
+            .into(),
+        );
+    }
+
+    #[benchmark]
+    fn lock_existing_account() {
+        initial_config::<T>();
+
+        let staker: T::AccountId = whitelisted_caller();
+        let owner: T::AccountId = account("dapp_owner", 0, SEED);
+        let smart_contract = T::BenchmarkHelper::get_smart_contract(1);
+        assert_ok!(DappStaking::<T>::register(
+            RawOrigin::Root.into(),
+            owner.clone().into(),
+            smart_contract.clone(),
+        ));
+
+        let amount_1 = T::MinimumLockedAmount::get();
+        let amount_2 = 19;
+        T::BenchmarkHelper::set_balance(&staker, amount_1 + amount_2);
+        assert_ok!(DappStaking::<T>::lock(
+            RawOrigin::Signed(staker.clone()).into(),
+            amount_1,
+        ));
+
+        #[extrinsic_call]
+        lock(RawOrigin::Signed(staker.clone()), amount_2);
+
+        assert_last_event::<T>(
+            Event::<T>::Locked {
+                account: staker,
+                amount: amount_2,
             }
             .into(),
         );
@@ -216,6 +249,8 @@ mod benchmarks {
 
     #[benchmark]
     fn claim_unlocked(x: Linear<0, { T::MaxNumberOfStakedContracts::get() }>) {
+        initial_config::<T>();
+
         // Prepare staker account and lock some amount
         let staker: T::AccountId = whitelisted_caller();
         let amount = (T::MinimumStakeAmount::get() + 1)
@@ -430,7 +465,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn claim_staker_rewards_past_period(x: Linear<1, { T::EraRewardSpanLength::get() }>) {
+    fn claim_staker_rewards_past_period(x: Linear<1, { max_claim_size_past_period::<T>() }>) {
         initial_config::<T>();
 
         // Prepare staker & register smart contract
@@ -456,15 +491,16 @@ mod benchmarks {
             amount
         ));
 
-        // Advance to era just after the last era covered by the first span
-        force_advance_to_era::<T>(T::EraRewardSpanLength::get());
+        // Hacky era advancement to ensure we have the exact number of eras to claim, but are already in the next period.
+        force_advance_to_era::<T>(max_claim_size_past_period::<T>() - 1);
+        force_advance_to_next_period::<T>();
 
-        // Hack - modify staker's stake so it seems as if stake was valid from the 'first stake era'/
+        // Hack - modify staker's stake so it seems as if stake was valid from the 'first stake era'.
         // Also fill up the reward span.
         //
         // This allows us to easily control how many rewards are claimed, without having to advance large amount of blocks/eras/periods
         // to find an appropriate scenario.
-        let first_stake_era = T::EraRewardSpanLength::get() - x;
+        let first_stake_era = max_claim_size_past_period::<T>() - x;
         Ledger::<T>::mutate(&staker, |ledger| {
             ledger.staked = ledger.staked_future.unwrap();
             ledger.staked_future = None;
@@ -485,9 +521,6 @@ mod benchmarks {
         }
         EraRewards::<T>::insert(&0, reward_span);
 
-        // This ensures we claim from the past period.
-        force_advance_to_next_period::<T>();
-
         // For testing purposes
         System::<T>::reset_events();
 
@@ -503,7 +536,7 @@ mod benchmarks {
     }
 
     #[benchmark]
-    fn claim_staker_rewards_ongoing_period(x: Linear<1, { T::EraRewardSpanLength::get() }>) {
+    fn claim_staker_rewards_ongoing_period(x: Linear<1, { max_claim_size_ongoing_period::<T>() }>) {
         initial_config::<T>();
 
         // Prepare staker & register smart contract
@@ -529,16 +562,20 @@ mod benchmarks {
             amount
         ));
 
-        // Advance to era just after the last era covered by the first span
-        // This means we'll be able to claim all of the rewards from the previous span.
-        force_advance_to_era::<T>(T::EraRewardSpanLength::get());
+        // Advance to era at the end of the first period or first span.
+        force_advance_to_era::<T>(max_claim_size_ongoing_period::<T>());
+        assert_eq!(
+            ActiveProtocolState::<T>::get().period_number(),
+            1,
+            "Sanity check, we must still be in the first period."
+        );
 
         // Hack - modify staker's stake so it seems as if stake was valid from the 'first stake era'/
         // Also fill up the reward span.
         //
         // This allows us to easily control how many rewards are claimed, without having to advance large amount of blocks/eras/periods
         // to find an appropriate scenario.
-        let first_stake_era = T::EraRewardSpanLength::get() - x;
+        let first_stake_era = max_claim_size_ongoing_period::<T>() - x;
         Ledger::<T>::mutate(&staker, |ledger| {
             ledger.staked = ledger.staked_future.unwrap();
             ledger.staked_future = None;

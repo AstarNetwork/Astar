@@ -21,14 +21,15 @@
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shiden_runtime::{
-    wasm_binary_unwrap, AccountId, AuraId, Balance, BlockRewardConfig, EVMConfig,
-    ParachainInfoConfig, Precompiles, RewardDistributionConfig, Signature, SystemConfig, SDN,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, DappStakingConfig, EVMConfig, InflationConfig,
+    InflationParameters, ParachainInfoConfig, Precompiles, Signature, SystemConfig, TierThreshold,
+    SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
-    Perbill,
+    Permill,
 };
 
 use super::{get_from_seed, Extensions};
@@ -116,18 +117,6 @@ fn make_genesis(
             ..Default::default()
         },
         balances: shiden_runtime::BalancesConfig { balances },
-        block_reward: BlockRewardConfig {
-            // Make sure sum is 100
-            reward_config: RewardDistributionConfig {
-                treasury_percent: Perbill::from_percent(40),
-                base_staker_percent: Perbill::from_percent(25),
-                dapps_percent: Perbill::from_percent(25),
-                collators_percent: Perbill::from_percent(10),
-                adjustable_percent: Perbill::from_percent(0),
-                ideal_dapps_staking_tvl: Perbill::from_percent(0),
-            },
-            ..Default::default()
-        },
         vesting: shiden_runtime::VestingConfig { vesting: vec![] },
         session: shiden_runtime::SessionConfig {
             keys: authorities
@@ -167,6 +156,41 @@ fn make_genesis(
         assets: Default::default(),
         parachain_system: Default::default(),
         transaction_payment: Default::default(),
+        dapp_staking: DappStakingConfig {
+            reward_portion: vec![
+                Permill::from_percent(40),
+                Permill::from_percent(30),
+                Permill::from_percent(20),
+                Permill::from_percent(10),
+            ],
+            slot_distribution: vec![
+                Permill::from_percent(10),
+                Permill::from_percent(20),
+                Permill::from_percent(30),
+                Permill::from_percent(40),
+            ],
+            tier_thresholds: vec![
+                TierThreshold::DynamicTvlAmount {
+                    amount: 30000 * SDN,
+                    minimum_amount: 20000 * SDN,
+                },
+                TierThreshold::DynamicTvlAmount {
+                    amount: 7500 * SDN,
+                    minimum_amount: 5000 * SDN,
+                },
+                TierThreshold::DynamicTvlAmount {
+                    amount: 20000 * SDN,
+                    minimum_amount: 15000 * SDN,
+                },
+                TierThreshold::FixedTvlAmount { amount: 5000 * SDN },
+            ],
+            slots_per_tier: vec![10, 20, 30, 40],
+            ..Default::default()
+        },
+        inflation: InflationConfig {
+            params: InflationParameters::default(),
+            ..Default::default()
+        },
     }
 }
 

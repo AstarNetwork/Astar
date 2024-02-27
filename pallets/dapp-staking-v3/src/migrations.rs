@@ -17,9 +17,10 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use sp_arithmetic::fixed_point::FixedU64;
 
 /// `OnRuntimeUpgrade` logic used to set & configure init dApp staking v3 storage items.
-pub struct DAppStakingV3InitConfig<T, G>(PhantomData<(T, G)>);
+pub struct DAppStakingV3InitConfig<T, G, P>(PhantomData<(T, G, P)>);
 impl<
         T: Config,
         G: Get<(
@@ -27,7 +28,8 @@ impl<
             TierParameters<T::NumberOfTiers>,
             TiersConfiguration<T::NumberOfTiers>,
         )>,
-    > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G>
+        P: Get<FixedU64>,
+    > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G, P>
 where
     BlockNumberFor<T>: IsType<BlockNumber>,
 {
@@ -37,7 +39,7 @@ where
         }
 
         // 0. Unwrap arguments
-        let (init_era, tier_params, init_tier_config) = G::get();
+        let (init_era, tier_params, base_tier_config) = G::get();
 
         // 1. Prepare init active protocol state
         let now = frame_system::Pallet::<T>::block_number();
@@ -72,6 +74,9 @@ where
                 period: period_number,
             },
         };
+
+        let average_price = P::get();
+        let init_tier_config = base_tier_config.calculate_new(average_price, &tier_params);
 
         // 3. Write necessary items into storage
         ActiveProtocolState::<T>::put(protocol_state);
@@ -120,101 +125,5 @@ where
         );
 
         Ok(())
-    }
-}
-
-/// Legacy struct type
-/// Should be deleted after the migration
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-struct OldDAppTier {
-    #[codec(compact)]
-    pub dapp_id: DAppId,
-    pub tier_id: Option<TierId>,
-}
-
-/// Information about all of the dApps that got into tiers, and tier rewards
-#[derive(
-    Encode,
-    Decode,
-    MaxEncodedLen,
-    RuntimeDebugNoBound,
-    PartialEqNoBound,
-    EqNoBound,
-    CloneNoBound,
-    TypeInfo,
-)]
-#[scale_info(skip_type_params(MD, NT))]
-struct OldDAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
-    /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-    pub dapps: BoundedVec<OldDAppTier, MD>,
-    /// Rewards for each tier. First entry refers to the first tier, and so on.
-    pub rewards: BoundedVec<Balance, NT>,
-    /// Period during which this struct was created.
-    #[codec(compact)]
-    pub period: PeriodNumber,
-}
-
-impl<MD: Get<u32>, NT: Get<u32>> Default for OldDAppTierRewards<MD, NT> {
-    fn default() -> Self {
-        Self {
-            dapps: BoundedVec::default(),
-            rewards: BoundedVec::default(),
-            period: 0,
-        }
-    }
-}
-
-// Legacy convenience type for `DAppTierRewards` usage.
-type OldDAppTierRewardsFor<T> =
-    OldDAppTierRewards<<T as Config>::MaxNumberOfContracts, <T as Config>::NumberOfTiers>;
-
-/// `OnRuntimeUpgrade` logic used to migrate DApp tiers storage item to BTreeMap.
-pub struct DappStakingV3TierRewardAsTree<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for DappStakingV3TierRewardAsTree<T>
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
-    fn on_runtime_upgrade() -> Weight {
-        let mut counter = 0;
-        let mut translate = |pre: OldDAppTierRewardsFor<T>| -> DAppTierRewardsFor<T> {
-            let mut dapps_tree = BTreeMap::new();
-            for dapp_tier in &pre.dapps {
-                if let Some(tier_id) = dapp_tier.tier_id {
-                    dapps_tree.insert(dapp_tier.dapp_id, tier_id);
-                }
-            }
-
-            let result = DAppTierRewardsFor::<T>::new(dapps_tree, pre.rewards.to_vec(), pre.period);
-            if result.is_err() {
-                // Tests should ensure this never happens...
-                log::error!("Failed to migrate dApp tier rewards: {:?}", pre);
-            }
-
-            // For weight calculation purposes
-            counter.saturating_inc();
-
-            // ...if it does happen, there's not much to do except create an empty map
-            result.unwrap_or(
-                DAppTierRewardsFor::<T>::new(BTreeMap::new(), pre.rewards.to_vec(), pre.period)
-                    .unwrap_or_default(),
-            )
-        };
-
-        DAppTiers::<T>::translate(|_key, value: OldDAppTierRewardsFor<T>| Some(translate(value)));
-
-        T::DbWeight::get().reads_writes(counter, counter)
-    }
-}
-
-/// We just set it to default value (all zeros) and let the pallet itself do the history cleanup.
-/// Only needed for Shibuya, can be removed later.
-pub struct DappStakingV3HistoryCleanupMarkerReset<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for DappStakingV3HistoryCleanupMarkerReset<T>
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
-    fn on_runtime_upgrade() -> Weight {
-        HistoryCleanupMarker::<T>::put(CleanupMarker::default());
-        T::DbWeight::get().writes(1)
     }
 }

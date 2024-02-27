@@ -29,7 +29,7 @@ use sp_core::{H160, H256};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_io::TestExternalities;
 use sp_runtime::{
-    traits::{BlakeTwo256, ConstBool, ConstU32, IdentityLookup},
+    traits::{BlakeTwo256, ConstBool, ConstU128, ConstU32, IdentityLookup},
     BuildStorage,
 };
 
@@ -160,6 +160,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type MaxEraStakeValues = MaxEraStakeValues;
     type UnregisteredDappRewardRetention = ConstU32<REWARD_RETENTION_PERIOD>;
     type ForcePalletDisabled = ConstBool<false>;
+    type DelegateClaimFee = ConstU128<7>;
 }
 
 #[derive(

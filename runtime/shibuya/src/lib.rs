@@ -53,7 +53,6 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -68,7 +67,10 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
+    dapp_staking::{
+        AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
+        PeriodNumber, SmartContract, TierId,
+    },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
@@ -403,6 +405,13 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
     }
 }
 
+pub struct AccountCheck;
+impl DappStakingAccountCheck<AccountId> for AccountCheck {
+    fn allowed_to_stake(account: &AccountId) -> bool {
+        !CollatorSelection::is_account_candidate(account)
+    }
+}
+
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 5 * SBY;
 }
@@ -417,12 +426,13 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
+    type AccountCheck = AccountCheck;
     type EraRewardSpanLength = ConstU32<16>;
-    type RewardRetentionInPeriods = ConstU32<2>; // Low enough value so we can get some expired rewards during testing
+    type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<500>;
     type MaxUnlockingChunks = ConstU32<8>;
     type MinimumLockedAmount = MinimumStakingAmount;
-    type UnlockingPeriod = ConstU32<4>; // Keep it low so it's easier to test
+    type UnlockingPeriod = ConstU32<4>;
     type MaxNumberOfStakedContracts = ConstU32<8>;
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
@@ -543,6 +553,13 @@ parameter_types! {
     pub const KickThreshold: BlockNumber = 2 * HOURS; // 2 SessionPeriod
 }
 
+pub struct CollatorSelectionAccountCheck;
+impl pallet_collator_selection::AccountCheck<AccountId> for CollatorSelectionAccountCheck {
+    fn allowed_candidacy(account: &AccountId) -> bool {
+        !DappStaking::is_staker(account)
+    }
+}
+
 impl pallet_collator_selection::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
@@ -557,6 +574,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type SlashRatio = SlashRatio;
+    type AccountCheck = CollatorSelectionAccountCheck;
     type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1354,67 +1372,7 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub struct InitActivePriceGet;
-impl Get<FixedU64> for InitActivePriceGet {
-    fn get() -> FixedU64 {
-        FixedU64::from_rational(1, 10)
-    }
-}
-
-parameter_types! {
-    pub const DappsStakingV2Name: &'static str = "DappsStaking";
-    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
-}
-
 pub type Migrations = (pallet_contracts::Migration<Runtime>,);
-
-pub struct NextEraProvider;
-impl Get<(EraNumber, Weight)> for NextEraProvider {
-    fn get() -> (EraNumber, Weight) {
-        // Prior to executing the migration, `recalculation_era` is still set to the old `recalculation_block`
-        let target_block =
-            pallet_inflation::ActiveInflationConfig::<Runtime>::get().recalculation_era;
-
-        let state = pallet_dapp_staking_v3::ActiveProtocolState::<Runtime>::get();
-
-        // Best case scenario, the target era is the first era of the next period.
-        use pallet_dapp_staking_v3::Subperiod;
-        let mut target_era = match state.subperiod() {
-            Subperiod::Voting => state.era.saturating_add(
-                InflationCycleConfig::eras_per_build_and_earn_subperiod().saturating_add(1),
-            ),
-            Subperiod::BuildAndEarn => state.next_subperiod_start_era(),
-        };
-
-        // Adding the whole period length in blocks to the current block number, and comparing it with the target
-        // is good enough to find the target era.
-        let period_length_in_blocks = InflationCycleConfig::blocks_per_cycle()
-            / InflationCycleConfig::periods_per_cycle().max(1);
-        let mut block = System::block_number().saturating_add(period_length_in_blocks);
-
-        // Max number of iterations is the number of periods per cycle, it's not possible for more than that to occur.
-        let mut limit = InflationCycleConfig::periods_per_cycle();
-
-        use sp_runtime::traits::Saturating;
-        while block < target_block && limit > 0 {
-            target_era.saturating_accrue(InflationCycleConfig::eras_per_period());
-            block.saturating_accrue(period_length_in_blocks);
-
-            limit.saturating_dec()
-        }
-
-        #[cfg(feature = "try-runtime")]
-        if block < target_block {
-            panic!("Failed to find target era for migration, please check for errors");
-        }
-
-        // A bit overestimated weight, but it's fine since we have some calculations to execute in this function which consume some time.
-        (
-            target_era,
-            <Runtime as frame_system::Config>::DbWeight::get().reads(3),
-        )
-    }
-}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

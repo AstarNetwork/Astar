@@ -52,8 +52,8 @@ pub use sp_std::vec::Vec;
 
 use astar_primitives::{
     dapp_staking::{
-        CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver, PeriodNumber,
-        SmartContractHandle, StakingRewardHandler, TierId,
+        AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
+        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -146,6 +146,9 @@ pub mod pallet {
 
         /// dApp staking event observers, notified when certain events occur.
         type Observers: DAppStakingObserver;
+
+        /// Used to check whether an account is allowed to participate in dApp staking.
+        type AccountCheck: AccountCheck<Self::AccountId>;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -309,12 +312,12 @@ pub mod pallet {
         ContractNotFound,
         /// Call origin is not dApp owner.
         OriginNotOwner,
-        /// dApp is part of dApp staking but isn't active anymore.
-        NotOperatedDApp,
         /// Performing locking or staking with 0 amount.
         ZeroAmount,
         /// Total locked amount for staker is below minimum threshold.
         LockedAmountBelowThreshold,
+        /// Account is not allowed to participate in dApp staking due to some external reason (e.g. account is already a collator).
+        AccountNotAvailableForDappStaking,
         /// Cannot add additional unlocking chunks due to capacity limit.
         TooManyUnlockingChunks,
         /// Remaining stake prevents entire balance of starting the unlocking process.
@@ -366,9 +369,8 @@ pub mod pallet {
         TooManyStakedContracts,
         /// There are no expired entries to cleanup for the account.
         NoExpiredEntries,
-        // TODO: remove this prior to the launch
-        /// Tier parameters aren't valid.
-        InvalidTierParameters,
+        /// Force call is not allowed in production.
+        ForceNotAllowed,
     }
 
     /// General information about dApp staking protocol state.
@@ -460,6 +462,21 @@ pub mod pallet {
     /// History cleanup marker - holds information about which DB entries should be cleaned up next, when applicable.
     #[pallet::storage]
     pub type HistoryCleanupMarker<T: Config> = StorageValue<_, CleanupMarker, ValueQuery>;
+
+    #[pallet::type_value]
+    pub fn DefaultSafeguard<T: Config>() -> bool
+    where
+        BlockNumberFor<T>: IsType<BlockNumber>,
+    {
+        // In production, safeguard is enabled by default.
+        true
+    }
+
+    /// Safeguard to prevent unwanted operations in production.
+    /// Kept as a storage without extrinsic setter, so we can still enable it for some
+    /// chain-fork debugging if required.
+    #[pallet::storage]
+    pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
 
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
@@ -653,7 +670,6 @@ pub mod pallet {
                 DAppInfo {
                     owner: owner.clone(),
                     id: dapp_id,
-                    state: DAppState::Registered,
                     reward_beneficiary: None,
                 },
             );
@@ -762,18 +778,13 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
 
-            let current_era = ActiveProtocolState::<T>::get().era;
-
-            let mut dapp_info =
+            let dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
-            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
-
             ContractStake::<T>::remove(&dapp_info.id);
+            IntegratedDApps::<T>::remove(&smart_contract);
 
-            dapp_info.state = DAppState::Unregistered(current_era);
-            IntegratedDApps::<T>::insert(&smart_contract, dapp_info);
-
+            let current_era = ActiveProtocolState::<T>::get().era;
             Self::deposit_event(Event::<T>::DAppUnregistered {
                 smart_contract,
                 era: current_era,
@@ -789,16 +800,30 @@ pub mod pallet {
         ///
         /// Locked amount can immediately be used for staking.
         #[pallet::call_index(7)]
-        #[pallet::weight(T::WeightInfo::lock())]
-        pub fn lock(origin: OriginFor<T>, #[pallet::compact] amount: Balance) -> DispatchResult {
+        #[pallet::weight(T::WeightInfo::lock_new_account().max(T::WeightInfo::lock_existing_account()))]
+        pub fn lock(
+            origin: OriginFor<T>,
+            #[pallet::compact] amount: Balance,
+        ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
             let mut ledger = Ledger::<T>::get(&account);
 
+            // Only do the check for new accounts.
+            // External logic should ensure that accounts which are already participating in dApp staking aren't
+            // allowed to participate elsewhere where they shouldn't.
+            let is_new_account = ledger.is_empty();
+            if is_new_account {
+                ensure!(
+                    T::AccountCheck::allowed_to_stake(&account),
+                    Error::<T>::AccountNotAvailableForDappStaking
+                );
+            }
+
             // Calculate & check amount available for locking
             let available_balance =
-                T::Currency::balance(&account).saturating_sub(ledger.active_locked_amount());
+                T::Currency::total_balance(&account).saturating_sub(ledger.active_locked_amount());
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 
@@ -819,7 +844,12 @@ pub mod pallet {
                 amount: amount_to_lock,
             });
 
-            Ok(())
+            Ok(Some(if is_new_account {
+                T::WeightInfo::lock_new_account()
+            } else {
+                T::WeightInfo::lock_existing_account()
+            })
+            .into())
         }
 
         /// Attempts to start the unlocking process for the specified amount.
@@ -960,8 +990,7 @@ pub mod pallet {
             ensure!(amount > 0, Error::<T>::ZeroAmount);
 
             let dapp_info =
-                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
-            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_era = protocol_state.era;
@@ -1087,8 +1116,7 @@ pub mod pallet {
             ensure!(amount > 0, Error::<T>::ZeroAmount);
 
             let dapp_info =
-                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::NotOperatedDApp)?;
-            ensure!(dapp_info.is_registered(), Error::<T>::NotOperatedDApp);
+                IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
 
             let protocol_state = ActiveProtocolState::<T>::get();
             let current_era = protocol_state.era;
@@ -1175,7 +1203,7 @@ pub mod pallet {
         }
 
         /// Claims some staker rewards, if user has any.
-        /// In the case of a successfull call, at least one era will be claimed, with the possibility of multiple claims happening.
+        /// In the case of a successful call, at least one era will be claimed, with the possibility of multiple claims happening.
         #[pallet::call_index(13)]
         #[pallet::weight({
             let max_span_length = T::EraRewardSpanLength::get();
@@ -1400,7 +1428,7 @@ pub mod pallet {
             let account = ensure_signed(origin)?;
 
             ensure!(
-                !Self::is_registered(&smart_contract),
+                !IntegratedDApps::<T>::contains_key(&smart_contract),
                 Error::<T>::ContractStillActive
             );
 
@@ -1512,7 +1540,6 @@ pub mod pallet {
             .into())
         }
 
-        // TODO: make this unavailable in production, to be only used for testing
         /// Used to force a change of era or subperiod.
         /// The effect isn't immediate but will happen on the next block.
         ///
@@ -1525,6 +1552,8 @@ pub mod pallet {
         pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
             T::ManagerOrigin::ensure_origin(origin)?;
+
+            ensure!(!Safeguard::<T>::get(), Error::<T>::ForceNotAllowed);
 
             // Ensure a 'change' happens on the next block
             ActiveProtocolState::<T>::mutate(|state| {
@@ -1549,43 +1578,17 @@ pub mod pallet {
 
             Ok(())
         }
-
-        // TODO: remove this prior to Astar launch, to be only used for testing
-        #[pallet::call_index(100)]
-        #[pallet::weight(T::DbWeight::get().writes(1))]
-        pub fn force_set_tier_params(
-            origin: OriginFor<T>,
-            value: TierParameters<T::NumberOfTiers>,
-        ) -> DispatchResult {
-            Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
-            ensure!(value.is_valid(), Error::<T>::InvalidTierParameters);
-
-            StaticTierParams::<T>::put(value);
-
-            Ok(())
-        }
-
-        // TODO: remove this prior to Astar launch, to be only used for testing
-        #[pallet::call_index(101)]
-        #[pallet::weight(T::DbWeight::get().writes(1))]
-        pub fn force_set_tier_config(
-            origin: OriginFor<T>,
-            value: TiersConfiguration<T::NumberOfTiers>,
-        ) -> DispatchResult {
-            Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
-
-            TierConfig::<T>::put(value);
-
-            Ok(())
-        }
     }
 
     impl<T: Config> Pallet<T>
     where
         BlockNumberFor<T>: IsType<BlockNumber>,
     {
+        /// `true` if the account is a staker, `false` otherwise.
+        pub fn is_staker(account: &T::AccountId) -> bool {
+            Ledger::<T>::contains_key(account)
+        }
+
         /// `Err` if pallet disabled for maintenance, `Ok` otherwise.
         pub(crate) fn ensure_pallet_enabled() -> Result<(), Error<T>> {
             if ActiveProtocolState::<T>::get().maintenance {
@@ -1637,12 +1640,6 @@ pub mod pallet {
         pub(crate) fn blocks_per_voting_period() -> BlockNumber {
             T::CycleConfiguration::blocks_per_era()
                 .saturating_mul(T::CycleConfiguration::eras_per_voting_subperiod().into())
-        }
-
-        /// `true` if smart contract is registered, `false` otherwise.
-        pub(crate) fn is_registered(smart_contract: &T::SmartContract) -> bool {
-            IntegratedDApps::<T>::get(smart_contract)
-                .map_or(false, |dapp_info| dapp_info.is_registered())
         }
 
         /// Calculates the `EraRewardSpan` index for the specified era.

@@ -19,7 +19,7 @@
 use super::{pallet::pallet::Error, pallet::pallet::Event, *};
 use frame_support::{
     assert_noop, assert_ok, assert_storage_noop,
-    traits::{Currency, OnFinalize, OnInitialize},
+    traits::{Currency, Get, OnFinalize, OnInitialize},
     weights::Weight,
 };
 use mock::{Balance, Balances, MockSmartContract, *};
@@ -2481,32 +2481,97 @@ fn claim_staker_for_works() {
         let smart_contract = MockSmartContract::Evm(H160::repeat_byte(0x02));
         assert_register(developer, &smart_contract);
         assert_bond_and_stake(staker, &smart_contract, 17);
+        assert_set_reward_destination(staker, RewardDestination::StakeBalance);
 
         // Advance to next era so we can claim rewards for it
         advance_to_era(DappsStaking::current_era() + 1);
 
-        // Claiming for another staker is not possible unless decommission has started
-        assert_noop!(
-            DappsStaking::claim_staker_for(
-                RuntimeOrigin::signed(claimer),
-                staker,
-                smart_contract.clone()
-            ),
-            Error::<TestRuntime>::DecommissionNotStarted
+        // 1. Call regular claim, and check the reward amount
+        let init_ledger = DappsStaking::ledger(&staker);
+        System::reset_events();
+        assert_ok!(DappsStaking::claim_staker(
+            RuntimeOrigin::signed(staker),
+            smart_contract.clone()
+        ));
+        let post_ledger = DappsStaking::ledger(&staker);
+
+        let (event_staker, init_reward) = match &System::events()[4].event {
+            mock::RuntimeEvent::DappsStaking(Event::Reward(staker, _, _, reward)) => (*staker, *reward),
+            _ => panic!("Unexpected event"),
+        };
+        assert_eq!(event_staker, staker);
+
+        assert_eq!(
+            post_ledger.locked,
+            init_ledger.locked + init_reward,
+            "We expect full reward to be re-locked"
         );
 
-        // Enable decommission mode & claim the reward
-        assert_ok!(DappsStaking::decommission(RuntimeOrigin::root()));
+        // 2. Check that delegated claim works as expected
+        advance_to_era(DappsStaking::current_era() + 1);
+        System::reset_events();
+
+        let init_ledger = DappsStaking::ledger(&staker);
         assert_ok!(DappsStaking::claim_staker_for(
             RuntimeOrigin::signed(claimer),
             staker,
             smart_contract.clone()
         ));
+        let post_ledger = DappsStaking::ledger(&staker);
 
-        // The reward must be claimed for the staker, not the claimer!
+        // We expect 6 events in total
+        // - 2 events related to reward withdraw & deposit
+        // - 2 restake events
+        // - 1 event related to dApps staking reward
+        // - 1 events related to delegated claim fee deposit
+        let events = System::events();
+        assert_eq!(events.len(), 6);
+
+        // Deposit the reward to the caller. Reward must be reduced by the delegate claim fee amount.
+        let fee_amount = <TestRuntime as Config>::DelegateClaimFee::get();
+        let expected_reward = init_reward - fee_amount;
+        assert!(expected_reward > fee_amount, "Reward must be greater than fee amount");
         assert_matches!(
-            System::events().last().unwrap().event,
-            mock::RuntimeEvent::DappsStaking(Event::Reward(staker, _, _, _)) if staker == staker
+            events[4].event,
+            mock::RuntimeEvent::DappsStaking(Event::Reward(staker, _, _, reward)) if staker == staker && reward == expected_reward
+        );
+
+        // Deposit the call refund fee to the caller.
+        assert_matches!(
+            events[5].event,
+            mock::RuntimeEvent::Balances(pallet_balances::Event::Deposit{who, amount}) if who == claimer && amount == fee_amount
+        );
+
+        assert_eq!(
+            post_ledger.locked,
+            init_ledger.locked + expected_reward,
+            "We expect the reward to be relocked, but it should be reduced by the fee amount."
+        );
+    })
+}
+
+#[test]
+fn claim_staker_for_fails_if_caller_is_same_as_staker() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Register a dApp and stake some amount on it
+        let developer = 1;
+        let staker = 2;
+        let smart_contract = MockSmartContract::Evm(H160::repeat_byte(0x02));
+        assert_register(developer, &smart_contract);
+        assert_bond_and_stake(staker, &smart_contract, 13);
+
+        // Advance to next era so we can claim rewards for it
+        advance_to_era(DappsStaking::current_era() + 1);
+
+        assert_noop!(
+            DappsStaking::claim_staker_for(
+                RuntimeOrigin::signed(staker),
+                staker,
+                smart_contract.clone()
+            ),
+            Error::<TestRuntime>::ClaimForCallerAccount
         );
     })
 }
@@ -2524,18 +2589,6 @@ fn set_reward_destination_for_works() {
         assert_register(developer, &smart_contract);
         assert_bond_and_stake(staker, &smart_contract, 17);
 
-        // Claiming for another staker is not possible unless decommission has started
-        assert_noop!(
-            DappsStaking::set_reward_destination_for(
-                RuntimeOrigin::signed(caller),
-                staker,
-                RewardDestination::StakeBalance
-            ),
-            Error::<TestRuntime>::DecommissionNotStarted
-        );
-
-        // Enable decommission mode and set the reward destination
-        assert_ok!(DappsStaking::decommission(RuntimeOrigin::root()));
         assert_ok!(DappsStaking::set_reward_destination_for(
             RuntimeOrigin::signed(caller),
             staker,

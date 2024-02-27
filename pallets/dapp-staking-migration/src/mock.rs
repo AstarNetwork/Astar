@@ -40,6 +40,8 @@ use astar_primitives::{
 
 pub(crate) type AccountId = u64;
 
+pub(crate) const UNBONDING_ACCOUNT: AccountId = 10;
+
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(crate) const MINIMUM_LOCK_AMOUNT: Balance = 10;
 
@@ -177,6 +179,7 @@ impl pallet_dapp_staking_v3::Config for Test {
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = ();
+    type AccountCheck = ();
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -211,6 +214,7 @@ impl pallet_dapps_staking::Config for Test {
     type MaxEraStakeValues = ConstU32<10>;
     type UnregisteredDappRewardRetention = ConstU32<10>;
     type ForcePalletDisabled = ConstBool<false>;
+    type DelegateClaimFee = ConstU128<1>;
 }
 
 impl pallet_dapp_staking_migration::Config for Test {
@@ -226,7 +230,7 @@ impl ExtBuilder {
             .build_storage()
             .unwrap();
 
-        let balances = vec![1000; 9]
+        let balances = vec![1000; 11]
             .into_iter()
             .enumerate()
             .map(|(idx, amount)| (idx as u64 + 1, amount))
@@ -270,4 +274,15 @@ pub fn init() {
             1_000,
         ));
     }
+
+    assert_ok!(pallet_dapps_staking::Pallet::<Test>::bond_and_stake(
+        RawOrigin::Signed(UNBONDING_ACCOUNT).into(),
+        MockSmartContract::Wasm(0),
+        2000
+    ));
+    assert_ok!(pallet_dapps_staking::Pallet::<Test>::unbond_and_unstake(
+        RawOrigin::Signed(UNBONDING_ACCOUNT).into(),
+        MockSmartContract::Wasm(0),
+        500
+    ));
 }

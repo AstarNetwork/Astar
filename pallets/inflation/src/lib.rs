@@ -111,7 +111,10 @@ use frame_support::{
 };
 use frame_system::{ensure_root, pallet_prelude::*};
 use serde::{Deserialize, Serialize};
-use sp_runtime::{traits::CheckedAdd, Perquintill};
+use sp_runtime::{
+    traits::{CheckedAdd, Zero},
+    Perquintill,
+};
 use sp_std::marker::PhantomData;
 
 pub mod weights;
@@ -300,29 +303,6 @@ pub mod pallet {
 
             Ok(().into())
         }
-
-        /// Used to force-set the inflation configuration.
-        /// The parameters aren't checked for validity, since essentially anything can be valid.
-        ///
-        /// Must be called by `root` origin.
-        ///
-        /// Purpose of the call is testing & handling unforeseen circumstances.
-        ///
-        /// **NOTE:** and a TODO, remove this before deploying on mainnet.
-        #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::force_set_inflation_config())]
-        pub fn force_set_inflation_config(
-            origin: OriginFor<T>,
-            config: InflationConfiguration,
-        ) -> DispatchResult {
-            ensure_root(origin)?;
-
-            ActiveInflationConfig::<T>::put(config.clone());
-
-            Self::deposit_event(Event::<T>::InflationConfigurationForceChanged { config });
-
-            Ok(().into())
-        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -372,27 +352,28 @@ pub mod pallet {
                 Balance::from(T::CycleConfiguration::periods_per_cycle().max(1));
 
             // 3.1. Collator & Treasury rewards per block
-            let collator_reward_per_block = collators_emission / blocks_per_cycle;
-            let treasury_reward_per_block = treasury_emission / blocks_per_cycle;
+            let collator_reward_per_block = collators_emission.saturating_div(blocks_per_cycle);
+            let treasury_reward_per_block = treasury_emission.saturating_div(blocks_per_cycle);
 
             // 3.2. dApp reward pool per era
-            let dapp_reward_pool_per_era = dapps_emission / build_and_earn_eras_per_cycle;
+            let dapp_reward_pool_per_era =
+                dapps_emission.saturating_div(build_and_earn_eras_per_cycle);
 
             // 3.3. Staking reward pools per era
             let base_staker_reward_pool_per_era =
-                base_stakers_emission / build_and_earn_eras_per_cycle;
+                base_stakers_emission.saturating_div(build_and_earn_eras_per_cycle);
             let adjustable_staker_reward_pool_per_era =
-                adjustable_stakers_emission / build_and_earn_eras_per_cycle;
+                adjustable_stakers_emission.saturating_div(build_and_earn_eras_per_cycle);
 
             // 3.4. Bonus reward pool per period
-            let bonus_reward_pool_per_period = bonus_emission / periods_per_cycle;
+            let bonus_reward_pool_per_period = bonus_emission.saturating_div(periods_per_cycle);
 
             // 4. Block at which the inflation must be recalculated.
             let recalculation_era =
                 next_era.saturating_add(T::CycleConfiguration::eras_per_cycle());
 
-            // 5. Return calculated values
-            InflationConfiguration {
+            // 5. Prepare config & do sanity check of its values.
+            let new_inflation_config = InflationConfiguration {
                 recalculation_era,
                 issuance_safety_cap,
                 collator_reward_per_block,
@@ -402,7 +383,10 @@ pub mod pallet {
                 adjustable_staker_reward_pool_per_era,
                 bonus_reward_pool_per_period,
                 ideal_staking_rate: params.ideal_staking_rate,
-            }
+            };
+            new_inflation_config.sanity_check();
+
+            new_inflation_config
         }
 
         /// Check if payout cap limit would be reached after payout.
@@ -516,6 +500,32 @@ pub struct InflationConfiguration {
     pub ideal_staking_rate: Perquintill,
 }
 
+impl InflationConfiguration {
+    /// Sanity check that does rudimentary checks on the configuration and prints warnings if something is unexpected.
+    ///
+    /// There are no strict checks, since the configuration values aren't strictly bounded like those of the parameters.
+    pub fn sanity_check(&self) {
+        if self.collator_reward_per_block.is_zero() {
+            log::warn!("Collator reward per block is zero. If this is not expected, please report this to Astar team.");
+        }
+        if self.treasury_reward_per_block.is_zero() {
+            log::warn!("Treasury reward per block is zero. If this is not expected, please report this to Astar team.");
+        }
+        if self.dapp_reward_pool_per_era.is_zero() {
+            log::warn!("dApp reward pool per era is zero. If this is not expected, please report this to Astar team.");
+        }
+        if self.base_staker_reward_pool_per_era.is_zero() {
+            log::warn!("Base staker reward pool per era is zero.  If this is not expected, please report this to Astar team.");
+        }
+        if self.adjustable_staker_reward_pool_per_era.is_zero() {
+            log::warn!("Adjustable staker reward pool per era is zero.  If this is not expected, please report this to Astar team.");
+        }
+        if self.bonus_reward_pool_per_period.is_zero() {
+            log::warn!("Bonus reward pool per period is zero.  If this is not expected, please report this to Astar team.");
+        }
+    }
+}
+
 /// Inflation parameters.
 ///
 /// The parts of the inflation that go towards different purposes must add up to exactly 100%.
@@ -615,8 +625,8 @@ pub trait PayoutPerBlock<Imbalance> {
 /// `OnRuntimeUpgrade` logic for integrating this pallet into the live network.
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
-pub struct PalletInflationInitConfig<T, P>(PhantomData<(T, P)>);
-impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
+pub struct PalletInflationInitConfig<T, P>(PhantomData<(T, P, Weight)>);
+impl<T: Config, P: Get<(InflationParameters, EraNumber, Weight)>> OnRuntimeUpgrade
     for PalletInflationInitConfig<T, P>
 {
     fn on_runtime_upgrade() -> Weight {
@@ -625,7 +635,7 @@ impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
         }
 
         // 1. Get & set inflation parameters
-        let (inflation_params, next_era) = P::get();
+        let (inflation_params, next_era, extra_weight) = P::get();
         InflationParams::<T>::put(inflation_params.clone());
 
         // 2. Calculation inflation config, set it & deposit event
@@ -639,7 +649,9 @@ impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
 
         log::info!("Inflation pallet storage initialized.");
 
-        T::WeightInfo::recalculation().saturating_add(T::DbWeight::get().reads_writes(1, 2))
+        T::WeightInfo::recalculation()
+            .saturating_add(T::DbWeight::get().reads_writes(1, 2))
+            .saturating_add(extra_weight)
     }
 
     #[cfg(feature = "try-runtime")]
@@ -648,26 +660,5 @@ impl<T: Config, P: Get<(InflationParameters, EraNumber)>> OnRuntimeUpgrade
         assert!(InflationParams::<T>::get().is_valid());
 
         Ok(())
-    }
-}
-
-/// To be used just for Shibuya, can be removed after migration has been executed.
-pub struct PalletInflationShibuyaMigration<T, P>(PhantomData<(T, P)>);
-impl<T: Config, P: Get<(EraNumber, Weight)>> OnRuntimeUpgrade
-    for PalletInflationShibuyaMigration<T, P>
-{
-    fn on_runtime_upgrade() -> Weight {
-        let (recalculation_era, weight) = P::get();
-        ActiveInflationConfig::<T>::mutate(|config| {
-            // Both recalculation_era and recalculation_block are of the same `u32` type so no need to do any translation.
-            config.recalculation_era = recalculation_era;
-        });
-
-        log::info!(
-            "Inflation pallet recalculation era set to {}.",
-            recalculation_era
-        );
-
-        T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
     }
 }

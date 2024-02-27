@@ -23,6 +23,8 @@ use frame_benchmarking::v2::*;
 use frame_system::{Pallet as System, RawOrigin};
 use sp_std::prelude::*;
 
+const UNIT: u128 = 1_000_000_000_000_000_000;
+
 /// Assert that the last event equals the provided one.
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     System::<T>::assert_last_event(generic_event.into());
@@ -50,12 +52,12 @@ fn initial_config<T: Config>() {
     let config = InflationConfiguration {
         recalculation_era: 123,
         issuance_safety_cap,
-        collator_reward_per_block: 11111,
-        treasury_reward_per_block: 33333,
-        dapp_reward_pool_per_era: 55555,
-        base_staker_reward_pool_per_era: 77777,
-        adjustable_staker_reward_pool_per_era: 99999,
-        bonus_reward_pool_per_period: 123987,
+        collator_reward_per_block: 11111 * UNIT,
+        treasury_reward_per_block: 33333 * UNIT,
+        dapp_reward_pool_per_era: 55555 * UNIT,
+        base_staker_reward_pool_per_era: 77777 * UNIT,
+        adjustable_staker_reward_pool_per_era: 99999 * UNIT,
+        bonus_reward_pool_per_period: 123987 * UNIT,
         ideal_staking_rate: Perquintill::from_percent(50),
     };
 
@@ -85,17 +87,6 @@ mod benchmarks {
         _(RawOrigin::Root, params);
 
         assert_last_event::<T>(Event::<T>::InflationParametersForceChanged.into());
-    }
-
-    #[benchmark]
-    fn force_set_inflation_config() {
-        initial_config::<T>();
-        let config = InflationConfiguration::default();
-
-        #[extrinsic_call]
-        _(RawOrigin::Root, config.clone());
-
-        assert_last_event::<T>(Event::<T>::InflationConfigurationForceChanged { config }.into());
     }
 
     #[benchmark]
