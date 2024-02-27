@@ -33,13 +33,12 @@ use sp_runtime::traits::{Convert, MaybeEquivalence};
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
-    DescribeFamily, EnsureXcmOrigin, FungiblesAdapter, HashedDescription, IsConcrete, NoChecking,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
-    WithComputedOrigin,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
+    ConvertedConcreteId, CurrencyAdapter, DescribeFamily, EnsureXcmOrigin, FungiblesAdapter,
+    HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -48,8 +47,9 @@ use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
 use astar_primitives::xcm::{
-    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, DescribeAllTerminal,
-    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler, MAX_ASSETS,
+    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
+    DescribeAllTerminal, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
+    MAX_ASSETS,
 };
 
 parameter_types! {

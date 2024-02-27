@@ -41,10 +41,11 @@ use sp_runtime::{
 };
 use sp_std::cell::RefCell;
 
+use astar_primitives::xcm::AllowTopLevelPaidExecutionFrom;
 use xcm::prelude::XcmVersion;
 use xcm_builder::{
-    test_utils::TransactAsset, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, FixedWeightBounds, SignedToAccountId32, TakeWeightCredit,
+    test_utils::TransactAsset, AllowKnownQueryResponses, AllowSubscriptionsFrom, FixedWeightBounds,
+    SignedToAccountId32, TakeWeightCredit,
 };
 use xcm_executor::XcmExecutor;
 // orml imports

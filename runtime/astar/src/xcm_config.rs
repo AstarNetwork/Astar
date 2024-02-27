@@ -34,11 +34,11 @@ use sp_runtime::traits::{Convert, MaybeEquivalence};
 use xcm::latest::prelude::*;
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
-    EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin,
+    FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents,
 };
 use xcm_executor::{
     traits::{JustTry, WithOriginFilter},
@@ -50,8 +50,8 @@ use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
 use astar_primitives::xcm::{
-    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, FixedRateOfForeignAsset,
-    ReserveAssetFilter, XcmFungibleFeeHandler,
+    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
+    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 
 parameter_types! {

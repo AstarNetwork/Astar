@@ -49,9 +49,9 @@ use super::msg_queue::*;
 use xcm::latest::prelude::{AssetId as XcmAssetId, *};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
-    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, IsConcrete,
-    NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin,
+    FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
     SovereignSignedViaLocation, TakeWeightCredit, WithComputedOrigin,
 };
@@ -62,7 +62,8 @@ use orml_xcm_support::DisabledParachainFee;
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::xcm::{
-    AssetLocationIdConverter, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
+    AllowTopLevelPaidExecutionFrom, AssetLocationIdConverter, FixedRateOfForeignAsset,
+    ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 
 pub type AccountId = AccountId32;

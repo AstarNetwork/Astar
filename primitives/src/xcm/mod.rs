@@ -33,17 +33,18 @@
 use crate::AccountId;
 
 use frame_support::{
-    traits::{tokens::fungibles, ContainsPair, Get},
+    ensure,
+    traits::{tokens::fungibles, Contains, ContainsPair, Get, ProcessMessageError},
     weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 use parity_scale_codec::Encode;
 use sp_runtime::traits::{Bounded, Convert, MaybeEquivalence, Zero};
-use sp_std::marker::PhantomData;
+use sp_std::{marker::PhantomData, vec::Vec};
 
 // Polkadot imports
 use xcm::latest::{prelude::*, Weight};
-use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{MatchesFungibles, WeightTrader};
+use xcm_builder::{CreateMatcher, MatchXcm, TakeRevenue};
+use xcm_executor::traits::{MatchesFungibles, Properties, ShouldExecute, WeightTrader};
 
 // ORML imports
 use orml_traits::location::{RelativeReserveProvider, Reserve};
@@ -268,7 +269,7 @@ impl<
     }
 }
 
-// TODO: remove this after uplift to `polkadot-v0.9.44` or beyond, and replace it with code in XCM builder.
+// TODO: remove this after uplift to `polkadot-v1.3.0` or beyond, and replace it with code in XCM builder.
 
 pub struct DescribeBodyTerminal;
 impl xcm_builder::DescribeLocation for DescribeBodyTerminal {
@@ -314,5 +315,67 @@ impl<AbsoluteLocation: Get<MultiLocation>> Reserve
                 reserve_location
             }
         })
+    }
+}
+
+// Copying the barrier here due to this issue - https://github.com/paritytech/polkadot-sdk/issues/1638
+// The fix was introduced in v1.3.0 via this PR - https://github.com/paritytech/polkadot-sdk/pull/1733
+// Below is the exact same copy from the fix PR.
+
+const MAX_ASSETS_FOR_BUY_EXECUTION: usize = 2;
+
+/// Allows execution from `origin` if it is contained in `T` (i.e. `T::Contains(origin)`) taking
+/// payments into account.
+///
+/// Only allows for `TeleportAsset`, `WithdrawAsset`, `ClaimAsset` and `ReserveAssetDeposit` XCMs
+/// because they are the only ones that place assets in the Holding Register to pay for execution.
+pub struct AllowTopLevelPaidExecutionFrom<T>(PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFrom<T> {
+    fn should_execute<RuntimeCall>(
+        origin: &MultiLocation,
+        instructions: &mut [Instruction<RuntimeCall>],
+        max_weight: Weight,
+        _properties: &mut Properties,
+    ) -> Result<(), ProcessMessageError> {
+        log::trace!(
+            target: "xcm::barriers",
+            "AllowTopLevelPaidExecutionFrom origin: {:?}, instructions: {:?}, max_weight: {:?}, properties: {:?}",
+            origin, instructions, max_weight, _properties,
+        );
+
+        ensure!(T::contains(origin), ProcessMessageError::Unsupported);
+        // We will read up to 5 instructions. This allows up to 3 `ClearOrigin` instructions. We
+        // allow for more than one since anything beyond the first is a no-op and it's conceivable
+        // that composition of operations might result in more than one being appended.
+        let end = instructions.len().min(5);
+        instructions[..end]
+            .matcher()
+            .match_next_inst(|inst| match inst {
+                ReceiveTeleportedAsset(..) | ReserveAssetDeposited(..) => Ok(()),
+                WithdrawAsset(ref assets) if assets.len() <= MAX_ASSETS_FOR_BUY_EXECUTION => Ok(()),
+                ClaimAsset { ref assets, .. } if assets.len() <= MAX_ASSETS_FOR_BUY_EXECUTION => {
+                    Ok(())
+                }
+                _ => Err(ProcessMessageError::BadFormat),
+            })?
+            .skip_inst_while(|inst| matches!(inst, ClearOrigin))?
+            .match_next_inst(|inst| match inst {
+                BuyExecution {
+                    weight_limit: Limited(ref mut weight),
+                    ..
+                } if weight.all_gte(max_weight) => {
+                    *weight = max_weight;
+                    Ok(())
+                }
+                BuyExecution {
+                    ref mut weight_limit,
+                    ..
+                } if weight_limit == &Unlimited => {
+                    *weight_limit = Limited(max_weight);
+                    Ok(())
+                }
+                _ => Err(ProcessMessageError::Overweight(max_weight)),
+            })?;
+        Ok(())
     }
 }
