@@ -630,7 +630,6 @@ parameter_types! {
     pub const DepositPerByte: Balance = contracts_deposit(0, 1);
     // Fallback value if storage deposit limit not set by the user
     pub const DefaultDepositLimit: Balance = contracts_deposit(16, 16 * 1024);
-    // TODO: re-vist to make sure values are appropriate
     pub const MaxDelegateDependencies: u32 = 32;
     pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
@@ -667,7 +666,6 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    // TODO: re-vist to make sure migration sequence is correct
     type Migrations = (
         pallet_contracts::migration::v12::Migration<Runtime, Balances>,
         pallet_contracts::migration::v13::Migration<Runtime>,

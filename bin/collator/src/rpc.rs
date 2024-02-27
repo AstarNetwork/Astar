@@ -155,6 +155,7 @@ pub fn create_full<C, P, BE, A>(
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + UsageProvider<Block>
         + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
@@ -169,6 +170,7 @@ where
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
