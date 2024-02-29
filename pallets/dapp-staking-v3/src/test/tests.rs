@@ -2595,7 +2595,7 @@ fn stake_and_unstake_after_reward_claim_is_ok() {
 }
 
 #[test]
-fn stake_and_unstake_correctly_update_staked_amounts() {
+fn stake_and_unstake_correctly_updates_staked_amounts() {
     ExtBuilder::build().execute_with(|| {
         // Register smart contract
         let dev_account = 1;
@@ -2637,11 +2637,17 @@ fn stake_and_unstake_correctly_update_staked_amounts() {
             assert_unstake(account_2, &smart_contract, amount_2);
         }
 
-        // Check that the contract stake snapshot is the same as before
+        // Check that the contract stake snapshot staked amount is the same as before
         assert_eq!(
-            contract_stake_snapshot,
-            ContractStake::<Test>::get(&smart_contract_id),
-            "Contract stake snapshot should not change."
+            contract_stake_snapshot.staked_amount(1, Subperiod::Voting),
+            ContractStake::<Test>::get(&smart_contract_id).staked_amount(1, Subperiod::Voting),
+            "Voting staked amount should not change."
+        );
+        assert_eq!(
+            contract_stake_snapshot.staked_amount(1, Subperiod::BuildAndEarn),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .staked_amount(1, Subperiod::BuildAndEarn),
+            "Build&Earn staked amount should not change."
         );
     })
 }

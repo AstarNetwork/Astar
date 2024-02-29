@@ -2430,6 +2430,7 @@ fn contract_stake_amount_stake_is_ok() {
     assert!(contract_stake.staked_future.is_some());
 }
 
+// TODO: improve this a bit
 #[test]
 fn contract_stake_amount_unstake_is_ok() {
     let mut contract_stake = ContractStakeAmount::default();
@@ -2447,7 +2448,7 @@ fn contract_stake_amount_unstake_is_ok() {
 
     // 1st scenario - unstake in the same era
     let amount_1 = 5;
-    contract_stake.unstake(amount_1, period_info, era_1);
+    contract_stake.unstake(amount_1, 0, period_info, era_1);
     assert_eq!(
         contract_stake.total_staked_amount(period),
         stake_amount - amount_1
@@ -2467,7 +2468,7 @@ fn contract_stake_amount_unstake_is_ok() {
     };
     let era_2 = era_1 + 1;
 
-    contract_stake.unstake(amount_1, period_info, era_2);
+    contract_stake.unstake(0, amount_1, period_info, era_2);
     assert_eq!(
         contract_stake.total_staked_amount(period),
         stake_amount - amount_1 * 2
@@ -2488,7 +2489,7 @@ fn contract_stake_amount_unstake_is_ok() {
     // 3rd scenario - bump up unstake eras by more than 1, entries should be aligned to the current era
     let era_3 = era_2 + 3;
     let amount_2 = 7;
-    contract_stake.unstake(amount_2, period_info, era_3);
+    contract_stake.unstake(0, amount_2, period_info, era_3);
     assert_eq!(
         contract_stake.total_staked_amount(period),
         stake_amount - amount_1 * 2 - amount_2
@@ -2509,7 +2510,8 @@ fn contract_stake_amount_unstake_is_ok() {
     // 4th scenario - do a full unstake with existing future entry, expect a cleanup
     contract_stake.stake(stake_amount, period_info, era_3);
     contract_stake.unstake(
-        contract_stake.total_staked_amount(period),
+        contract_stake.staked_amount(period, Subperiod::Voting),
+        contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
         period_info,
         era_3,
     );

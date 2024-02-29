@@ -1169,7 +1169,12 @@ pub mod pallet {
             // 3.
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
-            contract_stake_info.unstake(amount, protocol_state.period_info, current_era);
+            contract_stake_info.unstake(
+                voting_unstake_amount,
+                bep_unstake_amount,
+                protocol_state.period_info,
+                current_era,
+            );
 
             // 4.
             // Update total staked amount for the next era.

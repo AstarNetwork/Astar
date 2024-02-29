@@ -1199,7 +1199,13 @@ impl ContractStakeAmount {
     }
 
     /// Unstake the specified `amount` from the contract, for the specified `subperiod` and `era`.
-    pub fn unstake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
+    pub fn unstake(
+        &mut self,
+        voting_amount: Balance,
+        bep_amount: Balance,
+        period_info: PeriodInfo,
+        current_era: EraNumber,
+    ) {
         // First align entries - we only need to keep track of the current era, and the next one
         match self.staked_future {
             // Future entry exists, but it covers current or older era.
@@ -1219,9 +1225,11 @@ impl ContractStakeAmount {
         }
 
         // Subtract both amounts
-        self.staked.subtract(amount, period_info.subperiod);
+        self.staked.voting.saturating_reduce(voting_amount);
+        self.staked.build_and_earn.saturating_reduce(bep_amount);
         if let Some(stake_amount) = self.staked_future.as_mut() {
-            stake_amount.subtract(amount, period_info.subperiod);
+            stake_amount.voting.saturating_reduce(voting_amount);
+            stake_amount.build_and_earn.saturating_reduce(bep_amount);
         }
 
         // Convenience cleanup
