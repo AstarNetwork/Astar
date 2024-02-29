@@ -18,9 +18,9 @@
 
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, DAppId, EraRewards, Error, Event, ForcingType,
-    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo, Subperiod,
-    TierConfig,
+    pallet::Config, ActiveProtocolState, ContractStake, DAppId, EraRewards, Error, Event,
+    ForcingType, IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo,
+    Subperiod, TierConfig,
 };
 
 use frame_support::{
@@ -2591,6 +2591,58 @@ fn stake_and_unstake_after_reward_claim_is_ok() {
         }
         assert_stake(account, &smart_contract, 1);
         assert_unstake(account, &smart_contract, 1);
+    })
+}
+
+#[test]
+fn stake_and_unstake_correctly_update_staked_amounts() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+        let smart_contract_id = IntegratedDApps::<Test>::get(&smart_contract).unwrap().id;
+
+        // Lock & stake some amount by the first staker, and lock some amount by the second staker
+        let account_1 = 2;
+        let amount_1 = 50;
+        assert_lock(account_1, amount_1);
+        assert_stake(account_1, &smart_contract, amount_1);
+
+        let account_2 = 3;
+        let amount_2 = 10;
+        assert_lock(account_2, amount_2);
+
+        // Stake & unstake repeatedly by the second staker, in the current era
+        let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
+
+        for _ in 0..20 {
+            assert_stake(account_2, &smart_contract, amount_2);
+            assert_unstake(account_2, &smart_contract, amount_2);
+        }
+
+        // Check that the contract stake snapshot is the same as before
+        assert_eq!(
+            contract_stake_snapshot,
+            ContractStake::<Test>::get(&smart_contract_id),
+            "Contract stake snapshot should not change."
+        );
+
+        // Stake & unstake repeatedly in the next era
+        advance_to_next_era();
+        let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
+
+        for _ in 0..20 {
+            assert_stake(account_2, &smart_contract, amount_2);
+            assert_unstake(account_2, &smart_contract, amount_2);
+        }
+
+        // Check that the contract stake snapshot is the same as before
+        assert_eq!(
+            contract_stake_snapshot,
+            ContractStake::<Test>::get(&smart_contract_id),
+            "Contract stake snapshot should not change."
+        );
     })
 }
 

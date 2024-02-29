@@ -627,6 +627,17 @@ pub(crate) fn assert_unstake(
         .expect("Entry must exist since 'unstake' is being called.");
     let pre_era_info = pre_snapshot.current_era_info;
 
+    // Calculate expected unstake amounts from the voting and build&earn subperiods.
+    let (expected_voting_unstake, expected_build_and_earn_unstake) =
+        if pre_staker_info.staked_amount(Subperiod::BuildAndEarn) >= amount {
+            (Balance::zero(), amount)
+        } else {
+            (
+                amount - pre_staker_info.staked_amount(Subperiod::BuildAndEarn),
+                pre_staker_info.staked_amount(Subperiod::BuildAndEarn),
+            )
+        };
+
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
     let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
 
@@ -736,6 +747,40 @@ pub(crate) fn assert_unstake(
             .saturating_sub(amount),
         "Staked amount must decreased by the 'amount'"
     );
+    assert_eq!(
+        post_contract_stake.staked.voting,
+        pre_contract_stake.staked.voting.saturating_sub(expected_voting_unstake),
+        "Voting stake amount must be decreased exactly by how much staker's voting amount was reduced."
+    );
+
+    assert_eq!(
+        post_contract_stake.staked.build_and_earn,
+        pre_contract_stake
+            .staked
+            .build_and_earn
+            .saturating_sub(expected_build_and_earn_unstake),
+        "B&E stake amount must be decreased exactly by how much staker's B&E amount was reduced."
+    );
+    match (
+        pre_contract_stake.staked_future,
+        post_contract_stake.staked_future,
+    ) {
+        (Some(pre_future), Some(post_future)) => {
+            assert_eq!(
+                post_future.voting,
+                pre_future.voting.saturating_sub(expected_voting_unstake),
+                "Voting stake amount must be decreased exactly by how much staker's voting amount was reduced."
+            );
+            assert_eq!(
+                post_future.build_and_earn,
+                pre_future
+                    .build_and_earn
+                    .saturating_sub(expected_build_and_earn_unstake),
+                "B&E stake amount must be decreased exactly by how much staker's B&E amount was reduced."
+            );
+        }
+        (_, _) => {}
+    }
 
     // 4. verify era info
     // =========================
