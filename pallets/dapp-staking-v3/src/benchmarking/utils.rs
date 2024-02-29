@@ -24,13 +24,10 @@ use frame_system::Pallet as System;
 
 /// Run to the specified block number.
 /// Function assumes first block has been initialized.
-pub(super) fn run_to_block<T: Config>(n: BlockNumberFor<T>)
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn run_to_block<T: Config>(n: BlockNumberFor<T>) {
     while System::<T>::block_number() < n {
         DappStaking::<T>::on_finalize(System::<T>::block_number());
-        System::<T>::set_block_number(System::<T>::block_number() + 1.into());
+        System::<T>::set_block_number(System::<T>::block_number() + 1u32.into());
         // This is performed outside of dapps staking but we expect it before on_initialize
         DappStaking::<T>::on_initialize(System::<T>::block_number());
     }
@@ -38,20 +35,14 @@ where
 
 /// Run for the specified number of blocks.
 /// Function assumes first block has been initialized.
-pub(super) fn run_for_blocks<T: Config>(n: BlockNumberFor<T>)
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn run_for_blocks<T: Config>(n: BlockNumberFor<T>) {
     run_to_block::<T>(System::<T>::block_number() + n);
 }
 
 /// Advance blocks until the specified era has been reached.
 ///
 /// Function has no effect if era is already passed.
-pub(super) fn advance_to_era<T: Config>(era: EraNumber)
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn advance_to_era<T: Config>(era: EraNumber) {
     assert!(era >= ActiveProtocolState::<T>::get().era);
     while ActiveProtocolState::<T>::get().era < era {
         run_for_blocks::<T>(One::one());
@@ -61,10 +52,7 @@ where
 /// Advance blocks until the specified era has been reached.
 ///
 /// Relies on the `force` approach to advance one era per block.
-pub(super) fn force_advance_to_era<T: Config>(era: EraNumber)
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn force_advance_to_era<T: Config>(era: EraNumber) {
     assert!(era > ActiveProtocolState::<T>::get().era);
     while ActiveProtocolState::<T>::get().era < era {
         assert_ok!(DappStaking::<T>::force(
@@ -76,18 +64,12 @@ where
 }
 
 /// Advance blocks until next era has been reached.
-pub(super) fn _advance_to_next_era<T: Config>()
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn _advance_to_next_era<T: Config>() {
     advance_to_era::<T>(ActiveProtocolState::<T>::get().era + 1);
 }
 
 /// Advance to next era, in the next block using the `force` approach.
-pub(crate) fn force_advance_to_next_era<T: Config>()
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(crate) fn force_advance_to_next_era<T: Config>() {
     assert_ok!(DappStaking::<T>::force(
         RawOrigin::Root.into(),
         ForcingType::Era
@@ -98,10 +80,7 @@ where
 /// Advance blocks until next period has been reached.
 ///
 /// Relies on the `force` approach to advance one subperiod per block.
-pub(super) fn force_advance_to_next_period<T: Config>()
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn force_advance_to_next_period<T: Config>() {
     let init_period_number = ActiveProtocolState::<T>::get().period_number();
     while ActiveProtocolState::<T>::get().period_number() == init_period_number {
         assert_ok!(DappStaking::<T>::force(
@@ -113,10 +92,7 @@ where
 }
 
 /// Advance to the specified period, using the `force` approach.
-pub(super) fn force_advance_to_period<T: Config>(period: PeriodNumber)
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn force_advance_to_period<T: Config>(period: PeriodNumber) {
     assert!(period >= ActiveProtocolState::<T>::get().period_number());
     while ActiveProtocolState::<T>::get().period_number() < period {
         force_advance_to_next_subperiod::<T>();
@@ -124,10 +100,7 @@ where
 }
 
 /// Use the `force` approach to advance to the next subperiod immediately in the next block.
-pub(super) fn force_advance_to_next_subperiod<T: Config>()
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn force_advance_to_next_subperiod<T: Config>() {
     assert_ok!(DappStaking::<T>::force(
         RawOrigin::Root.into(),
         ForcingType::Subperiod
@@ -148,18 +121,12 @@ pub(super) const NUMBER_OF_SLOTS: u32 = 100;
 pub(super) const SEED: u32 = 9000;
 
 /// Assert that the last event equals the provided one.
-pub(super) fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent)
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
 // Return all dApp staking events from the event buffer.
-pub(super) fn dapp_staking_events<T: Config>() -> Vec<crate::Event<T>>
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn dapp_staking_events<T: Config>() -> Vec<crate::Event<T>> {
     System::<T>::events()
         .into_iter()
         .map(|r| r.event)
@@ -171,10 +138,7 @@ where
 ///
 /// **NOTE:** This assumes similar tier configuration for all runtimes.
 /// If we decide to change this, we'll need to provide a more generic init function.
-pub(super) fn initial_config<T: Config>()
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn initial_config<T: Config>() {
     let era_length = T::CycleConfiguration::blocks_per_era();
     let voting_period_length_in_eras = T::CycleConfiguration::eras_per_voting_subperiod();
 
@@ -244,10 +208,7 @@ where
 }
 
 /// Maximum number of contracts that 'makes sense' - considers both contract number limit & number of slots.
-pub(super) fn max_number_of_contracts<T: Config>() -> u32
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn max_number_of_contracts<T: Config>() -> u32 {
     T::MaxNumberOfContracts::get().min(NUMBER_OF_SLOTS).into()
 }
 
@@ -255,10 +216,7 @@ where
 ///
 /// Stake amounts are decided in such a way to maximize tier filling rate.
 /// This means that all of the contracts should end up in some tier.
-pub(super) fn prepare_contracts_for_tier_assignment<T: Config>(x: u32)
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn prepare_contracts_for_tier_assignment<T: Config>(x: u32) {
     let developer: T::AccountId = whitelisted_caller();
     for id in 0..x {
         let smart_contract = T::BenchmarkHelper::get_smart_contract(id as u32);
@@ -308,20 +266,14 @@ fn trivial_fisher_yates_shuffle<T>(vector: &mut Vec<T>, random_seed: u64) {
 /// Returns max amount of rewards that can be claimed in a single claim reward call from a past period.
 ///
 /// Bounded by era reward span length & number of eras per period (not length but absolute number).
-pub(super) fn max_claim_size_past_period<T: Config>() -> u32
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn max_claim_size_past_period<T: Config>() -> u32 {
     T::EraRewardSpanLength::get().min(T::CycleConfiguration::eras_per_build_and_earn_subperiod())
 }
 
 /// Returns max amount of rewards that can be claimed in a single claim reward call from an ongoing period.
 ///
 /// Bounded by era reward span length & number of eras per period (not length but absolute number).
-pub(super) fn max_claim_size_ongoing_period<T: Config>() -> u32
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+pub(super) fn max_claim_size_ongoing_period<T: Config>() -> u32 {
     T::EraRewardSpanLength::get()
         .min(T::CycleConfiguration::eras_per_build_and_earn_subperiod() - 1)
 }

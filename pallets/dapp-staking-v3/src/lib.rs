@@ -46,7 +46,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
     traits::{BadOrigin, One, Saturating, UniqueSaturatedInto, Zero},
-    Perbill, Permill,
+    Perbill, Permill, SaturatedConversion,
 };
 pub use sp_std::vec::Vec;
 
@@ -106,10 +106,7 @@ pub mod pallet {
     }
 
     #[pallet::config]
-    pub trait Config: frame_system::Config
-    where
-        BlockNumberFor<Self>: IsType<BlockNumber>,
-    {
+    pub trait Config: frame_system::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>
@@ -198,10 +195,7 @@ pub mod pallet {
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
-    pub enum Event<T: Config>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    pub enum Event<T: Config> {
         /// Maintenance mode has been either enabled or disabled.
         MaintenanceMode { enabled: bool },
         /// New era has started.
@@ -464,10 +458,7 @@ pub mod pallet {
     pub type HistoryCleanupMarker<T: Config> = StorageValue<_, CleanupMarker, ValueQuery>;
 
     #[pallet::type_value]
-    pub fn DefaultSafeguard<T: Config>() -> bool
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    pub fn DefaultSafeguard<T: Config>() -> bool {
         // In production, safeguard is enabled by default.
         true
     }
@@ -489,10 +480,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> BuildGenesisConfig for GenesisConfig<T>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             // Prepare tier parameters & verify their correctness
             let tier_params = TierParameters::<T::NumberOfTiers> {
@@ -554,12 +542,10 @@ pub mod pallet {
     }
 
     #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
-            Self::era_and_period_handler(now.into(), TierAssignment::Real)
+            let now = now.saturated_into();
+            Self::era_and_period_handler(now, TierAssignment::Real)
         }
 
         fn on_idle(_block: BlockNumberFor<T>, remaining_weight: Weight) -> Weight {
@@ -597,10 +583,7 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    impl<T: Config> Pallet<T> {
         /// Wrapper around _legacy-like_ `unbond_and_unstake`.
         ///
         /// Used to support legacy Ledger users so they can start the unlocking process for their funds.
@@ -892,7 +875,7 @@ pub mod pallet {
             let current_block = frame_system::Pallet::<T>::block_number();
             let unlock_block = current_block.saturating_add(Self::unlocking_period().into());
             ledger
-                .add_unlocking_chunk(amount_to_unlock, unlock_block.into())
+                .add_unlocking_chunk(amount_to_unlock, unlock_block.saturated_into())
                 .map_err(|_| Error::<T>::TooManyUnlockingChunks)?;
 
             // Update storage
@@ -919,7 +902,7 @@ pub mod pallet {
             let mut ledger = Ledger::<T>::get(&account);
 
             let current_block = frame_system::Pallet::<T>::block_number();
-            let amount = ledger.claim_unlocked(current_block.into());
+            let amount = ledger.claim_unlocked(current_block.saturated_into());
             ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
 
             // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
@@ -1558,7 +1541,7 @@ pub mod pallet {
             // Ensure a 'change' happens on the next block
             ActiveProtocolState::<T>::mutate(|state| {
                 let current_block = frame_system::Pallet::<T>::block_number();
-                state.next_era_start = current_block.saturating_add(One::one()).into();
+                state.next_era_start = current_block.saturating_add(One::one()).saturated_into();
 
                 match forcing_type {
                     ForcingType::Era => (),
@@ -1580,10 +1563,7 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> Pallet<T>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    impl<T: Config> Pallet<T> {
         /// `true` if the account is a staker, `false` otherwise.
         pub fn is_staker(account: &T::AccountId) -> bool {
             Ledger::<T>::contains_key(account)

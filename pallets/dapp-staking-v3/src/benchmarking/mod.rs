@@ -35,10 +35,7 @@ use utils::*;
 //
 // Without this optimization, benchmarks can take hours to execute for production runtimes.
 
-#[benchmarks(
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-)]
+#[benchmarks()]
 mod benchmarks {
     use super::*;
 
@@ -307,10 +304,10 @@ mod benchmarks {
 
         // Hack
         // In order to speed up the benchmark, we reduce how long it takes to unlock the chunks
-        let mut counter = 1;
+        let mut counter = 1u32;
         Ledger::<T>::mutate(&staker, |ledger| {
             ledger.unlocking.iter_mut().for_each(|unlocking| {
-                unlocking.unlock_block = (System::<T>::block_number() + counter.into()).into();
+                unlocking.unlock_block = (System::<T>::block_number() + counter.into()).saturated_into();
             });
             counter += 1;
         });

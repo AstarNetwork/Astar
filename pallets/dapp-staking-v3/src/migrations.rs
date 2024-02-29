@@ -30,8 +30,6 @@ impl<
         )>,
         P: Get<FixedU64>,
     > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G, P>
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
 {
     fn on_runtime_upgrade() -> Weight {
         if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
@@ -48,7 +46,7 @@ where
         let period_number = 1;
         let protocol_state = ProtocolState {
             era: init_era,
-            next_era_start: now.saturating_add(voting_period_length.into()).into(),
+            next_era_start: now.saturating_add(voting_period_length.into()).saturated_into(),
             period_info: PeriodInfo {
                 number: period_number,
                 subperiod: Subperiod::Voting,

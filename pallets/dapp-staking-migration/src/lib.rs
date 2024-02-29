@@ -98,8 +98,6 @@ pub mod pallet {
     pub trait Config:
         // Tight coupling, but it's fine since pallet is supposed to be just temporary and will be removed after migration.
         frame_system::Config + pallet_dapp_staking_v3::Config + pallet_dapps_staking::Config
-            where
-            BlockNumberFor<Self>: IsType<BlockNumber>,
     {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -114,10 +112,7 @@ pub mod pallet {
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
-    pub enum Event<T: Config>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    pub enum Event<T: Config> {
         /// Number of entries migrated from v2 over to v3
         EntriesMigrated(u32),
         /// Number of entries deleted from v2
@@ -125,10 +120,7 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    impl<T: Config> Pallet<T> {
         /// Attempt to execute migration steps, consuming up to the specified amount of weight.
         /// If no weight is specified, max allowed weight is used.
         ///
@@ -161,10 +153,7 @@ pub mod pallet {
     }
 
     #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn integrity_test() {
             assert!(Pallet::<T>::max_call_weight().all_gte(Pallet::<T>::min_call_weight()));
 
@@ -175,10 +164,7 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> Pallet<T>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    impl<T: Config> Pallet<T> {
         /// Execute migrations steps until the specified weight limit has been consumed.
         ///
         /// Depending on the number of entries migrated and/or deleted, appropriate events are emitted.
@@ -533,13 +519,8 @@ pub mod pallet {
         }
     }
 
-    pub struct DappStakingMigrationHandler<T: Config>(PhantomData<T>)
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>;
-    impl<T: Config> frame_support::traits::OnRuntimeUpgrade for DappStakingMigrationHandler<T>
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>,
-    {
+    pub struct DappStakingMigrationHandler<T: Config>(PhantomData<T>);
+    impl<T: Config> frame_support::traits::OnRuntimeUpgrade for DappStakingMigrationHandler<T> {
         fn on_runtime_upgrade() -> Weight {
             // When upgrade happens, we need to put dApp staking v3 into maintenance mode immediately.
             // For the old pallet, since the storage cleanup is going to happen, maintenance mode must be ensured
@@ -732,10 +713,7 @@ pub mod pallet {
 #[cfg(feature = "try-runtime")]
 /// Used to help with `try-runtime` testing.
 #[derive(Encode, Decode)]
-struct Helper<T: Config>
-where
-    BlockNumberFor<T>: IsType<BlockNumber>,
-{
+struct Helper<T: Config> {
     /// Vec of devs, with their associated smart contract & total reserved balance
     developers: Vec<(
         T::AccountId,

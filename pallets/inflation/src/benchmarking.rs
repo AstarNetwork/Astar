@@ -18,7 +18,6 @@
 
 use super::*;
 
-use astar_primitives::BlockNumber;
 use frame_benchmarking::v2::*;
 use frame_system::{Pallet as System, RawOrigin};
 use sp_std::prelude::*;
@@ -69,10 +68,7 @@ fn initial_config<T: Config>() {
     T::Currency::make_free_balance_be(&dummy_account, 1_000_000_000_000_000_000_000);
 }
 
-#[benchmarks(
-    where
-        BlockNumberFor<T>: IsType<BlockNumber>
-)]
+#[benchmarks]
 mod benchmarks {
     use super::*;
 
@@ -110,7 +106,7 @@ mod benchmarks {
         #[block]
         {
             Pallet::<T>::block_before_new_era(init_recalculation_era);
-            Pallet::<T>::on_finalize(1.into());
+            Pallet::<T>::on_finalize(1u32.into());
         }
 
         assert!(ActiveInflationConfig::<T>::get().recalculation_era > init_recalculation_era);
@@ -124,7 +120,7 @@ mod benchmarks {
         let init_issuance = T::Currency::total_issuance();
         DoRecalculation::<T>::kill();
 
-        let block = 1.into();
+        let block = 1u32.into();
         #[block]
         {
             Pallet::<T>::on_initialize(block);
