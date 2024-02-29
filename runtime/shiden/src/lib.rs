@@ -1119,6 +1119,7 @@ pub type Migrations = (
     >,
     // Part of shiden-119
     RecalculationEraFix,
+    pallet_contracts::Migration<Runtime>,
 );
 
 use frame_support::traits::OnRuntimeUpgrade;
