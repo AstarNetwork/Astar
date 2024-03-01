@@ -57,7 +57,6 @@ use frame_support::{
     traits::{Get, LockableCurrency, ReservableCurrency},
 };
 
-use astar_primitives::BlockNumber;
 use frame_system::{pallet_prelude::*, RawOrigin};
 use pallet_dapps_staking::{Ledger as OldLedger, RegisteredDapps as OldRegisteredDapps};
 use parity_scale_codec::{Decode, Encode};
