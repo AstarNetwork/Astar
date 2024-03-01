@@ -307,7 +307,8 @@ mod benchmarks {
         let mut counter = 1u32;
         Ledger::<T>::mutate(&staker, |ledger| {
             ledger.unlocking.iter_mut().for_each(|unlocking| {
-                unlocking.unlock_block = (System::<T>::block_number() + counter.into()).saturated_into();
+                unlocking.unlock_block =
+                    (System::<T>::block_number() + counter.into()).saturated_into();
             });
             counter += 1;
         });
