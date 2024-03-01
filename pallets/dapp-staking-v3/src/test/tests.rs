@@ -2613,7 +2613,7 @@ fn stake_and_unstake_correctly_updates_staked_amounts() {
         let amount_2 = 10;
         assert_lock(account_2, amount_2);
 
-        // Stake & unstake repeatedly by the second staker, in the current era
+        // 1st scenario: repeated stake & unstake in the `Voting` subperiod
         let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
 
         for _ in 0..20 {
@@ -2621,14 +2621,20 @@ fn stake_and_unstake_correctly_updates_staked_amounts() {
             assert_unstake(account_2, &smart_contract, amount_2);
         }
 
-        // Check that the contract stake snapshot is the same as before
+        // Check that the staked amount for the upcoming era is same as before
+        let current_era = ActiveProtocolState::<Test>::get().era;
+        let period_number = ActiveProtocolState::<Test>::get().period_number();
         assert_eq!(
-            contract_stake_snapshot,
-            ContractStake::<Test>::get(&smart_contract_id),
-            "Contract stake snapshot should not change."
+            contract_stake_snapshot
+                .get(current_era + 1, period_number)
+                .expect("Entry must exist."),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .get(current_era + 1, period_number)
+                .expect("Entry must exist."),
+            "Ongoing era staked amount must not change."
         );
 
-        // Stake & unstake repeatedly in the next era
+        // 2nd scenario: repeated stake & unstake in the first era of the `Build&Earn` subperiod
         advance_to_next_era();
         let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
 
@@ -2638,16 +2644,51 @@ fn stake_and_unstake_correctly_updates_staked_amounts() {
         }
 
         // Check that the contract stake snapshot staked amount is the same as before
+        let current_era = ActiveProtocolState::<Test>::get().era;
         assert_eq!(
-            contract_stake_snapshot.staked_amount(1, Subperiod::Voting),
-            ContractStake::<Test>::get(&smart_contract_id).staked_amount(1, Subperiod::Voting),
-            "Voting staked amount should not change."
-        );
-        assert_eq!(
-            contract_stake_snapshot.staked_amount(1, Subperiod::BuildAndEarn),
+            contract_stake_snapshot
+                .get(current_era, period_number)
+                .expect("Entry must exist."),
             ContractStake::<Test>::get(&smart_contract_id)
-                .staked_amount(1, Subperiod::BuildAndEarn),
-            "Build&Earn staked amount should not change."
+                .get(current_era, period_number)
+                .expect("Entry must exist."),
+            "Ongoing era staked amount must not change."
+        );
+
+        assert_eq!(
+            contract_stake_snapshot
+                .get(current_era, period_number)
+                .expect("Entry must exist.")
+                .total(),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .get(current_era + 1, period_number)
+                .expect("Entry must exist.")
+                .total(),
+            "Ongoing era staked amount must be equal to the upcoming era stake."
+        );
+
+        // 3rd scenario: repeated stake & unstake in the second era of the `Build&Earn` subperiod
+        assert_stake(account_2, &smart_contract, amount_2);
+        assert_lock(account_2, amount_2);
+        advance_to_next_era();
+
+        let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
+
+        for _ in 0..20 {
+            assert_stake(account_2, &smart_contract, amount_2);
+            assert_unstake(account_2, &smart_contract, amount_2);
+        }
+
+        // Check that the contract stake snapshot staked amount is the same as before
+        let current_era = ActiveProtocolState::<Test>::get().era;
+        assert_eq!(
+            contract_stake_snapshot
+                .get(current_era, period_number)
+                .expect("Entry must exist."),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .get(current_era, period_number)
+                .expect("Entry must exist."),
+            "Ongoing era staked amount must not change."
         );
     })
 }
