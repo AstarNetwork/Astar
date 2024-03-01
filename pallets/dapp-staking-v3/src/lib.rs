@@ -1106,7 +1106,7 @@ pub mod pallet {
 
             // 1.
             // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
-            let (new_staking_info, voting_unstake_amount, bep_unstake_amount) =
+            let (new_staking_info, amount) =
                 match StakerInfo::<T>::get(&account, &smart_contract) {
                     Some(mut staking_info) => {
                         ensure!(
@@ -1128,28 +1128,14 @@ pub mod pallet {
                             amount
                         };
 
-                        // We need to know the exact amounts to unstake from each subperiod.
-                        let (voting_unstake_amount, bep_unstake_amount) =
-                            if staking_info.staked_amount(Subperiod::BuildAndEarn) >= amount {
-                                (Balance::zero(), amount)
-                            } else {
-                                (
-                                    amount.saturating_sub(
-                                        staking_info.staked_amount(Subperiod::BuildAndEarn),
-                                    ),
-                                    staking_info.staked_amount(Subperiod::BuildAndEarn),
-                                )
-                            };
-
                         staking_info.unstake(amount, current_era, protocol_state.subperiod());
 
-                        (staking_info, voting_unstake_amount, bep_unstake_amount)
+                        (staking_info, amount)
                     }
                     None => {
                         return Err(Error::<T>::NoStakingInfo.into());
                     }
                 };
-            let amount = voting_unstake_amount.saturating_add(bep_unstake_amount);
 
             // 2.
             // Reduce stake amount
@@ -1170,8 +1156,7 @@ pub mod pallet {
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
             contract_stake_info.unstake(
-                voting_unstake_amount,
-                bep_unstake_amount,
+                amount,
                 protocol_state.period_info,
                 current_era,
             );

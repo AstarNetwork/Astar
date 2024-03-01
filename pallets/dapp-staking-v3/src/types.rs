@@ -882,13 +882,6 @@ impl StakeAmount {
             }
         }
     }
-
-    /// Saturating reduce the specified `amount` from the appropriate subperiod.
-    /// If the amount is larger than the subperiod amount, the subperiod amount is set to zero.
-    pub fn subtract_subperiods(&mut self, voting_amount: Balance, bep_amount: Balance) {
-        self.voting.saturating_reduce(voting_amount);
-        self.build_and_earn.saturating_reduce(bep_amount);
-    }
 }
 
 /// Info about an era, including the rewards, how much is locked, unlocking, etc.
@@ -1208,8 +1201,7 @@ impl ContractStakeAmount {
     /// Unstake the specified `Voting` and `Build&Earn` subperiod amounts from the contract, for the specified `subperiod` and `era`.
     pub fn unstake(
         &mut self,
-        voting_amount: Balance,
-        bep_amount: Balance,
+        amount: Balance,
         period_info: PeriodInfo,
         current_era: EraNumber,
     ) {
@@ -1232,9 +1224,9 @@ impl ContractStakeAmount {
         }
 
         // Subtract both amounts
-        self.staked.subtract_subperiods(voting_amount, bep_amount);
+        self.staked.subtract(amount, period_info.subperiod);
         if let Some(stake_amount) = self.staked_future.as_mut() {
-            stake_amount.subtract_subperiods(voting_amount, bep_amount);
+            stake_amount.subtract(amount, period_info.subperiod);
         }
 
         // Convenience cleanup

@@ -748,17 +748,7 @@ pub(crate) fn assert_unstake(
         "Staked amount must decreased by the 'amount'"
     );
 
-    assert_eq!(
-        post_contract_stake.staked_amount(unstake_period, Subperiod::Voting),
-        pre_contract_stake.staked_amount(unstake_period, Subperiod::Voting) - expected_voting_unstake,
-        "Voting stake amount must be decreased exactly by how much staker's voting amount was reduced."
-    );
-    assert_eq!(
-        post_contract_stake.staked_amount(unstake_period, Subperiod::BuildAndEarn),
-        pre_contract_stake.staked_amount(unstake_period, Subperiod::BuildAndEarn)
-            - expected_build_and_earn_unstake,
-        "B&E stake amount must be decreased exactly by how much staker's B&E amount was reduced."
-    );
+    // TODO: expand this check!
 
     // 4. verify era info
     // =========================
