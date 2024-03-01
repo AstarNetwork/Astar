@@ -631,7 +631,7 @@ parameter_types! {
     // Fallback value if storage deposit limit not set by the user
     pub const DefaultDepositLimit: Balance = contracts_deposit(16, 16 * 1024);
     pub const MaxDelegateDependencies: u32 = 32;
-    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(10);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 

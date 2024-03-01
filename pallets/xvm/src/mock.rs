@@ -99,7 +99,7 @@ parameter_types! {
     pub const DepositPerByte: Balance = 1_000;
     pub const DefaultDepositLimit: Balance = 1_000;
     pub const MaxDelegateDependencies: u32 = 32;
-    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(10);
     pub Schedule: pallet_contracts::Schedule<TestRuntime> = Default::default();
 }
 
