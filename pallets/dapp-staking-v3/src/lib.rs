@@ -1106,7 +1106,7 @@ pub mod pallet {
 
             // 1.
             // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
-            let (new_staking_info, amount) =
+            let (new_staking_info, amount, unstake_info) =
                 match StakerInfo::<T>::get(&account, &smart_contract) {
                     Some(mut staking_info) => {
                         ensure!(
@@ -1128,9 +1128,10 @@ pub mod pallet {
                             amount
                         };
 
-                        staking_info.unstake(amount, current_era, protocol_state.subperiod());
+                        let unstake_info =
+                            staking_info.unstake(amount, current_era, protocol_state.subperiod());
 
-                        (staking_info, amount)
+                        (staking_info, amount, unstake_info)
                     }
                     None => {
                         return Err(Error::<T>::NoStakingInfo.into());
@@ -1155,10 +1156,11 @@ pub mod pallet {
             // 3.
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
-            contract_stake_info.unstake(
+            contract_stake_info.new_unstake(
                 amount,
                 protocol_state.period_info,
                 current_era,
+                unstake_info,
             );
 
             // 4.

@@ -857,6 +857,8 @@ impl StakeAmount {
         }
     }
 
+    // TODO: remove subperiod argument since it's pointless. If BEP is > 0, then it's build&earn, otherwise it's voting or build&earn but it doesn't matter.
+
     /// Unstake the specified `amount` for the specified `subperiod`.
     ///
     /// In case subperiod is `Voting`, the amount is subtracted from the voting subperiod.
@@ -977,6 +979,8 @@ impl EraInfo {
 /// Keeps track of amount staked in the 'voting subperiod', as well as 'build&earn subperiod'.
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct SingularStakingInfo {
+    /// Amount staked before, if anything.
+    previous_staked: StakeAmount,
     /// Staked amount
     staked: StakeAmount,
     /// Indicates whether a staker is a loyal staker or not.
@@ -992,11 +996,10 @@ impl SingularStakingInfo {
     /// `subperiod` - subperiod during which this entry is created.
     pub fn new(period: PeriodNumber, subperiod: Subperiod) -> Self {
         Self {
+            previous_staked: Default::default(),
             staked: StakeAmount {
-                voting: Balance::zero(),
-                build_and_earn: Balance::zero(),
-                era: 0,
                 period,
+                ..Default::default()
             },
             // Loyalty staking is only possible if stake is first made during the voting subperiod.
             loyal_staker: subperiod == Subperiod::Voting,
@@ -1005,10 +1008,16 @@ impl SingularStakingInfo {
 
     /// Stake the specified amount on the contract, for the specified subperiod.
     pub fn stake(&mut self, amount: Balance, current_era: EraNumber, subperiod: Subperiod) {
-        self.staked.add(amount, subperiod);
+        // Keep the previous stake amount for future reference
+        self.previous_staked = self.staked;
+        self.previous_staked.era = current_era;
+
         // Stake is only valid from the next era so we keep it consistent here
+        self.staked.add(amount, subperiod);
         self.staked.era = current_era.saturating_add(1);
     }
+
+    // TODO: add better docs below and in the function!
 
     /// Unstakes some of the specified amount from the contract.
     ///
@@ -1021,10 +1030,18 @@ impl SingularStakingInfo {
         amount: Balance,
         current_era: EraNumber,
         subperiod: Subperiod,
-    ) -> (Balance, Balance) {
+    ) -> (EraNumber, Balance) {
+        // Keep the previous stake amounts for final calculation
         let snapshot = self.staked;
 
+        let stake_delta = self
+            .staked
+            .total()
+            .saturating_sub(self.previous_staked.total());
+
+        // Modify inner fields
         self.staked.subtract(amount, subperiod);
+        let unstaked_amount = snapshot.total().saturating_sub(self.staked.total());
         // Keep the latest era for which the entry is valid
         self.staked.era = self.staked.era.max(current_era);
 
@@ -1034,13 +1051,23 @@ impl SingularStakingInfo {
                 Subperiod::BuildAndEarn => self.staked.voting == snapshot.voting,
             };
 
-        // Amount that was unstaked
-        (
-            snapshot.voting.saturating_sub(self.staked.voting),
-            snapshot
-                .build_and_earn
-                .saturating_sub(self.staked.build_and_earn),
-        )
+        // Move over the snapshot to the previous snapshot field and make sure
+        // to update era in case something was staked before.
+        if stake_delta.is_zero() {
+            self.previous_staked = Default::default();
+        } else {
+            self.previous_staked = snapshot;
+            self.previous_staked.era = self.staked.era.saturating_sub(1);
+        }
+
+        if stake_delta.is_zero() {
+            (0, 0)
+        } else {
+            (
+                self.staked.era.saturating_sub(1),
+                unstaked_amount.saturating_sub(stake_delta),
+            )
+        }
     }
 
     /// Total staked on the contract by the user. Both subperiod stakes are included.
@@ -1199,12 +1226,7 @@ impl ContractStakeAmount {
     }
 
     /// Unstake the specified `Voting` and `Build&Earn` subperiod amounts from the contract, for the specified `subperiod` and `era`.
-    pub fn unstake(
-        &mut self,
-        amount: Balance,
-        period_info: PeriodInfo,
-        current_era: EraNumber,
-    ) {
+    pub fn unstake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
         // First align entries - we only need to keep track of the current era, and the next one
         match self.staked_future {
             // Future entry exists, but it covers current or older era.
@@ -1227,6 +1249,55 @@ impl ContractStakeAmount {
         self.staked.subtract(amount, period_info.subperiod);
         if let Some(stake_amount) = self.staked_future.as_mut() {
             stake_amount.subtract(amount, period_info.subperiod);
+        }
+
+        // Convenience cleanup
+        if self.staked.is_empty() {
+            self.staked = Default::default();
+        }
+        if let Some(stake_amount) = self.staked_future {
+            if stake_amount.is_empty() {
+                self.staked_future = None;
+            }
+        }
+    }
+
+    // TODO
+    pub fn new_unstake(
+        &mut self,
+        amount: Balance,
+        period_info: PeriodInfo,
+        current_era: EraNumber,
+        additional_unstake_info: (EraNumber, Balance),
+    ) {
+        // First align entries - we only need to keep track of the current era, and the next one
+        match self.staked_future {
+            // Future entry exists, but it covers current or older era.
+            Some(stake_amount)
+                if stake_amount.era <= current_era && stake_amount.period == period_info.number =>
+            {
+                self.staked = stake_amount;
+                self.staked.era = current_era;
+                self.staked_future = None;
+            }
+            _ => (),
+        }
+
+        // Current entry is from the right period, but older era. Shift it to the current era.
+        if self.staked.era < current_era && self.staked.period == period_info.number {
+            self.staked.era = current_era;
+        }
+
+        // Subtract both amounts
+        if let Some(stake_amount) = self.staked_future.as_mut() {
+            stake_amount.subtract(amount, period_info.subperiod);
+
+            let (old_era, old_amount) = additional_unstake_info;
+            if self.staked.era == old_era {
+                self.staked.subtract(old_amount, period_info.subperiod);
+            }
+        } else {
+            self.staked.subtract(amount, period_info.subperiod);
         }
 
         // Convenience cleanup
