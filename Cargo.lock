@@ -619,7 +619,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.32.1"
+version = "5.33.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -751,7 +751,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.32.1"
+version = "5.33.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -6618,7 +6618,7 @@ checksum = "01cda141df6706de531b6c46c3a33ecca755538219bd484262fa09410c13539c"
 
 [[package]]
 name = "local-runtime"
-version = "5.32.1"
+version = "5.33.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -13924,7 +13924,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.32.1"
+version = "5.33.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -14039,7 +14039,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.32.1"
+version = "5.33.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -17888,7 +17888,7 @@ dependencies = [
 
 [[package]]
 name = "xcm-tools"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "astar-primitives",
  "clap",
