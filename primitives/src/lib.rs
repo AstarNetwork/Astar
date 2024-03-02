@@ -77,8 +77,6 @@ pub type Hash = sp_core::H256;
 /// [2^64; 2^128-1] Ecosystem assets
 /// 2^128-1         Relay chain token (KSM)
 pub type AssetId = u128;
-/// Index of a transaction in the chain.
-pub type Index = u32;
 /// Block type.
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
 /// Index of a transaction in the chain.

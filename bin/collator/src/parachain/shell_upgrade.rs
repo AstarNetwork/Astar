@@ -111,8 +111,8 @@ where
 {
     async fn verify(
         &mut self,
-        mut block_import: BlockImportParams<Block, ()>,
-    ) -> Result<BlockImportParams<Block, ()>, String> {
+        mut block_import: BlockImportParams<Block>,
+    ) -> Result<BlockImportParams<Block>, String> {
         // Skip checks that include execution, if being told so or when importing only state.
         //
         // This is done for example when gap syncing and it is expected that the block after the gap

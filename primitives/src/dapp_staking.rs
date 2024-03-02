@@ -20,7 +20,7 @@ use super::{Balance, BlockNumber};
 
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
-use frame_support::{pallet_prelude::Weight, RuntimeDebug};
+use frame_support::pallet_prelude::{RuntimeDebug, Weight};
 use sp_core::H160;
 use sp_std::hash::Hash;
 
@@ -76,7 +76,7 @@ pub trait CycleConfiguration {
         Self::blocks_per_era().saturating_mul(Self::cycle_in_era_lengths())
     }
 
-    /// For how many standard era lengths do all the build&earn subperiods in a cycle last.    
+    /// For how many standard era lengths do all the build&earn subperiods in a cycle last.
     fn build_and_earn_eras_per_cycle() -> EraNumber {
         Self::eras_per_build_and_earn_subperiod().saturating_mul(Self::periods_per_cycle())
     }

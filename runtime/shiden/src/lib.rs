@@ -72,7 +72,7 @@ use astar_primitives::{
     },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
-    Address, AssetId, BlockNumber, Hash, Header, Index,
+    Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
 pub use astar_primitives::{AccountId, Balance, Signature};
 
@@ -80,7 +80,6 @@ pub use pallet_dapp_staking_v3::TierThreshold;
 pub use pallet_inflation::InflationParameters;
 
 pub use crate::precompiles::WhitelistedCalls;
-
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 #[cfg(any(feature = "std", test))]
@@ -235,16 +234,14 @@ impl frame_system::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     type Lookup = AccountIdLookup<AccountId, ()>;
-    /// The index type for storing how many extrinsics an account has signed.
-    type Index = Index;
-    /// The index type for blocks.
-    type BlockNumber = BlockNumber;
+    /// The nonce type for storing how many extrinsics an account has signed.
+    type Nonce = Nonce;
+    /// The type for blocks.
+    type Block = Block;
     /// The type for hashing blocks and tries.
     type Hash = Hash;
     /// The hashing algorithm used.
     type Hashing = BlakeTwo256;
-    /// The header type.
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// The ubiquitous event type.
     type RuntimeEvent = RuntimeEvent;
     /// The ubiquitous origin type.
@@ -450,12 +447,16 @@ impl parachain_info::Config for Runtime {}
 
 parameter_types! {
     pub const MaxAuthorities: u32 = 250;
+    // Should be only enabled (`true`) when async backing is enabled
+    // otherwise set to `false`
+    pub const AllowMultipleBlocksPerSlot: bool = false;
 }
 
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = MaxAuthorities;
+    type AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -547,9 +548,9 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
-    type MaxHolds = ConstU32<0>;
+    type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<1>;
 }
 
@@ -629,6 +630,8 @@ parameter_types! {
     pub const DepositPerByte: Balance = contracts_deposit(0, 1);
     // Fallback value if storage deposit limit not set by the user
     pub const DefaultDepositLimit: Balance = contracts_deposit(16, 16 * 1024);
+    pub const MaxDelegateDependencies: u32 = 32;
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(10);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
@@ -638,6 +641,7 @@ impl pallet_contracts::Config for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+    type RuntimeHoldReason = RuntimeHoldReason;
     /// The safest default is to allow no calls at all.
     ///
     /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -658,6 +662,16 @@ impl pallet_contracts::Config for Runtime {
     type MaxStorageKeyLen = ConstU32<128>;
     type UnsafeUnstableInterface = ConstBool<false>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+    type MaxDelegateDependencies = MaxDelegateDependencies;
+    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+    type Debug = ();
+    type Environment = ();
+    type Migrations = (
+        pallet_contracts::migration::v12::Migration<Runtime, Balances>,
+        pallet_contracts::migration::v13::Migration<Runtime>,
+        pallet_contracts::migration::v14::Migration<Runtime, Balances>,
+        pallet_contracts::migration::v15::Migration<Runtime>,
+    );
 }
 
 parameter_types! {
@@ -1007,10 +1021,7 @@ impl pallet_proxy::Config for Runtime {
 }
 
 construct_runtime!(
-    pub struct Runtime where
-        Block = Block,
-        NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
-        UncheckedExtrinsic = UncheckedExtrinsic
+    pub struct Runtime
     {
         System: frame_system = 10,
         Utility: pallet_utility = 11,
@@ -1108,6 +1119,7 @@ pub type Migrations = (
     >,
     // Part of shiden-119
     RecalculationEraFix,
+    pallet_contracts::Migration<Runtime>,
 );
 
 use frame_support::traits::OnRuntimeUpgrade;
@@ -1284,8 +1296,8 @@ impl_runtime_apis! {
         }
     }
 
-    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-        fn account_nonce(account: AccountId) -> Index {
+    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+        fn account_nonce(account: AccountId) -> Nonce {
             System::account_nonce(account)
         }
     }
@@ -1709,14 +1721,14 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
             use frame_system_benchmarking::Pallet as SystemBench;
             use baseline::Pallet as BaselineBench;
 
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
-            use frame_support::traits::WhitelistedStorageKeys;
+            use frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
             let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();

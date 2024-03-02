@@ -50,7 +50,7 @@ use ethereum_types::{H160, U256};
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use fp_evm::{
     CallInfo, CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, ExitReason,
-    ExitSucceed, InvalidEvmTransactionError,
+    ExitSucceed, TransactionValidationError,
 };
 use pallet_evm::GasWeightMapping;
 
@@ -136,7 +136,7 @@ pub mod pallet {
         type XvmTxWeightLimit: Get<Weight>;
 
         /// Invalid tx error.
-        type InvalidEvmTransactionError: From<InvalidEvmTransactionError>;
+        type InvalidEvmTransactionError: From<TransactionValidationError>;
 
         /// Validated tx execution.
         type ValidatedTransaction: ValidatedTransaction;

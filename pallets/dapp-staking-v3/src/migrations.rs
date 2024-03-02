@@ -46,7 +46,9 @@ impl<
         let period_number = 1;
         let protocol_state = ProtocolState {
             era: init_era,
-            next_era_start: now.saturating_add(voting_period_length),
+            next_era_start: now
+                .saturating_add(voting_period_length.into())
+                .saturated_into(),
             period_info: PeriodInfo {
                 number: period_number,
                 subperiod: Subperiod::Voting,

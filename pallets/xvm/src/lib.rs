@@ -41,7 +41,7 @@ extern crate alloc;
 use alloc::format;
 
 use fp_evm::ExitReason;
-use frame_support::{ensure, traits::Currency, weights::Weight};
+use frame_support::{ensure, traits::fungible::Inspect, weights::Weight};
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
 use pallet_contracts_primitives::ReturnFlags;
 use pallet_evm::GasWeightMapping;
@@ -100,7 +100,7 @@ pub mod pallet {
 impl<T> XvmCall<T::AccountId> for Pallet<T>
 where
     T: Config,
-    T::Currency: Currency<T::AccountId, Balance = Balance>,
+    T::Currency: Inspect<T::AccountId, Balance = Balance>,
 {
     fn call(
         context: Context,
@@ -127,7 +127,7 @@ where
 impl<T> Pallet<T>
 where
     T: Config,
-    T::Currency: Currency<T::AccountId, Balance = Balance>,
+    T::Currency: Inspect<T::AccountId, Balance = Balance>,
 {
     fn do_call(
         context: Context,

@@ -20,6 +20,7 @@ use super::*;
 
 use astar_primitives::ethereum_checked::EthereumTxInput;
 use frame_benchmarking::v2::*;
+use sp_std::prelude::*;
 
 #[benchmarks]
 mod benchmarks {
