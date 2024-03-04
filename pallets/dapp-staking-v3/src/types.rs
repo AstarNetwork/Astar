@@ -1024,14 +1024,14 @@ impl SingularStakingInfo {
     /// In case the `amount` being unstaked is larger than the amount staked in the `Voting` subperiod,
     /// and `Voting` subperiod has passed, this will remove the _loyalty_ flag from the staker.
     ///
-    /// Returns the amount that was unstaked from the `Voting` subperiod stake, and from the `Build&Earn` subperiod stake.
+    /// Returns how much was unstaked from the _previous_ staked era.
     pub fn unstake(
         &mut self,
         amount: Balance,
         current_era: EraNumber,
         subperiod: Subperiod,
     ) -> (EraNumber, Balance) {
-        // Keep the previous stake amounts for final calculation
+        // Keep the previous stake amounts for the final calculation
         let snapshot = self.staked;
 
         let stake_delta = self

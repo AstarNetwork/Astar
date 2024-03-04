@@ -641,17 +641,6 @@ pub(crate) fn assert_unstake(
         amount
     };
 
-    // Calculate expected unstake amounts from the voting and build&earn subperiods.
-    let (expected_voting_unstake, expected_build_and_earn_unstake) =
-        if pre_staker_info.staked_amount(Subperiod::BuildAndEarn) >= amount {
-            (Balance::zero(), amount)
-        } else {
-            (
-                amount - pre_staker_info.staked_amount(Subperiod::BuildAndEarn),
-                pre_staker_info.staked_amount(Subperiod::BuildAndEarn),
-            )
-        };
-
     // Unstake from smart contract & verify event
     assert_ok!(DappStaking::unstake(
         RuntimeOrigin::signed(account),

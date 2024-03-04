@@ -2690,6 +2690,32 @@ fn stake_and_unstake_correctly_updates_staked_amounts() {
                 .expect("Entry must exist."),
             "Ongoing era staked amount must not change."
         );
+
+        // 4th scenario: Unstake with more than was staked for the next era
+        let delta = 5;
+        let amount_3 = amount_2 + delta;
+        assert_stake(account_2, &smart_contract, amount_2);
+
+        let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
+        for _ in 0..20 {
+            assert_unstake(account_2, &smart_contract, amount_3);
+            assert_stake(account_2, &smart_contract, amount_3);
+        }
+
+        // Check that the contract stake snapshot staked amount is the same as before
+        let current_era = ActiveProtocolState::<Test>::get().era;
+        assert_eq!(
+            contract_stake_snapshot
+                .get(current_era, period_number)
+                .expect("Entry must exist.")
+                .total(),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .get(current_era, period_number)
+                .expect("Entry must exist.")
+                .total()
+                + delta,
+            "Ongoing era stake must be reduced by the `delta` amount."
+        );
     })
 }
 
