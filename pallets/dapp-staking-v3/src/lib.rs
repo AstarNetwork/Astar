@@ -1165,7 +1165,7 @@ pub mod pallet {
             // 4.
             // Update total staked amount for the next era.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unstake_amount(amount, protocol_state.subperiod());
+                era_info.unstake_amount(amount);
             });
 
             // 5.
@@ -1454,7 +1454,7 @@ pub mod pallet {
             // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
             // Although strange, it's been requested to keep it like this from the team.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unstake_amount(amount, protocol_state.subperiod());
+                era_info.unstake_amount(amount);
             });
 
             // Update remaining storage entries

@@ -629,7 +629,7 @@ where
             return Err(AccountLedgerError::UnstakeAmountLargerThanStake);
         }
 
-        self.staked.subtract(amount, current_period_info.subperiod);
+        self.staked.subtract(amount);
 
         // Convenience cleanup
         if self.staked.is_empty() {
@@ -637,7 +637,7 @@ where
         }
 
         if let Some(mut stake_amount) = self.staked_future {
-            stake_amount.subtract(amount, current_period_info.subperiod);
+            stake_amount.subtract(amount);
 
             self.staked_future = if stake_amount.is_empty() {
                 None
@@ -857,31 +857,22 @@ impl StakeAmount {
         }
     }
 
-    // TODO: remove subperiod argument since it's pointless. If BEP is > 0, then it's build&earn, otherwise it's voting or build&earn but it doesn't matter.
-
-    /// Unstake the specified `amount` for the specified `subperiod`.
+    /// Unstake the specified `amount`.
     ///
-    /// In case subperiod is `Voting`, the amount is subtracted from the voting subperiod.
-    ///
-    /// In case subperiod is `Build&Earn`, the amount is first subtracted from the
-    /// build&earn amount, and any rollover is subtracted from the voting subperiod.
-    pub fn subtract(&mut self, amount: Balance, subperiod: Subperiod) {
-        match subperiod {
-            Subperiod::Voting => self.voting.saturating_reduce(amount),
-            Subperiod::BuildAndEarn => {
-                if self.build_and_earn >= amount {
-                    self.build_and_earn.saturating_reduce(amount);
-                } else {
-                    // Rollover from build&earn to voting, is guaranteed to be larger than zero due to previous check
-                    // E.g. voting = 10, build&earn = 5, amount = 7
-                    // underflow = build&earn - amount = 5 - 7 = -2
-                    // voting = 10 - 2 = 8
-                    // build&earn = 0
-                    let remainder = amount.saturating_sub(self.build_and_earn);
-                    self.build_and_earn = Balance::zero();
-                    self.voting.saturating_reduce(remainder);
-                }
-            }
+    /// Attempt to subtract from `Build&Earn` subperiod amount is done first. Any rollover is subtracted from
+    /// the `Voting` subperiod amount.
+    pub fn subtract(&mut self, amount: Balance) {
+        if self.build_and_earn >= amount {
+            self.build_and_earn.saturating_reduce(amount);
+        } else {
+            // Rollover from build&earn to voting, is guaranteed to be larger than zero due to previous check
+            // E.g. voting = 10, build&earn = 5, amount = 7
+            // underflow = build&earn - amount = 5 - 7 = -2
+            // voting = 10 - 2 = 8
+            // build&earn = 0
+            let remainder = amount.saturating_sub(self.build_and_earn);
+            self.build_and_earn = Balance::zero();
+            self.voting.saturating_reduce(remainder);
         }
     }
 }
@@ -925,10 +916,10 @@ impl EraInfo {
         self.next_stake_amount.add(amount, subperiod);
     }
 
-    /// Subtract the specified `amount` from the appropriate stake amount, based on the `Subperiod`.
-    pub fn unstake_amount(&mut self, amount: Balance, subperiod: Subperiod) {
-        self.current_stake_amount.subtract(amount, subperiod);
-        self.next_stake_amount.subtract(amount, subperiod);
+    /// Subtract the specified `amount` from the appropriate stake amount.
+    pub fn unstake_amount(&mut self, amount: Balance) {
+        self.current_stake_amount.subtract(amount);
+        self.next_stake_amount.subtract(amount);
     }
 
     /// Total staked amount in this era.
@@ -1040,7 +1031,7 @@ impl SingularStakingInfo {
             .saturating_sub(self.previous_staked.total());
 
         // Modify current staked amount
-        self.staked.subtract(amount, subperiod);
+        self.staked.subtract(amount);
         let unstaked_amount = snapshot.total().saturating_sub(self.staked.total());
         self.staked.era = self.staked.era.max(current_era);
 
@@ -1263,13 +1254,13 @@ impl ContractStakeAmount {
 
         for (era, amount) in era_and_amount_pairs {
             if self.staked.era == era {
-                self.staked.subtract(amount, period_info.subperiod);
+                self.staked.subtract(amount);
                 continue;
             }
 
             match self.staked_future.as_mut() {
                 Some(future_stake_amount) if future_stake_amount.era == era => {
-                    future_stake_amount.subtract(amount, period_info.subperiod);
+                    future_stake_amount.subtract(amount);
                 }
                 // Otherwise do nothing
                 _ => (),
