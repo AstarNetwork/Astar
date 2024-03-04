@@ -2562,14 +2562,12 @@ fn contract_stake_amount_unstake_is_ok() {
     // 5th scenario - do a full unstake with existing future entry, expect a cleanup
     contract_stake.stake(total_stake_amount, period_info, era_3);
 
-    println!("{:?}", contract_stake);
     contract_stake.unstake(
         contract_stake.total_staked_amount(period),
         period_info,
         era_3,
         (EraNumber::zero(), Balance::zero()),
     );
-    println!("Contract stake after: {:?}", contract_stake);
     assert!(contract_stake.staked.is_empty());
     assert!(contract_stake.staked_future.is_none());
 }
