@@ -1252,6 +1252,8 @@ impl ContractStakeAmount {
             self.staked.era = current_era;
         }
 
+        // TODO: there should be a cleaner way to do this
+
         // Subtract both amounts
         if let Some(stake_amount) = self.staked_future.as_mut() {
             stake_amount.subtract(amount, period_info.subperiod);
@@ -1259,6 +1261,8 @@ impl ContractStakeAmount {
             let (old_era, old_amount) = additional_unstake_info;
             if self.staked.era == old_era {
                 self.staked.subtract(old_amount, period_info.subperiod);
+            } else if stake_amount.total().is_zero() {
+                self.staked = Default::default();
             }
         } else {
             // No future entry exists, so only current one needs to be updated.
