@@ -721,6 +721,8 @@ pub(crate) fn assert_unstake(
         );
     }
 
+    // TODO: expand checks for previous_staked entry!
+
     // 3. verify contract stake
     // =========================
     // =========================
@@ -737,7 +739,34 @@ pub(crate) fn assert_unstake(
         "Staked amount must decreased by the 'amount'"
     );
 
-    // TODO: expand this check!
+    let staker_delta_stake =
+        pre_staker_info.staked.total() - pre_staker_info.previous_staked.total();
+
+    // Ensure that former era stake is updated correctly.
+    // If this is true, it means that the staker must have had a stake in some previous era.
+    // It's not possible to unstake more than user has staked, so this has to always hold true.
+    if staker_delta_stake < amount {
+        let expected_adjustment = amount - staker_delta_stake;
+        let current_era = pre_snapshot.active_protocol_state.era;
+        let latest_contract_stake_era = post_contract_stake
+            .latest_stake_era()
+            .expect("Has to be defined");
+
+        let previous_former_era_stake_amount = pre_contract_stake
+            .get(latest_contract_stake_era - 1, unstake_period)
+            .expect("Has to be defined")
+            .total();
+        let current_former_era_stake_amount = post_contract_stake
+            .get(latest_contract_stake_era - 1, unstake_period)
+            .expect("Has to be defined")
+            .total();
+
+        assert_eq!(
+            current_former_era_stake_amount,
+            previous_former_era_stake_amount - expected_adjustment,
+            "Former era stake can only be adjusted by the amount that was actually unstaked from it."
+        );
+    }
 
     // 4. verify era info
     // =========================

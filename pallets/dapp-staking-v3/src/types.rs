@@ -980,11 +980,11 @@ impl EraInfo {
 #[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 pub struct SingularStakingInfo {
     /// Amount staked before, if anything.
-    previous_staked: StakeAmount,
+    pub(crate) previous_staked: StakeAmount,
     /// Staked amount
-    staked: StakeAmount,
+    pub(crate) staked: StakeAmount,
     /// Indicates whether a staker is a loyal staker or not.
-    loyal_staker: bool,
+    pub(crate) loyal_staker: bool,
 }
 
 impl SingularStakingInfo {
