@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/parachain/service.rs`."><title>service.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c4dbdcde0fbd8430.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-db279b6232be9c13.css"><link rel="stylesheet" disabled href="../../../static.files/dark-cf923f49f397b216.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-be46fdc453a55015.css"><script src="../../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../../static.files/source-script-1b95b7cca98b26e5.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-98a684e84ae5b08b.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../astar_collator/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/parachain/service.rs`."><title>service.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.70.0 (90c541806 2023-05-31)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../../static.files/source-script-905937fbbdc8e9ea.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-f61008743c98d196.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../astar_collator/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1887,16 +1887,7 @@
 <a href="#1887" id="1887">1887</a>
 <a href="#1888" id="1888">1888</a>
 <a href="#1889" id="1889">1889</a>
-<a href="#1890" id="1890">1890</a>
-<a href="#1891" id="1891">1891</a>
-<a href="#1892" id="1892">1892</a>
-<a href="#1893" id="1893">1893</a>
-<a href="#1894" id="1894">1894</a>
-<a href="#1895" id="1895">1895</a>
-<a href="#1896" id="1896">1896</a>
-<a href="#1897" id="1897">1897</a>
-<a href="#1898" id="1898">1898</a>
-</pre><pre class="rust"><code><span class="comment">// This file is part of Astar.
+</pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -1918,17 +1909,19 @@
 
 </span><span class="kw">use </span>astar_primitives::<span class="kw-2">*</span>;
 <span class="kw">use </span>cumulus_client_cli::CollatorOptions;
-<span class="kw">use </span>cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
+<span class="attr">#[allow(deprecated)]
+</span><span class="kw">use </span>cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 <span class="kw">use </span>cumulus_client_consensus_common::{ParachainBlockImport, ParachainConsensus};
 <span class="kw">use </span>cumulus_client_consensus_relay_chain::Verifier <span class="kw">as </span>RelayChainVerifier;
-<span class="kw">use </span>cumulus_client_service::{
-    prepare_node_config, start_collator, start_full_node, BuildNetworkParams, StartCollatorParams,
-    StartFullNodeParams,
+<span class="attr">#[allow(deprecated)]
+</span><span class="kw">use </span>cumulus_client_service::{
+    prepare_node_config, start_collator, start_relay_chain_tasks, BuildNetworkParams,
+    DARecoveryProfile, StartCollatorParams, StartRelayChainTasksParams,
 };
 <span class="kw">use </span>cumulus_primitives_core::ParaId;
 <span class="kw">use </span>cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 <span class="kw">use </span>cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
-<span class="kw">use </span>cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
+<span class="kw">use </span>cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
 <span class="kw">use </span>fc_consensus::FrontierBlockImport;
 <span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 <span class="kw">use </span>futures::{lock::Mutex, StreamExt};
@@ -1941,7 +1934,7 @@
 <span class="kw">use </span>sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 <span class="kw">use </span>sp_api::ConstructRuntimeApi;
-<span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
+<span class="kw">use </span>sp_consensus_aura::{sr25519::AuthorityId <span class="kw">as </span>AuraId, AuraApi};
 <span class="kw">use </span>sp_keystore::KeystorePtr;
 <span class="kw">use </span>sp_runtime::traits::BlakeTwo256;
 <span class="kw">use </span>sp_runtime::Percent;
@@ -1955,17 +1948,21 @@
 <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
 </span><span class="kw">use </span><span class="kw">crate</span>::rpc::tracing;
 
+<span class="doccomment">/// Extra host functions
+</span><span class="kw">pub type </span>HostFunctions = (
+    frame_benchmarking::benchmarking::HostFunctions,
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+);
+
 <span class="doccomment">/// Astar network runtime executor.
 </span><span class="kw">pub mod </span>astar {
+    <span class="kw">use </span><span class="kw">super</span>::HostFunctions;
     <span class="kw">pub use </span>astar_runtime::RuntimeApi;
 
     <span class="doccomment">/// Shibuya runtime executor.
     </span><span class="kw">pub struct </span>Executor;
     <span class="kw">impl </span>sc_executor::NativeExecutionDispatch <span class="kw">for </span>Executor {
-        <span class="kw">type </span>ExtendHostFunctions = (
-            frame_benchmarking::benchmarking::HostFunctions,
-            moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-        );
+        <span class="kw">type </span>ExtendHostFunctions = HostFunctions;
 
         <span class="kw">fn </span>dispatch(method: <span class="kw-2">&amp;</span>str, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
             astar_runtime::api::dispatch(method, data)
@@ -1979,15 +1976,13 @@
 
 <span class="doccomment">/// Shiden network runtime executor.
 </span><span class="kw">pub mod </span>shiden {
+    <span class="kw">use </span><span class="kw">super</span>::HostFunctions;
     <span class="kw">pub use </span>shiden_runtime::RuntimeApi;
 
     <span class="doccomment">/// Shiden runtime executor.
     </span><span class="kw">pub struct </span>Executor;
     <span class="kw">impl </span>sc_executor::NativeExecutionDispatch <span class="kw">for </span>Executor {
-        <span class="kw">type </span>ExtendHostFunctions = (
-            frame_benchmarking::benchmarking::HostFunctions,
-            moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-        );
+        <span class="kw">type </span>ExtendHostFunctions = HostFunctions;
 
         <span class="kw">fn </span>dispatch(method: <span class="kw-2">&amp;</span>str, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
             shiden_runtime::api::dispatch(method, data)
@@ -2001,15 +1996,13 @@
 
 <span class="doccomment">/// Shibuya network runtime executor.
 </span><span class="kw">pub mod </span>shibuya {
+    <span class="kw">use </span><span class="kw">super</span>::HostFunctions;
     <span class="kw">pub use </span>shibuya_runtime::RuntimeApi;
 
     <span class="doccomment">/// Shibuya runtime executor.
     </span><span class="kw">pub struct </span>Executor;
     <span class="kw">impl </span>sc_executor::NativeExecutionDispatch <span class="kw">for </span>Executor {
-        <span class="kw">type </span>ExtendHostFunctions = (
-            frame_benchmarking::benchmarking::HostFunctions,
-            moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-        );
+        <span class="kw">type </span>ExtendHostFunctions = HostFunctions;
 
         <span class="kw">fn </span>dispatch(method: <span class="kw-2">&amp;</span>str, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
             shibuya_runtime::api::dispatch(method, data)
@@ -2033,10 +2026,7 @@
         TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
         TFullBackend&lt;Block&gt;,
         (),
-        sc_consensus::DefaultImportQueue&lt;
-            Block,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-        &gt;,
+        sc_consensus::DefaultImportQueue&lt;Block&gt;,
         sc_transaction_pool::FullPool&lt;
             Block,
             TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
@@ -2066,10 +2056,8 @@
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
-        + sp_api::ApiExt&lt;
-            Block,
-            StateBackend = sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;,
-        &gt; + sp_offchain::OffchainWorkerApi&lt;Block&gt;
+        + sp_api::ApiExt&lt;Block&gt;
+        + sp_offchain::OffchainWorkerApi&lt;Block&gt;
         + sp_block_builder::BlockBuilder&lt;Block&gt;
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;: sp_api::StateBackend&lt;BlakeTwo256&gt;,
@@ -2088,13 +2076,7 @@
         <span class="kw-2">&amp;</span>Configuration,
         <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
         <span class="kw-2">&amp;</span>TaskManager,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;
-        sc_consensus::DefaultImportQueue&lt;
-            Block,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-        &gt;,
-        sc_service::Error,
-    &gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::DefaultImportQueue&lt;Block&gt;, sc_service::Error&gt;,
 {
     <span class="kw">let </span>telemetry = config
         .telemetry_endpoints
@@ -2177,13 +2159,11 @@
     Arc&lt;(<span class="kw">dyn </span>RelayChainInterface + <span class="lifetime">&#39;static</span>)&gt;,
     <span class="prelude-ty">Option</span>&lt;CollatorPair&gt;,
 )&gt; {
-    <span class="kw">if </span>!collator_options.relay_chain_rpc_urls.is_empty() {
-        build_minimal_relay_chain_node(
-            polkadot_config,
-            task_manager,
-            collator_options.relay_chain_rpc_urls,
-        )
-        .<span class="kw">await
+    <span class="kw">if let </span>cumulus_client_cli::RelayChainMode::ExternalRpc(rpc_target_urls) =
+        collator_options.relay_chain_mode
+    {
+        build_minimal_relay_chain_node_with_rpc(polkadot_config, task_manager, rpc_target_urls)
+            .<span class="kw">await
     </span>} <span class="kw">else </span>{
         build_inprocess_relay_chain(
             polkadot_config,
@@ -2219,16 +2199,15 @@
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
-        + sp_api::ApiExt&lt;
-            Block,
-            StateBackend = sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;,
-        &gt; + sp_offchain::OffchainWorkerApi&lt;Block&gt;
+        + sp_api::ApiExt&lt;Block&gt;
+        + sp_offchain::OffchainWorkerApi&lt;Block&gt;
         + sp_block_builder::BlockBuilder&lt;Block&gt;
         + substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
         + fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;
-        + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;,
+        + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;
+        + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;: sp_api::StateBackend&lt;BlakeTwo256&gt;,
     Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
     BIQ: FnOnce(
@@ -2245,13 +2224,7 @@
         <span class="kw-2">&amp;</span>Configuration,
         <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
         <span class="kw-2">&amp;</span>TaskManager,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;
-        sc_consensus::DefaultImportQueue&lt;
-            Block,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-        &gt;,
-        sc_service::Error,
-    &gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::DefaultImportQueue&lt;Block&gt;, sc_service::Error&gt;,
     BIC: FnOnce(
         Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
         ParachainBlockImport&lt;
@@ -2314,6 +2287,7 @@
             spawn_handle: task_manager.spawn_handle(),
             import_queue: params.import_queue,
             relay_chain_interface: relay_chain_interface.clone(),
+            sybil_resistance_level: cumulus_client_service::CollatorSybilResistance::Resistant,
         })
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -2409,8 +2383,17 @@
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            <span class="kw">crate</span>::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
-                .map_err(Into::into)
+            <span class="kw">let </span>pending_consensus_data_provider = Box::new(
+                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
+            );
+
+            <span class="kw">crate</span>::rpc::create_full(
+                deps,
+                subscription,
+                pubsub_notification_sinks.clone(),
+                pending_consensus_data_provider,
+            )
+            .map_err(Into::into)
         })
     };
 
@@ -2473,9 +2456,10 @@
             sync_service,
         };
 
-        start_collator(params).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="attr">#[allow(deprecated)]
+        </span>start_collator(params).<span class="kw">await</span><span class="question-mark">?</span>;
     } <span class="kw">else </span>{
-        <span class="kw">let </span>params = StartFullNodeParams {
+        <span class="kw">let </span>params = StartRelayChainTasksParams {
             client: client.clone(),
             announce_block,
             task_manager: <span class="kw-2">&amp;mut </span>task_manager,
@@ -2485,9 +2469,10 @@
             import_queue: import_queue_service,
             recovery_handle: Box::new(overseer_handle),
             sync_service,
+            da_recovery_profile: DARecoveryProfile::FullNode,
         };
 
-        start_full_node(params)<span class="question-mark">?</span>;
+        start_relay_chain_tasks(params)<span class="question-mark">?</span>;
     }
 
     start_network.start_network();
@@ -2537,10 +2522,8 @@
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
-        + sp_api::ApiExt&lt;
-            Block,
-            StateBackend = sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;,
-        &gt; + sp_offchain::OffchainWorkerApi&lt;Block&gt;
+        + sp_api::ApiExt&lt;Block&gt;
+        + sp_offchain::OffchainWorkerApi&lt;Block&gt;
         + sp_block_builder::BlockBuilder&lt;Block&gt;
         + substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;
@@ -2548,7 +2531,8 @@
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi&lt;Block&gt;
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
         + fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;
-        + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;,
+        + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;
+        + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;: sp_api::StateBackend&lt;BlakeTwo256&gt;,
     Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
     BIQ: FnOnce(
@@ -2565,13 +2549,7 @@
         <span class="kw-2">&amp;</span>Configuration,
         <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
         <span class="kw-2">&amp;</span>TaskManager,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;
-        sc_consensus::DefaultImportQueue&lt;
-            Block,
-            TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-        &gt;,
-        sc_service::Error,
-    &gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::DefaultImportQueue&lt;Block&gt;, sc_service::Error&gt;,
     BIC: FnOnce(
         Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
         ParachainBlockImport&lt;
@@ -2634,6 +2612,7 @@
             spawn_handle: task_manager.spawn_handle(),
             import_queue: params.import_queue,
             relay_chain_interface: relay_chain_interface.clone(),
+            sybil_resistance_level: cumulus_client_service::CollatorSybilResistance::Resistant,
         })
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -2755,10 +2734,15 @@
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
+            <span class="kw">let </span>pending_consensus_data_provider = Box::new(
+                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
+            );
+
             <span class="kw">crate</span>::rpc::create_full(
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
+                pending_consensus_data_provider,
                 rpc_config.clone(),
             )
             .map_err(Into::into)
@@ -2823,10 +2807,10 @@
             recovery_handle: Box::new(overseer_handle),
             sync_service,
         };
-
-        start_collator(params).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="attr">#[allow(deprecated)]
+        </span>start_collator(params).<span class="kw">await</span><span class="question-mark">?</span>;
     } <span class="kw">else </span>{
-        <span class="kw">let </span>params = StartFullNodeParams {
+        <span class="kw">let </span>params = StartRelayChainTasksParams {
             client: client.clone(),
             announce_block,
             task_manager: <span class="kw-2">&amp;mut </span>task_manager,
@@ -2836,9 +2820,10 @@
             import_queue: import_queue_service,
             recovery_handle: Box::new(overseer_handle),
             sync_service,
+            da_recovery_profile: DARecoveryProfile::FullNode,
         };
 
-        start_full_node(params)<span class="question-mark">?</span>;
+        start_relay_chain_tasks(params)<span class="question-mark">?</span>;
     }
 
     start_network.start_network();
@@ -2861,13 +2846,7 @@
     config: <span class="kw-2">&amp;</span>Configuration,
     telemetry_handle: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
     task_manager: <span class="kw-2">&amp;</span>TaskManager,
-) -&gt; <span class="prelude-ty">Result</span>&lt;
-    sc_consensus::DefaultImportQueue&lt;
-        Block,
-        TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;,
-    &gt;,
-    sc_service::Error,
-&gt;
+) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::DefaultImportQueue&lt;Block&gt;, sc_service::Error&gt;
 <span class="kw">where
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
@@ -2876,10 +2855,8 @@
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
-        + sp_api::ApiExt&lt;
-            Block,
-            StateBackend = sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;,
-        &gt; + sp_offchain::OffchainWorkerApi&lt;Block&gt;
+        + sp_api::ApiExt&lt;Block&gt;
+        + sp_offchain::OffchainWorkerApi&lt;Block&gt;
         + sp_block_builder::BlockBuilder&lt;Block&gt;
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
         + sp_consensus_aura::AuraApi&lt;Block, AuraId&gt;,
@@ -3018,7 +2995,8 @@
 
             <span class="kw">let </span>relay_chain_for_aura = relay_chain_interface.clone();
 
-            <span class="prelude-val">Ok</span>(AuraConsensus::build::&lt;
+            <span class="attr">#[allow(deprecated)]
+            </span><span class="prelude-val">Ok</span>(AuraConsensus::build::&lt;
                 sp_consensus_aura::sr25519::AuthorityPair,
                 <span class="kw">_</span>,
                 <span class="kw">_</span>,
@@ -3152,7 +3130,8 @@
 
             <span class="kw">let </span>relay_chain_for_aura = relay_chain_interface.clone();
 
-            <span class="prelude-val">Ok</span>(AuraConsensus::build::&lt;
+            <span class="attr">#[allow(deprecated)]
+            </span><span class="prelude-val">Ok</span>(AuraConsensus::build::&lt;
                 sp_consensus_aura::sr25519::AuthorityPair,
                 <span class="kw">_</span>,
                 <span class="kw">_</span>,
@@ -3261,7 +3240,8 @@
                     proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
                     proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
-                    AuraConsensus::build::&lt;
+                    <span class="attr">#[allow(deprecated)]
+                    </span>AuraConsensus::build::&lt;
                         sp_consensus_aura::sr25519::AuthorityPair,
                         <span class="kw">_</span>,
                         <span class="kw">_</span>,
@@ -3406,7 +3386,6 @@
             <span class="kw">let </span>block_import2 = block_import.clone();
             <span class="kw">let </span>sync_oracle2 = sync_oracle.clone();
             <span class="kw">let </span>keystore2 = keystore.clone();
-
             <span class="kw">let </span>aura_consensus = BuildOnAccess::Uninitialized(<span class="prelude-val">Some</span>(
                 Box::new(<span class="kw">move </span>|| {
                     <span class="kw">let </span>slot_duration =
@@ -3424,7 +3403,8 @@
                     proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
                     proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
-                    AuraConsensus::build::&lt;
+                    <span class="attr">#[allow(deprecated)]
+                    </span>AuraConsensus::build::&lt;
                         sp_consensus_aura::sr25519::AuthorityPair,
                         <span class="kw">_</span>,
                         <span class="kw">_</span>,
@@ -3610,7 +3590,8 @@
             proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
             proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
-            <span class="prelude-val">Ok</span>(AuraConsensus::build::&lt;
+            <span class="attr">#[allow(deprecated)]
+            </span><span class="prelude-val">Ok</span>(AuraConsensus::build::&lt;
                 sp_consensus_aura::sr25519::AuthorityPair,
                 <span class="kw">_</span>,
                 <span class="kw">_</span>,
@@ -3742,7 +3723,8 @@
             proposer_factory.set_default_block_size_limit(additional_config.proposer_block_size_limit);
             proposer_factory.set_soft_deadline(Percent::from_percent(additional_config.proposer_soft_deadline_percent));
 
-            <span class="prelude-val">Ok</span>(AuraConsensus::build::&lt;
+            <span class="attr">#[allow(deprecated)]
+            </span><span class="prelude-val">Ok</span>(AuraConsensus::build::&lt;
                 sp_consensus_aura::sr25519::AuthorityPair,
                 <span class="kw">_</span>,
                 <span class="kw">_</span>,
@@ -3794,5 +3776,4 @@
         )
     }).<span class="kw">await
 </span>}
-</code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0 (84c898d65 2023-04-16)" data-search-js="search-8a59a8356673ec1f.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
+</code></pre></div></section></main></body></html>

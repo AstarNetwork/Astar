@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["build_import_queue","new_partial","start_astar_node","start_shibuya_node","start_shiden_node"],"mod":["astar","shibuya","shiden"],"struct":["AdditionalConfig"]};
+window.SIDEBAR_ITEMS = {"fn":["build_import_queue","new_partial","start_astar_node","start_shibuya_node","start_shiden_node"],"mod":["astar","shibuya","shiden"],"struct":["AdditionalConfig"],"type":["HostFunctions"]};

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/command.rs`."><title>command.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c4dbdcde0fbd8430.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-db279b6232be9c13.css"><link rel="stylesheet" disabled href="../../static.files/dark-cf923f49f397b216.css"><link rel="stylesheet" disabled href="../../static.files/ayu-be46fdc453a55015.css"><script src="../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../static.files/source-script-1b95b7cca98b26e5.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-98a684e84ae5b08b.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../astar_collator/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/command.rs`."><title>command.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.70.0 (90c541806 2023-05-31)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../static.files/source-script-905937fbbdc8e9ea.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-f61008743c98d196.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../astar_collator/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1016,74 +1016,7 @@
 <a href="#1016" id="1016">1016</a>
 <a href="#1017" id="1017">1017</a>
 <a href="#1018" id="1018">1018</a>
-<a href="#1019" id="1019">1019</a>
-<a href="#1020" id="1020">1020</a>
-<a href="#1021" id="1021">1021</a>
-<a href="#1022" id="1022">1022</a>
-<a href="#1023" id="1023">1023</a>
-<a href="#1024" id="1024">1024</a>
-<a href="#1025" id="1025">1025</a>
-<a href="#1026" id="1026">1026</a>
-<a href="#1027" id="1027">1027</a>
-<a href="#1028" id="1028">1028</a>
-<a href="#1029" id="1029">1029</a>
-<a href="#1030" id="1030">1030</a>
-<a href="#1031" id="1031">1031</a>
-<a href="#1032" id="1032">1032</a>
-<a href="#1033" id="1033">1033</a>
-<a href="#1034" id="1034">1034</a>
-<a href="#1035" id="1035">1035</a>
-<a href="#1036" id="1036">1036</a>
-<a href="#1037" id="1037">1037</a>
-<a href="#1038" id="1038">1038</a>
-<a href="#1039" id="1039">1039</a>
-<a href="#1040" id="1040">1040</a>
-<a href="#1041" id="1041">1041</a>
-<a href="#1042" id="1042">1042</a>
-<a href="#1043" id="1043">1043</a>
-<a href="#1044" id="1044">1044</a>
-<a href="#1045" id="1045">1045</a>
-<a href="#1046" id="1046">1046</a>
-<a href="#1047" id="1047">1047</a>
-<a href="#1048" id="1048">1048</a>
-<a href="#1049" id="1049">1049</a>
-<a href="#1050" id="1050">1050</a>
-<a href="#1051" id="1051">1051</a>
-<a href="#1052" id="1052">1052</a>
-<a href="#1053" id="1053">1053</a>
-<a href="#1054" id="1054">1054</a>
-<a href="#1055" id="1055">1055</a>
-<a href="#1056" id="1056">1056</a>
-<a href="#1057" id="1057">1057</a>
-<a href="#1058" id="1058">1058</a>
-<a href="#1059" id="1059">1059</a>
-<a href="#1060" id="1060">1060</a>
-<a href="#1061" id="1061">1061</a>
-<a href="#1062" id="1062">1062</a>
-<a href="#1063" id="1063">1063</a>
-<a href="#1064" id="1064">1064</a>
-<a href="#1065" id="1065">1065</a>
-<a href="#1066" id="1066">1066</a>
-<a href="#1067" id="1067">1067</a>
-<a href="#1068" id="1068">1068</a>
-<a href="#1069" id="1069">1069</a>
-<a href="#1070" id="1070">1070</a>
-<a href="#1071" id="1071">1071</a>
-<a href="#1072" id="1072">1072</a>
-<a href="#1073" id="1073">1073</a>
-<a href="#1074" id="1074">1074</a>
-<a href="#1075" id="1075">1075</a>
-<a href="#1076" id="1076">1076</a>
-<a href="#1077" id="1077">1077</a>
-<a href="#1078" id="1078">1078</a>
-<a href="#1079" id="1079">1079</a>
-<a href="#1080" id="1080">1080</a>
-<a href="#1081" id="1081">1081</a>
-<a href="#1082" id="1082">1082</a>
-<a href="#1083" id="1083">1083</a>
-<a href="#1084" id="1084">1084</a>
-<a href="#1085" id="1085">1085</a>
-</pre><pre class="rust"><code><span class="comment">// This file is part of Astar.
+</pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -1126,9 +1059,9 @@
 <span class="kw">use </span>sp_core::hexdisplay::HexDisplay;
 <span class="kw">use </span>sp_runtime::traits::AccountIdConversion;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
-<span class="kw">use </span>std::net::SocketAddr;
+<span class="kw">use </span>std::{io::Write, net::SocketAddr};
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;frame-benchmarking-cli&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">use </span>frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
 <span class="kw">trait </span>IdentifyChain {
@@ -1232,8 +1165,10 @@
     <span class="kw">fn </span>load_spec(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="kw-2">&amp;</span>str) -&gt; std::result::Result&lt;Box&lt;<span class="kw">dyn </span>sc_service::ChainSpec&gt;, String&gt; {
         load_spec(id)
     }
+}
 
-    <span class="kw">fn </span>native_runtime_version(chain_spec: <span class="kw-2">&amp;</span>Box&lt;<span class="kw">dyn </span>ChainSpec&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>RuntimeVersion {
+<span class="kw">impl </span>Cli {
+    <span class="kw">fn </span>runtime_version(chain_spec: <span class="kw-2">&amp;</span>Box&lt;<span class="kw">dyn </span>ChainSpec&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>RuntimeVersion {
         <span class="kw">if </span>chain_spec.is_dev() {
             <span class="kw-2">&amp;</span>local_runtime::VERSION
         } <span class="kw">else if </span>chain_spec.is_astar() {
@@ -1286,10 +1221,6 @@
         } <span class="kw">else </span>{
             polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
         }
-    }
-
-    <span class="kw">fn </span>native_runtime_version(chain_spec: <span class="kw-2">&amp;</span>Box&lt;<span class="kw">dyn </span>ChainSpec&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>RuntimeVersion {
-        polkadot_cli::Cli::native_runtime_version(chain_spec)
     }
 }
 
@@ -1543,13 +1474,22 @@
             }
         }
         <span class="prelude-val">Some</span>(Subcommand::ExportGenesisState(cmd)) =&gt; {
-            <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+            <span class="kw">let </span>spec = cli.load_spec(<span class="kw-2">&amp;</span>cmd.shared_params.chain.clone().unwrap_or_default())<span class="question-mark">?</span>;
+            <span class="kw">let </span>state_version = Cli::runtime_version(<span class="kw-2">&amp;</span>spec).state_version();
 
-            runner.sync_run(|_config| {
-                <span class="kw">let </span>spec = cli.load_spec(<span class="kw-2">&amp;</span>cmd.shared_params.chain.clone().unwrap_or_default())<span class="question-mark">?</span>;
-                <span class="kw">let </span>state_version = Cli::native_runtime_version(<span class="kw-2">&amp;</span>spec).state_version();
-                cmd.run::&lt;Block&gt;(<span class="kw-2">&amp;*</span>spec, state_version)
-            })
+            <span class="kw">let </span>block: Block = generate_genesis_block(<span class="kw-2">&amp;*</span>spec, state_version)<span class="question-mark">?</span>;
+            <span class="kw">let </span>raw_header = block.header().encode();
+            <span class="kw">let </span>output_buf = <span class="kw">if </span>cmd.raw {
+                raw_header
+            } <span class="kw">else </span>{
+                <span class="macro">format!</span>(<span class="string">&quot;0x{:?}&quot;</span>, HexDisplay::from(<span class="kw-2">&amp;</span>block.header().encode())).into_bytes()
+            };
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(output) = <span class="kw-2">&amp;</span>cmd.output {
+                std::fs::write(output, output_buf)<span class="question-mark">?</span>;
+            } <span class="kw">else </span>{
+                std::io::stdout().write_all(<span class="kw-2">&amp;</span>output_buf)<span class="question-mark">?</span>;
+            }
+            <span class="prelude-val">Ok</span>(())
         }
         <span class="prelude-val">Some</span>(Subcommand::ExportGenesisWasm(cmd)) =&gt; {
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
@@ -1563,7 +1503,7 @@
         <span class="prelude-val">Some</span>(Subcommand::Sign(cmd)) =&gt; cmd.run(),
         <span class="prelude-val">Some</span>(Subcommand::Verify(cmd)) =&gt; cmd.run(),
         <span class="prelude-val">Some</span>(Subcommand::Vanity(cmd)) =&gt; cmd.run(),
-        <span class="attr">#[cfg(feature = <span class="string">&quot;frame-benchmarking-cli&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
         </span><span class="prelude-val">Some</span>(Subcommand::Benchmark(cmd)) =&gt; {
             <span class="kw">use </span><span class="kw">crate</span>::benchmarking::<span class="kw-2">*</span>;
             <span class="kw">use </span>sp_keyring::Sr25519Keyring;
@@ -1575,18 +1515,18 @@
                 BenchmarkCmd::Pallet(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            cmd.run::&lt;astar_runtime::Block, astar::Executor&gt;(config)
+                            cmd.run::&lt;astar_runtime::Block, parachain::HostFunctions&gt;(config)
                         })
                     } <span class="kw">else if </span>chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            cmd.run::&lt;shiden_runtime::Block, shiden::Executor&gt;(config)
+                            cmd.run::&lt;shiden_runtime::Block, parachain::HostFunctions&gt;(config)
                         })
                     } <span class="kw">else if </span>chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            cmd.run::&lt;shibuya_runtime::Block, shibuya::Executor&gt;(config)
+                            cmd.run::&lt;shibuya_runtime::Block, parachain::HostFunctions&gt;(config)
                         })
                     } <span class="kw">else </span>{
-                        runner.sync_run(|config| cmd.run::&lt;Block, local::Executor&gt;(config))
+                        runner.sync_run(|config| cmd.run::&lt;Block, local::HostFunctions&gt;(config))
                     }
                 }
                 BenchmarkCmd::Block(cmd) =&gt; {
@@ -1848,85 +1788,11 @@
                 }
             }
         }
-        <span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
-        </span><span class="prelude-val">Some</span>(Subcommand::TryRuntime(cmd)) =&gt; {
-            <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
-            <span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
-
-            <span class="kw">use </span>sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
-            <span class="kw">type </span>HostFunctionsOf&lt;E&gt; = ExtendedHostFunctions&lt;
-                sp_io::SubstrateHostFunctions,
-                &lt;E <span class="kw">as </span>NativeExecutionDispatch&gt;::ExtendHostFunctions,
-            &gt;;
-
-            <span class="kw">if </span>chain_spec.is_shiden() {
-                runner.async_run(|config| {
-                    <span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
-                    <span class="kw">let </span>info_provider =
-                        try_runtime_cli::block_building_info::timestamp_with_aura_info(<span class="number">6000</span>);
-                    <span class="kw">let </span>task_manager =
-                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-                            .map_err(|e| {
-                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
-                            })<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>((
-                        cmd.run::&lt;shiden_runtime::Block, HostFunctionsOf&lt;shiden::Executor&gt;, <span class="kw">_</span>&gt;(
-                            <span class="prelude-val">Some</span>(info_provider),
-                        ),
-                        task_manager,
-                    ))
-                })
-            } <span class="kw">else if </span>chain_spec.is_shibuya() {
-                runner.async_run(|config| {
-                    <span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
-                    <span class="kw">let </span>info_provider =
-                        try_runtime_cli::block_building_info::timestamp_with_aura_info(<span class="number">6000</span>);
-                    <span class="kw">let </span>task_manager =
-                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-                            .map_err(|e| {
-                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
-                            })<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>((
-                        cmd.run::&lt;shibuya_runtime::Block, HostFunctionsOf&lt;shibuya::Executor&gt;, <span class="kw">_</span>&gt;(
-                            <span class="prelude-val">Some</span>(info_provider),
-                        ),
-                        task_manager,
-                    ))
-                })
-            } <span class="kw">else if </span>chain_spec.is_astar() {
-                runner.async_run(|config| {
-                    <span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
-                    <span class="kw">let </span>info_provider =
-                        try_runtime_cli::block_building_info::timestamp_with_aura_info(<span class="number">6000</span>);
-                    <span class="kw">let </span>task_manager =
-                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-                            .map_err(|e| {
-                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
-                            })<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>((
-                        cmd.run::&lt;astar_runtime::Block, HostFunctionsOf&lt;astar::Executor&gt;, <span class="kw">_</span>&gt;(<span class="prelude-val">Some</span>(
-                            info_provider,
-                        )),
-                        task_manager,
-                    ))
-                })
-            } <span class="kw">else </span>{
-                runner.async_run(|config| {
-                    <span class="kw">let </span>registry = config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry);
-                    <span class="kw">let </span>info_provider =
-                        try_runtime_cli::block_building_info::timestamp_with_aura_info(<span class="number">6000</span>);
-                    <span class="kw">let </span>task_manager =
-                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-                            .map_err(|e| {
-                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
-                            })<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>((
-                        cmd.run::&lt;Block, HostFunctionsOf&lt;local::Executor&gt;, <span class="kw">_</span>&gt;(<span class="prelude-val">Some</span>(info_provider)),
-                        task_manager,
-                    ))
-                })
-            }
-        }
+        <span class="prelude-val">Some</span>(Subcommand::TryRuntime) =&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;The `try-runtime` subcommand has been migrated to a \
+        standalone CLI (https://github.com/paritytech/try-runtime-cli). It is no longer \
+        being maintained here and will be removed entirely some time after January 2024. \
+        Please remove this subcommand from your runtime and use the standalone CLI.&quot;
+            </span>.into()),
         <span class="prelude-val">None </span>=&gt; {
             <span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run.normalize())<span class="question-mark">?</span>;
             <span class="kw">let </span>collator_options = cli.run.collator_options();
@@ -1970,7 +1836,7 @@
                 <span class="kw">let </span>parachain_account =
                     AccountIdConversion::&lt;polkadot_primitives::AccountId&gt;::into_account_truncating(<span class="kw-2">&amp;</span>para_id);
 
-                <span class="kw">let </span>state_version = Cli::native_runtime_version(<span class="kw-2">&amp;</span>config.chain_spec).state_version();
+                <span class="kw">let </span>state_version = Cli::runtime_version(<span class="kw-2">&amp;</span>config.chain_spec).state_version();
                 <span class="kw">let </span>block: Block = generate_genesis_block(<span class="kw-2">&amp;*</span>config.chain_spec, state_version)
                     .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
                 <span class="kw">let </span>genesis_state = <span class="macro">format!</span>(<span class="string">&quot;0x{:?}&quot;</span>, HexDisplay::from(<span class="kw-2">&amp;</span>block.header().encode()));
@@ -2168,5 +2034,4 @@
         <span class="self">self</span>.base.base.telemetry_endpoints(chain_spec)
     }
 }
-</code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0 (84c898d65 2023-04-16)" data-search-js="search-8a59a8356673ec1f.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
+</code></pre></div></section></main></body></html>

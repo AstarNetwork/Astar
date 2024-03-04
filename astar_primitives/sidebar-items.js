@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["dapp_staking","ethereum_checked","evm","oracle","precompiles","testing","xcm","xvm"],"type":["AccountId","Address","AssetId","Balance","Block","BlockNumber","Hash","Header","Index","Nonce","Signature"]};
+window.SIDEBAR_ITEMS = {"mod":["dapp_staking","ethereum_checked","evm","oracle","precompiles","testing","xcm","xvm"],"type":["AccountId","Address","AssetId","Balance","Block","BlockNumber","Hash","Header","Nonce","Signature"]};

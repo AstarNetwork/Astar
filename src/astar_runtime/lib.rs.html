@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/astar/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c4dbdcde0fbd8430.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-db279b6232be9c13.css"><link rel="stylesheet" disabled href="../../static.files/dark-cf923f49f397b216.css"><link rel="stylesheet" disabled href="../../static.files/ayu-be46fdc453a55015.css"><script src="../../static.files/storage-3891ce972e3a2bf8.js"></script><script defer src="../../static.files/source-script-1b95b7cca98b26e5.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-98a684e84ae5b08b.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../astar_runtime/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/astar/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.70.0 (90c541806 2023-05-31)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../static.files/source-script-905937fbbdc8e9ea.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-f61008743c98d196.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../astar_runtime/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1893,7 +1893,18 @@
 <a href="#1893" id="1893">1893</a>
 <a href="#1894" id="1894">1894</a>
 <a href="#1895" id="1895">1895</a>
-</pre><pre class="rust"><code><span class="comment">// This file is part of Astar.
+<a href="#1896" id="1896">1896</a>
+<a href="#1897" id="1897">1897</a>
+<a href="#1898" id="1898">1898</a>
+<a href="#1899" id="1899">1899</a>
+<a href="#1900" id="1900">1900</a>
+<a href="#1901" id="1901">1901</a>
+<a href="#1902" id="1902">1902</a>
+<a href="#1903" id="1903">1903</a>
+<a href="#1904" id="1904">1904</a>
+<a href="#1905" id="1905">1905</a>
+<a href="#1906" id="1906">1906</a>
+</pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -1968,7 +1979,7 @@
     },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
-    Address, AssetId, BlockNumber, Hash, Header, Index,
+    Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
 <span class="kw">pub use </span>astar_primitives::{AccountId, Balance, Signature};
 
@@ -2043,7 +2054,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">80</span>,
+    spec_version: <span class="number">81</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">2</span>,
@@ -2128,16 +2139,14 @@
     </span><span class="kw">type </span>RuntimeCall = RuntimeCall;
     <span class="doccomment">/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     </span><span class="kw">type </span>Lookup = AccountIdLookup&lt;AccountId, ()&gt;;
-    <span class="doccomment">/// The index type for storing how many extrinsics an account has signed.
-    </span><span class="kw">type </span>Index = Index;
-    <span class="doccomment">/// The index type for blocks.
-    </span><span class="kw">type </span>BlockNumber = BlockNumber;
+    <span class="doccomment">/// The nonce type for storing how many extrinsics an account has signed.
+    </span><span class="kw">type </span>Nonce = Nonce;
+    <span class="doccomment">/// The type for blocks.
+    </span><span class="kw">type </span>Block = Block;
     <span class="doccomment">/// The type for hashing blocks and tries.
     </span><span class="kw">type </span>Hash = Hash;
     <span class="doccomment">/// The hashing algorithm used.
     </span><span class="kw">type </span>Hashing = BlakeTwo256;
-    <span class="doccomment">/// The header type.
-    </span><span class="kw">type </span>Header = generic::Header&lt;BlockNumber, BlakeTwo256&gt;;
     <span class="doccomment">/// The ubiquitous event type.
     </span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="doccomment">/// The ubiquitous origin type.
@@ -2384,6 +2393,9 @@
     <span class="kw">type </span>AuthorityId = AuraId;
     <span class="kw">type </span>DisabledValidators = ();
     <span class="kw">type </span>MaxAuthorities = MaxAuthorities;
+    <span class="comment">// Should be only enabled (`true`) when async backing is enabled
+    // otherwise set to `false`
+    </span><span class="kw">type </span>AllowMultipleBlocksPerSlot = ConstBool&lt;<span class="bool-val">false</span>&gt;;
 }
 
 <span class="kw">impl </span>cumulus_pallet_aura_ext::Config <span class="kw">for </span>Runtime {}
@@ -2476,9 +2488,9 @@
     <span class="kw">type </span>ExistentialDeposit = ExistentialDeposit;
     <span class="kw">type </span>AccountStore = frame_system::Pallet&lt;Runtime&gt;;
     <span class="kw">type </span>WeightInfo = pallet_balances::weights::SubstrateWeight&lt;Runtime&gt;;
-    <span class="kw">type </span>HoldIdentifier = ();
+    <span class="kw">type </span>RuntimeHoldReason = RuntimeHoldReason;
     <span class="kw">type </span>FreezeIdentifier = RuntimeFreezeReason;
-    <span class="kw">type </span>MaxHolds = ConstU32&lt;<span class="number">0</span>&gt;;
+    <span class="kw">type </span>MaxHolds = ConstU32&lt;<span class="number">1</span>&gt;;
     <span class="kw">type </span>MaxFreezes = ConstU32&lt;<span class="number">1</span>&gt;;
 }
 
@@ -2558,6 +2570,8 @@
     <span class="kw">pub const </span>DepositPerByte: Balance = contracts_deposit(<span class="number">0</span>, <span class="number">1</span>);
     <span class="comment">// Fallback value if storage deposit limit not set by the user
     </span><span class="kw">pub const </span>DefaultDepositLimit: Balance = contracts_deposit(<span class="number">16</span>, <span class="number">16 </span>* <span class="number">1024</span>);
+    <span class="kw">pub const </span>MaxDelegateDependencies: u32 = <span class="number">32</span>;
+    <span class="kw">pub const </span>CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(<span class="number">10</span>);
     <span class="kw">pub </span>Schedule: pallet_contracts::Schedule&lt;Runtime&gt; = Default::default();
 }
 
@@ -2578,6 +2592,7 @@
     <span class="kw">type </span>Currency = Balances;
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="kw">type </span>RuntimeCall = RuntimeCall;
+    <span class="kw">type </span>RuntimeHoldReason = RuntimeHoldReason;
     <span class="doccomment">/// The safest default is to allow no calls at all.
     ///
     /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -2598,6 +2613,16 @@
     <span class="kw">type </span>MaxStorageKeyLen = ConstU32&lt;<span class="number">128</span>&gt;;
     <span class="kw">type </span>UnsafeUnstableInterface = ConstBool&lt;<span class="bool-val">false</span>&gt;;
     <span class="kw">type </span>MaxDebugBufferLen = ConstU32&lt;{ <span class="number">2 </span>* <span class="number">1024 </span>* <span class="number">1024 </span>}&gt;;
+    <span class="kw">type </span>MaxDelegateDependencies = MaxDelegateDependencies;
+    <span class="kw">type </span>CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+    <span class="kw">type </span>Debug = ();
+    <span class="kw">type </span>Environment = ();
+    <span class="kw">type </span>Migrations = (
+        pallet_contracts::migration::v12::Migration&lt;Runtime, Balances&gt;,
+        pallet_contracts::migration::v13::Migration&lt;Runtime&gt;,
+        pallet_contracts::migration::v14::Migration&lt;Runtime, Balances&gt;,
+        pallet_contracts::migration::v15::Migration&lt;Runtime&gt;,
+    );
 }
 
 <span class="comment">// These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -2948,10 +2973,7 @@
 }
 
 <span class="macro">construct_runtime!</span>(
-    <span class="kw">pub struct </span>Runtime <span class="kw">where
-        </span>Block = Block,
-        NodeBlock = generic::Block&lt;Header, sp_runtime::OpaqueExtrinsic&gt;,
-        UncheckedExtrinsic = UncheckedExtrinsic
+    <span class="kw">pub struct </span>Runtime
     {
         System: frame_system = <span class="number">10</span>,
         Utility: pallet_utility = <span class="number">11</span>,
@@ -3041,7 +3063,7 @@
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-</span><span class="kw">pub type </span>Migrations = ();
+</span><span class="kw">pub type </span>Migrations = (pallet_contracts::Migration&lt;Runtime&gt;,);
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
@@ -3202,8 +3224,8 @@
         }
     }
 
-    <span class="kw">impl </span>frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Index&gt; <span class="kw">for </span>Runtime {
-        <span class="kw">fn </span>account_nonce(account: AccountId) -&gt; Index {
+    <span class="kw">impl </span>frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Nonce&gt; <span class="kw">for </span>Runtime {
+        <span class="kw">fn </span>account_nonce(account: AccountId) -&gt; Nonce {
             System::account_nonce(account)
         }
     }
@@ -3627,14 +3649,14 @@
         <span class="kw">fn </span>dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;frame_benchmarking::BenchmarkBatch&gt;, sp_runtime::RuntimeString&gt; {
-            <span class="kw">use </span>frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            <span class="kw">use </span>frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
             <span class="kw">use </span>frame_system_benchmarking::Pallet <span class="kw">as </span>SystemBench;
             <span class="kw">use </span>baseline::Pallet <span class="kw">as </span>BaselineBench;
 
             <span class="kw">impl </span>frame_system_benchmarking::Config <span class="kw">for </span>Runtime {}
             <span class="kw">impl </span>baseline::Config <span class="kw">for </span>Runtime {}
 
-            <span class="kw">use </span>frame_support::traits::WhitelistedStorageKeys;
+            <span class="kw">use </span>frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
             <span class="kw">let </span>whitelist: Vec&lt;TrackedStorageKey&gt; = AllPalletsWithSystem::whitelisted_storage_keys();
 
             <span class="kw">let </span><span class="kw-2">mut </span>batches = Vec::&lt;BenchmarkBatch&gt;::new();
@@ -3788,5 +3810,4 @@
     BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::&lt;Runtime, Executive&gt;,
     CheckInherents = CheckInherents,
 }
-</code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0 (84c898d65 2023-04-16)" data-search-js="search-8a59a8356673ec1f.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
+</code></pre></div></section></main></body></html>
