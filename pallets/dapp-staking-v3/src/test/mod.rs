@@ -19,5 +19,4 @@
 pub(crate) mod mock;
 mod testing_utils;
 mod tests;
-// TODO: return this later, and fix the type tests
-// mod tests_types;
+mod tests_types;

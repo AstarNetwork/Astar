@@ -1023,29 +1023,27 @@ impl SingularStakingInfo {
     ) -> Vec<(EraNumber, Balance)> {
         let mut result = Vec::new();
 
-        // Prepare values for further calculations
+        // 0. Prepare values for further calculations
         let snapshot = self.staked;
         let stake_delta = self
             .staked
             .total()
             .saturating_sub(self.previous_staked.total());
 
-        // Modify current staked amount
+        // 1. Modify current staked amount
         self.staked.subtract(amount);
         let unstaked_amount = snapshot.total().saturating_sub(self.staked.total());
         self.staked.era = self.staked.era.max(current_era);
-
-        // Push the result into result vector
         result.push((self.staked.era, unstaked_amount));
 
-        // Update loyal staker flag accordingly
+        // 2. Update loyal staker flag accordingly
         self.loyal_staker = self.loyal_staker
             && match subperiod {
                 Subperiod::Voting => !self.staked.voting.is_zero(),
                 Subperiod::BuildAndEarn => self.staked.voting == snapshot.voting,
             };
 
-        // Move over the snapshot to the previous snapshot field and make sure
+        // 3. Move over the snapshot to the previous snapshot field and make sure
         // to update era in case something was staked before.
         if stake_delta.is_zero() {
             self.previous_staked = Default::default();
@@ -1054,7 +1052,9 @@ impl SingularStakingInfo {
             self.previous_staked.era = self.staked.era.saturating_sub(1);
         }
 
+        // 4. If something was unstaked from the previous era, add it to the result
         if unstaked_amount > stake_delta {
+            // Doesn't need to be at 0-th index, but we still add it for clarity
             result.insert(
                 0,
                 (
