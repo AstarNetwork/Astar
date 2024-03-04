@@ -679,6 +679,9 @@ pub(crate) fn assert_unstake(
     // 2. verify staker info
     // =====================
     // =====================
+    let staker_delta_stake =
+        pre_staker_info.staked.total() - pre_staker_info.previous_staked.total();
+
     if is_full_unstake {
         assert!(
             !StakerInfo::<Test>::contains_key(&account, smart_contract),
@@ -719,9 +722,20 @@ pub(crate) fn assert_unstake(
             is_loyal,
             "If 'Voting' stake amount is reduced in B&E period, loyalty flag must be set to false."
         );
-    }
 
-    // TODO: expand checks for previous_staked entry!
+        if staker_delta_stake.is_zero() {
+            assert!(post_staker_info.previous_staked.is_empty(),);
+        } else {
+            assert_eq!(
+                post_staker_info.previous_staked.total(),
+                pre_staker_info.staked.total()
+            );
+            assert_eq!(
+                post_staker_info.previous_staked.era,
+                pre_staker_info.staked.era - 1
+            );
+        }
+    }
 
     // 3. verify contract stake
     // =========================
@@ -739,15 +753,12 @@ pub(crate) fn assert_unstake(
         "Staked amount must decreased by the 'amount'"
     );
 
-    let staker_delta_stake =
-        pre_staker_info.staked.total() - pre_staker_info.previous_staked.total();
-
     // Ensure that former era stake is updated correctly.
     // If this is true, it means that the staker must have had a stake in some previous era.
     // It's not possible to unstake more than user has staked, so this has to always hold true.
     if staker_delta_stake < amount {
         let expected_adjustment = amount - staker_delta_stake;
-        let current_era = pre_snapshot.active_protocol_state.era;
+
         let latest_contract_stake_era = post_contract_stake
             .latest_stake_era()
             .expect("Has to be defined");

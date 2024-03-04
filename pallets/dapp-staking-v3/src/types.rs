@@ -1017,8 +1017,6 @@ impl SingularStakingInfo {
         self.staked.era = current_era.saturating_add(1);
     }
 
-    // TODO: add better docs below and in the function!
-
     /// Unstakes some of the specified amount from the contract.
     ///
     /// In case the `amount` being unstaked is larger than the amount staked in the `Voting` subperiod,
@@ -1030,6 +1028,7 @@ impl SingularStakingInfo {
         amount: Balance,
         current_era: EraNumber,
         subperiod: Subperiod,
+        // TODO: change the entire approach to return vector of unstaked amounts per era (more generic that way?) Item for the future?
     ) -> (EraNumber, Balance) {
         // Keep the previous stake amounts for the final calculation
         let snapshot = self.staked;
@@ -1065,6 +1064,8 @@ impl SingularStakingInfo {
         } else {
             (
                 self.staked.era.saturating_sub(1),
+                // The diff between unstake amount & stake delta tells us how much was
+                // actually unstaked from the previous era.
                 unstaked_amount.saturating_sub(stake_delta),
             )
         }
@@ -1226,44 +1227,7 @@ impl ContractStakeAmount {
     }
 
     /// Unstake the specified `Voting` and `Build&Earn` subperiod amounts from the contract, for the specified `subperiod` and `era`.
-    pub fn unstake(&mut self, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
-        // First align entries - we only need to keep track of the current era, and the next one
-        match self.staked_future {
-            // Future entry exists, but it covers current or older era.
-            Some(stake_amount)
-                if stake_amount.era <= current_era && stake_amount.period == period_info.number =>
-            {
-                self.staked = stake_amount;
-                self.staked.era = current_era;
-                self.staked_future = None;
-            }
-            _ => (),
-        }
-
-        // Current entry is from the right period, but older era. Shift it to the current era.
-        if self.staked.era < current_era && self.staked.period == period_info.number {
-            self.staked.era = current_era;
-        }
-
-        // Subtract both amounts
-        self.staked.subtract(amount, period_info.subperiod);
-        if let Some(stake_amount) = self.staked_future.as_mut() {
-            stake_amount.subtract(amount, period_info.subperiod);
-        }
-
-        // Convenience cleanup
-        if self.staked.is_empty() {
-            self.staked = Default::default();
-        }
-        if let Some(stake_amount) = self.staked_future {
-            if stake_amount.is_empty() {
-                self.staked_future = None;
-            }
-        }
-    }
-
-    // TODO
-    pub fn new_unstake(
+    pub fn unstake(
         &mut self,
         amount: Balance,
         period_info: PeriodInfo,
@@ -1297,6 +1261,7 @@ impl ContractStakeAmount {
                 self.staked.subtract(old_amount, period_info.subperiod);
             }
         } else {
+            // No future entry exists, so only current one needs to be updated.
             self.staked.subtract(amount, period_info.subperiod);
         }
 
