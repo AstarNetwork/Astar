@@ -57,7 +57,7 @@ fn period_info_basic_checks() {
     assert_eq!(info.subperiod, Subperiod::Voting);
     assert_eq!(info.next_subperiod_start_era, next_subperiod_start_era);
 
-    // Voting period checks
+    // Voting subperiod checks
     assert!(!info.is_next_period(next_subperiod_start_era - 1));
     assert!(!info.is_next_period(next_subperiod_start_era));
     assert!(!info.is_next_period(next_subperiod_start_era + 1));
@@ -68,7 +68,7 @@ fn period_info_basic_checks() {
     ] {
         assert!(
             !info.is_next_period(era),
-            "Cannot trigger 'true' in the Voting period type."
+            "Cannot trigger 'true' in the Voting subperiod type."
         );
     }
 
@@ -520,7 +520,7 @@ fn account_ledger_add_stake_amount_basic_example_with_different_subperiods_works
     assert!(acc_ledger.staked.is_empty());
     assert!(acc_ledger.staked_future.is_none());
 
-    // 1st scenario - stake some amount in Voting period, and ensure values are as expected.
+    // 1st scenario - stake some amount in Voting subperiod, and ensure values are as expected.
     let era_1 = 1;
     let period_1 = 1;
     let period_info_1 = PeriodInfo {
@@ -1775,7 +1775,7 @@ fn era_info_stake_works() {
     // Sanity check
     assert!(era_info.total_locked.is_zero());
 
-    // Add some voting period stake
+    // Add some voting subperiod stake
     let vp_stake_amount = 7;
     era_info.add_stake_amount(vp_stake_amount, Subperiod::Voting);
     assert_eq!(era_info.total_staked_amount_next_era(), vp_stake_amount);
@@ -2080,7 +2080,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     let vote_stake_amount_1 = 11;
     staking_info.stake(vote_stake_amount_1, era_1, Subperiod::Voting);
 
-    // Unstake some amount during `Voting` period, loyalty should remain as expected.
+    // 1. Unstake some amount during `Voting` period, loyalty should remain as expected.
     let unstake_amount_1 = 5;
     assert_eq!(
         staking_info.unstake(unstake_amount_1, era_1, Subperiod::Voting),
@@ -2097,7 +2097,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         "Stake era should remain valid."
     );
 
-    // Fully unstake, attempting to underflow, and ensure loyalty flag has been removed.
+    // 2. Fully unstake, attempting to underflow, and ensure loyalty flag has been removed.
     let era_2 = era_1 + 2;
     let remaining_stake = staking_info.total_staked_amount();
     assert_eq!(
@@ -2151,8 +2151,21 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         "Stake era should remain valid."
     );
 
-    // 2nd scenario - unstake all of the amount staked during B&E period, and then some more.
-    // The point is to take a chunk from the voting period stake too.
+    // 2nd scenario - Ensure that staked amount is larger than the previous stake amount, and then
+    // unstake enough to result in some overflow of the stake delta.
+    let bep_stake_amount_2 = 13;
+    staking_info.stake(bep_stake_amount_2, era_1, Subperiod::BuildAndEarn);
+    let delta = staking_info.staked.total() - staking_info.previous_staked.total();
+    let overflow = 1;
+    let unstake_2 = delta + overflow;
+
+    assert_eq!(
+        staking_info.unstake(unstake_2, era_1, Subperiod::BuildAndEarn),
+        vec![(era_1, overflow), (era_1 + 1, unstake_2)]
+    );
+
+    // 3rd scenario - unstake all of the amount staked during B&E period, and then some more.
+    // The point is to take a chunk from the voting subperiod stake too.
     let current_total_stake = staking_info.total_staked_amount();
     let current_bep_stake = staking_info.staked_amount(Subperiod::BuildAndEarn);
     let voting_stake_overflow = 2;
@@ -2161,7 +2174,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 
     assert_eq!(
         staking_info.unstake(unstake_2, era_2, Subperiod::BuildAndEarn),
-        // Both amounts are the same since current stake is less than the previous one
+        // Both amounts are the same since previous staked era is less than last staked era - 1
         vec![(era_2 - 1, unstake_2), (era_2, unstake_2)]
     );
     assert_eq!(
@@ -2177,7 +2190,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         .is_zero());
     assert!(
         !staking_info.is_loyal(),
-        "Loyalty flag should have been removed due to non-zero voting period unstake"
+        "Loyalty flag should have been removed due to non-zero voting subperiod unstake"
     );
     assert_eq!(staking_info.era(), era_2);
 }

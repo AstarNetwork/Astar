@@ -1015,6 +1015,28 @@ impl SingularStakingInfo {
     ///
     /// Returns a vector of `(era, amount)` pairs, where `era` is the era in which the unstake happened,
     /// and the amount is the corresponding amount.
+    ///
+    /// ### NOTE
+    /// `SingularStakingInfo` always aims to keep track of the staked amount between two consecutive eras.
+    /// This means that the returned value will at most cover two eras - the last staked era, and the one before it.
+    ///
+    /// Last staked era can be the current era, or the era after.
+    /// If after the unstake operation, delta between previous & current era is larger than 1, previous staked entry is ignored.
+    ///
+    /// #### Example (simplified)
+    ///
+    /// 1. previous_staked: (era: 4, amount: 50), staked: (era: 5, amount: 100)
+    /// 2. unstake 30 in era 6 is called
+    /// 3. Return value is: (era: 5, amount: 30), (era: 6, amount: 30)
+    /// 4. previous_staked: (era: 5, amount: 70), (era: 6, amount: 70)
+    ///
+    /// In case same example is repeated, but unstake is done in era 5:
+    ///
+    /// 1. previous_staked: (era: 4, amount: 50), staked: (era: 5, amount: 100)
+    /// 2. unstake 30 in era 5 is called
+    /// 3. Return value is: (era: 5, amount: 30)
+    /// 4. previous_staked: (era: 4, amount: 50), (era: 5, amount: 70)
+    ///
     pub fn unstake(
         &mut self,
         amount: Balance,
@@ -1022,25 +1044,30 @@ impl SingularStakingInfo {
         subperiod: Subperiod,
     ) -> Vec<(EraNumber, Balance)> {
         let mut result = Vec::new();
-
-        // 0. Prepare values for further calculations
-        let snapshot = self.staked;
-        let stake_delta = self
-            .staked
-            .total()
-            .saturating_sub(self.previous_staked.total());
+        let staked_snapshot = self.staked;
 
         // 1. Modify current staked amount
         self.staked.subtract(amount);
-        let unstaked_amount = snapshot.total().saturating_sub(self.staked.total());
+        let unstaked_amount = staked_snapshot.total().saturating_sub(self.staked.total());
         self.staked.era = self.staked.era.max(current_era);
         result.push((self.staked.era, unstaked_amount));
+
+        // 2. Calculate previous stake delta.
+        // In case new stake era is exactly one era after the previous stake era, we can calculate this as a delta.
+        // Otherwise, if it's further far away in the past, the previous era stake is equal to the snapshot.
+        let stake_delta = if self.staked.era == self.previous_staked.era.saturating_add(1) {
+            staked_snapshot
+                .total()
+                .saturating_sub(self.previous_staked.total())
+        } else {
+            Balance::zero()
+        };
 
         // 2. Update loyal staker flag accordingly
         self.loyal_staker = self.loyal_staker
             && match subperiod {
                 Subperiod::Voting => !self.staked.voting.is_zero(),
-                Subperiod::BuildAndEarn => self.staked.voting == snapshot.voting,
+                Subperiod::BuildAndEarn => self.staked.voting == staked_snapshot.voting,
             };
 
         // 3. Move over the snapshot to the previous snapshot field and make sure
@@ -1048,7 +1075,7 @@ impl SingularStakingInfo {
         if stake_delta.is_zero() {
             self.previous_staked = Default::default();
         } else {
-            self.previous_staked = snapshot;
+            self.previous_staked = staked_snapshot;
             self.previous_staked.era = self.staked.era.saturating_sub(1);
         }
 
