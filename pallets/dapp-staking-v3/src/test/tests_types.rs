@@ -2479,7 +2479,7 @@ fn contract_stake_amount_stake_is_ok() {
 }
 
 #[test]
-fn contract_stake_amount_unstake_is_ok() {
+fn contract_stake_amount_basic_unstake_is_ok() {
     let mut contract_stake = ContractStakeAmount::default();
 
     // Prep action - create a stake entry
@@ -2600,6 +2600,66 @@ fn contract_stake_amount_unstake_is_ok() {
     );
     assert!(contract_stake.staked.is_empty());
     assert!(contract_stake.staked_future.is_none());
+}
+
+#[test]
+fn contract_stake_amount_advanced_unstake_is_ok() {
+    let mut contract_stake = ContractStakeAmount::default();
+
+    // Prep action - create staked & staked_future fields
+    let era_1 = 3;
+    let era_2 = era_1 + 1;
+    let period = 1;
+    let period_info = PeriodInfo {
+        number: period,
+        subperiod: Subperiod::Voting,
+        next_subperiod_start_era: 20,
+    };
+    let vp_stake_amount = 31;
+    let bep_stake_amount = 19;
+
+    // Stake in two consecutive eras. Entries will be aligned.
+    contract_stake.stake(vp_stake_amount, period_info, era_1);
+    contract_stake.stake(
+        bep_stake_amount,
+        PeriodInfo {
+            subperiod: Subperiod::BuildAndEarn,
+            ..period_info
+        },
+        era_2,
+    );
+    let total_stake_amount = vp_stake_amount + bep_stake_amount;
+
+    // Unstake some amount from both staked & staked_future fields
+    let amount_1 = 2;
+    let amount_2 = 3;
+    contract_stake.unstake(
+        vec![(era_2, amount_1), (era_2 + 1, amount_2)],
+        period_info,
+        era_2,
+    );
+
+    // Verify future era staked values
+    assert_eq!(
+        contract_stake.staked_future.expect("Must exist").total(),
+        total_stake_amount - amount_2
+    );
+    assert_eq!(
+        contract_stake.staked_future.expect("Must exist").voting,
+        vp_stake_amount
+    );
+    assert_eq!(
+        contract_stake
+            .staked_future
+            .expect("Must exist")
+            .build_and_earn,
+        bep_stake_amount - amount_2
+    );
+
+    // Verify current era stake values
+    assert_eq!(contract_stake.staked.total(), vp_stake_amount - amount_1);
+    assert_eq!(contract_stake.staked.voting, vp_stake_amount - amount_1);
+    assert!(contract_stake.staked.build_and_earn.is_zero());
 }
 
 #[test]

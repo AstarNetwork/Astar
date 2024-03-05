@@ -1269,7 +1269,7 @@ impl ContractStakeAmount {
         current_era: EraNumber,
     ) {
         // 1. Entry alignment
-        // e only need to keep track of the current era, and the next one
+        // We only need to keep track of the current era, and the next one.
         match self.staked_future {
             // Future entry exists, but it covers current or older era.
             Some(stake_amount)
