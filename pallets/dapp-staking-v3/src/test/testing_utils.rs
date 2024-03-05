@@ -627,6 +627,7 @@ pub(crate) fn assert_unstake(
         .expect("Entry must exist since 'unstake' is being called.");
     let pre_era_info = pre_snapshot.current_era_info;
 
+    let unstake_era = pre_snapshot.active_protocol_state.era;
     let unstake_period = pre_snapshot.active_protocol_state.period_number();
     let unstake_subperiod = pre_snapshot.active_protocol_state.subperiod();
 
@@ -679,9 +680,8 @@ pub(crate) fn assert_unstake(
     // 2. verify staker info
     // =====================
     // =====================
-    let staker_delta_stake =
-        pre_staker_info.staked.total() - pre_staker_info.previous_staked.total();
 
+    // Verify that expected unstake amounts are applied.
     if is_full_unstake {
         assert!(
             !StakerInfo::<Test>::contains_key(&account, smart_contract),
@@ -722,19 +722,19 @@ pub(crate) fn assert_unstake(
             is_loyal,
             "If 'Voting' stake amount is reduced in B&E period, loyalty flag must be set to false."
         );
+    }
 
-        if staker_delta_stake.is_zero() {
-            assert!(post_staker_info.previous_staked.is_empty(),);
-        } else {
-            assert_eq!(
-                post_staker_info.previous_staked.total(),
-                pre_staker_info.staked.total()
-            );
-            assert_eq!(
-                post_staker_info.previous_staked.era,
-                pre_staker_info.staked.era - 1
-            );
-        }
+    let unstaked_amount_era_pairs =
+        pre_staker_info
+            .clone()
+            .unstake(amount, unstake_period, unstake_subperiod);
+    assert!(unstaked_amount_era_pairs.len() <= 2 && unstaked_amount_era_pairs.len() > 0);
+    {
+        let (last_unstake_era, last_unstake_amount) = unstaked_amount_era_pairs
+            .last()
+            .expect("Has to exist due to success of previous check");
+        assert_eq!(*last_unstake_era, unstake_era.max(pre_staker_info.era()));
+        assert_eq!(*last_unstake_amount, amount);
     }
 
     // 3. verify contract stake
@@ -753,30 +753,21 @@ pub(crate) fn assert_unstake(
         "Staked amount must decreased by the 'amount'"
     );
 
-    // Ensure that former era stake is updated correctly.
-    // If this is true, it means that the staker must have had a stake in some previous era.
-    // It's not possible to unstake more than user has staked, so this has to always hold true.
-    if staker_delta_stake < amount {
-        let expected_adjustment = amount - staker_delta_stake;
-
-        let latest_contract_stake_era = post_contract_stake
-            .latest_stake_era()
-            .expect("Has to be defined");
-
-        let previous_former_era_stake_amount = pre_contract_stake
-            .get(latest_contract_stake_era - 1, unstake_period)
-            .expect("Has to be defined")
-            .total();
-        let current_former_era_stake_amount = post_contract_stake
-            .get(latest_contract_stake_era - 1, unstake_period)
-            .expect("Has to be defined")
-            .total();
-
-        assert_eq!(
-            current_former_era_stake_amount,
-            previous_former_era_stake_amount - expected_adjustment,
-            "Former era stake can only be adjusted by the amount that was actually unstaked from it."
-        );
+    // Ensure staked amounts are updated as expected, unless it's full unstake.
+    if !is_full_unstake {
+        for (unstake_era_iter, unstake_amount_iter) in unstaked_amount_era_pairs {
+            assert_eq!(
+                post_contract_stake
+                    .get(unstake_era_iter, unstake_period)
+                    .expect("Must exist.")
+                    .total(),
+                pre_contract_stake
+                    .get(unstake_era_iter, unstake_period)
+                    .expect("Must exist")
+                    .total()
+                    - unstake_amount_iter
+            );
+        }
     }
 
     // 4. verify era info

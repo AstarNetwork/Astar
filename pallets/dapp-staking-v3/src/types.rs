@@ -1002,6 +1002,9 @@ impl SingularStakingInfo {
         // Keep the previous stake amount for future reference
         self.previous_staked = self.staked;
         self.previous_staked.era = current_era;
+        if self.previous_staked.total().is_zero() {
+            self.previous_staked = Default::default();
+        }
 
         // Stake is only valid from the next era so we keep it consistent here
         self.staked.add(amount, subperiod);
@@ -1021,22 +1024,6 @@ impl SingularStakingInfo {
     /// This means that the returned value will at most cover two eras - the last staked era, and the one before it.
     ///
     /// Last staked era can be the current era, or the era after.
-    /// If after the unstake operation, delta between previous & current era is larger than 1, previous staked entry is ignored.
-    ///
-    /// #### Example (simplified)
-    ///
-    /// 1. previous_staked: (era: 4, amount: 50), staked: (era: 5, amount: 100)
-    /// 2. unstake 30 in era 6 is called
-    /// 3. Return value is: (era: 5, amount: 30), (era: 6, amount: 30)
-    /// 4. previous_staked: (era: 5, amount: 70), (era: 6, amount: 70)
-    ///
-    /// In case same example is repeated, but unstake is done in era 5:
-    ///
-    /// 1. previous_staked: (era: 4, amount: 50), staked: (era: 5, amount: 100)
-    /// 2. unstake 30 in era 5 is called
-    /// 3. Return value is: (era: 5, amount: 30)
-    /// 4. previous_staked: (era: 4, amount: 50), (era: 5, amount: 70)
-    ///
     pub fn unstake(
         &mut self,
         amount: Balance,
@@ -1046,51 +1033,64 @@ impl SingularStakingInfo {
         let mut result = Vec::new();
         let staked_snapshot = self.staked;
 
-        // 1. Modify current staked amount
+        // 1. Modify current staked amount, and update the result.
         self.staked.subtract(amount);
         let unstaked_amount = staked_snapshot.total().saturating_sub(self.staked.total());
         self.staked.era = self.staked.era.max(current_era);
         result.push((self.staked.era, unstaked_amount));
 
-        // 2. Calculate previous stake delta.
-        // In case new stake era is exactly one era after the previous stake era, we can calculate this as a delta.
-        // Otherwise, if it's further far away in the past, the previous era stake is equal to the snapshot.
-        let stake_delta = if self.staked.era == self.previous_staked.era.saturating_add(1) {
-            staked_snapshot
-                .total()
-                .saturating_sub(self.previous_staked.total())
-        } else {
-            Balance::zero()
-        };
-
-        // 2. Update loyal staker flag accordingly
+        // 2. Update loyal staker flag accordingly.
         self.loyal_staker = self.loyal_staker
             && match subperiod {
                 Subperiod::Voting => !self.staked.voting.is_zero(),
                 Subperiod::BuildAndEarn => self.staked.voting == staked_snapshot.voting,
             };
 
-        // 3. Move over the snapshot to the previous snapshot field and make sure
-        // to update era in case something was staked before.
-        if stake_delta.is_zero() {
-            self.previous_staked = Default::default();
-        } else {
-            self.previous_staked = staked_snapshot;
-            self.previous_staked.era = self.staked.era.saturating_sub(1);
-        }
+        // 3. Determine what was the previous staked amount.
+        // This is done by simply comparing where does the _previous era_ fit in the current context.
+        let previous_era = self.staked.era.saturating_sub(1);
 
-        // 4. If something was unstaked from the previous era, add it to the result
-        if unstaked_amount > stake_delta {
-            // Doesn't need to be at 0-th index, but we still add it for clarity
-            result.insert(
-                0,
-                (
-                    self.staked.era.saturating_sub(1),
-                    // The diff between unstake amount & stake delta tells us how much was
-                    // actually unstaked from the previous era.
-                    unstaked_amount.saturating_sub(stake_delta),
-                ),
-            )
+        self.previous_staked = if staked_snapshot.era <= previous_era {
+            let mut previous_staked = staked_snapshot;
+            previous_staked.era = previous_era;
+            previous_staked
+        } else if !self.previous_staked.is_empty() && self.previous_staked.era <= previous_era {
+            let mut previous_staked = self.previous_staked;
+            previous_staked.era = previous_era;
+            previous_staked
+        } else {
+            Default::default()
+        };
+
+        // 4. Calculate how much is being unstaked from the previous staked era entry, in case its era equals the current era.
+        //
+        // Simples way to explain this is via an example.
+        // Let's assume a simplification where stake amount entries are in `(era, amount)` format.
+        //
+        // 1. Values: previous_staked: **(2, 10)**, staked: **(3, 15)**
+        // 2. User calls unstake during **era 2**, and unstakes amount **6**.
+        //    Clearly some amount was staked during era 2, which resulted in era 3 stake being increased by 5.
+        //    Calling unstake immediately in the same era should not necessarily reduce current era stake amount.
+        //    This should be allowed to happen only if the unstaked amount is larger than the difference between the staked amount of two eras.
+        // 3. Values: previous_staked: **(2, 9)**, staked: **(3, 9)**
+        //
+        // An alternative scenario, where user calls unstake during **era 2**, and unstakes amount **4**.
+        // 3. Values: previous_staked: **(2, 10)**, staked: **(3, 11)**
+        //
+        // Note that the unstake operation didn't chip away from the current era, only the next one.
+        if self.previous_staked.era == current_era {
+            let maybe_stake_delta = staked_snapshot
+                .total()
+                .checked_sub(self.previous_staked.total());
+            match maybe_stake_delta {
+                Some(stake_delta) if unstaked_amount > stake_delta => {
+                    let overflow_amount = unstaked_amount - stake_delta;
+                    self.previous_staked.subtract(overflow_amount);
+
+                    result.insert(0, (self.previous_staked.era, overflow_amount));
+                }
+                _ => {}
+            }
         }
 
         result

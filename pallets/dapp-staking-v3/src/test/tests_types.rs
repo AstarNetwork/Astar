@@ -2049,6 +2049,7 @@ fn singular_staking_info_basics_are_ok() {
         era_1 + 1,
         "Stake era should remain valid."
     );
+    assert!(staking_info.previous_staked.is_empty());
 
     // Add some staked amount during `BuildAndEarn` period
     let era_2 = 9;
@@ -2067,6 +2068,12 @@ fn singular_staking_info_basics_are_ok() {
         bep_stake_amount_1
     );
     assert_eq!(staking_info.era(), era_2 + 1);
+
+    assert_eq!(staking_info.previous_staked.total(), vote_stake_amount_1);
+    assert_eq!(
+        staking_info.previous_staked.era, era_2,
+        "Must be equal to the previous staked era."
+    );
 }
 
 #[test]
@@ -2102,7 +2109,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     let remaining_stake = staking_info.total_staked_amount();
     assert_eq!(
         staking_info.unstake(remaining_stake + 1, era_2, Subperiod::Voting),
-        vec![(era_2 - 1, remaining_stake), (era_2, remaining_stake)]
+        vec![(era_2, remaining_stake)]
     );
     assert!(staking_info.total_staked_amount().is_zero());
     assert!(
@@ -2174,8 +2181,7 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 
     assert_eq!(
         staking_info.unstake(unstake_2, era_2, Subperiod::BuildAndEarn),
-        // Both amounts are the same since previous staked era is less than last staked era - 1
-        vec![(era_2 - 1, unstake_2), (era_2, unstake_2)]
+        vec![(era_2, unstake_2)]
     );
     assert_eq!(
         staking_info.total_staked_amount(),
