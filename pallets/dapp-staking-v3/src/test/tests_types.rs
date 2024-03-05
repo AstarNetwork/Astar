@@ -2084,7 +2084,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     let unstake_amount_1 = 5;
     assert_eq!(
         staking_info.unstake(unstake_amount_1, era_1, Subperiod::Voting),
-        vec![(era_1 + 1, vote_stake_amount_1 - unstake_amount_1)]
+        vec![(era_1 + 1, unstake_amount_1)]
     );
     assert_eq!(
         staking_info.total_staked_amount(),
@@ -2102,7 +2102,7 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     let remaining_stake = staking_info.total_staked_amount();
     assert_eq!(
         staking_info.unstake(remaining_stake + 1, era_2, Subperiod::Voting),
-        vec![(era_2, remaining_stake)]
+        vec![(era_2 - 1, remaining_stake), (era_2, remaining_stake)]
     );
     assert!(staking_info.total_staked_amount().is_zero());
     assert!(
@@ -2129,7 +2129,8 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     let unstake_1 = 5;
     assert_eq!(
         staking_info.unstake(5, era_1, Subperiod::BuildAndEarn),
-        vec![(era_1 + 1, bep_stake_amount_1 - unstake_1)]
+        // We're unstaking from the `era_1 + 1` because stake was made for that era
+        vec![(era_1 + 1, unstake_1)]
     );
     assert_eq!(
         staking_info.total_staked_amount(),
@@ -2160,10 +2161,8 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 
     assert_eq!(
         staking_info.unstake(unstake_2, era_2, Subperiod::BuildAndEarn),
-        vec![
-            (era_2 - 1, voting_stake_overflow),
-            (era_2, current_bep_stake)
-        ]
+        // Both amounts are the same since current stake is less than the previous one
+        vec![(era_2 - 1, unstake_2), (era_2, unstake_2)]
     );
     assert_eq!(
         staking_info.total_staked_amount(),
@@ -2450,21 +2449,25 @@ fn contract_stake_amount_unstake_is_ok() {
     );
     let total_stake_amount = vp_stake_amount + bep_stake_amount;
 
-    // 1st scenario - unstake in the same era, from `Voting` subperiod
+    // 1st scenario - unstake some amount from the next era, B&E subperiod
     let amount_1 = 5;
-    contract_stake.unstake(vec![(era_1, amount_1)], period_info, era_1);
+    contract_stake.unstake(vec![(era_1 + 1, amount_1)], period_info, era_1);
     assert_eq!(
         contract_stake.total_staked_amount(period),
         total_stake_amount - amount_1
     );
     assert_eq!(
         contract_stake.staked_amount(period, Subperiod::Voting),
-        vp_stake_amount - amount_1
+        vp_stake_amount
+    );
+    assert_eq!(
+        contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
+        bep_stake_amount - amount_1
     );
     assert!(contract_stake.staked.is_empty());
     assert!(contract_stake.staked_future.is_some());
 
-    // 2nd scenario - unstake in the next era
+    // 2nd scenario - unstake in the next era, expect entry alignment
     let period_info = PeriodInfo {
         number: period,
         subperiod: Subperiod::BuildAndEarn,
@@ -2478,11 +2481,11 @@ fn contract_stake_amount_unstake_is_ok() {
     );
     assert_eq!(
         contract_stake.staked_amount(period, Subperiod::Voting),
-        vp_stake_amount - amount_1
+        vp_stake_amount
     );
     assert_eq!(
         contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
-        bep_stake_amount - amount_1,
+        bep_stake_amount - amount_1 * 2,
     );
     assert!(
         !contract_stake.staked.is_empty(),
@@ -2493,37 +2496,38 @@ fn contract_stake_amount_unstake_is_ok() {
         "future entry should be cleaned up since it refers to the current era"
     );
 
-    // 3rd scenario - same as previous scenario, but for `BuildAndEarn` subperiod
-    contract_stake.unstake(vec![(era_2, amount_1)], period_info, era_2);
+    // 3rd scenario - unstake such amount we chip away from the Voting subperiod stake amount
+    let voting_unstake_amount = 2;
+    let amount_2 =
+        contract_stake.staked_amount(period, Subperiod::BuildAndEarn) + voting_unstake_amount;
+    contract_stake.unstake(vec![(era_2, amount_2)], period_info, era_2);
     assert_eq!(
         contract_stake.total_staked_amount(period),
-        total_stake_amount - amount_1 * 3
+        total_stake_amount - amount_1 * 2 - amount_2
     );
     assert_eq!(
         contract_stake.staked_amount(period, Subperiod::Voting),
-        vp_stake_amount - amount_1
+        vp_stake_amount - voting_unstake_amount
     );
-    assert_eq!(
-        contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
-        bep_stake_amount - amount_1 * 2
-    );
+    assert!(contract_stake
+        .staked_amount(period, Subperiod::BuildAndEarn)
+        .is_zero(),);
 
     // 4th scenario - bump up unstake eras by more than 1, entries should be aligned to the current era
     let era_3 = era_2 + 3;
-    let amount_2 = 7;
-    contract_stake.unstake(vec![(era_3, amount_2)], period_info, era_3);
+    let amount_3 = 7;
+    contract_stake.unstake(vec![(era_3, amount_3)], period_info, era_3);
     assert_eq!(
         contract_stake.total_staked_amount(period),
-        total_stake_amount - amount_1 * 3 - amount_2
+        total_stake_amount - amount_1 * 2 - amount_2 - amount_3
     );
     assert_eq!(
         contract_stake.staked_amount(period, Subperiod::Voting),
-        vp_stake_amount - amount_1
+        vp_stake_amount - voting_unstake_amount - amount_3
     );
-    assert_eq!(
-        contract_stake.staked_amount(period, Subperiod::BuildAndEarn),
-        bep_stake_amount - amount_1 * 2 - amount_2
-    );
+    assert!(contract_stake
+        .staked_amount(period, Subperiod::BuildAndEarn)
+        .is_zero());
     assert_eq!(
         contract_stake.staked.era, era_3,
         "Should be aligned to the current era."
@@ -2533,11 +2537,9 @@ fn contract_stake_amount_unstake_is_ok() {
         "future entry should remain 'None'"
     );
 
-    // 5th scenario - do a full unstake with existing future entry, expect a cleanup
-    contract_stake.stake(total_stake_amount, period_info, era_3);
-
+    // 5th scenario - do a full unstake, even with overflow, with existing future entry, expect a cleanup
     contract_stake.unstake(
-        vec![(era_3, contract_stake.total_staked_amount(period))], // TODO: revisit this
+        vec![(era_3, contract_stake.total_staked_amount(period) + 1)],
         period_info,
         era_3,
     );
