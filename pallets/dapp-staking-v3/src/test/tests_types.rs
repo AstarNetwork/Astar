@@ -2104,6 +2104,9 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         "Stake era should remain valid."
     );
 
+    assert!(staking_info.previous_staked.is_empty());
+    assert!(staking_info.previous_staked.era.is_zero());
+
     // 2. Fully unstake, attempting to underflow, and ensure loyalty flag has been removed.
     let era_2 = era_1 + 2;
     let remaining_stake = staking_info.total_staked_amount();
@@ -2116,7 +2119,10 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
         !staking_info.is_loyal(),
         "Loyalty flag should have been removed since it was full unstake."
     );
-    assert_eq!(staking_info.era(), era_2);
+    assert!(staking_info.era().is_zero());
+
+    assert!(staking_info.previous_staked.is_empty());
+    assert!(staking_info.previous_staked.era.is_zero());
 }
 
 #[test]
@@ -2131,6 +2137,9 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
     staking_info.stake(vote_stake_amount_1, era_1 - 1, Subperiod::Voting);
     let bep_stake_amount_1 = 23;
     staking_info.stake(bep_stake_amount_1, era_1, Subperiod::BuildAndEarn);
+
+    assert_eq!(staking_info.previous_staked.total(), vote_stake_amount_1);
+    assert_eq!(staking_info.previous_staked.era, era_1);
 
     // 1st scenario - Unstake some of the amount staked during B&E period
     let unstake_1 = 5;
@@ -2158,10 +2167,15 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         "Stake era should remain valid."
     );
 
+    // No changes to the previous staked amount
+    assert_eq!(staking_info.previous_staked.total(), vote_stake_amount_1);
+    assert_eq!(staking_info.previous_staked.era, era_1);
+
     // 2nd scenario - Ensure that staked amount is larger than the previous stake amount, and then
     // unstake enough to result in some overflow of the stake delta.
     let bep_stake_amount_2 = 13;
     staking_info.stake(bep_stake_amount_2, era_1, Subperiod::BuildAndEarn);
+    let previous_total_stake = staking_info.previous_staked.total();
     let delta = staking_info.staked.total() - staking_info.previous_staked.total();
     let overflow = 1;
     let unstake_2 = delta + overflow;
@@ -2170,6 +2184,25 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         staking_info.unstake(unstake_2, era_1, Subperiod::BuildAndEarn),
         vec![(era_1, overflow), (era_1 + 1, unstake_2)]
     );
+
+    assert_eq!(
+        staking_info.total_staked_amount(),
+        vote_stake_amount_1 + bep_stake_amount_1 + bep_stake_amount_2 - unstake_1 - unstake_2
+    );
+    assert_eq!(
+        staking_info.staked_amount(Subperiod::Voting),
+        vote_stake_amount_1
+    );
+    assert_eq!(
+        staking_info.staked_amount(Subperiod::BuildAndEarn),
+        bep_stake_amount_1 + bep_stake_amount_2 - unstake_1 - unstake_2
+    );
+
+    assert_eq!(
+        staking_info.previous_staked.total(),
+        previous_total_stake - overflow
+    );
+    assert_eq!(staking_info.previous_staked.era, era_1);
 
     // 3rd scenario - unstake all of the amount staked during B&E period, and then some more.
     // The point is to take a chunk from the voting subperiod stake too.
@@ -2199,6 +2232,9 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
         "Loyalty flag should have been removed due to non-zero voting subperiod unstake"
     );
     assert_eq!(staking_info.era(), era_2);
+
+    assert_eq!(staking_info.previous_staked.total(), current_total_stake);
+    assert_eq!(staking_info.previous_staked.era, era_2 - 1);
 }
 
 #[test]

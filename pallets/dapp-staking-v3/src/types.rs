@@ -1067,15 +1067,15 @@ impl SingularStakingInfo {
         // Simples way to explain this is via an example.
         // Let's assume a simplification where stake amount entries are in `(era, amount)` format.
         //
-        // 1. Values: previous_staked: **(2, 10)**, staked: **(3, 15)**
-        // 2. User calls unstake during **era 2**, and unstakes amount **6**.
+        // a. Values: previous_staked: **(2, 10)**, staked: **(3, 15)**
+        // b. User calls unstake during **era 2**, and unstakes amount **6**.
         //    Clearly some amount was staked during era 2, which resulted in era 3 stake being increased by 5.
         //    Calling unstake immediately in the same era should not necessarily reduce current era stake amount.
         //    This should be allowed to happen only if the unstaked amount is larger than the difference between the staked amount of two eras.
-        // 3. Values: previous_staked: **(2, 9)**, staked: **(3, 9)**
+        // c. Values: previous_staked: **(2, 9)**, staked: **(3, 9)**
         //
         // An alternative scenario, where user calls unstake during **era 2**, and unstakes amount **4**.
-        // 3. Values: previous_staked: **(2, 10)**, staked: **(3, 11)**
+        // c. Values: previous_staked: **(2, 10)**, staked: **(3, 11)**
         //
         // Note that the unstake operation didn't chip away from the current era, only the next one.
         if self.previous_staked.era == current_era {
@@ -1091,6 +1091,16 @@ impl SingularStakingInfo {
                 }
                 _ => {}
             }
+        }
+
+        // 5. Convenience cleanup
+        if self.previous_staked.is_empty() {
+            self.previous_staked = Default::default();
+        }
+        if self.staked.is_empty() {
+            self.staked = Default::default();
+            // No longer relevant.
+            self.previous_staked = Default::default();
         }
 
         result
