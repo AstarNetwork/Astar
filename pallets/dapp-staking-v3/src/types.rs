@@ -1261,7 +1261,8 @@ impl ContractStakeAmount {
         }
     }
 
-    /// Unstake the specified `Voting` and `Build&Earn` subperiod amounts from the contract, for the specified `subperiod` and `era`.
+    /// Unstake the specified `(era, amount)` pairs from the contract.
+    // Important to account for the ongoing specified `subperiod` and `era` in order to align the entries.
     pub fn unstake(
         &mut self,
         era_and_amount_pairs: Vec<(EraNumber, Balance)>,
