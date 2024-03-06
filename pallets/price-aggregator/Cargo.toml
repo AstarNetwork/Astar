@@ -21,6 +21,8 @@ sp-arithmetic = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
+orml-traits = { workspace = true }
+
 frame-benchmarking = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -41,6 +43,7 @@ std = [
 	"pallet-balances/std",
 	"astar-primitives/std",
 	"sp-arithmetic/std",
+	"orml-traits/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
