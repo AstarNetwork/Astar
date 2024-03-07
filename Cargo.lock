@@ -9180,6 +9180,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "num-traits",
  "orml-traits",
  "pallet-balances",
  "parity-scale-codec",

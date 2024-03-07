@@ -20,7 +20,7 @@ use crate::{
     self as pallet_price_aggregator, AverageBlockValue, BlockNumberFor, IntermediateValueAggregator,
 };
 
-pub(crate) use frame_support::{
+use frame_support::{
     construct_runtime, parameter_types,
     traits::{ConstU128, ConstU32},
     weights::Weight,

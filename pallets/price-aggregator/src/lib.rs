@@ -83,13 +83,13 @@ const LOG_TARGET: &str = "price-aggregator";
 pub struct ValueAggregator {
     /// Total accumulated value amount.
     #[codec(compact)]
-    total: CurrencyAmount,
+    pub(crate) total: CurrencyAmount,
     /// Number of values accumulated.
     #[codec(compact)]
-    count: u32,
+    pub(crate) count: u32,
     /// Block number at which aggregation should reset.
     #[codec(compact)]
-    limit_block: BlockNumber,
+    pub(crate) limit_block: BlockNumber,
 }
 
 impl ValueAggregator {
@@ -147,11 +147,11 @@ impl ValueAggregator {
 )]
 #[scale_info(skip_type_params(L))]
 pub struct CircularBuffer<L: Get<u32>> {
+    /// Currency values store.
+    pub(crate) buffer: BoundedVec<CurrencyAmount, L>,
     /// Next index to write to.
     #[codec(compact)]
-    next_index: u32,
-    /// Currency values store.
-    buffer: BoundedVec<CurrencyAmount, L>,
+    pub(crate) head: u32,
 }
 
 impl<L: Get<u32>> CircularBuffer<L> {
@@ -159,20 +159,26 @@ impl<L: Get<u32>> CircularBuffer<L> {
     pub fn add(&mut self, value: CurrencyAmount) {
         // This can never happen, parameters must ensure that.
         // But we still check it and log an error if it does.
-        if self.next_index >= L::get() || self.next_index as usize > self.buffer.len() {
+        if self.head >= L::get() || self.head as usize > self.buffer.len() {
             log::error!(
                 target: LOG_TARGET,
                 "Failed to push value to the circular buffer due to invalid next index. \
                 Next index: {:?}, Buffer length: {:?}, Buffer capacity: {:?}",
-                self.next_index,
+                self.head,
                 self.buffer.len(),
                 L::get()
             );
             return;
         }
 
-        let _infallible = self.buffer.try_insert(self.next_index as usize, value);
-        self.next_index = self.next_index.saturating_add(1) % L::get();
+        if self.buffer.len() > self.head as usize {
+            // Vec has been filled out, so we need to override the 'head' value
+            self.buffer[self.head as usize] = value;
+        } else {
+            // Vec is not full yet, so we can just push the value
+            let _ignorable = self.buffer.try_push(value);
+        }
+        self.head = self.head.saturating_add(1) % L::get();
     }
 
     /// Returns the average of the accumulated values.
