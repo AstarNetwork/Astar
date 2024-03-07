@@ -20,12 +20,12 @@
 //!
 //! ## Overview
 //!
-//! ##
+//! ## TODO
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, DefaultNoBound};
-use frame_system::{ensure_root, pallet_prelude::*};
+use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use sp_arithmetic::{
     fixed_point::FixedU128,
@@ -33,16 +33,19 @@ use sp_arithmetic::{
 };
 use sp_std::marker::PhantomData;
 
-pub use orml_traits::OnNewData;
+use orml_traits::OnNewData;
 
-use astar_primitives::{oracle::PriceProvider, BlockNumber};
+use astar_primitives::{
+    oracle::{CurrencyAmount, CurrencyId, PriceProvider},
+    BlockNumber,
+};
 
-// TODO: move to primitives
-#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
-pub enum CurrencyId {
-    ASTR,
-}
-pub type CurrencyAmount = FixedU128;
+// TODO: perhaps make CurrencyAmount and CurrencyId generic?
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 /// Trait for processing accumulated currency values within a single block.
 ///
@@ -54,6 +57,22 @@ pub trait ProcessBlockValues {
     fn process(values: &[CurrencyAmount]) -> Result<CurrencyAmount, &'static str>;
 }
 
+/// Used to calculate the simple average of the accumulated values.
+pub struct AverageBlockValue;
+impl ProcessBlockValues for AverageBlockValue {
+    fn process(values: &[CurrencyAmount]) -> Result<CurrencyAmount, &'static str> {
+        if values.is_empty() {
+            return Err("No values exist for the current block.");
+        }
+
+        let sum = values.iter().fold(CurrencyAmount::zero(), |acc, &value| {
+            acc.saturating_add(value)
+        });
+
+        Ok(sum.saturating_mul(FixedU128::from_rational(1, values.len() as u128)))
+    }
+}
+
 const LOG_TARGET: &str = "price-aggregator";
 
 /// Used to aggregate the accumulated values over some time period.
@@ -63,10 +82,13 @@ const LOG_TARGET: &str = "price-aggregator";
 #[derive(Encode, Decode, MaxEncodedLen, Default, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct ValueAggregator {
     /// Total accumulated value amount.
+    #[codec(compact)]
     total: CurrencyAmount,
     /// Number of values accumulated.
+    #[codec(compact)]
     count: u32,
     /// Block number at which aggregation should reset.
+    #[codec(compact)]
     limit_block: BlockNumber,
 }
 
@@ -99,13 +121,12 @@ impl ValueAggregator {
 
     /// Returns the average of the accumulated values.
     pub fn average(&self) -> CurrencyAmount {
-        if self.count == 0 {
-            return CurrencyAmount::zero();
+        if self.count.is_zero() {
+            CurrencyAmount::zero()
+        } else {
+            self.total
+                .saturating_mul(FixedU128::from_rational(1, self.count.into()))
         }
-
-        // TODO: maybe this can be written in a way that preserves more precision?
-        self.total
-            .saturating_mul(FixedU128::from_rational(1, self.count.into()))
     }
 }
 
@@ -127,6 +148,7 @@ impl ValueAggregator {
 #[scale_info(skip_type_params(L))]
 pub struct CircularBuffer<L: Get<u32>> {
     /// Next index to write to.
+    #[codec(compact)]
     next_index: u32,
     /// Currency values store.
     buffer: BoundedVec<CurrencyAmount, L>,
@@ -210,22 +232,19 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        // TODO: do we want to emit some events?
-        // Maybe when the aggregated average value is pushed to the buffer?
-    }
-
-    #[pallet::error]
-    pub enum Error<T> {
-        // TODO
+        /// New average native currency value has been calculated and pushed into the moving average buffer.
+        AverageAggregatedValue(CurrencyAmount),
     }
 
     /// Storage for the accumulated native currency price in the current block.
     #[pallet::storage]
+    #[pallet::whitelist_storage]
     pub type CurrentBlockValues<T: Config> =
         StorageValue<_, BoundedVec<CurrencyAmount, T::MaxValuesPerBlock>, ValueQuery>;
 
     /// Used to store the aggregated processed block values during some time period.
     #[pallet::storage]
+    #[pallet::whitelist_storage]
     pub type IntermediateValueAggregator<T: Config> = StorageValue<_, ValueAggregator, ValueQuery>;
 
     /// Used to store aggregated intermediate values for some time period.
@@ -233,16 +252,15 @@ pub mod pallet {
     pub type ValuesCircularBuffer<T: Config> =
         StorageValue<_, CircularBuffer<T::CircularBufferLength>, ValueQuery>;
 
-    #[pallet::call]
-    impl<T: Config> Pallet<T> {
-        // TODO
-    }
-
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
-            // TODO: benchmarks & account for the possible changes in the on_finalize
-            Weight::zero()
+            // Need to account for the reads and writes of:
+            // - CurrentBlockValues
+            // - IntermediateValueAggregator
+            T::DbWeight::get().reads_writes(2, 2)
+
+            // TODO + the weight of the actual processing time, needs to be benchmarked
         }
 
         fn on_finalize(now: BlockNumberFor<T>) {
@@ -254,6 +272,8 @@ pub mod pallet {
                 Self::process_intermediate_aggregated_values(now);
             }
         }
+
+        // TODO: integration tests!
     }
 
     impl<T: Config> Pallet<T> {
@@ -325,15 +345,13 @@ pub mod pallet {
 
             // 4. Push the 'valid' average aggregated value to the circular buffer.
             ValuesCircularBuffer::<T>::mutate(|buffer| buffer.add(average_value));
+            Self::deposit_event(Event::AverageAggregatedValue(average_value));
         }
     }
 
     // Make this pallet an 'observer' ('listener') of the new oracle data feed.
     impl<T: Config> OnNewData<T::AccountId, CurrencyId, CurrencyAmount> for Pallet<T> {
         fn on_new_data(who: &T::AccountId, key: &CurrencyId, value: &CurrencyAmount) {
-            // TODO
-            // Do we need to prevent same account posting multiple values in the same block? Or will the other pallet take care of that?
-
             // Ignore any currency that is not native currency.
             if T::NativeCurrencyId::get() != *key {
                 return;
@@ -353,9 +371,42 @@ pub mod pallet {
         }
     }
 
+    // Make this pallet a `price provider` for the native currency.
+    //
+    // For this particular implementation, a simple moving average is used to calculate the average price.
     impl<T: Config> PriceProvider for Pallet<T> {
         fn average_price() -> FixedU128 {
             ValuesCircularBuffer::<T>::get().average()
         }
+    }
+}
+
+/// Used to update static price due to storage schema change.
+pub struct PriceAggregatorInitializer<T, P>(PhantomData<(T, P)>);
+impl<T: Config, P: Get<FixedU128>> OnRuntimeUpgrade for PriceAggregatorInitializer<T, P> {
+    fn on_runtime_upgrade() -> Weight {
+        if Pallet::<T>::on_chain_storage_version() > 0 {
+            return Weight::zero();
+        }
+
+        // 1. Prepare price aggregator storage.
+        let now = frame_system::Pallet::<T>::block_number();
+        let limit_block = now.saturating_add(T::AggregationDuration::get().saturated_into());
+        IntermediateValueAggregator::<T>::put(ValueAggregator::new(limit_block.saturated_into()));
+
+        // 2. Put the initial value into the circular buffer so it's not empty.
+        use sp_arithmetic::FixedPointNumber;
+        let init_price = P::get().max(FixedU128::from_rational(1, FixedU128::DIV.into()));
+        log::info!(
+            "Pushing initial price value into moving average buffer: {}",
+            init_price
+        );
+        ValuesCircularBuffer::<T>::mutate(|buffer| buffer.add(init_price));
+
+        // 3. Set the initial storage version.
+        STORAGE_VERSION.put::<Pallet<T>>();
+
+        // Reading block number is 'free' in the terms of weight.
+        T::DbWeight::get().writes(3)
     }
 }
