@@ -24,7 +24,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
+use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, DefaultNoBound};
 use frame_system::{ensure_root, pallet_prelude::*};
 pub use pallet::*;
 use sp_arithmetic::{
@@ -73,7 +73,7 @@ impl ValueAggregator {
     /// Attempts to add a value to the aggregator.
     ///
     /// Returns an error if the addition would cause an overflow in the accumulator or the counter.
-    pub fn try_add(&mut self, value: CurrencyAmount) -> Result<(), &'static str> {
+    pub fn try_add(mut self, value: CurrencyAmount) -> Result<Self, &'static str> {
         self.total = self
             .total
             .checked_add(&value)
@@ -84,7 +84,7 @@ impl ValueAggregator {
             .checked_add(1)
             .ok_or("Failed to increment count in the aggregator due to overflow.")?;
 
-        Ok(())
+        Ok(self)
     }
 
     /// Returns the average of the accumulated values.
@@ -96,6 +96,48 @@ impl ValueAggregator {
         // TODO: maybe this can be written in a way that preserves more precision?
         self.total
             .saturating_mul(FixedU128::from_rational(1, self.count.into()))
+    }
+}
+
+/// TODO: docs
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    RuntimeDebugNoBound,
+    PartialEqNoBound,
+    EqNoBound,
+    CloneNoBound,
+    TypeInfo,
+    DefaultNoBound,
+)]
+#[scale_info(skip_type_params(L))]
+pub struct CircularBuffer<L: Get<u32>> {
+    /// Next index to write to.
+    next_index: u32,
+    /// Currency values store.
+    buffer: BoundedVec<CurrencyAmount, L>,
+}
+
+impl<L: Get<u32>> CircularBuffer<L> {
+    /// Adds a new value to the circular buffer, possibly overriding the oldest value if capacity is filled.
+    pub fn add(&mut self, value: CurrencyAmount) {
+        // This can never happen, parameters must ensure that.
+        // But we still check it and log an error if it does.
+        if self.next_index >= L::get() || self.next_index as usize > self.buffer.len() {
+            log::error!(
+                target: LOG_TARGET,
+                "Failed to push value to the circular buffer due to invalid next index. \
+                Next index: {:?}, Buffer length: {:?}, Buffer capacity: {:?}",
+                self.next_index,
+                self.buffer.len(),
+                L::get()
+            );
+            return;
+        }
+
+        let _infallible = self.buffer.try_insert(self.next_index as usize, value);
+        self.next_index = self.next_index.saturating_add(1) % L::get();
     }
 }
 
@@ -124,6 +166,10 @@ pub mod pallet {
 
         /// Native currency ID that this pallet is supposed to track.
         type NativeCurrencyId: Get<CurrencyId>;
+
+        /// Maximum length of the circular buffer used to calculate the moving average.
+        #[pallet::constant]
+        type CircularBufferLength: Get<u32>;
     }
 
     #[pallet::event]
@@ -137,14 +183,23 @@ pub mod pallet {
         // TODO
     }
 
+    // TODO: A few storage values are read every block.
+    //       Should we just combine them all into a single struct?
+    //       It would save on weight consumption, but would make the code less readable, IMO.
+
     /// Storage for the accumulated native currency price in the current block.
     #[pallet::storage]
-    pub type CurrentValues<T: Config> =
+    pub type CurrentBlockValues<T: Config> =
         StorageValue<_, BoundedVec<CurrencyAmount, T::MaxValuesPerBlock>, ValueQuery>;
 
     /// Used to store the aggregated processed block values during some time period.
     #[pallet::storage]
     pub type IntermediateValueAggregator<T: Config> = StorageValue<_, ValueAggregator, ValueQuery>;
+
+    /// Used to store aggregated intermediate values for some time period.
+    #[pallet::storage]
+    pub type ValuesCircularBuffer<T: Config> =
+        StorageValue<_, CircularBuffer<T::CircularBufferLength>, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -177,7 +232,7 @@ pub mod pallet {
         /// In case of an error during processing, intermediate aggregated value is not updated.
         fn process_block_aggregated_values() {
             // 1. Take the accumulated block values, clearing the existing storage.
-            let accumulated_values = CurrentValues::<T>::take();
+            let accumulated_values = CurrentBlockValues::<T>::take();
 
             // 2. Attempt to process accumulated block values.
             let processed_value = match T::ProcessBlockValues::process(
@@ -197,10 +252,11 @@ pub mod pallet {
                 }
             };
 
+            // TODO: is it ok to ignore this? A bit confused what happens actually in the closure.
             // 3. Attempt to store the processed value.
-            IntermediateValueAggregator::<T>::mutate(|aggregator| {
-                match aggregator.try_add(processed_value) {
-                    Ok(()) => {}
+            let _ignore = IntermediateValueAggregator::<T>::try_mutate(
+                |aggregator| match aggregator.try_add(processed_value) {
+                    Ok(new_aggregator) => Ok(new_aggregator),
                     Err(message) => {
                         log::error!(
                             target: LOG_TARGET,
@@ -208,14 +264,21 @@ pub mod pallet {
                             Reason: {:?}",
                             message
                         );
+                        Err(())
                     }
-                }
-            });
+                },
+            );
         }
 
         /// Used to process the intermediate aggregated values, and push them to the moving average storage.
         fn process_intermediate_aggregated_values() {
             let average_value = IntermediateValueAggregator::<T>::take().average();
+
+            // TODO: how to handle zero values here?
+            // It's safe to assume that price equaling zero is not a valid price,
+            // and it's probably an issue with the lack of oracle data feed.
+
+            ValuesCircularBuffer::<T>::mutate(|buffer| buffer.add(average_value));
         }
     }
 
@@ -229,7 +292,7 @@ pub mod pallet {
                 return;
             }
 
-            CurrentValues::<T>::mutate(|v| match v.try_push(*value) {
+            CurrentBlockValues::<T>::mutate(|v| match v.try_push(*value) {
                 Ok(()) => {}
                 Err(_) => {
                     log::error!(
