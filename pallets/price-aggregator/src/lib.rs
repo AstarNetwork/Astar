@@ -29,14 +29,13 @@ use frame_system::{ensure_root, pallet_prelude::*};
 pub use pallet::*;
 use sp_arithmetic::{
     fixed_point::FixedU128,
-    traits::{CheckedAdd, Saturating, Zero},
-    FixedPointNumber,
+    traits::{CheckedAdd, SaturatedConversion, Saturating, Zero},
 };
 use sp_std::marker::PhantomData;
 
 pub use orml_traits::OnNewData;
 
-use astar_primitives::{oracle::PriceProvider, AccountId};
+use astar_primitives::{oracle::PriceProvider, BlockNumber};
 
 // TODO: move to primitives
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
@@ -60,19 +59,30 @@ const LOG_TARGET: &str = "price-aggregator";
 /// Used to aggregate the accumulated values over some time period.
 ///
 /// To avoid having a large memory footprint, values are summed up into a single accumulator.
-/// Number of summed up values is tracked separately.
+/// Number of summed up values is tracked in a separate field.
 #[derive(Encode, Decode, MaxEncodedLen, Default, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 pub struct ValueAggregator {
     /// Total accumulated value amount.
     total: CurrencyAmount,
     /// Number of values accumulated.
     count: u32,
+    /// Block number at which aggregation should reset.
+    limit_block: BlockNumber,
 }
 
 impl ValueAggregator {
-    /// Attempts to add a value to the aggregator.
+    /// New value aggregator, with the given block number as the new limit.
+    pub fn new(limit_block: BlockNumber) -> Self {
+        Self {
+            limit_block,
+            ..Default::default()
+        }
+    }
+
+    /// Attempts to add a value to the aggregator, consuming `self` in the process.
     ///
     /// Returns an error if the addition would cause an overflow in the accumulator or the counter.
+    /// Otherwise returns the updated aggregator.
     pub fn try_add(mut self, value: CurrencyAmount) -> Result<Self, &'static str> {
         self.total = self
             .total
@@ -99,7 +109,10 @@ impl ValueAggregator {
     }
 }
 
-/// TODO: docs
+/// Used to store the aggregated intermediate values into a circular buffer.
+///
+/// Inserts values sequentially into the buffer, until the buffer has been filled out.
+/// After that, the oldest value is always overwritten with the new value.
 #[derive(
     Encode,
     Decode,
@@ -139,6 +152,23 @@ impl<L: Get<u32>> CircularBuffer<L> {
         let _infallible = self.buffer.try_insert(self.next_index as usize, value);
         self.next_index = self.next_index.saturating_add(1) % L::get();
     }
+
+    /// Returns the average of the accumulated values.
+    pub fn average(&self) -> CurrencyAmount {
+        if self.buffer.is_empty() {
+            return CurrencyAmount::zero();
+        }
+
+        let sum = self
+            .buffer
+            .iter()
+            .fold(CurrencyAmount::zero(), |acc, &value| {
+                acc.saturating_add(value)
+            });
+
+        // At this point, length of the buffer is guaranteed to be greater than zero.
+        sum.saturating_mul(FixedU128::from_rational(1, self.buffer.len() as u128))
+    }
 }
 
 #[frame_support::pallet]
@@ -170,22 +200,24 @@ pub mod pallet {
         /// Maximum length of the circular buffer used to calculate the moving average.
         #[pallet::constant]
         type CircularBufferLength: Get<u32>;
+
+        /// Duration of aggregation period expressed in the number of blocks.
+        /// During this time, currency values are aggregated, and are then used to calculate the average value.
+        #[pallet::constant]
+        type AggregationDuration: Get<BlockNumberFor<Self>>;
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        // TODO
+        // TODO: do we want to emit some events?
+        // Maybe when the aggregated average value is pushed to the buffer?
     }
 
     #[pallet::error]
     pub enum Error<T> {
         // TODO
     }
-
-    // TODO: A few storage values are read every block.
-    //       Should we just combine them all into a single struct?
-    //       It would save on weight consumption, but would make the code less readable, IMO.
 
     /// Storage for the accumulated native currency price in the current block.
     #[pallet::storage]
@@ -213,14 +245,13 @@ pub mod pallet {
             Weight::zero()
         }
 
-        fn on_finalize(_now: BlockNumberFor<T>) {
+        fn on_finalize(now: BlockNumberFor<T>) {
             // 1. Process the accumulated native currency values in the current block.
             Self::process_block_aggregated_values();
 
             // 2. Check if we need to push the average aggregated value to the storage.
-            let is_average_value_push_time = false; // TODO, clearly
-            if is_average_value_push_time {
-                Self::process_intermediate_aggregated_values();
+            if IntermediateValueAggregator::<T>::get().limit_block >= now.saturated_into() {
+                Self::process_intermediate_aggregated_values(now);
             }
         }
     }
@@ -271,17 +302,33 @@ pub mod pallet {
         }
 
         /// Used to process the intermediate aggregated values, and push them to the moving average storage.
-        fn process_intermediate_aggregated_values() {
-            let average_value = IntermediateValueAggregator::<T>::take().average();
+        fn process_intermediate_aggregated_values(now: BlockNumberFor<T>) {
+            // 1. Get the average value from the intermediate aggregator.
+            let average_value = IntermediateValueAggregator::<T>::get().average();
 
-            // TODO: how to handle zero values here?
-            // It's safe to assume that price equaling zero is not a valid price,
-            // and it's probably an issue with the lack of oracle data feed.
+            // 2. Reset the aggregator back to zero, and set the new limit block.
+            IntermediateValueAggregator::<T>::put(ValueAggregator::new(
+                now.saturating_add(T::AggregationDuration::get())
+                    .saturated_into(),
+            ));
 
+            // 3. In case aggregated value equals 0, it means something has gone wrong since it's extremely unlikely
+            // that price goes to absolute zero. The much more likely case is that there's a problem with the oracle data feed.
+            if average_value.is_zero() {
+                log::error!(
+                    target: LOG_TARGET,
+                    "The average aggregated price equals zero, which most likely means that oracle data feed is faulty. \
+                    Not pushing the 'zero' value to the moving average storage."
+                );
+                return;
+            }
+
+            // 4. Push the 'valid' average aggregated value to the circular buffer.
             ValuesCircularBuffer::<T>::mutate(|buffer| buffer.add(average_value));
         }
     }
 
+    // Make this pallet an 'observer' ('listener') of the new oracle data feed.
     impl<T: Config> OnNewData<T::AccountId, CurrencyId, CurrencyAmount> for Pallet<T> {
         fn on_new_data(who: &T::AccountId, key: &CurrencyId, value: &CurrencyAmount) {
             // TODO
@@ -303,6 +350,12 @@ pub mod pallet {
                         );
                 }
             });
+        }
+    }
+
+    impl<T: Config> PriceProvider for Pallet<T> {
+        fn average_price() -> FixedU128 {
+            ValuesCircularBuffer::<T>::get().average()
         }
     }
 }

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use sp_arithmetic::fixed_point::FixedU64;
+use sp_arithmetic::fixed_point::FixedU128;
 
 /// Interface for fetching price of the native token.
 ///
@@ -24,5 +24,5 @@ use sp_arithmetic::fixed_point::FixedU64;
 /// the price over a certain period of time.
 pub trait PriceProvider {
     /// Get the price of the native token.
-    fn average_price() -> FixedU64;
+    fn average_price() -> FixedU128;
 }

@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use sp_arithmetic::fixed_point::FixedU64;
+use sp_arithmetic::fixed_point::FixedU128;
 
 /// `OnRuntimeUpgrade` logic used to set & configure init dApp staking v3 storage items.
 pub struct DAppStakingV3InitConfig<T, G, P>(PhantomData<(T, G, P)>);
@@ -28,7 +28,7 @@ impl<
             TierParameters<T::NumberOfTiers>,
             TiersConfiguration<T::NumberOfTiers>,
         )>,
-        P: Get<FixedU64>,
+        P: Get<FixedU128>,
     > OnRuntimeUpgrade for DAppStakingV3InitConfig<T, G, P>
 {
     fn on_runtime_upgrade() -> Weight {
