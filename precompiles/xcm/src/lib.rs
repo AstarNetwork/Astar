@@ -21,10 +21,11 @@
 use astar_primitives::xcm::XCM_SIZE_LIMIT;
 use fp_evm::PrecompileHandle;
 use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+    dispatch::{GetDispatchInfo, PostDispatchInfo},
     pallet_prelude::Weight,
     traits::{ConstU32, Get},
 };
+use sp_runtime::traits::{Dispatchable, MaybeEquivalence};
 type GetXcmSizeLimit = ConstU32<XCM_SIZE_LIMIT>;
 
 use pallet_evm::AddressMapping;
@@ -35,7 +36,6 @@ use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 
 use xcm::{latest::prelude::*, VersionedMultiAsset, VersionedMultiAssets, VersionedMultiLocation};
-use xcm_executor::traits::Convert;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use precompile_utils::prelude::*;
@@ -85,7 +85,7 @@ where
     XBalanceOf<Runtime>: TryFrom<U256> + Into<U256> + From<u128>,
     <Runtime as orml_xtokens::Config>::CurrencyId:
         From<<Runtime as pallet_assets::Config>::AssetId>,
-    C: Convert<MultiLocation, <Runtime as pallet_assets::Config>::AssetId>,
+    C: MaybeEquivalence<MultiLocation, <Runtime as pallet_assets::Config>::AssetId>,
 {
     #[precompile::public("assets_withdraw(address[],uint256[],bytes32,bool,uint256,uint256)")]
     fn assets_withdraw_native_v1(
@@ -153,7 +153,7 @@ where
             .iter()
             .cloned()
             .filter_map(|address| {
-                Runtime::address_to_asset_id(address.into()).and_then(|x| C::reverse_ref(x).ok())
+                Runtime::address_to_asset_id(address.into()).and_then(|x| C::convert_back(&x))
             })
             .collect::<Vec<MultiLocation>>();
 
@@ -256,9 +256,9 @@ where
             } else {
                 let fee_asset_id = Runtime::address_to_asset_id(address)
                     .ok_or(revert("Failed to resolve fee asset id from address"))?;
-                C::reverse_ref(fee_asset_id).map_err(|_| {
-                    revert("Failed to resolve fee asset multilocation from local id")
-                })?
+                C::convert_back(&fee_asset_id).ok_or(revert(
+                    "Failed to resolve fee asset multilocation from local id",
+                ))?
             }
         };
 
@@ -318,7 +318,7 @@ where
                 if address == NATIVE_ADDRESS {
                     Some(Here.into())
                 } else {
-                    Runtime::address_to_asset_id(address).and_then(|x| C::reverse_ref(x).ok())
+                    Runtime::address_to_asset_id(address).and_then(|x| C::convert_back(&x))
                 }
             })
             .collect();

@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::{traits::Currency, weights::Weight};
+use frame_support::{traits::fungible::Inspect, weights::Weight};
 use pallet_contracts_primitives::{Code, ReturnFlags};
 use parity_scale_codec::Decode;
 use sp_runtime::traits::Hash;
 
-type ContractBalanceOf<T> = <<T as pallet_contracts::Config>::Currency as Currency<
+type ContractBalanceOf<T> = <<T as pallet_contracts::Config>::Currency as Inspect<
     <T as frame_system::Config>::AccountId,
 >>::Balance;
 

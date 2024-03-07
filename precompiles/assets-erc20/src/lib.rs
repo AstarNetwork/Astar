@@ -37,18 +37,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use fp_evm::{ExitError, PrecompileHandle};
-use frame_support::traits::fungibles::approvals::Inspect as ApprovalInspect;
-use frame_support::traits::fungibles::metadata::Inspect as MetadataInspect;
-use frame_support::traits::fungibles::Inspect;
-use frame_support::traits::OriginTrait;
-use frame_support::DefaultNoBound;
 use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
-    sp_runtime::traits::StaticLookup,
+    dispatch::{GetDispatchInfo, PostDispatchInfo},
+    traits::{
+        fungibles::{
+            approvals::Inspect as ApprovalInspect, metadata::Inspect as MetadataInspect, Inspect,
+        },
+        OriginTrait,
+    },
+    DefaultNoBound,
 };
 use pallet_evm::AddressMapping;
 use precompile_utils::prelude::*;
-use sp_runtime::traits::Bounded;
+use sp_runtime::traits::{Bounded, Dispatchable, StaticLookup};
 
 use sp_core::{Get, MaxEncodedLen, H160, U256};
 use sp_std::{

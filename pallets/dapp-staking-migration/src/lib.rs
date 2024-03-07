@@ -53,20 +53,18 @@ pub use pallet::*;
 
 use frame_support::{
     dispatch::PostDispatchInfo,
-    log,
     pallet_prelude::*,
     traits::{Get, LockableCurrency, ReservableCurrency},
 };
 
 use frame_system::{pallet_prelude::*, RawOrigin};
+use pallet_dapps_staking::{Ledger as OldLedger, RegisteredDapps as OldRegisteredDapps};
 use parity_scale_codec::{Decode, Encode};
 use sp_io::{hashing::twox_128, storage::clear_prefix, KillStorageResult};
 use sp_runtime::{
     traits::{TrailingZeroInput, UniqueSaturatedInto},
     Saturating,
 };
-
-use pallet_dapps_staking::{Ledger as OldLedger, RegisteredDapps as OldRegisteredDapps};
 
 #[cfg(feature = "try-runtime")]
 use astar_primitives::Balance;

@@ -56,7 +56,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         /// The staking balance.
         type Currency: Currency<Self::AccountId, Balance = Balance>
-            + LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
+            + LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>
             + ReservableCurrency<Self::AccountId>;
 
         /// Describes smart contract in the context required by dapps staking.
@@ -174,7 +174,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::whitelist_storage]
     #[pallet::getter(fn next_era_starting_block)]
-    pub type NextEraStartingBlock<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+    pub type NextEraStartingBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, ValueQuery>;
 
     /// Simple map where developer account points to their smart contract
     #[pallet::storage]

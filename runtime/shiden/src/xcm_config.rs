@@ -28,20 +28,20 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::EnsureRoot;
-use sp_runtime::traits::Convert;
+use sp_runtime::traits::{Convert, MaybeEquivalence};
 
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter,
-    EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
+    ConvertedConcreteId, CurrencyAdapter, DescribeFamily, EnsureXcmOrigin, FixedWeightBounds,
+    FungiblesAdapter, HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents, WithComputedOrigin,
 };
 use xcm_executor::{
-    traits::{Convert as XcmConvert, JustTry, WithOriginFilter},
+    traits::{JustTry, WithOriginFilter},
     XcmExecutor,
 };
 
@@ -50,9 +50,8 @@ use orml_xcm_support::DisabledParachainFee;
 
 // Astar imports
 use astar_primitives::xcm::{
-    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, DescribeAllTerminal,
-    DescribeFamily, FixedRateOfForeignAsset, HashedDescription, ReserveAssetFilter,
-    XcmFungibleFeeHandler,
+    AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
+    DescribeAllTerminal, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
 };
 
 parameter_types! {
@@ -272,6 +271,7 @@ impl xcm_executor::Config for XcmConfig {
     type UniversalAliases = Nothing;
     type CallDispatcher = WithOriginFilter<SafeCallFilter>;
     type SafeCallFilter = SafeCallFilter;
+    type Aliasers = Nothing;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -364,7 +364,7 @@ parameter_types! {
 pub struct AssetIdConvert;
 impl Convert<AssetId, Option<MultiLocation>> for AssetIdConvert {
     fn convert(asset_id: AssetId) -> Option<MultiLocation> {
-        ShidenAssetLocationIdConverter::reverse_ref(&asset_id).ok()
+        ShidenAssetLocationIdConverter::convert_back(&asset_id)
     }
 }
 

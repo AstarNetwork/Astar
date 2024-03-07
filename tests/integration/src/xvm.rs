@@ -703,7 +703,7 @@ fn wasm_call_via_xvm_fails_if_storage_deposit_limit_exhausted() {
                 reason: FailureReason::Error(FailureError::VmError(data)),
                 ..
             }) => {
-                let error_string = "WASM call error: Module(ModuleError { index: 70, error: [22, 0, 0, 0], message: Some(\"StorageDepositLimitExhausted\") })";
+                let error_string = "WASM call error: Module(ModuleError { index: 70, error: [23, 0, 0, 0], message: Some(\"StorageDepositLimitExhausted\") })";
                 assert_eq!(data, error_string.as_bytes());
             },
             _ => panic!("unexpected wasm call result"),

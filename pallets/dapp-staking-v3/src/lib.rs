@@ -46,7 +46,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
     traits::{BadOrigin, One, Saturating, UniqueSaturatedInto, Zero},
-    Perbill, Permill,
+    Perbill, Permill, SaturatedConversion,
 };
 pub use sp_std::vec::Vec;
 
@@ -106,7 +106,7 @@ pub mod pallet {
     }
 
     #[pallet::config]
-    pub trait Config: frame_system::Config<BlockNumber = BlockNumber> {
+    pub trait Config: frame_system::Config {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>>
             + IsType<<Self as frame_system::Config>::RuntimeEvent>
@@ -471,15 +471,16 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
-    pub struct GenesisConfig {
+    pub struct GenesisConfig<T> {
         pub reward_portion: Vec<Permill>,
         pub slot_distribution: Vec<Permill>,
         pub tier_thresholds: Vec<TierThreshold>,
         pub slots_per_tier: Vec<u16>,
+        pub _config: PhantomData<T>,
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             // Prepare tier parameters & verify their correctness
             let tier_params = TierParameters::<T::NumberOfTiers> {
@@ -541,8 +542,9 @@ pub mod pallet {
     }
 
     #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
-        fn on_initialize(now: BlockNumber) -> Weight {
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
+            let now = now.saturated_into();
             Self::era_and_period_handler(now, TierAssignment::Real)
         }
 
@@ -871,9 +873,9 @@ pub mod pallet {
             ledger.subtract_lock_amount(amount_to_unlock);
 
             let current_block = frame_system::Pallet::<T>::block_number();
-            let unlock_block = current_block.saturating_add(Self::unlocking_period());
+            let unlock_block = current_block.saturating_add(Self::unlocking_period().into());
             ledger
-                .add_unlocking_chunk(amount_to_unlock, unlock_block)
+                .add_unlocking_chunk(amount_to_unlock, unlock_block.saturated_into())
                 .map_err(|_| Error::<T>::TooManyUnlockingChunks)?;
 
             // Update storage
@@ -900,7 +902,7 @@ pub mod pallet {
             let mut ledger = Ledger::<T>::get(&account);
 
             let current_block = frame_system::Pallet::<T>::block_number();
-            let amount = ledger.claim_unlocked(current_block);
+            let amount = ledger.claim_unlocked(current_block.saturated_into());
             ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
 
             // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
@@ -1539,7 +1541,7 @@ pub mod pallet {
             // Ensure a 'change' happens on the next block
             ActiveProtocolState::<T>::mutate(|state| {
                 let current_block = frame_system::Pallet::<T>::block_number();
-                state.next_era_start = current_block.saturating_add(One::one());
+                state.next_era_start = current_block.saturating_add(One::one()).saturated_into();
 
                 match forcing_type {
                     ForcingType::Era => (),
@@ -1661,7 +1663,7 @@ pub mod pallet {
         /// 3. Read in tier configuration. This contains information about how many slots per tier there are,
         ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
         ///    Iterate over tier thresholds & capacities, starting from the top tier, and assign dApps to them.
-        ///    
+        ///
         ///    ```text
         ////   for each tier:
         ///        for each unassigned dApp:

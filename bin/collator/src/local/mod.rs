@@ -25,4 +25,4 @@ mod service;
 mod chain_spec;
 
 pub use chain_spec::*;
-pub use service::{new_partial, start_node, Executor, RuntimeApi};
+pub use service::{new_partial, start_node, Executor, HostFunctions, RuntimeApi};

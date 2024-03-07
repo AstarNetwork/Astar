@@ -20,6 +20,7 @@ use super::*;
 
 use frame_benchmarking::v2::*;
 use frame_system::{Pallet as System, RawOrigin};
+use sp_std::prelude::*;
 
 const UNIT: u128 = 1_000_000_000_000_000_000;
 
@@ -105,7 +106,7 @@ mod benchmarks {
         #[block]
         {
             Pallet::<T>::block_before_new_era(init_recalculation_era);
-            Pallet::<T>::on_finalize(1);
+            Pallet::<T>::on_finalize(1u32.into());
         }
 
         assert!(ActiveInflationConfig::<T>::get().recalculation_era > init_recalculation_era);
@@ -119,7 +120,7 @@ mod benchmarks {
         let init_issuance = T::Currency::total_issuance();
         DoRecalculation::<T>::kill();
 
-        let block = 1;
+        let block = 1u32.into();
         #[block]
         {
             Pallet::<T>::on_initialize(block);
@@ -142,7 +143,7 @@ mod benchmarks {
 #[cfg(test)]
 mod tests {
     use crate::mock;
-    use frame_support::sp_io::TestExternalities;
+    use sp_io::TestExternalities;
 
     pub fn new_test_ext() -> TestExternalities {
         mock::ExternalityBuilder::build()

@@ -102,13 +102,15 @@ use astar_primitives::{
     dapp_staking::{
         CycleConfiguration, EraNumber, Observer as DappStakingObserver, StakingRewardHandler,
     },
-    Balance, BlockNumber,
+    Balance,
 };
 use frame_support::{
     pallet_prelude::*,
     traits::{Currency, GetStorageVersion, OnRuntimeUpgrade},
+    DefaultNoBound,
 };
 use frame_system::{ensure_root, pallet_prelude::*};
+use serde::{Deserialize, Serialize};
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
     Perquintill,
@@ -128,7 +130,6 @@ mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
-
     use super::*;
 
     /// The current storage version.
@@ -144,7 +145,7 @@ pub mod pallet {
     >>::NegativeImbalance;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config<BlockNumber = BlockNumber> {
+    pub trait Config: frame_system::Config {
         /// The currency trait.
         /// This has been soft-deprecated but it still needs to be used here in order to access `NegativeImbalance`
         /// which is defined in the currency trait.
@@ -198,14 +199,15 @@ pub mod pallet {
     pub type DoRecalculation<T: Config> = StorageValue<_, EraNumber, OptionQuery>;
 
     #[pallet::genesis_config]
-    #[cfg_attr(feature = "std", derive(Default))]
-    pub struct GenesisConfig {
+    #[derive(DefaultNoBound)]
+    pub struct GenesisConfig<T> {
         pub params: InflationParameters,
+        pub _config: sp_std::marker::PhantomData<T>,
     }
 
     /// This should be executed **AFTER** other pallets that cause issuance to increase have been initialized.
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             assert!(self.params.is_valid());
 
@@ -218,8 +220,8 @@ pub mod pallet {
     }
 
     #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumber> for Pallet<T> {
-        fn on_initialize(_now: BlockNumber) -> Weight {
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
             Self::payout_block_rewards();
 
             // Benchmarks won't account for the whitelisted storage access so this needs to be added manually.
@@ -229,7 +231,7 @@ pub mod pallet {
             <T as frame_system::Config>::DbWeight::get().reads(2)
         }
 
-        fn on_finalize(_now: BlockNumber) {
+        fn on_finalize(_now: BlockNumberFor<T>) {
             // Recalculation is done at the block right before a new cycle starts.
             // This is to ensure all the rewards are paid out according to the new inflation configuration from next block.
             //
@@ -527,8 +529,19 @@ impl InflationConfiguration {
 /// Inflation parameters.
 ///
 /// The parts of the inflation that go towards different purposes must add up to exactly 100%.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    TypeInfo,
+    Serialize,
+    Deserialize,
+)]
 pub struct InflationParameters {
     /// Maximum possible inflation rate, based on the total issuance at some point in time.
     /// From this value, all the other inflation parameters are derived.

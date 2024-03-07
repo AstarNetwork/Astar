@@ -312,7 +312,7 @@ impl<T: Config> Pallet<T> {
         domain.extend_from_slice(&keccak256!("1")); // version
         domain.extend_from_slice(&(<[u8; 32]>::from(U256::from(T::ChainId::get())))); // chain id
         domain.extend_from_slice(
-            frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()).as_ref(),
+            frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero()).as_ref(),
         ); // genesis block hash
         keccak_256(domain.as_slice())
     }

@@ -17,8 +17,10 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use frame_support::traits::OnRuntimeUpgrade;
-use frame_support::{dispatch::GetStorageVersion, log, pallet_prelude::*, traits::Get};
+use frame_support::{
+    pallet_prelude::*,
+    traits::{Get, OnRuntimeUpgrade},
+};
 use sp_std::{marker::PhantomData, vec::Vec};
 use xcm::IntoVersion;
 

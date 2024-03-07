@@ -15,7 +15,7 @@ num-traits = { workspace = true }
 parity-scale-codec = { workspace = true }
 
 scale-info = { workspace = true }
-serde = { workspace = true, optional = true }
+serde = { workspace = true }
 sp-arithmetic = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
@@ -33,7 +33,7 @@ pallet-balances = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"serde",
+	"serde/std",
 	"log/std",
 	"parity-scale-codec/std",
 	"scale-info/std",

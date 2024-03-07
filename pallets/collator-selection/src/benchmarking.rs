@@ -26,12 +26,12 @@ use frame_benchmarking::{
 };
 use frame_support::{
     assert_ok,
-    codec::Decode,
     traits::{Currency, EnsureOrigin, Get},
 };
-use frame_system::{EventRecord, RawOrigin};
+use frame_system::{pallet_prelude::BlockNumberFor, EventRecord, RawOrigin};
 use pallet_authorship::EventHandler;
 use pallet_session::{self as session, SessionManager};
+use parity_scale_codec::Decode;
 use sp_std::prelude::*;
 
 pub type BalanceOf<T> =
@@ -203,7 +203,7 @@ benchmarks! {
             T::Currency::minimum_balance() * 4u32.into(),
         );
         let author = account("author", 0, SEED);
-        let new_block: T::BlockNumber = 10u32.into();
+        let new_block: BlockNumberFor<T> = 10u32.into();
 
         frame_system::Pallet::<T>::set_block_number(new_block);
         assert!(T::Currency::free_balance(&author) == 0u32.into());
@@ -226,8 +226,8 @@ benchmarks! {
         register_validators::<T>(c);
         register_candidates::<T>(c);
 
-        let new_block: T::BlockNumber = 1800u32.into();
-        let zero_block: T::BlockNumber = 0u32.into();
+        let new_block: BlockNumberFor<T> = 1800u32.into();
+        let zero_block: BlockNumberFor<T> = 0u32.into();
         let candidates = <Candidates<T>>::get();
 
         let non_removals = c.saturating_sub(r);

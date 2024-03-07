@@ -20,10 +20,10 @@
 
 use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BlockRewardConfig,
-    CouncilConfig, DappStakingConfig, DemocracyConfig, EVMConfig, GenesisConfig, GrandpaConfig,
-    GrandpaId, InflationConfig, InflationParameters, Precompiles, RewardDistributionConfig,
-    Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig, TierThreshold, TreasuryConfig,
-    VestingConfig, AST,
+    CouncilConfig, DappStakingConfig, DemocracyConfig, EVMConfig, GrandpaConfig, GrandpaId,
+    InflationConfig, InflationParameters, Precompiles, RewardDistributionConfig,
+    RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+    TierThreshold, TreasuryConfig, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -35,7 +35,7 @@ use sp_runtime::{
 type AccountPublic = <Signature as Verify>::Signer;
 
 /// Specialized `ChainSpec` for Shiden Network.
-pub type ChainSpec = sc_service::GenericChainSpec<local_runtime::GenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec<local_runtime::RuntimeGenesisConfig>;
 
 /// Helper function to generate a crypto pair from seed
 fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -99,15 +99,16 @@ fn testnet_genesis(
     initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
-) -> GenesisConfig {
+) -> RuntimeGenesisConfig {
     // This is supposed the be the simplest bytecode to revert without returning any data.
     // We will pre-deploy it under all of our precompiles to ensure they can be called from
     // within contracts.
     // (PUSH1 0x00 PUSH1 0x00 REVERT)
     let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
-    GenesisConfig {
+    RuntimeGenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
+            ..Default::default()
         },
         balances: BalancesConfig {
             balances: endowed_accounts
@@ -126,6 +127,7 @@ fn testnet_genesis(
                 adjustable_percent: Perbill::from_percent(25),
                 ideal_dapps_staking_tvl: Perbill::from_percent(40),
             },
+            ..Default::default()
         },
         vesting: VestingConfig { vesting: vec![] },
         aura: AuraConfig {
@@ -136,6 +138,7 @@ fn testnet_genesis(
                 .iter()
                 .map(|x| (x.1.clone(), 1))
                 .collect(),
+            ..Default::default()
         },
         evm: EVMConfig {
             // We need _some_ code inserted at the precompile address so that
@@ -153,6 +156,7 @@ fn testnet_genesis(
                     )
                 })
                 .collect(),
+            ..Default::default()
         },
         ethereum: Default::default(),
         sudo: SudoConfig {
@@ -207,9 +211,11 @@ fn testnet_genesis(
                 TierThreshold::FixedTvlAmount { amount: 10 * AST },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
+            ..Default::default()
         },
         inflation: InflationConfig {
             params: InflationParameters::default(),
+            ..Default::default()
         },
     }
 }

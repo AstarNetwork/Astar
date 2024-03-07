@@ -302,10 +302,8 @@ jobs:
 
     - name: Srtool build
       id: srtool_build
-      uses: chevdor/srtool-actions@v0.7.0
+      uses: chevdor/srtool-actions@v0.8.0
       with:
-        # TODO: Remove tag field once we uplifted to the latest polkadot 0.9.41.
-        tag: 1.66.1
         chain: ${{ matrix.chain }}
         runtime_dir: runtime/${{ matrix.chain }}
 
