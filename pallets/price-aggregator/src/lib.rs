@@ -40,12 +40,16 @@ use astar_primitives::{
     BlockNumber,
 };
 
-// TODO: perhaps make CurrencyAmount and CurrencyId generic?
+pub mod weights;
+pub use weights::WeightInfo;
 
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 /// Trait for processing accumulated currency values within a single block.
 ///
@@ -256,13 +260,15 @@ pub mod pallet {
         /// During this time, currency values are aggregated, and are then used to calculate the average value.
         #[pallet::constant]
         type AggregationDuration: Get<BlockNumberFor<Self>>;
+
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
         /// New average native currency value has been calculated and pushed into the moving average buffer.
-        AverageAggregatedValue(CurrencyAmount),
+        AverageAggregatedValue { value: CurrencyAmount },
     }
 
     /// Storage for the accumulated native currency price in the current block.
@@ -283,13 +289,22 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
+        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
             // Need to account for the reads and writes of:
             // - CurrentBlockValues
             // - IntermediateValueAggregator
-            T::DbWeight::get().reads_writes(2, 2)
+            //
+            // Also need to account for the weight of processing block accumulated values.
+            let mut total_weight = T::DbWeight::get()
+                .reads_writes(2, 2)
+                .saturating_add(T::WeightInfo::process_block_aggregated_values());
 
-            // TODO + the weight of the actual processing time, needs to be benchmarked
+            if IntermediateValueAggregator::<T>::get().limit_block <= now.saturated_into() {
+                total_weight
+                    .saturating_accrue(T::WeightInfo::process_intermediate_aggregated_values());
+            }
+
+            total_weight
         }
 
         fn on_finalize(now: BlockNumberFor<T>) {
@@ -314,7 +329,7 @@ pub mod pallet {
         ///
         /// Guarantees that the accumulated values are cleared after processing.
         /// In case of an error during processing, intermediate aggregated value is not updated.
-        fn process_block_aggregated_values() {
+        pub(crate) fn process_block_aggregated_values() {
             // 1. Take the accumulated block values, clearing the existing storage.
             let accumulated_values = CurrentBlockValues::<T>::take();
 
@@ -355,7 +370,7 @@ pub mod pallet {
         }
 
         /// Used to process the intermediate aggregated values, and push them to the moving average storage.
-        fn process_intermediate_aggregated_values(now: BlockNumberFor<T>) {
+        pub(crate) fn process_intermediate_aggregated_values(now: BlockNumberFor<T>) {
             // 1. Get the average value from the intermediate aggregator.
             let average_value = IntermediateValueAggregator::<T>::get().average();
 
@@ -378,7 +393,9 @@ pub mod pallet {
 
             // 4. Push the 'valid' average aggregated value to the circular buffer.
             ValuesCircularBuffer::<T>::mutate(|buffer| buffer.add(average_value));
-            Self::deposit_event(Event::AverageAggregatedValue(average_value));
+            Self::deposit_event(Event::AverageAggregatedValue {
+                value: average_value,
+            });
         }
     }
 

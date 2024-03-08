@@ -98,6 +98,7 @@ impl pallet_price_aggregator::Config for Test {
     type NativeCurrencyId = NativeCurrencyId;
     type CircularBufferLength = ConstU32<7>;
     type AggregationDuration = AggregationDuration;
+    type WeightInfo = ();
 }
 
 construct_runtime!(

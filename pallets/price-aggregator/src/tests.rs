@@ -18,7 +18,7 @@
 
 use crate::mock::*;
 use crate::{
-    pallet::Config, AverageBlockValue, CircularBuffer, CurrentBlockValues,
+    pallet::Config, AverageBlockValue, CircularBuffer, CurrentBlockValues, Event,
     IntermediateValueAggregator, MedianBlockValue, ProcessBlockValues, ValueAggregator,
     ValuesCircularBuffer,
 };
@@ -458,6 +458,13 @@ fn on_finalize_updates_circular_buffer() {
             vec![expected_average]
         );
         assert_eq!(circular_buffer.head, 1);
+
+        // Verify deposited event
+        System::assert_last_event(RuntimeEvent::PriceAggregator(
+            Event::AverageAggregatedValue {
+                value: expected_average,
+            },
+        ));
     })
 }
 
