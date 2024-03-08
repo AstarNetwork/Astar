@@ -22,7 +22,7 @@ use crate::{
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU32},
+    traits::{ConstU128, ConstU32, Hooks},
     weights::Weight,
 };
 use sp_core::H256;
@@ -117,12 +117,16 @@ impl ExtBuilder {
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| {
-            System::set_block_number(1);
-
+            // 1. Set the initial limit block for the intermediate value aggregator
             IntermediateValueAggregator::<Test>::mutate(|v| {
                 v.limit_block =
                     <Test as pallet_price_aggregator::Config>::AggregationDuration::get() + 1
             });
+
+            // 2. Init block setting
+            let init_block_number = 1;
+            System::set_block_number(init_block_number);
+            PriceAggregator::on_initialize(init_block_number);
         });
 
         ext

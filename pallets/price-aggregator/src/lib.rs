@@ -73,7 +73,28 @@ impl ProcessBlockValues for AverageBlockValue {
     }
 }
 
-const LOG_TARGET: &str = "price-aggregator";
+/// Used to calculate the median of the accumulated values.
+pub struct MedianBlockValue;
+impl ProcessBlockValues for MedianBlockValue {
+    fn process(values: &[CurrencyAmount]) -> Result<CurrencyAmount, &'static str> {
+        if values.is_empty() {
+            return Err("No values exist for the current block.");
+        }
+
+        let mut sorted_values = values.to_vec();
+        sorted_values.sort_unstable();
+
+        let mid = sorted_values.len() / 2;
+
+        if sorted_values.len() % 2 == 0 {
+            Ok(sorted_values[mid.saturating_sub(1)]
+                .saturating_add(sorted_values[mid])
+                .saturating_mul(CurrencyAmount::from_rational(1, 2)))
+        } else {
+            Ok(sorted_values[mid])
+        }
+    }
+}
 
 /// Used to aggregate the accumulated values over some time period.
 ///
@@ -199,6 +220,8 @@ impl<L: Get<u32>> CircularBuffer<L> {
     }
 }
 
+const LOG_TARGET: &str = "price-aggregator";
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -274,12 +297,16 @@ pub mod pallet {
             Self::process_block_aggregated_values();
 
             // 2. Check if we need to push the average aggregated value to the storage.
-            if IntermediateValueAggregator::<T>::get().limit_block >= now.saturated_into() {
+            if IntermediateValueAggregator::<T>::get().limit_block <= now.saturated_into() {
                 Self::process_intermediate_aggregated_values(now);
             }
         }
 
-        // TODO: integration tests!
+        fn integrity_test() {
+            assert!(T::MaxValuesPerBlock::get() > 0);
+            assert!(T::CircularBufferLength::get() > 0);
+            assert!(!T::AggregationDuration::get().is_zero());
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -297,7 +324,7 @@ pub mod pallet {
             ) {
                 Ok(value) => value,
                 Err(message) => {
-                    log::error!(
+                    log::trace!(
                         target: LOG_TARGET,
                         "Failed to process the accumulated native currency values in the current block. \
                         Reason: {:?}",
@@ -309,22 +336,22 @@ pub mod pallet {
                 }
             };
 
-            // TODO: is it ok to ignore this? A bit confused what happens actually in the closure.
             // 3. Attempt to store the processed value.
-            let _ignore = IntermediateValueAggregator::<T>::try_mutate(
-                |aggregator| match aggregator.try_add(processed_value) {
-                    Ok(new_aggregator) => Ok(new_aggregator),
-                    Err(message) => {
-                        log::error!(
-                            target: LOG_TARGET,
-                            "Failed to add the processed native currency value to the intermediate storage. \
-                            Reason: {:?}",
-                            message
-                        );
-                        Err(())
-                    }
-                },
-            );
+            // This operation is practically infallible, but we check the results for the additional safety.
+            let intermediate_value = IntermediateValueAggregator::<T>::get();
+            match intermediate_value.try_add(processed_value) {
+                Ok(new_aggregator) => {
+                    IntermediateValueAggregator::<T>::put(new_aggregator);
+                }
+                Err(message) => {
+                    log::error!(
+                        target: LOG_TARGET,
+                        "Failed to add the processed native currency value to the intermediate storage. \
+                        Reason: {:?}",
+                        message
+                    );
+                }
+            }
         }
 
         /// Used to process the intermediate aggregated values, and push them to the moving average storage.
