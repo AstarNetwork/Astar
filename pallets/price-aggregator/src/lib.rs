@@ -20,7 +20,31 @@
 //!
 //! ## Overview
 //!
-//! ## TODO
+//! Purpose of this pallet is to aggregate price data over some time, and then calculate the moving average.
+//!
+//! ## Solution
+//!
+//! The overall solution is broken down into several steps that occur over the course of various time periods.
+//!
+//! ### Block Aggregation
+//!
+//! During each block, the native currency price data is accumulated. This is done 'outside' the pallet, and it's only expected
+//! that 'something' will push this data to the price aggregator pallet. The pallet itself doesn't care about the source of the data, nor who submitted it.
+//!
+//! At the end of each block, accumulated data is processed according to the specified algorithm (e.g. can be average, median, or something else).
+//! In case processing was successful, the result is stored in the intermediate value aggregator.
+//! In case processing fails, value is simply ignored.
+//!
+//! ### Intermediate Value Aggregation
+//!
+//! After a predetermined amount of time (blocks) has passed, the average value is calculated from the intermediate value aggregator.
+//! In case it's a valid value (non-zero), it's pushed into the circular buffer used to calculate the moving average.
+//! In case of an error, the value is simply ignored.
+//!
+//! ### Moving Average Calculation
+//!
+//! The moving average is calculated from the circular buffer, and is used to provide the 'average' price of the native currency, over some time period.
+//! It's important to note that the moving average is not a 'real-time' value, but rather a 'lagging' indicator.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
