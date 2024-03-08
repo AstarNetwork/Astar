@@ -1,7 +1,7 @@
 
 // This file is part of Astar.
 
-// Copyright (C) 2019-2024 Stake Technologies Pte.Ltd.
+// Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // Astar is free software: you can redistribute it and/or modify
