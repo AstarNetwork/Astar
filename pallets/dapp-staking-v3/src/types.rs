@@ -66,6 +66,7 @@
 
 use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec};
 use parity_scale_codec::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_runtime::{
     traits::{CheckedAdd, UniqueSaturatedInto, Zero},
@@ -1354,8 +1355,19 @@ where
 }
 
 /// Description of tier entry requirement.
-#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[derive(
+    Encode,
+    Decode,
+    MaxEncodedLen,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    TypeInfo,
+    Serialize,
+    Deserialize,
+)]
 pub enum TierThreshold {
     /// Entry into tier is mandated by minimum amount of staked funds.
     /// Value is fixed, and is not expected to change in between periods.
@@ -1518,7 +1530,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
             // All vector length must match number of tiers.
             && number_of_tiers == self.reward_portion.len()
             && number_of_tiers == self.tier_thresholds.len()
-            // Total number of slots must match the sum of slots per tier. 
+            // Total number of slots must match the sum of slots per tier.
             && self.slots_per_tier.iter().fold(0, |acc, x| acc + x) == self.number_of_slots
     }
 

@@ -26,7 +26,6 @@ pub use pallet_evm::{
 };
 use sp_core::{keccak_256, H160, H256};
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, ConstU32, IdentityLookup},
     AccountId32,
 };
@@ -36,8 +35,6 @@ use frame_support::traits::Contains;
 use astar_primitives::precompiles::DispatchFilterValidate;
 pub type AccountId = AccountId32;
 pub type Balance = u128;
-pub type BlockNumber = u64;
-pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 pub type Block = frame_system::mocking::MockBlock<TestRuntime>;
 pub const PRECOMPILE_ADDRESS: H160 = H160::repeat_byte(0x7B);
 
@@ -60,14 +57,13 @@ impl frame_system::Config for TestRuntime {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId32;
     type Lookup = IdentityLookup<AccountId32>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -135,7 +131,7 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
@@ -214,10 +210,7 @@ parameter_types! {
 
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
-    pub enum TestRuntime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum TestRuntime
     {
         System: frame_system,
         Evm: pallet_evm,
@@ -232,8 +225,9 @@ pub(crate) struct ExtBuilder;
 
 impl ExtBuilder {
     pub(crate) fn build(self) -> sp_io::TestExternalities {
-        let t = frame_system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
+        use sp_runtime::BuildStorage;
+        let t = frame_system::GenesisConfig::<TestRuntime>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         let mut ext = sp_io::TestExternalities::new(t);

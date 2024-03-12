@@ -25,12 +25,13 @@ use astar_primitives::{
     evm::UnifiedAddressMapper,
     xvm::{CallFailure, Context, FailureError, VmId, XvmCall},
 };
-use frame_support::{dispatch::Encode, weights::Weight};
+use frame_support::weights::Weight;
 use frame_system::RawOrigin;
 use pallet_contracts::chain_extension::{
     ChainExtension, Environment, Ext, InitState, RetVal, ReturnFlags,
 };
 use pallet_unified_accounts::WeightInfo;
+use parity_scale_codec::Encode;
 use sp_runtime::DispatchError;
 use sp_std::marker::PhantomData;
 use xvm_chain_extension_types::{XvmCallArgs, XvmExecutionResult};

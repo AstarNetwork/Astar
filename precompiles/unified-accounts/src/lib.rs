@@ -21,7 +21,6 @@
 use astar_primitives::evm::{UnifiedAddress, UnifiedAddressMapper};
 use core::marker::PhantomData;
 use fp_evm::PrecompileHandle;
-use frame_support::dispatch::Dispatchable;
 use frame_support::traits::IsType;
 use precompile_utils::prelude::*;
 use sp_core::{crypto::AccountId32, H256};
@@ -38,8 +37,6 @@ pub struct UnifiedAccountsPrecompile<T, UA>(PhantomData<(T, UA)>);
 impl<R, UA> UnifiedAccountsPrecompile<R, UA>
 where
     R: pallet_evm::Config + pallet_unified_accounts::Config,
-    <<R as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin:
-        From<Option<R::AccountId>>,
     <R as frame_system::Config>::AccountId: IsType<AccountId32>,
     UA: UnifiedAddressMapper<R::AccountId>,
 {

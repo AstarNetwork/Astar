@@ -32,6 +32,7 @@ sp-runtime = { workspace = true, features = ["std"] }
 # Frontier
 ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true, features = ["std"] }
+fc-api = { workspace = true }
 fc-consensus = { workspace = true }
 fc-db = { workspace = true }
 fc-rpc = { workspace = true, features = ["rpc-binary-search-estimate"] }

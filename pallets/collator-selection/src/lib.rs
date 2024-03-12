@@ -80,7 +80,6 @@ pub mod pallet {
     use core::ops::Div;
     use frame_support::{
         dispatch::{DispatchClass, DispatchResultWithPostInfo},
-        inherent::Vec,
         pallet_prelude::*,
         sp_runtime::{
             traits::{AccountIdConversion, CheckedSub, Saturating, Zero},
@@ -90,12 +89,13 @@ pub mod pallet {
             Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
             ValidatorRegistration,
         },
-        PalletId,
+        DefaultNoBound, PalletId,
     };
     use frame_system::{pallet_prelude::*, Config as SystemConfig};
     use pallet_session::SessionManager;
     use sp_runtime::{traits::Convert, Perbill};
     use sp_staking::SessionIndex;
+    use sp_std::prelude::*;
 
     type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -147,7 +147,7 @@ pub mod pallet {
         type MaxInvulnerables: Get<u32>;
 
         // Will be kicked if block is not produced in threshold.
-        type KickThreshold: Get<Self::BlockNumber>;
+        type KickThreshold: Get<BlockNumberFor<Self>>;
 
         /// A stable ID for a validator.
         type ValidatorId: Member + Parameter;
@@ -198,7 +198,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn last_authored_block)]
     pub type LastAuthoredBlock<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, T::BlockNumber, ValueQuery>;
+        StorageMap<_, Twox64Concat, T::AccountId, BlockNumberFor<T>, ValueQuery>;
 
     /// Desired number of candidates.
     ///
@@ -220,30 +220,20 @@ pub mod pallet {
     pub type SlashDestination<T> = StorageValue<_, <T as frame_system::Config>::AccountId>;
 
     #[pallet::genesis_config]
+    #[derive(DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
         pub invulnerables: Vec<T::AccountId>,
         pub candidacy_bond: BalanceOf<T>,
         pub desired_candidates: u32,
     }
 
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                invulnerables: Default::default(),
-                candidacy_bond: Default::default(),
-                desired_candidates: Default::default(),
-            }
-        }
-    }
-
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             let duplicate_invulnerables = self
                 .invulnerables
                 .iter()
-                .collect::<std::collections::BTreeSet<_>>();
+                .collect::<sp_std::collections::btree_set::BTreeSet<_>>();
             assert!(
                 duplicate_invulnerables.len() == self.invulnerables.len(),
                 "duplicate invulnerables in genesis."
@@ -527,7 +517,7 @@ pub mod pallet {
     /// Keep track of number of authored blocks per authority, uncles are counted as well since
     /// they're a valid proof of being online.
     impl<T: Config + pallet_authorship::Config>
-        pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
+        pallet_authorship::EventHandler<T::AccountId, BlockNumberFor<T>> for Pallet<T>
     {
         fn note_author(author: T::AccountId) {
             let pot = Self::account_id();

@@ -27,12 +27,14 @@ use frame_support::{
 use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H256;
 use sp_io::TestExternalities;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
+};
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, SmartContract, StakingRewardHandler, StandardTierSlots},
     oracle::PriceProvider,
-    testing::Header,
     Balance, BlockNumber,
 };
 
@@ -43,16 +45,10 @@ pub(crate) const UNBONDING_ACCOUNT: AccountId = 10;
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(crate) const MINIMUM_LOCK_AMOUNT: Balance = 10;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 construct_runtime!(
-    pub struct Test
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub struct Test {
         System: frame_system,
         Balances: pallet_balances,
         DappStaking: pallet_dapp_staking_v3,
@@ -72,14 +68,13 @@ impl frame_system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -103,7 +98,7 @@ impl pallet_balances::Config for Test {
     type DustRemoval = ();
     type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
     type AccountStore = System;
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<1>;
@@ -232,8 +227,8 @@ pub struct ExtBuilder;
 impl ExtBuilder {
     pub fn build() -> TestExternalities {
         // Normal behavior is for reward payout to succeed
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut storage = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .unwrap();
 
         let balances = vec![1000; 11]

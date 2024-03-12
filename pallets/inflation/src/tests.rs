@@ -17,10 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::{pallet::Error, Event, *};
-use frame_support::{
-    assert_noop, assert_ok, assert_storage_noop,
-    traits::{GenesisBuild, Hooks},
-};
+use frame_support::{assert_noop, assert_ok, assert_storage_noop, traits::Hooks};
 use mock::*;
 use sp_runtime::{
     traits::{AccountIdConversion, BadOrigin, Zero},
@@ -463,7 +460,7 @@ fn test_genesis_build() {
         InflationParams::<Test>::kill();
 
         // Execute genesis build
-        <pallet::GenesisConfig as GenesisBuild<Test>>::build(&genesis_config);
+        <pallet::GenesisConfig<Test> as BuildGenesisConfig>::build(&genesis_config);
 
         // Verify state is as expected
         assert_eq!(InflationParams::<Test>::get(), genesis_config.params);

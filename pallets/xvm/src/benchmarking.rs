@@ -27,7 +27,7 @@ use sp_runtime::MultiAddress;
 use astar_primitives::Balance;
 
 #[benchmarks(
-    where <T as pallet_contracts::Config>::Currency: Currency<T::AccountId, Balance = Balance>,
+    where <T as pallet_contracts::Config>::Currency: Inspect<T::AccountId, Balance = Balance>,
 )]
 mod benchmarks {
     use super::*;

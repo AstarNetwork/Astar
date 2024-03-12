@@ -52,7 +52,7 @@ where
     fn run_benchmark(
         name: &[u8],
         c: &[(frame_benchmarking::BenchmarkParameter, u32)],
-        whitelist: &[frame_benchmarking::TrackedStorageKey],
+        whitelist: &[frame_support::traits::TrackedStorageKey],
         verify: bool,
         internal_repeats: u32,
     ) -> Result<Vec<frame_benchmarking::BenchmarkResult>, frame_benchmarking::BenchmarkError> {

@@ -27,7 +27,7 @@ use frame_system::Pallet as System;
 pub(super) fn run_to_block<T: Config>(n: BlockNumberFor<T>) {
     while System::<T>::block_number() < n {
         DappStaking::<T>::on_finalize(System::<T>::block_number());
-        System::<T>::set_block_number(System::<T>::block_number() + 1);
+        System::<T>::set_block_number(System::<T>::block_number() + 1u32.into());
         // This is performed outside of dapps staking but we expect it before on_initialize
         DappStaking::<T>::on_initialize(System::<T>::block_number());
     }
