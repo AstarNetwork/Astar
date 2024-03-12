@@ -1123,15 +1123,7 @@ parameter_types! {
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // Part of shiden-119
-    frame_support::migrations::RemovePallet<
-        DappStakingMigrationName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    // Part of shiden-119
-    RecalculationEraFix,
-    // TODO: revise this since Shiden will be upgraded tomorrow
-    // part of shiden-119
+    // Part of shiden-121 (added after v5.33.0 release)
     SetNewTierConfig,
 );
 
