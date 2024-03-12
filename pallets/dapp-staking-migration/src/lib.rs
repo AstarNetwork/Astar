@@ -22,7 +22,6 @@ pub use pallet::*;
 
 use frame_support::{
     dispatch::PostDispatchInfo,
-    log,
     pallet_prelude::*,
     storage_alias,
     traits::{ConstU32, Get},

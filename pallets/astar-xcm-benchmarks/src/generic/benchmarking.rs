@@ -19,7 +19,7 @@
 use super::{Pallet as AstarBenchmarks, *};
 use crate::WrappedBenchmark;
 use frame_benchmarking::v2::*;
-use frame_support::dispatch::Weight;
+use frame_support::weights::Weight;
 use pallet_xcm_benchmarks::{generic::Pallet as PalletXcmBenchmarks, new_executor, XcmCallOf};
 use sp_std::vec;
 use xcm::latest::prelude::*;

@@ -27,6 +27,7 @@ use frame_support::{assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
 use sp_runtime::traits::Bounded;
 use xcm::{prelude::*, v3::Response};
+use xcm_executor::traits::QueryHandler;
 use xcm_simulator::TestExt;
 
 const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
@@ -279,7 +280,7 @@ fn test_async_xcm_contract_call_no_ce() {
             ALICE.into(),
             0,
             GAS_LIMIT,
-            None,
+            Some(ONE * 100),
             [CONSTRUCTOR_SELECTOR.to_vec(), 1.encode()].concat(),
         );
 

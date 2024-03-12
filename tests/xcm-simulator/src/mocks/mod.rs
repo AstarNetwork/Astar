@@ -22,14 +22,15 @@ pub(crate) mod relay_chain;
 
 use frame_support::traits::{Currency, IsType, OnFinalize, OnInitialize};
 use sp_runtime::traits::{Bounded, StaticLookup};
-use sp_runtime::DispatchResult;
+use sp_runtime::{BuildStorage, DispatchResult};
 use xcm::latest::prelude::*;
-use xcm_executor::traits::Convert;
+use xcm_executor::traits::ConvertLocation;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain, TestExt};
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFAu8; 32]);
 pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0xFBu8; 32]);
 pub const INITIAL_BALANCE: u128 = 1_000_000_000_000_000_000_000_000;
+pub const ONE: u128 = 1_000_000_000_000_000_000;
 pub const DAPP_STAKER_REWARD_PER_BLOCK: parachain::Balance = 1_000;
 pub const DAPP_STAKER_DEV_PER_BLOCK: parachain::Balance = 250;
 
@@ -82,19 +83,19 @@ pub type ParachainXtokens = orml_xtokens::Pallet<parachain::Runtime>;
 
 pub fn parent_account_id() -> parachain::AccountId {
     let location = (Parent,);
-    parachain::LocationToAccountId::convert(location.into()).unwrap()
+    parachain::LocationToAccountId::convert_location(&location.into()).unwrap()
 }
 
 /// Derive parachain sovereign account on relay chain, from parachain Id
 pub fn child_para_account_id(para: u32) -> relay_chain::AccountId {
     let location = (Parachain(para),);
-    relay_chain::LocationToAccountId::convert(location.into()).unwrap()
+    relay_chain::LocationToAccountId::convert_location(&location.into()).unwrap()
 }
 
 /// Derive parachain sovereign account on a sibling parachain, from parachain Id
 pub fn sibling_para_account_id(para: u32) -> parachain::AccountId {
     let location = (Parent, X1(Parachain(para)));
-    parachain::LocationToAccountId::convert(location.into()).unwrap()
+    parachain::LocationToAccountId::convert_location(&location.into()).unwrap()
 }
 
 /// Derive parachain's account's account on a sibling parachain
@@ -111,15 +112,15 @@ pub fn sibling_para_account_account_id(
             id: who.into(),
         },
     );
-    parachain::LocationToAccountId::convert(location.into()).unwrap()
+    parachain::LocationToAccountId::convert_location(&location.into()).unwrap()
 }
 
 /// Prepare parachain test externality
 pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
     use parachain::{MsgQueue, Runtime, System};
 
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Runtime>()
+    let mut t = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
         .unwrap();
 
     pallet_balances::GenesisConfig::<Runtime> {
@@ -150,8 +151,8 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 pub fn relay_ext() -> sp_io::TestExternalities {
     use relay_chain::{Runtime, System};
 
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Runtime>()
+    let mut t = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
         .unwrap();
 
     pallet_balances::GenesisConfig::<Runtime> {

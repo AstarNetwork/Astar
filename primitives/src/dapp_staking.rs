@@ -20,8 +20,10 @@ use super::{Balance, BlockNumber};
 
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
-use frame_support::{pallet_prelude::Weight, RuntimeDebug};
+use frame_support::pallet_prelude::{RuntimeDebug, Weight};
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::H160;
+use sp_runtime::{traits::UniqueSaturatedInto, FixedPointNumber};
 use sp_std::hash::Hash;
 
 /// Era number type
@@ -76,7 +78,7 @@ pub trait CycleConfiguration {
         Self::blocks_per_era().saturating_mul(Self::cycle_in_era_lengths())
     }
 
-    /// For how many standard era lengths do all the build&earn subperiods in a cycle last.    
+    /// For how many standard era lengths do all the build&earn subperiods in a cycle last.
     fn build_and_earn_eras_per_cycle() -> EraNumber {
         Self::eras_per_build_and_earn_subperiod().saturating_mul(Self::periods_per_cycle())
     }
@@ -180,5 +182,20 @@ pub trait AccountCheck<AccountId> {
 impl<AccountId> AccountCheck<AccountId> for () {
     fn allowed_to_stake(_account: &AccountId) -> bool {
         true
+    }
+}
+
+/// Trait for calculating the total number of tier slots for the given price.
+pub trait TierSlots {
+    /// Returns the total number of tier slots for the given price.
+    fn number_of_slots(price: FixedU64) -> u16;
+}
+
+/// Standard tier slots implementation, as proposed in the Tokenomics 2.0 document.
+pub struct StandardTierSlots;
+impl TierSlots for StandardTierSlots {
+    fn number_of_slots(price: FixedU64) -> u16 {
+        let result: u64 = price.saturating_mul_int(1000_u64).saturating_add(50);
+        result.unique_saturated_into()
     }
 }

@@ -19,16 +19,14 @@
 use super::{Pallet as AstarBenchmarks, *};
 use crate::WrappedBenchmark;
 use frame_benchmarking::v2::*;
-use frame_support::{
-    dispatch::Weight,
-    traits::{fungible::Inspect, Get},
-};
+use frame_support::{traits::fungible::Inspect, weights::Weight};
 use pallet_xcm_benchmarks::{
     account_and_location, fungible::Pallet as PalletXcmBenchmarks, new_executor, AssetTransactorOf,
 };
+use sp_runtime::traits::Zero;
 use sp_std::vec;
 use xcm::latest::prelude::*;
-use xcm_executor::traits::{Convert, TransactAsset};
+use xcm_executor::traits::{ConvertLocation, TransactAsset};
 
 #[benchmarks(
     where
@@ -58,14 +56,14 @@ mod benchmarks {
         // this xcm doesn't use holding
 
         let dest_location = T::valid_destination()?;
-        let dest_account = T::AccountIdConverter::convert(dest_location.clone()).unwrap();
+        let dest_account = T::AccountIdConverter::convert_location(&dest_location).unwrap();
 
         <AssetTransactorOf<T>>::deposit_asset(
             &asset_to_deposit,
             &sender_location,
             &XcmContext {
                 origin: Some(sender_location.clone()),
-                message_hash: [0; 32],
+                message_id: [0; 32],
                 topic: None,
             },
         )
@@ -94,7 +92,7 @@ mod benchmarks {
     fn transfer_reserve_asset() -> Result<(), BenchmarkError> {
         let (sender_account, sender_location) = account_and_location::<T>(1);
         let dest_location = T::valid_destination()?;
-        let dest_account = T::AccountIdConverter::convert(dest_location.clone()).unwrap();
+        let dest_account = T::AccountIdConverter::convert_location(&dest_location).unwrap();
 
         let asset_to_deposit = T::get_multi_asset();
         // take out ED from given asset
@@ -107,7 +105,7 @@ mod benchmarks {
             &sender_location,
             &XcmContext {
                 origin: Some(sender_location.clone()),
-                message_hash: [0; 32],
+                message_id: [0; 32],
                 topic: None,
             },
         )
@@ -129,30 +127,6 @@ mod benchmarks {
 
         assert_eq!(T::TransactAsset::balance(&sender_account), min_balance);
         assert!(!T::TransactAsset::balance(&dest_account).is_zero());
-        Ok(())
-    }
-
-    /// The benchmarks for `reserve_asset_deposited` was added in later versions of
-    /// `pallet-xcm-benchmarks` (in v1.x.x versions).
-    /// TODO: remove this once we uplift to new polkadot release
-    #[benchmark]
-    fn reserve_asset_deposited() -> Result<(), BenchmarkError> {
-        let (trusted_reserve, transferable_reserve_asset) = T::TrustedReserve::get().ok_or(
-            BenchmarkError::Override(BenchmarkResult::from_weight(Weight::MAX)),
-        )?;
-
-        let assets: MultiAssets = vec![transferable_reserve_asset].into();
-
-        let mut executor = new_executor::<T>(trusted_reserve);
-        let instruction = Instruction::ReserveAssetDeposited(assets.clone());
-        let xcm = Xcm(vec![instruction]);
-
-        #[block]
-        {
-            executor.bench_process(xcm)?;
-        }
-
-        assert!(executor.holding().ensure_contains(&assets).is_ok());
         Ok(())
     }
 

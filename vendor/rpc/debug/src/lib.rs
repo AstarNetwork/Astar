@@ -142,7 +142,7 @@ where
     pub fn task(
         client: Arc<C>,
         backend: Arc<BE>,
-        frontier_backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
+        frontier_backend: Arc<dyn fc_api::Backend<B>>,
         permit_pool: Arc<Semaphore>,
         overrides: Arc<OverrideHandle<B>>,
         raw_max_memory_usage: usize,
@@ -282,7 +282,7 @@ where
     fn handle_block_request(
         client: Arc<C>,
         backend: Arc<BE>,
-        frontier_backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
+        frontier_backend: Arc<dyn fc_api::Backend<B>>,
         request_block_id: RequestBlockId,
         params: Option<TraceParams>,
         overrides: Arc<OverrideHandle<B>>,
@@ -417,7 +417,7 @@ where
     fn handle_transaction_request(
         client: Arc<C>,
         backend: Arc<BE>,
-        frontier_backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
+        frontier_backend: Arc<dyn fc_api::Backend<B>>,
         transaction_hash: H256,
         params: Option<TraceParams>,
         overrides: Arc<OverrideHandle<B>>,

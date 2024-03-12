@@ -20,6 +20,7 @@
 
 use crate::cli::*;
 
+use astar_primitives::xcm::DescribeAllTerminal;
 use clap::Parser;
 use cumulus_primitives_core::ParaId;
 use polkadot_parachain::primitives::Sibling;
@@ -27,10 +28,8 @@ use polkadot_primitives::AccountId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
-use xcm_builder::{ParentIsPreset, SiblingParachainConvertsVia};
-use xcm_executor::traits::Convert;
-
-use astar_primitives::xcm::{DescribeAllTerminal, DescribeFamily, HashedDescription};
+use xcm_builder::{DescribeFamily, HashedDescription, ParentIsPreset, SiblingParachainConvertsVia};
+use xcm_executor::traits::ConvertLocation;
 
 /// CLI error type.
 pub type Error = String;
@@ -42,7 +41,7 @@ pub fn run() -> Result<(), Error> {
     match &cli.subcommand {
         Some(Subcommand::RelayChainAccount) => {
             let relay_account =
-                ParentIsPreset::<AccountId>::convert_ref(&MultiLocation::parent()).unwrap();
+                ParentIsPreset::<AccountId>::convert_location(&MultiLocation::parent()).unwrap();
             println!("{}", relay_account);
         }
         Some(Subcommand::SovereignAccount(cmd)) => {
@@ -51,7 +50,8 @@ pub fn run() -> Result<(), Error> {
                     parents: 1,
                     interior: X1(Parachain(cmd.parachain_id)),
                 };
-                SiblingParachainConvertsVia::<Sibling, AccountId>::convert_ref(&location).unwrap()
+                SiblingParachainConvertsVia::<Sibling, AccountId>::convert_location(&location)
+                    .unwrap()
             } else {
                 let para_id = ParaId::from(cmd.parachain_id);
                 AccountIdConversion::<AccountId>::into_account_truncating(&para_id)
@@ -97,10 +97,10 @@ pub fn run() -> Result<(), Error> {
             }
 
             let derived_acc =
-                HashedDescription::<AccountId, DescribeFamily<DescribeAllTerminal>>::convert(
-                    sender_multilocation,
+                HashedDescription::<AccountId, DescribeFamily<DescribeAllTerminal>>::convert_location(
+                    &sender_multilocation,
                 );
-            if let Ok(derived_acc) = derived_acc {
+            if let Some(derived_acc) = derived_acc {
                 println!("{}", derived_acc);
             } else {
                 println!("Failed to derive account Id.");

@@ -53,7 +53,7 @@ mod benchmarks {
 #[cfg(test)]
 mod tests {
     use crate::mock;
-    use frame_support::sp_io::TestExternalities;
+    use sp_io::TestExternalities;
 
     pub fn new_test_ext() -> TestExternalities {
         mock::ExternalityBuilder::build()

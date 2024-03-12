@@ -37,7 +37,8 @@ use super::{get_from_seed, Extensions};
 const PARA_ID: u32 = 2007;
 
 /// Specialized `ChainSpec` for Shiden Network.
-pub type ShidenChainSpec = sc_service::GenericChainSpec<shiden_runtime::GenesisConfig, Extensions>;
+pub type ShidenChainSpec =
+    sc_service::GenericChainSpec<shiden_runtime::RuntimeGenesisConfig, Extensions>;
 
 /// Gen Shiden chain specification for given parachain id.
 pub fn get_chain_spec() -> ShidenChainSpec {
@@ -80,12 +81,12 @@ fn session_keys(aura: AuraId) -> shiden_runtime::SessionKeys {
     shiden_runtime::SessionKeys { aura }
 }
 
-/// Helper function to create GenesisConfig.
+/// Helper function to create RuntimeGenesisConfig.
 fn make_genesis(
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     parachain_id: ParaId,
-) -> shiden_runtime::GenesisConfig {
+) -> shiden_runtime::RuntimeGenesisConfig {
     let authorities = vec![
         (
             get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -103,14 +104,18 @@ fn make_genesis(
     // (PUSH1 0x00 PUSH1 0x00 REVERT)
     let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
 
-    shiden_runtime::GenesisConfig {
+    shiden_runtime::RuntimeGenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
+            ..Default::default()
         },
         sudo: shiden_runtime::SudoConfig {
             key: Some(root_key),
         },
-        parachain_info: ParachainInfoConfig { parachain_id },
+        parachain_info: ParachainInfoConfig {
+            parachain_id,
+            ..Default::default()
+        },
         balances: shiden_runtime::BalancesConfig { balances },
         vesting: shiden_runtime::VestingConfig { vesting: vec![] },
         session: shiden_runtime::SessionConfig {
@@ -144,6 +149,7 @@ fn make_genesis(
                     )
                 })
                 .collect(),
+            ..Default::default()
         },
         ethereum: Default::default(),
         polkadot_xcm: Default::default(),
@@ -179,9 +185,11 @@ fn make_genesis(
                 TierThreshold::FixedTvlAmount { amount: 5000 * SDN },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
+            ..Default::default()
         },
         inflation: InflationConfig {
             params: InflationParameters::default(),
+            ..Default::default()
         },
     }
 }

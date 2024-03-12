@@ -105,8 +105,8 @@ pub enum Subcommand {
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
     /// Try some command against runtime state.
-    #[cfg(feature = "try-runtime")]
-    TryRuntime(try_runtime_cli::TryRuntimeCmd),
+    /// No moved to separte cli and just a placeholder command here
+    TryRuntime,
 }
 
 #[derive(Debug)]
