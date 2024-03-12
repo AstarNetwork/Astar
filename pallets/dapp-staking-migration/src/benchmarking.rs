@@ -18,6 +18,7 @@
 
 use super::{Pallet as Migration, *};
 
+use sp_std::vec;
 use astar_primitives::{dapp_staking::SmartContractHandle, Balance};
 use frame_benchmarking::{account as benchmark_account, v2::*};
 use pallet_dapp_staking_v3::StakeAmount;
