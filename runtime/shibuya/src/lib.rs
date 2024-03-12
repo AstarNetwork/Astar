@@ -1379,6 +1379,7 @@ pub type Executive = frame_executive::Executive<
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations =
+    // Part of shibuya-124
     (pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<

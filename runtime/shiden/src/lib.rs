@@ -1131,28 +1131,12 @@ parameter_types! {
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
     // Part of shiden-121
-    pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,,
+    pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,
     // Part of shiden-121 (added after v5.33.0 release)
     SetNewTierConfig,
 );
 
 use frame_support::traits::OnRuntimeUpgrade;
-pub struct RecalculationEraFix;
-impl OnRuntimeUpgrade for RecalculationEraFix {
-    fn on_runtime_upgrade() -> Weight {
-        let first_dapp_staking_v3_era = 743;
-
-        let expected_recalculation_era =
-            InflationCycleConfig::eras_per_cycle().saturating_add(first_dapp_staking_v3_era);
-
-        pallet_inflation::ActiveInflationConfig::<Runtime>::mutate(|config| {
-            config.recalculation_era = expected_recalculation_era;
-        });
-
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
-    }
-}
-
 pub struct SetNewTierConfig;
 impl OnRuntimeUpgrade for SetNewTierConfig {
     fn on_runtime_upgrade() -> Weight {
