@@ -39,7 +39,7 @@ use frame_support::{
     pallet_prelude::*,
     traits::{
         fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},
-        OnRuntimeUpgrade, StorageVersion,
+        StorageVersion,
     },
     weights::Weight,
 };
@@ -53,7 +53,7 @@ pub use sp_std::vec::Vec;
 use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
-        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId,
+        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId, TierSlots as TierSlotFunc,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -69,8 +69,6 @@ mod benchmarking;
 
 mod types;
 pub use types::*;
-
-pub mod migrations;
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -146,6 +144,9 @@ pub mod pallet {
 
         /// Used to check whether an account is allowed to participate in dApp staking.
         type AccountCheck: AccountCheck<Self::AccountId>;
+
+        /// Used to calculate total number of tier slots for some price.
+        type TierSlots: TierSlotFunc;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -446,7 +447,7 @@ pub mod pallet {
     /// Tier configuration user for current & preceding eras.
     #[pallet::storage]
     pub type TierConfig<T: Config> =
-        StorageValue<_, TiersConfiguration<T::NumberOfTiers>, ValueQuery>;
+        StorageValue<_, TiersConfiguration<T::NumberOfTiers, T::TierSlots>, ValueQuery>;
 
     /// Information about which tier a dApp belonged to in a specific era.
     #[pallet::storage]
@@ -506,7 +507,7 @@ pub mod pallet {
             let number_of_slots = self.slots_per_tier.iter().fold(0_u16, |acc, &slots| {
                 acc.checked_add(slots).expect("Overflow")
             });
-            let tier_config = TiersConfiguration::<T::NumberOfTiers> {
+            let tier_config = TiersConfiguration::<T::NumberOfTiers, T::TierSlots> {
                 number_of_slots,
                 slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
                     self.slots_per_tier.clone(),
@@ -514,6 +515,7 @@ pub mod pallet {
                 .expect("Invalid number of slots per tier entries provided."),
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_thresholds: tier_params.tier_thresholds.clone(),
+                _phantom: Default::default(),
             };
             assert!(
                 tier_params.is_valid(),

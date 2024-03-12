@@ -33,7 +33,7 @@ use sp_runtime::{
 };
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, SmartContract, StakingRewardHandler},
+    dapp_staking::{CycleConfiguration, SmartContract, StakingRewardHandler, StandardTierSlots},
     oracle::PriceProvider,
     Balance, BlockNumber,
 };
@@ -180,6 +180,7 @@ impl pallet_dapp_staking_v3::Config for Test {
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = ();
     type AccountCheck = ();
+    type TierSlots = StandardTierSlots;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;

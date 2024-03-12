@@ -52,6 +52,7 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -68,7 +69,7 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, TierId,
+        PeriodNumber, SmartContract, TierId, TierSlots as TierSlotsFunc,
     },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
@@ -352,6 +353,15 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
     }
 }
 
+pub struct ShidenTierSlots;
+impl TierSlotsFunc for ShidenTierSlots {
+    fn number_of_slots(price: FixedU64) -> u16 {
+        // According to the forum proposal, the original formula's factor is reduced from 1000x to 100x.
+        let result: u64 = price.saturating_mul_int(100_u64).saturating_add(50);
+        result.unique_saturated_into()
+    }
+}
+
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 50 * SDN;
 }
@@ -367,6 +377,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
+    type TierSlots = ShidenTierSlots;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<3>;
     type MaxNumberOfContracts = ConstU32<500>;
@@ -1112,14 +1123,8 @@ parameter_types! {
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // Part of shiden-119
-    frame_support::migrations::RemovePallet<
-        DappStakingMigrationName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    // Part of shiden-119
-    RecalculationEraFix,
-    pallet_contracts::Migration<Runtime>,
+    // Part of shiden-121 (added after v5.33.0 release)
+    SetNewTierConfig,
 );
 
 use frame_support::traits::OnRuntimeUpgrade;
@@ -1136,6 +1141,38 @@ impl OnRuntimeUpgrade for RecalculationEraFix {
         });
 
         <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+    }
+}
+
+pub struct SetNewTierConfig;
+impl OnRuntimeUpgrade for SetNewTierConfig {
+    fn on_runtime_upgrade() -> Weight {
+        use astar_primitives::oracle::PriceProvider;
+        use frame_support::BoundedVec;
+
+        // Set new init tier config values according to the forum post
+        let mut init_tier_config = pallet_dapp_staking_v3::TierConfig::<Runtime>::get();
+        init_tier_config.number_of_slots = 55;
+        init_tier_config.slots_per_tier =
+            BoundedVec::try_from(vec![2, 11, 16, 24]).unwrap_or_default();
+
+        #[cfg(feature = "try-runtime")]
+        {
+            assert!(
+                init_tier_config.number_of_slots >= init_tier_config.slots_per_tier.iter().sum::<u16>() as u16,
+                "Safety check, sum of slots per tier must be equal or less than max number of slots (due to possible rounding)"
+            );
+        }
+
+        // Based on the new init config, calculate the new tier config based on the 'average' price
+        let price = StaticPriceProvider::average_price();
+        let tier_params = pallet_dapp_staking_v3::StaticTierParams::<Runtime>::get();
+
+        let new_tier_config = init_tier_config.calculate_new(price, &tier_params);
+
+        pallet_dapp_staking_v3::TierConfig::<Runtime>::put(new_tier_config);
+
+        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(3, 1)
     }
 }
 
