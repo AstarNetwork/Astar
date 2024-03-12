@@ -1006,6 +1006,11 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
+impl pallet_dapp_staking_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Self>;
+}
+
 construct_runtime!(
     pub struct Runtime where
         Block = Block,
@@ -1055,6 +1060,8 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
+        // Remove after migrating to v6 storage
+        DappStakingMigration: pallet_dapp_staking_migration = 252,
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
     }
@@ -1108,6 +1115,8 @@ pub type Migrations = (
     >,
     // Part of shiden-119
     RecalculationEraFix,
+    // Part of shiden-121
+    (pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,),
 );
 
 use frame_support::traits::OnRuntimeUpgrade;

@@ -20,7 +20,6 @@ sp-std = { workspace = true }
 
 astar-primitives = { workspace = true, optional = true }
 pallet-dapp-staking-v3 = { workspace = true }
-pallet-dapps-staking = { workspace = true }
 
 [dev-dependencies]
 astar-primitives = { workspace = true }
@@ -38,7 +37,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-dapp-staking-v3/std",
-	"pallet-dapps-staking/std",
 	"frame-benchmarking/std",
 	"astar-primitives?/std",
 	"sp-core/std",
@@ -50,7 +48,6 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-dapp-staking-v3/runtime-benchmarks",
-	"pallet-dapps-staking/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime", "astar-primitives"]
