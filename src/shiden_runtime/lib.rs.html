@@ -1883,6 +1883,43 @@
 <a href="#1883" id="1883">1883</a>
 <a href="#1884" id="1884">1884</a>
 <a href="#1885" id="1885">1885</a>
+<a href="#1886" id="1886">1886</a>
+<a href="#1887" id="1887">1887</a>
+<a href="#1888" id="1888">1888</a>
+<a href="#1889" id="1889">1889</a>
+<a href="#1890" id="1890">1890</a>
+<a href="#1891" id="1891">1891</a>
+<a href="#1892" id="1892">1892</a>
+<a href="#1893" id="1893">1893</a>
+<a href="#1894" id="1894">1894</a>
+<a href="#1895" id="1895">1895</a>
+<a href="#1896" id="1896">1896</a>
+<a href="#1897" id="1897">1897</a>
+<a href="#1898" id="1898">1898</a>
+<a href="#1899" id="1899">1899</a>
+<a href="#1900" id="1900">1900</a>
+<a href="#1901" id="1901">1901</a>
+<a href="#1902" id="1902">1902</a>
+<a href="#1903" id="1903">1903</a>
+<a href="#1904" id="1904">1904</a>
+<a href="#1905" id="1905">1905</a>
+<a href="#1906" id="1906">1906</a>
+<a href="#1907" id="1907">1907</a>
+<a href="#1908" id="1908">1908</a>
+<a href="#1909" id="1909">1909</a>
+<a href="#1910" id="1910">1910</a>
+<a href="#1911" id="1911">1911</a>
+<a href="#1912" id="1912">1912</a>
+<a href="#1913" id="1913">1913</a>
+<a href="#1914" id="1914">1914</a>
+<a href="#1915" id="1915">1915</a>
+<a href="#1916" id="1916">1916</a>
+<a href="#1917" id="1917">1917</a>
+<a href="#1918" id="1918">1918</a>
+<a href="#1919" id="1919">1919</a>
+<a href="#1920" id="1920">1920</a>
+<a href="#1921" id="1921">1921</a>
+<a href="#1922" id="1922">1922</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -1937,6 +1974,7 @@
 <span class="kw">use </span>parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>polkadot_runtime_common::BlockHashCount;
 <span class="kw">use </span>sp_api::impl_runtime_apis;
+<span class="kw">use </span>sp_arithmetic::fixed_point::FixedU64;
 <span class="kw">use </span>sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 <span class="kw">use </span>sp_inherents::{CheckInherentsResult, InherentData};
 <span class="kw">use </span>sp_runtime::{
@@ -1953,7 +1991,7 @@
 <span class="kw">use </span>astar_primitives::{
     dapp_staking::{
         AccountCheck <span class="kw">as </span>DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, TierId,
+        PeriodNumber, SmartContract, TierId, TierSlots <span class="kw">as </span>TierSlotsFunc,
     },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
@@ -2237,6 +2275,15 @@
     }
 }
 
+<span class="kw">pub struct </span>ShidenTierSlots;
+<span class="kw">impl </span>TierSlotsFunc <span class="kw">for </span>ShidenTierSlots {
+    <span class="kw">fn </span>number_of_slots(price: FixedU64) -&gt; u16 {
+        <span class="comment">// According to the forum proposal, the original formula&#39;s factor is reduced from 1000x to 100x.
+        </span><span class="kw">let </span>result: u64 = price.saturating_mul_int(<span class="number">100_u64</span>).saturating_add(<span class="number">50</span>);
+        result.unique_saturated_into()
+    }
+}
+
 <span class="macro">parameter_types! </span>{
     <span class="kw">pub const </span>MinimumStakingAmount: Balance = <span class="number">50 </span>* SDN;
 }
@@ -2252,6 +2299,7 @@
     <span class="kw">type </span>CycleConfiguration = InflationCycleConfig;
     <span class="kw">type </span>Observers = Inflation;
     <span class="kw">type </span>AccountCheck = AccountCheck;
+    <span class="kw">type </span>TierSlots = ShidenTierSlots;
     <span class="kw">type </span>EraRewardSpanLength = ConstU32&lt;<span class="number">16</span>&gt;;
     <span class="kw">type </span>RewardRetentionInPeriods = ConstU32&lt;<span class="number">3</span>&gt;;
     <span class="kw">type </span>MaxNumberOfContracts = ConstU32&lt;<span class="number">500</span>&gt;;
@@ -2997,14 +3045,8 @@
 ///
 /// Once done, migrations should be removed from the tuple.
 </span><span class="kw">pub type </span>Migrations = (
-    <span class="comment">// Part of shiden-119
-    </span>frame_support::migrations::RemovePallet&lt;
-        DappStakingMigrationName,
-        &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight,
-    &gt;,
-    <span class="comment">// Part of shiden-119
-    </span>RecalculationEraFix,
-    pallet_contracts::Migration&lt;Runtime&gt;,
+    <span class="comment">// Part of shiden-121 (added after v5.33.0 release)
+    </span>SetNewTierConfig,
 );
 
 <span class="kw">use </span>frame_support::traits::OnRuntimeUpgrade;
@@ -3021,6 +3063,38 @@
         });
 
         &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().reads_writes(<span class="number">1</span>, <span class="number">1</span>)
+    }
+}
+
+<span class="kw">pub struct </span>SetNewTierConfig;
+<span class="kw">impl </span>OnRuntimeUpgrade <span class="kw">for </span>SetNewTierConfig {
+    <span class="kw">fn </span>on_runtime_upgrade() -&gt; Weight {
+        <span class="kw">use </span>astar_primitives::oracle::PriceProvider;
+        <span class="kw">use </span>frame_support::BoundedVec;
+
+        <span class="comment">// Set new init tier config values according to the forum post
+        </span><span class="kw">let </span><span class="kw-2">mut </span>init_tier_config = pallet_dapp_staking_v3::TierConfig::&lt;Runtime&gt;::get();
+        init_tier_config.number_of_slots = <span class="number">55</span>;
+        init_tier_config.slots_per_tier =
+            BoundedVec::try_from(<span class="macro">vec!</span>[<span class="number">2</span>, <span class="number">11</span>, <span class="number">16</span>, <span class="number">24</span>]).unwrap_or_default();
+
+        <span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
+        </span>{
+            <span class="macro">assert!</span>(
+                init_tier_config.number_of_slots &gt;= init_tier_config.slots_per_tier.iter().sum::&lt;u16&gt;() <span class="kw">as </span>u16,
+                <span class="string">&quot;Safety check, sum of slots per tier must be equal or less than max number of slots (due to possible rounding)&quot;
+            </span>);
+        }
+
+        <span class="comment">// Based on the new init config, calculate the new tier config based on the &#39;average&#39; price
+        </span><span class="kw">let </span>price = StaticPriceProvider::average_price();
+        <span class="kw">let </span>tier_params = pallet_dapp_staking_v3::StaticTierParams::&lt;Runtime&gt;::get();
+
+        <span class="kw">let </span>new_tier_config = init_tier_config.calculate_new(price, <span class="kw-2">&amp;</span>tier_params);
+
+        pallet_dapp_staking_v3::TierConfig::&lt;Runtime&gt;::put(new_tier_config);
+
+        &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().reads_writes(<span class="number">3</span>, <span class="number">1</span>)
     }
 }
 

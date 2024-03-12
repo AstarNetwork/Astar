@@ -2055,6 +2055,8 @@
 <a href="#2055" id="2055">2055</a>
 <a href="#2056" id="2056">2056</a>
 <a href="#2057" id="2057">2057</a>
+<a href="#2058" id="2058">2058</a>
+<a href="#2059" id="2059">2059</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2096,7 +2098,7 @@
     pallet_prelude::<span class="kw-2">*</span>,
     traits::{
         fungible::{Inspect <span class="kw">as </span>FunInspect, MutateFreeze <span class="kw">as </span>FunMutateFreeze},
-        OnRuntimeUpgrade, StorageVersion,
+        StorageVersion,
     },
     weights::Weight,
 };
@@ -2110,7 +2112,7 @@
 <span class="kw">use </span>astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer <span class="kw">as </span>DAppStakingObserver,
-        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId,
+        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId, TierSlots <span class="kw">as </span>TierSlotFunc,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -2126,8 +2128,6 @@
 
 <span class="kw">mod </span>types;
 <span class="kw">pub use </span>types::<span class="kw-2">*</span>;
-
-<span class="kw">pub mod </span>migrations;
 
 <span class="kw">pub mod </span>weights;
 <span class="kw">pub use </span>weights::WeightInfo;
@@ -2203,6 +2203,9 @@
 
         <span class="doccomment">/// Used to check whether an account is allowed to participate in dApp staking.
         </span><span class="kw">type </span>AccountCheck: AccountCheck&lt;<span class="self">Self</span>::AccountId&gt;;
+
+        <span class="doccomment">/// Used to calculate total number of tier slots for some price.
+        </span><span class="kw">type </span>TierSlots: TierSlotFunc;
 
         <span class="doccomment">/// Maximum length of a single era reward span length entry.
         </span><span class="attr">#[pallet::constant]
@@ -2503,7 +2506,7 @@
     <span class="doccomment">/// Tier configuration user for current &amp; preceding eras.
     </span><span class="attr">#[pallet::storage]
     </span><span class="kw">pub type </span>TierConfig&lt;T: Config&gt; =
-        StorageValue&lt;<span class="kw">_</span>, TiersConfiguration&lt;T::NumberOfTiers&gt;, ValueQuery&gt;;
+        StorageValue&lt;<span class="kw">_</span>, TiersConfiguration&lt;T::NumberOfTiers, T::TierSlots&gt;, ValueQuery&gt;;
 
     <span class="doccomment">/// Information about which tier a dApp belonged to in a specific era.
     </span><span class="attr">#[pallet::storage]
@@ -2563,7 +2566,7 @@
             </span><span class="kw">let </span>number_of_slots = <span class="self">self</span>.slots_per_tier.iter().fold(<span class="number">0_u16</span>, |acc, <span class="kw-2">&amp;</span>slots| {
                 acc.checked_add(slots).expect(<span class="string">&quot;Overflow&quot;</span>)
             });
-            <span class="kw">let </span>tier_config = TiersConfiguration::&lt;T::NumberOfTiers&gt; {
+            <span class="kw">let </span>tier_config = TiersConfiguration::&lt;T::NumberOfTiers, T::TierSlots&gt; {
                 number_of_slots,
                 slots_per_tier: BoundedVec::&lt;u16, T::NumberOfTiers&gt;::try_from(
                     <span class="self">self</span>.slots_per_tier.clone(),
@@ -2571,6 +2574,7 @@
                 .expect(<span class="string">&quot;Invalid number of slots per tier entries provided.&quot;</span>),
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_thresholds: tier_params.tier_thresholds.clone(),
+                _phantom: Default::default(),
             };
             <span class="macro">assert!</span>(
                 tier_params.is_valid(),

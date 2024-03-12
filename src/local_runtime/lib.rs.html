@@ -1915,6 +1915,10 @@
 <a href="#1915" id="1915">1915</a>
 <a href="#1916" id="1916">1916</a>
 <a href="#1917" id="1917">1917</a>
+<a href="#1918" id="1918">1918</a>
+<a href="#1919" id="1919">1919</a>
+<a href="#1920" id="1920">1920</a>
+<a href="#1921" id="1921">1921</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -1978,7 +1982,10 @@
 <span class="kw">use </span>sp_std::{collections::btree_map::BTreeMap, prelude::<span class="kw-2">*</span>};
 
 <span class="kw">use </span>astar_primitives::{
-    dapp_staking::{CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, TierId},
+    dapp_staking::{
+        CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, StandardTierSlots,
+        TierId,
+    },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
@@ -2435,6 +2442,7 @@
     <span class="kw">type </span>CycleConfiguration = InflationCycleConfig;
     <span class="kw">type </span>Observers = Inflation;
     <span class="kw">type </span>AccountCheck = ();
+    <span class="kw">type </span>TierSlots = StandardTierSlots;
     <span class="kw">type </span>EraRewardSpanLength = ConstU32&lt;<span class="number">8</span>&gt;;
     <span class="kw">type </span>RewardRetentionInPeriods = ConstU32&lt;<span class="number">2</span>&gt;;
     <span class="kw">type </span>MaxNumberOfContracts = ConstU32&lt;<span class="number">100</span>&gt;;

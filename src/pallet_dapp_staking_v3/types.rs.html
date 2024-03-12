@@ -1726,9 +1726,6 @@
 <a href="#1726" id="1726">1726</a>
 <a href="#1727" id="1727">1727</a>
 <a href="#1728" id="1728">1728</a>
-<a href="#1729" id="1729">1729</a>
-<a href="#1730" id="1730">1730</a>
-<a href="#1731" id="1731">1731</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -1806,7 +1803,7 @@
 <span class="kw">pub use </span>sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
 <span class="kw">use </span>astar_primitives::{
-    dapp_staking::{DAppId, EraNumber, PeriodNumber, TierId},
+    dapp_staking::{DAppId, EraNumber, PeriodNumber, TierId, TierSlots <span class="kw">as </span>TierSlotsFunc},
     Balance, BlockNumber,
 };
 
@@ -3216,8 +3213,8 @@
     CloneNoBound,
     TypeInfo,
 )]
-#[scale_info(skip_type_params(NT))]
-</span><span class="kw">pub struct </span>TiersConfiguration&lt;NT: Get&lt;u32&gt;&gt; {
+#[scale_info(skip_type_params(NT, T))]
+</span><span class="kw">pub struct </span>TiersConfiguration&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc&gt; {
     <span class="doccomment">/// Total number of slots.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>number_of_slots: u16,
@@ -3231,15 +3228,19 @@
     <span class="doccomment">/// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
     </span><span class="kw">pub </span>tier_thresholds: BoundedVec&lt;TierThreshold, NT&gt;,
+    <span class="doccomment">/// Phantom data to keep track of the tier slots function.
+    </span><span class="attr">#[codec(skip)]
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) _phantom: PhantomData&lt;T&gt;,
 }
 
-<span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;&gt; Default <span class="kw">for </span>TiersConfiguration&lt;NT&gt; {
+<span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc&gt; Default <span class="kw">for </span>TiersConfiguration&lt;NT, T&gt; {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             number_of_slots: <span class="number">0</span>,
             slots_per_tier: BoundedVec::default(),
             reward_portion: BoundedVec::default(),
             tier_thresholds: BoundedVec::default(),
+            _phantom: Default::default(),
         }
     }
 }
@@ -3249,7 +3250,7 @@
 // * There&#39;s no need to keep thresholds in two separate storage items since the calculation can always be done compared to the
 //    anchor value of 5 cents. This still needs to be checked &amp; investigated, but it&#39;s worth a try.
 
-</span><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;&gt; TiersConfiguration&lt;NT&gt; {
+</span><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc&gt; TiersConfiguration&lt;NT, T&gt; {
     <span class="doccomment">/// Check if parameters are valid.
     </span><span class="kw">pub fn </span>is_valid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="kw">let </span>number_of_tiers: usize = NT::get() <span class="kw">as </span>usize;
@@ -3264,7 +3265,7 @@
     <span class="doccomment">/// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
     </span><span class="kw">pub fn </span>calculate_new(<span class="kw-2">&amp;</span><span class="self">self</span>, native_price: FixedU64, params: <span class="kw-2">&amp;</span>TierParameters&lt;NT&gt;) -&gt; <span class="self">Self </span>{
         <span class="comment">// It must always be at least 1 slot.
-        </span><span class="kw">let </span>new_number_of_slots = <span class="self">Self</span>::calculate_number_of_slots(native_price).max(<span class="number">1</span>);
+        </span><span class="kw">let </span>new_number_of_slots = T::number_of_slots(native_price).max(<span class="number">1</span>);
 
         <span class="comment">// Calculate how much each tier gets slots.
         </span><span class="kw">let </span>new_slots_per_tier: Vec&lt;u16&gt; = params
@@ -3352,15 +3353,8 @@
             slots_per_tier: new_slots_per_tier,
             reward_portion: params.reward_portion.clone(),
             tier_thresholds: new_tier_thresholds,
+            _phantom: Default::default(),
         }
-    }
-
-    <span class="doccomment">/// Calculate number of slots, based on the provided native token price.
-    </span><span class="kw">pub fn </span>calculate_number_of_slots(native_price: FixedU64) -&gt; u16 {
-        <span class="comment">// floor(1000 x price + 50), formula proposed in Tokenomics 2.0 document.
-        </span><span class="kw">let </span>result: u64 = native_price.saturating_mul_int(<span class="number">1000</span>).saturating_add(<span class="number">50</span>);
-
-        result.unique_saturated_into()
     }
 }
 
