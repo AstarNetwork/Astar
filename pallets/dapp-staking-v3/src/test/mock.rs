@@ -38,7 +38,6 @@ use sp_std::cell::RefCell;
 
 use astar_primitives::{
     dapp_staking::{Observer as DappStakingObserver, SmartContract, StandardTierSlots},
-    testing::Header,
     Balance, BlockNumber,
 };
 
