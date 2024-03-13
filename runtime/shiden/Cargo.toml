@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "5.33.0"
+version = "5.33.1"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -237,6 +237,7 @@ runtime-benchmarks = [
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 ]
 try-runtime = [
+	"astar-primitives/try-runtime",
 	"fp-self-contained/try-runtime",
 	"log",
 	"frame-try-runtime/try-runtime",

@@ -619,7 +619,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.33.0"
+version = "5.33.1"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -733,6 +733,7 @@ dependencies = [
  "log",
  "orml-traits",
  "pallet-assets",
+ "pallet-contracts",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-dispatch",
@@ -751,7 +752,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.33.0"
+version = "5.33.1"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -6618,7 +6619,7 @@ checksum = "01cda141df6706de531b6c46c3a33ecca755538219bd484262fa09410c13539c"
 
 [[package]]
 name = "local-runtime"
-version = "5.33.0"
+version = "5.33.1"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -13924,7 +13925,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.33.0"
+version = "5.33.1"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -14039,7 +14040,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.33.0"
+version = "5.33.1"
 dependencies = [
  "array-bytes",
  "astar-primitives",

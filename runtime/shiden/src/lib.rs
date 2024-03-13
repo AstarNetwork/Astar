@@ -149,7 +149,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 120,
+    spec_version: 121,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -666,12 +666,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = (
-        pallet_contracts::migration::v12::Migration<Runtime, Balances>,
-        pallet_contracts::migration::v13::Migration<Runtime>,
-        pallet_contracts::migration::v14::Migration<Runtime, Balances>,
-        pallet_contracts::migration::v15::Migration<Runtime>,
-    );
+    type Migrations = (astar_primitives::migrations::contract_v12_fix::Migration<Runtime>,);
 }
 
 parameter_types! {
@@ -1105,39 +1100,13 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
-}
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // Part of shiden-119
-    frame_support::migrations::RemovePallet<
-        DappStakingMigrationName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    // Part of shiden-119
-    RecalculationEraFix,
+    astar_primitives::migrations::ForceContractsVersion<Runtime, 14>,
     pallet_contracts::Migration<Runtime>,
 );
-
-use frame_support::traits::OnRuntimeUpgrade;
-pub struct RecalculationEraFix;
-impl OnRuntimeUpgrade for RecalculationEraFix {
-    fn on_runtime_upgrade() -> Weight {
-        let first_dapp_staking_v3_era = 743;
-
-        let expected_recalculation_era =
-            InflationCycleConfig::eras_per_cycle().saturating_add(first_dapp_staking_v3_era);
-
-        pallet_inflation::ActiveInflationConfig::<Runtime>::mutate(|config| {
-            config.recalculation_era = expected_recalculation_era;
-        });
-
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
-    }
-}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
