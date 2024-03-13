@@ -553,7 +553,7 @@ where
         // the entire amount from the origin to target contract.
         //
         // In case value comes from the past period, we don't care, since the `unstake` call will fall apart.
-        let stake_amount = if staked_amount > 0
+        let amount = if staked_amount > 0
             && staked_amount.saturating_sub(amount) < minimum_allowed_stake_amount
         {
             staked_amount
@@ -571,7 +571,7 @@ where
         // Then call stake on the target smart contract
         let stake_call = pallet_dapp_staking_v3::Call::<R>::stake {
             smart_contract: target_smart_contract,
-            amount: stake_amount,
+            amount,
         };
         RuntimeHelper::<R>::try_dispatch(handle, Some(origin).into(), stake_call)?;
 

@@ -768,7 +768,7 @@ fn nomination_transfer_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize();
 
-        // Register the first dApp, and stke on it.
+        // Register the first dApp, and stake on it.
         let staker_h160 = ALICE;
         let staker_native = AddressMapper::into_account_id(staker_h160);
         let smart_contract_address_1 = H160::repeat_byte(0xFA);
