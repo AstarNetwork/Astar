@@ -716,8 +716,6 @@ impl pallet_contracts::Config for Runtime {
     type Migrations = (astar_primitives::migrations::contract_v12_fix::Migration<Runtime>,);
 }
 
-use custom_migrations::ForceContractsVersion;
-
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
 parameter_types! {
     pub const TransactionLengthFeeFactor: Balance = 23_500_000_000_000; // 0.000_023_500_000_000_000 SBY per byte
@@ -1369,7 +1367,7 @@ pub type Executive = frame_executive::Executive<
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    custom_migrations::ForceContractsVersion<Runtime, 14>,
+    astar_primitives::migrations::ForceContractsVersion<Runtime, 14>,
     pallet_contracts::Migration<Runtime>,
 );
 
