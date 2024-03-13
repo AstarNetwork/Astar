@@ -75,7 +75,7 @@ use sp_runtime::{
 pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
 use astar_primitives::{
-    dapp_staking::{DAppId, EraNumber, PeriodNumber, TierId},
+    dapp_staking::{DAppId, EraNumber, PeriodNumber, TierId, TierSlots as TierSlotsFunc},
     Balance, BlockNumber,
 };
 
@@ -1485,8 +1485,8 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
     CloneNoBound,
     TypeInfo,
 )]
-#[scale_info(skip_type_params(NT))]
-pub struct TiersConfiguration<NT: Get<u32>> {
+#[scale_info(skip_type_params(NT, T))]
+pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc> {
     /// Total number of slots.
     #[codec(compact)]
     pub number_of_slots: u16,
@@ -1500,15 +1500,19 @@ pub struct TiersConfiguration<NT: Get<u32>> {
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
     pub tier_thresholds: BoundedVec<TierThreshold, NT>,
+    /// Phantom data to keep track of the tier slots function.
+    #[codec(skip)]
+    pub(crate) _phantom: PhantomData<T>,
 }
 
-impl<NT: Get<u32>> Default for TiersConfiguration<NT> {
+impl<NT: Get<u32>, T: TierSlotsFunc> Default for TiersConfiguration<NT, T> {
     fn default() -> Self {
         Self {
             number_of_slots: 0,
             slots_per_tier: BoundedVec::default(),
             reward_portion: BoundedVec::default(),
             tier_thresholds: BoundedVec::default(),
+            _phantom: Default::default(),
         }
     }
 }
@@ -1518,7 +1522,7 @@ impl<NT: Get<u32>> Default for TiersConfiguration<NT> {
 // * There's no need to keep thresholds in two separate storage items since the calculation can always be done compared to the
 //    anchor value of 5 cents. This still needs to be checked & investigated, but it's worth a try.
 
-impl<NT: Get<u32>> TiersConfiguration<NT> {
+impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
     /// Check if parameters are valid.
     pub fn is_valid(&self) -> bool {
         let number_of_tiers: usize = NT::get() as usize;
@@ -1533,7 +1537,7 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
     /// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
     pub fn calculate_new(&self, native_price: FixedU64, params: &TierParameters<NT>) -> Self {
         // It must always be at least 1 slot.
-        let new_number_of_slots = Self::calculate_number_of_slots(native_price).max(1);
+        let new_number_of_slots = T::number_of_slots(native_price).max(1);
 
         // Calculate how much each tier gets slots.
         let new_slots_per_tier: Vec<u16> = params
@@ -1621,15 +1625,8 @@ impl<NT: Get<u32>> TiersConfiguration<NT> {
             slots_per_tier: new_slots_per_tier,
             reward_portion: params.reward_portion.clone(),
             tier_thresholds: new_tier_thresholds,
+            _phantom: Default::default(),
         }
-    }
-
-    /// Calculate number of slots, based on the provided native token price.
-    pub fn calculate_number_of_slots(native_price: FixedU64) -> u16 {
-        // floor(1000 x price + 50), formula proposed in Tokenomics 2.0 document.
-        let result: u64 = native_price.saturating_mul_int(1000).saturating_add(50);
-
-        result.unique_saturated_into()
     }
 }
 
