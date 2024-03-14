@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+//! Migrate CodeInfo from faulty alias introduced on contracts's v12 migration
+
 use frame_support::{
     pallet_prelude::*, storage_alias, traits::fungible::Inspect, DefaultNoBound, Identity,
 };
@@ -26,8 +28,12 @@ use pallet_contracts::{
 };
 use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "try-runtime")]
+use scale_info::prelude::format;
+#[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
 use sp_std::marker::PhantomData;
+#[cfg(feature = "try-runtime")]
+use sp_std::vec::Vec;
 
 const LOG_TARGET: &str = "runtime::contracts";
 
@@ -121,9 +127,9 @@ impl<T: Config> MigrationStep for Migration<T> {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade_step() -> Result<sp_std::vec::Vec<u8>, TryRuntimeError> {
+    fn pre_upgrade_step() -> Result<Vec<u8>, TryRuntimeError> {
         let len = 100;
-        let sample: sp_std::vec::Vec<_> = old::CodeInfoOf::<T>::iter_keys().take(len).collect();
+        let sample: Vec<_> = old::CodeInfoOf::<T>::iter_keys().take(len).collect();
         log::debug!(
             target: LOG_TARGET,
             "Taking sample of {} CodeInfoOf(s)",
@@ -134,8 +140,8 @@ impl<T: Config> MigrationStep for Migration<T> {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade_step(state: sp_std::vec::Vec<u8>) -> Result<(), TryRuntimeError> {
-        let state = <sp_std::vec::Vec<CodeHash<T>> as Decode>::decode(&mut &state[..]).unwrap();
+    fn post_upgrade_step(state: Vec<u8>) -> Result<(), TryRuntimeError> {
+        let state = <Vec<CodeHash<T>> as Decode>::decode(&mut &state[..]).unwrap();
 
         log::debug!(
             target: LOG_TARGET,
@@ -147,10 +153,8 @@ impl<T: Config> MigrationStep for Migration<T> {
                 old::CodeInfoOf::<T>::get(&hash).is_none(),
                 "Old CodeInfoFor is not none!"
             );
-            let _ = CodeInfoOf::<T>::get(&hash).expect(
-                scale_info::prelude::format!("CodeInfo for code_hash {:?} not found!", hash)
-                    .as_str(),
-            );
+            let _ = CodeInfoOf::<T>::get(&hash)
+                .expect(format!("CodeInfo for code_hash {:?} not found!", hash).as_str());
         }
         Ok(())
     }

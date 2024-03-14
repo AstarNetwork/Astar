@@ -21,7 +21,9 @@ use frame_support::weights::Weight;
 use sp_core::Get;
 use sp_std::marker::PhantomData;
 
+pub mod contract_v12;
 pub mod contract_v12_fix;
+pub mod contract_v14;
 
 pub struct ForceContractsVersion<T: pallet_contracts::Config, const V: u16> {
     _phantom: PhantomData<T>,
