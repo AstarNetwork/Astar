@@ -1130,10 +1130,8 @@ parameter_types! {
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // Part of shiden-121
+    // Part of shiden-122
     pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,
-    // Part of shiden-121 (added after v5.33.0 release)
-    SetNewTierConfig,
 );
 
 use frame_support::traits::OnRuntimeUpgrade;

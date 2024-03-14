@@ -1128,12 +1128,12 @@ parameter_types! {
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // Part of astar-82, need to first cleanup old storage before re-using the pallet
+    // Part of astar-83, need to first cleanup old storage before re-using the pallet
     frame_support::migrations::RemovePallet<
         DappStakingMigrationName,
         <Runtime as frame_system::Config>::DbWeight,
     >,
-    // Part of astar-82
+    // Part of astar-83
     (pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,),
 );
 
