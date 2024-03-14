@@ -173,7 +173,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 123,
+    spec_version: 124,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -713,12 +713,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = (
-        pallet_contracts::migration::v12::Migration<Runtime, Balances>,
-        pallet_contracts::migration::v13::Migration<Runtime>,
-        pallet_contracts::migration::v14::Migration<Runtime, Balances>,
-        pallet_contracts::migration::v15::Migration<Runtime>,
-    );
+    type Migrations = (astar_primitives::migrations::contract_v12_fix::Migration<Runtime>,);
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -1371,7 +1366,13 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (pallet_contracts::Migration<Runtime>,);
+pub type Migrations = (
+    // [contracts fix] Part of shiden-121 (added after v5.33.0 release)
+    // bump down version to 14 --> fixed storage alias and restore to 15 --> ensure it's 15
+    astar_primitives::migrations::ForceContractsVersion<Runtime, 14>,
+    pallet_contracts::Migration<Runtime>,
+    astar_primitives::migrations::EnsurePalletVersion<Contracts, 15>,
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
