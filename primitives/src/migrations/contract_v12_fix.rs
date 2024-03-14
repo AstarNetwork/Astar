@@ -1,3 +1,21 @@
+// This file is part of Astar.
+
+// Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+
 use frame_support::{
     pallet_prelude::*, storage_alias, traits::fungible::Inspect, DefaultNoBound, Identity,
 };
@@ -7,7 +25,6 @@ use pallet_contracts::{
     Config, Determinism, Pallet,
 };
 use parity_scale_codec::{Decode, Encode};
-use scale_info::prelude::format;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
 use sp_std::marker::PhantomData;
@@ -74,20 +91,29 @@ impl<T: Config> MigrationStep for Migration<T> {
         };
 
         if let Some(code_hash) = iter.next() {
-            log::debug!(
-                target: LOG_TARGET,
-                "Migrating CodeInfoOf for code_hash {:?}",
-                code_hash
-            );
+            if let Some(code_info) = old::CodeInfoOf::<T>::take(code_hash) {
+                log::debug!(
+                    target: LOG_TARGET,
+                    "Migrating CodeInfoOf for code_hash {:?}",
+                    code_hash
+                );
 
-            let code_info = old::CodeInfoOf::<T>::take(code_hash)
-                .expect(format!("No CodeInfo found for code_hash: {:?}", code_hash).as_str());
-            let code_len = code_info.code_len;
+                let code_len = code_info.code_len;
 
-            CodeInfoOf::<T>::insert(code_hash, code_info);
+                CodeInfoOf::<T>::insert(code_hash, code_info);
 
-            self.last_code_hash = Some(code_hash);
-            (IsFinished::No, T::WeightInfo::v12_migration_step(code_len))
+                self.last_code_hash = Some(code_hash);
+                (IsFinished::No, T::WeightInfo::v12_migration_step(code_len))
+            } else {
+                log::warn!(
+                    target: LOG_TARGET,
+                    "No CodeInfo found for code_hash {:?}, maybe new contract?",
+                    code_hash
+                );
+                // old CodeInfo not found, it's newly deployed contract
+                self.last_code_hash = Some(code_hash);
+                (IsFinished::No, T::WeightInfo::v12_migration_step(0))
+            }
         } else {
             log::debug!(target: LOG_TARGET, "No more CodeInfo to migrate");
             (IsFinished::Yes, T::WeightInfo::v12_migration_step(0))
@@ -97,7 +123,7 @@ impl<T: Config> MigrationStep for Migration<T> {
     #[cfg(feature = "try-runtime")]
     fn pre_upgrade_step() -> Result<sp_std::vec::Vec<u8>, TryRuntimeError> {
         let len = 100;
-        let sample: Vec<_> = old::CodeInfoOf::<T>::iter_keys().take(len).collect();
+        let sample: sp_std::vec::Vec<_> = old::CodeInfoOf::<T>::iter_keys().take(len).collect();
         log::debug!(
             target: LOG_TARGET,
             "Taking sample of {} CodeInfoOf(s)",
@@ -108,8 +134,8 @@ impl<T: Config> MigrationStep for Migration<T> {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade_step(state: Vec<u8>) -> Result<(), TryRuntimeError> {
-        let state = <Vec<CodeHash<T>> as Decode>::decode(&mut &state[..]).unwrap();
+    fn post_upgrade_step(state: sp_std::vec::Vec<u8>) -> Result<(), TryRuntimeError> {
+        let state = <sp_std::vec::Vec<CodeHash<T>> as Decode>::decode(&mut &state[..]).unwrap();
 
         log::debug!(
             target: LOG_TARGET,
@@ -121,8 +147,10 @@ impl<T: Config> MigrationStep for Migration<T> {
                 old::CodeInfoOf::<T>::get(&hash).is_none(),
                 "Old CodeInfoFor is not none!"
             );
-            let _ = CodeInfoOf::<T>::get(&hash)
-                .expect(format!("CodeInfo for code_hash {:?} not found!", hash).as_str());
+            let _ = CodeInfoOf::<T>::get(&hash).expect(
+                scale_info::prelude::format!("CodeInfo for code_hash {:?} not found!", hash)
+                    .as_str(),
+            );
         }
         Ok(())
     }
