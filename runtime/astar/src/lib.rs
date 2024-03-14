@@ -148,7 +148,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 81,
+    spec_version: 82,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -681,9 +681,9 @@ impl pallet_contracts::Config for Runtime {
     type Debug = ();
     type Environment = ();
     type Migrations = (
-        pallet_contracts::migration::v12::Migration<Runtime, Balances>,
+        astar_primitives::migrations::contract_v12::Migration<Runtime, Balances>,
         pallet_contracts::migration::v13::Migration<Runtime>,
-        pallet_contracts::migration::v14::Migration<Runtime, Balances>,
+        astar_primitives::migrations::contract_v14::Migration<Runtime, Balances>,
         pallet_contracts::migration::v15::Migration<Runtime>,
     );
 }
