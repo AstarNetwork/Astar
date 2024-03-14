@@ -1367,8 +1367,11 @@ pub type Executive = frame_executive::Executive<
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
+    // [contracts fix] Part of shiden-121 (added after v5.33.0 release)
+    // bump down version to 14 --> fixed storage alias and restore to 15 --> ensure it's 15
     astar_primitives::migrations::ForceContractsVersion<Runtime, 14>,
     pallet_contracts::Migration<Runtime>,
+    astar_primitives::migrations::EnsurePalletVersion<Contracts, 15>,
 );
 
 type EventRecord = frame_system::EventRecord<
