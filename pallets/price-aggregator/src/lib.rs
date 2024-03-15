@@ -288,7 +288,21 @@ pub mod pallet {
         type WeightInfo: WeightInfo;
     }
 
-    // TODO: Genesis to configure the initial Circular buffer. That way we can integrate the pallet into dev runtimes easily.
+    #[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
+    pub struct GenesisConfig<T: Config> {
+        pub circular_buffer: BoundedVec<CurrencyAmount, T::CircularBufferLength>,
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+        fn build(&self) {
+            ValuesCircularBuffer::<T>::put(CircularBuffer::<T::CircularBufferLength> {
+                buffer: self.circular_buffer.clone(),
+                head: self.circular_buffer.len() as u32 % T::CircularBufferLength::get(),
+            });
+        }
+    }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
