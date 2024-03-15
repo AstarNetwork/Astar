@@ -174,7 +174,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 123,
+    spec_version: 125, // TODO: revert this
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1275,8 +1275,6 @@ impl pallet_unified_accounts::Config for Runtime {
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
-// TODO: need to set init on-chain storage for all 3 pallets
-
 parameter_types! {
     // Of course it's not true for Shibuya, but SBY is worthless, a test token.
     pub const NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
@@ -1292,11 +1290,11 @@ impl pallet_price_aggregator::Config for Runtime {
     // 7 days
     type CircularBufferLength = ConstU32<7>;
     type AggregationDuration = AggregationDuration;
-    type WeightInfo = ();
+    type WeightInfo = pallet_price_aggregator::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
-    // TODO: change this to something else later?
+    // Cannot specify `Root` so need to do it like this, unfortunately.
     pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
 }
 
@@ -1429,7 +1427,33 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (pallet_contracts::Migration<Runtime>,);
+pub type Migrations = (
+    OracleIntegrationLogic,
+    pallet_price_aggregator::PriceAggregatorInitializer<Runtime, InitPrice>,
+);
+
+pub struct InitPrice;
+impl Get<CurrencyAmount> for InitPrice {
+    fn get() -> CurrencyAmount {
+        // 0.15 $
+        CurrencyAmount::from_rational(15, 100)
+    }
+}
+
+use frame_support::traits::OnRuntimeUpgrade;
+pub struct OracleIntegrationLogic;
+impl OnRuntimeUpgrade for OracleIntegrationLogic {
+    fn on_runtime_upgrade() -> Weight {
+        // 1. Set initial storage versions for the membership pallet
+        use frame_support::traits::StorageVersion;
+        StorageVersion::new(4)
+            .put::<pallet_membership::Pallet<Runtime, OracleMembershipInstance>>();
+
+        // No storage version for the `orml_oracle` pallet, it's essentially 0
+
+        <Runtime as frame_system::Config>::DbWeight::get().writes(1)
+    }
+}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

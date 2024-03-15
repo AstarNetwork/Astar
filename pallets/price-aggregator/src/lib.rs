@@ -473,7 +473,7 @@ pub mod pallet {
 
 /// Used to update static price due to storage schema change.
 pub struct PriceAggregatorInitializer<T, P>(PhantomData<(T, P)>);
-impl<T: Config, P: Get<FixedU128>> OnRuntimeUpgrade for PriceAggregatorInitializer<T, P> {
+impl<T: Config, P: Get<CurrencyAmount>> OnRuntimeUpgrade for PriceAggregatorInitializer<T, P> {
     fn on_runtime_upgrade() -> Weight {
         if Pallet::<T>::on_chain_storage_version() > 0 {
             return Weight::zero();
