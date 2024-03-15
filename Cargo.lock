@@ -7756,6 +7756,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 
 [[package]]
+name = "oracle-benchmarks"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "orml-oracle",
+ "orml-traits",
+ "pallet-price-aggregator",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "orchestra"
 version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13994,6 +14014,7 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum 0.5.11",
+ "oracle-benchmarks",
  "orml-oracle",
  "orml-xcm-support",
  "orml-xtokens",

@@ -1328,6 +1328,17 @@ impl pallet_membership::Config<OracleMembershipInstance> for Runtime {
     type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
 }
 
+// TODO: get rid of this after running the benchmarks
+pub struct DummyKeyPairValue;
+impl Get<(CurrencyId, CurrencyAmount)> for DummyKeyPairValue {
+    fn get() -> (CurrencyId, CurrencyAmount) {
+        (CurrencyId::ASTR, CurrencyAmount::from_rational(15, 100))
+    }
+}
+impl oracle_benchmarks::Config for Runtime {
+    type BenchmarkCurrencyIdValuePair = DummyKeyPairValue;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1384,6 +1395,9 @@ construct_runtime!(
         Xvm: pallet_xvm = 90,
 
         Sudo: pallet_sudo = 99,
+
+        // TODO: remove prior to the merge
+        OracleBenchmarks: oracle_benchmarks = 252,
 
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
@@ -1543,6 +1557,7 @@ mod benches {
         [xcm_benchmarks_fungible, XcmFungible]
         [pallet_price_aggregator, PriceAggregator]
         [pallet_membership, OracleMembership]
+        [oracle_benchmarks, OracleBenchmarks]
     );
 }
 
