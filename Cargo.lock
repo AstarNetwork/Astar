@@ -7796,6 +7796,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "orml-oracle"
+version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library?branch=polkadot-v1.1.0#b3694e631df7f1ca16b1973122937753fcdee9d4"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "orml-traits",
+ "orml-utilities",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-application-crypto",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
 source = "git+https://github.com/open-web3-stack/open-runtime-module-library?branch=polkadot-v1.1.0#b3694e631df7f1ca16b1973122937753fcdee9d4"
@@ -13975,6 +13993,8 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum 0.5.11",
+ "orml-oracle",
+ "orml-traits",
  "orml-xcm-support",
  "orml-xtokens",
  "pallet-assets",
@@ -14013,8 +14033,10 @@ dependencies = [
  "pallet-identity",
  "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
+ "pallet-membership",
  "pallet-multisig",
  "pallet-preimage",
+ "pallet-price-aggregator",
  "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",

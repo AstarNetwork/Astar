@@ -20,6 +20,7 @@
 
 use super::*;
 use frame_benchmarking::v2::*;
+use sp_std::vec;
 
 #[benchmarks]
 mod benchmarks {

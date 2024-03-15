@@ -72,6 +72,7 @@ use astar_primitives::{
         PeriodNumber, SmartContract, TierId,
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
+    oracle::{CurrencyAmount, CurrencyId},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -1274,6 +1275,75 @@ impl pallet_unified_accounts::Config for Runtime {
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
+// TODO: need to set init on-chain storage for all 3 pallets
+
+parameter_types! {
+    // Of course it's not true for Shibuya, but SBY is worthless, a test token.
+    pub const NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
+    // Aggregate values for one day.
+    pub const AggregationDuration: BlockNumber = 7200;
+}
+
+impl pallet_price_aggregator::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type MaxValuesPerBlock = ConstU32<8>;
+    type ProcessBlockValues = pallet_price_aggregator::MedianBlockValue;
+    type NativeCurrencyId = NativeCurrencyId;
+    // 7 days
+    type CircularBufferLength = ConstU32<7>;
+    type AggregationDuration = AggregationDuration;
+    type WeightInfo = ();
+}
+
+// TODO: push to primitives or add to orml
+// TODO2: define Moment as custom type
+type ShibuyaTimestampedValue = orml_oracle::TimestampedValue<CurrencyAmount, u64>;
+pub struct DummyCombineData;
+impl orml_traits::CombineData<CurrencyId, ShibuyaTimestampedValue> for DummyCombineData {
+    fn combine_data(
+        _key: &CurrencyId,
+        _values: Vec<ShibuyaTimestampedValue>,
+        _prev_value: Option<ShibuyaTimestampedValue>,
+    ) -> Option<ShibuyaTimestampedValue> {
+        None
+    }
+}
+
+parameter_types! {
+    // TODO: change this to something else later?
+    pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
+}
+
+impl orml_oracle::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type OnNewData = PriceAggregator;
+    type CombineData = DummyCombineData;
+    type Time = Timestamp;
+    type OracleKey = CurrencyId;
+    type OracleValue = CurrencyAmount;
+    type RootOperatorAccountId = RootOperatorAccountId;
+    type Members = OracleMembership;
+    type MaxHasDispatchedSize = ConstU32<8>;
+    // TODO: this will require custom weight since `OnNewData` needs to be accounted for
+    type WeightInfo = ();
+    type MaxFeedValues = ConstU32<1>;
+}
+
+pub type OracleMembershipInstance = pallet_membership::Instance1;
+impl pallet_membership::Config<OracleMembershipInstance> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = EnsureRoot<AccountId>;
+    type RemoveOrigin = EnsureRoot<AccountId>;
+    type SwapOrigin = EnsureRoot<AccountId>;
+    type ResetOrigin = EnsureRoot<AccountId>;
+    type PrimeOrigin = EnsureRoot<AccountId>;
+
+    type MembershipInitialized = ();
+    type MembershipChanged = ();
+    type MaxMembers = ConstU32<16>;
+    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1295,6 +1365,9 @@ construct_runtime!(
         DappStaking: pallet_dapp_staking_v3 = 34,
         Inflation: pallet_inflation = 35,
         Assets: pallet_assets = 36,
+        PriceAggregator: pallet_price_aggregator = 37,
+        Oracle: orml_oracle = 38,
+        OracleMembership: pallet_membership::<Instance1> = 39,
 
         Authorship: pallet_authorship = 40,
         CollatorSelection: pallet_collator_selection = 41,
@@ -1458,6 +1531,8 @@ mod benches {
         [pallet_unified_accounts, UnifiedAccounts]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
+        [pallet_price_aggregator, PriceAggregator]
+        [pallet_membership, OracleMembership]
     );
 }
 

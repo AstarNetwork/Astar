@@ -288,6 +288,8 @@ pub mod pallet {
         type WeightInfo: WeightInfo;
     }
 
+    // TODO: Genesis to configure the initial Circular buffer. That way we can integrate the pallet into dev runtimes easily.
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {

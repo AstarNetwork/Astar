@@ -84,10 +84,29 @@ fn median_block_value_works() {
         Ok(CurrencyAmount::from_rational(7, 10))
     );
 
+    let odd_values_vec = vec![
+        CurrencyAmount::from_rational(11, 10),
+        CurrencyAmount::from_rational(2, 10),
+        CurrencyAmount::from_rational(7, 10),
+    ];
+    assert_eq!(
+        MedianBlockValue::process(&odd_values_vec),
+        Ok(CurrencyAmount::from_rational(7, 10))
+    );
+
     // 3.1. Even number values check
     let even_values_vec_1 = vec![
         CurrencyAmount::from_rational(4, 10),
         CurrencyAmount::from_rational(6, 10),
+    ];
+    assert_eq!(
+        MedianBlockValue::process(&even_values_vec_1),
+        Ok(CurrencyAmount::from_rational(5, 10))
+    );
+
+    let even_values_vec_1 = vec![
+        CurrencyAmount::from_rational(6, 10),
+        CurrencyAmount::from_rational(4, 10),
     ];
     assert_eq!(
         MedianBlockValue::process(&even_values_vec_1),
@@ -100,6 +119,17 @@ fn median_block_value_works() {
         CurrencyAmount::from_rational(4, 10),
         CurrencyAmount::from_rational(6, 10),
         CurrencyAmount::from_rational(23, 10),
+    ];
+    assert_eq!(
+        MedianBlockValue::process(&even_values_vec_2),
+        Ok(CurrencyAmount::from_rational(5, 10))
+    );
+
+    let even_values_vec_2 = vec![
+        CurrencyAmount::from_rational(23, 10),
+        CurrencyAmount::from_rational(4, 10),
+        CurrencyAmount::from_rational(3, 10),
+        CurrencyAmount::from_rational(6, 10),
     ];
     assert_eq!(
         MedianBlockValue::process(&even_values_vec_2),
