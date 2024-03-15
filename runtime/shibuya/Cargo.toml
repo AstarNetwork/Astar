@@ -94,7 +94,6 @@ xcm-executor = { workspace = true }
 
 # orml dependencies
 orml-oracle = { workspace = true }
-orml-traits = { workspace = true }      # Remove this later when dummy struct is moved to primitives
 orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 

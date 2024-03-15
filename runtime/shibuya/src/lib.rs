@@ -72,7 +72,7 @@ use astar_primitives::{
         PeriodNumber, SmartContract, TierId,
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
-    oracle::{CurrencyAmount, CurrencyId},
+    oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -1295,20 +1295,6 @@ impl pallet_price_aggregator::Config for Runtime {
     type WeightInfo = ();
 }
 
-// TODO: push to primitives or add to orml
-// TODO2: define Moment as custom type
-type ShibuyaTimestampedValue = orml_oracle::TimestampedValue<CurrencyAmount, u64>;
-pub struct DummyCombineData;
-impl orml_traits::CombineData<CurrencyId, ShibuyaTimestampedValue> for DummyCombineData {
-    fn combine_data(
-        _key: &CurrencyId,
-        _values: Vec<ShibuyaTimestampedValue>,
-        _prev_value: Option<ShibuyaTimestampedValue>,
-    ) -> Option<ShibuyaTimestampedValue> {
-        None
-    }
-}
-
 parameter_types! {
     // TODO: change this to something else later?
     pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
@@ -1317,7 +1303,7 @@ parameter_types! {
 impl orml_oracle::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type OnNewData = PriceAggregator;
-    type CombineData = DummyCombineData;
+    type CombineData = DummyCombineData<Runtime>;
     type Time = Timestamp;
     type OracleKey = CurrencyId;
     type OracleValue = CurrencyAmount;

@@ -16,8 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::pallet_prelude::*;
+use frame_support::{pallet_prelude::*, traits::Time};
 use sp_arithmetic::fixed_point::FixedU128;
+use sp_std::vec::Vec;
 
 /// Interface for fetching price of the native token.
 ///
@@ -34,4 +35,23 @@ pub type CurrencyAmount = FixedU128;
 pub enum CurrencyId {
     ASTR,
     SDN,
+}
+
+type TimestampedValue<T, I = ()> = orml_oracle::TimestampedValue<
+    CurrencyAmount,
+    <<T as orml_oracle::Config<I>>::Time as Time>::Moment,
+>;
+
+/// A dummy implementation of `CombineData` trait that does nothing.
+pub struct DummyCombineData<T, I = ()>(PhantomData<(T, I)>);
+impl<T: orml_oracle::Config<I>, I> orml_traits::CombineData<CurrencyId, TimestampedValue<T, I>>
+    for DummyCombineData<T, I>
+{
+    fn combine_data(
+        _key: &CurrencyId,
+        _values: Vec<TimestampedValue<T, I>>,
+        _prev_value: Option<TimestampedValue<T, I>>,
+    ) -> Option<TimestampedValue<T, I>> {
+        None
+    }
 }
