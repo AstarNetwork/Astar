@@ -22,7 +22,7 @@ use super::*;
 use frame_benchmarking::v2::*;
 use frame_support::{
     assert_ok,
-    traits::{Get, OnFinalize, SortedMembers},
+    traits::{Get, OnFinalize},
     BoundedVec,
 };
 use frame_system::RawOrigin;
@@ -36,7 +36,7 @@ mod benchmarks {
     fn feed_values(x: Linear<1, { <T as orml_oracle::Config>::MaxFeedValues::get() }>) {
         // Prepare account and add it as member
         let account: T::AccountId = whitelisted_caller();
-        <T as orml_oracle::Config>::Members::add(&account);
+        T::AddMember::add_member(account.clone());
 
         // TODO: probably should limit size via config param. That way I can ensure that provided key/value pairs are of the correct size
         // as the `x` iter value.

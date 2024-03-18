@@ -24,7 +24,6 @@ orml-oracle = { workspace = true }
 orml-traits = { workspace = true }
 
 astar-primitives = { workspace = true }
-pallet-price-aggregator = { workspace = true }
 
 frame-benchmarking = { workspace = true, optional = true }
 
@@ -42,7 +41,6 @@ std = [
 	"sp-arithmetic/std",
 	"orml-traits/std",
 	"orml-oracle/std",
-	"pallet-price-aggregator/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

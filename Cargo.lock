@@ -7766,7 +7766,6 @@ dependencies = [
  "log",
  "orml-oracle",
  "orml-traits",
- "pallet-price-aggregator",
  "parity-scale-codec",
  "scale-info",
  "serde",

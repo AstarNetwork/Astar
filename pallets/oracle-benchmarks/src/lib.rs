@@ -26,10 +26,13 @@ pub use pallet::*;
 use sp_std::marker::PhantomData;
 
 pub mod weights;
-pub use weights::WeightInfo;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+
+pub trait AddMember<AccountId> {
+    fn add_member(account: AccountId);
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -39,13 +42,13 @@ pub mod pallet {
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::config]
-    pub trait Config:
-        frame_system::Config + orml_oracle::Config + pallet_price_aggregator::Config
-    {
+    pub trait Config: frame_system::Config + orml_oracle::Config {
         #[pallet::constant]
         type BenchmarkCurrencyIdValuePair: Get<(
             <Self as orml_oracle::Config>::OracleKey,
             <Self as orml_oracle::Config>::OracleValue,
         )>;
+
+        type AddMember: AddMember<Self::AccountId>;
     }
 }

@@ -1310,6 +1310,9 @@ impl orml_oracle::Config for Runtime {
     type MaxHasDispatchedSize = ConstU32<8>;
     // TODO: this will require custom weight since `OnNewData` needs to be accounted for
     type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type MaxFeedValues = ConstU32<2>;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type MaxFeedValues = ConstU32<1>;
 }
 
@@ -1335,8 +1338,24 @@ impl Get<(CurrencyId, CurrencyAmount)> for DummyKeyPairValue {
         (CurrencyId::ASTR, CurrencyAmount::from_rational(15, 100))
     }
 }
+
+pub struct AddMemberBenchmark;
+impl oracle_benchmarks::AddMember<AccountId> for AddMemberBenchmark {
+    fn add_member(account: AccountId) {
+        use frame_support::assert_ok;
+        use frame_system::RawOrigin;
+        assert_ok!(
+            pallet_membership::Pallet::<Runtime, OracleMembershipInstance>::add_member(
+                RawOrigin::Root.into(),
+                account.into()
+            )
+        );
+    }
+}
+
 impl oracle_benchmarks::Config for Runtime {
     type BenchmarkCurrencyIdValuePair = DummyKeyPairValue;
+    type AddMember = AddMemberBenchmark;
 }
 
 construct_runtime!(
