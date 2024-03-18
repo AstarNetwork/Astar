@@ -1154,10 +1154,16 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+use astar_primitives::oracle::CurrencyAmount;
+parameter_types! {
+    // Keep it exactly the same as before
+    pub const InitPrice: CurrencyAmount = CurrencyAmount::from_rational(18, 100);
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (pallet_contracts::Migration<Runtime>,);
+pub type Migrations = (pallet_static_price_provider::ActivePriceUpdate<Runtime, InitPrice>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

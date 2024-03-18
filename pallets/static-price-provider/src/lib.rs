@@ -49,7 +49,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -118,8 +118,8 @@ pub mod pallet {
 pub struct ActivePriceUpdate<T, P>(PhantomData<(T, P)>);
 impl<T: Config, P: Get<FixedU128>> OnRuntimeUpgrade for ActivePriceUpdate<T, P> {
     fn on_runtime_upgrade() -> Weight {
-        if Pallet::<T>::on_chain_storage_version() > 1 {
-            return Weight::zero();
+        if Pallet::<T>::on_chain_storage_version() != 1 {
+            return T::DbWeight::get().reads(1);
         }
 
         let init_price = P::get().max(FixedU128::from_rational(1, FixedU128::DIV.into()));
@@ -128,6 +128,6 @@ impl<T: Config, P: Get<FixedU128>> OnRuntimeUpgrade for ActivePriceUpdate<T, P> 
 
         StorageVersion::new(2).put::<Pallet<T>>();
 
-        T::DbWeight::get().writes(2)
+        T::DbWeight::get().reads_writes(1, 2)
     }
 }
