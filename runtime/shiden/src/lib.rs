@@ -52,7 +52,6 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
-use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -72,6 +71,7 @@ use astar_primitives::{
         PeriodNumber, SmartContract, TierId, TierSlots as TierSlotsFunc,
     },
     evm::EvmRevertCodeHandler,
+    oracle::CurrencyAmount,
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -355,7 +355,7 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
 
 pub struct ShidenTierSlots;
 impl TierSlotsFunc for ShidenTierSlots {
-    fn number_of_slots(price: FixedU64) -> u16 {
+    fn number_of_slots(price: CurrencyAmount) -> u16 {
         // According to the forum proposal, the original formula's factor is reduced from 1000x to 100x.
         let result: u64 = price.saturating_mul_int(100_u64).saturating_add(50);
         result.unique_saturated_into()
@@ -1118,7 +1118,6 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-use astar_primitives::oracle::CurrencyAmount;
 parameter_types! {
     // Keep it exactly the same as before
     pub const InitPrice: CurrencyAmount = CurrencyAmount::from_rational(32, 100);
