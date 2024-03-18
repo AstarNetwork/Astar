@@ -619,7 +619,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.33.0"
+version = "5.34.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -734,6 +734,7 @@ dependencies = [
  "orml-oracle",
  "orml-traits",
  "pallet-assets",
+ "pallet-contracts",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-dispatch",
@@ -752,7 +753,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.33.0"
+version = "5.34.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -6619,7 +6620,7 @@ checksum = "01cda141df6706de531b6c46c3a33ecca755538219bd484262fa09410c13539c"
 
 [[package]]
 name = "local-runtime"
-version = "5.33.0"
+version = "5.34.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -7008,9 +7009,9 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "0.8.8"
+version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "927a765cd3fc26206e66b296465fa9d3e5ab003e651c1b3c060e7956d96b19d2"
+checksum = "a4a650543ca06a924e8b371db273b2756685faae30f8487da1b56505a8f78b0c"
 dependencies = [
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
@@ -8341,7 +8342,6 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-dapp-staking-v3",
- "pallet-dapps-staking",
  "parity-scale-codec",
  "scale-info",
  "sp-arithmetic",
@@ -12315,9 +12315,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.36.15"
+version = "0.36.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c37f1bd5ef1b5422177b7646cba67430579cfe2ace80f284fee876bca52ad941"
+checksum = "305efbd14fde4139eb501df5f136994bb520b033fa9fbdce287507dc23b8c7ed"
 dependencies = [
  "bitflags 1.3.2",
  "errno",
@@ -12995,7 +12995,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "log",
- "rustix 0.36.15",
+ "rustix 0.36.17",
  "sc-allocator",
  "sc-executor-common",
  "sp-runtime-interface",
@@ -13984,7 +13984,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.33.0"
+version = "5.34.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -14028,6 +14028,7 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-migration",
  "pallet-dapp-staking-v3",
  "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
@@ -14103,7 +14104,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.33.0"
+version = "5.34.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -14182,6 +14183,7 @@ dependencies = [
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",
@@ -16941,7 +16943,7 @@ dependencies = [
  "directories-next",
  "file-per-thread-logger",
  "log",
- "rustix 0.36.15",
+ "rustix 0.36.17",
  "serde",
  "sha2 0.10.7",
  "toml 0.5.11",
@@ -17037,7 +17039,7 @@ checksum = "6e0554b84c15a27d76281d06838aed94e13a77d7bf604bbbaf548aa20eb93846"
 dependencies = [
  "object 0.30.4",
  "once_cell",
- "rustix 0.36.15",
+ "rustix 0.36.17",
 ]
 
 [[package]]
@@ -17068,7 +17070,7 @@ dependencies = [
  "memoffset 0.8.0",
  "paste",
  "rand 0.8.5",
- "rustix 0.36.15",
+ "rustix 0.36.17",
  "wasmtime-asm-macros",
  "wasmtime-environ",
  "wasmtime-jit-debug",

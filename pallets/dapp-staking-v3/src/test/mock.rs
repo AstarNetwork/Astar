@@ -37,7 +37,7 @@ use sp_runtime::{
 use sp_std::cell::RefCell;
 
 use astar_primitives::{
-    dapp_staking::{Observer as DappStakingObserver, SmartContract},
+    dapp_staking::{Observer as DappStakingObserver, SmartContract, StandardTierSlots},
     Balance, BlockNumber,
 };
 
@@ -204,6 +204,7 @@ impl pallet_dapp_staking::Config for Test {
     type CycleConfiguration = DummyCycleConfiguration;
     type Observers = DummyDappStakingObserver;
     type AccountCheck = DummyAccountCheck;
+    type TierSlots = StandardTierSlots;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -309,11 +310,15 @@ impl ExtBuilder {
             };
 
             // Init tier config, based on the initial params
-            let init_tier_config = TiersConfiguration::<<Test as Config>::NumberOfTiers> {
+            let init_tier_config = TiersConfiguration::<
+                <Test as Config>::NumberOfTiers,
+                <Test as Config>::TierSlots,
+            > {
                 number_of_slots: 40,
                 slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_thresholds: tier_params.tier_thresholds.clone(),
+                _phantom: Default::default(),
             };
 
             pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);

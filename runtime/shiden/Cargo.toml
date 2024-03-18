@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "5.33.0"
+version = "5.34.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -21,6 +21,7 @@ fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true }
 
 sp-api = { workspace = true }
+sp-arithmetic = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
@@ -138,6 +139,7 @@ std = [
 	"sp-consensus-aura/std",
 	"sp-io/std",
 	"sp-runtime/std",
+	"sp-arithmetic/std",
 	"pallet-static-price-provider/std",
 	"sp-runtime-interface/std",
 	"sp-version/std",
@@ -237,6 +239,7 @@ runtime-benchmarks = [
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 ]
 try-runtime = [
+	"astar-primitives/try-runtime",
 	"fp-self-contained/try-runtime",
 	"log",
 	"frame-try-runtime/try-runtime",

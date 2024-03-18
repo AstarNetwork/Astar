@@ -69,7 +69,7 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, TierId,
+        PeriodNumber, SmartContract, StandardTierSlots, TierId,
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
@@ -174,7 +174,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 123,
+    spec_version: 124,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -428,6 +428,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
+    type TierSlots = StandardTierSlots;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<500>;
@@ -713,12 +714,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = (
-        pallet_contracts::migration::v12::Migration<Runtime, Balances>,
-        pallet_contracts::migration::v13::Migration<Runtime>,
-        pallet_contracts::migration::v14::Migration<Runtime, Balances>,
-        pallet_contracts::migration::v15::Migration<Runtime>,
-    );
+    type Migrations = (astar_primitives::migrations::contract_v12_fix::Migration<Runtime>,);
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -1360,6 +1356,11 @@ impl oracle_benchmarks::Config for Runtime {
     type AddMember = AddMemberBenchmark;
 }
 
+impl pallet_dapp_staking_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Self>;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1418,8 +1419,10 @@ construct_runtime!(
         Sudo: pallet_sudo = 99,
 
         // TODO: remove prior to the merge
-        OracleBenchmarks: oracle_benchmarks = 252,
+        OracleBenchmarks: oracle_benchmarks = 251,
 
+        // Remove after migrating to v6 storage
+        DappStakingMigration: pallet_dapp_staking_migration = 252,
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
     }
@@ -1579,6 +1582,7 @@ mod benches {
         [pallet_price_aggregator, PriceAggregator]
         [pallet_membership, OracleMembership]
         [oracle_benchmarks, OracleBenchmarks]
+        [pallet_dapp_staking_migration, DappStakingMigration]
     );
 }
 

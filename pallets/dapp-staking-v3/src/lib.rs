@@ -39,7 +39,7 @@ use frame_support::{
     pallet_prelude::*,
     traits::{
         fungible::{Inspect as FunInspect, MutateFreeze as FunMutateFreeze},
-        OnRuntimeUpgrade, StorageVersion,
+        StorageVersion,
     },
     weights::Weight,
 };
@@ -53,7 +53,7 @@ pub use sp_std::vec::Vec;
 use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
-        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId,
+        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId, TierSlots as TierSlotFunc,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -69,8 +69,6 @@ mod benchmarking;
 
 mod types;
 pub use types::*;
-
-pub mod migrations;
 
 pub mod weights;
 pub use weights::WeightInfo;
@@ -92,7 +90,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(5);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(6);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -146,6 +144,9 @@ pub mod pallet {
 
         /// Used to check whether an account is allowed to participate in dApp staking.
         type AccountCheck: AccountCheck<Self::AccountId>;
+
+        /// Used to calculate total number of tier slots for some price.
+        type TierSlots: TierSlotFunc;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -446,7 +447,7 @@ pub mod pallet {
     /// Tier configuration user for current & preceding eras.
     #[pallet::storage]
     pub type TierConfig<T: Config> =
-        StorageValue<_, TiersConfiguration<T::NumberOfTiers>, ValueQuery>;
+        StorageValue<_, TiersConfiguration<T::NumberOfTiers, T::TierSlots>, ValueQuery>;
 
     /// Information about which tier a dApp belonged to in a specific era.
     #[pallet::storage]
@@ -506,7 +507,7 @@ pub mod pallet {
             let number_of_slots = self.slots_per_tier.iter().fold(0_u16, |acc, &slots| {
                 acc.checked_add(slots).expect("Overflow")
             });
-            let tier_config = TiersConfiguration::<T::NumberOfTiers> {
+            let tier_config = TiersConfiguration::<T::NumberOfTiers, T::TierSlots> {
                 number_of_slots,
                 slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
                     self.slots_per_tier.clone(),
@@ -514,6 +515,7 @@ pub mod pallet {
                 .expect("Invalid number of slots per tier entries provided."),
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_thresholds: tier_params.tier_thresholds.clone(),
+                _phantom: Default::default(),
             };
             assert!(
                 tier_params.is_valid(),
@@ -1108,34 +1110,37 @@ pub mod pallet {
 
             // 1.
             // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
-            let (new_staking_info, amount) = match StakerInfo::<T>::get(&account, &smart_contract) {
-                Some(mut staking_info) => {
-                    ensure!(
-                        staking_info.period_number() == protocol_state.period_number(),
-                        Error::<T>::UnstakeFromPastPeriod
-                    );
-                    ensure!(
-                        staking_info.total_staked_amount() >= amount,
-                        Error::<T>::UnstakeAmountTooLarge
-                    );
+            let (new_staking_info, amount, era_and_amount_pairs) =
+                match StakerInfo::<T>::get(&account, &smart_contract) {
+                    Some(mut staking_info) => {
+                        ensure!(
+                            staking_info.period_number() == protocol_state.period_number(),
+                            Error::<T>::UnstakeFromPastPeriod
+                        );
+                        ensure!(
+                            staking_info.total_staked_amount() >= amount,
+                            Error::<T>::UnstakeAmountTooLarge
+                        );
 
-                    // If unstaking would take the total staked amount below the minimum required value,
-                    // unstake everything.
-                    let amount = if staking_info.total_staked_amount().saturating_sub(amount)
-                        < T::MinimumStakeAmount::get()
-                    {
-                        staking_info.total_staked_amount()
-                    } else {
-                        amount
-                    };
+                        // If unstaking would take the total staked amount below the minimum required value,
+                        // unstake everything.
+                        let amount = if staking_info.total_staked_amount().saturating_sub(amount)
+                            < T::MinimumStakeAmount::get()
+                        {
+                            staking_info.total_staked_amount()
+                        } else {
+                            amount
+                        };
 
-                    staking_info.unstake(amount, current_era, protocol_state.subperiod());
-                    (staking_info, amount)
-                }
-                None => {
-                    return Err(Error::<T>::NoStakingInfo.into());
-                }
-            };
+                        let era_and_amount_pairs =
+                            staking_info.unstake(amount, current_era, protocol_state.subperiod());
+
+                        (staking_info, amount, era_and_amount_pairs)
+                    }
+                    None => {
+                        return Err(Error::<T>::NoStakingInfo.into());
+                    }
+                };
 
             // 2.
             // Reduce stake amount
@@ -1155,12 +1160,16 @@ pub mod pallet {
             // 3.
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.
             let mut contract_stake_info = ContractStake::<T>::get(&dapp_info.id);
-            contract_stake_info.unstake(amount, protocol_state.period_info, current_era);
+            contract_stake_info.unstake(
+                era_and_amount_pairs,
+                protocol_state.period_info,
+                current_era,
+            );
 
             // 4.
             // Update total staked amount for the next era.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unstake_amount(amount, protocol_state.subperiod());
+                era_info.unstake_amount(amount);
             });
 
             // 5.
@@ -1449,7 +1458,7 @@ pub mod pallet {
             // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
             // Although strange, it's been requested to keep it like this from the team.
             CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unstake_amount(amount, protocol_state.subperiod());
+                era_info.unstake_amount(amount);
             });
 
             // Update remaining storage entries

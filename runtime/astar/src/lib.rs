@@ -28,8 +28,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, Contains, Currency, FindAuthor, Get,
-        Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -69,7 +69,7 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, TierId,
+        PeriodNumber, SmartContract, StandardTierSlots, TierId,
     },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
@@ -148,7 +148,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 81,
+    spec_version: 82,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -318,39 +318,7 @@ impl pallet_multisig::Config for Runtime {
 }
 
 parameter_types! {
-    pub const BlockPerEra: BlockNumber = DAYS;
-    pub const RegisterDeposit: Balance = 1000 * ASTR;
-    pub const MaxNumberOfStakersPerContract: u32 = 16384;
     pub const MinimumStakingAmount: Balance = 500 * ASTR;
-    pub const MinimumRemainingAmount: Balance = ASTR;
-    pub const MaxEraStakeValues: u32 = 5;
-    pub const MaxUnlockingChunks: u32 = 4;
-    pub const UnbondingPeriod: u32 = 10;
-}
-
-impl pallet_dapps_staking::Config for Runtime {
-    type Currency = Balances;
-    type BlockPerEra = BlockPerEra;
-    type SmartContract = SmartContract<AccountId>;
-    type RegisterDeposit = RegisterDeposit;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
-    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
-    type MinimumStakingAmount = MinimumStakingAmount;
-    type PalletId = DappsStakingPalletId;
-    type MaxUnlockingChunks = MaxUnlockingChunks;
-    type UnbondingPeriod = UnbondingPeriod;
-    type MinimumRemainingAmount = MinimumRemainingAmount;
-    type MaxEraStakeValues = MaxEraStakeValues;
-    // Not allowed on Astar yet
-    type UnregisteredDappRewardRetention = ConstU32<{ u32::MAX }>;
-    // Needed so benchmark can use the pallets extrinsics
-    #[cfg(feature = "runtime-benchmarks")]
-    type ForcePalletDisabled = ConstBool<false>;
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type ForcePalletDisabled = ConstBool<true>;
-    // Fee required to claim rewards for another account. Calculated & tested manually.
-    type DelegateClaimFee = ConstU128<057_950_348_114_187_155>;
 }
 
 impl pallet_static_price_provider::Config for Runtime {
@@ -396,6 +364,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
+    type TierSlots = StandardTierSlots;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<4>;
     type MaxNumberOfContracts = ConstU32<500>;
@@ -712,9 +681,9 @@ impl pallet_contracts::Config for Runtime {
     type Debug = ();
     type Environment = ();
     type Migrations = (
-        pallet_contracts::migration::v12::Migration<Runtime, Balances>,
+        astar_primitives::migrations::contract_v12::Migration<Runtime, Balances>,
         pallet_contracts::migration::v13::Migration<Runtime>,
-        pallet_contracts::migration::v14::Migration<Runtime, Balances>,
+        astar_primitives::migrations::contract_v14::Migration<Runtime, Balances>,
         pallet_contracts::migration::v15::Migration<Runtime>,
     );
 }
@@ -1115,8 +1084,6 @@ construct_runtime!(
         StaticPriceProvider: pallet_static_price_provider = 253,
         // To be removed & cleaned up after migration has been finished
         DappStakingMigration: pallet_dapp_staking_migration = 254,
-        // Legacy dApps staking v2, to be removed after migration has been finished
-        DappsStaking: pallet_dapps_staking = 255,
     }
 );
 
@@ -1240,7 +1207,6 @@ mod benches {
         [pallet_assets, Assets]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapps_staking, DappsStaking]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_dapp_staking_migration, DappStakingMigration]
