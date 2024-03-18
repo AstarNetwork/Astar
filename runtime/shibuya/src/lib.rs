@@ -1304,9 +1304,6 @@ impl orml_oracle::Config for Runtime {
     type RootOperatorAccountId = RootOperatorAccountId;
     type Members = OracleMembership;
     type MaxHasDispatchedSize = ConstU32<8>;
-    // TODO: this is a custom benchmark implemented for this PR, to account for `OnNewData` weight.
-    // However, given the implementation used, `OnNewData` consumes next to no weight, except for minor processing time.
-    // So it can be ok to use hardcoded `orml-benchmarks` weight initially.
     type WeightInfo = oracle_benchmarks::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type MaxFeedValues = ConstU32<2>;
