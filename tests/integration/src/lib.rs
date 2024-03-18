@@ -43,3 +43,6 @@ mod dapp_staking_v3;
 
 #[cfg(any(feature = "shibuya"))]
 mod assets_chain_extensions;
+
+#[cfg(any(feature = "shibuya"))]
+mod oracle;

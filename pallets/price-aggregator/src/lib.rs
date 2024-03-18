@@ -301,6 +301,10 @@ pub mod pallet {
                 buffer: self.circular_buffer.clone(),
                 head: self.circular_buffer.len() as u32 % T::CircularBufferLength::get(),
             });
+
+            IntermediateValueAggregator::<T>::mutate(|aggregator| {
+                aggregator.limit_block = T::AggregationDuration::get().saturated_into();
+            });
         }
     }
 
