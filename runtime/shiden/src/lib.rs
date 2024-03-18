@@ -1026,6 +1026,11 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
+impl pallet_dapp_staking_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Self>;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1072,6 +1077,8 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
+        // Remove after migrating to v6 storage
+        DappStakingMigration: pallet_dapp_staking_migration = 252,
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
     }
@@ -1115,13 +1122,8 @@ pub type Executive = frame_executive::Executive<
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // [contracts fix] Part of shiden-121 (added after v5.33.0 release)
-    // bump down version to 14 --> fixed storage alias and restore to 15 --> ensure it's 15
-    astar_primitives::migrations::ForceContractsVersion<Runtime, 14>,
-    pallet_contracts::Migration<Runtime>,
-    astar_primitives::migrations::EnsurePalletVersion<Contracts, 15>,
-    // Part of shiden-121 (added after v5.33.0 release)
-    SetNewTierConfig,
+    // Part of shiden-122
+    pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,
 );
 
 use frame_support::traits::OnRuntimeUpgrade;

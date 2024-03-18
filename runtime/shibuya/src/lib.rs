@@ -1270,6 +1270,11 @@ impl pallet_unified_accounts::Config for Runtime {
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
+impl pallet_dapp_staking_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Self>;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1324,6 +1329,8 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
+        // Remove after migrating to v6 storage
+        DappStakingMigration: pallet_dapp_staking_migration = 252,
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
     }
@@ -1366,13 +1373,8 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    // [contracts fix] Part of shiden-121 (added after v5.33.0 release)
-    // bump down version to 14 --> fixed storage alias and restore to 15 --> ensure it's 15
-    astar_primitives::migrations::ForceContractsVersion<Runtime, 14>,
-    pallet_contracts::Migration<Runtime>,
-    astar_primitives::migrations::EnsurePalletVersion<Contracts, 15>,
-);
+pub type Migrations =
+    (pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1460,6 +1462,7 @@ mod benches {
         [pallet_unified_accounts, UnifiedAccounts]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
+        [pallet_dapp_staking_migration, DappStakingMigration]
     );
 }
 
