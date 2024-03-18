@@ -1881,30 +1881,6 @@
 <a href="#1881" id="1881">1881</a>
 <a href="#1882" id="1882">1882</a>
 <a href="#1883" id="1883">1883</a>
-<a href="#1884" id="1884">1884</a>
-<a href="#1885" id="1885">1885</a>
-<a href="#1886" id="1886">1886</a>
-<a href="#1887" id="1887">1887</a>
-<a href="#1888" id="1888">1888</a>
-<a href="#1889" id="1889">1889</a>
-<a href="#1890" id="1890">1890</a>
-<a href="#1891" id="1891">1891</a>
-<a href="#1892" id="1892">1892</a>
-<a href="#1893" id="1893">1893</a>
-<a href="#1894" id="1894">1894</a>
-<a href="#1895" id="1895">1895</a>
-<a href="#1896" id="1896">1896</a>
-<a href="#1897" id="1897">1897</a>
-<a href="#1898" id="1898">1898</a>
-<a href="#1899" id="1899">1899</a>
-<a href="#1900" id="1900">1900</a>
-<a href="#1901" id="1901">1901</a>
-<a href="#1902" id="1902">1902</a>
-<a href="#1903" id="1903">1903</a>
-<a href="#1904" id="1904">1904</a>
-<a href="#1905" id="1905">1905</a>
-<a href="#1906" id="1906">1906</a>
-<a href="#1907" id="1907">1907</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -1935,8 +1911,8 @@
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, Contains, Currency, FindAuthor, Get,
-        Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -2055,7 +2031,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">81</span>,
+    spec_version: <span class="number">82</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">2</span>,
@@ -2225,39 +2201,7 @@
 }
 
 <span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>BlockPerEra: BlockNumber = DAYS;
-    <span class="kw">pub const </span>RegisterDeposit: Balance = <span class="number">1000 </span>* ASTR;
-    <span class="kw">pub const </span>MaxNumberOfStakersPerContract: u32 = <span class="number">16384</span>;
     <span class="kw">pub const </span>MinimumStakingAmount: Balance = <span class="number">500 </span>* ASTR;
-    <span class="kw">pub const </span>MinimumRemainingAmount: Balance = ASTR;
-    <span class="kw">pub const </span>MaxEraStakeValues: u32 = <span class="number">5</span>;
-    <span class="kw">pub const </span>MaxUnlockingChunks: u32 = <span class="number">4</span>;
-    <span class="kw">pub const </span>UnbondingPeriod: u32 = <span class="number">10</span>;
-}
-
-<span class="kw">impl </span>pallet_dapps_staking::Config <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>Currency = Balances;
-    <span class="kw">type </span>BlockPerEra = BlockPerEra;
-    <span class="kw">type </span>SmartContract = SmartContract&lt;AccountId&gt;;
-    <span class="kw">type </span>RegisterDeposit = RegisterDeposit;
-    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>WeightInfo = pallet_dapps_staking::weights::SubstrateWeight&lt;Runtime&gt;;
-    <span class="kw">type </span>MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
-    <span class="kw">type </span>MinimumStakingAmount = MinimumStakingAmount;
-    <span class="kw">type </span>PalletId = DappsStakingPalletId;
-    <span class="kw">type </span>MaxUnlockingChunks = MaxUnlockingChunks;
-    <span class="kw">type </span>UnbondingPeriod = UnbondingPeriod;
-    <span class="kw">type </span>MinimumRemainingAmount = MinimumRemainingAmount;
-    <span class="kw">type </span>MaxEraStakeValues = MaxEraStakeValues;
-    <span class="comment">// Not allowed on Astar yet
-    </span><span class="kw">type </span>UnregisteredDappRewardRetention = ConstU32&lt;{ u32::MAX }&gt;;
-    <span class="comment">// Needed so benchmark can use the pallets extrinsics
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
-    </span><span class="kw">type </span>ForcePalletDisabled = ConstBool&lt;<span class="bool-val">false</span>&gt;;
-    <span class="attr">#[cfg(not(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
-    </span><span class="kw">type </span>ForcePalletDisabled = ConstBool&lt;<span class="bool-val">true</span>&gt;;
-    <span class="comment">// Fee required to claim rewards for another account. Calculated &amp; tested manually.
-    </span><span class="kw">type </span>DelegateClaimFee = ConstU128&lt;<span class="number">057_950_348_114_187_155</span>&gt;;
 }
 
 <span class="kw">impl </span>pallet_static_price_provider::Config <span class="kw">for </span>Runtime {
@@ -2620,9 +2564,9 @@
     <span class="kw">type </span>Debug = ();
     <span class="kw">type </span>Environment = ();
     <span class="kw">type </span>Migrations = (
-        pallet_contracts::migration::v12::Migration&lt;Runtime, Balances&gt;,
+        astar_primitives::migrations::contract_v12::Migration&lt;Runtime, Balances&gt;,
         pallet_contracts::migration::v13::Migration&lt;Runtime&gt;,
-        pallet_contracts::migration::v14::Migration&lt;Runtime, Balances&gt;,
+        astar_primitives::migrations::contract_v14::Migration&lt;Runtime, Balances&gt;,
         pallet_contracts::migration::v15::Migration&lt;Runtime&gt;,
     );
 }
@@ -3023,8 +2967,6 @@
         </span>StaticPriceProvider: pallet_static_price_provider = <span class="number">253</span>,
         <span class="comment">// To be removed &amp; cleaned up after migration has been finished
         </span>DappStakingMigration: pallet_dapp_staking_migration = <span class="number">254</span>,
-        <span class="comment">// Legacy dApps staking v2, to be removed after migration has been finished
-        </span>DappsStaking: pallet_dapps_staking = <span class="number">255</span>,
     }
 );
 
@@ -3062,10 +3004,21 @@
     Migrations,
 &gt;;
 
+<span class="macro">parameter_types! </span>{
+    <span class="kw">pub const </span>DappStakingMigrationName: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;DappStakingMigration&quot;</span>;
+}
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-</span><span class="kw">pub type </span>Migrations = (pallet_contracts::Migration&lt;Runtime&gt;,);
+</span><span class="kw">pub type </span>Migrations = (
+    <span class="comment">// Part of astar-83, need to first cleanup old storage before re-using the pallet
+    </span>frame_support::migrations::RemovePallet&lt;
+        DappStakingMigrationName,
+        &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight,
+    &gt;,
+    <span class="comment">// Part of astar-83
+    </span>(pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade&lt;Runtime&gt;,),
+);
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
@@ -3142,7 +3095,6 @@
         [pallet_assets, Assets]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapps_staking, DappsStaking]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_dapp_staking_migration, DappStakingMigration]

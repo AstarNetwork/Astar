@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["contract_v12","contract_v12_fix","contract_v14"],"struct":["EnsurePalletVersion","ForceContractsVersion"]};

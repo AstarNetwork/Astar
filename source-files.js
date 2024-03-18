@@ -1,7 +1,7 @@
 var sourcesIndex = JSON.parse('{\
 "assets_chain_extension_types":["",[],["lib.rs"]],\
 "astar_collator":["",[["local",[],["chain_spec.rs","mod.rs","service.rs"]],["parachain",[["chain_spec",[],["astar.rs","mod.rs","shibuya.rs","shiden.rs"]]],["mod.rs","service.rs","shell_upgrade.rs"]]],["cli.rs","command.rs","evm_tracing_types.rs","lib.rs","rpc.rs"]],\
-"astar_primitives":["",[["xcm",[],["mod.rs"]]],["dapp_staking.rs","ethereum_checked.rs","evm.rs","lib.rs","oracle.rs","precompiles.rs","testing.rs","xvm.rs"]],\
+"astar_primitives":["",[["migrations",[],["contract_v12.rs","contract_v12_fix.rs","contract_v14.rs","mod.rs"]],["xcm",[],["mod.rs"]]],["dapp_staking.rs","ethereum_checked.rs","evm.rs","lib.rs","oracle.rs","precompiles.rs","testing.rs","xvm.rs"]],\
 "astar_runtime":["",[["weights",[],["mod.rs","pallet_assets.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["lib.rs","precompiles.rs","xcm_config.rs"]],\
 "astar_test_utils":["",[],["lib.rs"]],\
 "astar_xcm_benchmarks":["",[["fungible",[],["mod.rs"]],["generic",[],["mod.rs"]]],["lib.rs"]],\

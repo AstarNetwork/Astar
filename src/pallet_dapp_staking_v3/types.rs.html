@@ -1726,6 +1726,100 @@
 <a href="#1726" id="1726">1726</a>
 <a href="#1727" id="1727">1727</a>
 <a href="#1728" id="1728">1728</a>
+<a href="#1729" id="1729">1729</a>
+<a href="#1730" id="1730">1730</a>
+<a href="#1731" id="1731">1731</a>
+<a href="#1732" id="1732">1732</a>
+<a href="#1733" id="1733">1733</a>
+<a href="#1734" id="1734">1734</a>
+<a href="#1735" id="1735">1735</a>
+<a href="#1736" id="1736">1736</a>
+<a href="#1737" id="1737">1737</a>
+<a href="#1738" id="1738">1738</a>
+<a href="#1739" id="1739">1739</a>
+<a href="#1740" id="1740">1740</a>
+<a href="#1741" id="1741">1741</a>
+<a href="#1742" id="1742">1742</a>
+<a href="#1743" id="1743">1743</a>
+<a href="#1744" id="1744">1744</a>
+<a href="#1745" id="1745">1745</a>
+<a href="#1746" id="1746">1746</a>
+<a href="#1747" id="1747">1747</a>
+<a href="#1748" id="1748">1748</a>
+<a href="#1749" id="1749">1749</a>
+<a href="#1750" id="1750">1750</a>
+<a href="#1751" id="1751">1751</a>
+<a href="#1752" id="1752">1752</a>
+<a href="#1753" id="1753">1753</a>
+<a href="#1754" id="1754">1754</a>
+<a href="#1755" id="1755">1755</a>
+<a href="#1756" id="1756">1756</a>
+<a href="#1757" id="1757">1757</a>
+<a href="#1758" id="1758">1758</a>
+<a href="#1759" id="1759">1759</a>
+<a href="#1760" id="1760">1760</a>
+<a href="#1761" id="1761">1761</a>
+<a href="#1762" id="1762">1762</a>
+<a href="#1763" id="1763">1763</a>
+<a href="#1764" id="1764">1764</a>
+<a href="#1765" id="1765">1765</a>
+<a href="#1766" id="1766">1766</a>
+<a href="#1767" id="1767">1767</a>
+<a href="#1768" id="1768">1768</a>
+<a href="#1769" id="1769">1769</a>
+<a href="#1770" id="1770">1770</a>
+<a href="#1771" id="1771">1771</a>
+<a href="#1772" id="1772">1772</a>
+<a href="#1773" id="1773">1773</a>
+<a href="#1774" id="1774">1774</a>
+<a href="#1775" id="1775">1775</a>
+<a href="#1776" id="1776">1776</a>
+<a href="#1777" id="1777">1777</a>
+<a href="#1778" id="1778">1778</a>
+<a href="#1779" id="1779">1779</a>
+<a href="#1780" id="1780">1780</a>
+<a href="#1781" id="1781">1781</a>
+<a href="#1782" id="1782">1782</a>
+<a href="#1783" id="1783">1783</a>
+<a href="#1784" id="1784">1784</a>
+<a href="#1785" id="1785">1785</a>
+<a href="#1786" id="1786">1786</a>
+<a href="#1787" id="1787">1787</a>
+<a href="#1788" id="1788">1788</a>
+<a href="#1789" id="1789">1789</a>
+<a href="#1790" id="1790">1790</a>
+<a href="#1791" id="1791">1791</a>
+<a href="#1792" id="1792">1792</a>
+<a href="#1793" id="1793">1793</a>
+<a href="#1794" id="1794">1794</a>
+<a href="#1795" id="1795">1795</a>
+<a href="#1796" id="1796">1796</a>
+<a href="#1797" id="1797">1797</a>
+<a href="#1798" id="1798">1798</a>
+<a href="#1799" id="1799">1799</a>
+<a href="#1800" id="1800">1800</a>
+<a href="#1801" id="1801">1801</a>
+<a href="#1802" id="1802">1802</a>
+<a href="#1803" id="1803">1803</a>
+<a href="#1804" id="1804">1804</a>
+<a href="#1805" id="1805">1805</a>
+<a href="#1806" id="1806">1806</a>
+<a href="#1807" id="1807">1807</a>
+<a href="#1808" id="1808">1808</a>
+<a href="#1809" id="1809">1809</a>
+<a href="#1810" id="1810">1810</a>
+<a href="#1811" id="1811">1811</a>
+<a href="#1812" id="1812">1812</a>
+<a href="#1813" id="1813">1813</a>
+<a href="#1814" id="1814">1814</a>
+<a href="#1815" id="1815">1815</a>
+<a href="#1816" id="1816">1816</a>
+<a href="#1817" id="1817">1817</a>
+<a href="#1818" id="1818">1818</a>
+<a href="#1819" id="1819">1819</a>
+<a href="#1820" id="1820">1820</a>
+<a href="#1821" id="1821">1821</a>
+<a href="#1822" id="1822">1822</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2358,7 +2452,7 @@
             <span class="kw">return </span><span class="prelude-val">Err</span>(AccountLedgerError::UnstakeAmountLargerThanStake);
         }
 
-        <span class="self">self</span>.staked.subtract(amount, current_period_info.subperiod);
+        <span class="self">self</span>.staked.subtract(amount);
 
         <span class="comment">// Convenience cleanup
         </span><span class="kw">if </span><span class="self">self</span>.staked.is_empty() {
@@ -2366,7 +2460,7 @@
         }
 
         <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>stake_amount) = <span class="self">self</span>.staked_future {
-            stake_amount.subtract(amount, current_period_info.subperiod);
+            stake_amount.subtract(amount);
 
             <span class="self">self</span>.staked_future = <span class="kw">if </span>stake_amount.is_empty() {
                 <span class="prelude-val">None
@@ -2586,29 +2680,22 @@
         }
     }
 
-    <span class="doccomment">/// Unstake the specified `amount` for the specified `subperiod`.
+    <span class="doccomment">/// Unstake the specified `amount`.
     ///
-    /// In case subperiod is `Voting`, the amount is subtracted from the voting subperiod.
-    ///
-    /// In case subperiod is `Build&amp;Earn`, the amount is first subtracted from the
-    /// build&amp;earn amount, and any rollover is subtracted from the voting subperiod.
-    </span><span class="kw">pub fn </span>subtract(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: Balance, subperiod: Subperiod) {
-        <span class="kw">match </span>subperiod {
-            Subperiod::Voting =&gt; <span class="self">self</span>.voting.saturating_reduce(amount),
-            Subperiod::BuildAndEarn =&gt; {
-                <span class="kw">if </span><span class="self">self</span>.build_and_earn &gt;= amount {
-                    <span class="self">self</span>.build_and_earn.saturating_reduce(amount);
-                } <span class="kw">else </span>{
-                    <span class="comment">// Rollover from build&amp;earn to voting, is guaranteed to be larger than zero due to previous check
-                    // E.g. voting = 10, build&amp;earn = 5, amount = 7
-                    // underflow = build&amp;earn - amount = 5 - 7 = -2
-                    // voting = 10 - 2 = 8
-                    // build&amp;earn = 0
-                    </span><span class="kw">let </span>remainder = amount.saturating_sub(<span class="self">self</span>.build_and_earn);
-                    <span class="self">self</span>.build_and_earn = Balance::zero();
-                    <span class="self">self</span>.voting.saturating_reduce(remainder);
-                }
-            }
+    /// Attempt to subtract from `Build&amp;Earn` subperiod amount is done first. Any rollover is subtracted from
+    /// the `Voting` subperiod amount.
+    </span><span class="kw">pub fn </span>subtract(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: Balance) {
+        <span class="kw">if </span><span class="self">self</span>.build_and_earn &gt;= amount {
+            <span class="self">self</span>.build_and_earn.saturating_reduce(amount);
+        } <span class="kw">else </span>{
+            <span class="comment">// Rollover from build&amp;earn to voting, is guaranteed to be larger than zero due to previous check
+            // E.g. voting = 10, build&amp;earn = 5, amount = 7
+            // underflow = build&amp;earn - amount = 5 - 7 = -2
+            // voting = 10 - 2 = 8
+            // build&amp;earn = 0
+            </span><span class="kw">let </span>remainder = amount.saturating_sub(<span class="self">self</span>.build_and_earn);
+            <span class="self">self</span>.build_and_earn = Balance::zero();
+            <span class="self">self</span>.voting.saturating_reduce(remainder);
         }
     }
 }
@@ -2652,10 +2739,10 @@
         <span class="self">self</span>.next_stake_amount.add(amount, subperiod);
     }
 
-    <span class="doccomment">/// Subtract the specified `amount` from the appropriate stake amount, based on the `Subperiod`.
-    </span><span class="kw">pub fn </span>unstake_amount(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: Balance, subperiod: Subperiod) {
-        <span class="self">self</span>.current_stake_amount.subtract(amount, subperiod);
-        <span class="self">self</span>.next_stake_amount.subtract(amount, subperiod);
+    <span class="doccomment">/// Subtract the specified `amount` from the appropriate stake amount.
+    </span><span class="kw">pub fn </span>unstake_amount(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: Balance) {
+        <span class="self">self</span>.current_stake_amount.subtract(amount);
+        <span class="self">self</span>.next_stake_amount.subtract(amount);
     }
 
     <span class="doccomment">/// Total staked amount in this era.
@@ -2706,10 +2793,12 @@
 /// Keeps track of amount staked in the &#39;voting subperiod&#39;, as well as &#39;build&amp;earn subperiod&#39;.
 </span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 </span><span class="kw">pub struct </span>SingularStakingInfo {
+    <span class="doccomment">/// Amount staked before, if anything.
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) previous_staked: StakeAmount,
     <span class="doccomment">/// Staked amount
-    </span>staked: StakeAmount,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) staked: StakeAmount,
     <span class="doccomment">/// Indicates whether a staker is a loyal staker or not.
-    </span>loyal_staker: bool,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) loyal_staker: bool,
 }
 
 <span class="kw">impl </span>SingularStakingInfo {
@@ -2721,22 +2810,41 @@
     /// `subperiod` - subperiod during which this entry is created.
     </span><span class="kw">pub fn </span>new(period: PeriodNumber, subperiod: Subperiod) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
+            previous_staked: Default::default(),
             staked: StakeAmount {
-                voting: Balance::zero(),
-                build_and_earn: Balance::zero(),
-                era: <span class="number">0</span>,
                 period,
+                ..Default::default()
             },
             <span class="comment">// Loyalty staking is only possible if stake is first made during the voting subperiod.
             </span>loyal_staker: subperiod == Subperiod::Voting,
         }
     }
 
+    <span class="doccomment">/// TODO: remove this after migration to v6 has been done.
+    </span><span class="kw">pub fn </span>new_migration(
+        previous_staked: StakeAmount,
+        staked: StakeAmount,
+        loyal_staker: bool,
+    ) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            previous_staked,
+            staked,
+            loyal_staker,
+        }
+    }
+
     <span class="doccomment">/// Stake the specified amount on the contract, for the specified subperiod.
     </span><span class="kw">pub fn </span>stake(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: Balance, current_era: EraNumber, subperiod: Subperiod) {
-        <span class="self">self</span>.staked.add(amount, subperiod);
+        <span class="comment">// Keep the previous stake amount for future reference
+        </span><span class="self">self</span>.previous_staked = <span class="self">self</span>.staked;
+        <span class="self">self</span>.previous_staked.era = current_era;
+        <span class="kw">if </span><span class="self">self</span>.previous_staked.total().is_zero() {
+            <span class="self">self</span>.previous_staked = Default::default();
+        }
+
         <span class="comment">// Stake is only valid from the next era so we keep it consistent here
-        </span><span class="self">self</span>.staked.era = current_era.saturating_add(<span class="number">1</span>);
+        </span><span class="self">self</span>.staked.add(amount, subperiod);
+        <span class="self">self</span>.staked.era = current_era.saturating_add(<span class="number">1</span>);
     }
 
     <span class="doccomment">/// Unstakes some of the specified amount from the contract.
@@ -2744,32 +2852,94 @@
     /// In case the `amount` being unstaked is larger than the amount staked in the `Voting` subperiod,
     /// and `Voting` subperiod has passed, this will remove the _loyalty_ flag from the staker.
     ///
-    /// Returns the amount that was unstaked from the `Voting` subperiod stake, and from the `Build&amp;Earn` subperiod stake.
+    /// Returns a vector of `(era, amount)` pairs, where `era` is the era in which the unstake happened,
+    /// and the amount is the corresponding amount.
+    ///
+    /// ### NOTE
+    /// `SingularStakingInfo` always aims to keep track of the staked amount between two consecutive eras.
+    /// This means that the returned value will at most cover two eras - the last staked era, and the one before it.
+    ///
+    /// Last staked era can be the current era, or the era after.
     </span><span class="kw">pub fn </span>unstake(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         amount: Balance,
         current_era: EraNumber,
         subperiod: Subperiod,
-    ) -&gt; (Balance, Balance) {
-        <span class="kw">let </span>snapshot = <span class="self">self</span>.staked;
+    ) -&gt; Vec&lt;(EraNumber, Balance)&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>result = Vec::new();
+        <span class="kw">let </span>staked_snapshot = <span class="self">self</span>.staked;
 
-        <span class="self">self</span>.staked.subtract(amount, subperiod);
-        <span class="comment">// Keep the latest era for which the entry is valid
-        </span><span class="self">self</span>.staked.era = <span class="self">self</span>.staked.era.max(current_era);
+        <span class="comment">// 1. Modify current staked amount, and update the result.
+        </span><span class="self">self</span>.staked.subtract(amount);
+        <span class="kw">let </span>unstaked_amount = staked_snapshot.total().saturating_sub(<span class="self">self</span>.staked.total());
+        <span class="self">self</span>.staked.era = <span class="self">self</span>.staked.era.max(current_era);
+        result.push((<span class="self">self</span>.staked.era, unstaked_amount));
 
-        <span class="self">self</span>.loyal_staker = <span class="self">self</span>.loyal_staker
+        <span class="comment">// 2. Update loyal staker flag accordingly.
+        </span><span class="self">self</span>.loyal_staker = <span class="self">self</span>.loyal_staker
             &amp;&amp; <span class="kw">match </span>subperiod {
                 Subperiod::Voting =&gt; !<span class="self">self</span>.staked.voting.is_zero(),
-                Subperiod::BuildAndEarn =&gt; <span class="self">self</span>.staked.voting == snapshot.voting,
+                Subperiod::BuildAndEarn =&gt; <span class="self">self</span>.staked.voting == staked_snapshot.voting,
             };
 
-        <span class="comment">// Amount that was unstaked
-        </span>(
-            snapshot.voting.saturating_sub(<span class="self">self</span>.staked.voting),
-            snapshot
-                .build_and_earn
-                .saturating_sub(<span class="self">self</span>.staked.build_and_earn),
-        )
+        <span class="comment">// 3. Determine what was the previous staked amount.
+        // This is done by simply comparing where does the _previous era_ fit in the current context.
+        </span><span class="kw">let </span>previous_era = <span class="self">self</span>.staked.era.saturating_sub(<span class="number">1</span>);
+
+        <span class="self">self</span>.previous_staked = <span class="kw">if </span>staked_snapshot.era &lt;= previous_era {
+            <span class="kw">let </span><span class="kw-2">mut </span>previous_staked = staked_snapshot;
+            previous_staked.era = previous_era;
+            previous_staked
+        } <span class="kw">else if </span>!<span class="self">self</span>.previous_staked.is_empty() &amp;&amp; <span class="self">self</span>.previous_staked.era &lt;= previous_era {
+            <span class="kw">let </span><span class="kw-2">mut </span>previous_staked = <span class="self">self</span>.previous_staked;
+            previous_staked.era = previous_era;
+            previous_staked
+        } <span class="kw">else </span>{
+            Default::default()
+        };
+
+        <span class="comment">// 4. Calculate how much is being unstaked from the previous staked era entry, in case its era equals the current era.
+        //
+        // Simples way to explain this is via an example.
+        // Let&#39;s assume a simplification where stake amount entries are in `(era, amount)` format.
+        //
+        // a. Values: previous_staked: **(2, 10)**, staked: **(3, 15)**
+        // b. User calls unstake during **era 2**, and unstakes amount **6**.
+        //    Clearly some amount was staked during era 2, which resulted in era 3 stake being increased by 5.
+        //    Calling unstake immediately in the same era should not necessarily reduce current era stake amount.
+        //    This should be allowed to happen only if the unstaked amount is larger than the difference between the staked amount of two eras.
+        // c. Values: previous_staked: **(2, 9)**, staked: **(3, 9)**
+        //
+        // An alternative scenario, where user calls unstake during **era 2**, and unstakes amount **4**.
+        // c. Values: previous_staked: **(2, 10)**, staked: **(3, 11)**
+        //
+        // Note that the unstake operation didn&#39;t chip away from the current era, only the next one.
+        </span><span class="kw">if </span><span class="self">self</span>.previous_staked.era == current_era {
+            <span class="kw">let </span>maybe_stake_delta = staked_snapshot
+                .total()
+                .checked_sub(<span class="self">self</span>.previous_staked.total());
+            <span class="kw">match </span>maybe_stake_delta {
+                <span class="prelude-val">Some</span>(stake_delta) <span class="kw">if </span>unstaked_amount &gt; stake_delta =&gt; {
+                    <span class="kw">let </span>overflow_amount = unstaked_amount - stake_delta;
+                    <span class="self">self</span>.previous_staked.subtract(overflow_amount);
+
+                    result.insert(<span class="number">0</span>, (<span class="self">self</span>.previous_staked.era, overflow_amount));
+                }
+                <span class="kw">_ </span>=&gt; {}
+            }
+        }
+
+        <span class="comment">// 5. Convenience cleanup
+        </span><span class="kw">if </span><span class="self">self</span>.previous_staked.is_empty() {
+            <span class="self">self</span>.previous_staked = Default::default();
+        }
+        <span class="kw">if </span><span class="self">self</span>.staked.is_empty() {
+            <span class="self">self</span>.staked = Default::default();
+            <span class="comment">// No longer relevant.
+            </span><span class="self">self</span>.previous_staked = Default::default();
+        }
+
+        result
     }
 
     <span class="doccomment">/// Total staked on the contract by the user. Both subperiod stakes are included.
@@ -2927,9 +3097,16 @@
         }
     }
 
-    <span class="doccomment">/// Unstake the specified `amount` from the contract, for the specified `subperiod` and `era`.
-    </span><span class="kw">pub fn </span>unstake(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: Balance, period_info: PeriodInfo, current_era: EraNumber) {
-        <span class="comment">// First align entries - we only need to keep track of the current era, and the next one
+    <span class="doccomment">/// Unstake the specified `(era, amount)` pairs from the contract.
+    </span><span class="comment">// Important to account for the ongoing specified `subperiod` and `era` in order to align the entries.
+    </span><span class="kw">pub fn </span>unstake(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        era_and_amount_pairs: Vec&lt;(EraNumber, Balance)&gt;,
+        period_info: PeriodInfo,
+        current_era: EraNumber,
+    ) {
+        <span class="comment">// 1. Entry alignment
+        // We only need to keep track of the current era, and the next one.
         </span><span class="kw">match </span><span class="self">self</span>.staked_future {
             <span class="comment">// Future entry exists, but it covers current or older era.
             </span><span class="prelude-val">Some</span>(stake_amount)
@@ -2947,13 +3124,24 @@
             <span class="self">self</span>.staked.era = current_era;
         }
 
-        <span class="comment">// Subtract both amounts
-        </span><span class="self">self</span>.staked.subtract(amount, period_info.subperiod);
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(stake_amount) = <span class="self">self</span>.staked_future.as_mut() {
-            stake_amount.subtract(amount, period_info.subperiod);
+        <span class="comment">// 2. Value updates - only after alignment
+
+        </span><span class="kw">for </span>(era, amount) <span class="kw">in </span>era_and_amount_pairs {
+            <span class="kw">if </span><span class="self">self</span>.staked.era == era {
+                <span class="self">self</span>.staked.subtract(amount);
+                <span class="kw">continue</span>;
+            }
+
+            <span class="kw">match </span><span class="self">self</span>.staked_future.as_mut() {
+                <span class="prelude-val">Some</span>(future_stake_amount) <span class="kw">if </span>future_stake_amount.era == era =&gt; {
+                    future_stake_amount.subtract(amount);
+                }
+                <span class="comment">// Otherwise do nothing
+                </span><span class="kw">_ </span>=&gt; (),
+            }
         }
 
-        <span class="comment">// Convenience cleanup
+        <span class="comment">// 3. Convenience cleanup
         </span><span class="kw">if </span><span class="self">self</span>.staked.is_empty() {
             <span class="self">self</span>.staked = Default::default();
         }

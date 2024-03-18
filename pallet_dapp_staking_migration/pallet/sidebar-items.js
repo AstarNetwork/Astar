@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Call","Event","MigrationState"],"mod":["dispatchables","storage_types"],"struct":["DappStakingMigrationHandler","Pallet"],"trait":["Config"],"type":["MigrationStateStorage","Module"]};
+window.SIDEBAR_ITEMS = {"enum":["Call","Event","MigrationState"],"mod":["dispatchables","storage_types"],"struct":["Pallet","SingularStakingInfoTranslationUpgrade"],"trait":["Config"],"type":["MigrationStateStorage","Module"]};

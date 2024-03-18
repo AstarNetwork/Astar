@@ -2057,6 +2057,13 @@
 <a href="#2057" id="2057">2057</a>
 <a href="#2058" id="2058">2058</a>
 <a href="#2059" id="2059">2059</a>
+<a href="#2060" id="2060">2060</a>
+<a href="#2061" id="2061">2061</a>
+<a href="#2062" id="2062">2062</a>
+<a href="#2063" id="2063">2063</a>
+<a href="#2064" id="2064">2064</a>
+<a href="#2065" id="2065">2065</a>
+<a href="#2066" id="2066">2066</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2149,7 +2156,7 @@
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
     <span class="doccomment">/// The current storage version.
-    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">5</span>);
+    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">6</span>);
 
     <span class="attr">#[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -3169,34 +3176,37 @@
 
             <span class="comment">// 1.
             // Update `StakerInfo` storage with the reduced stake amount on the specified contract.
-            </span><span class="kw">let </span>(new_staking_info, amount) = <span class="kw">match </span>StakerInfo::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract) {
-                <span class="prelude-val">Some</span>(<span class="kw-2">mut </span>staking_info) =&gt; {
-                    <span class="macro">ensure!</span>(
-                        staking_info.period_number() == protocol_state.period_number(),
-                        Error::&lt;T&gt;::UnstakeFromPastPeriod
-                    );
-                    <span class="macro">ensure!</span>(
-                        staking_info.total_staked_amount() &gt;= amount,
-                        Error::&lt;T&gt;::UnstakeAmountTooLarge
-                    );
+            </span><span class="kw">let </span>(new_staking_info, amount, era_and_amount_pairs) =
+                <span class="kw">match </span>StakerInfo::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract) {
+                    <span class="prelude-val">Some</span>(<span class="kw-2">mut </span>staking_info) =&gt; {
+                        <span class="macro">ensure!</span>(
+                            staking_info.period_number() == protocol_state.period_number(),
+                            Error::&lt;T&gt;::UnstakeFromPastPeriod
+                        );
+                        <span class="macro">ensure!</span>(
+                            staking_info.total_staked_amount() &gt;= amount,
+                            Error::&lt;T&gt;::UnstakeAmountTooLarge
+                        );
 
-                    <span class="comment">// If unstaking would take the total staked amount below the minimum required value,
-                    // unstake everything.
-                    </span><span class="kw">let </span>amount = <span class="kw">if </span>staking_info.total_staked_amount().saturating_sub(amount)
-                        &lt; T::MinimumStakeAmount::get()
-                    {
-                        staking_info.total_staked_amount()
-                    } <span class="kw">else </span>{
-                        amount
-                    };
+                        <span class="comment">// If unstaking would take the total staked amount below the minimum required value,
+                        // unstake everything.
+                        </span><span class="kw">let </span>amount = <span class="kw">if </span>staking_info.total_staked_amount().saturating_sub(amount)
+                            &lt; T::MinimumStakeAmount::get()
+                        {
+                            staking_info.total_staked_amount()
+                        } <span class="kw">else </span>{
+                            amount
+                        };
 
-                    staking_info.unstake(amount, current_era, protocol_state.subperiod());
-                    (staking_info, amount)
-                }
-                <span class="prelude-val">None </span>=&gt; {
-                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NoStakingInfo.into());
-                }
-            };
+                        <span class="kw">let </span>era_and_amount_pairs =
+                            staking_info.unstake(amount, current_era, protocol_state.subperiod());
+
+                        (staking_info, amount, era_and_amount_pairs)
+                    }
+                    <span class="prelude-val">None </span>=&gt; {
+                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NoStakingInfo.into());
+                    }
+                };
 
             <span class="comment">// 2.
             // Reduce stake amount
@@ -3216,12 +3226,16 @@
             <span class="comment">// 3.
             // Update `ContractStake` storage with the reduced stake amount on the specified contract.
             </span><span class="kw">let </span><span class="kw-2">mut </span>contract_stake_info = ContractStake::&lt;T&gt;::get(<span class="kw-2">&amp;</span>dapp_info.id);
-            contract_stake_info.unstake(amount, protocol_state.period_info, current_era);
+            contract_stake_info.unstake(
+                era_and_amount_pairs,
+                protocol_state.period_info,
+                current_era,
+            );
 
             <span class="comment">// 4.
             // Update total staked amount for the next era.
             </span>CurrentEraInfo::&lt;T&gt;::mutate(|era_info| {
-                era_info.unstake_amount(amount, protocol_state.subperiod());
+                era_info.unstake_amount(amount);
             });
 
             <span class="comment">// 5.
@@ -3510,7 +3524,7 @@
             // This means &#39;fake&#39; stake total amount has been kept until now, even though contract was unregistered.
             // Although strange, it&#39;s been requested to keep it like this from the team.
             </span>CurrentEraInfo::&lt;T&gt;::mutate(|era_info| {
-                era_info.unstake_amount(amount, protocol_state.subperiod());
+                era_info.unstake_amount(amount);
             });
 
             <span class="comment">// Update remaining storage entries
