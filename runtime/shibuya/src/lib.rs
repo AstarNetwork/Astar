@@ -713,7 +713,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = (astar_primitives::migrations::contract_v12_fix::Migration<Runtime>,);
+    type Migrations = ();
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -1374,6 +1374,7 @@ pub type Executive = frame_executive::Executive<
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations =
+    // part of shibuya-125
     (pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,);
 
 type EventRecord = frame_system::EventRecord<

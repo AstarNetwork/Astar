@@ -680,12 +680,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = (
-        astar_primitives::migrations::contract_v12::Migration<Runtime, Balances>,
-        pallet_contracts::migration::v13::Migration<Runtime>,
-        astar_primitives::migrations::contract_v14::Migration<Runtime, Balances>,
-        pallet_contracts::migration::v15::Migration<Runtime>,
-    );
+    type Migrations = ();
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.

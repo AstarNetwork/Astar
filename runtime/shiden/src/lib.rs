@@ -677,7 +677,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = (astar_primitives::migrations::contract_v12_fix::Migration<Runtime>,);
+    type Migrations = ();
 }
 
 parameter_types! {
