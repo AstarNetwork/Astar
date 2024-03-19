@@ -173,7 +173,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 124,
+    spec_version: 125,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -713,7 +713,7 @@ impl pallet_contracts::Config for Runtime {
     type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     type Debug = ();
     type Environment = ();
-    type Migrations = (astar_primitives::migrations::contract_v12_fix::Migration<Runtime>,);
+    type Migrations = ();
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
