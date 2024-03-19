@@ -1876,11 +1876,6 @@
 <a href="#1876" id="1876">1876</a>
 <a href="#1877" id="1877">1877</a>
 <a href="#1878" id="1878">1878</a>
-<a href="#1879" id="1879">1879</a>
-<a href="#1880" id="1880">1880</a>
-<a href="#1881" id="1881">1881</a>
-<a href="#1882" id="1882">1882</a>
-<a href="#1883" id="1883">1883</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2031,7 +2026,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">82</span>,
+    spec_version: <span class="number">83</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">2</span>,
@@ -2563,12 +2558,7 @@
     <span class="kw">type </span>CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
     <span class="kw">type </span>Debug = ();
     <span class="kw">type </span>Environment = ();
-    <span class="kw">type </span>Migrations = (
-        astar_primitives::migrations::contract_v12::Migration&lt;Runtime, Balances&gt;,
-        pallet_contracts::migration::v13::Migration&lt;Runtime&gt;,
-        astar_primitives::migrations::contract_v14::Migration&lt;Runtime, Balances&gt;,
-        pallet_contracts::migration::v15::Migration&lt;Runtime&gt;,
-    );
+    <span class="kw">type </span>Migrations = ();
 }
 
 <span class="comment">// These values are based on the Astar 2.0 Tokenomics Modeling report.
