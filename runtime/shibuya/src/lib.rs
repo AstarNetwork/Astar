@@ -423,7 +423,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type NativePriceProvider = StaticPriceProvider;
+    type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
