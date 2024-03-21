@@ -541,12 +541,12 @@
 </span><span class="kw">pub struct </span>SafeCallFilter;
 <span class="kw">impl </span>SafeCallFilter {
     <span class="comment">// 1. RuntimeCall::EVM(..) &amp; RuntimeCall::Ethereum(..) have to be prohibited since we cannot measure PoV size properly
-    // 2. RuntimeCall::Contracts(..) can be allowed, but it hasn&#39;t been tested properly yet.
 
     </span><span class="doccomment">/// Checks whether the base (non-composite) call is allowed to be executed via `Transact` XCM instruction.
     </span><span class="kw">pub fn </span>allow_base_call(call: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
         <span class="kw">match </span>call {
             RuntimeCall::System(..)
+            | RuntimeCall::Contracts(..)
             | RuntimeCall::Identity(..)
             | RuntimeCall::Balances(..)
             | RuntimeCall::Vesting(..)
