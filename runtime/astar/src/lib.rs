@@ -1116,21 +1116,16 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+use astar_primitives::oracle::CurrencyAmount;
 parameter_types! {
-    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
+    // Keep it exactly the same as before
+    pub const InitPrice: CurrencyAmount = CurrencyAmount::from_rational(18, 100);
 }
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    // Part of astar-83, need to first cleanup old storage before re-using the pallet
-    frame_support::migrations::RemovePallet<
-        DappStakingMigrationName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    // Part of astar-83
-    (pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,),
-);
+pub type Migrations = (pallet_static_price_provider::ActivePriceUpdate<Runtime, InitPrice>,);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

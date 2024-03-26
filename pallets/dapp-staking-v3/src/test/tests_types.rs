@@ -18,7 +18,7 @@
 
 use astar_primitives::{dapp_staking::StandardTierSlots, Balance};
 use frame_support::assert_ok;
-use sp_arithmetic::fixed_point::FixedU64;
+use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::Permill;
 
 use crate::*;
@@ -2887,11 +2887,11 @@ fn tier_configuration_basic_tests() {
     assert!(init_config.is_valid(), "Init config must be valid!");
 
     // Create a new config, based on a new price
-    let high_price = FixedU64::from_rational(20, 100); // in production will be expressed in USD
+    let high_price = FixedU128::from_rational(20, 100); // in production will be expressed in USD
     let new_config = init_config.calculate_new(high_price, &params);
     assert!(new_config.is_valid());
 
-    let low_price = FixedU64::from_rational(1, 100); // in production will be expressed in USD
+    let low_price = FixedU128::from_rational(1, 100); // in production will be expressed in USD
     let new_config = init_config.calculate_new(low_price, &params);
     assert!(new_config.is_valid());
 

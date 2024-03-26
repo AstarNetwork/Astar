@@ -31,7 +31,7 @@ use frame_system::RawOrigin;
 use pallet_evm::{
     AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
 };
-use sp_arithmetic::{fixed_point::FixedU64, Permill};
+use sp_arithmetic::{fixed_point::FixedU128, Permill};
 use sp_core::{H160, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -186,8 +186,8 @@ type MockSmartContract = SmartContract<<Test as frame_system::Config>::AccountId
 
 pub struct DummyPriceProvider;
 impl PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU64 {
-        FixedU64::from_rational(1, 10)
+    fn average_price() -> FixedU128 {
+        FixedU128::from_rational(1, 10)
     }
 }
 

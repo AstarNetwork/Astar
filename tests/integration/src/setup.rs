@@ -29,7 +29,8 @@ pub use sp_io::hashing::keccak_256;
 pub use sp_runtime::{AccountId32, MultiAddress};
 
 pub use astar_primitives::{
-    dapp_staking::CycleConfiguration, evm::UnifiedAddressMapper, BlockNumber,
+    dapp_staking::CycleConfiguration, evm::UnifiedAddressMapper, oracle::CurrencyAmount,
+    BlockNumber,
 };
 
 #[cfg(feature = "shibuya")]
@@ -159,6 +160,8 @@ pub const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
 
 pub const INITIAL_AMOUNT: u128 = 100_000 * UNIT;
 
+pub const INIT_PRICE: CurrencyAmount = CurrencyAmount::from_rational(1, 10);
+
 pub type SystemError = frame_system::Error<Runtime>;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_dapp_staking_v3 as DappStakingCall;
@@ -191,6 +194,26 @@ impl ExtBuilder {
             balances: self.balances,
         }
         .assimilate_storage(&mut t)
+        .unwrap();
+
+        #[cfg(any(feature = "shibuya"))]
+        // Setup initial oracle members
+        <pallet_membership::GenesisConfig<Runtime, OracleMembershipInstance> as BuildStorage>::assimilate_storage(
+            &pallet_membership::GenesisConfig::<Runtime, OracleMembershipInstance> {
+                members: vec![ALICE, BOB].try_into().expect("Safe to assume at least 2 members are supported."),
+                ..Default::default()
+            },
+            &mut t)
+        .unwrap();
+
+        #[cfg(any(feature = "shibuya"))]
+        // Setup initial native currency price
+        <pallet_price_aggregator::GenesisConfig<Runtime> as BuildStorage>::assimilate_storage(
+            &pallet_price_aggregator::GenesisConfig::<Runtime> {
+                circular_buffer: vec![INIT_PRICE].try_into().unwrap(),
+            },
+            &mut t,
+        )
         .unwrap();
 
         // Needed to trigger initial inflation config setting.
@@ -241,6 +264,10 @@ pub fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
         let block_number = System::block_number();
         TransactionPayment::on_finalize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        Oracle::on_finalize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        PriceAggregator::on_finalize(block_number);
         DappStaking::on_finalize(block_number);
         Authorship::on_finalize(block_number);
         Session::on_finalize(block_number);
@@ -258,6 +285,10 @@ pub fn run_to_block(n: BlockNumber) {
         Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
         TransactionPayment::on_initialize(block_number);
         DappStaking::on_initialize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        Oracle::on_initialize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        PriceAggregator::on_initialize(block_number);
         Authorship::on_initialize(block_number);
         Aura::on_initialize(block_number);
         AuraExt::on_initialize(block_number);

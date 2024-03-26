@@ -33,7 +33,7 @@
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
 use frame_system::{ensure_root, pallet_prelude::*};
 pub use pallet::*;
-use sp_arithmetic::{fixed_point::FixedU64, traits::Zero, FixedPointNumber};
+use sp_arithmetic::{fixed_point::FixedU128, traits::Zero, FixedPointNumber};
 use sp_std::marker::PhantomData;
 
 use astar_primitives::oracle::PriceProvider;
@@ -49,7 +49,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -65,7 +65,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
         /// New static native currency price has been set.
-        PriceSet { price: FixedU64 },
+        PriceSet { price: FixedU128 },
     }
 
     #[pallet::error]
@@ -77,16 +77,16 @@ pub mod pallet {
     /// Default value handler for active price.
     /// This pallet is temporary and it's not worth bothering with genesis config.
     pub struct DefaultActivePrice;
-    impl Get<FixedU64> for DefaultActivePrice {
-        fn get() -> FixedU64 {
-            FixedU64::from_rational(1, 10)
+    impl Get<FixedU128> for DefaultActivePrice {
+        fn get() -> FixedU128 {
+            FixedU128::from_rational(1, 10)
         }
     }
 
     /// Current active native currency price.
     #[pallet::storage]
     #[pallet::whitelist_storage]
-    pub type ActivePrice<T: Config> = StorageValue<_, FixedU64, ValueQuery, DefaultActivePrice>;
+    pub type ActivePrice<T: Config> = StorageValue<_, FixedU128, ValueQuery, DefaultActivePrice>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -95,7 +95,7 @@ pub mod pallet {
         /// This is a temporary solution before oracle is implemented & operational.
         #[pallet::call_index(0)]
         #[pallet::weight(T::DbWeight::get().writes(1))]
-        pub fn force_set_price(origin: OriginFor<T>, price: FixedU64) -> DispatchResult {
+        pub fn force_set_price(origin: OriginFor<T>, price: FixedU128) -> DispatchResult {
             ensure_root(origin)?;
             ensure!(!price.is_zero(), Error::<T>::ZeroPrice);
 
@@ -108,23 +108,26 @@ pub mod pallet {
     }
 
     impl<T: Config> PriceProvider for Pallet<T> {
-        fn average_price() -> FixedU64 {
+        fn average_price() -> FixedU128 {
             ActivePrice::<T>::get()
         }
     }
 }
 
-/// `OnRuntimeUpgrade` logic for integrating this pallet into the live network.
-pub struct InitActivePrice<T, P>(PhantomData<(T, P)>);
-impl<T: Config, P: Get<FixedU64>> OnRuntimeUpgrade for InitActivePrice<T, P> {
+/// Used to update static price due to storage schema change.
+pub struct ActivePriceUpdate<T, P>(PhantomData<(T, P)>);
+impl<T: Config, P: Get<FixedU128>> OnRuntimeUpgrade for ActivePriceUpdate<T, P> {
     fn on_runtime_upgrade() -> Weight {
-        let init_price = P::get().max(FixedU64::from_rational(1, FixedU64::DIV.into()));
+        if Pallet::<T>::on_chain_storage_version() != 1 {
+            return T::DbWeight::get().reads(1);
+        }
 
+        let init_price = P::get().max(FixedU128::from_rational(1, FixedU128::DIV.into()));
         log::info!("Setting initial active price to {}", init_price);
         ActivePrice::<T>::put(init_price);
 
-        STORAGE_VERSION.put::<Pallet<T>>();
+        StorageVersion::new(2).put::<Pallet<T>>();
 
-        T::DbWeight::get().writes(2)
+        T::DbWeight::get().reads_writes(1, 2)
     }
 }

@@ -21,10 +21,12 @@ pallet-evm = { workspace = true }
 # frame dependencies
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+orml-oracle = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
+pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-utility = { workspace = true }
 sp-core = { workspace = true }
@@ -40,6 +42,7 @@ pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
 pallet-inflation = { workspace = true }
+pallet-price-aggregator = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 precompile-utils = { workspace = true }
 unified-accounts-chain-extension-types = { workspace = true }
