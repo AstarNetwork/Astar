@@ -21,15 +21,19 @@ use super::*;
 use fp_evm::FeeCalculator;
 use frame_benchmarking::v2::*;
 use frame_support::traits::Hooks;
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::*, RawOrigin};
+use sp_std::prelude::*;
 
-#[benchmarks]
+#[benchmarks(
+    where
+        BlockNumberFor<T>: From<u32>
+)]
 mod benchmarks {
     use super::*;
 
     #[benchmark]
     fn base_fee_per_gas_adjustment() {
-        let (first_block, second_block) = (T::BlockNumber::from(1u32), T::BlockNumber::from(2u32));
+        let (first_block, second_block) = (1u32.into(), 2u32.into());
 
         // Setup actions, should ensure some value is written to storage.
         Pallet::<T>::on_initialize(first_block);
@@ -65,7 +69,7 @@ mod benchmarks {
 
     #[benchmark]
     fn min_gas_price() {
-        let first_block = T::BlockNumber::from(1u32);
+        let first_block = 1u32.into();
 
         // Setup actions, should ensure some value is written to storage.
         Pallet::<T>::on_initialize(first_block);
@@ -91,7 +95,7 @@ mod benchmarks {
 #[cfg(test)]
 mod tests {
     use crate::mock;
-    use frame_support::sp_io::TestExternalities;
+    use sp_io::TestExternalities;
 
     pub fn new_test_ext() -> TestExternalities {
         mock::ExtBuilder::build()

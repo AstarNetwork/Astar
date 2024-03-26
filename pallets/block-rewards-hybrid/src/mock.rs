@@ -20,37 +20,29 @@ use crate::{self as pallet_block_reward, NegativeImbalanceOf};
 
 use frame_support::{
     construct_runtime, parameter_types,
-    sp_io::TestExternalities,
     traits::Currency,
     traits::{ConstU32, Get},
     weights::Weight,
     PalletId,
 };
-
 use sp_core::H256;
+use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
     traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
+    BuildStorage,
 };
 use sp_std::cell::RefCell;
 
 pub(crate) type AccountId = u64;
-pub(crate) type BlockNumber = u64;
 pub(crate) type Balance = u128;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 
 construct_runtime!(
-    pub struct TestRuntime
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub struct TestRuntime {
         System: frame_system,
         Balances: pallet_balances,
         Timestamp: pallet_timestamp,
@@ -69,14 +61,13 @@ impl frame_system::Config for TestRuntime {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -106,7 +97,7 @@ impl pallet_balances::Config for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
@@ -188,8 +179,8 @@ pub struct ExternalityBuilder;
 
 impl ExternalityBuilder {
     pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
+        let mut storage = frame_system::GenesisConfig::<TestRuntime>::default()
+            .build_storage()
             .unwrap();
 
         // This will cause some initial issuance

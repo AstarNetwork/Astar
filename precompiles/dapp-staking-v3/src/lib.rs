@@ -21,13 +21,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use fp_evm::PrecompileHandle;
+use frame_system::pallet_prelude::BlockNumberFor;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use parity_scale_codec::MaxEncodedLen;
 
 use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+    dispatch::{GetDispatchInfo, PostDispatchInfo},
     ensure,
-    traits::ConstU32,
+    traits::{ConstU32, IsType},
 };
 
 use pallet_evm::AddressMapping;
@@ -39,11 +40,11 @@ use precompile_utils::{
     },
 };
 use sp_core::{Get, H160, U256};
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{Dispatchable, Zero};
 use sp_std::{marker::PhantomData, prelude::*};
 extern crate alloc;
 
-use astar_primitives::{dapp_staking::SmartContractHandle, AccountId, Balance};
+use astar_primitives::{dapp_staking::SmartContractHandle, AccountId, Balance, BlockNumber};
 use pallet_dapp_staking_v3::{
     AccountLedgerFor, ActiveProtocolState, ContractStake, ContractStakeAmount, CurrentEraInfo,
     DAppInfoFor, EraInfo, EraRewardSpanFor, EraRewards, IntegratedDApps, Ledger,
@@ -117,6 +118,7 @@ where
     R: pallet_evm::Config
         + pallet_dapp_staking_v3::Config
         + frame_system::Config<AccountId = AccountId>,
+    BlockNumberFor<R>: IsType<BlockNumber>,
     <R::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<R::AccountId>>,
     R::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
     R::RuntimeCall: From<pallet_dapp_staking_v3::Call<R>>,

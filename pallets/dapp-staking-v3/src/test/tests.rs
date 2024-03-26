@@ -18,9 +18,9 @@
 
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, DAppId, EraRewards, Error, Event, ForcingType,
-    IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo, Subperiod,
-    TierConfig,
+    pallet::Config, ActiveProtocolState, ContractStake, DAppId, EraRewards, Error, Event,
+    ForcingType, IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo,
+    Subperiod, TierConfig,
 };
 
 use frame_support::{
@@ -2595,6 +2595,131 @@ fn stake_and_unstake_after_reward_claim_is_ok() {
 }
 
 #[test]
+fn stake_and_unstake_correctly_updates_staked_amounts() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+        let smart_contract_id = IntegratedDApps::<Test>::get(&smart_contract).unwrap().id;
+
+        // Lock & stake some amount by the first staker, and lock some amount by the second staker
+        let account_1 = 2;
+        let amount_1 = 50;
+        assert_lock(account_1, amount_1);
+        assert_stake(account_1, &smart_contract, amount_1);
+
+        let account_2 = 3;
+        let amount_2 = 10;
+        assert_lock(account_2, amount_2);
+
+        // 1st scenario: repeated stake & unstake in the `Voting` subperiod
+        let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
+
+        for _ in 0..20 {
+            assert_stake(account_2, &smart_contract, amount_2);
+            assert_unstake(account_2, &smart_contract, amount_2);
+        }
+
+        // Check that the staked amount for the upcoming era is same as before
+        let current_era = ActiveProtocolState::<Test>::get().era;
+        let period_number = ActiveProtocolState::<Test>::get().period_number();
+        assert_eq!(
+            contract_stake_snapshot
+                .get(current_era + 1, period_number)
+                .expect("Entry must exist."),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .get(current_era + 1, period_number)
+                .expect("Entry must exist."),
+            "Ongoing era staked amount must not change."
+        );
+
+        // 2nd scenario: repeated stake & unstake in the first era of the `Build&Earn` subperiod
+        advance_to_next_era();
+        let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
+
+        for _ in 0..20 {
+            assert_stake(account_2, &smart_contract, amount_2);
+            assert_unstake(account_2, &smart_contract, amount_2);
+        }
+
+        // Check that the contract stake snapshot staked amount is the same as before
+        let current_era = ActiveProtocolState::<Test>::get().era;
+        assert_eq!(
+            contract_stake_snapshot
+                .get(current_era, period_number)
+                .expect("Entry must exist."),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .get(current_era, period_number)
+                .expect("Entry must exist."),
+            "Ongoing era staked amount must not change."
+        );
+
+        assert_eq!(
+            contract_stake_snapshot
+                .get(current_era, period_number)
+                .expect("Entry must exist.")
+                .total(),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .get(current_era + 1, period_number)
+                .expect("Entry must exist.")
+                .total(),
+            "Ongoing era staked amount must be equal to the upcoming era stake."
+        );
+
+        // 3rd scenario: repeated stake & unstake in the second era of the `Build&Earn` subperiod
+        assert_stake(account_2, &smart_contract, amount_2);
+        assert_lock(account_2, amount_2);
+        advance_to_next_era();
+
+        let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
+
+        for _ in 0..20 {
+            assert_stake(account_2, &smart_contract, amount_2);
+            assert_unstake(account_2, &smart_contract, amount_2);
+        }
+
+        // Check that the contract stake snapshot staked amount is the same as before
+        let current_era = ActiveProtocolState::<Test>::get().era;
+        assert_eq!(
+            contract_stake_snapshot
+                .get(current_era, period_number)
+                .expect("Entry must exist."),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .get(current_era, period_number)
+                .expect("Entry must exist."),
+            "Ongoing era staked amount must not change."
+        );
+
+        // 4th scenario: Unstake with more than was staked for the next era
+        let delta = 5;
+        let amount_3 = amount_2 + delta;
+        assert_stake(account_2, &smart_contract, amount_2);
+
+        let contract_stake_snapshot = ContractStake::<Test>::get(&smart_contract_id);
+        for _ in 0..20 {
+            assert_unstake(account_2, &smart_contract, amount_3);
+            assert_stake(account_2, &smart_contract, amount_3);
+        }
+
+        // Check that the contract stake snapshot staked amount is the same as before
+        let current_era = ActiveProtocolState::<Test>::get().era;
+        assert_eq!(
+            contract_stake_snapshot
+                .get(current_era, period_number)
+                .expect("Entry must exist.")
+                .total(),
+            ContractStake::<Test>::get(&smart_contract_id)
+                .get(current_era, period_number)
+                .expect("Entry must exist.")
+                .total()
+                + delta,
+            "Ongoing era stake must be reduced by the `delta` amount."
+        );
+    })
+}
+
+#[test]
 fn stake_after_period_ends_with_max_staked_contracts() {
     ExtBuilder::build().execute_with(|| {
         let max_number_of_contracts: u32 = <Test as Config>::MaxNumberOfStakedContracts::get();
@@ -2765,8 +2890,9 @@ fn unregister_after_max_number_of_contracts_allows_register_again() {
 
 #[test]
 fn safeguard_on_by_default() {
-    let storage = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
+    use sp_runtime::BuildStorage;
+    let storage = frame_system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap();
 
     let mut ext = sp_io::TestExternalities::from(storage);

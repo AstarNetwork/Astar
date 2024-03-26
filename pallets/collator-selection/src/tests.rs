@@ -19,10 +19,10 @@ use crate as collator_selection;
 use crate::{mock::*, CandidateInfo, Error};
 use frame_support::{
     assert_noop, assert_ok,
-    traits::{Currency, GenesisBuild, OnInitialize},
+    traits::{Currency, OnInitialize},
 };
 use pallet_balances::Error as BalancesError;
-use sp_runtime::traits::BadOrigin;
+use sp_runtime::{traits::BadOrigin, BuildStorage};
 
 #[test]
 fn basic_setup_works() {
@@ -447,8 +447,8 @@ fn should_not_kick_mechanism_too_few() {
 #[should_panic = "duplicate invulnerables in genesis."]
 fn cannot_set_genesis_value_twice() {
     sp_tracing::try_init_simple();
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
+    let mut t = frame_system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap();
     let invulnerables = vec![1, 1];
 

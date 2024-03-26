@@ -24,14 +24,14 @@ use fp_evm::PrecompileHandle;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
 use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+    dispatch::{GetDispatchInfo, PostDispatchInfo},
     traits::{Currency, Get},
 };
 use pallet_dapps_staking::RewardDestination;
 use pallet_evm::AddressMapping;
 use precompile_utils::prelude::*;
 use sp_core::{ConstU32, H160, U256};
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{Dispatchable, Zero};
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 extern crate alloc;

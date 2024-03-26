@@ -18,67 +18,26 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-//! ## Summary
-//!
-//! Purpose of this pallet is to provide multi-stage migration for moving
-//! from the old _dapps_staking_v2_ over to the new _dapp_staking_v3_.
-//!
-//! ## Approach
-//!
-//! ### Multi-Stage Migration
-//!
-//! Since a lot of data has to be cleaned up & migrated, it is necessary to do this in multiple steps.
-//! To reduce the risk of something going wrong, nothing is done in _mandatory hooks_, like `on_initialize` or `on_idle`.
-//! Instead, a dedicated extrinsic call is introduced, which can be called to move the migration forward.
-//! As long as this call moves the migration forward, its cost is refunded to the user.
-//! Once migration finishes, the extrinsic call will no longer do anything but won't refund the call cost either.
-//!
-//! ### Migration Steps
-//!
-//! The general approach used when migrating is:
-//! 1. Clean up old pallet's storage using custom code
-//! 2. Use dedicated dApp staking v3 extrinsic calls for registering dApps & locking funds.
-//!
-//! The main benefits of this approach are that we don't duplicate logic that is already present in dApp staking v3,
-//! and that we ensure proper events are emitted for each action which will make indexers happy. No special handling will
-//! be required to migrate dApps or locked/staked funds over from the old pallet to the new one, from the indexers  perspective.
-//!
-//! ### Final Cleanup
-//!
-//! The pallet doesn't clean after itself, so when it's removed from the runtime,
-//! the old storage should be cleaned up using `RemovePallet` type.
-//!
-
 pub use pallet::*;
 
 use frame_support::{
     dispatch::PostDispatchInfo,
-    log,
     pallet_prelude::*,
-    traits::{Get, LockableCurrency, ReservableCurrency},
+    storage_alias,
+    traits::{ConstU32, Get},
+    WeakBoundedVec,
 };
 
-use frame_system::{pallet_prelude::*, RawOrigin};
+use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode};
-use sp_io::{hashing::twox_128, storage::clear_prefix, KillStorageResult};
-use sp_runtime::{
-    traits::{TrailingZeroInput, UniqueSaturatedInto},
-    Saturating,
-};
+use sp_runtime::Saturating;
 
-use pallet_dapps_staking::{Ledger as OldLedger, RegisteredDapps as OldRegisteredDapps};
+use pallet_dapp_staking_v3::{SingularStakingInfo, StakeAmount, StakerInfo};
 
-#[cfg(feature = "try-runtime")]
-use astar_primitives::Balance;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
-pub use crate::pallet::DappStakingMigrationHandler;
-
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod tests;
+pub use crate::pallet::SingularStakingInfoTranslationUpgrade;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -87,6 +46,35 @@ pub mod weights;
 pub use weights::WeightInfo;
 
 const LOG_TARGET: &str = "dapp-staking-migration";
+
+mod v5 {
+    use super::*;
+
+    #[derive(
+        Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default,
+    )]
+    #[scale_info(skip_type_params(T))]
+    pub struct SingularStakingInfo {
+        /// Staked amount
+        pub(crate) staked: StakeAmount,
+        /// Indicates whether a staker is a loyal staker or not.
+        pub(crate) loyal_staker: bool,
+    }
+
+    #[storage_alias]
+    pub type StakerInfo<T: Config> = StorageDoubleMap<
+        pallet_dapp_staking_v3::Pallet<T>,
+        Blake2_128Concat,
+        <T as frame_system::Config>::AccountId,
+        Blake2_128Concat,
+        <T as pallet_dapp_staking_v3::Config>::SmartContract,
+        SingularStakingInfo,
+        OptionQuery,
+    >;
+}
+
+const MAX_KEY_SIZE: u32 = 1024;
+type StakingInfoKey = WeakBoundedVec<u8, ConstU32<MAX_KEY_SIZE>>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -98,7 +86,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config:
         // Tight coupling, but it's fine since pallet is supposed to be just temporary and will be removed after migration.
-        frame_system::Config + pallet_dapp_staking_v3::Config + pallet_dapps_staking::Config
+        frame_system::Config + pallet_dapp_staking_v3::Config
     {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -114,10 +102,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Number of entries migrated from v2 over to v3
-        EntriesMigrated(u32),
-        /// Number of entries deleted from v2
-        EntriesDeleted(u32),
+        /// Number of staking info entries translated
+        SingularStakingInfoTranslated(u32),
     }
 
     #[pallet::call]
@@ -185,73 +171,38 @@ pub mod pallet {
                 return Err(consumed_weight);
             }
 
-            // Ensure we can call dApp staking v3 extrinsics within this call.
-            consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 2));
-            pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
-                state.maintenance = false;
-            });
+            consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
 
             let mut migration_state = init_migration_state;
-            let (mut entries_migrated, mut entries_deleted) = (0_u32, 0_u32);
+            let mut entries_migrated = 0_u32;
 
-            // Execute migration steps only if we have enough weight to do so.
-            //
-            // 1. Migrate registered dApps
-            // 2. Migrate ledgers
-            // 3. Cleanup
             while weight_limit
                 .saturating_sub(consumed_weight)
                 .all_gte(Self::migration_weight_margin())
             {
-                match migration_state {
-                    MigrationState::NotInProgress | MigrationState::RegisteredDApps => {
-                        migration_state = MigrationState::RegisteredDApps;
-
-                        match Self::migrate_dapps() {
-                            Ok(weight) => {
-                                consumed_weight.saturating_accrue(weight);
-                                entries_migrated.saturating_inc();
-                            }
-                            Err(weight) => {
-                                consumed_weight.saturating_accrue(weight);
-                                migration_state = MigrationState::Ledgers;
-                            }
-                        }
-                    }
-                    MigrationState::Ledgers => match Self::migrate_ledger() {
-                        Ok(weight) => {
+                match migration_state.clone() {
+                    MigrationState::NotInProgress => match Self::translate_staking_info(None) {
+                        Ok((last_key, weight)) => {
                             consumed_weight.saturating_accrue(weight);
                             entries_migrated.saturating_inc();
+
+                            migration_state = MigrationState::SingularStakingInfo(last_key);
                         }
                         Err(weight) => {
                             consumed_weight.saturating_accrue(weight);
-                            migration_state = MigrationState::Cleanup;
+                            migration_state = MigrationState::Finished;
                         }
                     },
-                    MigrationState::Cleanup => {
-                        // Ensure we don't attempt to delete too much at once.
-                        const SAFETY_MARGIN: u32 = 2000;
-                        let remaining_weight = weight_limit.saturating_sub(consumed_weight);
-                        let capacity = match remaining_weight.checked_div_per_component(
-                            &<T as Config>::WeightInfo::cleanup_old_storage_success(1),
-                        ) {
-                            Some(entries_to_delete) => {
-                                SAFETY_MARGIN.min(entries_to_delete.unique_saturated_into())
-                            }
-                            None => {
-                                // Not enough weight to delete even a single entry
-                                break;
-                            }
-                        };
+                    MigrationState::SingularStakingInfo(last_key) => {
+                        match Self::translate_staking_info(Some(last_key)) {
+                            Ok((last_key, weight)) => {
+                                consumed_weight.saturating_accrue(weight);
+                                entries_migrated.saturating_inc();
 
-                        match Self::cleanup_old_storage(capacity) {
-                            Ok((weight, count)) => {
-                                consumed_weight.saturating_accrue(weight);
-                                entries_deleted.saturating_accrue(count);
+                                migration_state = MigrationState::SingularStakingInfo(last_key);
                             }
-                            Err((weight, count)) => {
+                            Err(weight) => {
                                 consumed_weight.saturating_accrue(weight);
-                                entries_deleted.saturating_accrue(count);
                                 migration_state = MigrationState::Finished;
                             }
                         }
@@ -265,197 +216,61 @@ pub mod pallet {
 
             // Deposit events if needed
             if entries_migrated > 0 {
-                Self::deposit_event(Event::<T>::EntriesMigrated(entries_migrated));
-            }
-            if entries_deleted > 0 {
-                Self::deposit_event(Event::<T>::EntriesDeleted(entries_deleted));
+                Self::deposit_event(Event::<T>::SingularStakingInfoTranslated(entries_migrated));
             }
 
-            // Put the pallet back into maintenance mode in case we're still migration the old storage over,
-            // otherwise disable the maintenance mode.
-            pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
-                state.maintenance = match migration_state {
-                    MigrationState::NotInProgress
-                    | MigrationState::RegisteredDApps
-                    | MigrationState::Ledgers => true,
-                    MigrationState::Cleanup | MigrationState::Finished => false,
-                };
-            });
+            // Update the migration status
+            MigrationStateStorage::<T>::put(migration_state.clone());
 
-            if migration_state != init_migration_state {
-                // Already charged in pessimistic manner at the beginning of the function.
-                MigrationStateStorage::<T>::put(migration_state);
+            // Once migration has been finished, disable the maintenance mode and set correct storage version.
+            if migration_state == MigrationState::Finished {
+                log::trace!(target: LOG_TARGET, "Migration has been finished.");
+
+                pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
+                    state.maintenance = false;
+                });
+                StorageVersion::new(6).put::<pallet_dapp_staking_v3::Pallet<T>>();
+                consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 2));
             }
 
             Ok(consumed_weight)
         }
 
-        /// Used to migrate `RegisteredDapps` from the _old_ dApps staking v2 pallet over to the new `IntegratedDApps`.
-        ///
-        /// Steps:
-        /// 1. Attempt to `drain` a single DB entry from the old storage. If it's unregistered, move on.
-        /// 2. Unreserve the old `RegisterDeposit` amount from the developer account.
-        /// 2. Re-decode old smart contract type into new one. Operation should be infallible in practice since the same underlying type is used.
-        /// 3. `register` the old-new smart contract into dApp staking v3 pallet.
-        ///
-        /// Returns `Ok(_)` if an entry was migrated, `Err(_)` if there are no more entries to migrate.
-        pub(crate) fn migrate_dapps() -> Result<Weight, Weight> {
-            match OldRegisteredDapps::<T>::drain().next() {
-                Some((smart_contract, old_dapp_info)) => {
-                    // In case dApp was unregistered, nothing more to do here
-                    if old_dapp_info.is_unregistered() {
-                        // Not precise, but happens rarely
-                        return Ok(<T as Config>::WeightInfo::migrate_dapps_success());
-                    }
-
-                    // Release reserved funds from the old dApps staking
-                    <T as pallet_dapps_staking::Config>::Currency::unreserve(
-                        &old_dapp_info.developer,
-                        <T as pallet_dapps_staking::Config>::RegisterDeposit::get(),
-                    );
-
-                    // Trick to get around different associated types which are essentially the same underlying struct.
-                    let new_smart_contract = match Decode::decode(&mut TrailingZeroInput::new(
-                        smart_contract.encode().as_ref(),
-                    )) {
-                        Ok(new_smart_contract) => new_smart_contract,
-                        Err(_) => {
-                            log::error!(
-                                target: LOG_TARGET,
-                                "Failed to decode smart contract: {:?}.",
-                                smart_contract,
-                            );
-
-                            // This should never happen, but if it does, we want to know about it.
-                            #[cfg(feature = "try-runtime")]
-                            panic!("Failed to decode smart contract: {:?}", smart_contract);
-                            #[cfg(not(feature = "try-runtime"))]
-                            // Not precise, but must never happen in production
-                            return Ok(<T as Config>::WeightInfo::migrate_dapps_success());
-                        }
-                    };
-
-                    match pallet_dapp_staking_v3::Pallet::<T>::register(
-                        RawOrigin::Root.into(),
-                        old_dapp_info.developer.clone(),
-                        new_smart_contract,
-                    ) {
-                        Ok(_) => {}
-                        Err(error) => {
-                            log::error!(
-                                target: LOG_TARGET,
-                                "Failed to register smart contract: {:?} with error: {:?}.",
-                                smart_contract,
-                                error,
-                            );
-                        }
-                    }
-
-                    Ok(<T as Config>::WeightInfo::migrate_dapps_success())
-                }
-                None => {
-                    // Nothing more to migrate here
-                    Err(<T as Config>::WeightInfo::migrate_dapps_noop())
-                }
-            }
-        }
-
-        /// Used to migrate `Ledger` from the _old_ dApps staking v2 pallet over to the new `Ledger`.
-        ///
-        /// Steps:
-        /// 1. Attempt to `drain` a single DB entry from the old storage.
-        /// 2. Release the old lock from the staker account, in full.
-        /// 3. Lock (or freeze) the old _staked_ amount into the new dApp staking v3 pallet.
-        ///
-        /// **NOTE:** the amount that was undergoing the unbonding process is not migrated but is immediately fully released.
-        ///
-        /// Returns `Ok(_)` if an entry was migrated, `Err(_)` if there are no more entries to migrate.
-        pub(crate) fn migrate_ledger() -> Result<Weight, Weight> {
-            match OldLedger::<T>::drain().next() {
-                Some((staker, old_account_ledger)) => {
-                    let locked = old_account_ledger.locked;
-
-                    // Old unbonding amount can just be released, to keep things simple.
-                    // Alternative is to re-calculate this into unlocking chunks.
-                    let _total_unbonding = old_account_ledger.unbonding_info.sum();
-
-                    <T as pallet_dapps_staking::Config>::Currency::remove_lock(
-                        pallet_dapps_staking::pallet::STAKING_ID,
-                        &staker,
-                    );
-
-                    // No point in attempting to lock the old amount into dApp staking v3 if amount is insufficient.
-                    if locked >= <T as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get() {
-                        match pallet_dapp_staking_v3::Pallet::<T>::lock(
-                            RawOrigin::Signed(staker.clone()).into(),
-                            locked,
-                        ) {
-                            Ok(_) => {}
-                            Err(error) => {
-                                log::error!(
-                                    target: LOG_TARGET,
-                                    "Failed to lock for staker {:?} with error: {:?}.",
-                                    staker,
-                                    error,
-                                );
-
-                                // This should never happen, but if it does, we want to know about it.
-                                #[cfg(feature = "try-runtime")]
-                                panic!(
-                                    "Failed to lock for staker {:?} with error: {:?}.",
-                                    staker, error,
-                                );
-                            }
-                        }
-                    }
-
-                    // In case no lock action, it will be imprecise but it's fine since this
-                    // isn't expected to happen, and even if it does, it's not a big deal.
-                    Ok(<T as Config>::WeightInfo::migrate_ledger_success())
-                }
-                None => {
-                    // Nothing more to migrate here
-                    Err(<T as Config>::WeightInfo::migrate_ledger_noop())
-                }
-            }
-        }
-
-        /// Used to remove one entry from the old _dapps_staking_v2_ storage.
-        ///
-        /// If there are no more entries to remove, returns `Err(_)` with consumed weight and number of deleted entries.
-        /// Otherwise returns `Ok(_)` with consumed weight and number of consumed entries.
-        pub(crate) fn cleanup_old_storage(limit: u32) -> Result<(Weight, u32), (Weight, u32)> {
-            let hashed_prefix = twox_128(pallet_dapps_staking::Pallet::<T>::name().as_bytes());
-
-            // Repeated calls in the same block don't work, so we set the limit to `Unlimited` in case of `try-runtime` testing.
-            let inner_limit = if cfg!(feature = "try-runtime") {
-                None
+        pub(crate) fn translate_staking_info(
+            last_key: Option<StakingInfoKey>,
+        ) -> Result<(StakingInfoKey, Weight), Weight> {
+            // Create an iterator to be used for reading a single entry
+            let mut iter = if let Some(last_key) = last_key {
+                v5::StakerInfo::<T>::iter_from(last_key.into_inner())
             } else {
-                Some(limit)
+                v5::StakerInfo::<T>::iter()
             };
 
-            let (keys_removed, done) = match clear_prefix(&hashed_prefix, inner_limit) {
-                KillStorageResult::AllRemoved(value) => (value, true),
-                KillStorageResult::SomeRemaining(value) => (value, false),
-            };
+            // Try to read the next entry
+            if let Some((account_id, smart_contract_id, old)) = iter.next() {
+                // Entry exists so it needs to be translated into the new format
+                let new_staking_info = SingularStakingInfo::new_migration(
+                    StakeAmount::default(),
+                    old.staked,
+                    old.loyal_staker,
+                );
+                StakerInfo::<T>::insert(&account_id, &smart_contract_id, new_staking_info);
 
-            log::trace!(
-                target: LOG_TARGET,
-                "Removed {} keys from storage.",
-                keys_removed
-            );
+                let hashed_key = StakerInfo::<T>::hashed_key_for(&account_id, &smart_contract_id);
 
-            if !done {
+                if cfg!(feature = "try-runtime") {
+                    assert!(
+                        hashed_key.len() < MAX_KEY_SIZE as usize,
+                        "Key size exceeded max limit!"
+                    );
+                }
+
                 Ok((
-                    <T as Config>::WeightInfo::cleanup_old_storage_success(keys_removed),
-                    keys_removed as u32,
+                    WeakBoundedVec::force_from(hashed_key, None),
+                    <T as Config>::WeightInfo::translate_staking_info_success(),
                 ))
             } else {
-                log::trace!(target: LOG_TARGET, "All keys have been removed.",);
-                Err((
-                    <T as Config>::WeightInfo::cleanup_old_storage_noop(),
-                    keys_removed as u32,
-                ))
+                Err(<T as Config>::WeightInfo::translate_staking_info_success_noop())
             }
         }
 
@@ -490,24 +305,18 @@ pub mod pallet {
         /// This is used to ensure we don't go over the limit.
         fn migration_weight_margin() -> Weight {
             // Consider the weight of all steps
-            <T as Config>::WeightInfo::migrate_dapps_success()
-                .max(<T as Config>::WeightInfo::migrate_ledger_success())
-                .max(<T as Config>::WeightInfo::cleanup_old_storage_success(1))
+            <T as Config>::WeightInfo::translate_staking_info_success()
                 // and add the weight of updating migration status
                 .saturating_add(T::DbWeight::get().writes(1))
         }
     }
 
-    #[derive(PartialEq, Eq, Clone, Encode, Decode, Copy, TypeInfo, RuntimeDebug, MaxEncodedLen)]
+    #[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo, RuntimeDebug, MaxEncodedLen)]
     pub enum MigrationState {
         /// No migration in progress
         NotInProgress,
-        /// In the middle of `RegisteredDApps` migration.
-        RegisteredDApps,
-        /// In the middle of `Ledgers` migration.
-        Ledgers,
-        /// In the middle of old v2 storage cleanup
-        Cleanup,
+        /// In the middle of `SingularStakingInfo` migration/translation.
+        SingularStakingInfo(StakingInfoKey),
         /// All migrations have been finished
         Finished,
     }
@@ -518,19 +327,17 @@ pub mod pallet {
         }
     }
 
-    pub struct DappStakingMigrationHandler<T: Config>(PhantomData<T>);
-    impl<T: Config> frame_support::traits::OnRuntimeUpgrade for DappStakingMigrationHandler<T> {
+    pub struct SingularStakingInfoTranslationUpgrade<T: Config>(PhantomData<T>);
+    impl<T: Config> frame_support::traits::OnRuntimeUpgrade
+        for SingularStakingInfoTranslationUpgrade<T>
+    {
         fn on_runtime_upgrade() -> Weight {
-            // When upgrade happens, we need to put dApp staking v3 into maintenance mode immediately.
-            // For the old pallet, since the storage cleanup is going to happen, maintenance mode must be ensured
-            // by the runtime config itself.
             let mut consumed_weight = T::DbWeight::get().reads_writes(1, 2);
+
+            // Enable maintenance mode.
             pallet_dapp_staking_v3::ActiveProtocolState::<T>::mutate(|state| {
                 state.maintenance = true;
             });
-
-            // Set the correct init storage version
-            pallet_dapp_staking_v3::STORAGE_VERSION.put::<pallet_dapp_staking_v3::Pallet<T>>();
 
             // In case of try-runtime, we want to execute the whole logic, to ensure it works
             // with on-chain data.
@@ -563,143 +370,67 @@ pub mod pallet {
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
-            // Get dev accounts with registered dapps and their total reserved balance
-            let developers: Vec<_> = pallet_dapps_staking::RegisteredDapps::<T>::iter()
-                .filter_map(|(smart_contract, info)| {
-                    if info.state == pallet_dapps_staking::DAppState::Registered {
-                        let reserved =
-                            <T as pallet_dapps_staking::Config>::Currency::reserved_balance(
-                                &info.developer,
-                            );
-                        Some((info.developer, smart_contract, reserved))
-                    } else {
-                        None
-                    }
+            // Get all staker info entries to be used later for verification
+            let staker_info: Vec<_> = v5::StakerInfo::<T>::iter()
+                .map(|(account_id, smart_contract, staking_info)| {
+                    (
+                        account_id,
+                        smart_contract,
+                        staking_info.staked,
+                        staking_info.loyal_staker,
+                    )
                 })
                 .collect();
 
-            // Get the stakers and their active locked (staked) amount.
-
-            use sp_runtime::traits::Zero;
-            let mut total_locked = Balance::zero();
-            let min_lock_amount: Balance =
-                <T as pallet_dapp_staking_v3::Config>::MinimumLockedAmount::get();
-            let stakers: Vec<_> = pallet_dapps_staking::Ledger::<T>::iter()
-                .filter_map(|(staker, ledger)| {
-                    total_locked.saturating_accrue(ledger.locked);
-                    if ledger.locked >= min_lock_amount {
-                        Some((staker, ledger.locked))
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-
-            log::info!(
-                target: LOG_TARGET,
-                "Total locked amount in the old pallet: {:?}.",
-                total_locked,
-            );
-
-            log::info!(
-                target: LOG_TARGET,
-                "Out of {} stakers, {} have sufficient amount to lock.",
-                pallet_dapps_staking::Ledger::<T>::iter().count(),
-                stakers.len(),
-            );
-
-            let helper = Helper::<T> {
-                developers,
-                stakers,
-            };
+            let helper = Helper::<T> { staker_info };
 
             Ok(helper.encode())
         }
 
         #[cfg(feature = "try-runtime")]
         fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-            use sp_runtime::traits::Zero;
+            use sp_runtime::traits::TrailingZeroInput;
+
+            // 0. Verify that migration state is `Finished`
+            if MigrationStateStorage::<T>::get() != MigrationState::Finished {
+                return Err("Migration state is not `Finished`".into());
+            }
 
             let helper = Helper::<T>::decode(&mut TrailingZeroInput::new(state.as_ref()))
                 .map_err(|_| "Cannot decode data from pre_upgrade")?;
 
-            // 1. Ensure that all entries have been unregistered/removed and all dev accounts have been refunded.
-            //    Also check that dApps have been registered in the new pallet.
-            assert!(pallet_dapps_staking::RegisteredDapps::<T>::iter()
-                .count()
-                .is_zero());
-            assert_eq!(
-                pallet_dapp_staking_v3::IntegratedDApps::<T>::iter().count(),
-                helper.developers.len()
-            );
+            // 1. Verify that staker info is essentially same as before
+            for (account_id, smart_contract, staked, loyal_staker) in helper.staker_info {
+                let staking_info = StakerInfo::<T>::get(&account_id, &smart_contract)
+                    .ok_or("Staking info not found but it must exist!")?;
 
-            let register_deposit = <T as pallet_dapps_staking::Config>::RegisterDeposit::get();
-            for (dev_account, smart_contract, old_reserved) in helper.developers {
-                let new_reserved =
-                    <T as pallet_dapps_staking::Config>::Currency::reserved_balance(&dev_account);
-                assert_eq!(old_reserved, new_reserved + register_deposit);
+                let expected_staking_info = SingularStakingInfo::new_migration(
+                    StakeAmount::default(),
+                    staked,
+                    loyal_staker,
+                );
 
-                let new_smart_contract: <T as pallet_dapp_staking_v3::Config>::SmartContract =
-                    Decode::decode(&mut TrailingZeroInput::new(
-                        smart_contract.encode().as_ref(),
-                    ))
-                    .expect("Must succeed since we're using the same underlying type.");
+                if staking_info != expected_staking_info {
+                    log::error!(target: LOG_TARGET,
+                        "Staking info mismatch for account {:?} and smart contract {:?}. Expected: {:?}, got: {:?}",
+                        account_id, smart_contract, expected_staking_info, staking_info
+                    );
 
-                let dapp_info =
-                    pallet_dapp_staking_v3::IntegratedDApps::<T>::get(&new_smart_contract)
-                        .expect("Must exist!");
-                assert_eq!(dapp_info.owner, dev_account);
+                    return Err("Failed to verify staking info".into());
+                }
             }
 
-            // 2. Ensure that all ledger entries have been migrated over to the new pallet.
-            //    Total locked amount in the new pallet must equal the sum of all old locked amounts.
-            assert!(pallet_dapps_staking::Ledger::<T>::iter().count().is_zero());
-            assert_eq!(
-                pallet_dapp_staking_v3::Ledger::<T>::iter().count(),
-                helper.stakers.len()
-            );
-
-            for (staker, old_locked) in &helper.stakers {
-                let new_locked = pallet_dapp_staking_v3::Ledger::<T>::get(&staker).locked;
-                assert_eq!(*old_locked, new_locked);
+            // 2. Verify pallet is no longer in maintenance mode
+            if pallet_dapp_staking_v3::ActiveProtocolState::<T>::get().maintenance {
+                return Err("Pallet is still in maintenance mode".into());
             }
 
-            let total_locked = helper
-                .stakers
-                .iter()
-                .map(|(_, locked)| locked)
-                .sum::<Balance>();
-            assert_eq!(
-                pallet_dapp_staking_v3::CurrentEraInfo::<T>::get().total_locked,
-                total_locked
-            );
+            // 3. Verify on-chain storage version is correct
+            if StorageVersion::get::<pallet_dapp_staking_v3::Pallet<T>>() != 6 {
+                return Err("Storage version is not correct".into());
+            }
 
-            log::info!(
-                target: LOG_TARGET,
-                "Total locked amount in the new pallet: {:?}.",
-                total_locked,
-            );
-
-            // 3. Check that rest of the storage has been cleaned up.
-            assert!(!pallet_dapps_staking::PalletDisabled::<T>::exists());
-            assert!(!pallet_dapps_staking::CurrentEra::<T>::exists());
-            assert!(!pallet_dapps_staking::BlockRewardAccumulator::<T>::exists());
-            assert!(!pallet_dapps_staking::ForceEra::<T>::exists());
-            assert!(!pallet_dapps_staking::NextEraStartingBlock::<T>::exists());
-            assert!(!pallet_dapps_staking::StorageVersion::<T>::exists());
-
-            assert!(pallet_dapps_staking::RegisteredDevelopers::<T>::iter()
-                .count()
-                .is_zero());
-            assert!(pallet_dapps_staking::GeneralEraInfo::<T>::iter()
-                .count()
-                .is_zero());
-            assert!(pallet_dapps_staking::ContractEraStake::<T>::iter()
-                .count()
-                .is_zero());
-            assert!(pallet_dapps_staking::GeneralStakerInfo::<T>::iter()
-                .count()
-                .is_zero());
+            log::trace!(target: LOG_TARGET, "Post-upgrade checks successful.");
 
             Ok(())
         }
@@ -710,12 +441,5 @@ pub mod pallet {
 /// Used to help with `try-runtime` testing.
 #[derive(Encode, Decode)]
 struct Helper<T: Config> {
-    /// Vec of devs, with their associated smart contract & total reserved balance
-    developers: Vec<(
-        T::AccountId,
-        <T as pallet_dapps_staking::Config>::SmartContract,
-        Balance,
-    )>,
-    /// Stakers with their total active locked amount (not undergoing the unbonding process)
-    stakers: Vec<(T::AccountId, Balance)>,
+    staker_info: Vec<(T::AccountId, T::SmartContract, StakeAmount, bool)>,
 }

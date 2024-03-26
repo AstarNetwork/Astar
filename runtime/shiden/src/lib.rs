@@ -52,6 +52,7 @@ use pallet_transaction_payment::{
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
+use sp_arithmetic::fixed_point::FixedU64;
 use sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
@@ -68,11 +69,11 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, TierId,
+        PeriodNumber, SmartContract, TierId, TierSlots as TierSlotsFunc,
     },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
-    Address, AssetId, BlockNumber, Hash, Header, Index,
+    Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
 pub use astar_primitives::{AccountId, Balance, Signature};
 
@@ -80,7 +81,6 @@ pub use pallet_dapp_staking_v3::TierThreshold;
 pub use pallet_inflation::InflationParameters;
 
 pub use crate::precompiles::WhitelistedCalls;
-
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 #[cfg(any(feature = "std", test))]
@@ -150,7 +150,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 119,
+    spec_version: 122,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -235,16 +235,14 @@ impl frame_system::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     type Lookup = AccountIdLookup<AccountId, ()>;
-    /// The index type for storing how many extrinsics an account has signed.
-    type Index = Index;
-    /// The index type for blocks.
-    type BlockNumber = BlockNumber;
+    /// The nonce type for storing how many extrinsics an account has signed.
+    type Nonce = Nonce;
+    /// The type for blocks.
+    type Block = Block;
     /// The type for hashing blocks and tries.
     type Hash = Hash;
     /// The hashing algorithm used.
     type Hashing = BlakeTwo256;
-    /// The header type.
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// The ubiquitous event type.
     type RuntimeEvent = RuntimeEvent;
     /// The ubiquitous origin type.
@@ -355,6 +353,15 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
     }
 }
 
+pub struct ShidenTierSlots;
+impl TierSlotsFunc for ShidenTierSlots {
+    fn number_of_slots(price: FixedU64) -> u16 {
+        // According to the forum proposal, the original formula's factor is reduced from 1000x to 100x.
+        let result: u64 = price.saturating_mul_int(100_u64).saturating_add(50);
+        result.unique_saturated_into()
+    }
+}
+
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 50 * SDN;
 }
@@ -370,6 +377,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
+    type TierSlots = ShidenTierSlots;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<3>;
     type MaxNumberOfContracts = ConstU32<500>;
@@ -450,12 +458,16 @@ impl parachain_info::Config for Runtime {}
 
 parameter_types! {
     pub const MaxAuthorities: u32 = 250;
+    // Should be only enabled (`true`) when async backing is enabled
+    // otherwise set to `false`
+    pub const AllowMultipleBlocksPerSlot: bool = false;
 }
 
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = MaxAuthorities;
+    type AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -547,9 +559,9 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
-    type MaxHolds = ConstU32<0>;
+    type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<1>;
 }
 
@@ -629,6 +641,8 @@ parameter_types! {
     pub const DepositPerByte: Balance = contracts_deposit(0, 1);
     // Fallback value if storage deposit limit not set by the user
     pub const DefaultDepositLimit: Balance = contracts_deposit(16, 16 * 1024);
+    pub const MaxDelegateDependencies: u32 = 32;
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(10);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
@@ -638,6 +652,7 @@ impl pallet_contracts::Config for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+    type RuntimeHoldReason = RuntimeHoldReason;
     /// The safest default is to allow no calls at all.
     ///
     /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -658,6 +673,11 @@ impl pallet_contracts::Config for Runtime {
     type MaxStorageKeyLen = ConstU32<128>;
     type UnsafeUnstableInterface = ConstBool<false>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+    type MaxDelegateDependencies = MaxDelegateDependencies;
+    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+    type Debug = ();
+    type Environment = ();
+    type Migrations = ();
 }
 
 parameter_types! {
@@ -1006,11 +1026,13 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
+impl pallet_dapp_staking_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Self>;
+}
+
 construct_runtime!(
-    pub struct Runtime where
-        Block = Block,
-        NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
-        UncheckedExtrinsic = UncheckedExtrinsic
+    pub struct Runtime
     {
         System: frame_system = 10,
         Utility: pallet_utility = 11,
@@ -1055,6 +1077,8 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
+        // Remove after migrating to v6 storage
+        DappStakingMigration: pallet_dapp_staking_migration = 252,
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
     }
@@ -1094,36 +1118,44 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
-}
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // Part of shiden-119
-    frame_support::migrations::RemovePallet<
-        DappStakingMigrationName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    // Part of shiden-119
-    RecalculationEraFix,
+    // Part of shiden-122
+    pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,
 );
 
 use frame_support::traits::OnRuntimeUpgrade;
-pub struct RecalculationEraFix;
-impl OnRuntimeUpgrade for RecalculationEraFix {
+pub struct SetNewTierConfig;
+impl OnRuntimeUpgrade for SetNewTierConfig {
     fn on_runtime_upgrade() -> Weight {
-        let first_dapp_staking_v3_era = 743;
+        use astar_primitives::oracle::PriceProvider;
+        use frame_support::BoundedVec;
 
-        let expected_recalculation_era =
-            InflationCycleConfig::eras_per_cycle().saturating_add(first_dapp_staking_v3_era);
+        // Set new init tier config values according to the forum post
+        let mut init_tier_config = pallet_dapp_staking_v3::TierConfig::<Runtime>::get();
+        init_tier_config.number_of_slots = 55;
+        init_tier_config.slots_per_tier =
+            BoundedVec::try_from(vec![2, 11, 16, 24]).unwrap_or_default();
 
-        pallet_inflation::ActiveInflationConfig::<Runtime>::mutate(|config| {
-            config.recalculation_era = expected_recalculation_era;
-        });
+        #[cfg(feature = "try-runtime")]
+        {
+            assert!(
+                init_tier_config.number_of_slots >= init_tier_config.slots_per_tier.iter().sum::<u16>() as u16,
+                "Safety check, sum of slots per tier must be equal or less than max number of slots (due to possible rounding)"
+            );
+        }
 
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+        // Based on the new init config, calculate the new tier config based on the 'average' price
+        let price = StaticPriceProvider::average_price();
+        let tier_params = pallet_dapp_staking_v3::StaticTierParams::<Runtime>::get();
+
+        let new_tier_config = init_tier_config.calculate_new(price, &tier_params);
+
+        pallet_dapp_staking_v3::TierConfig::<Runtime>::put(new_tier_config);
+
+        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(3, 1)
     }
 }
 
@@ -1284,8 +1316,8 @@ impl_runtime_apis! {
         }
     }
 
-    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-        fn account_nonce(account: AccountId) -> Index {
+    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+        fn account_nonce(account: AccountId) -> Nonce {
             System::account_nonce(account)
         }
     }
@@ -1709,14 +1741,14 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
             use frame_system_benchmarking::Pallet as SystemBench;
             use baseline::Pallet as BaselineBench;
 
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
-            use frame_support::traits::WhitelistedStorageKeys;
+            use frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
             let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();

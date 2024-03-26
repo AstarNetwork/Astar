@@ -9,10 +9,12 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+log = { workspace = true }
 parity-scale-codec = { workspace = true }
 serde = { workspace = true }
 
 astar-primitives = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 scale-info = { workspace = true }
@@ -20,12 +22,11 @@ sp-arithmetic = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
-frame-benchmarking = { workspace = true, optional = true }
-
 [dev-dependencies]
 pallet-balances = { workspace = true }
 pallet-timestamp = { workspace = true }
 sp-core = { workspace = true }
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]
@@ -35,6 +36,7 @@ std = [
 	"scale-info/std",
 	"sp-std/std",
 	"serde/std",
+	"log/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-timestamp/std",

@@ -19,16 +19,18 @@
 use crate::AssetsExtension;
 use frame_support::traits::{AsEnsureOriginWithArg, ConstU128, Currency, Randomness};
 use frame_support::{
-    parameter_types, sp_io,
+    parameter_types,
     traits::{ConstU32, ConstU64, Nothing},
     weights::Weight,
 };
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 use pallet_contracts::{Config, DefaultAddressGenerator, Frame};
 use sp_core::crypto::AccountId32;
-use sp_runtime::generic;
-use sp_runtime::testing::H256;
-use sp_runtime::traits::{BlakeTwo256, Convert, IdentityLookup, Zero};
+use sp_runtime::{
+    testing::H256,
+    traits::{BlakeTwo256, Convert, IdentityLookup, Zero},
+    BuildStorage, Perbill,
+};
 
 pub type BlockNumber = u32;
 pub type Balance = u128;
@@ -50,14 +52,13 @@ impl frame_system::Config for Test {
     type BlockLength = ();
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u32;
-    type BlockNumber = BlockNumber;
+    type Nonce = u32;
+    type Block = Block;
     type Hash = H256;
     type RuntimeCall = RuntimeCall;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId32;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = generic::Header<u32, BlakeTwo256>;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -74,9 +75,11 @@ impl frame_system::Config for Test {
 parameter_types! {
     pub static UnstableInterface: bool = true;
     pub Schedule: pallet_contracts::Schedule<Test> = Default::default();
-    pub static DepositPerByte: BalanceOf<Test> = 1;
-    pub const DepositPerItem: BalanceOf<Test> = 1;
+    pub static DepositPerByte: Balance = 1;
+    pub const DepositPerItem: Balance = 1;
     pub const DefaultDepositLimit: Balance = 1;
+    pub const MaxDelegateDependencies: u32 = 32;
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(1);
 }
 
 pub struct DummyDeprecatedRandomness;
@@ -106,6 +109,12 @@ impl pallet_contracts::Config for Test {
     type MaxStorageKeyLen = ConstU32<128>;
     type UnsafeUnstableInterface = UnstableInterface;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+    type Debug = ();
+    type Environment = ();
+    type MaxDelegateDependencies = MaxDelegateDependencies;
+    type Migrations = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
 }
 
 impl RegisteredChainExtension<Test> for AssetsExtension<Test> {
@@ -126,9 +135,9 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
-    type MaxHolds = ConstU32<0>;
+    type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<0>;
 }
 
@@ -162,20 +171,16 @@ impl pallet_assets::Config for Test {
     type BenchmarkHelper = ();
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+        System: frame_system,
+        Balances: pallet_balances,
+        Assets: pallet_assets,
+        Timestamp: pallet_timestamp,
+        Contracts: pallet_contracts,
     }
 );
 
@@ -217,8 +222,8 @@ impl ExtBuilder {
         let env = Env::new().default_filter_or("runtime=debug");
         let _ = Builder::from_env(env).is_test(true).try_init();
         self.set_associated_consts();
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .unwrap();
         pallet_balances::GenesisConfig::<Test> { balances: vec![] }
             .assimilate_storage(&mut t)

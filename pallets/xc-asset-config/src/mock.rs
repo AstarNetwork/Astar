@@ -23,26 +23,19 @@ use sp_core::H256;
 
 use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
 };
 
-type BlockNumber = u64;
 type Balance = u128;
 type AccountId = u64;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 const EXISTENTIAL_DEPOSIT: Balance = 2;
 
 construct_runtime!(
-    pub struct Test
-    where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
+    pub struct Test {
         System: frame_system,
         Balances: pallet_balances,
         XcAssetConfig: pallet_xc_asset_config,
@@ -60,14 +53,13 @@ impl frame_system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
+    type Nonce = u64;
     type RuntimeCall = RuntimeCall;
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -97,7 +89,7 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
@@ -116,8 +108,8 @@ pub struct ExternalityBuilder;
 
 impl ExternalityBuilder {
     pub fn build() -> TestExternalities {
-        let storage = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let storage = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .unwrap();
 
         let mut ext = TestExternalities::from(storage);

@@ -18,14 +18,20 @@
 
 //! Astar RPCs implementation.
 
+use cumulus_primitives_parachain_inherent::ParachainInherentData;
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::{
-    Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
-    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, TxPool, Web3, Web3ApiServer,
+    pending::ConsensusDataProvider, Eth, EthApiServer, EthBlockDataCacheTask, EthFilter,
+    EthFilterApiServer, EthPubSub, EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3,
+    Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
-use sc_client_api::{AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider};
+use polkadot_primitives::PersistedValidationData;
+use sc_client_api::{
+    AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
+};
 use sc_network::NetworkService;
 use sc_network_sync::SyncingService;
 use sc_rpc::dev::DevApiServer;
@@ -37,6 +43,7 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
+use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
 use sp_runtime::traits::BlakeTwo256;
 use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
@@ -85,6 +92,21 @@ where
     )?))
 }
 
+pub struct AstarEthConfig<C, BE>(std::marker::PhantomData<(C, BE)>);
+
+impl<C, BE> fc_rpc::EthConfig<Block, C> for AstarEthConfig<C, BE>
+where
+    C: sc_client_api::StorageProvider<Block, BE> + Sync + Send + 'static,
+    BE: Backend<Block> + 'static,
+{
+    // Use to override (adapt) evm call to precompiles for proper gas estimation.
+    // We are not aware of any of our precompile that require this.
+    type EstimateGasAdapter = ();
+    // This assumes the use of HashedMapping<BlakeTwo256> for address mapping
+    type RuntimeStorageOverride =
+        fc_rpc::frontier_backend_client::SystemAccountId32StorageOverride<Block, C, BE>;
+}
+
 /// Full client dependencies
 pub struct FullDeps<C, P, A: ChainApi> {
     /// The client instance to use.
@@ -102,7 +124,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
     /// The Node authority flag
     pub is_authority: bool,
     /// Frontier Backend.
-    pub frontier_backend: Arc<dyn fc_db::BackendReader<Block> + Send + Sync>,
+    pub frontier_backend: Arc<dyn fc_api::Backend<Block>>,
     /// EthFilterApi pool.
     pub filter_pool: FilterPool,
     /// Maximum fee history cache size.
@@ -127,11 +149,13 @@ pub fn create_full<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
+    pending_consenus_data_provider: Box<dyn ConsensusDataProvider<Block>>,
     tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + UsageProvider<Block>
         + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
@@ -146,6 +170,7 @@ where
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
@@ -157,7 +182,12 @@ where
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
 
-    let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
+    let mut io = create_full_rpc(
+        deps,
+        subscription_task_executor,
+        pubsub_notification_sinks,
+        pending_consenus_data_provider,
+    )?;
 
     if tracing_config.enable_txpool {
         io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
@@ -191,10 +221,12 @@ pub fn create_full<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
+    pending_consenus_data_provider: Box<dyn ConsensusDataProvider<Block>>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
+        + UsageProvider<Block>
         + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
@@ -208,14 +240,20 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
-        + BlockBuilder<Block>,
+        + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
     A: ChainApi<Block = Block> + 'static,
 {
-    create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
+    create_full_rpc(
+        deps,
+        subscription_task_executor,
+        pubsub_notification_sinks,
+        pending_consenus_data_provider,
+    )
 }
 
 fn create_full_rpc<C, P, BE, A>(
@@ -226,9 +264,11 @@ fn create_full_rpc<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
+    pending_consenus_data_provider: Box<dyn ConsensusDataProvider<Block>>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
+        + UsageProvider<Block>
         + HeaderBackend<Block>
         + CallApiAt<Block>
         + AuxStore
@@ -243,7 +283,8 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
-        + BlockBuilder<Block>,
+        + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
@@ -278,8 +319,39 @@ where
 
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
+    let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
+    let pending_create_inherent_data_providers = move |_, _| async move {
+        let current = sp_timestamp::InherentDataProvider::from_system_time();
+        let next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
+        let timestamp = sp_timestamp::InherentDataProvider::new(next_slot.into());
+        let slot =
+            sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                *timestamp,
+                slot_duration,
+            );
+        // Create a dummy parachain inherent data provider which is required to pass
+        // the checks by the para chain system. We use dummy values because in the 'pending context'
+        // neither do we have access to the real values nor do we need them.
+        let (relay_parent_storage_root, relay_chain_state) =
+            RelayStateSproofBuilder::default().into_state_root_and_proof();
+        let vfp = PersistedValidationData {
+            // This is a hack to make `cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases`
+            // happy. Relay parent number can't be bigger than u32::MAX.
+            relay_parent_number: u32::MAX,
+            relay_parent_storage_root,
+            ..Default::default()
+        };
+        let parachain_inherent_data = ParachainInherentData {
+            validation_data: vfp,
+            relay_chain_state,
+            downward_messages: Default::default(),
+            horizontal_messages: Default::default(),
+        };
+        Ok((slot, timestamp, parachain_inherent_data))
+    };
+
     io.merge(
-        Eth::new(
+        Eth::<_, _, _, _, _, _, _, ()>::new(
             client.clone(),
             pool.clone(),
             graph.clone(),
@@ -295,18 +367,20 @@ where
             // Allow 10x max allowed weight for non-transactional calls
             10,
             None,
+            pending_create_inherent_data_providers,
+            Some(pending_consenus_data_provider),
         )
+        .replace_config::<AstarEthConfig<C, BE>>()
         .into_rpc(),
     )?;
 
     let max_past_logs: u32 = 10_000;
     let max_stored_filters: usize = 500;
-    let tx_pool = TxPool::new(client.clone(), graph);
     io.merge(
         EthFilter::new(
             client.clone(),
             frontier_backend,
-            tx_pool.clone(),
+            graph.clone(),
             filter_pool,
             max_stored_filters,
             max_past_logs,

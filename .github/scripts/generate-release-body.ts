@@ -10,9 +10,15 @@ type Commits = Await<ReturnType<Octokit["rest"]["repos"]["compareCommits"]>>["da
 
 function getCompareLink(packageName: string, previousTag: string, newTag: string) {
   // Previous
-  const previousPackage = execSync(
-    `git show ${previousTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
-  ).toString();
+  let previousPackage: string;
+  try {
+    previousPackage = execSync(
+      `git show ${previousTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
+    ).toString();
+  } catch (error) {
+    console.error('An error occurred while executing the shell command:', error);
+    return ""
+  }
 
   const previousCommitTmp = /#([0-9a-f]*)/g.exec(previousPackage);
   if (previousCommitTmp == null) { // regexp didn't match
@@ -27,9 +33,16 @@ function getCompareLink(packageName: string, previousTag: string, newTag: string
   const previousRepo = previousRepoTmp[1];
 
   // New
-  const newPackage = execSync(
-    `git show ${newTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
-  ).toString();
+  let newPackage: string;
+  try {
+    newPackage = execSync(
+      `git show ${newTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
+    ).toString();
+  } catch (error) {
+    console.error('An error occurred while executing the shell command:', error);
+    return ""
+  }
+
   const newCommitTmp = /#([0-9a-f]*)/g.exec(newPackage)
   if (newCommitTmp == null) {
     return ""
@@ -255,7 +268,7 @@ async function main() {
     getRuntimeInfo(argv["srtool-report-folder"], runtimeName)
   );
 
-  const moduleLinks = ["substrate", "polkadot", "cumulus", "frontier"].map((repoName) => ({
+  const moduleLinks = ["polkadot-sdk", "frontier"].map((repoName) => ({
     name: repoName,
     link: getCompareLink(repoName, previousTag, newTag),
   }));

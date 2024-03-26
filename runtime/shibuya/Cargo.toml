@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.32.0"
+version = "5.35.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -101,6 +101,7 @@ astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-collator-selection = { workspace = true }
+pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
@@ -153,6 +154,7 @@ std = [
 	"sp-api/std",
 	"sp-core/std",
 	"sp-consensus-aura/std",
+	"pallet-dapp-staking-migration/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-runtime-interface/std",
@@ -248,6 +250,7 @@ std = [
 ]
 runtime-benchmarks = [
 	"astar-xcm-benchmarks/runtime-benchmarks",
+	"pallet-dapp-staking-migration/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
@@ -295,6 +298,7 @@ try-runtime = [
 	"pallet-assets/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-collator-selection/try-runtime",
+	"pallet-dapp-staking-migration/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-xcm/try-runtime",
 	"pallet-identity/try-runtime",

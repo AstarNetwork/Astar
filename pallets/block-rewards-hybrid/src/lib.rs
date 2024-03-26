@@ -80,11 +80,9 @@ pub use pallet::*;
 
 use astar_primitives::Balance;
 use frame_support::pallet_prelude::*;
-use frame_support::{
-    log,
-    traits::{Currency, Get, Imbalance, OnTimestampSet},
-};
+use frame_support::traits::{Currency, Get, Imbalance, OnTimestampSet};
 use frame_system::{ensure_root, pallet_prelude::*};
+use serde::{Deserialize, Serialize};
 use sp_runtime::{
     traits::{CheckedAdd, Zero},
     Perbill,
@@ -155,13 +153,15 @@ pub mod pallet {
     }
 
     #[pallet::genesis_config]
-    #[cfg_attr(feature = "std", derive(Default))]
-    pub struct GenesisConfig {
+    #[derive(frame_support::DefaultNoBound)]
+    pub struct GenesisConfig<T: Config> {
         pub reward_config: RewardDistributionConfig,
+        #[serde(skip)]
+        pub _config: sp_std::marker::PhantomData<T>,
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             assert!(self.reward_config.is_consistent());
             RewardDistributionConfigStorage::<T>::put(self.reward_config.clone())
@@ -280,8 +280,18 @@ pub mod pallet {
 ///
 /// Note that if `ideal_dapps_staking_tvl` is set to `Zero`, entire `adjustable_percent` goes to the stakers.
 ///
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[derive(
+    PartialEq,
+    Eq,
+    Clone,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    TypeInfo,
+    MaxEncodedLen,
+    Serialize,
+    Deserialize,
+)]
 pub struct RewardDistributionConfig {
     /// Base percentage of reward that goes to treasury
     #[codec(compact)]

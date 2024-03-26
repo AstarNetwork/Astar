@@ -28,8 +28,8 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, Contains, Currency, FindAuthor, Get,
-        Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -69,11 +69,11 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, TierId,
+        PeriodNumber, SmartContract, StandardTierSlots, TierId,
     },
     evm::EvmRevertCodeHandler,
     xcm::AssetLocationIdConverter,
-    Address, AssetId, BlockNumber, Hash, Header, Index,
+    Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
 pub use astar_primitives::{AccountId, Balance, Signature};
 
@@ -148,7 +148,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 79,
+    spec_version: 83,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -233,16 +233,14 @@ impl frame_system::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
     type Lookup = AccountIdLookup<AccountId, ()>;
-    /// The index type for storing how many extrinsics an account has signed.
-    type Index = Index;
-    /// The index type for blocks.
-    type BlockNumber = BlockNumber;
+    /// The nonce type for storing how many extrinsics an account has signed.
+    type Nonce = Nonce;
+    /// The type for blocks.
+    type Block = Block;
     /// The type for hashing blocks and tries.
     type Hash = Hash;
     /// The hashing algorithm used.
     type Hashing = BlakeTwo256;
-    /// The header type.
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
     /// The ubiquitous event type.
     type RuntimeEvent = RuntimeEvent;
     /// The ubiquitous origin type.
@@ -320,39 +318,7 @@ impl pallet_multisig::Config for Runtime {
 }
 
 parameter_types! {
-    pub const BlockPerEra: BlockNumber = DAYS;
-    pub const RegisterDeposit: Balance = 1000 * ASTR;
-    pub const MaxNumberOfStakersPerContract: u32 = 16384;
     pub const MinimumStakingAmount: Balance = 500 * ASTR;
-    pub const MinimumRemainingAmount: Balance = ASTR;
-    pub const MaxEraStakeValues: u32 = 5;
-    pub const MaxUnlockingChunks: u32 = 4;
-    pub const UnbondingPeriod: u32 = 10;
-}
-
-impl pallet_dapps_staking::Config for Runtime {
-    type Currency = Balances;
-    type BlockPerEra = BlockPerEra;
-    type SmartContract = SmartContract<AccountId>;
-    type RegisterDeposit = RegisterDeposit;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
-    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
-    type MinimumStakingAmount = MinimumStakingAmount;
-    type PalletId = DappsStakingPalletId;
-    type MaxUnlockingChunks = MaxUnlockingChunks;
-    type UnbondingPeriod = UnbondingPeriod;
-    type MinimumRemainingAmount = MinimumRemainingAmount;
-    type MaxEraStakeValues = MaxEraStakeValues;
-    // Not allowed on Astar yet
-    type UnregisteredDappRewardRetention = ConstU32<{ u32::MAX }>;
-    // Needed so benchmark can use the pallets extrinsics
-    #[cfg(feature = "runtime-benchmarks")]
-    type ForcePalletDisabled = ConstBool<false>;
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    type ForcePalletDisabled = ConstBool<true>;
-    // Fee required to claim rewards for another account. Calculated & tested manually.
-    type DelegateClaimFee = ConstU128<057_950_348_114_187_155>;
 }
 
 impl pallet_static_price_provider::Config for Runtime {
@@ -398,6 +364,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
+    type TierSlots = StandardTierSlots;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<4>;
     type MaxNumberOfContracts = ConstU32<500>;
@@ -489,6 +456,9 @@ impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = MaxAuthorities;
+    // Should be only enabled (`true`) when async backing is enabled
+    // otherwise set to `false`
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -581,9 +551,9 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
-    type MaxHolds = ConstU32<0>;
+    type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<1>;
 }
 
@@ -663,6 +633,8 @@ parameter_types! {
     pub const DepositPerByte: Balance = contracts_deposit(0, 1);
     // Fallback value if storage deposit limit not set by the user
     pub const DefaultDepositLimit: Balance = contracts_deposit(16, 16 * 1024);
+    pub const MaxDelegateDependencies: u32 = 32;
+    pub const CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(10);
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
@@ -683,6 +655,7 @@ impl pallet_contracts::Config for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+    type RuntimeHoldReason = RuntimeHoldReason;
     /// The safest default is to allow no calls at all.
     ///
     /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -703,6 +676,11 @@ impl pallet_contracts::Config for Runtime {
     type MaxStorageKeyLen = ConstU32<128>;
     type UnsafeUnstableInterface = ConstBool<false>;
     type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+    type MaxDelegateDependencies = MaxDelegateDependencies;
+    type CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+    type Debug = ();
+    type Environment = ();
+    type Migrations = ();
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -1053,10 +1031,7 @@ impl pallet_proxy::Config for Runtime {
 }
 
 construct_runtime!(
-    pub struct Runtime where
-        Block = Block,
-        NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
-        UncheckedExtrinsic = UncheckedExtrinsic
+    pub struct Runtime
     {
         System: frame_system = 10,
         Utility: pallet_utility = 11,
@@ -1104,8 +1079,6 @@ construct_runtime!(
         StaticPriceProvider: pallet_static_price_provider = 253,
         // To be removed & cleaned up after migration has been finished
         DappStakingMigration: pallet_dapp_staking_migration = 254,
-        // Legacy dApps staking v2, to be removed after migration has been finished
-        DappsStaking: pallet_dapps_staking = 255,
     }
 );
 
@@ -1144,134 +1117,20 @@ pub type Executive = frame_executive::Executive<
 >;
 
 parameter_types! {
-    pub const BlockRewardName: &'static str = "BlockReward";
+    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
 }
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    pallet_static_price_provider::InitActivePrice<Runtime, InitActivePriceGet>,
-    pallet_inflation::PalletInflationInitConfig<Runtime, InitInflationParamsHelper>,
-    pallet_dapp_staking_v3::migrations::DAppStakingV3InitConfig<
-        Runtime,
-        InitDappStakingV3Params,
-        InitActivePriceGet,
-    >,
-    // This will handle new pallet storage version setting & it will put the new pallet into maintenance mode.
-    // But it's most important for testing with try-runtime.
-    pallet_dapp_staking_migration::DappStakingMigrationHandler<Runtime>,
+    // Part of astar-83, need to first cleanup old storage before re-using the pallet
     frame_support::migrations::RemovePallet<
-        BlockRewardName,
+        DappStakingMigrationName,
         <Runtime as frame_system::Config>::DbWeight,
     >,
+    // Part of astar-83
+    (pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,),
 );
-
-use sp_arithmetic::fixed_point::FixedU64;
-pub struct InitActivePriceGet;
-impl Get<FixedU64> for InitActivePriceGet {
-    fn get() -> FixedU64 {
-        FixedU64::from_rational(18, 100)
-    }
-}
-
-/// Used to initialize inflation parameters for the runtime.
-pub struct InitInflationParamsHelper;
-impl Get<(pallet_inflation::InflationParameters, EraNumber, Weight)> for InitInflationParamsHelper {
-    fn get() -> (pallet_inflation::InflationParameters, EraNumber, Weight) {
-        (
-            pallet_inflation::InflationParameters {
-                // Recalculation is done every two weeks, hence the small %.
-                max_inflation_rate: Perquintill::from_percent(7),
-                treasury_part: Perquintill::from_percent(5),
-                collators_part: Perquintill::from_rational(32_u64, 1000),
-                dapps_part: Perquintill::from_percent(13),
-                base_stakers_part: Perquintill::from_percent(25),
-                adjustable_stakers_part: Perquintill::from_percent(40),
-                bonus_part: Perquintill::from_rational(138_u64, 1000),
-                ideal_staking_rate: Perquintill::from_percent(50),
-            },
-            pallet_dapps_staking::CurrentEra::<Runtime>::get().saturating_add(1),
-            <Runtime as frame_system::Config>::DbWeight::get().reads(1),
-        )
-    }
-}
-
-use frame_support::BoundedVec;
-use pallet_dapp_staking_v3::{TierParameters, TiersConfiguration};
-type NumberOfTiers = <Runtime as pallet_dapp_staking_v3::Config>::NumberOfTiers;
-/// Used to initialize dApp staking parameters for the runtime.
-pub struct InitDappStakingV3Params;
-impl
-    Get<(
-        EraNumber,
-        TierParameters<NumberOfTiers>,
-        TiersConfiguration<NumberOfTiers>,
-    )> for InitDappStakingV3Params
-{
-    fn get() -> (
-        EraNumber,
-        TierParameters<NumberOfTiers>,
-        TiersConfiguration<NumberOfTiers>,
-    ) {
-        // 1. Prepare init values
-
-        // Init era of dApp staking v3 should be the next era after dApp staking v2
-        let init_era = pallet_dapps_staking::CurrentEra::<Runtime>::get().saturating_add(1);
-
-        // Reward portions according to the Tokenomics 2.0 report
-        let reward_portion = BoundedVec::try_from(vec![
-            Permill::from_percent(25),
-            Permill::from_percent(47),
-            Permill::from_percent(25),
-            Permill::from_percent(3),
-        ])
-        .unwrap_or_default();
-
-        // Tier thresholds adjusted according to numbers observed on Shibuya
-        let tier_thresholds = BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: ASTR.saturating_mul(300_000_000),
-                minimum_amount: ASTR.saturating_mul(200_000_000),
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: ASTR.saturating_mul(75_000_000),
-                minimum_amount: ASTR.saturating_mul(50_000_000),
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: ASTR.saturating_mul(20_000_000),
-                minimum_amount: ASTR.saturating_mul(15_000_000),
-            },
-            TierThreshold::FixedTvlAmount {
-                amount: ASTR.saturating_mul(1_500_000),
-            },
-        ])
-        .unwrap_or_default();
-
-        // 2. Tier params
-        let tier_params =
-            TierParameters::<<Runtime as pallet_dapp_staking_v3::Config>::NumberOfTiers> {
-                reward_portion: reward_portion.clone(),
-                slot_distribution: BoundedVec::try_from(vec![
-                    Permill::from_percent(5),
-                    Permill::from_percent(20),
-                    Permill::from_percent(30),
-                    Permill::from_percent(45),
-                ])
-                .unwrap_or_default(),
-                tier_thresholds: tier_thresholds.clone(),
-            };
-
-        // 3. Init tier config
-        let init_tier_config = TiersConfiguration {
-            number_of_slots: 100,
-            slots_per_tier: BoundedVec::try_from(vec![5, 20, 30, 45]).unwrap_or_default(),
-            reward_portion,
-            tier_thresholds,
-        };
-
-        (init_era, tier_params, init_tier_config)
-    }
-}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1348,7 +1207,6 @@ mod benches {
         [pallet_assets, Assets]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapps_staking, DappsStaking]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
         [pallet_dapp_staking_migration, DappStakingMigration]
@@ -1432,8 +1290,8 @@ impl_runtime_apis! {
         }
     }
 
-    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-        fn account_nonce(account: AccountId) -> Index {
+    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+        fn account_nonce(account: AccountId) -> Nonce {
             System::account_nonce(account)
         }
     }
@@ -1857,14 +1715,14 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
             use frame_system_benchmarking::Pallet as SystemBench;
             use baseline::Pallet as BaselineBench;
 
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}
 
-            use frame_support::traits::WhitelistedStorageKeys;
+            use frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
             let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
             let mut batches = Vec::<BenchmarkBatch>::new();
