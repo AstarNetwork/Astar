@@ -38,9 +38,6 @@ mod benchmarks {
         let account: T::AccountId = whitelisted_caller();
         T::AddMember::add_member(account.clone());
 
-        // TODO: probably should limit size via config param. That way I can ensure that provided key/value pairs are of the correct size
-        // as the `x` iter value.
-
         // Get base feed value
         let currency_id_price_pair = T::BenchmarkCurrencyIdValuePair::get();
 
@@ -52,7 +49,6 @@ mod benchmarks {
                 .try_push(currency_id_price_pair.clone())
                 .unwrap();
         }
-        // TODO: clearly this isn't correct yet, we need to ensure distinct currency Ids are used
 
         #[block]
         {

@@ -1326,14 +1326,16 @@ impl pallet_membership::Config<OracleMembershipInstance> for Runtime {
     type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
 }
 
-// TODO: get rid of this after running the benchmarks
+// The oracle-benchmarks pallet should be removed once we uplift to high enough version
+// (assumption is `polkadot-v1.10.0`) to have access to normal oracle pallet benchmarks).
+//
+// The pallet is stateless so in order to remove it, only code needs to be cleaned up.
 pub struct DummyKeyPairValue;
 impl Get<(CurrencyId, CurrencyAmount)> for DummyKeyPairValue {
     fn get() -> (CurrencyId, CurrencyAmount) {
         (CurrencyId::ASTR, CurrencyAmount::from_rational(15, 100))
     }
 }
-
 pub struct AddMemberBenchmark;
 impl oracle_benchmarks::AddMember<AccountId> for AddMemberBenchmark {
     fn add_member(account: AccountId) {
@@ -1415,9 +1417,8 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
-        // TODO: remove prior to the merge
+        // Remove after benchmarks are available in orml_oracle
         OracleBenchmarks: oracle_benchmarks = 251,
-
         // Remove after migrating to v6 storage
         DappStakingMigration: pallet_dapp_staking_migration = 252,
         // To be removed & cleaned up once proper oracle is implemented
