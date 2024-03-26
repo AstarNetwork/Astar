@@ -295,6 +295,7 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
+    type RuntimeFreezeReason = ();
     type MaxHolds = ();
     type MaxFreezes = ();
 }
@@ -384,6 +385,7 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
+    type SuicideQuickClearLimit = ConstU32<0>;
     type Timestamp = Timestamp;
 }
 

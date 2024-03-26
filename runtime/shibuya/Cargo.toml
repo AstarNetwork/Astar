@@ -24,6 +24,7 @@ sp-arithmetic = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
+sp-genesis-builder = { workspace = true }
 sp-inherents = { workspace = true }
 sp-io = { workspace = true }
 sp-offchain = { workspace = true }
@@ -153,6 +154,7 @@ std = [
 	"sp-std/std",
 	"sp-api/std",
 	"sp-core/std",
+	"sp-genesis-builder/std",
 	"sp-consensus-aura/std",
 	"pallet-dapp-staking-migration/std",
 	"sp-io/std",
@@ -275,6 +277,7 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"cumulus-primitives-utility/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",

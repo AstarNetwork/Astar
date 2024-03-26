@@ -114,6 +114,7 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<1>;
     type WeightInfo = ();
@@ -173,6 +174,7 @@ impl pallet_evm::Config for Test {
     type OnCreate = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
+    type SuicideQuickClearLimit = ConstU32<0>;
 }
 
 impl pallet_timestamp::Config for Test {

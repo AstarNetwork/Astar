@@ -79,6 +79,7 @@ impl pallet_balances::Config for TestRuntime {
     type WeightInfo = ();
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
+    type RuntimeFreezeReason = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
 }
@@ -134,6 +135,7 @@ impl pallet_evm::Config for TestRuntime {
     type Timestamp = Timestamp;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<TestRuntime>;
     type GasLimitPovSizeRatio = ConstU64<4>;
+    type SuicideQuickClearLimit = ConstU32<0>;
 }
 
 parameter_types! {
