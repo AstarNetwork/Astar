@@ -756,6 +756,7 @@ version = "5.35.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
+ "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -821,6 +822,7 @@ dependencies = [
  "pallet-vesting",
  "pallet-xc-asset-config",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain-primitives",
@@ -14044,6 +14046,7 @@ version = "5.35.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
+ "astar-xcm-benchmarks",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -14110,6 +14113,7 @@ dependencies = [
  "pallet-vesting",
  "pallet-xc-asset-config",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain-primitives",
