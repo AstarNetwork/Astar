@@ -412,7 +412,11 @@ pub type Barrier = (
 
 pub struct LocalAssetTransactor;
 impl TransactAsset for LocalAssetTransactor {
-    fn deposit_asset(_what: &MultiAsset, _who: &MultiLocation, _context: &XcmContext) -> XcmResult {
+    fn deposit_asset(
+        _what: &MultiAsset,
+        _who: &MultiLocation,
+        _context: Option<&XcmContext>,
+    ) -> XcmResult {
         Ok(())
     }
 

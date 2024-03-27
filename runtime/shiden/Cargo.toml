@@ -96,7 +96,6 @@ orml-xtokens = { workspace = true }
 array-bytes = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-system-benchmarking = { workspace = true, optional = true }
-pallet-collective = { workspace = true, optional = true }
 
 # try-runtime
 frame-try-runtime = { workspace = true, optional = true }
@@ -156,7 +155,6 @@ std = [
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
-	"pallet-collective/std",
 	"pallet-contracts-primitives/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
@@ -230,7 +228,6 @@ runtime-benchmarks = [
 	"pallet-dapp-staking-migration/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
-	"pallet-collective/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",

@@ -8550,6 +8550,7 @@ dependencies = [
  "ethereum-types",
  "fp-ethereum",
  "fp-evm",
+ "fp-rpc",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -14038,7 +14039,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
- "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapp-staking-migration",
@@ -17747,6 +17747,7 @@ dependencies = [
 name = "xcm-simulator-tests"
 version = "0.1.0"
 dependencies = [
+ "assert_matches",
  "astar-primitives",
  "astar-test-utils",
  "cumulus-pallet-xcm",
@@ -17760,6 +17761,7 @@ dependencies = [
  "pallet-balances",
  "pallet-contracts",
  "pallet-contracts-primitives",
+ "pallet-dapp-staking-v3",
  "pallet-insecure-randomness-collective-flip",
  "pallet-message-queue",
  "pallet-proxy",

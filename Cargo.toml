@@ -170,12 +170,9 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 pallet-vesting = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 frame-system-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
-pallet-collective = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 frame-try-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
-pallet-democracy = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 pallet-preimage = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 pallet-scheduler = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
-pallet-treasury = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 pallet-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 pallet-message-queue = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 
@@ -273,7 +270,6 @@ orml-xcm-support = { git = "https://github.com/AstarNetwork/open-runtime-module-
 # Astar pallets & modules
 # (wasm)
 pallet-collator-selection = { path = "./pallets/collator-selection", default-features = false }
-pallet-dapps-staking = { path = "./pallets/dapps-staking", default-features = false }
 pallet-dapp-staking-v3 = { path = "./pallets/dapp-staking-v3", default-features = false }
 pallet-dapp-staking-migration = { path = "./pallets/dapp-staking-migration", default-features = false }
 pallet-xc-asset-config = { path = "./pallets/xc-asset-config", default-features = false }
@@ -295,7 +291,6 @@ pallet-evm-precompile-sr25519 = { path = "./precompiles/sr25519", default-featur
 pallet-evm-precompile-substrate-ecdsa = { path = "./precompiles/substrate-ecdsa", default-features = false }
 pallet-evm-precompile-xcm = { path = "./precompiles/xcm", default-features = false }
 pallet-evm-precompile-xvm = { path = "./precompiles/xvm", default-features = false }
-pallet-evm-precompile-dapps-staking = { path = "./precompiles/dapps-staking", default-features = false }
 pallet-evm-precompile-dapp-staking-v3 = { path = "./precompiles/dapp-staking-v3", default-features = false }
 pallet-evm-precompile-unified-accounts = { path = "./precompiles/unified-accounts", default-features = false }
 pallet-evm-precompile-dispatch-lockdrop = { path = "./precompiles/dispatch-lockdrop", default-features = false }

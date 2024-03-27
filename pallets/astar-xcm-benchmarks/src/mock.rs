@@ -252,6 +252,8 @@ impl xcm_executor::Config for XcmConfig {
 impl pallet_xcm_benchmarks::Config for Test {
     type XcmConfig = XcmConfig;
     type AccountIdConverter = AccountIdConverter;
+    type DeliveryHelper = ();
+
     fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
         let valid_destination: MultiLocation = X1(AccountId32 {
             network: None,
@@ -272,6 +274,7 @@ impl pallet_xcm_benchmarks::Config for Test {
 
 impl pallet_xcm_benchmarks::generic::Config for Test {
     type RuntimeCall = RuntimeCall;
+    type TransactAsset = Balances;
 
     fn worst_case_response() -> (u64, Response) {
         let assets: MultiAssets = (Concrete(Here.into()), 100).into();
