@@ -829,7 +829,7 @@ dependencies = [
  "polkadot-parachain-primitives",
  "polkadot-primitives",
  "polkadot-runtime-common",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
@@ -4176,7 +4176,7 @@ dependencies = [
 [[package]]
 name = "fc-api"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "async-trait",
  "fp-storage",
@@ -4188,7 +4188,7 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "async-trait",
  "fp-consensus",
@@ -4204,7 +4204,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "async-trait",
  "fc-api",
@@ -4225,7 +4225,7 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "fc-db",
  "fc-storage",
@@ -4246,7 +4246,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -4300,7 +4300,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -4313,7 +4313,7 @@ dependencies = [
 [[package]]
 name = "fc-storage"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -4478,7 +4478,7 @@ dependencies = [
 [[package]]
 name = "fp-account"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "hex",
  "impl-serde",
@@ -4497,7 +4497,7 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -4509,7 +4509,7 @@ dependencies = [
 [[package]]
 name = "fp-ethereum"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -4522,7 +4522,7 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "evm",
  "frame-support",
@@ -4538,7 +4538,7 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -4555,7 +4555,7 @@ dependencies = [
 [[package]]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -4567,7 +4567,7 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -5728,7 +5728,7 @@ dependencies = [
  "pallet-unified-accounts",
  "pallet-utility",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "sha3",
  "shibuya-runtime",
  "shiden-runtime",
@@ -6748,7 +6748,7 @@ dependencies = [
  "pallet-vesting",
  "pallet-xvm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
@@ -8521,7 +8521,7 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -8569,7 +8569,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "environmental",
  "evm",
@@ -8595,7 +8595,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-chain-id"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8618,7 +8618,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "serde",
  "sha3",
@@ -8632,7 +8632,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "fp-evm",
 ]
@@ -8640,7 +8640,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -8664,7 +8664,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "serde",
  "sha3",
@@ -8678,7 +8678,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8705,7 +8705,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-utility",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "sp-core",
  "sp-io",
@@ -8716,7 +8716,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "ed25519-dalek",
  "fp-evm",
@@ -8725,7 +8725,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "fp-evm",
  "num",
@@ -8734,7 +8734,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "fp-evm",
  "tiny-keccak",
@@ -8743,7 +8743,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#76939a19b45d9908f0358b0aaed9a5ab20398f45"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
 dependencies = [
  "fp-evm",
  "ripemd",
@@ -8765,7 +8765,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "serde",
  "sp-core",
@@ -8790,7 +8790,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "serde",
  "sp-core",
@@ -8819,7 +8819,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-unified-accounts",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "serde",
  "sp-core",
@@ -8851,7 +8851,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-xcm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "serde",
  "sp-core",
@@ -8880,7 +8880,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "serde",
  "sp-core",
@@ -9577,7 +9577,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "sp-core",
  "sp-io",
@@ -11207,6 +11207,50 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "staging-xcm",
+]
+
+[[package]]
+name = "precompile-utils"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
+dependencies = [
+ "derive_more",
+ "environmental",
+ "evm",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal",
+ "impl-trait-for-tuples",
+ "log",
+ "num_enum 0.7.0",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils-macro",
+ "scale-info",
+ "serde",
+ "similar-asserts",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-weights",
+ "staging-xcm",
+]
+
+[[package]]
+name = "precompile-utils-macro"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0#73d814d42ed30e9b896adeff1cb2429bd465e82e"
+dependencies = [
+ "case",
+ "num_enum 0.7.0",
+ "prettyplease 0.2.15",
+ "proc-macro2",
+ "quote",
+ "sp-core-hashing",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -13978,7 +14022,7 @@ dependencies = [
  "polkadot-parachain-primitives",
  "polkadot-primitives",
  "polkadot-runtime-common",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
@@ -14078,7 +14122,7 @@ dependencies = [
  "polkadot-parachain-primitives",
  "polkadot-primitives",
  "polkadot-runtime-common",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v1.3.0)",
  "scale-info",
  "smallvec 1.11.0",
  "sp-api",
