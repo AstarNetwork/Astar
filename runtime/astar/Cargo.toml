@@ -103,7 +103,6 @@ astar-primitives = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
-pallet-dapps-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
@@ -247,7 +246,6 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-proxy/try-runtime",
-	"pallet-dapps-staking/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
 	"pallet-dapp-staking-migration/try-runtime",
 	"pallet-inflation/try-runtime",

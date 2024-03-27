@@ -281,45 +281,6 @@ impl OnUnbalanced<NegativeImbalance> for BurnFees {
     }
 }
 
-#[derive(
-    PartialEq, Eq, Copy, Clone, Encode, Decode, MaxEncodedLen, RuntimeDebug, scale_info::TypeInfo,
-)]
-pub enum SmartContract {
-    Wasm(u32),
-}
-
-impl Default for SmartContract {
-    fn default() -> Self {
-        SmartContract::Wasm(0)
-    }
-}
-
-parameter_types! {
-    pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
-    pub const MaxUnlockingChunks: u32 = 5;
-    pub const UnbondingPeriod: u32 = 5;
-    pub const MaxEraStakeValues: u32 = 5;
-}
-
-impl pallet_dapps_staking::Config for Runtime {
-    type Currency = Balances;
-    type BlockPerEra = ConstU64<5>;
-    type SmartContract = SmartContract;
-    type RegisterDeposit = ConstU128<1>;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
-    type MaxNumberOfStakersPerContract = ConstU32<8>;
-    type MinimumStakingAmount = ConstU128<1>;
-    type PalletId = DappsStakingPalletId;
-    type MinimumRemainingAmount = ConstU128<0>;
-    type MaxUnlockingChunks = ConstU32<4>;
-    type UnbondingPeriod = ConstU32<2>;
-    type MaxEraStakeValues = ConstU32<4>;
-    type UnregisteredDappRewardRetention = ConstU32<7>;
-    type ForcePalletDisabled = ConstBool<false>;
-    type DelegateClaimFee = ConstU128<1>;
-}
-
 /// The type used to represent the kinds of proxying allowed.
 #[derive(
     Copy,
@@ -336,7 +297,7 @@ impl pallet_dapps_staking::Config for Runtime {
 )]
 pub enum ProxyType {
     CancelProxy,
-    DappsStaking,
+    DappStaking,
     StakerRewardClaim,
 }
 
@@ -355,14 +316,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                     RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
                 )
             }
-            ProxyType::DappsStaking => {
-                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            ProxyType::DappStaking => {
+                matches!(c, RuntimeCall::DappStaking(..) | RuntimeCall::Utility(..))
             }
             ProxyType::StakerRewardClaim => {
                 matches!(
                     c,
-                    RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
-                        | RuntimeCall::Utility(..)
+                    RuntimeCall::DappStaking(
+                        pallet_dapp_staking::Call::claim_staker_rewards { .. }
+                    ) | RuntimeCall::Utility(..)
                 )
             }
         }
@@ -370,7 +332,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 
     fn is_superset(&self, o: &Self) -> bool {
         match (self, o) {
-            (Self::StakerRewardClaim, Self::DappsStaking) => true,
+            (Self::StakerRewardClaim, Self::DappStaking) => true,
             (x, y) if x == y => true,
             _ => false,
         }
@@ -683,7 +645,7 @@ construct_runtime!(
         Assets: pallet_assets,
         XcAssetConfig: pallet_xc_asset_config,
         CumulusXcm: cumulus_pallet_xcm,
-        DappsStaking: pallet_dapps_staking,
+        DappStaking: pallet_dapp_staking_v3,
         Proxy: pallet_proxy,
         Utility: pallet_utility,
         Randomness: pallet_insecure_randomness_collective_flip,

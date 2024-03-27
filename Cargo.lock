@@ -795,7 +795,6 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-dapp-staking-migration",
  "pallet-dapp-staking-v3",
- "pallet-dapps-staking",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
  "pallet-evm",
@@ -5720,7 +5719,6 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapp-staking-v3",
- "pallet-dapps-staking",
  "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -8427,30 +8425,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-dapps-staking"
-version = "3.10.0"
-dependencies = [
- "assert_matches",
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "num-traits",
- "pallet-balances",
- "pallet-session",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-democracy"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.3.0#401f8a3e9448db854f5605b679fa085b8f445039"
@@ -8694,31 +8668,6 @@ dependencies = [
  "serde",
  "sha3",
  "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-evm-precompile-dapps-staking"
-version = "3.6.3"
-dependencies = [
- "derive_more",
- "fp-evm",
- "frame-support",
- "frame-system",
- "log",
- "num_enum 0.5.11",
- "pallet-balances",
- "pallet-dapps-staking",
- "pallet-evm",
- "pallet-timestamp",
- "parity-scale-codec",
- "precompile-utils",
- "scale-info",
- "serde",
- "sha3",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -17811,7 +17760,6 @@ dependencies = [
  "pallet-balances",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-dapps-staking",
  "pallet-insecure-randomness-collective-flip",
  "pallet-message-queue",
  "pallet-proxy",

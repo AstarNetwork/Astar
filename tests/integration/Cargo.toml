@@ -35,7 +35,6 @@ sp-runtime = { workspace = true }
 assets-chain-extension-types = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
-pallet-dapps-staking = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
