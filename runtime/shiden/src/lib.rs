@@ -1031,11 +1031,6 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
-impl pallet_dapp_staking_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Self>;
-}
-
 construct_runtime!(
     pub struct Runtime
     {
@@ -1082,8 +1077,6 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
-        // Remove after migrating to v6 storage
-        DappStakingMigration: pallet_dapp_staking_migration = 252,
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
     }
@@ -1123,12 +1116,19 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+parameter_types! {
+    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
+
+}
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // Part of shiden-122
-    pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,
+    // TODO: mark with version number
+    frame_support::migrations::RemovePallet<
+        DappStakingMigrationName,
+        <Runtime as frame_system::Config>::DbWeight,
+    >,
 );
 
 use frame_support::traits::OnRuntimeUpgrade;

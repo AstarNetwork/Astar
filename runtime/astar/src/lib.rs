@@ -420,11 +420,6 @@ impl pallet_inflation::Config for Runtime {
     type WeightInfo = weights::pallet_inflation::SubstrateWeight<Runtime>;
 }
 
-impl pallet_dapp_staking_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Runtime>;
-}
-
 impl pallet_utility::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
@@ -1082,8 +1077,6 @@ construct_runtime!(
 
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
-        // To be removed & cleaned up after migration has been finished
-        DappStakingMigration: pallet_dapp_staking_migration = 254,
     }
 );
 
@@ -1123,18 +1116,17 @@ pub type Executive = frame_executive::Executive<
 
 parameter_types! {
     pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
+
 }
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // Part of astar-83, need to first cleanup old storage before re-using the pallet
+    // TODO: mark with version number
     frame_support::migrations::RemovePallet<
         DappStakingMigrationName,
         <Runtime as frame_system::Config>::DbWeight,
     >,
-    // Part of astar-83
-    (pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,),
 );
 
 type EventRecord = frame_system::EventRecord<
@@ -1214,7 +1206,6 @@ mod benches {
         [pallet_timestamp, Timestamp]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
-        [pallet_dapp_staking_migration, DappStakingMigration]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]

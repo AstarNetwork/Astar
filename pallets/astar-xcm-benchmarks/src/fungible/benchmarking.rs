@@ -61,11 +61,11 @@ mod benchmarks {
         <AssetTransactorOf<T>>::deposit_asset(
             &asset_to_deposit,
             &sender_location,
-            &XcmContext {
+            Some(&XcmContext {
                 origin: Some(sender_location.clone()),
                 message_id: [0; 32],
                 topic: None,
-            },
+            }),
         )
         .unwrap();
 
@@ -103,11 +103,11 @@ mod benchmarks {
         <AssetTransactorOf<T>>::deposit_asset(
             &asset_to_deposit,
             &sender_location,
-            &XcmContext {
+            Some(&XcmContext {
                 origin: Some(sender_location.clone()),
                 message_id: [0; 32],
                 topic: None,
-            },
+            }),
         )
         .unwrap();
         assert!(T::TransactAsset::balance(&dest_account).is_zero());
