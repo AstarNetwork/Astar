@@ -33,7 +33,7 @@ use frame_system::Config;
 use pallet_evm::GasWeightMapping;
 use pallet_evm_precompile_dispatch::DispatchValidateT;
 use parity_scale_codec::DecodeLimit;
-use precompile_utils::prelude::{revert, BoundedBytes, RuntimeHelper, UnboundedBytes};
+use precompile_utils::prelude::{revert, BoundedBytes, RuntimeHelper};
 use precompile_utils::EvmResult;
 use sp_core::{crypto::AccountId32, H160, H256};
 use sp_io::hashing::keccak_256;
@@ -57,6 +57,8 @@ pub struct DispatchLockdrop<Runtime, DispatchValidator, DecodeLimit = ConstU32<8
     PhantomData<(Runtime, DispatchValidator, DecodeLimit)>,
 );
 
+type CallLengthLimit = ConstU32<{ 2u32.pow(12) }>;
+
 #[precompile_utils::precompile]
 impl<Runtime, DispatchValidator, DecodeLimit>
     DispatchLockdrop<Runtime, DispatchValidator, DecodeLimit>
@@ -73,7 +75,7 @@ where
     #[precompile::public("dispatch_lockdrop_call(bytes,bytes)")]
     fn dispatch_lockdrop_call(
         handle: &mut impl PrecompileHandle,
-        call: UnboundedBytes,
+        call: BoundedBytes<CallLengthLimit>,
         pubkey: BoundedBytes<ECDSAPublic>,
     ) -> EvmResult<bool> {
         log::trace!(
