@@ -211,7 +211,6 @@ parameter_types! {
     pub SS58Prefix: u8 = 5;
 }
 
-// TODO: changing depost per item and per byte to `deposit` function will require storage migration it seems
 parameter_types! {
     pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
     pub const DepositPerByte: Balance = MILLISDN / 1_000_000;

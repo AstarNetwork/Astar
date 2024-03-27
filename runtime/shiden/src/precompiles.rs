@@ -83,7 +83,6 @@ pub type ShidenPrecompilesSetAt<R, C> = (
         AddressU64<1025>,
         Dispatch<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>,
         // Not callable from smart contract nor precompiles, only EOA accounts
-        // TODO: test this without the gensis hack for blacklisted
         (),
     >,
     PrecompileAt<AddressU64<1026>, ECRecoverPublicKey, (CallableByContract, CallableByPrecompile)>,

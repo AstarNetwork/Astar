@@ -874,11 +874,8 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = ConstU128<{ MILLIAST * 660 }>;
 }
 
-// TODO: remove this once https://github.com/paritytech/substrate/issues/12161 is resolved
-#[rustfmt::skip]
 construct_runtime!(
-    pub struct Runtime
-    {
+    pub struct Runtime {
         System: frame_system,
         Utility: pallet_utility,
         Timestamp: pallet_timestamp,
