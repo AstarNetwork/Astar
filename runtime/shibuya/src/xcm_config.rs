@@ -36,8 +36,8 @@ use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
-    ConvertedConcreteId, CurrencyAdapter, DescribeFamily, EnsureXcmOrigin, FungiblesAdapter,
-    HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    ConvertedConcreteId, CurrencyAdapter, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin,
+    FungiblesAdapter, HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     UsingComponents, WeightInfoBounds, WithComputedOrigin,
@@ -50,8 +50,7 @@ use orml_xcm_support::DisabledParachainFee;
 // Astar imports
 use astar_primitives::xcm::{
     AbsoluteAndRelativeReserveProvider, AccountIdToMultiLocation, AllowTopLevelPaidExecutionFrom,
-    DescribeAllTerminal, FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler,
-    MAX_ASSETS,
+    FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler, MAX_ASSETS,
 };
 
 parameter_types! {
