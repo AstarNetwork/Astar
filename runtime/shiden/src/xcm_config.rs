@@ -34,11 +34,11 @@ use sp_runtime::traits::{Convert, MaybeEquivalence};
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
-    ConvertedConcreteId, CurrencyAdapter, DescribeFamily, EnsureXcmOrigin, FixedWeightBounds,
-    FungiblesAdapter, HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    ConvertedConcreteId, CurrencyAdapter, DescribeFamily, EnsureXcmOrigin, FungiblesAdapter,
+    HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents, WithComputedOrigin,
+    UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{JustTry, WithOriginFilter},
@@ -291,7 +291,8 @@ parameter_types! {
     pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
 }
 
-pub type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+pub type Weigher =
+    WeightInfoBounds<weights::xcm::XcmWeight<Runtime, RuntimeCall>, RuntimeCall, MaxInstructions>;
 
 impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;

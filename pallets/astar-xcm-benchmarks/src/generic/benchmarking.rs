@@ -145,6 +145,15 @@ mod benchmarks {
         )))
     }
 
+    #[benchmark]
+    fn alias_origin() -> Result<(), BenchmarkError> {
+        #[block]
+        {}
+        Err(BenchmarkError::Override(BenchmarkResult::from_weight(
+            Weight::MAX,
+        )))
+    }
+
     impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
 
