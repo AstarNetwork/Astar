@@ -21,9 +21,9 @@
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::{
-    pending::ConsensusDataProvider, Eth, EthApiServer, EthBlockDataCacheTask, EthFilter,
-    EthFilterApiServer, EthPubSub, EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3,
-    Web3ApiServer,
+    pending::ConsensusDataProvider, Debug, DebugApiServer, Eth, EthApiServer,
+    EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub, EthPubSubApiServer, Net,
+    NetApiServer, OverrideHandle, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
@@ -379,12 +379,12 @@ where
     io.merge(
         EthFilter::new(
             client.clone(),
-            frontier_backend,
+            frontier_backend.clone(),
             graph.clone(),
             filter_pool,
             max_stored_filters,
             max_past_logs,
-            block_data_cache,
+            block_data_cache.clone(),
         )
         .into_rpc(),
     )?;
@@ -399,8 +399,18 @@ where
             client.clone(),
             sync,
             subscription_task_executor,
-            overrides,
+            overrides.clone(),
             pubsub_notification_sinks,
+        )
+        .into_rpc(),
+    )?;
+
+    io.merge(
+        Debug::new(
+            client.clone(),
+            frontier_backend,
+            overrides,
+            block_data_cache,
         )
         .into_rpc(),
     )?;
