@@ -162,13 +162,13 @@ where
 
             if remaining > Zero::zero() {
                 log::warn!(
-					target: LOG_TARGET,
-					"Code owner's account 0x{:?} for code {:?} has some non-unreservable deposit {:?} from a total of {:?} that will remain in reserved.",
-					HexDisplay::from(&code_info.owner.encode()),
-					hash,
-					remaining,
-					code_info.deposit
-				);
+                    target: LOG_TARGET,
+                    "Code owner's account 0x{:?} for code {:?} has some non-unreservable deposit {:?} from a total of {:?} that will remain in reserved.",
+                    HexDisplay::from(&code_info.owner.encode()),
+                    hash,
+                    remaining,
+                    code_info.deposit
+                );
             }
 
             let unreserved = code_info.deposit.saturating_sub(remaining);

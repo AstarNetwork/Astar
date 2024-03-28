@@ -60,10 +60,6 @@ All branch names should adhere to the following rules:
 - `doc/*`: documentation changes
 - `fix/*`: bug fixes
 
-
-**TODO**: We don't really use this at all from what I've seen?
-- `development/*`: nodes that are actively in development (including release candidates) will have the `development/` prefix in their branch name.
-
 Every major feature will be first deployed on our testnet parachain _Shibuya_ after which it can be deployed on one of the production networks.
 The expected flow is:
 

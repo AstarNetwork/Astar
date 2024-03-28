@@ -22,10 +22,9 @@ use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
-    CollatorSelectionConfig, CouncilConfig, DappStakingConfig, DemocracyConfig, EVMChainIdConfig,
-    EVMConfig, InflationConfig, InflationParameters, ParachainInfoConfig, Precompiles,
-    RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig,
-    TechnicalCommitteeConfig, TierThreshold, TreasuryConfig, VestingConfig, SBY,
+    CollatorSelectionConfig, DappStakingConfig, EVMChainIdConfig, EVMConfig, InflationConfig,
+    InflationParameters, ParachainInfoConfig, Precompiles, RuntimeGenesisConfig, SessionConfig,
+    SessionKeys, Signature, SudoConfig, SystemConfig, TierThreshold, VestingConfig, SBY,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -161,16 +160,6 @@ fn make_genesis(
         assets: Default::default(),
         parachain_system: Default::default(),
         transaction_payment: Default::default(),
-        council: CouncilConfig {
-            members: vec![],
-            phantom: Default::default(),
-        },
-        technical_committee: TechnicalCommitteeConfig {
-            members: vec![],
-            phantom: Default::default(),
-        },
-        democracy: DemocracyConfig::default(),
-        treasury: TreasuryConfig::default(),
         dapp_staking: DappStakingConfig {
             reward_portion: vec![
                 Permill::from_percent(40),

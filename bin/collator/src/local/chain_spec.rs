@@ -19,17 +19,15 @@
 //! Chain specifications.
 
 use local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BlockRewardConfig,
-    CouncilConfig, DappStakingConfig, DemocracyConfig, EVMConfig, GrandpaConfig, GrandpaId,
-    InflationConfig, InflationParameters, Precompiles, RewardDistributionConfig,
-    RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
-    TierThreshold, TreasuryConfig, VestingConfig, AST,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, DappStakingConfig,
+    EVMConfig, GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles,
+    RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig, TierThreshold, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
-    Perbill, Permill,
+    Permill,
 };
 
 type AccountPublic = <Signature as Verify>::Signer;
@@ -117,18 +115,6 @@ fn testnet_genesis(
                 .map(|k| (k, 1_000_000_000 * AST))
                 .collect(),
         },
-        block_reward: BlockRewardConfig {
-            // Make sure sum is 100
-            reward_config: RewardDistributionConfig {
-                treasury_percent: Perbill::from_percent(25),
-                base_staker_percent: Perbill::from_percent(30),
-                dapps_percent: Perbill::from_percent(20),
-                collators_percent: Perbill::zero(),
-                adjustable_percent: Perbill::from_percent(25),
-                ideal_dapps_staking_tvl: Perbill::from_percent(40),
-            },
-            ..Default::default()
-        },
         vesting: VestingConfig { vesting: vec![] },
         aura: AuraConfig {
             authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
@@ -164,24 +150,6 @@ fn testnet_genesis(
         },
         assets: Default::default(),
         transaction_payment: Default::default(),
-        council: CouncilConfig {
-            members: vec![
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                get_account_id_from_seed::<sr25519::Public>("Bob"),
-                get_account_id_from_seed::<sr25519::Public>("Charlie"),
-            ],
-            phantom: Default::default(),
-        },
-        technical_committee: TechnicalCommitteeConfig {
-            members: vec![
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                get_account_id_from_seed::<sr25519::Public>("Bob"),
-                get_account_id_from_seed::<sr25519::Public>("Charlie"),
-            ],
-            phantom: Default::default(),
-        },
-        democracy: DemocracyConfig::default(),
-        treasury: TreasuryConfig::default(),
         dapp_staking: DappStakingConfig {
             reward_portion: vec![
                 Permill::from_percent(40),

@@ -145,6 +145,7 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type RuntimeHoldReason = ();
     type FreezeIdentifier = ();
+    type RuntimeFreezeReason = ();
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
 }
@@ -178,6 +179,7 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type WeightInfo = ();
     type GasLimitPovSizeRatio = ConstU64<4>;
+    type SuicideQuickClearLimit = ConstU32<0>;
 }
 
 // These parameters dont matter much as this will only be called by root with the forced arguments

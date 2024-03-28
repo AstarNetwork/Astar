@@ -156,13 +156,6 @@ pub enum SmartContract<AccountId> {
     Wasm(AccountId),
 }
 
-// TODO: remove this once dApps staking v2 has been removed.
-impl<AccountId> Default for SmartContract<AccountId> {
-    fn default() -> Self {
-        Self::evm([0x01; 20].into())
-    }
-}
-
 impl<AccountId> SmartContractHandle<AccountId> for SmartContract<AccountId> {
     fn evm(address: H160) -> Self {
         Self::Evm(address)

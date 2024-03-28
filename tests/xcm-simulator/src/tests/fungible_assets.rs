@@ -21,9 +21,8 @@ use frame_support::{assert_ok, weights::Weight};
 use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
-// TODO: remove this when retiring pallet-xcm fork
 #[test]
-fn para_to_para_reserve_transfer_and_back_via_pallet_xcm() {
+fn para_to_para_reserve_transfer_and_back_via_xtokens() {
     MockNet::reset();
 
     let sibling_asset_id = 123 as u128;
@@ -409,12 +408,10 @@ fn para_to_para_reserve_transfer_local_asset() {
     });
 }
 
-// TODO: remove this when retiring pallet-xcm fork
-//
 // Send a relay asset (like DOT/KSM) to a parachain A
 // and send it back from Parachain A to relaychain
 #[test]
-fn receive_relay_asset_from_relay_and_send_them_back_via_pallet_xcm() {
+fn receive_relay_asset_from_relay_and_send_them_back_via_xtokens() {
     MockNet::reset();
 
     let source_location = (Parent,);

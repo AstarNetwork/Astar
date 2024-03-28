@@ -99,6 +99,7 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = RuntimeFreezeReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<1>;
     type WeightInfo = ();

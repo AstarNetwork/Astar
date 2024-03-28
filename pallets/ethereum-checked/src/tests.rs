@@ -22,7 +22,8 @@ use super::*;
 use mock::*;
 
 use astar_primitives::ethereum_checked::EthereumTxInput;
-use ethereum::{ReceiptV3, TransactionV2 as Transaction};
+use ethereum::{ReceiptV3, ReceiptV3 as Receipt, TransactionV2 as Transaction};
+pub use fp_rpc::TransactionStatus;
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 
@@ -30,6 +31,14 @@ fn bounded_input(data: &'static str) -> EthereumTxInput {
     EthereumTxInput::try_from(hex::decode(data).expect("invalid input hex"))
         .expect("input too large")
 }
+
+// A hacky way to get around crate pub visibility of the storage item.
+#[frame_support::storage_alias]
+type Pending<T: pallet_ethereum::Config> = StorageValue<
+    pallet_ethereum::Pallet<T>,
+    Vec<(Transaction, TransactionStatus, Receipt)>,
+    ValueQuery,
+>;
 
 #[test]
 fn transact_works() {
@@ -52,7 +61,7 @@ fn transact_works() {
             RawOrigin::XcmEthereumTx(ALICE).into(),
             store_tx
         ));
-        let pending = pallet_ethereum::Pending::<TestRuntime>::get();
+        let pending = Pending::<TestRuntime>::get();
         assert_eq!(pending.len(), 2);
 
         match pending[0] {
@@ -143,7 +152,7 @@ fn no_hash_collision() {
             ));
         }
 
-        let mut tx_hashes = pallet_ethereum::Pending::<TestRuntime>::get()
+        let mut tx_hashes = Pending::<TestRuntime>::get()
             .iter()
             .map(|(tx, _, _)| tx.hash())
             .collect::<Vec<_>>();

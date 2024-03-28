@@ -32,7 +32,7 @@ fn test_utility_call_pass_for_any() {
         ));
 
         // Preparing Utility call
-        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
             dest: MultiAddress::Id(CAT),
             value: 100_000_000_000,
         });
@@ -67,7 +67,7 @@ fn test_utility_call_pass_for_balances() {
         ));
 
         // Preparing Utility call
-        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
             dest: MultiAddress::Id(CAT),
             value: 100_000_000_000,
         });
@@ -102,7 +102,7 @@ fn test_utility_call_fail_non_transfer() {
         ));
 
         // Preparing Utility call
-        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
             dest: MultiAddress::Id(CAT),
             value: 100_000_000_000,
         });
@@ -142,7 +142,7 @@ fn test_utility_call_fail_for_dappstaking() {
         ));
 
         // Preparing Utility call
-        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
             dest: MultiAddress::Id(CAT),
             value: 100_000_000_000,
         });

@@ -97,6 +97,7 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 4];
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = ();
+	type RuntimeFreezeReason = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type MaxHolds = ();
@@ -162,6 +163,7 @@ impl PrecompileHandle for MockPrecompileHandle {
 		&mut self,
 		_ref_time: Option<u64>,
 		_proof_size: Option<u64>,
+		_storage_growth: Option<u64>,
 	) -> Result<(), fp_evm::ExitError> {
 		Ok(())
 	}
@@ -219,7 +221,6 @@ parameter_types! {
 		let block_gas_limit = BlockGasLimit::get().min(u64::MAX.into()).low_u64();
 		block_gas_limit.saturating_div(MAX_POV_SIZE)
 	};
-	pub SuicideQuickClearLimit: u32 = 0;
 }
 
 impl pallet_evm::Config for Runtime {
@@ -241,7 +242,7 @@ impl pallet_evm::Config for Runtime {
 	type OnCreate = ();
 	type FindAuthor = ();
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
-	type SuicideQuickClearLimit = SuicideQuickClearLimit;
+	type SuicideQuickClearLimit = ConstU32<0>;
 	type Timestamp = Timestamp;
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }

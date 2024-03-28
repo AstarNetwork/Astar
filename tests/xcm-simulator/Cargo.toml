@@ -8,6 +8,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dev-dependencies]
+assert_matches = { workspace = true }
 log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
@@ -33,7 +34,7 @@ sp-tracing = { workspace = true }
 # Custom Astar inclusions
 astar-primitives = { workspace = true }
 astar-test-utils = { workspace = true }
-pallet-dapps-staking = { workspace = true }
+pallet-dapp-staking-v3 = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 
 # polkadot deps
@@ -76,13 +77,13 @@ std = [
 	"cumulus-pallet-xcm/std",
 	"pallet-assets/std",
 	"polkadot-primitives/std",
-	"pallet-dapps-staking/std",
 	"pallet-proxy/std",
 	"pallet-utility/std",
 	"pallet-message-queue/std",
 	"orml-xtokens/std",
 	"orml-traits/std",
 	"orml-xcm-support/std",
+	"pallet-dapp-staking-v3/std",
 ]
 runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
@@ -98,4 +99,5 @@ runtime-benchmarks = [
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
+	"pallet-dapp-staking-v3/runtime-benchmarks",
 ]

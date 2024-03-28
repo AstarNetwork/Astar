@@ -165,7 +165,7 @@ fn approve_works() {
 
         // Contract approve Alice to spend 100 tokens
         // First the contract need Existential DDeposit
-        assert_ok!(Balances::transfer(
+        assert_ok!(Balances::transfer_allow_death(
             RuntimeOrigin::signed(ALICE),
             contract_id.clone().into(),
             UNIT,

@@ -43,7 +43,7 @@ fn filter_accepts_batch_call_with_whitelisted_calls() {
 fn filter_rejects_non_whitelisted_batch_calls() {
     ExtBuilder::default().build().execute_with(|| {
         // CASE1 - only non whitelisted calls
-        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
             dest: MultiAddress::Id(CAT),
             value: 100_000_000_000,
         });
@@ -90,7 +90,7 @@ fn filter_accepts_whitelisted_calls() {
 fn filter_rejects_non_whitelisted_calls() {
     ExtBuilder::default().build().execute_with(|| {
         // Random call from non whitelisted pallet doesn't work
-        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer {
+        let transfer_call = RuntimeCall::Balances(BalancesCall::transfer_allow_death {
             dest: MultiAddress::Id(CAT),
             value: 100_000_000_000,
         });

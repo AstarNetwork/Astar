@@ -23,6 +23,8 @@ use parity_scale_codec::Encode;
 use xcm::prelude::*;
 use xcm_simulator::TestExt;
 
+use astar_primitives::dapp_staking::SmartContractHandle;
+
 #[test]
 fn basic_dmp() {
     MockNet::reset();
@@ -190,31 +192,35 @@ fn remote_dapps_staking_staker_claim() {
     // The idea of this test case is to remotely claim dApps staking staker rewards.
     // Remote claim will be sent from parachain A to parachain B.
 
-    let smart_contract = parachain::SmartContract::Wasm(1337);
+    let smart_contract =
+        parachain::MockSmartContract::wasm(parachain::AccountId::from([13 as u8; 32]));
     let stake_amount = 100_000_000;
 
     // 1st step
     // Register contract & stake on it. Advance a few blocks until at least era 4 since we need 3 claimable rewards.
     // Enable parachain A sovereign account to claim on Alice's behalf.
     ParaB::execute_with(|| {
-        assert_ok!(parachain::DappsStaking::register(
+        assert_ok!(parachain::DappStaking::register(
             parachain::RuntimeOrigin::root(),
             ALICE,
             smart_contract.clone(),
         ));
-        assert_ok!(parachain::DappsStaking::bond_and_stake(
+        assert_ok!(parachain::DappStaking::lock(
+            parachain::RuntimeOrigin::signed(ALICE),
+            stake_amount,
+        ));
+        assert_ok!(parachain::DappStaking::stake(
             parachain::RuntimeOrigin::signed(ALICE),
             smart_contract.clone(),
             stake_amount,
         ));
-        assert_ok!(parachain::DappsStaking::set_reward_destination(
-            parachain::RuntimeOrigin::signed(ALICE),
-            pallet_dapps_staking::RewardDestination::StakeBalance,
-        ));
 
-        // advance enough blocks so we at least get to era 4
-        advance_parachain_block_to(20);
-        assert!(parachain::DappsStaking::current_era() >= 4);
+        // advance enough blocks so we at least get to era 5 - this gives us era 2, 3 and 4 for claiming
+        while pallet_dapp_staking_v3::ActiveProtocolState::<parachain::Runtime>::get().era < 5 {
+            advance_parachain_block_to(parachain::System::block_number() + 1);
+        }
+        // Ensure it's not first block so event storage is clear
+        advance_parachain_block_to(parachain::System::block_number() + 1);
 
         // Register para A sovereign account as proxy with dApps staking privileges
         assert_ok!(parachain::Proxy::add_proxy(
@@ -225,11 +231,9 @@ fn remote_dapps_staking_staker_claim() {
         ));
     });
 
-    let claim_staker_call = parachain::RuntimeCall::DappsStaking(pallet_dapps_staking::Call::<
+    let claim_staker_call = parachain::RuntimeCall::DappStaking(pallet_dapp_staking_v3::Call::<
         parachain::Runtime,
-    >::claim_staker {
-        contract_id: smart_contract.clone(),
-    });
+    >::claim_staker_rewards {});
 
     // 2nd step
     // Dispatch remote `claim_staker` call from Para A to Para B
@@ -264,22 +268,22 @@ fn remote_dapps_staking_staker_claim() {
     // Receive claim & verify it was successful
     ParaB::execute_with(|| {
         // We expect exactly one `Reward` event
-        assert_eq!(
-            parachain::System::events()
-                .iter()
-                .filter(|r| matches!(
-                    r.event,
-                    parachain::RuntimeEvent::DappsStaking(
-                        pallet_dapps_staking::Event::Reward { .. }
-                    )
-                ))
-                .count(),
-            1
-        );
+        let dapp_staking_events = parachain::System::events()
+            .into_iter()
+            .map(|r| r.event)
+            .filter_map(|e| {
+                <parachain::Runtime as pallet_dapp_staking_v3::Config>::RuntimeEvent::from(e)
+                    .try_into()
+                    .ok()
+            })
+            .collect::<Vec<pallet_dapp_staking_v3::Event<parachain::Runtime>>>();
 
-        // Extra check to ensure reward was claimed for `Alice`
-        let staker_info = parachain::DappsStaking::staker_info(&ALICE, &smart_contract);
-        assert!(staker_info.latest_staked_value() > stake_amount);
+        assert_eq!(dapp_staking_events.len(), 1);
+        assert_matches::assert_matches!(
+            dapp_staking_events[0].clone(),
+                pallet_dapp_staking_v3::Event::Reward { account, .. }
+            if account == ALICE
+        );
 
         // Cleanup events
         parachain::System::reset_events();
@@ -328,8 +332,8 @@ fn remote_dapps_staking_staker_claim() {
                 .iter()
                 .filter(|r| matches!(
                     r.event,
-                    parachain::RuntimeEvent::DappsStaking(
-                        pallet_dapps_staking::Event::Reward { .. }
+                    parachain::RuntimeEvent::DappStaking(
+                        pallet_dapp_staking_v3::Event::Reward { .. }
                     )
                 ))
                 .count(),

@@ -26,6 +26,7 @@ use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
+    genesis_builder_helper::{build_config, create_default_config},
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
@@ -47,6 +48,7 @@ use frame_system::{
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
+use pallet_identity::simple::IdentityInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
@@ -293,6 +295,7 @@ impl pallet_identity::Config for Runtime {
     type SubAccountDeposit = SubAccountDeposit;
     type MaxSubAccounts = MaxSubAccounts;
     type MaxAdditionalFields = MaxAdditionalFields;
+    type IdentityInformation = IdentityInfo<MaxAdditionalFields>;
     type MaxRegistrars = MaxRegistrars;
     type Slashed = ();
     type ForceOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
@@ -415,11 +418,6 @@ impl pallet_inflation::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = weights::pallet_inflation::SubstrateWeight<Runtime>;
-}
-
-impl pallet_dapp_staking_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -552,6 +550,7 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
     type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<1>;
@@ -858,6 +857,7 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+    type SuicideQuickClearLimit = ConstU32<0>;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1077,8 +1077,6 @@ construct_runtime!(
 
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
-        // To be removed & cleaned up after migration has been finished
-        DappStakingMigration: pallet_dapp_staking_migration = 254,
     }
 );
 
@@ -1118,18 +1116,16 @@ pub type Executive = frame_executive::Executive<
 
 parameter_types! {
     pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
+
 }
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // Part of astar-83, need to first cleanup old storage before re-using the pallet
     frame_support::migrations::RemovePallet<
         DappStakingMigrationName,
         <Runtime as frame_system::Config>::DbWeight,
     >,
-    // Part of astar-83
-    (pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade<Runtime>,),
 );
 
 type EventRecord = frame_system::EventRecord<
@@ -1209,7 +1205,6 @@ mod benches {
         [pallet_timestamp, Timestamp]
         [pallet_dapp_staking_v3, DappStaking]
         [pallet_inflation, Inflation]
-        [pallet_dapp_staking_migration, DappStakingMigration]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PolkadotXcm]
@@ -1690,6 +1685,17 @@ impl_runtime_apis! {
 
         fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
             DappStaking::get_dapp_tier_assignment()
+        }
+    }
+
+
+    impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+        fn create_default_config() -> Vec<u8> {
+            create_default_config::<RuntimeGenesisConfig>()
+        }
+
+        fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
+            build_config::<RuntimeGenesisConfig>(config)
         }
     }
 

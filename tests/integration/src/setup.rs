@@ -162,7 +162,6 @@ pub const INITIAL_AMOUNT: u128 = 100_000 * UNIT;
 pub type SystemError = frame_system::Error<Runtime>;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_dapp_staking_v3 as DappStakingCall;
-pub use pallet_dapps_staking as DappsStakingCall;
 pub use pallet_proxy::Event as ProxyEvent;
 pub use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
 

@@ -27,6 +27,7 @@ astar-primitives = { workspace = true }
 
 [dev-dependencies]
 ethereum = { workspace = true }
+fp-rpc = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
