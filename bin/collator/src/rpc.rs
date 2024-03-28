@@ -379,12 +379,12 @@ where
     io.merge(
         EthFilter::new(
             client.clone(),
-            frontier_backend.clone(),
+            frontier_backend,
             graph.clone(),
             filter_pool,
             max_stored_filters,
             max_past_logs,
-            block_data_cache.clone(),
+            block_data_cache,
         )
         .into_rpc(),
     )?;
@@ -399,7 +399,7 @@ where
             client.clone(),
             sync,
             subscription_task_executor,
-            overrides.clone(),
+            overrides,
             pubsub_notification_sinks,
         )
         .into_rpc(),

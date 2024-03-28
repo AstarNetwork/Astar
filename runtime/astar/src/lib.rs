@@ -1122,7 +1122,6 @@ parameter_types! {
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // TODO: mark with version number
     frame_support::migrations::RemovePallet<
         DappStakingMigrationName,
         <Runtime as frame_system::Config>::DbWeight,

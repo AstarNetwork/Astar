@@ -1226,7 +1226,6 @@ use frame_support::migrations::RemovePallet;
 ///
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
-    // TODO: mark with version number
     RemovePallet<DappStakingMigrationName, <Runtime as frame_system::Config>::DbWeight>,
     RemovePallet<DemocracyName, <Runtime as frame_system::Config>::DbWeight>,
     RemovePallet<CouncilName, <Runtime as frame_system::Config>::DbWeight>,
