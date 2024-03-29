@@ -44,14 +44,20 @@ precompile-utils = { workspace = true }
 unified-accounts-chain-extension-types = { workspace = true }
 
 astar-primitives = { workspace = true }
-astar-runtime = { workspace = true, features = ["std"], optional = true }
-astar-test-utils = { workspace = true, features = ["std"] }
-shibuya-runtime = { workspace = true, features = ["std"], optional = true }
-shiden-runtime = { workspace = true, features = ["std"], optional = true }
+astar-runtime = { workspace = true, optional = true }
+astar-test-utils = { workspace = true }
+shibuya-runtime = { workspace = true, optional = true }
+shiden-runtime = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
-std = []
+std = [
+	"astar-runtime/std",
+	"shibuya-runtime/std",
+	"shiden-runtime/std",
+	"astar-primitives/std",
+	"astar-test-utils/std",
+]
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]
 astar = ["astar-runtime"]

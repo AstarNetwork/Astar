@@ -70,5 +70,6 @@ std = [
 	"orml-xtokens/std",
 	"orml-xcm-support/std",
 	"orml-traits/std",
+	"astar-primitives/std",
 ]
 runtime-benchmarks = ["pallet-xcm/runtime-benchmarks", "pallet-assets/runtime-benchmarks", "xcm-builder/runtime-benchmarks"]
