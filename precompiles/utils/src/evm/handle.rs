@@ -29,7 +29,7 @@ use fp_evm::{Log, PrecompileHandle};
 
 pub trait PrecompileHandleExt: PrecompileHandle {
     /// Record cost of one DB read manually.
-    /// The max encoded lenght of the data that will be read should be provided.
+    /// The max encoded length of the data that will be read should be provided.
     fn record_db_read<Runtime: pallet_evm::Config>(
         &mut self,
         data_max_encoded_len: usize,

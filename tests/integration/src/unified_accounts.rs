@@ -31,7 +31,7 @@ fn transfer_to_h160_via_lookup() {
         // make sure account is empty
         assert!(EVM::is_account_empty(&eth_address));
 
-        // tranfer to evm account
+        // transfer to evm account
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(ALICE),
             MultiAddress::Address20(eth_address.clone().into()),

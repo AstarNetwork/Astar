@@ -76,7 +76,7 @@ pub struct Migration<T: Config> {
 }
 
 /// Logic as follows,
-/// Since we need to modifiy `CodeInfoOf` mapping we cannot use `iter()` or `drain()` on it as
+/// Since we need to modify `CodeInfoOf` mapping we cannot use `iter()` or `drain()` on it as
 /// that will be undefined behaviour, so we are iterating over keys of `PristineCode` mappings
 /// which are code hashes.
 ///
