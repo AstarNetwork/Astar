@@ -64,9 +64,8 @@ where
     Runtime: frame_system::Config,
 {
     fn withdraw_asset(assets: &MultiAssets) -> XCMWeight {
-        assets.inner().iter().fold(Weight::zero(), |acc, _asset| {
-            acc.saturating_add(XcmFungibleWeight::<Runtime>::withdraw_asset())
-        })
+        XcmFungibleWeight::<Runtime>::withdraw_asset()
+            .saturating_mul(assets.inner().into_iter().count() as u64)
     }
 
     fn reserve_asset_deposited(_assets: &MultiAssets) -> XCMWeight {
@@ -84,18 +83,16 @@ where
         XcmGeneric::<Runtime>::query_response()
     }
     fn transfer_asset(assets: &MultiAssets, _dest: &MultiLocation) -> XCMWeight {
-        assets.inner().iter().fold(Weight::zero(), |acc, _asset| {
-            acc.saturating_add(XcmFungibleWeight::<Runtime>::transfer_asset())
-        })
+        XcmFungibleWeight::<Runtime>::transfer_asset()
+            .saturating_mul(assets.inner().into_iter().count() as u64)
     }
     fn transfer_reserve_asset(
         assets: &MultiAssets,
         _dest: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
-        assets.inner().iter().fold(Weight::zero(), |acc, _asset| {
-            acc.saturating_add(XcmFungibleWeight::<Runtime>::transfer_reserve_asset())
-        })
+        XcmFungibleWeight::<Runtime>::transfer_reserve_asset()
+            .saturating_mul(assets.inner().into_iter().count() as u64)
     }
     fn transact(
         _origin_type: &OriginKind,
