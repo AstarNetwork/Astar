@@ -23,7 +23,7 @@ This must be called by the root (at the moment).</p>
 </div></details><details class="toggle method-toggle" open><summary><section id="method.bond_and_stake" class="method"><a class="srclink rightside" href="../../../src/pallet_dapps_staking/pallet/mod.rs.html#42">source</a><h4 class="code-header">pub fn <a href="#method.bond_and_stake" class="fn">bond_and_stake</a>(
     origin: OriginFor&lt;T&gt;,
     contract_id: T::<a class="associatedtype" href="trait.Config.html#associatedtype.SmartContract" title="type pallet_dapps_staking::pallet::pallet::Config::SmartContract">SmartContract</a>,
-    value: Balance
+    value: <a class="type" href="../../../astar_primitives/type.Balance.html" title="type astar_primitives::Balance">Balance</a>
 ) -&gt; DispatchResultWithPostInfo</h4></section></summary><div class="docblock"><p>Lock up and stake balance of the origin account.</p>
 <p><code>value</code> must be more than the <code>minimum_balance</code> specified by <code>MinimumStakingAmount</code>
 unless account already has bonded value equal or more than ‘minimum_balance’.</p>
@@ -31,7 +31,7 @@ unless account already has bonded value equal or more than ‘minimum_balance’
 </div></details><details class="toggle method-toggle" open><summary><section id="method.unbond_and_unstake" class="method"><a class="srclink rightside" href="../../../src/pallet_dapps_staking/pallet/mod.rs.html#42">source</a><h4 class="code-header">pub fn <a href="#method.unbond_and_unstake" class="fn">unbond_and_unstake</a>(
     origin: OriginFor&lt;T&gt;,
     contract_id: T::<a class="associatedtype" href="trait.Config.html#associatedtype.SmartContract" title="type pallet_dapps_staking::pallet::pallet::Config::SmartContract">SmartContract</a>,
-    value: Balance
+    value: <a class="type" href="../../../astar_primitives/type.Balance.html" title="type astar_primitives::Balance">Balance</a>
 ) -&gt; DispatchResultWithPostInfo</h4></section></summary><div class="docblock"><p>Start unbonding process and unstake balance from the contract.</p>
 <p>The unstaked amount will no longer be eligible for rewards but still won’t be unlocked.
 User needs to wait for the unbonding period to finish before being able to withdraw
@@ -44,7 +44,7 @@ they will remain and can be withdrawn later.</p>
 </div></details><details class="toggle method-toggle" open><summary><section id="method.nomination_transfer" class="method"><a class="srclink rightside" href="../../../src/pallet_dapps_staking/pallet/mod.rs.html#42">source</a><h4 class="code-header">pub fn <a href="#method.nomination_transfer" class="fn">nomination_transfer</a>(
     origin: OriginFor&lt;T&gt;,
     origin_contract_id: T::<a class="associatedtype" href="trait.Config.html#associatedtype.SmartContract" title="type pallet_dapps_staking::pallet::pallet::Config::SmartContract">SmartContract</a>,
-    value: Balance,
+    value: <a class="type" href="../../../astar_primitives/type.Balance.html" title="type astar_primitives::Balance">Balance</a>,
     target_contract_id: T::<a class="associatedtype" href="trait.Config.html#associatedtype.SmartContract" title="type pallet_dapps_staking::pallet::pallet::Config::SmartContract">SmartContract</a>
 ) -&gt; DispatchResultWithPostInfo</h4></section></summary><div class="docblock"><p>Transfer nomination from one contract to another.</p>
 <p>Same rules as for <code>bond_and_stake</code> and <code>unbond_and_unstake</code> apply.
@@ -113,7 +113,7 @@ In order to claim multiple eras, this call has to be called multiple times.</p>
 <li><code>stakers</code> - portion of the reward that will be distributed to stakers</li>
 <li><code>dapps</code> - portion of the reward that will be distributed to dapps</li>
 </ul>
-</div></details><details class="toggle method-toggle" open><summary><section id="method.tvl" class="method"><a class="srclink rightside" href="../../../src/pallet_dapps_staking/pallet/mod.rs.html#1281-1289">source</a><h4 class="code-header">pub fn <a href="#method.tvl" class="fn">tvl</a>() -&gt; Balance</h4></section></summary><div class="docblock"><p>Returns total value locked by dapps-staking.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.tvl" class="method"><a class="srclink rightside" href="../../../src/pallet_dapps_staking/pallet/mod.rs.html#1281-1289">source</a><h4 class="code-header">pub fn <a href="#method.tvl" class="fn">tvl</a>() -&gt; <a class="type" href="../../../astar_primitives/type.Balance.html" title="type astar_primitives::Balance">Balance</a></h4></section></summary><div class="docblock"><p>Returns total value locked by dapps-staking.</p>
 <p>Note that this can differ from <em>total staked value</em> since some funds might be undergoing the unbonding period.</p>
 </div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-Pallet%3CT%3E-2" class="impl"><a class="srclink rightside" href="../../../src/pallet_dapps_staking/pallet/mod.rs.html#135">source</a><a href="#impl-Pallet%3CT%3E-2" class="anchor">§</a><h3 class="code-header">impl&lt;T: <a class="trait" href="trait.Config.html" title="trait pallet_dapps_staking::pallet::pallet::Config">Config</a>&gt; <a class="struct" href="struct.Pallet.html" title="struct pallet_dapps_staking::pallet::pallet::Pallet">Pallet</a>&lt;T&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.pallet_disabled" class="method"><a class="srclink rightside" href="../../../src/pallet_dapps_staking/pallet/mod.rs.html#135">source</a><h4 class="code-header">pub fn <a href="#method.pallet_disabled" class="fn">pallet_disabled</a>() -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.70.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>An auto-generated getter for <a href="type.PalletDisabled.html" title="type pallet_dapps_staking::pallet::pallet::PalletDisabled"><code>PalletDisabled</code></a>.</p>
 </div></details></div></details><details class="toggle implementors-toggle" open><summary><section id="impl-Pallet%3CT%3E-3" class="impl"><a class="srclink rightside" href="../../../src/pallet_dapps_staking/pallet/mod.rs.html#146">source</a><a href="#impl-Pallet%3CT%3E-3" class="anchor">§</a><h3 class="code-header">impl&lt;T: <a class="trait" href="trait.Config.html" title="trait pallet_dapps_staking::pallet::pallet::Config">Config</a>&gt; <a class="struct" href="struct.Pallet.html" title="struct pallet_dapps_staking::pallet::pallet::Pallet">Pallet</a>&lt;T&gt;</h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.ledger" class="method"><a class="srclink rightside" href="../../../src/pallet_dapps_staking/pallet/mod.rs.html#146">source</a><h4 class="code-header">pub fn <a href="#method.ledger" class="fn">ledger</a>&lt;KArg&gt;(k: KArg) -&gt; <a class="struct" href="../../struct.AccountLedger.html" title="struct pallet_dapps_staking::AccountLedger">AccountLedger</a><span class="where fmt-newline">where
