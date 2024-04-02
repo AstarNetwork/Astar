@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":["PriceProvider"]};
+window.SIDEBAR_ITEMS = {"enum":["CurrencyId"],"struct":["DummyCombineData"],"trait":["PriceProvider"],"type":["CurrencyAmount"]};

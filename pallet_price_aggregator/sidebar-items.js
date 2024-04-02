@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["pallet","weights"],"struct":["AverageBlockValue","CircularBuffer","MedianBlockValue","PriceAggregatorInitializer","ValueAggregator"],"trait":["ProcessBlockValues"]};

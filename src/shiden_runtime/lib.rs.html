@@ -1903,6 +1903,8 @@
 <a href="#1903" id="1903">1903</a>
 <a href="#1904" id="1904">1904</a>
 <a href="#1905" id="1905">1905</a>
+<a href="#1906" id="1906">1906</a>
+<a href="#1907" id="1907">1907</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -1957,7 +1959,6 @@
 <span class="kw">use </span>parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>polkadot_runtime_common::BlockHashCount;
 <span class="kw">use </span>sp_api::impl_runtime_apis;
-<span class="kw">use </span>sp_arithmetic::fixed_point::FixedU64;
 <span class="kw">use </span>sp_core::{ConstBool, OpaqueMetadata, H160, H256, U256};
 <span class="kw">use </span>sp_inherents::{CheckInherentsResult, InherentData};
 <span class="kw">use </span>sp_runtime::{
@@ -1977,6 +1978,7 @@
         PeriodNumber, SmartContract, TierId, TierSlots <span class="kw">as </span>TierSlotsFunc,
     },
     evm::EvmRevertCodeHandler,
+    oracle::CurrencyAmount,
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -2260,7 +2262,7 @@
 
 <span class="kw">pub struct </span>ShidenTierSlots;
 <span class="kw">impl </span>TierSlotsFunc <span class="kw">for </span>ShidenTierSlots {
-    <span class="kw">fn </span>number_of_slots(price: FixedU64) -&gt; u16 {
+    <span class="kw">fn </span>number_of_slots(price: CurrencyAmount) -&gt; u16 {
         <span class="comment">// According to the forum proposal, the original formula&#39;s factor is reduced from 1000x to 100x.
         </span><span class="kw">let </span>result: u64 = price.saturating_mul_int(<span class="number">100_u64</span>).saturating_add(<span class="number">50</span>);
         result.unique_saturated_into()
@@ -3023,13 +3025,15 @@
     Migrations,
 &gt;;
 
+<span class="macro">parameter_types! </span>{
+    <span class="comment">// Keep it exactly the same as before
+    </span><span class="kw">pub const </span>InitPrice: CurrencyAmount = CurrencyAmount::from_rational(<span class="number">32</span>, <span class="number">100</span>);
+}
+
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-</span><span class="kw">pub type </span>Migrations = (
-    <span class="comment">// Part of shiden-122
-    </span>pallet_dapp_staking_migration::SingularStakingInfoTranslationUpgrade&lt;Runtime&gt;,
-);
+</span><span class="kw">pub type </span>Migrations = (pallet_static_price_provider::ActivePriceUpdate&lt;Runtime, InitPrice&gt;,);
 
 <span class="kw">use </span>frame_support::traits::OnRuntimeUpgrade;
 <span class="kw">pub struct </span>SetNewTierConfig;

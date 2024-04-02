@@ -1889,7 +1889,7 @@
 </span><span class="kw">use </span>frame_support::{pallet_prelude::<span class="kw-2">*</span>, BoundedBTreeMap, BoundedVec};
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
-<span class="kw">use </span>sp_arithmetic::fixed_point::FixedU64;
+<span class="kw">use </span>sp_arithmetic::fixed_point::FixedU128;
 <span class="kw">use </span>sp_runtime::{
     traits::{CheckedAdd, UniqueSaturatedInto, Zero},
     FixedPointNumber, Permill, Saturating,
@@ -3451,7 +3451,7 @@
     }
 
     <span class="doccomment">/// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
-    </span><span class="kw">pub fn </span>calculate_new(<span class="kw-2">&amp;</span><span class="self">self</span>, native_price: FixedU64, params: <span class="kw-2">&amp;</span>TierParameters&lt;NT&gt;) -&gt; <span class="self">Self </span>{
+    </span><span class="kw">pub fn </span>calculate_new(<span class="kw-2">&amp;</span><span class="self">self</span>, native_price: FixedU128, params: <span class="kw-2">&amp;</span>TierParameters&lt;NT&gt;) -&gt; <span class="self">Self </span>{
         <span class="comment">// It must always be at least 1 slot.
         </span><span class="kw">let </span>new_number_of_slots = T::number_of_slots(native_price).max(<span class="number">1</span>);
 
@@ -3493,7 +3493,7 @@
         // new_threshold = old_threshold * (1 + %_threshold)
         //
         </span><span class="kw">let </span>new_tier_thresholds = <span class="kw">if </span>new_number_of_slots &gt; <span class="self">self</span>.number_of_slots {
-            <span class="kw">let </span>delta_threshold_decrease = FixedU64::from_rational(
+            <span class="kw">let </span>delta_threshold_decrease = FixedU128::from_rational(
                 (new_number_of_slots - <span class="self">self</span>.number_of_slots).into(),
                 new_number_of_slots.into(),
             );
@@ -3515,7 +3515,7 @@
 
             new_tier_thresholds
         } <span class="kw">else if </span>new_number_of_slots &lt; <span class="self">self</span>.number_of_slots {
-            <span class="kw">let </span>delta_threshold_increase = FixedU64::from_rational(
+            <span class="kw">let </span>delta_threshold_increase = FixedU128::from_rational(
                 (<span class="self">self</span>.number_of_slots - new_number_of_slots).into(),
                 new_number_of_slots.into(),
             );

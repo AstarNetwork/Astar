@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["pallet"],"struct":["InitActivePrice"]};
+window.SIDEBAR_ITEMS = {"mod":["pallet"],"struct":["ActivePriceUpdate"]};

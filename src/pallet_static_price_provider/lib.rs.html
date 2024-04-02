@@ -128,6 +128,9 @@
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
 <a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -163,7 +166,7 @@
 </span><span class="kw">use </span>frame_support::{pallet_prelude::<span class="kw-2">*</span>, traits::OnRuntimeUpgrade};
 <span class="kw">use </span>frame_system::{ensure_root, pallet_prelude::<span class="kw-2">*</span>};
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
-<span class="kw">use </span>sp_arithmetic::{fixed_point::FixedU64, traits::Zero, FixedPointNumber};
+<span class="kw">use </span>sp_arithmetic::{fixed_point::FixedU128, traits::Zero, FixedPointNumber};
 <span class="kw">use </span>sp_std::marker::PhantomData;
 
 <span class="kw">use </span>astar_primitives::oracle::PriceProvider;
@@ -179,7 +182,7 @@
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
     <span class="doccomment">/// The current storage version.
-    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">1</span>);
+    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">2</span>);
 
     <span class="attr">#[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -195,7 +198,7 @@
     #[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>deposit_event)]
     </span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
         <span class="doccomment">/// New static native currency price has been set.
-        </span>PriceSet { price: FixedU64 },
+        </span>PriceSet { price: FixedU128 },
     }
 
     <span class="attr">#[pallet::error]
@@ -207,16 +210,16 @@
     <span class="doccomment">/// Default value handler for active price.
     /// This pallet is temporary and it&#39;s not worth bothering with genesis config.
     </span><span class="kw">pub struct </span>DefaultActivePrice;
-    <span class="kw">impl </span>Get&lt;FixedU64&gt; <span class="kw">for </span>DefaultActivePrice {
-        <span class="kw">fn </span>get() -&gt; FixedU64 {
-            FixedU64::from_rational(<span class="number">1</span>, <span class="number">10</span>)
+    <span class="kw">impl </span>Get&lt;FixedU128&gt; <span class="kw">for </span>DefaultActivePrice {
+        <span class="kw">fn </span>get() -&gt; FixedU128 {
+            FixedU128::from_rational(<span class="number">1</span>, <span class="number">10</span>)
         }
     }
 
     <span class="doccomment">/// Current active native currency price.
     </span><span class="attr">#[pallet::storage]
     #[pallet::whitelist_storage]
-    </span><span class="kw">pub type </span>ActivePrice&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, FixedU64, ValueQuery, DefaultActivePrice&gt;;
+    </span><span class="kw">pub type </span>ActivePrice&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, FixedU128, ValueQuery, DefaultActivePrice&gt;;
 
     <span class="attr">#[pallet::call]
     </span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
@@ -225,7 +228,7 @@
         /// This is a temporary solution before oracle is implemented &amp; operational.
         </span><span class="attr">#[pallet::call_index(<span class="number">0</span>)]
         #[pallet::weight(T::DbWeight::get().writes(<span class="number">1</span>))]
-        </span><span class="kw">pub fn </span>force_set_price(origin: OriginFor&lt;T&gt;, price: FixedU64) -&gt; DispatchResult {
+        </span><span class="kw">pub fn </span>force_set_price(origin: OriginFor&lt;T&gt;, price: FixedU128) -&gt; DispatchResult {
             ensure_root(origin)<span class="question-mark">?</span>;
             <span class="macro">ensure!</span>(!price.is_zero(), Error::&lt;T&gt;::ZeroPrice);
 
@@ -238,24 +241,27 @@
     }
 
     <span class="kw">impl</span>&lt;T: Config&gt; PriceProvider <span class="kw">for </span>Pallet&lt;T&gt; {
-        <span class="kw">fn </span>average_price() -&gt; FixedU64 {
+        <span class="kw">fn </span>average_price() -&gt; FixedU128 {
             ActivePrice::&lt;T&gt;::get()
         }
     }
 }
 
-<span class="doccomment">/// `OnRuntimeUpgrade` logic for integrating this pallet into the live network.
-</span><span class="kw">pub struct </span>InitActivePrice&lt;T, P&gt;(PhantomData&lt;(T, P)&gt;);
-<span class="kw">impl</span>&lt;T: Config, P: Get&lt;FixedU64&gt;&gt; OnRuntimeUpgrade <span class="kw">for </span>InitActivePrice&lt;T, P&gt; {
+<span class="doccomment">/// Used to update static price due to storage schema change.
+</span><span class="kw">pub struct </span>ActivePriceUpdate&lt;T, P&gt;(PhantomData&lt;(T, P)&gt;);
+<span class="kw">impl</span>&lt;T: Config, P: Get&lt;FixedU128&gt;&gt; OnRuntimeUpgrade <span class="kw">for </span>ActivePriceUpdate&lt;T, P&gt; {
     <span class="kw">fn </span>on_runtime_upgrade() -&gt; Weight {
-        <span class="kw">let </span>init_price = P::get().max(FixedU64::from_rational(<span class="number">1</span>, FixedU64::DIV.into()));
+        <span class="kw">if </span>Pallet::&lt;T&gt;::on_chain_storage_version() != <span class="number">1 </span>{
+            <span class="kw">return </span>T::DbWeight::get().reads(<span class="number">1</span>);
+        }
 
+        <span class="kw">let </span>init_price = P::get().max(FixedU128::from_rational(<span class="number">1</span>, FixedU128::DIV.into()));
         <span class="macro">log::info!</span>(<span class="string">&quot;Setting initial active price to {}&quot;</span>, init_price);
         ActivePrice::&lt;T&gt;::put(init_price);
 
-        STORAGE_VERSION.put::&lt;Pallet&lt;T&gt;&gt;();
+        StorageVersion::new(<span class="number">2</span>).put::&lt;Pallet&lt;T&gt;&gt;();
 
-        T::DbWeight::get().writes(<span class="number">2</span>)
+        T::DbWeight::get().reads_writes(<span class="number">1</span>, <span class="number">2</span>)
     }
 }
 </code></pre></div></section></main></body></html>

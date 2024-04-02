@@ -21,6 +21,7 @@ var sourcesIndex = JSON.parse('{\
 "moonbeam_rpc_primitives_txpool":["",[],["lib.rs"]],\
 "moonbeam_rpc_trace":["",[],["lib.rs"]],\
 "moonbeam_rpc_txpool":["",[],["lib.rs"]],\
+"oracle_benchmarks":["",[],["lib.rs","weights.rs"]],\
 "pallet_block_rewards_hybrid":["",[],["lib.rs","weights.rs"]],\
 "pallet_chain_extension_assets":["",[],["lib.rs"]],\
 "pallet_chain_extension_unified_accounts":["",[],["lib.rs"]],\
@@ -41,6 +42,7 @@ var sourcesIndex = JSON.parse('{\
 "pallet_evm_precompile_xcm":["",[],["lib.rs"]],\
 "pallet_evm_precompile_xvm":["",[],["lib.rs"]],\
 "pallet_inflation":["",[],["lib.rs","weights.rs"]],\
+"pallet_price_aggregator":["",[],["lib.rs","weights.rs"]],\
 "pallet_static_price_provider":["",[],["lib.rs"]],\
 "pallet_unified_accounts":["",[],["lib.rs","weights.rs"]],\
 "pallet_xc_asset_config":["",[],["lib.rs","migrations.rs","weights.rs"]],\

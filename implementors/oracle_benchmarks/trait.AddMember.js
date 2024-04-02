@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"shibuya_runtime":[["impl <a class=\"trait\" href=\"oracle_benchmarks/trait.AddMember.html\" title=\"trait oracle_benchmarks::AddMember\">AddMember</a>&lt;&lt;&lt;MultiSignature as Verify&gt;::Signer as IdentifyAccount&gt;::AccountId&gt; for <a class=\"struct\" href=\"shibuya_runtime/struct.AddMemberBenchmark.html\" title=\"struct shibuya_runtime::AddMemberBenchmark\">AddMemberBenchmark</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
