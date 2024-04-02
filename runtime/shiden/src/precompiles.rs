@@ -141,7 +141,7 @@ pub type ShidenPrecompilesSetAt<R, C> = (
         ),
     >,
     PrecompileAt<
-        AddressU64<20488>,
+        AddressU64<20485>,
         DispatchLockdrop<
             R,
             DispatchFilterValidate<RuntimeCall, WhitelistedLockdropCalls>,
