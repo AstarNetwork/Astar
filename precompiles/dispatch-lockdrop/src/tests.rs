@@ -223,6 +223,55 @@ fn decode_limit_too_high() {
 }
 
 #[test]
+fn decode_limit_bounded() {
+    ExtBuilder::default().build().execute_with(|| {
+        let calls: Vec<_> = (0..681)
+            .map(|_| RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() }))
+            .collect();
+        let call = RuntimeCall::Utility(pallet_utility::Call::batch_all { calls });
+        let out_of_bounds_calls: Vec<_> = (0..682)
+            .map(|_| RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() }))
+            .collect();
+        let out_of_bounds_call = RuntimeCall::Utility(pallet_utility::Call::batch_all {
+            calls: out_of_bounds_calls,
+        });
+
+        // Get Alice EVM address based on the Public Key
+        let alice_eth = crate::tests::eth_address(&alice_secret());
+        // Get derived AccountId from the Blake2b hash of the compressed ECDSA Public key
+        let account_id = account_id(&alice_secret());
+        // Fund this account (fund the lockdrop account)
+        let _ = Balances::deposit_creating(&account_id, ONE * 20);
+        // Get the full 64 bytes ECDSA Public key
+        let pubkey = crate::tests::public_key_full(&alice_secret());
+
+        precompiles()
+            .prepare_test(
+                alice_eth,
+                PRECOMPILE_ADDRESS,
+                PrecompileCall::dispatch_lockdrop_call {
+                    call: call.encode().into(),
+                    pubkey: pubkey.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_returns(true);
+
+        precompiles()
+            .prepare_test(
+                alice_eth,
+                PRECOMPILE_ADDRESS,
+                PrecompileCall::dispatch_lockdrop_call {
+                    call: out_of_bounds_call.encode().into(),
+                    pubkey: pubkey.into(),
+                },
+            )
+            .expect_no_logs()
+            .execute_reverts(|output| output == b"call: Value is too large for length");
+    });
+}
+
+#[test]
 fn decode_limit_ok() {
     ExtBuilder::default().build().execute_with(|| {
         let mut nested_call =

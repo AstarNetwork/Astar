@@ -82,41 +82,6 @@ mod shibuya {
         }
     }
 
-    /// Deploy a WASM contract via ALICE as origin. (The code is in `../ink-contracts/`.)
-    /// Assumption: Contract constructor is called "new" and take no arguments
-    pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
-        let (address, _) = astar_test_utils::deploy_wasm_contract::<Runtime>(
-            name,
-            ALICE,
-            0,
-            Weight::from_parts(10_000_000_000, 1024 * 1024),
-            None,
-            hex::decode("9bae9d5e").expect("invalid data hex"),
-        );
-
-        // On instantiation, the contract got existential deposit.
-        assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
-        address
-    }
-
-    /// Call a wasm smart contract method
-    pub fn call_wasm_contract_method<V: Decode>(
-        origin: AccountId,
-        contract_id: AccountId,
-        data: Vec<u8>,
-    ) -> V {
-        let (value, _, _) = astar_test_utils::call_wasm_contract_method::<Runtime, V>(
-            origin,
-            contract_id,
-            0,
-            Weight::from_parts(10_000_000_000, 1024 * 1024),
-            None,
-            data,
-            false,
-        );
-        value
-    }
-
     /// Build the signature payload for given native account and eth private key
     fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
         // sign the payload
@@ -137,48 +102,10 @@ mod shibuya {
 pub use shiden::*;
 #[cfg(feature = "shiden")]
 mod shiden {
-    use crate::setup::{Weight, ALICE};
-    use parity_scale_codec::Decode;
     pub use shiden_runtime::*;
-    use sp_core::crypto::AccountId32;
 
     /// 1 SDN.
     pub const UNIT: Balance = SDN;
-
-    /// Deploy a WASM contract via ALICE as origin. (The code is in `../ink-contracts/`.)
-    /// Assumption: Contract constructor is called "new" and take no arguments
-    pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
-        let (address, _) = astar_test_utils::deploy_wasm_contract::<Runtime>(
-            name,
-            ALICE,
-            0,
-            Weight::from_parts(10_000_000_000, 1024 * 1024),
-            None,
-            hex::decode("9bae9d5e").expect("invalid data hex"),
-        );
-
-        // On instantiation, the contract got existential deposit.
-        assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
-        address
-    }
-
-    /// Call a wasm smart contract method
-    pub fn call_wasm_contract_method<V: Decode>(
-        origin: AccountId,
-        contract_id: AccountId,
-        data: Vec<u8>,
-    ) -> V {
-        let (value, _, _) = astar_test_utils::call_wasm_contract_method::<Runtime, V>(
-            origin,
-            contract_id,
-            0,
-            Weight::from_parts(10_000_000_000, 1024 * 1024),
-            None,
-            data,
-            false,
-        );
-        value
-    }
 }
 
 #[cfg(feature = "astar")]
@@ -203,6 +130,7 @@ pub use pallet_dapp_staking_v3 as DappStakingCall;
 pub use pallet_dapps_staking as DappsStakingCall;
 pub use pallet_proxy::Event as ProxyEvent;
 pub use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
+use parity_scale_codec::Decode;
 
 pub struct ExtBuilder {
     balances: Vec<(AccountId32, Balance)>,
@@ -334,4 +262,39 @@ pub fn expect_events(e: Vec<RuntimeEvent>) {
 #[allow(dead_code)]
 pub fn init_env_logger() {
     let _ = env_logger::builder().is_test(true).try_init();
+}
+
+/// Deploy a WASM contract via ALICE as origin. (The code is in `../ink-contracts/`.)
+/// Assumption: Contract constructor is called "new" and take no arguments
+pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
+    let (address, _) = astar_test_utils::deploy_wasm_contract::<Runtime>(
+        name,
+        ALICE,
+        0,
+        Weight::from_parts(10_000_000_000, 1024 * 1024),
+        None,
+        hex::decode("9bae9d5e").expect("invalid data hex"),
+    );
+
+    // On instantiation, the contract got existential deposit.
+    assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
+    address
+}
+
+/// Call a wasm smart contract method
+pub fn call_wasm_contract_method<V: Decode>(
+    origin: AccountId,
+    contract_id: AccountId,
+    data: Vec<u8>,
+) -> V {
+    let (value, _, _) = astar_test_utils::call_wasm_contract_method::<Runtime, V>(
+        origin,
+        contract_id,
+        0,
+        Weight::from_parts(10_000_000_000, 1024 * 1024),
+        None,
+        data,
+        false,
+    );
+    value
 }
