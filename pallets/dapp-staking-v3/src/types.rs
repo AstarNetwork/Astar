@@ -67,7 +67,7 @@
 use frame_support::{pallet_prelude::*, BoundedBTreeMap, BoundedVec};
 use parity_scale_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
-use sp_arithmetic::fixed_point::FixedU64;
+use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::{
     traits::{CheckedAdd, UniqueSaturatedInto, Zero},
     FixedPointNumber, Permill, Saturating,
@@ -1629,7 +1629,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
     }
 
     /// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
-    pub fn calculate_new(&self, native_price: FixedU64, params: &TierParameters<NT>) -> Self {
+    pub fn calculate_new(&self, native_price: FixedU128, params: &TierParameters<NT>) -> Self {
         // It must always be at least 1 slot.
         let new_number_of_slots = T::number_of_slots(native_price).max(1);
 
@@ -1671,7 +1671,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
         // new_threshold = old_threshold * (1 + %_threshold)
         //
         let new_tier_thresholds = if new_number_of_slots > self.number_of_slots {
-            let delta_threshold_decrease = FixedU64::from_rational(
+            let delta_threshold_decrease = FixedU128::from_rational(
                 (new_number_of_slots - self.number_of_slots).into(),
                 new_number_of_slots.into(),
             );
@@ -1693,7 +1693,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
 
             new_tier_thresholds
         } else if new_number_of_slots < self.number_of_slots {
-            let delta_threshold_increase = FixedU64::from_rational(
+            let delta_threshold_increase = FixedU128::from_rational(
                 (self.number_of_slots - new_number_of_slots).into(),
                 new_number_of_slots.into(),
             );
