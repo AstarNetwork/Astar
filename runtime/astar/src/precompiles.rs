@@ -59,6 +59,8 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
             }
             RuntimeCall::DappStaking(_) => true,
             RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
+            RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset_with_fee { .. }) => true,
+            RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset { .. }) => true,
             _ => false,
         }
     }
