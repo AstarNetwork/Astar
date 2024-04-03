@@ -1905,6 +1905,9 @@
 <a href="#1905" id="1905">1905</a>
 <a href="#1906" id="1906">1906</a>
 <a href="#1907" id="1907">1907</a>
+<a href="#1908" id="1908">1908</a>
+<a href="#1909" id="1909">1909</a>
+<a href="#1910" id="1910">1910</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2000,6 +2003,7 @@
 <span class="attr">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, test))]
 </span><span class="kw">pub use </span>sp_runtime::BuildStorage;
 
+<span class="kw">mod </span>chain_extensions;
 <span class="kw">mod </span>precompiles;
 <span class="kw">mod </span>weights;
 <span class="kw">mod </span>xcm_config;
@@ -2008,6 +2012,8 @@
 
 <span class="kw">pub use </span>precompiles::{ShidenPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 <span class="kw">pub type </span>Precompiles = ShidenPrecompiles&lt;Runtime, ShidenAssetLocationIdConverter&gt;;
+
+<span class="kw">use </span>chain_extensions::ShidenChainExtensions;
 
 <span class="doccomment">/// Constant values used within the runtime.
 </span><span class="kw">pub const </span>NANOSDN: Balance = <span class="number">1_000_000_000</span>;
@@ -2573,7 +2579,7 @@
     <span class="kw">type </span>CallStack = [pallet_contracts::Frame&lt;<span class="self">Self</span>&gt;; <span class="number">5</span>];
     <span class="kw">type </span>WeightPrice = pallet_transaction_payment::Pallet&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>WeightInfo = pallet_contracts::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
-    <span class="kw">type </span>ChainExtension = ();
+    <span class="kw">type </span>ChainExtension = ShidenChainExtensions&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>Schedule = Schedule;
     <span class="kw">type </span>AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     <span class="kw">type </span>MaxCodeLen = ConstU32&lt;{ <span class="number">123 </span>* <span class="number">1024 </span>}&gt;;

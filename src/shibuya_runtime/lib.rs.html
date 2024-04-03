@@ -2355,10 +2355,6 @@
 <a href="#2355" id="2355">2355</a>
 <a href="#2356" id="2356">2356</a>
 <a href="#2357" id="2357">2357</a>
-<a href="#2358" id="2358">2358</a>
-<a href="#2359" id="2359">2359</a>
-<a href="#2360" id="2360">2360</a>
-<a href="#2361" id="2361">2361</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2466,7 +2462,7 @@
 <span class="kw">pub use </span>precompiles::{ShibuyaPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 <span class="kw">pub type </span>Precompiles = ShibuyaPrecompiles&lt;Runtime, ShibuyaAssetLocationIdConverter&gt;;
 
-<span class="kw">use </span>chain_extensions::<span class="kw-2">*</span>;
+<span class="kw">use </span>chain_extensions::ShibuyaChainExtensions;
 
 <span class="doccomment">/// Constant values used within the runtime.
 </span><span class="kw">pub const </span>MICROSBY: Balance = <span class="number">1_000_000_000_000</span>;
@@ -3060,11 +3056,7 @@
     <span class="kw">type </span>CallStack = [pallet_contracts::Frame&lt;<span class="self">Self</span>&gt;; <span class="number">5</span>];
     <span class="kw">type </span>WeightPrice = pallet_transaction_payment::Pallet&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>WeightInfo = pallet_contracts::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
-    <span class="kw">type </span>ChainExtension = (
-        XvmExtension&lt;<span class="self">Self</span>, Xvm, UnifiedAccounts&gt;,
-        AssetsExtension&lt;<span class="self">Self</span>&gt;,
-        UnifiedAccountsExtension&lt;<span class="self">Self</span>, UnifiedAccounts&gt;,
-    );
+    <span class="kw">type </span>ChainExtension = ShibuyaChainExtensions&lt;<span class="self">Self</span>, UnifiedAccounts, Xvm&gt;;
     <span class="kw">type </span>Schedule = Schedule;
     <span class="kw">type </span>AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     <span class="kw">type </span>MaxCodeLen = ConstU32&lt;{ <span class="number">123 </span>* <span class="number">1024 </span>}&gt;;

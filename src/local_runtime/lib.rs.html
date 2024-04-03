@@ -1914,11 +1914,6 @@
 <a href="#1914" id="1914">1914</a>
 <a href="#1915" id="1915">1915</a>
 <a href="#1916" id="1916">1916</a>
-<a href="#1917" id="1917">1917</a>
-<a href="#1918" id="1918">1918</a>
-<a href="#1919" id="1919">1919</a>
-<a href="#1920" id="1920">1920</a>
-<a href="#1921" id="1921">1921</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2041,7 +2036,7 @@
 <span class="kw">pub type </span>Precompiles = LocalPrecompiles&lt;Runtime&gt;;
 
 <span class="kw">mod </span>chain_extensions;
-<span class="kw">pub use </span>chain_extensions::<span class="kw-2">*</span>;
+<span class="kw">pub use </span>chain_extensions::LocalChainExtensions;
 
 <span class="kw">mod </span>weights;
 
@@ -2849,12 +2844,7 @@
     <span class="kw">type </span>CallStack = [pallet_contracts::Frame&lt;<span class="self">Self</span>&gt;; <span class="number">5</span>];
     <span class="kw">type </span>WeightPrice = pallet_transaction_payment::Pallet&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>WeightInfo = pallet_contracts::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
-    <span class="kw">type </span>ChainExtension = (
-        <span class="comment">// DappsStakingExtension&lt;Self&gt;,
-        </span>XvmExtension&lt;<span class="self">Self</span>, Xvm, UnifiedAccounts&gt;,
-        AssetsExtension&lt;<span class="self">Self</span>&gt;,
-        UnifiedAccountsExtension&lt;<span class="self">Self</span>, UnifiedAccounts&gt;,
-    );
+    <span class="kw">type </span>ChainExtension = LocalChainExtensions&lt;<span class="self">Self</span>, UnifiedAccounts, Xvm&gt;;
     <span class="kw">type </span>Schedule = Schedule;
     <span class="kw">type </span>AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     <span class="kw">type </span>MaxCodeLen = ConstU32&lt;{ <span class="number">123 </span>* <span class="number">1024 </span>}&gt;;
