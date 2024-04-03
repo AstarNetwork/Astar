@@ -103,7 +103,7 @@ pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAs
 pub use precompiles::{ShidenPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = ShidenPrecompiles<Runtime, ShidenAssetLocationIdConverter>;
 
-use chain_extensions::*;
+use chain_extensions::ShidenChainExtensions;
 
 /// Constant values used within the runtime.
 pub const NANOSDN: Balance = 1_000_000_000;
@@ -669,7 +669,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = AssetsExtension<Self>;
+    type ChainExtension = ShidenChainExtensions<Self>;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;

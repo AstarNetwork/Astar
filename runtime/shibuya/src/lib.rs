@@ -104,7 +104,7 @@ pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcA
 pub use precompiles::{ShibuyaPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = ShibuyaPrecompiles<Runtime, ShibuyaAssetLocationIdConverter>;
 
-use chain_extensions::*;
+use chain_extensions::ShibuyaChainExtensions;
 
 /// Constant values used within the runtime.
 pub const MICROSBY: Balance = 1_000_000_000_000;
@@ -698,11 +698,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = (
-        XvmExtension<Self, Xvm, UnifiedAccounts>,
-        AssetsExtension<Self>,
-        UnifiedAccountsExtension<Self, UnifiedAccounts>,
-    );
+    type ChainExtension = ShibuyaChainExtensions<Self, UnifiedAccounts, Xvm>;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;

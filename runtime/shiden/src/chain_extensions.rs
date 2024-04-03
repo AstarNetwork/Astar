@@ -26,3 +26,5 @@ use pallet_contracts::chain_extension::RegisteredChainExtension;
 impl RegisteredChainExtension<Runtime> for AssetsExtension<Runtime> {
     const ID: u16 = 02;
 }
+
+pub type ShidenChainExtensions<Runtime> = AssetsExtension<Runtime>;
