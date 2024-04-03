@@ -20,12 +20,14 @@
 
 use crate::RuntimeCall;
 use astar_primitives::precompiles::DispatchFilterValidate;
+use frame_support::pallet_prelude::ConstU32;
 use frame_support::{parameter_types, traits::Contains};
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dapp_staking_v3::DappStakingV3Precompile;
 use pallet_evm_precompile_dispatch::Dispatch;
+use pallet_evm_precompile_dispatch_lockdrop::DispatchLockdrop;
 use pallet_evm_precompile_ed25519::Ed25519Verify;
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
@@ -65,6 +67,31 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
         }
     }
 }
+/// Filter that only allows whitelisted runtime call to pass through dispatch-lockdrop precompile
+pub struct WhitelistedLockdropCalls;
+
+impl Contains<RuntimeCall> for WhitelistedLockdropCalls {
+    fn contains(t: &RuntimeCall) -> bool {
+        match t {
+            RuntimeCall::Utility(pallet_utility::Call::batch { calls })
+            | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => calls
+                .iter()
+                .all(|call| WhitelistedLockdropCalls::contains(call)),
+            RuntimeCall::DappStaking(pallet_dapp_staking_v3::Call::unbond_and_unstake {
+                ..
+            }) => true,
+            RuntimeCall::DappStaking(pallet_dapp_staking_v3::Call::withdraw_unbonded {
+                ..
+            }) => true,
+            RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,
+            RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) => true,
+            RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) => true,
+            RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
+            _ => false,
+        }
+    }
+}
+
 /// The PrecompileSet installed in the Shiden runtime.
 #[precompile_utils::precompile_name_from_address]
 pub type ShidenPrecompilesSetAt<R, C> = (
@@ -115,6 +142,16 @@ pub type ShidenPrecompilesSetAt<R, C> = (
             CallableByPrecompile,
         ),
     >,
+    PrecompileAt<
+        AddressU64<20485>,
+        DispatchLockdrop<
+            R,
+            DispatchFilterValidate<RuntimeCall, WhitelistedLockdropCalls>,
+            ConstU32<8>,
+        >,
+        // Not callable from smart contract nor precompiled, only EOA accounts
+        (),
+    >,
 );
 
 pub type ShidenPrecompiles<R, C> = PrecompileSetBuilder<
@@ -123,7 +160,7 @@ pub type ShidenPrecompiles<R, C> = PrecompileSetBuilder<
         // Skip precompiles if out of range.
         PrecompilesInRangeInclusive<
             // We take range as last precompile index, UPDATE this once new prcompile is added
-            (AddressU64<1>, AddressU64<20484>),
+            (AddressU64<1>, AddressU64<20485>),
             ShidenPrecompilesSetAt<R, C>,
         >,
         // Prefixed precompile sets (XC20)

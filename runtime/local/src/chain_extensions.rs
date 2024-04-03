@@ -38,3 +38,9 @@ impl RegisteredChainExtension<Runtime> for AssetsExtension<Runtime> {
 impl RegisteredChainExtension<Runtime> for UnifiedAccountsExtension<Runtime, UnifiedAccounts> {
     const ID: u16 = 03;
 }
+
+pub type LocalChainExtensions<Runtime, UnifiedAccounts, Xvm> = (
+    AssetsExtension<Runtime>,
+    UnifiedAccountsExtension<Runtime, UnifiedAccounts>,
+    XvmExtension<Runtime, Xvm, UnifiedAccounts>,
+);

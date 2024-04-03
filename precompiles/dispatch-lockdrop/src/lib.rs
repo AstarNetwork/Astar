@@ -57,7 +57,7 @@ pub struct DispatchLockdrop<Runtime, DispatchValidator, DecodeLimit = ConstU32<8
     PhantomData<(Runtime, DispatchValidator, DecodeLimit)>,
 );
 
-type CallLengthLimit = ConstU32<4096>;
+type CallLengthLimit = ConstU32<2048>;
 
 #[precompile_utils::precompile]
 impl<Runtime, DispatchValidator, DecodeLimit>
