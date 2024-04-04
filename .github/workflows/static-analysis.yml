@@ -56,6 +56,8 @@ jobs:
       run: rustup target list --installed
 
     - uses: actions-rs/clippy-check@v1
+      env:
+        SKIP_WASM_BUILD: 1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         args: --features try-runtime,runtime-benchmarks -- -D warnings
