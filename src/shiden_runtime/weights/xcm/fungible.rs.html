@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/weights/xcm/fungible.rs`."><title>fungible.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.70.0 (90c541806 2023-05-31)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../../../static.files/source-script-905937fbbdc8e9ea.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../static.files/main-f61008743c98d196.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../shibuya_runtime/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shiden/src/weights/xcm/fungible.rs`."><title>fungible.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="shiden_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.70.0 (90c541806 2023-05-31)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../../../static.files/source-script-905937fbbdc8e9ea.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../static.files/main-f61008743c98d196.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../shiden_runtime/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -353,10 +353,6 @@
 <a href="#353" id="353">353</a>
 <a href="#354" id="354">354</a>
 <a href="#355" id="355">355</a>
-<a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -381,13 +377,13 @@
 //! DATE: 2024-03-27, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
-//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some(&quot;shibuya-dev&quot;), DB CACHE: 1024
+//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some(&quot;shiden-dev&quot;), DB CACHE: 1024
 
 </span><span class="comment">// Executed Command:
 // ./target/release/astar-collator
 // benchmark
 // pallet
-// --chain=shibuya-dev
+// --chain=shiden-dev
 // --steps=50
 // --repeat=20
 // --pallet=xcm_benchmarks_fungible
@@ -395,7 +391,7 @@
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --output=./benchmark-results/shibuya-dev/benchmarks_fungible_weights.rs
+// --output=./benchmark-results/shiden-dev/benchmarks_fungible_weights.rs
 // --template=./scripts/templates/weight-template.hbs
 
 </span><span class="attr">#![cfg_attr(rustfmt, rustfmt_skip)]
@@ -431,10 +427,10 @@
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>transfer_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `545`
+		//  Measured:  `508`
 		//  Estimated: `6232`
-		// Minimum execution time: 46_672_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">47_320_000</span>, <span class="number">6232</span>)
+		// Minimum execution time: 47_024_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">47_577_000</span>, <span class="number">6232</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">4_u64</span>))
 	}
@@ -456,10 +452,10 @@
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>transfer_reserve_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `690`
+		//  Measured:  `582`
 		//  Estimated: `6232`
-		// Minimum execution time: 65_825_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">67_220_000</span>, <span class="number">6232</span>)
+		// Minimum execution time: 64_871_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">65_519_000</span>, <span class="number">6232</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">9_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">5_u64</span>))
 	}
@@ -489,23 +485,21 @@
 	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(146), added: 2621, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	/// Storage: `UnifiedAccounts::NativeToEvm` (r:1 w:0)
-	/// Proof: `UnifiedAccounts::NativeToEvm` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>withdraw_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `1960`
-		//  Estimated: `5425`
-		// Minimum execution time: 54_402_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">55_279_000</span>, <span class="number">5425</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
+		//  Measured:  `1919`
+		//  Estimated: `5384`
+		// Minimum execution time: 52_014_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">52_827_000</span>, <span class="number">5384</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
 	}
 	<span class="kw">fn </span>reserve_asset_deposited() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_651_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">3_790_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 3_725_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">3_809_000</span>, <span class="number">0</span>)
 	}
 	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -517,10 +511,10 @@
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>initiate_reserve_withdraw() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `145`
-		//  Estimated: `3610`
-		// Minimum execution time: 402_261_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">408_453_000</span>, <span class="number">3610</span>)
+		//  Measured:  `74`
+		//  Estimated: `3539`
+		// Minimum execution time: 409_889_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">418_197_000</span>, <span class="number">3539</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 	}
@@ -534,10 +528,10 @@
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>deposit_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `1696`
-		//  Estimated: `5161`
-		// Minimum execution time: 42_761_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">43_379_000</span>, <span class="number">5161</span>)
+		//  Measured:  `1659`
+		//  Estimated: `5124`
+		// Minimum execution time: 42_715_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">43_305_000</span>, <span class="number">5124</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
 	}
@@ -559,10 +553,10 @@
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>deposit_reserve_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `1841`
-		//  Estimated: `5306`
-		// Minimum execution time: 65_274_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">66_706_000</span>, <span class="number">5306</span>)
+		//  Measured:  `1733`
+		//  Estimated: `5198`
+		// Minimum execution time: 65_407_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">65_819_000</span>, <span class="number">5198</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">8_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">4_u64</span>))
 	}
@@ -580,10 +574,10 @@
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>transfer_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `545`
+		//  Measured:  `508`
 		//  Estimated: `6232`
-		// Minimum execution time: 46_672_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">47_320_000</span>, <span class="number">6232</span>)
+		// Minimum execution time: 47_024_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">47_577_000</span>, <span class="number">6232</span>)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">5_u64</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">4_u64</span>))
 	}
@@ -605,10 +599,10 @@
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>transfer_reserve_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `690`
+		//  Measured:  `582`
 		//  Estimated: `6232`
-		// Minimum execution time: 65_825_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">67_220_000</span>, <span class="number">6232</span>)
+		// Minimum execution time: 64_871_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">65_519_000</span>, <span class="number">6232</span>)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">9_u64</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">5_u64</span>))
 	}
@@ -638,23 +632,21 @@
 	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(146), added: 2621, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	/// Storage: `UnifiedAccounts::NativeToEvm` (r:1 w:0)
-	/// Proof: `UnifiedAccounts::NativeToEvm` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>withdraw_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `1960`
-		//  Estimated: `5425`
-		// Minimum execution time: 54_402_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">55_279_000</span>, <span class="number">5425</span>)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">5_u64</span>))
+		//  Measured:  `1919`
+		//  Estimated: `5384`
+		// Minimum execution time: 52_014_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">52_827_000</span>, <span class="number">5384</span>)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">4_u64</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">3_u64</span>))
 	}
 	<span class="kw">fn </span>reserve_asset_deposited() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_651_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">3_790_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 3_725_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">3_809_000</span>, <span class="number">0</span>)
 	}
 	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -666,10 +658,10 @@
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>initiate_reserve_withdraw() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `145`
-		//  Estimated: `3610`
-		// Minimum execution time: 402_261_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">408_453_000</span>, <span class="number">3610</span>)
+		//  Measured:  `74`
+		//  Estimated: `3539`
+		// Minimum execution time: 409_889_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">418_197_000</span>, <span class="number">3539</span>)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">4_u64</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1_u64</span>))
 	}
@@ -683,10 +675,10 @@
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	</span><span class="kw">fn </span>deposit_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `1696`
-		//  Estimated: `5161`
-		// Minimum execution time: 42_761_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">43_379_000</span>, <span class="number">5161</span>)
+		//  Measured:  `1659`
+		//  Estimated: `5124`
+		// Minimum execution time: 42_715_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">43_305_000</span>, <span class="number">5124</span>)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">4_u64</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">3_u64</span>))
 	}
@@ -708,10 +700,10 @@
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>deposit_reserve_asset() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `1841`
-		//  Estimated: `5306`
-		// Minimum execution time: 65_274_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">66_706_000</span>, <span class="number">5306</span>)
+		//  Measured:  `1733`
+		//  Estimated: `5198`
+		// Minimum execution time: 65_407_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">65_819_000</span>, <span class="number">5198</span>)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">8_u64</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">4_u64</span>))
 	}

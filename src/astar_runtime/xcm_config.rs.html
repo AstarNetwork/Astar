@@ -382,6 +382,7 @@
 <a href="#382" id="382">382</a>
 <a href="#383" id="383">383</a>
 <a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -419,10 +420,10 @@
 <span class="kw">use </span>xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin,
-    FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    FungiblesAdapter, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents,
+    UsingComponents, WeightInfoBounds,
 };
 <span class="kw">use </span>xcm_executor::{
     traits::{JustTry, WithOriginFilter},
@@ -672,7 +673,8 @@
     <span class="kw">pub </span>ReachableDest: <span class="prelude-ty">Option</span>&lt;MultiLocation&gt; = <span class="prelude-val">Some</span>(Parent.into());
 }
 
-<span class="kw">pub type </span>Weigher = FixedWeightBounds&lt;UnitWeightCost, RuntimeCall, MaxInstructions&gt;;
+<span class="kw">pub type </span>Weigher =
+    WeightInfoBounds&lt;weights::xcm::XcmWeight&lt;Runtime, RuntimeCall&gt;, RuntimeCall, MaxInstructions&gt;;
 
 <span class="kw">impl </span>pallet_xcm::Config <span class="kw">for </span>Runtime {
     <span class="kw">const </span>VERSION_DISCOVERY_QUEUE_SIZE: u32 = <span class="number">100</span>;

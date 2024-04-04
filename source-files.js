@@ -2,7 +2,7 @@ var sourcesIndex = JSON.parse('{\
 "assets_chain_extension_types":["",[],["lib.rs"]],\
 "astar_collator":["",[["local",[],["chain_spec.rs","mod.rs","service.rs"]],["parachain",[["chain_spec",[],["astar.rs","mod.rs","shibuya.rs","shiden.rs"]]],["mod.rs","service.rs","shell_upgrade.rs"]]],["cli.rs","command.rs","evm_tracing_types.rs","lib.rs","rpc.rs"]],\
 "astar_primitives":["",[["migrations",[],["contract_v12.rs","contract_v12_fix.rs","contract_v14.rs","mod.rs"]],["xcm",[],["mod.rs"]]],["dapp_staking.rs","ethereum_checked.rs","evm.rs","lib.rs","oracle.rs","precompiles.rs","testing.rs","xvm.rs"]],\
-"astar_runtime":["",[["weights",[],["mod.rs","pallet_assets.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["lib.rs","precompiles.rs","xcm_config.rs"]],\
+"astar_runtime":["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","pallet_assets.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["lib.rs","precompiles.rs","xcm_config.rs"]],\
 "astar_test_utils":["",[],["lib.rs"]],\
 "astar_xcm_benchmarks":["",[["fungible",[],["mod.rs"]],["generic",[],["mod.rs"]]],["lib.rs"]],\
 "dapp_staking_v3_runtime_api":["",[],["lib.rs"]],\
@@ -50,7 +50,7 @@ var sourcesIndex = JSON.parse('{\
 "precompile_utils":["",[["evm",[],["costs.rs","handle.rs","logs.rs","mod.rs"]],["solidity",[["codec",[],["bytes.rs","mod.rs","native.rs","xcm.rs"]]],["mod.rs","modifier.rs","revert.rs"]],["testing",[],["account.rs","execution.rs","handle.rs","mod.rs","modifier.rs","solidity.rs"]]],["lib.rs","precompile_set.rs","substrate.rs"]],\
 "precompile_utils_macro_v2":["",[["precompile",[],["attr.rs","expand.rs","mod.rs","parse.rs"]]],["derive_codec.rs","lib.rs","precompile_name_from_address.rs"]],\
 "shibuya_runtime":["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","pallet_assets.rs","pallet_balances.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","lib.rs","precompiles.rs","xcm_config.rs"]],\
-"shiden_runtime":["",[["weights",[],["mod.rs","pallet_assets.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","lib.rs","precompiles.rs","xcm_config.rs"]],\
+"shiden_runtime":["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","pallet_assets.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","lib.rs","precompiles.rs","xcm_config.rs"]],\
 "unified_accounts_chain_extension_types":["",[],["lib.rs"]],\
 "xcm_simulator_tests":["",[],["lib.rs"]],\
 "xcm_tools":["",[],["cli.rs","command.rs","main.rs"]],\
