@@ -74,6 +74,7 @@ use astar_primitives::{
         PeriodNumber, SmartContract, StandardTierSlots, TierId,
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
+    oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -106,7 +107,7 @@ pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcA
 pub use precompiles::{ShibuyaPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = ShibuyaPrecompiles<Runtime, ShibuyaAssetLocationIdConverter>;
 
-use chain_extensions::*;
+use chain_extensions::ShibuyaChainExtensions;
 
 /// Constant values used within the runtime.
 pub const MICROSBY: Balance = 1_000_000_000_000;
@@ -175,7 +176,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 125,
+    spec_version: 126,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -430,7 +431,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type NativePriceProvider = StaticPriceProvider;
+    type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
@@ -707,11 +708,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = (
-        XvmExtension<Self, Xvm, UnifiedAccounts>,
-        AssetsExtension<Self>,
-        UnifiedAccountsExtension<Self, UnifiedAccounts>,
-    );
+    type ChainExtension = ShibuyaChainExtensions<Self, UnifiedAccounts, Xvm>;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
@@ -1123,6 +1120,95 @@ impl pallet_unified_accounts::Config for Runtime {
     type WeightInfo = pallet_unified_accounts::weights::SubstrateWeight<Self>;
 }
 
+parameter_types! {
+    // Of course it's not true for Shibuya, but SBY is worthless, a test token.
+    pub const NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
+    // Aggregate values for one day.
+    pub const AggregationDuration: BlockNumber = 7200;
+}
+
+impl pallet_price_aggregator::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type MaxValuesPerBlock = ConstU32<8>;
+    type ProcessBlockValues = pallet_price_aggregator::MedianBlockValue;
+    type NativeCurrencyId = NativeCurrencyId;
+    // 7 days
+    type CircularBufferLength = ConstU32<7>;
+    type AggregationDuration = AggregationDuration;
+    type WeightInfo = pallet_price_aggregator::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    // Cannot specify `Root` so need to do it like this, unfortunately.
+    pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
+}
+
+impl orml_oracle::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type OnNewData = PriceAggregator;
+    type CombineData = DummyCombineData<Runtime>;
+    type Time = Timestamp;
+    type OracleKey = CurrencyId;
+    type OracleValue = CurrencyAmount;
+    type RootOperatorAccountId = RootOperatorAccountId;
+    type Members = OracleMembership;
+    type MaxHasDispatchedSize = ConstU32<8>;
+    type WeightInfo = oracle_benchmarks::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type MaxFeedValues = ConstU32<2>;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type MaxFeedValues = ConstU32<1>;
+}
+
+pub type OracleMembershipInstance = pallet_membership::Instance1;
+impl pallet_membership::Config<OracleMembershipInstance> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = EnsureRoot<AccountId>;
+    type RemoveOrigin = EnsureRoot<AccountId>;
+    type SwapOrigin = EnsureRoot<AccountId>;
+    type ResetOrigin = EnsureRoot<AccountId>;
+    type PrimeOrigin = EnsureRoot<AccountId>;
+
+    type MembershipInitialized = ();
+    type MembershipChanged = ();
+    type MaxMembers = ConstU32<16>;
+    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
+// The oracle-benchmarks pallet should be removed once we uplift to high enough version
+// (assumption is `polkadot-v1.10.0`) to have access to normal oracle pallet benchmarks).
+//
+// The pallet is stateless so in order to remove it, only code needs to be cleaned up.
+pub struct DummyKeyPairValue;
+impl Get<(CurrencyId, CurrencyAmount)> for DummyKeyPairValue {
+    fn get() -> (CurrencyId, CurrencyAmount) {
+        (CurrencyId::ASTR, CurrencyAmount::from_rational(15, 100))
+    }
+}
+pub struct AddMemberBenchmark;
+impl oracle_benchmarks::AddMember<AccountId> for AddMemberBenchmark {
+    fn add_member(account: AccountId) {
+        use frame_support::assert_ok;
+        use frame_system::RawOrigin;
+        assert_ok!(
+            pallet_membership::Pallet::<Runtime, OracleMembershipInstance>::add_member(
+                RawOrigin::Root.into(),
+                account.into()
+            )
+        );
+    }
+}
+
+impl oracle_benchmarks::Config for Runtime {
+    type BenchmarkCurrencyIdValuePair = DummyKeyPairValue;
+    type AddMember = AddMemberBenchmark;
+}
+
+impl pallet_dapp_staking_migration::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Self>;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1144,6 +1230,9 @@ construct_runtime!(
         DappStaking: pallet_dapp_staking_v3 = 34,
         Inflation: pallet_inflation = 35,
         Assets: pallet_assets = 36,
+        PriceAggregator: pallet_price_aggregator = 37,
+        Oracle: orml_oracle = 38,
+        OracleMembership: pallet_membership::<Instance1> = 39,
 
         Authorship: pallet_authorship = 40,
         CollatorSelection: pallet_collator_selection = 41,
@@ -1173,6 +1262,8 @@ construct_runtime!(
 
         Sudo: pallet_sudo = 99,
 
+        // Remove after benchmarks are available in orml_oracle
+        OracleBenchmarks: oracle_benchmarks = 251,
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
     }
@@ -1319,6 +1410,9 @@ mod benches {
         [pallet_unified_accounts, UnifiedAccounts]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
+        [pallet_price_aggregator, PriceAggregator]
+        [pallet_membership, OracleMembership]
+        [oracle_benchmarks, OracleBenchmarks]
     );
 }
 

@@ -16,8 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-pub mod pallet_assets;
-pub mod pallet_dapp_staking_v3;
-pub mod pallet_inflation;
-pub mod pallet_xcm;
-pub mod xcm;
+use super::Runtime;
+
+/// Registered WASM contracts chain extensions.
+pub use pallet_chain_extension_assets::AssetsExtension;
+use pallet_contracts::chain_extension::RegisteredChainExtension;
+
+// Following impls defines chain extension IDs.
+impl RegisteredChainExtension<Runtime> for AssetsExtension<Runtime> {
+    const ID: u16 = 02;
+}
+
+pub type ShidenChainExtensions<Runtime> = AssetsExtension<Runtime>;

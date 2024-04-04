@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "5.35.0"
+version = "5.36.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -68,6 +68,7 @@ pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
+pallet-xcm-benchmarks = { workspace = true, optional = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
@@ -102,11 +103,13 @@ frame-try-runtime = { workspace = true, optional = true }
 
 # Astar pallets
 astar-primitives = { workspace = true }
+astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-collator-selection = { workspace = true }
 pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
+pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
@@ -123,6 +126,9 @@ precompile-utils = { workspace = true }
 moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
+
+# chain-extensions
+pallet-chain-extension-assets = { workspace = true }
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
@@ -164,6 +170,7 @@ std = [
 	"pallet-evm-precompile-bn128/std",
 	"sp-genesis-builder/std",
 	"pallet-evm-precompile-dispatch/std",
+	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-evm-precompile-ed25519/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
@@ -213,6 +220,7 @@ std = [
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
 	"substrate-wasm-builder",
+	"pallet-chain-extension-assets/std",
 	"orml-xtokens/std",
 	"orml-xcm-support/std",
 	"astar-primitives/std",
@@ -230,6 +238,8 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
+	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"astar-xcm-benchmarks/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",

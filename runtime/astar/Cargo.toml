@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "5.35.0"
+version = "5.36.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -66,6 +66,7 @@ pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
+pallet-xcm-benchmarks = { workspace = true, optional = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
@@ -100,6 +101,7 @@ frame-try-runtime = { workspace = true, optional = true }
 
 # Astar pallets
 astar-primitives = { workspace = true }
+astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-collator-selection = { workspace = true }
 pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
@@ -235,6 +237,8 @@ runtime-benchmarks = [
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 	"cumulus-primitives-utility/runtime-benchmarks",
+	"astar-xcm-benchmarks/runtime-benchmarks",
+	"pallet-xcm-benchmarks/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",

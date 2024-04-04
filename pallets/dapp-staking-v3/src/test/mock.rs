@@ -27,7 +27,7 @@ use frame_support::{
     traits::{fungible::Mutate as FunMutate, ConstU128, ConstU32},
     weights::Weight,
 };
-use sp_arithmetic::fixed_point::FixedU64;
+use sp_arithmetic::fixed_point::FixedU128;
 use sp_core::H256;
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -107,8 +107,8 @@ impl pallet_balances::Config for Test {
 
 pub struct DummyPriceProvider;
 impl PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU64 {
-        FixedU64::from_rational(1, 10)
+    fn average_price() -> FixedU128 {
+        FixedU128::from_rational(1, 10)
     }
 }
 

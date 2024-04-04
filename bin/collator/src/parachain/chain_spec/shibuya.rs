@@ -28,6 +28,7 @@ use shibuya_runtime::{
 };
 use sp_core::{sr25519, Pair, Public};
 
+use astar_primitives::oracle::CurrencyAmount;
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
     Permill,
@@ -194,6 +195,20 @@ fn make_genesis(
         inflation: InflationConfig {
             params: InflationParameters::default(),
             ..Default::default()
+        },
+        oracle_membership: OracleMembershipConfig {
+            members: vec![
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+            ]
+            .try_into()
+            .expect("Assumption is that at least two members will be allowed."),
+            ..Default::default()
+        },
+        price_aggregator: PriceAggregatorConfig {
+            circular_buffer: vec![CurrencyAmount::from_rational(5, 10)]
+                .try_into()
+                .expect("Must work since buffer should have at least a single value."),
         },
     }
 }

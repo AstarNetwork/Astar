@@ -41,5 +41,8 @@ mod unified_accounts;
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod dapp_staking_v3;
 
-#[cfg(any(feature = "shibuya"))]
+#[cfg(any(feature = "shibuya", feature = "shiden"))]
 mod assets_chain_extensions;
+
+#[cfg(any(feature = "shibuya"))]
+mod oracle;

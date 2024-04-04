@@ -29,7 +29,8 @@ pub use sp_io::hashing::keccak_256;
 pub use sp_runtime::{AccountId32, MultiAddress};
 
 pub use astar_primitives::{
-    dapp_staking::CycleConfiguration, evm::UnifiedAddressMapper, BlockNumber,
+    dapp_staking::CycleConfiguration, evm::UnifiedAddressMapper, oracle::CurrencyAmount,
+    BlockNumber,
 };
 
 #[cfg(feature = "shibuya")]
@@ -82,41 +83,6 @@ mod shibuya {
         }
     }
 
-    /// Deploy a WASM contract via ALICE as origin. (The code is in `../ink-contracts/`.)
-    /// Assumption: Contract constructor is called "new" and take no arguments
-    pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
-        let (address, _) = astar_test_utils::deploy_wasm_contract::<Runtime>(
-            name,
-            ALICE,
-            0,
-            Weight::from_parts(10_000_000_000, 1024 * 1024),
-            None,
-            hex::decode("9bae9d5e").expect("invalid data hex"),
-        );
-
-        // On instantiation, the contract got existential deposit.
-        assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
-        address
-    }
-
-    /// Call a wasm smart contract method
-    pub fn call_wasm_contract_method<V: Decode>(
-        origin: AccountId,
-        contract_id: AccountId,
-        data: Vec<u8>,
-    ) -> V {
-        let (value, _, _) = astar_test_utils::call_wasm_contract_method::<Runtime, V>(
-            origin,
-            contract_id,
-            0,
-            Weight::from_parts(10_000_000_000, 1024 * 1024),
-            None,
-            data,
-            false,
-        );
-        value
-    }
-
     /// Build the signature payload for given native account and eth private key
     fn get_evm_signature(who: &AccountId32, secret: &libsecp256k1::SecretKey) -> [u8; 65] {
         // sign the payload
@@ -159,11 +125,14 @@ pub const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
 
 pub const INITIAL_AMOUNT: u128 = 100_000 * UNIT;
 
+pub const INIT_PRICE: CurrencyAmount = CurrencyAmount::from_rational(1, 10);
+
 pub type SystemError = frame_system::Error<Runtime>;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_dapp_staking_v3 as DappStakingCall;
 pub use pallet_proxy::Event as ProxyEvent;
 pub use pallet_utility::{Call as UtilityCall, Event as UtilityEvent};
+use parity_scale_codec::Decode;
 
 pub struct ExtBuilder {
     balances: Vec<(AccountId32, Balance)>,
@@ -190,6 +159,26 @@ impl ExtBuilder {
             balances: self.balances,
         }
         .assimilate_storage(&mut t)
+        .unwrap();
+
+        #[cfg(any(feature = "shibuya"))]
+        // Setup initial oracle members
+        <pallet_membership::GenesisConfig<Runtime, OracleMembershipInstance> as BuildStorage>::assimilate_storage(
+            &pallet_membership::GenesisConfig::<Runtime, OracleMembershipInstance> {
+                members: vec![ALICE, BOB].try_into().expect("Safe to assume at least 2 members are supported."),
+                ..Default::default()
+            },
+            &mut t)
+        .unwrap();
+
+        #[cfg(any(feature = "shibuya"))]
+        // Setup initial native currency price
+        <pallet_price_aggregator::GenesisConfig<Runtime> as BuildStorage>::assimilate_storage(
+            &pallet_price_aggregator::GenesisConfig::<Runtime> {
+                circular_buffer: vec![INIT_PRICE].try_into().unwrap(),
+            },
+            &mut t,
+        )
         .unwrap();
 
         // Needed to trigger initial inflation config setting.
@@ -240,6 +229,10 @@ pub fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
         let block_number = System::block_number();
         TransactionPayment::on_finalize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        Oracle::on_finalize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        PriceAggregator::on_finalize(block_number);
         DappStaking::on_finalize(block_number);
         Authorship::on_finalize(block_number);
         Session::on_finalize(block_number);
@@ -257,6 +250,10 @@ pub fn run_to_block(n: BlockNumber) {
         Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
         TransactionPayment::on_initialize(block_number);
         DappStaking::on_initialize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        Oracle::on_initialize(block_number);
+        #[cfg(any(feature = "shibuya"))]
+        PriceAggregator::on_initialize(block_number);
         Authorship::on_initialize(block_number);
         Aura::on_initialize(block_number);
         AuraExt::on_initialize(block_number);
@@ -295,4 +292,39 @@ pub fn expect_events(e: Vec<RuntimeEvent>) {
 #[allow(dead_code)]
 pub fn init_env_logger() {
     let _ = env_logger::builder().is_test(true).try_init();
+}
+
+/// Deploy a WASM contract via ALICE as origin. (The code is in `../ink-contracts/`.)
+/// Assumption: Contract constructor is called "new" and take no arguments
+pub fn deploy_wasm_contract(name: &str) -> AccountId32 {
+    let (address, _) = astar_test_utils::deploy_wasm_contract::<Runtime>(
+        name,
+        ALICE,
+        0,
+        Weight::from_parts(10_000_000_000, 1024 * 1024),
+        None,
+        hex::decode("9bae9d5e").expect("invalid data hex"),
+    );
+
+    // On instantiation, the contract got existential deposit.
+    assert_eq!(Balances::free_balance(&address), ExistentialDeposit::get(),);
+    address
+}
+
+/// Call a wasm smart contract method
+pub fn call_wasm_contract_method<V: Decode>(
+    origin: AccountId,
+    contract_id: AccountId,
+    data: Vec<u8>,
+) -> V {
+    let (value, _, _) = astar_test_utils::call_wasm_contract_method::<Runtime, V>(
+        origin,
+        contract_id,
+        0,
+        Weight::from_parts(10_000_000_000, 1024 * 1024),
+        None,
+        data,
+        false,
+    );
+    value
 }
