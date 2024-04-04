@@ -22,13 +22,13 @@
 //! DATE: 2024-03-27, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
-//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("shibuya-dev"), DB CACHE: 1024
+//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("astar-dev"), DB CACHE: 1024
 
 // Executed Command:
 // ./target/release/astar-collator
 // benchmark
 // pallet
-// --chain=shibuya-dev
+// --chain=astar-dev
 // --steps=50
 // --repeat=20
 // --pallet=xcm_benchmarks_fungible
@@ -36,7 +36,7 @@
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --output=./benchmark-results/shibuya-dev/benchmarks_fungible_weights.rs
+// --output=./benchmark-results/astar-dev/benchmarks_fungible_weights.rs
 // --template=./scripts/templates/weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -72,10 +72,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn transfer_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `545`
+		//  Measured:  `508`
 		//  Estimated: `6232`
-		// Minimum execution time: 46_672_000 picoseconds.
-		Weight::from_parts(47_320_000, 6232)
+		// Minimum execution time: 46_420_000 picoseconds.
+		Weight::from_parts(47_162_000, 6232)
 			.saturating_add(T::DbWeight::get().reads(5_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
@@ -97,10 +97,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn transfer_reserve_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `690`
+		//  Measured:  `582`
 		//  Estimated: `6232`
-		// Minimum execution time: 65_825_000 picoseconds.
-		Weight::from_parts(67_220_000, 6232)
+		// Minimum execution time: 65_727_000 picoseconds.
+		Weight::from_parts(66_724_000, 6232)
 			.saturating_add(T::DbWeight::get().reads(9_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -130,23 +130,21 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(146), added: 2621, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	/// Storage: `UnifiedAccounts::NativeToEvm` (r:1 w:0)
-	/// Proof: `UnifiedAccounts::NativeToEvm` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	fn withdraw_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1960`
-		//  Estimated: `5425`
-		// Minimum execution time: 54_402_000 picoseconds.
-		Weight::from_parts(55_279_000, 5425)
-			.saturating_add(T::DbWeight::get().reads(5_u64))
+		//  Measured:  `1919`
+		//  Estimated: `5384`
+		// Minimum execution time: 51_262_000 picoseconds.
+		Weight::from_parts(52_184_000, 5384)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	fn reserve_asset_deposited() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_651_000 picoseconds.
-		Weight::from_parts(3_790_000, 0)
+		// Minimum execution time: 3_917_000 picoseconds.
+		Weight::from_parts(4_020_000, 0)
 	}
 	/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -158,10 +156,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn initiate_reserve_withdraw() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `145`
-		//  Estimated: `3610`
-		// Minimum execution time: 402_261_000 picoseconds.
-		Weight::from_parts(408_453_000, 3610)
+		//  Measured:  `74`
+		//  Estimated: `3539`
+		// Minimum execution time: 403_972_000 picoseconds.
+		Weight::from_parts(411_024_000, 3539)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -175,10 +173,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn deposit_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1696`
-		//  Estimated: `5161`
-		// Minimum execution time: 42_761_000 picoseconds.
-		Weight::from_parts(43_379_000, 5161)
+		//  Measured:  `1659`
+		//  Estimated: `5124`
+		// Minimum execution time: 42_469_000 picoseconds.
+		Weight::from_parts(43_416_000, 5124)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -200,10 +198,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn deposit_reserve_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1841`
-		//  Estimated: `5306`
-		// Minimum execution time: 65_274_000 picoseconds.
-		Weight::from_parts(66_706_000, 5306)
+		//  Measured:  `1733`
+		//  Estimated: `5198`
+		// Minimum execution time: 64_346_000 picoseconds.
+		Weight::from_parts(65_769_000, 5198)
 			.saturating_add(T::DbWeight::get().reads(8_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
@@ -221,10 +219,10 @@ impl WeightInfo for () {
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn transfer_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `545`
+		//  Measured:  `508`
 		//  Estimated: `6232`
-		// Minimum execution time: 46_672_000 picoseconds.
-		Weight::from_parts(47_320_000, 6232)
+		// Minimum execution time: 46_420_000 picoseconds.
+		Weight::from_parts(47_162_000, 6232)
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
@@ -246,10 +244,10 @@ impl WeightInfo for () {
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn transfer_reserve_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `690`
+		//  Measured:  `582`
 		//  Estimated: `6232`
-		// Minimum execution time: 65_825_000 picoseconds.
-		Weight::from_parts(67_220_000, 6232)
+		// Minimum execution time: 65_727_000 picoseconds.
+		Weight::from_parts(66_724_000, 6232)
 			.saturating_add(RocksDbWeight::get().reads(9_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
@@ -279,23 +277,21 @@ impl WeightInfo for () {
 	/// Proof: `Assets::Account` (`max_values`: None, `max_size`: Some(146), added: 2621, mode: `MaxEncodedLen`)
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	/// Storage: `UnifiedAccounts::NativeToEvm` (r:1 w:0)
-	/// Proof: `UnifiedAccounts::NativeToEvm` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	fn withdraw_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1960`
-		//  Estimated: `5425`
-		// Minimum execution time: 54_402_000 picoseconds.
-		Weight::from_parts(55_279_000, 5425)
-			.saturating_add(RocksDbWeight::get().reads(5_u64))
+		//  Measured:  `1919`
+		//  Estimated: `5384`
+		// Minimum execution time: 51_262_000 picoseconds.
+		Weight::from_parts(52_184_000, 5384)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	fn reserve_asset_deposited() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_651_000 picoseconds.
-		Weight::from_parts(3_790_000, 0)
+		// Minimum execution time: 3_917_000 picoseconds.
+		Weight::from_parts(4_020_000, 0)
 	}
 	/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -307,10 +303,10 @@ impl WeightInfo for () {
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn initiate_reserve_withdraw() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `145`
-		//  Estimated: `3610`
-		// Minimum execution time: 402_261_000 picoseconds.
-		Weight::from_parts(408_453_000, 3610)
+		//  Measured:  `74`
+		//  Estimated: `3539`
+		// Minimum execution time: 403_972_000 picoseconds.
+		Weight::from_parts(411_024_000, 3539)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
@@ -324,10 +320,10 @@ impl WeightInfo for () {
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn deposit_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1696`
-		//  Estimated: `5161`
-		// Minimum execution time: 42_761_000 picoseconds.
-		Weight::from_parts(43_379_000, 5161)
+		//  Measured:  `1659`
+		//  Estimated: `5124`
+		// Minimum execution time: 42_469_000 picoseconds.
+		Weight::from_parts(43_416_000, 5124)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
@@ -349,10 +345,10 @@ impl WeightInfo for () {
 	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn deposit_reserve_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1841`
-		//  Estimated: `5306`
-		// Minimum execution time: 65_274_000 picoseconds.
-		Weight::from_parts(66_706_000, 5306)
+		//  Measured:  `1733`
+		//  Estimated: `5198`
+		// Minimum execution time: 64_346_000 picoseconds.
+		Weight::from_parts(65_769_000, 5198)
 			.saturating_add(RocksDbWeight::get().reads(8_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
