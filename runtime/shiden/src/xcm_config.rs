@@ -37,10 +37,10 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
     ConvertedConcreteId, CurrencyAdapter, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin,
-    FixedWeightBounds, FungiblesAdapter, HashedDescription, IsConcrete, NoChecking,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds, WithComputedOrigin,
+    FungiblesAdapter, HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents, WeightInfoBounds, WithComputedOrigin,
 };
 use xcm_executor::{
     traits::{JustTry, WithOriginFilter},

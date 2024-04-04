@@ -255,7 +255,6 @@ std = [
 runtime-benchmarks = [
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"oracle-benchmarks/runtime-benchmarks",
-	"pallet-dapp-staking-migration/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",

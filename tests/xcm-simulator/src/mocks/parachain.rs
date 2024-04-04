@@ -40,7 +40,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::H256;
 use sp_runtime::{
     traits::{AccountIdConversion, Convert, Get, IdentityLookup, MaybeEquivalence},
-    AccountId32, FixedU64, Perbill, RuntimeDebug,
+    AccountId32, FixedU128, Perbill, RuntimeDebug,
 };
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
@@ -685,8 +685,8 @@ impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
 
 pub struct DummyPriceProvider;
 impl PriceProvider for DummyPriceProvider {
-    fn average_price() -> FixedU64 {
-        FixedU64::from_rational(1, 10)
+    fn average_price() -> FixedU128 {
+        FixedU128::from_rational(1, 10)
     }
 }
 

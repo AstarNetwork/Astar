@@ -1749,6 +1749,8 @@ impl_runtime_apis! {
             impl pallet_xcm_benchmarks::Config for Runtime {
                 type XcmConfig = xcm_config::XcmConfig;
                 type AccountIdConverter = xcm_config::LocationToAccountId;
+                type DeliveryHelper = ();
+
                 // destination location to be used in benchmarks
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
                     Ok(MultiLocation::parent())
@@ -1760,6 +1762,8 @@ impl_runtime_apis! {
 
             impl pallet_xcm_benchmarks::generic::Config for Runtime {
                 type RuntimeCall = RuntimeCall;
+                type TransactAsset = Balances;
+
                 fn worst_case_response() -> (u64, Response) {
                     (0u64, Response::Version(Default::default()))
                 }

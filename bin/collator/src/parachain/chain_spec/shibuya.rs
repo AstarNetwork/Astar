@@ -23,8 +23,9 @@ use sc_service::ChainType;
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
     CollatorSelectionConfig, DappStakingConfig, EVMChainIdConfig, EVMConfig, InflationConfig,
-    InflationParameters, ParachainInfoConfig, Precompiles, RuntimeGenesisConfig, SessionConfig,
-    SessionKeys, Signature, SudoConfig, SystemConfig, TierThreshold, VestingConfig, SBY,
+    InflationParameters, OracleMembershipConfig, ParachainInfoConfig, Precompiles,
+    PriceAggregatorConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
+    SystemConfig, TierThreshold, VestingConfig, SBY,
 };
 use sp_core::{sr25519, Pair, Public};
 

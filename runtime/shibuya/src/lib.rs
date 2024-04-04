@@ -1204,11 +1204,6 @@ impl oracle_benchmarks::Config for Runtime {
     type AddMember = AddMemberBenchmark;
 }
 
-impl pallet_dapp_staking_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Self>;
-}
-
 construct_runtime!(
     pub struct Runtime
     {
