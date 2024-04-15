@@ -44,9 +44,6 @@ pub mod testing;
 /// Oracle & price primitives.
 pub mod oracle;
 
-/// Common Migrations
-pub mod migrations;
-
 /// Benchmark primitives
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarks;
