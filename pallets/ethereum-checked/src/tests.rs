@@ -32,14 +32,6 @@ fn bounded_input(data: &'static str) -> EthereumTxInput {
         .expect("input too large")
 }
 
-// A hacky way to get around crate pub visibility of the storage item.
-#[frame_support::storage_alias]
-type Pending<T: pallet_ethereum::Config> = StorageValue<
-    pallet_ethereum::Pallet<T>,
-    Vec<(Transaction, TransactionStatus, Receipt)>,
-    ValueQuery,
->;
-
 #[test]
 fn transact_works() {
     ExtBuilder::default().build().execute_with(|| {
@@ -61,7 +53,7 @@ fn transact_works() {
             RawOrigin::XcmEthereumTx(ALICE).into(),
             store_tx
         ));
-        let pending = Pending::<TestRuntime>::get();
+        let pending = pallet_ethereum::Pending::<TestRuntime>::get();
         assert_eq!(pending.len(), 2);
 
         match pending[0] {
@@ -152,7 +144,7 @@ fn no_hash_collision() {
             ));
         }
 
-        let mut tx_hashes = Pending::<TestRuntime>::get()
+        let mut tx_hashes = pallet_ethereum::Pending::<TestRuntime>::get()
             .iter()
             .map(|(tx, _, _)| tx.hash())
             .collect::<Vec<_>>();
