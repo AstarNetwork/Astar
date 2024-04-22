@@ -167,6 +167,8 @@
 <a href="#167" id="167">167</a>
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -311,8 +313,10 @@
             CallableByPrecompile,
         ),
     &gt;,
-    PrecompileAt&lt;
-        AddressU64&lt;<span class="number">20485</span>&gt;,
+    <span class="comment">// Skipping 20485 and 20486 to make sure all network have consistent
+    // precompiles address
+    </span>PrecompileAt&lt;
+        AddressU64&lt;<span class="number">20487</span>&gt;,
         DispatchLockdrop&lt;
             R,
             DispatchFilterValidate&lt;RuntimeCall, WhitelistedLockdropCalls&gt;,
@@ -329,7 +333,7 @@
         <span class="comment">// Skip precompiles if out of range.
         </span>PrecompilesInRangeInclusive&lt;
             <span class="comment">// We take range as last precompile index, UPDATE this once new prcompile is added
-            </span>(AddressU64&lt;<span class="number">1</span>&gt;, AddressU64&lt;<span class="number">20485</span>&gt;),
+            </span>(AddressU64&lt;<span class="number">1</span>&gt;, AddressU64&lt;<span class="number">20487</span>&gt;),
             ShidenPrecompilesSetAt&lt;R, C&gt;,
         &gt;,
         <span class="comment">// Prefixed precompile sets (XC20)

@@ -1990,6 +1990,9 @@
 <a href="#1990" id="1990">1990</a>
 <a href="#1991" id="1991">1991</a>
 <a href="#1992" id="1992">1992</a>
+<a href="#1993" id="1993">1993</a>
+<a href="#1994" id="1994">1994</a>
+<a href="#1995" id="1995">1995</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2084,6 +2087,7 @@
 <span class="attr">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, test))]
 </span><span class="kw">pub use </span>sp_runtime::BuildStorage;
 
+<span class="kw">mod </span>chain_extensions;
 <span class="kw">mod </span>precompiles;
 <span class="kw">mod </span>weights;
 <span class="kw">mod </span>xcm_config;
@@ -2092,6 +2096,8 @@
 
 <span class="kw">pub use </span>precompiles::{AstarPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 <span class="kw">pub type </span>Precompiles = AstarPrecompiles&lt;Runtime, AstarAssetLocationIdConverter&gt;;
+
+<span class="kw">use </span>chain_extensions::AstarChainExtensions;
 
 <span class="doccomment">/// Constant values used within the runtime.
 </span><span class="kw">pub const </span>MICROASTR: Balance = <span class="number">1_000_000_000_000</span>;
@@ -2140,7 +2146,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">84</span>,
+    spec_version: <span class="number">85</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">2</span>,
@@ -2661,7 +2667,7 @@
     <span class="kw">type </span>CallStack = [pallet_contracts::Frame&lt;<span class="self">Self</span>&gt;; <span class="number">5</span>];
     <span class="kw">type </span>WeightPrice = pallet_transaction_payment::Pallet&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>WeightInfo = pallet_contracts::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
-    <span class="kw">type </span>ChainExtension = ();
+    <span class="kw">type </span>ChainExtension = AstarChainExtensions&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>Schedule = Schedule;
     <span class="kw">type </span>AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     <span class="kw">type </span>MaxCodeLen = ConstU32&lt;{ <span class="number">123 </span>* <span class="number">1024 </span>}&gt;;

@@ -2329,32 +2329,6 @@
 <a href="#2329" id="2329">2329</a>
 <a href="#2330" id="2330">2330</a>
 <a href="#2331" id="2331">2331</a>
-<a href="#2332" id="2332">2332</a>
-<a href="#2333" id="2333">2333</a>
-<a href="#2334" id="2334">2334</a>
-<a href="#2335" id="2335">2335</a>
-<a href="#2336" id="2336">2336</a>
-<a href="#2337" id="2337">2337</a>
-<a href="#2338" id="2338">2338</a>
-<a href="#2339" id="2339">2339</a>
-<a href="#2340" id="2340">2340</a>
-<a href="#2341" id="2341">2341</a>
-<a href="#2342" id="2342">2342</a>
-<a href="#2343" id="2343">2343</a>
-<a href="#2344" id="2344">2344</a>
-<a href="#2345" id="2345">2345</a>
-<a href="#2346" id="2346">2346</a>
-<a href="#2347" id="2347">2347</a>
-<a href="#2348" id="2348">2348</a>
-<a href="#2349" id="2349">2349</a>
-<a href="#2350" id="2350">2350</a>
-<a href="#2351" id="2351">2351</a>
-<a href="#2352" id="2352">2352</a>
-<a href="#2353" id="2353">2353</a>
-<a href="#2354" id="2354">2354</a>
-<a href="#2355" id="2355">2355</a>
-<a href="#2356" id="2356">2356</a>
-<a href="#2357" id="2357">2357</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2531,7 +2505,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">126</span>,
+    spec_version: <span class="number">127</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">2</span>,
@@ -3816,33 +3790,7 @@
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-</span><span class="kw">pub type </span>Migrations = (
-    OracleIntegrationLogic,
-    pallet_price_aggregator::PriceAggregatorInitializer&lt;Runtime, InitPrice&gt;,
-);
-
-<span class="kw">pub struct </span>InitPrice;
-<span class="kw">impl </span>Get&lt;CurrencyAmount&gt; <span class="kw">for </span>InitPrice {
-    <span class="kw">fn </span>get() -&gt; CurrencyAmount {
-        <span class="comment">// 0.15 $
-        </span>CurrencyAmount::from_rational(<span class="number">15</span>, <span class="number">100</span>)
-    }
-}
-
-<span class="kw">use </span>frame_support::traits::OnRuntimeUpgrade;
-<span class="kw">pub struct </span>OracleIntegrationLogic;
-<span class="kw">impl </span>OnRuntimeUpgrade <span class="kw">for </span>OracleIntegrationLogic {
-    <span class="kw">fn </span>on_runtime_upgrade() -&gt; Weight {
-        <span class="comment">// 1. Set initial storage versions for the membership pallet
-        </span><span class="kw">use </span>frame_support::traits::StorageVersion;
-        StorageVersion::new(<span class="number">4</span>)
-            .put::&lt;pallet_membership::Pallet&lt;Runtime, OracleMembershipInstance&gt;&gt;();
-
-        <span class="comment">// No storage version for the `orml_oracle` pallet, it&#39;s essentially 0
-
-        </span>&lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().writes(<span class="number">1</span>)
-    }
-}
+</span><span class="kw">pub type </span>Migrations = ();
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,

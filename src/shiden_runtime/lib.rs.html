@@ -1993,39 +1993,6 @@
 <a href="#1993" id="1993">1993</a>
 <a href="#1994" id="1994">1994</a>
 <a href="#1995" id="1995">1995</a>
-<a href="#1996" id="1996">1996</a>
-<a href="#1997" id="1997">1997</a>
-<a href="#1998" id="1998">1998</a>
-<a href="#1999" id="1999">1999</a>
-<a href="#2000" id="2000">2000</a>
-<a href="#2001" id="2001">2001</a>
-<a href="#2002" id="2002">2002</a>
-<a href="#2003" id="2003">2003</a>
-<a href="#2004" id="2004">2004</a>
-<a href="#2005" id="2005">2005</a>
-<a href="#2006" id="2006">2006</a>
-<a href="#2007" id="2007">2007</a>
-<a href="#2008" id="2008">2008</a>
-<a href="#2009" id="2009">2009</a>
-<a href="#2010" id="2010">2010</a>
-<a href="#2011" id="2011">2011</a>
-<a href="#2012" id="2012">2012</a>
-<a href="#2013" id="2013">2013</a>
-<a href="#2014" id="2014">2014</a>
-<a href="#2015" id="2015">2015</a>
-<a href="#2016" id="2016">2016</a>
-<a href="#2017" id="2017">2017</a>
-<a href="#2018" id="2018">2018</a>
-<a href="#2019" id="2019">2019</a>
-<a href="#2020" id="2020">2020</a>
-<a href="#2021" id="2021">2021</a>
-<a href="#2022" id="2022">2022</a>
-<a href="#2023" id="2023">2023</a>
-<a href="#2024" id="2024">2024</a>
-<a href="#2025" id="2025">2025</a>
-<a href="#2026" id="2026">2026</a>
-<a href="#2027" id="2027">2027</a>
-<a href="#2028" id="2028">2028</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2181,7 +2148,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">123</span>,
+    spec_version: <span class="number">124</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">2</span>,
@@ -3157,40 +3124,7 @@
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-</span><span class="kw">pub type </span>Migrations = (pallet_static_price_provider::ActivePriceUpdate&lt;Runtime, InitPrice&gt;,);
-
-<span class="kw">use </span>frame_support::traits::OnRuntimeUpgrade;
-<span class="kw">pub struct </span>SetNewTierConfig;
-<span class="kw">impl </span>OnRuntimeUpgrade <span class="kw">for </span>SetNewTierConfig {
-    <span class="kw">fn </span>on_runtime_upgrade() -&gt; Weight {
-        <span class="kw">use </span>astar_primitives::oracle::PriceProvider;
-        <span class="kw">use </span>frame_support::BoundedVec;
-
-        <span class="comment">// Set new init tier config values according to the forum post
-        </span><span class="kw">let </span><span class="kw-2">mut </span>init_tier_config = pallet_dapp_staking_v3::TierConfig::&lt;Runtime&gt;::get();
-        init_tier_config.number_of_slots = <span class="number">55</span>;
-        init_tier_config.slots_per_tier =
-            BoundedVec::try_from(<span class="macro">vec!</span>[<span class="number">2</span>, <span class="number">11</span>, <span class="number">16</span>, <span class="number">24</span>]).unwrap_or_default();
-
-        <span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
-        </span>{
-            <span class="macro">assert!</span>(
-                init_tier_config.number_of_slots &gt;= init_tier_config.slots_per_tier.iter().sum::&lt;u16&gt;() <span class="kw">as </span>u16,
-                <span class="string">&quot;Safety check, sum of slots per tier must be equal or less than max number of slots (due to possible rounding)&quot;
-            </span>);
-        }
-
-        <span class="comment">// Based on the new init config, calculate the new tier config based on the &#39;average&#39; price
-        </span><span class="kw">let </span>price = StaticPriceProvider::average_price();
-        <span class="kw">let </span>tier_params = pallet_dapp_staking_v3::StaticTierParams::&lt;Runtime&gt;::get();
-
-        <span class="kw">let </span>new_tier_config = init_tier_config.calculate_new(price, <span class="kw-2">&amp;</span>tier_params);
-
-        pallet_dapp_staking_v3::TierConfig::&lt;Runtime&gt;::put(new_tier_config);
-
-        &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().reads_writes(<span class="number">3</span>, <span class="number">1</span>)
-    }
-}
+</span><span class="kw">pub type </span>Migrations = ();
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
