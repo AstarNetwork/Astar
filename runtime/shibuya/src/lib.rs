@@ -1459,33 +1459,7 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    OracleIntegrationLogic,
-    pallet_price_aggregator::PriceAggregatorInitializer<Runtime, InitPrice>,
-);
-
-pub struct InitPrice;
-impl Get<CurrencyAmount> for InitPrice {
-    fn get() -> CurrencyAmount {
-        // 0.15 $
-        CurrencyAmount::from_rational(15, 100)
-    }
-}
-
-use frame_support::traits::OnRuntimeUpgrade;
-pub struct OracleIntegrationLogic;
-impl OnRuntimeUpgrade for OracleIntegrationLogic {
-    fn on_runtime_upgrade() -> Weight {
-        // 1. Set initial storage versions for the membership pallet
-        use frame_support::traits::StorageVersion;
-        StorageVersion::new(4)
-            .put::<pallet_membership::Pallet<Runtime, OracleMembershipInstance>>();
-
-        // No storage version for the `orml_oracle` pallet, it's essentially 0
-
-        <Runtime as frame_system::Config>::DbWeight::get().writes(1)
-    }
-}
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
