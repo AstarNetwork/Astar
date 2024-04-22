@@ -16,33 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-//! Runtime integration tests.
+use super::Runtime;
 
-#![cfg(test)]
+/// Registered WASM contracts chain extensions.
+pub use pallet_chain_extension_assets::AssetsExtension;
+use pallet_contracts::chain_extension::RegisteredChainExtension;
 
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod setup;
+// Following impls defines chain extension IDs.
+impl RegisteredChainExtension<Runtime> for AssetsExtension<Runtime> {
+    const ID: u16 = 02;
+}
 
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod proxy;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod assets;
-
-#[cfg(feature = "shibuya")]
-mod xvm;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod dispatch_precompile_filter;
-
-#[cfg(feature = "shibuya")]
-mod unified_accounts;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod dapp_staking_v3;
-
-#[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
-mod assets_chain_extensions;
-
-#[cfg(any(feature = "shibuya"))]
-mod oracle;
+pub type AstarChainExtensions<Runtime> = AssetsExtension<Runtime>;

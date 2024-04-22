@@ -153,7 +153,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 123,
+    spec_version: 124,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1129,40 +1129,7 @@ parameter_types! {
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (pallet_static_price_provider::ActivePriceUpdate<Runtime, InitPrice>,);
-
-use frame_support::traits::OnRuntimeUpgrade;
-pub struct SetNewTierConfig;
-impl OnRuntimeUpgrade for SetNewTierConfig {
-    fn on_runtime_upgrade() -> Weight {
-        use astar_primitives::oracle::PriceProvider;
-        use frame_support::BoundedVec;
-
-        // Set new init tier config values according to the forum post
-        let mut init_tier_config = pallet_dapp_staking_v3::TierConfig::<Runtime>::get();
-        init_tier_config.number_of_slots = 55;
-        init_tier_config.slots_per_tier =
-            BoundedVec::try_from(vec![2, 11, 16, 24]).unwrap_or_default();
-
-        #[cfg(feature = "try-runtime")]
-        {
-            assert!(
-                init_tier_config.number_of_slots >= init_tier_config.slots_per_tier.iter().sum::<u16>() as u16,
-                "Safety check, sum of slots per tier must be equal or less than max number of slots (due to possible rounding)"
-            );
-        }
-
-        // Based on the new init config, calculate the new tier config based on the 'average' price
-        let price = StaticPriceProvider::average_price();
-        let tier_params = pallet_dapp_staking_v3::StaticTierParams::<Runtime>::get();
-
-        let new_tier_config = init_tier_config.calculate_new(price, &tier_params);
-
-        pallet_dapp_staking_v3::TierConfig::<Runtime>::put(new_tier_config);
-
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(3, 1)
-    }
-}
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
