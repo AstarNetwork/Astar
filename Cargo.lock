@@ -788,6 +788,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-chain-extension-assets",
  "pallet-collator-selection",
  "pallet-contracts",
  "pallet-contracts-primitives",

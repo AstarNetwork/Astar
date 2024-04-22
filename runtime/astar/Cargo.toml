@@ -124,6 +124,9 @@ moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 precompile-utils = { workspace = true }
 
+# chain-extensions
+pallet-chain-extension-assets = { workspace = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -212,6 +215,7 @@ std = [
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
 	"substrate-wasm-builder",
+	"pallet-chain-extension-assets/std",
 	"orml-xtokens/std",
 	"orml-xcm-support/std",
 	"astar-primitives/std",
