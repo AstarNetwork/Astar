@@ -619,7 +619,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -753,7 +753,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -802,6 +802,7 @@ dependencies = [
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapp-staking-v3",
  "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
@@ -6625,7 +6626,7 @@ checksum = "01cda141df6706de531b6c46c3a33ecca755538219bd484262fa09410c13539c"
 
 [[package]]
 name = "local-runtime"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -13989,7 +13990,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
@@ -14109,7 +14110,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "array-bytes",
  "astar-primitives",
