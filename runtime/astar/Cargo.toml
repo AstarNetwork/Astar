@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "5.36.0"
+version = "5.37.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -107,6 +107,7 @@ pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
+pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
@@ -122,6 +123,9 @@ moonbeam-evm-tracer = { workspace = true, optional = true }
 moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 moonbeam-rpc-primitives-txpool = { workspace = true, optional = true }
 precompile-utils = { workspace = true }
+
+# chain-extensions
+pallet-chain-extension-assets = { workspace = true }
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
@@ -172,6 +176,7 @@ std = [
 	"pallet-evm-precompile-simple/std",
 	"pallet-evm-precompile-bn128/std",
 	"pallet-evm-precompile-dispatch/std",
+	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-evm-precompile-ed25519/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
@@ -211,6 +216,7 @@ std = [
 	"xcm-executor/std",
 	"pallet-xc-asset-config/std",
 	"substrate-wasm-builder",
+	"pallet-chain-extension-assets/std",
 	"orml-xtokens/std",
 	"orml-xcm-support/std",
 	"astar-primitives/std",

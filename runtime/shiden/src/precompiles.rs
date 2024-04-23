@@ -141,8 +141,10 @@ pub type ShidenPrecompilesSetAt<R, C> = (
             CallableByPrecompile,
         ),
     >,
+    // Skipping 20485 and 20486 to make sure all network have consistent
+    // precompiles address
     PrecompileAt<
-        AddressU64<20485>,
+        AddressU64<20487>,
         DispatchLockdrop<
             R,
             DispatchFilterValidate<RuntimeCall, WhitelistedLockdropCalls>,
@@ -159,7 +161,7 @@ pub type ShidenPrecompiles<R, C> = PrecompileSetBuilder<
         // Skip precompiles if out of range.
         PrecompilesInRangeInclusive<
             // We take range as last precompile index, UPDATE this once new prcompile is added
-            (AddressU64<1>, AddressU64<20485>),
+            (AddressU64<1>, AddressU64<20487>),
             ShidenPrecompilesSetAt<R, C>,
         >,
         // Prefixed precompile sets (XC20)

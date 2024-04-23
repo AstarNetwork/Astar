@@ -94,6 +94,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+mod chain_extensions;
 mod precompiles;
 mod weights;
 mod xcm_config;
@@ -102,6 +103,8 @@ pub type AstarAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAss
 
 pub use precompiles::{AstarPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = AstarPrecompiles<Runtime, AstarAssetLocationIdConverter>;
+
+use chain_extensions::AstarChainExtensions;
 
 /// Constant values used within the runtime.
 pub const MICROASTR: Balance = 1_000_000_000_000;
@@ -150,7 +153,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 84,
+    spec_version: 85,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -668,7 +671,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ();
+    type ChainExtension = AstarChainExtensions<Self>;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;

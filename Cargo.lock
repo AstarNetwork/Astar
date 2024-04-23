@@ -623,7 +623,7 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
@@ -757,7 +757,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -792,6 +792,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-chain-extension-assets",
  "pallet-collator-selection",
  "pallet-contracts",
  "pallet-contracts-primitives",
@@ -805,6 +806,7 @@ dependencies = [
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dapp-staking-v3",
  "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-dispatch-lockdrop",
  "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
@@ -5211,9 +5213,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.20"
+version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97ec8491ebaf99c8eaa73058b045fe58073cd6be7f596ac993ced0b0a0c01049"
+checksum = "81fe527a889e1532da5c525686d96d4c2e74cdd345badf8dfef9f6b39dd5f5e8"
 dependencies = [
  "bytes",
  "fnv",
@@ -5221,7 +5223,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http",
- "indexmap 1.9.3",
+ "indexmap 2.0.0",
  "slab",
  "tokio",
  "tokio-util",
@@ -6692,7 +6694,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -13956,7 +13958,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
@@ -14073,7 +14075,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.36.0"
+version = "5.37.0"
 dependencies = [
  "array-bytes 6.1.0",
  "astar-primitives",
