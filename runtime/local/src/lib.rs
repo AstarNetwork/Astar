@@ -25,10 +25,13 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime,
+    genesis_builder_helper::{build_config, create_default_config},
+    parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EitherOfDiverse,
-        EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, Nothing, OnFinalize, WithdrawReasons,
+        fungible::HoldConsideration, AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64,
+        Currency, EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, LinearStoragePrice, Nothing,
+        OnFinalize, WithdrawReasons,
     },
     weights::{
         constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -70,7 +73,6 @@ use astar_primitives::{
 };
 
 pub use astar_primitives::{AccountId, Signature};
-pub use pallet_block_rewards_hybrid::RewardDistributionConfig;
 pub use pallet_dapp_staking_v3::TierThreshold;
 
 pub use crate::precompiles::WhitelistedCalls;
@@ -277,7 +279,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = (Aura, BlockReward);
+    type OnTimestampSet = Aura;
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
@@ -302,8 +304,9 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = System;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
     type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = RuntimeFreezeReason;
-    type MaxHolds = ConstU32<1>;
+    type MaxHolds = ConstU32<2>;
     type MaxFreezes = ConstU32<1>;
 }
 
@@ -424,71 +427,6 @@ parameter_types! {
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
-pub struct DappsStakingTvlProvider();
-impl Get<Balance> for DappsStakingTvlProvider {
-    fn get() -> Balance {
-        DappsStaking::tvl()
-    }
-}
-
-pub struct BeneficiaryPayout();
-impl pallet_block_rewards_hybrid::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
-    fn treasury(reward: NegativeImbalance) {
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
-    }
-
-    fn collators(_reward: NegativeImbalance) {
-        // no collators for local dev node
-    }
-
-    fn dapps_staking(stakers: NegativeImbalance, dapps: NegativeImbalance) {
-        DappsStaking::rewards(stakers, dapps)
-    }
-}
-
-parameter_types! {
-    pub const MaxBlockRewardAmount: Balance = 230_718 * MILLIAST;
-}
-
-impl pallet_block_rewards_hybrid::Config for Runtime {
-    type Currency = Balances;
-    type DappsStakingTvlProvider = DappsStakingTvlProvider;
-    type BeneficiaryPayout = BeneficiaryPayout;
-    type MaxBlockRewardAmount = MaxBlockRewardAmount;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_block_rewards_hybrid::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-    pub const BlockPerEra: BlockNumber = 60;
-    pub const RegisterDeposit: Balance = 100 * AST;
-    pub const MaxNumberOfStakersPerContract: u32 = 512;
-    pub const MinimumStakingAmount: Balance = 10 * AST;
-    pub const MinimumRemainingAmount: Balance = AST;
-    pub const MaxUnlockingChunks: u32 = 2;
-    pub const UnbondingPeriod: u32 = 2;
-    pub const MaxEraStakeValues: u32 = 5;
-}
-
-impl pallet_dapps_staking::Config for Runtime {
-    type Currency = Balances;
-    type BlockPerEra = BlockPerEra;
-    type SmartContract = SmartContract<AccountId>;
-    type RegisterDeposit = RegisterDeposit;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
-    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
-    type MinimumStakingAmount = MinimumStakingAmount;
-    type PalletId = DappsStakingPalletId;
-    type MaxUnlockingChunks = MaxUnlockingChunks;
-    type UnbondingPeriod = UnbondingPeriod;
-    type MinimumRemainingAmount = MinimumRemainingAmount;
-    type MaxEraStakeValues = MaxEraStakeValues;
-    type UnregisteredDappRewardRetention = ConstU32<3>;
-    type ForcePalletDisabled = ConstBool<false>; // This will be set to `true` when needed
-    type DelegateClaimFee = ConstU128<1>;
-}
-
 impl pallet_static_price_provider::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
 }
@@ -572,11 +510,6 @@ impl pallet_inflation::Config for Runtime {
     type CycleConfiguration = InflationCycleConfig;
     type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_inflation::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_dapp_staking_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -690,6 +623,7 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+    type SuicideQuickClearLimit = ConstU32<0>;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -725,6 +659,7 @@ impl pallet_scheduler::Config for Runtime {
 parameter_types! {
     pub const PreimageBaseDeposit: Balance = deposit(1, 0);
     pub const PreimageByteDeposit: Balance = deposit(0, 1);
+    pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -732,153 +667,12 @@ impl pallet_preimage::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    type BaseDeposit = PreimageBaseDeposit;
-    type ByteDeposit = PreimageByteDeposit;
-}
-
-parameter_types! {
-    pub CouncilMotionDuration: BlockNumber = 3 * MINUTES;
-    pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
-}
-
-type CouncilCollective = pallet_collective::Instance1;
-impl pallet_collective::Config<CouncilCollective> for Runtime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeEvent = RuntimeEvent;
-    type Proposal = RuntimeCall;
-    type MotionDuration = CouncilMotionDuration;
-    type MaxProposals = ConstU32<100>;
-    type MaxMembers = ConstU32<3>;
-    type DefaultVote = pallet_collective::PrimeDefaultVote;
-    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
-    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
-    type MaxProposalWeight = MaxProposalWeight;
-}
-
-parameter_types! {
-    pub const TechnicalCommitteeMotionDuration: BlockNumber = 3 * MINUTES;
-}
-
-type TechnicalCommitteeCollective = pallet_collective::Instance2;
-impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeEvent = RuntimeEvent;
-    type Proposal = RuntimeCall;
-    type MotionDuration = TechnicalCommitteeMotionDuration;
-    type MaxProposals = ConstU32<100>;
-    type MaxMembers = ConstU32<3>;
-    type DefaultVote = pallet_collective::PrimeDefaultVote;
-    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
-    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
-    type MaxProposalWeight = MaxProposalWeight;
-}
-
-parameter_types! {
-    pub const ProposalBond: Permill = Permill::from_percent(5);
-    pub const ProposalBondMinimum: Balance = 100 * AST;
-    pub const ProposalBondMaximum: Balance = 500 * AST;
-    pub const SpendPeriod: BlockNumber = 1 * MINUTES;
-    pub const Burn: Permill = Permill::from_percent(1);
-}
-
-impl pallet_treasury::Config for Runtime {
-    type PalletId = TreasuryPalletId;
-    type Currency = Balances;
-    type ApproveOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+    type Consideration = HoldConsideration<
+        AccountId,
+        Balances,
+        PreimageHoldReason,
+        LinearStoragePrice<PreimageBaseDeposit, PreimageByteDeposit, Balance>,
     >;
-    type RejectOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
-    >;
-    type RuntimeEvent = RuntimeEvent;
-    type OnSlash = Treasury;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type ProposalBondMaximum = ProposalBondMaximum;
-    type SpendPeriod = SpendPeriod;
-    type Burn = Burn;
-    type BurnDestination = ();
-    type SpendFunds = ();
-    type MaxApprovals = ConstU32<100>;
-    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-}
-
-parameter_types! {
-    pub LaunchPeriod: BlockNumber = 1 * MINUTES;
-    pub VotingPeriod: BlockNumber = 3 * MINUTES;
-    pub FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
-    pub const MinimumDeposit: Balance = 7000 * AST;
-    pub EnactmentPeriod: BlockNumber = 5 * MINUTES;
-    pub VoteLockingPeriod: BlockNumber = 10 * MINUTES;
-    pub CooloffPeriod: BlockNumber = 10 * MINUTES;
-    pub const InstantAllowed: bool = true;
-}
-
-impl pallet_democracy::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type EnactmentPeriod = EnactmentPeriod;
-    type LaunchPeriod = LaunchPeriod;
-    type VotingPeriod = VotingPeriod;
-    type VoteLockingPeriod = VoteLockingPeriod;
-    type MinimumDeposit = MinimumDeposit;
-    /// A straight majority of the council can decide what their next motion is.
-    type ExternalOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
-        EnsureRoot<AccountId>,
-    >;
-    /// A 60% super-majority can have the next scheduled referendum be a straight majority-carries vote.
-    type ExternalMajorityOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
-        EnsureRoot<AccountId>,
-    >;
-    /// A unanimous council can have the next scheduled referendum be a straight default-carries
-    /// (NTB) vote.
-    type ExternalDefaultOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
-        EnsureRoot<AccountId>,
-    >;
-    type SubmitOrigin = EnsureSigned<AccountId>;
-    /// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
-    /// be tabled immediately and with a shorter voting/enactment period.
-    type FastTrackOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
-        EnsureRoot<AccountId>,
-    >;
-    type InstantOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
-        EnsureRoot<AccountId>,
-    >;
-    type InstantAllowed = InstantAllowed;
-    type FastTrackVotingPeriod = FastTrackVotingPeriod;
-    // To cancel a proposal which has been passed, 2/3 of the council must agree to it.
-    type CancellationOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
-        EnsureRoot<AccountId>,
-    >;
-    // To cancel a proposal before it has been passed, the technical committee must be unanimous or
-    // Root must agree.
-    type CancelProposalOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
-        EnsureRoot<AccountId>,
-    >;
-    type BlacklistOrigin = EnsureRoot<AccountId>;
-    // Any single technical committee member may veto a coming council proposal, however they can
-    // only do it once and it lasts only for the cooloff period.
-    type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>;
-    type CooloffPeriod = CooloffPeriod;
-    type Slash = Treasury;
-    type Scheduler = Scheduler;
-    type MaxVotes = ConstU32<100>;
-    type PalletsOrigin = OriginCaller;
-    type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
-    type MaxProposals = ConstU32<100>;
-    type Preimages = Preimage;
-    type MaxDeposits = ConstU32<100>;
-    type MaxBlacklisted = ConstU32<100>;
 }
 
 parameter_types! {
@@ -973,9 +767,6 @@ pub enum ProxyType {
     Balances,
     /// All Runtime calls from Pallet Assets allowed for proxy account
     Assets,
-    /// Only Runtime Calls related to governance for proxy account
-    /// To know exact calls check InstanceFilter implementation for ProxyTypes
-    Governance,
     /// Only reject_announcement call from pallet proxy allowed for proxy account
     CancelProxy,
     /// All runtime calls from pallet DappStaking allowed for proxy account
@@ -1011,15 +802,10 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::Vesting(pallet_vesting::Call::vest{..})
 				        | RuntimeCall::Vesting(pallet_vesting::Call::vest_other{..})
 				        // Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
-                        | RuntimeCall::DappsStaking(..)
+                        | RuntimeCall::DappStaking(..)
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
-                        | RuntimeCall::DynamicEvmBaseFee(..)
-                        // Skip entire Contracts pallet
-                        | RuntimeCall::Democracy(..)
-                        | RuntimeCall::Council(..)
-                        | RuntimeCall::TechnicalCommittee(..)
-                        | RuntimeCall::Treasury(..)
+                        | RuntimeCall::DynamicEvmBaseFee(..) // Skip entire Contracts pallet
                 )
             }
             // All Runtime calls from Pallet Balances allowed for proxy account
@@ -1029,15 +815,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             // All Runtime calls from Pallet Assets allowed for proxy account
             ProxyType::Assets => {
                 matches!(c, RuntimeCall::Assets(..))
-            }
-            ProxyType::Governance => {
-                matches!(
-                    c,
-                    RuntimeCall::Democracy(..)
-                        | RuntimeCall::Council(..)
-                        | RuntimeCall::TechnicalCommittee(..)
-                        | RuntimeCall::Treasury(..)
-                )
             }
             // Only reject_announcement call from pallet proxy allowed for proxy account
             ProxyType::CancelProxy => {
@@ -1092,11 +869,8 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = ConstU128<{ MILLIAST * 660 }>;
 }
 
-// TODO: remove this once https://github.com/paritytech/substrate/issues/12161 is resolved
-#[rustfmt::skip]
 construct_runtime!(
-    pub struct Runtime
-    {
+    pub struct Runtime {
         System: frame_system,
         Utility: pallet_utility,
         Timestamp: pallet_timestamp,
@@ -1105,12 +879,9 @@ construct_runtime!(
         Grandpa: pallet_grandpa,
         Balances: pallet_balances,
         Vesting: pallet_vesting,
-        DappsStaking: pallet_dapps_staking,
         DappStaking: pallet_dapp_staking_v3,
-        DappStakingMigration: pallet_dapp_staking_migration,
         Inflation: pallet_inflation,
         StaticPriceProvider: pallet_static_price_provider,
-        BlockReward: pallet_block_rewards_hybrid,
         TransactionPayment: pallet_transaction_payment,
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,
@@ -1119,10 +890,6 @@ construct_runtime!(
         Sudo: pallet_sudo,
         Assets: pallet_assets,
         Scheduler: pallet_scheduler,
-        Democracy: pallet_democracy,
-        Council: pallet_collective::<Instance1>,
-        TechnicalCommittee: pallet_collective::<Instance2>,
-        Treasury: pallet_treasury,
         Xvm: pallet_xvm,
         Proxy: pallet_proxy,
         Preimage: pallet_preimage,
@@ -1242,11 +1009,8 @@ mod benches {
         [frame_system, SystemBench::<Runtime>]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
-        [pallet_dapps_staking, DappsStaking]
-        [pallet_block_rewards_hybrid, BlockReward]
         [pallet_ethereum_checked, EthereumChecked]
         [pallet_dapp_staking_v3, DappStaking]
-        [pallet_dapp_staking_migration, DappStakingMigration]
         [pallet_inflation, Inflation]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
     );
@@ -1755,6 +1519,17 @@ impl_runtime_apis! {
 
         fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
             DappStaking::get_dapp_tier_assignment()
+        }
+    }
+
+
+    impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+        fn create_default_config() -> Vec<u8> {
+            create_default_config::<RuntimeGenesisConfig>()
+        }
+
+        fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
+            build_config::<RuntimeGenesisConfig>(config)
         }
     }
 

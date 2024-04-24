@@ -40,7 +40,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::H256;
 use sp_runtime::{
     traits::{AccountIdConversion, Convert, Get, IdentityLookup, MaybeEquivalence},
-    AccountId32, Perbill, RuntimeDebug,
+    AccountId32, FixedU128, Perbill, RuntimeDebug,
 };
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
@@ -61,9 +61,15 @@ use orml_xcm_support::DisabledParachainFee;
 
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
-use astar_primitives::xcm::{
-    AllowTopLevelPaidExecutionFrom, AssetLocationIdConverter, FixedRateOfForeignAsset,
-    ReserveAssetFilter, XcmFungibleFeeHandler,
+use astar_primitives::{
+    dapp_staking::{
+        AccountCheck, CycleConfiguration, SmartContract, SmartContractHandle, StakingRewardHandler,
+    },
+    oracle::PriceProvider,
+    xcm::{
+        AllowTopLevelPaidExecutionFrom, AssetLocationIdConverter, FixedRateOfForeignAsset,
+        ReserveAssetFilter, XcmFungibleFeeHandler,
+    },
 };
 
 pub type AccountId = AccountId32;
@@ -121,9 +127,10 @@ impl pallet_balances::Config for Runtime {
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
     type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = RuntimeFreezeReason;
     type MaxHolds = ConstU32<1>;
-    type MaxFreezes = ConstU32<0>;
+    type MaxFreezes = ConstU32<1>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -204,7 +211,6 @@ parameter_types! {
     pub SS58Prefix: u8 = 5;
 }
 
-// TODO: changing depost per item and per byte to `deposit` function will require storage migration it seems
 parameter_types! {
     pub const DepositPerItem: Balance = MILLISDN / 1_000_000;
     pub const DepositPerByte: Balance = MILLISDN / 1_000_000;
@@ -280,45 +286,6 @@ impl OnUnbalanced<NegativeImbalance> for BurnFees {
     }
 }
 
-#[derive(
-    PartialEq, Eq, Copy, Clone, Encode, Decode, MaxEncodedLen, RuntimeDebug, scale_info::TypeInfo,
-)]
-pub enum SmartContract {
-    Wasm(u32),
-}
-
-impl Default for SmartContract {
-    fn default() -> Self {
-        SmartContract::Wasm(0)
-    }
-}
-
-parameter_types! {
-    pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
-    pub const MaxUnlockingChunks: u32 = 5;
-    pub const UnbondingPeriod: u32 = 5;
-    pub const MaxEraStakeValues: u32 = 5;
-}
-
-impl pallet_dapps_staking::Config for Runtime {
-    type Currency = Balances;
-    type BlockPerEra = ConstU64<5>;
-    type SmartContract = SmartContract;
-    type RegisterDeposit = ConstU128<1>;
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapps_staking::weights::SubstrateWeight<Runtime>;
-    type MaxNumberOfStakersPerContract = ConstU32<8>;
-    type MinimumStakingAmount = ConstU128<1>;
-    type PalletId = DappsStakingPalletId;
-    type MinimumRemainingAmount = ConstU128<0>;
-    type MaxUnlockingChunks = ConstU32<4>;
-    type UnbondingPeriod = ConstU32<2>;
-    type MaxEraStakeValues = ConstU32<4>;
-    type UnregisteredDappRewardRetention = ConstU32<7>;
-    type ForcePalletDisabled = ConstBool<false>;
-    type DelegateClaimFee = ConstU128<1>;
-}
-
 /// The type used to represent the kinds of proxying allowed.
 #[derive(
     Copy,
@@ -335,7 +302,7 @@ impl pallet_dapps_staking::Config for Runtime {
 )]
 pub enum ProxyType {
     CancelProxy,
-    DappsStaking,
+    DappStaking,
     StakerRewardClaim,
 }
 
@@ -354,14 +321,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                     RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
                 )
             }
-            ProxyType::DappsStaking => {
-                matches!(c, RuntimeCall::DappsStaking(..) | RuntimeCall::Utility(..))
+            ProxyType::DappStaking => {
+                matches!(c, RuntimeCall::DappStaking(..) | RuntimeCall::Utility(..))
             }
             ProxyType::StakerRewardClaim => {
                 matches!(
                     c,
-                    RuntimeCall::DappsStaking(pallet_dapps_staking::Call::claim_staker { .. })
-                        | RuntimeCall::Utility(..)
+                    RuntimeCall::DappStaking(
+                        pallet_dapp_staking_v3::Call::claim_staker_rewards { .. }
+                    ) | RuntimeCall::Utility(..)
                 )
             }
         }
@@ -369,7 +337,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 
     fn is_superset(&self, o: &Self) -> bool {
         match (self, o) {
-            (Self::StakerRewardClaim, Self::DappsStaking) => true,
+            (Self::StakerRewardClaim, Self::DappStaking) => true,
             (x, y) if x == y => true,
             _ => false,
         }
@@ -671,6 +639,102 @@ impl orml_xtokens::Config for Runtime {
     type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShidenLocationAbsolute>;
 }
 
+pub struct DummyCycleConfiguration;
+impl CycleConfiguration for DummyCycleConfiguration {
+    fn periods_per_cycle() -> u32 {
+        4
+    }
+
+    fn eras_per_voting_subperiod() -> u32 {
+        8
+    }
+
+    fn eras_per_build_and_earn_subperiod() -> u32 {
+        16
+    }
+
+    fn blocks_per_era() -> u32 {
+        10
+    }
+}
+
+pub struct DummyAccountCheck;
+impl AccountCheck<AccountId> for DummyAccountCheck {
+    fn allowed_to_stake(_: &AccountId) -> bool {
+        true
+    }
+}
+
+pub struct DummyStakingRewardHandler;
+impl StakingRewardHandler<AccountId> for DummyStakingRewardHandler {
+    fn staker_and_dapp_reward_pools(_total_staked_value: Balance) -> (Balance, Balance) {
+        (
+            Balance::from(1_000_000_000_000_u128),
+            Balance::from(1_000_000_000_u128),
+        )
+    }
+
+    fn bonus_reward_pool() -> Balance {
+        Balance::from(3_000_000_u128)
+    }
+
+    fn payout_reward(_: &AccountId, _: Balance) -> Result<(), ()> {
+        Ok(())
+    }
+}
+
+pub struct DummyPriceProvider;
+impl PriceProvider for DummyPriceProvider {
+    fn average_price() -> FixedU128 {
+        FixedU128::from_rational(1, 10)
+    }
+}
+
+pub(crate) type MockSmartContract = SmartContract<AccountId>;
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_dapp_staking_v3::BenchmarkHelper<MockSmartContract, AccountId>
+    for BenchmarkHelper<MockSmartContract, AccountId>
+{
+    fn get_smart_contract(id: u32) -> MockSmartContract {
+        MockSmartContract::wasm(AccountId::from([id as u8; 32]))
+    }
+
+    fn set_balance(account: &AccountId, amount: Balance) {
+        use frame_support::traits::fungible::Unbalanced as FunUnbalanced;
+        Balances::write_balance(account, amount)
+            .expect("Must succeed in test/benchmark environment.");
+    }
+}
+
+impl pallet_dapp_staking_v3::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
+    type Currency = Balances;
+    type SmartContract = MockSmartContract;
+    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type NativePriceProvider = DummyPriceProvider;
+    type StakingRewardHandler = DummyStakingRewardHandler;
+    type CycleConfiguration = DummyCycleConfiguration;
+    type Observers = ();
+    type AccountCheck = DummyAccountCheck;
+    type TierSlots = astar_primitives::dapp_staking::StandardTierSlots;
+    type EraRewardSpanLength = ConstU32<1>;
+    type RewardRetentionInPeriods = ConstU32<2>;
+    type MaxNumberOfContracts = ConstU32<10>;
+    type MaxUnlockingChunks = ConstU32<5>;
+    type MinimumLockedAmount = ConstU128<3>;
+    type UnlockingPeriod = ConstU32<2>;
+    type MaxNumberOfStakedContracts = ConstU32<5>;
+    type MinimumStakeAmount = ConstU128<3>;
+    type NumberOfTiers = ConstU32<4>;
+    type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
+}
+
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 construct_runtime!(
@@ -682,7 +746,7 @@ construct_runtime!(
         Assets: pallet_assets,
         XcAssetConfig: pallet_xc_asset_config,
         CumulusXcm: cumulus_pallet_xcm,
-        DappsStaking: pallet_dapps_staking,
+        DappStaking: pallet_dapp_staking_v3,
         Proxy: pallet_proxy,
         Utility: pallet_utility,
         Randomness: pallet_insecure_randomness_collective_flip,

@@ -60,7 +60,7 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
             | RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => {
                 calls.iter().all(|call| WhitelistedCalls::contains(call))
             }
-            RuntimeCall::DappsStaking(_) => true,
+            RuntimeCall::DappStaking(_) => true,
             RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
             _ => false,
         }
@@ -112,7 +112,6 @@ pub type LocalPrecompilesSetAt<R> = (
         AddressU64<1025>,
         Dispatch<R, DispatchFilterValidate<RuntimeCall, WhitelistedCalls>>,
         // Not callable from smart contract nor precompiles, only EOA accounts
-        // TODO: test this without the gensis hack for blacklisted
         (),
     >,
     PrecompileAt<AddressU64<1026>, ECRecoverPublicKey, (CallableByContract, CallableByPrecompile)>,

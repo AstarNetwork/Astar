@@ -26,11 +26,12 @@ use cumulus_pallet_parachain_system::AnyRelayNumber;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
+    genesis_builder_helper::{build_config, create_default_config},
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly,
-        FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced,
-        WithdrawReasons,
+        fungible::HoldConsideration, AsEnsureOriginWithArg, ConstU32, Contains, Currency,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
+        Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -47,6 +48,7 @@ use frame_system::{
 };
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
+use pallet_identity::simple::IdentityInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
@@ -326,8 +328,9 @@ impl pallet_identity::Config for Runtime {
     type SubAccountDeposit = SubAccountDeposit;
     type MaxSubAccounts = MaxSubAccounts;
     type MaxAdditionalFields = MaxAdditionalFields;
+    type IdentityInformation = IdentityInfo<MaxAdditionalFields>;
     type MaxRegistrars = MaxRegistrars;
-    type Slashed = Treasury;
+    type Slashed = ();
     type ForceOrigin = EnsureRoot<AccountId>;
     type RegistrarOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
@@ -370,6 +373,7 @@ impl pallet_scheduler::Config for Runtime {
 parameter_types! {
     pub const PreimageBaseDeposit: Balance = deposit(1, 0);
     pub const PreimageByteDeposit: Balance = deposit(0, 1);
+    pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -377,8 +381,12 @@ impl pallet_preimage::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    type BaseDeposit = PreimageBaseDeposit;
-    type ByteDeposit = PreimageByteDeposit;
+    type Consideration = HoldConsideration<
+        AccountId,
+        Balances,
+        PreimageHoldReason,
+        LinearStoragePrice<PreimageBaseDeposit, PreimageByteDeposit, Balance>,
+    >;
 }
 
 impl pallet_static_price_provider::Config for Runtime {
@@ -613,8 +621,9 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
     type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = RuntimeFreezeReason;
-    type MaxHolds = ConstU32<1>;
+    type MaxHolds = ConstU32<2>;
     type MaxFreezes = ConstU32<1>;
 }
 
@@ -906,6 +915,7 @@ impl pallet_evm::Config for Runtime {
     type OnCreate = ();
     type FindAuthor = FindAuthorTruncated<Aura>;
     type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+    type SuicideQuickClearLimit = ConstU32<0>;
     type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -921,150 +931,6 @@ impl pallet_ethereum::Config for Runtime {
     type PostLogContent = PostBlockAndTxnHashes;
     // Maximum length (in bytes) of revert message to include in Executed event
     type ExtraDataLength = ConstU32<30>;
-}
-
-parameter_types! {
-    pub CouncilMotionDuration: BlockNumber = 36 * HOURS;
-    pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
-}
-
-type CouncilCollective = pallet_collective::Instance1;
-impl pallet_collective::Config<CouncilCollective> for Runtime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeEvent = RuntimeEvent;
-    type Proposal = RuntimeCall;
-    type MotionDuration = CouncilMotionDuration;
-    type MaxProposals = ConstU32<100>;
-    type MaxMembers = ConstU32<10>;
-    type DefaultVote = pallet_collective::PrimeDefaultVote;
-    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
-    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
-    type MaxProposalWeight = MaxProposalWeight;
-}
-
-parameter_types! {
-    pub const TechnicalCommitteeMotionDuration: BlockNumber = 36 * HOURS;
-}
-
-type TechnicalCommitteeCollective = pallet_collective::Instance2;
-impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
-    type RuntimeOrigin = RuntimeOrigin;
-    type RuntimeEvent = RuntimeEvent;
-    type Proposal = RuntimeCall;
-    type MotionDuration = TechnicalCommitteeMotionDuration;
-    type MaxProposals = ConstU32<100>;
-    type MaxMembers = ConstU32<10>;
-    type DefaultVote = pallet_collective::PrimeDefaultVote;
-    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
-    type SetMembersOrigin = EnsureRoot<Self::AccountId>;
-    type MaxProposalWeight = MaxProposalWeight;
-}
-
-parameter_types! {
-    pub const ProposalBond: Permill = Permill::from_percent(5);
-    pub const ProposalBondMinimum: Balance = 100 * SBY;
-    pub const SpendPeriod: BlockNumber = 1 * DAYS;
-}
-
-impl pallet_treasury::Config for Runtime {
-    type PalletId = TreasuryPalletId;
-    type Currency = Balances;
-    type ApproveOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
-    >;
-    type RejectOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
-    >;
-    type RuntimeEvent = RuntimeEvent;
-    type OnSlash = Treasury;
-    type ProposalBond = ProposalBond;
-    type ProposalBondMinimum = ProposalBondMinimum;
-    type ProposalBondMaximum = ();
-    type SpendPeriod = SpendPeriod;
-    type Burn = ();
-    type BurnDestination = ();
-    type SpendFunds = ();
-    type MaxApprovals = ConstU32<100>;
-    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-}
-
-parameter_types! {
-    pub LaunchPeriod: BlockNumber = 7 * DAYS;
-    pub VotingPeriod: BlockNumber = 14 * DAYS;
-    pub FastTrackVotingPeriod: BlockNumber = 1 * DAYS;
-    pub const MinimumDeposit: Balance = 1000 * SBY;
-    pub EnactmentPeriod: BlockNumber = 2 * DAYS;
-    pub VoteLockingPeriod: BlockNumber = 7 * DAYS;
-    pub CooloffPeriod: BlockNumber = 7 * DAYS;
-    pub const InstantAllowed: bool = true;
-}
-
-impl pallet_democracy::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type EnactmentPeriod = EnactmentPeriod;
-    type LaunchPeriod = LaunchPeriod;
-    type VotingPeriod = VotingPeriod;
-    type VoteLockingPeriod = VoteLockingPeriod;
-    type MinimumDeposit = MinimumDeposit;
-    /// A straight majority of the council can decide what their next motion is.
-    type ExternalOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
-        EnsureRoot<AccountId>,
-    >;
-    /// A 60% super-majority can have the next scheduled referendum be a straight majority-carries vote.
-    type ExternalMajorityOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
-        EnsureRoot<AccountId>,
-    >;
-    /// A unanimous council can have the next scheduled referendum be a straight default-carries
-    /// (NTB) vote.
-    type ExternalDefaultOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
-        EnsureRoot<AccountId>,
-    >;
-    type SubmitOrigin = EnsureSigned<AccountId>;
-    /// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
-    /// be tabled immediately and with a shorter voting/enactment period.
-    type FastTrackOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
-        EnsureRoot<AccountId>,
-    >;
-    type InstantOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
-        EnsureRoot<AccountId>,
-    >;
-    type InstantAllowed = InstantAllowed;
-    type FastTrackVotingPeriod = FastTrackVotingPeriod;
-    // To cancel a proposal which has been passed, 2/3 of the council must agree to it.
-    type CancellationOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
-        EnsureRoot<AccountId>,
-    >;
-    // To cancel a proposal before it has been passed, the technical committee must be unanimous or
-    // Root must agree.
-    type CancelProposalOrigin = EitherOfDiverse<
-        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
-        EnsureRoot<AccountId>,
-    >;
-    type BlacklistOrigin = EnsureRoot<AccountId>;
-    // Any single technical committee member may veto a coming council proposal, however they can
-    // only do it once and it lasts only for the cooloff period.
-    type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>;
-    type CooloffPeriod = CooloffPeriod;
-    // The amount of balance that must be deposited per byte of preimage stored.
-    type Slash = Treasury;
-    type Scheduler = Scheduler;
-    type MaxVotes = ConstU32<100>;
-    type PalletsOrigin = OriginCaller;
-    type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
-    type MaxProposals = ConstU32<100>;
-    type Preimages = Preimage;
-    type MaxDeposits = ConstU32<100>;
-    type MaxBlacklisted = ConstU32<100>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -1106,8 +972,7 @@ pub enum ProxyType {
     Balances,
     /// All Runtime calls from Pallet Assets allowed for proxy account
     Assets,
-    /// Only Runtime Calls related to governance for proxy account
-    /// To know exact calls check InstanceFilter implementation for ProxyTypes
+    /// Not used at the moment, but kept for backwards compatibility.
     Governance,
     /// Only provide_judgement call from pallet identity allowed for proxy account
     IdentityJudgement,
@@ -1160,12 +1025,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                         | RuntimeCall::XcAssetConfig(..)
                         // Skip entire EVM pallet
                         // Skip entire Ethereum pallet
-                        | RuntimeCall::DynamicEvmBaseFee(..)
-                        // Skip entire Contracts pallet
-                        | RuntimeCall::Democracy(..)
-                        | RuntimeCall::Council(..)
-                        | RuntimeCall::TechnicalCommittee(..)
-                        | RuntimeCall::Treasury(..)
+                        | RuntimeCall::DynamicEvmBaseFee(..) // Skip entire Contracts pallet
                 )
             }
             // All Runtime calls from Pallet Balances allowed for proxy account
@@ -1175,15 +1035,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
             // All Runtime calls from Pallet Assets allowed for proxy account
             ProxyType::Assets => {
                 matches!(c, RuntimeCall::Assets(..))
-            }
-            ProxyType::Governance => {
-                matches!(
-                    c,
-                    RuntimeCall::Democracy(..)
-                        | RuntimeCall::Council(..)
-                        | RuntimeCall::TechnicalCommittee(..)
-                        | RuntimeCall::Treasury(..)
-                )
             }
             // Only provide_judgement call from pallet identity allowed for proxy account
             ProxyType::IdentityJudgement => {
@@ -1211,6 +1062,8 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
                     )
                 )
             }
+            // Not used at the moment, but kept for backwards compatibility.
+            ProxyType::Governance => false,
         }
     }
 
@@ -1351,11 +1204,6 @@ impl oracle_benchmarks::Config for Runtime {
     type AddMember = AddMemberBenchmark;
 }
 
-impl pallet_dapp_staking_migration::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight<Self>;
-}
-
 construct_runtime!(
     pub struct Runtime
     {
@@ -1403,10 +1251,6 @@ construct_runtime!(
 
         Contracts: pallet_contracts = 70,
 
-        Democracy: pallet_democracy = 80,
-        Council: pallet_collective::<Instance1> = 81,
-        TechnicalCommittee: pallet_collective::<Instance2> = 82,
-        Treasury: pallet_treasury = 83,
         Preimage: pallet_preimage = 84,
 
         Xvm: pallet_xvm = 90,
@@ -1415,8 +1259,6 @@ construct_runtime!(
 
         // Remove after benchmarks are available in orml_oracle
         OracleBenchmarks: oracle_benchmarks = 251,
-        // Remove after migrating to v6 storage
-        DappStakingMigration: pallet_dapp_staking_migration = 252,
         // To be removed & cleaned up once proper oracle is implemented
         StaticPriceProvider: pallet_static_price_provider = 253,
     }
@@ -1456,10 +1298,26 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+parameter_types! {
+    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
+    pub const DemocracyName: &'static str = "Democracy";
+    pub const CouncilName: &'static str = "Council";
+    pub const TechnicalCommitteeName: &'static str = "TechnicalCommittee";
+    pub const TreasuryName: &'static str = "Treasury";
+
+}
+use frame_support::migrations::RemovePallet;
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = ();
+pub type Migrations = (
+    RemovePallet<DappStakingMigrationName, <Runtime as frame_system::Config>::DbWeight>,
+    RemovePallet<DemocracyName, <Runtime as frame_system::Config>::DbWeight>,
+    RemovePallet<CouncilName, <Runtime as frame_system::Config>::DbWeight>,
+    RemovePallet<TechnicalCommitteeName, <Runtime as frame_system::Config>::DbWeight>,
+    RemovePallet<TreasuryName, <Runtime as frame_system::Config>::DbWeight>,
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1550,7 +1408,6 @@ mod benches {
         [pallet_price_aggregator, PriceAggregator]
         [pallet_membership, OracleMembership]
         [oracle_benchmarks, OracleBenchmarks]
-        [pallet_dapp_staking_migration, DappStakingMigration]
     );
 }
 
@@ -2030,6 +1887,17 @@ impl_runtime_apis! {
         }
     }
 
+
+    impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+        fn create_default_config() -> Vec<u8> {
+            create_default_config::<RuntimeGenesisConfig>()
+        }
+
+        fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
+            build_config::<RuntimeGenesisConfig>(config)
+        }
+    }
+
     #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
         fn benchmark_metadata(extra: bool) -> (
@@ -2076,6 +1944,7 @@ impl_runtime_apis! {
             impl pallet_xcm_benchmarks::Config for Runtime {
                 type XcmConfig = xcm_config::XcmConfig;
                 type AccountIdConverter = xcm_config::LocationToAccountId;
+                type DeliveryHelper = ();
                 // destination location to be used in benchmarks
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
                     Ok(MultiLocation::parent())
@@ -2087,6 +1956,7 @@ impl_runtime_apis! {
 
             impl pallet_xcm_benchmarks::generic::Config for Runtime {
                 type RuntimeCall = RuntimeCall;
+                type TransactAsset = Balances;
                 fn worst_case_response() -> (u64, Response) {
                     (0u64, Response::Version(Default::default()))
                 }

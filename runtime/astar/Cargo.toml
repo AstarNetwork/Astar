@@ -24,6 +24,7 @@ sp-arithmetic = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
+sp-genesis-builder = { workspace = true }
 sp-inherents = { workspace = true }
 sp-io = { workspace = true }
 sp-offchain = { workspace = true }
@@ -104,7 +105,6 @@ astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-collator-selection = { workspace = true }
 pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
-pallet-dapps-staking = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dapp-staking-v3 = { workspace = true }
 pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
@@ -134,6 +134,7 @@ substrate-wasm-builder = { workspace = true, optional = true }
 default = ["std"]
 std = [
 	"parity-scale-codec/std",
+	"sp-genesis-builder/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
 	"sp-std/std",
@@ -241,6 +242,7 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"cumulus-primitives-utility/runtime-benchmarks",
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 ]
@@ -254,7 +256,6 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-proxy/try-runtime",
-	"pallet-dapps-staking/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
 	"pallet-dapp-staking-migration/try-runtime",
 	"pallet-inflation/try-runtime",

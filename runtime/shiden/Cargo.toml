@@ -25,6 +25,7 @@ sp-arithmetic = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
+sp-genesis-builder = { workspace = true }
 sp-inherents = { workspace = true }
 sp-io = { workspace = true }
 sp-offchain = { workspace = true }
@@ -96,7 +97,6 @@ orml-xtokens = { workspace = true }
 array-bytes = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-system-benchmarking = { workspace = true, optional = true }
-pallet-collective = { workspace = true, optional = true }
 
 # try-runtime
 frame-try-runtime = { workspace = true, optional = true }
@@ -161,7 +161,6 @@ std = [
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
-	"pallet-collective/std",
 	"pallet-contracts-primitives/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
@@ -169,6 +168,7 @@ std = [
 	"pallet-evm-precompile-blake2/std",
 	"pallet-evm-precompile-simple/std",
 	"pallet-evm-precompile-bn128/std",
+	"sp-genesis-builder/std",
 	"pallet-evm-precompile-dispatch/std",
 	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-evm-precompile-ed25519/std",
@@ -236,7 +236,6 @@ runtime-benchmarks = [
 	"pallet-dapp-staking-migration/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
-	"pallet-collective/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
@@ -247,6 +246,7 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"cumulus-primitives-utility/runtime-benchmarks",
 ]
 try-runtime = [
 	"astar-primitives/try-runtime",

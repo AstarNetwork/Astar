@@ -455,11 +455,11 @@ pub mod pallet {
                 Ok(()) => {}
                 Err(_) => {
                     log::error!(
-                        target: LOG_TARGET,
-                            "Failed to push native currency value into the ongoing block due to exceeded capacity. \
-                            Value was submitted by: {:?}",
-                            who
-                        );
+                    target: LOG_TARGET,
+                        "Failed to push native currency value into the ongoing block due to exceeded capacity. \
+                        Value was submitted by: {:?}",
+                        who
+                    );
                 }
             });
         }

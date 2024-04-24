@@ -24,6 +24,7 @@ sp-arithmetic = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
+sp-genesis-builder = { workspace = true }
 sp-inherents = { workspace = true }
 sp-io = { workspace = true }
 sp-offchain = { workspace = true }
@@ -43,10 +44,8 @@ pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
-pallet-collective = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
-pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
@@ -69,7 +68,6 @@ pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
-pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 
@@ -103,7 +101,6 @@ astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
 pallet-collator-selection = { workspace = true }
-pallet-dapp-staking-migration = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
@@ -159,8 +156,8 @@ std = [
 	"sp-std/std",
 	"sp-api/std",
 	"sp-core/std",
+	"sp-genesis-builder/std",
 	"sp-consensus-aura/std",
-	"pallet-dapp-staking-migration/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-runtime-interface/std",
@@ -217,9 +214,6 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-vesting/std",
 	"pallet-proxy/std",
-	"pallet-democracy/std",
-	"pallet-collective/std",
-	"pallet-treasury/std",
 	"sp-offchain/std",
 	"sp-session/std",
 	"pallet-sudo/std",
@@ -261,7 +255,6 @@ std = [
 runtime-benchmarks = [
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"oracle-benchmarks/runtime-benchmarks",
-	"pallet-dapp-staking-migration/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
@@ -273,7 +266,6 @@ runtime-benchmarks = [
 	"pallet-balances/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
-	"pallet-collective/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
@@ -288,6 +280,7 @@ runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"cumulus-primitives-utility/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -314,7 +307,6 @@ try-runtime = [
 	"pallet-assets/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-collator-selection/try-runtime",
-	"pallet-dapp-staking-migration/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-xcm/try-runtime",
 	"pallet-identity/try-runtime",
@@ -324,9 +316,6 @@ try-runtime = [
 	"pallet-proxy/try-runtime",
 	"pallet-contracts/try-runtime",
 	"oracle-benchmarks/try-runtime",
-	"pallet-democracy/try-runtime",
-	"pallet-collective/try-runtime",
-	"pallet-treasury/try-runtime",
 	"pallet-evm-chain-id/try-runtime",
 	"cumulus-pallet-aura-ext/try-runtime",
 	"cumulus-pallet-dmp-queue/try-runtime",

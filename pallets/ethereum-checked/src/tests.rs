@@ -22,7 +22,8 @@ use super::*;
 use mock::*;
 
 use astar_primitives::ethereum_checked::EthereumTxInput;
-use ethereum::{ReceiptV3, TransactionV2 as Transaction};
+use ethereum::{ReceiptV3 as Receipt, TransactionV2 as Transaction};
+pub use fp_rpc::TransactionStatus;
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 
@@ -56,7 +57,7 @@ fn transact_works() {
         assert_eq!(pending.len(), 2);
 
         match pending[0] {
-            (Transaction::EIP1559(ref t), _, ReceiptV3::EIP1559(ref r)) => {
+            (Transaction::EIP1559(ref t), _, Receipt::EIP1559(ref r)) => {
                 // nonce 0, status code 1 (success)
                 assert_eq!(t.nonce, U256::zero());
                 assert_eq!(r.status_code, 1);
@@ -64,7 +65,7 @@ fn transact_works() {
             _ => panic!("unexpected transaction type"),
         }
         match pending[1] {
-            (Transaction::EIP1559(ref t), _, ReceiptV3::EIP1559(ref r)) => {
+            (Transaction::EIP1559(ref t), _, Receipt::EIP1559(ref r)) => {
                 // nonce 1, status code 1 (success)
                 assert_eq!(t.nonce, U256::one());
                 assert_eq!(r.status_code, 1);
