@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"astar_runtime":[["impl Randomness&lt;H256, <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.70.0/std/primitive.u32.html\">u32</a>&gt; for <a class=\"struct\" href=\"astar_runtime/struct.DummyDeprecatedRandomness.html\" title=\"struct astar_runtime::DummyDeprecatedRandomness\">DummyDeprecatedRandomness</a>"]]
+"astar_runtime":[["impl Randomness&lt;H256, <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.73.0/std/primitive.u32.html\">u32</a>&gt; for <a class=\"struct\" href=\"astar_runtime/struct.DummyDeprecatedRandomness.html\" title=\"struct astar_runtime::DummyDeprecatedRandomness\">DummyDeprecatedRandomness</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

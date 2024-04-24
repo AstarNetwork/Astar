@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["bond_and_stake","burn_stale_reward","claim_dapp","claim_staker","claim_staker_for","decommission","force_new_era","maintenance_mode","nomination_transfer","register","set_contract_stake_info","set_reward_destination","set_reward_destination_for","unbond_and_unstake","unregister","withdraw_from_unregistered","withdraw_unbonded"]};

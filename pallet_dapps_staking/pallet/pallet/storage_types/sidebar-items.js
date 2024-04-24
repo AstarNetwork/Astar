@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":["BlockRewardAccumulator","ContractEraStake","CurrentEra","DecommissionStarted","ForceEra","GeneralEraInfo","GeneralStakerInfo","Ledger","NextEraStartingBlock","PalletDisabled","RegisteredDapps","RegisteredDevelopers","StorageVersion"]};

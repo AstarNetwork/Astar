@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.70.0 (90c541806 2023-05-31)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../static.files/source-script-905937fbbdc8e9ea.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-f61008743c98d196.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../shibuya_runtime/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0 (cc66ad468 2023-10-03)" data-channel="1.73.0" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../shibuya_runtime/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -2199,136 +2199,6 @@
 <a href="#2199" id="2199">2199</a>
 <a href="#2200" id="2200">2200</a>
 <a href="#2201" id="2201">2201</a>
-<a href="#2202" id="2202">2202</a>
-<a href="#2203" id="2203">2203</a>
-<a href="#2204" id="2204">2204</a>
-<a href="#2205" id="2205">2205</a>
-<a href="#2206" id="2206">2206</a>
-<a href="#2207" id="2207">2207</a>
-<a href="#2208" id="2208">2208</a>
-<a href="#2209" id="2209">2209</a>
-<a href="#2210" id="2210">2210</a>
-<a href="#2211" id="2211">2211</a>
-<a href="#2212" id="2212">2212</a>
-<a href="#2213" id="2213">2213</a>
-<a href="#2214" id="2214">2214</a>
-<a href="#2215" id="2215">2215</a>
-<a href="#2216" id="2216">2216</a>
-<a href="#2217" id="2217">2217</a>
-<a href="#2218" id="2218">2218</a>
-<a href="#2219" id="2219">2219</a>
-<a href="#2220" id="2220">2220</a>
-<a href="#2221" id="2221">2221</a>
-<a href="#2222" id="2222">2222</a>
-<a href="#2223" id="2223">2223</a>
-<a href="#2224" id="2224">2224</a>
-<a href="#2225" id="2225">2225</a>
-<a href="#2226" id="2226">2226</a>
-<a href="#2227" id="2227">2227</a>
-<a href="#2228" id="2228">2228</a>
-<a href="#2229" id="2229">2229</a>
-<a href="#2230" id="2230">2230</a>
-<a href="#2231" id="2231">2231</a>
-<a href="#2232" id="2232">2232</a>
-<a href="#2233" id="2233">2233</a>
-<a href="#2234" id="2234">2234</a>
-<a href="#2235" id="2235">2235</a>
-<a href="#2236" id="2236">2236</a>
-<a href="#2237" id="2237">2237</a>
-<a href="#2238" id="2238">2238</a>
-<a href="#2239" id="2239">2239</a>
-<a href="#2240" id="2240">2240</a>
-<a href="#2241" id="2241">2241</a>
-<a href="#2242" id="2242">2242</a>
-<a href="#2243" id="2243">2243</a>
-<a href="#2244" id="2244">2244</a>
-<a href="#2245" id="2245">2245</a>
-<a href="#2246" id="2246">2246</a>
-<a href="#2247" id="2247">2247</a>
-<a href="#2248" id="2248">2248</a>
-<a href="#2249" id="2249">2249</a>
-<a href="#2250" id="2250">2250</a>
-<a href="#2251" id="2251">2251</a>
-<a href="#2252" id="2252">2252</a>
-<a href="#2253" id="2253">2253</a>
-<a href="#2254" id="2254">2254</a>
-<a href="#2255" id="2255">2255</a>
-<a href="#2256" id="2256">2256</a>
-<a href="#2257" id="2257">2257</a>
-<a href="#2258" id="2258">2258</a>
-<a href="#2259" id="2259">2259</a>
-<a href="#2260" id="2260">2260</a>
-<a href="#2261" id="2261">2261</a>
-<a href="#2262" id="2262">2262</a>
-<a href="#2263" id="2263">2263</a>
-<a href="#2264" id="2264">2264</a>
-<a href="#2265" id="2265">2265</a>
-<a href="#2266" id="2266">2266</a>
-<a href="#2267" id="2267">2267</a>
-<a href="#2268" id="2268">2268</a>
-<a href="#2269" id="2269">2269</a>
-<a href="#2270" id="2270">2270</a>
-<a href="#2271" id="2271">2271</a>
-<a href="#2272" id="2272">2272</a>
-<a href="#2273" id="2273">2273</a>
-<a href="#2274" id="2274">2274</a>
-<a href="#2275" id="2275">2275</a>
-<a href="#2276" id="2276">2276</a>
-<a href="#2277" id="2277">2277</a>
-<a href="#2278" id="2278">2278</a>
-<a href="#2279" id="2279">2279</a>
-<a href="#2280" id="2280">2280</a>
-<a href="#2281" id="2281">2281</a>
-<a href="#2282" id="2282">2282</a>
-<a href="#2283" id="2283">2283</a>
-<a href="#2284" id="2284">2284</a>
-<a href="#2285" id="2285">2285</a>
-<a href="#2286" id="2286">2286</a>
-<a href="#2287" id="2287">2287</a>
-<a href="#2288" id="2288">2288</a>
-<a href="#2289" id="2289">2289</a>
-<a href="#2290" id="2290">2290</a>
-<a href="#2291" id="2291">2291</a>
-<a href="#2292" id="2292">2292</a>
-<a href="#2293" id="2293">2293</a>
-<a href="#2294" id="2294">2294</a>
-<a href="#2295" id="2295">2295</a>
-<a href="#2296" id="2296">2296</a>
-<a href="#2297" id="2297">2297</a>
-<a href="#2298" id="2298">2298</a>
-<a href="#2299" id="2299">2299</a>
-<a href="#2300" id="2300">2300</a>
-<a href="#2301" id="2301">2301</a>
-<a href="#2302" id="2302">2302</a>
-<a href="#2303" id="2303">2303</a>
-<a href="#2304" id="2304">2304</a>
-<a href="#2305" id="2305">2305</a>
-<a href="#2306" id="2306">2306</a>
-<a href="#2307" id="2307">2307</a>
-<a href="#2308" id="2308">2308</a>
-<a href="#2309" id="2309">2309</a>
-<a href="#2310" id="2310">2310</a>
-<a href="#2311" id="2311">2311</a>
-<a href="#2312" id="2312">2312</a>
-<a href="#2313" id="2313">2313</a>
-<a href="#2314" id="2314">2314</a>
-<a href="#2315" id="2315">2315</a>
-<a href="#2316" id="2316">2316</a>
-<a href="#2317" id="2317">2317</a>
-<a href="#2318" id="2318">2318</a>
-<a href="#2319" id="2319">2319</a>
-<a href="#2320" id="2320">2320</a>
-<a href="#2321" id="2321">2321</a>
-<a href="#2322" id="2322">2322</a>
-<a href="#2323" id="2323">2323</a>
-<a href="#2324" id="2324">2324</a>
-<a href="#2325" id="2325">2325</a>
-<a href="#2326" id="2326">2326</a>
-<a href="#2327" id="2327">2327</a>
-<a href="#2328" id="2328">2328</a>
-<a href="#2329" id="2329">2329</a>
-<a href="#2330" id="2330">2330</a>
-<a href="#2331" id="2331">2331</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) 2019-2023 Stake Technologies Pte.Ltd.
@@ -2357,11 +2227,12 @@
 <span class="kw">use </span>frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
+    genesis_builder_helper::{build_config, create_default_config},
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly,
-        FindAuthor, Get, Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced,
-        WithdrawReasons,
+        fungible::HoldConsideration, AsEnsureOriginWithArg, ConstU32, Contains, Currency,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
+        Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -2378,6 +2249,7 @@
 };
 <span class="kw">use </span>pallet_ethereum::PostLogContent;
 <span class="kw">use </span>pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
+<span class="kw">use </span>pallet_identity::simple::IdentityInfo;
 <span class="kw">use </span>pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
@@ -2657,8 +2529,9 @@
     <span class="kw">type </span>SubAccountDeposit = SubAccountDeposit;
     <span class="kw">type </span>MaxSubAccounts = MaxSubAccounts;
     <span class="kw">type </span>MaxAdditionalFields = MaxAdditionalFields;
+    <span class="kw">type </span>IdentityInformation = IdentityInfo&lt;MaxAdditionalFields&gt;;
     <span class="kw">type </span>MaxRegistrars = MaxRegistrars;
-    <span class="kw">type </span>Slashed = Treasury;
+    <span class="kw">type </span>Slashed = ();
     <span class="kw">type </span>ForceOrigin = EnsureRoot&lt;AccountId&gt;;
     <span class="kw">type </span>RegistrarOrigin = EnsureRoot&lt;AccountId&gt;;
     <span class="kw">type </span>WeightInfo = pallet_identity::weights::SubstrateWeight&lt;Runtime&gt;;
@@ -2701,6 +2574,7 @@
 <span class="macro">parameter_types! </span>{
     <span class="kw">pub const </span>PreimageBaseDeposit: Balance = deposit(<span class="number">1</span>, <span class="number">0</span>);
     <span class="kw">pub const </span>PreimageByteDeposit: Balance = deposit(<span class="number">0</span>, <span class="number">1</span>);
+    <span class="kw">pub const </span>PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
 }
 
 <span class="kw">impl </span>pallet_preimage::Config <span class="kw">for </span>Runtime {
@@ -2708,8 +2582,12 @@
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="kw">type </span>Currency = Balances;
     <span class="kw">type </span>ManagerOrigin = EnsureRoot&lt;AccountId&gt;;
-    <span class="kw">type </span>BaseDeposit = PreimageBaseDeposit;
-    <span class="kw">type </span>ByteDeposit = PreimageByteDeposit;
+    <span class="kw">type </span>Consideration = HoldConsideration&lt;
+        AccountId,
+        Balances,
+        PreimageHoldReason,
+        LinearStoragePrice&lt;PreimageBaseDeposit, PreimageByteDeposit, Balance&gt;,
+    &gt;;
 }
 
 <span class="kw">impl </span>pallet_static_price_provider::Config <span class="kw">for </span>Runtime {
@@ -2944,8 +2822,9 @@
     <span class="kw">type </span>AccountStore = frame_system::Pallet&lt;Runtime&gt;;
     <span class="kw">type </span>WeightInfo = weights::pallet_balances::SubstrateWeight&lt;Runtime&gt;;
     <span class="kw">type </span>RuntimeHoldReason = RuntimeHoldReason;
+    <span class="kw">type </span>RuntimeFreezeReason = RuntimeFreezeReason;
     <span class="kw">type </span>FreezeIdentifier = RuntimeFreezeReason;
-    <span class="kw">type </span>MaxHolds = ConstU32&lt;<span class="number">1</span>&gt;;
+    <span class="kw">type </span>MaxHolds = ConstU32&lt;<span class="number">2</span>&gt;;
     <span class="kw">type </span>MaxFreezes = ConstU32&lt;<span class="number">1</span>&gt;;
 }
 
@@ -3237,6 +3116,7 @@
     <span class="kw">type </span>OnCreate = ();
     <span class="kw">type </span>FindAuthor = FindAuthorTruncated&lt;Aura&gt;;
     <span class="kw">type </span>GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+    <span class="kw">type </span>SuicideQuickClearLimit = ConstU32&lt;<span class="number">0</span>&gt;;
     <span class="kw">type </span>WeightInfo = pallet_evm::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
@@ -3252,150 +3132,6 @@
     <span class="kw">type </span>PostLogContent = PostBlockAndTxnHashes;
     <span class="comment">// Maximum length (in bytes) of revert message to include in Executed event
     </span><span class="kw">type </span>ExtraDataLength = ConstU32&lt;<span class="number">30</span>&gt;;
-}
-
-<span class="macro">parameter_types! </span>{
-    <span class="kw">pub </span>CouncilMotionDuration: BlockNumber = <span class="number">36 </span>* HOURS;
-    <span class="kw">pub </span>MaxProposalWeight: Weight = Perbill::from_percent(<span class="number">50</span>) * RuntimeBlockWeights::get().max_block;
-}
-
-<span class="kw">type </span>CouncilCollective = pallet_collective::Instance1;
-<span class="kw">impl </span>pallet_collective::Config&lt;CouncilCollective&gt; <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
-    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>Proposal = RuntimeCall;
-    <span class="kw">type </span>MotionDuration = CouncilMotionDuration;
-    <span class="kw">type </span>MaxProposals = ConstU32&lt;<span class="number">100</span>&gt;;
-    <span class="kw">type </span>MaxMembers = ConstU32&lt;<span class="number">10</span>&gt;;
-    <span class="kw">type </span>DefaultVote = pallet_collective::PrimeDefaultVote;
-    <span class="kw">type </span>WeightInfo = pallet_collective::weights::SubstrateWeight&lt;Runtime&gt;;
-    <span class="kw">type </span>SetMembersOrigin = EnsureRoot&lt;<span class="self">Self</span>::AccountId&gt;;
-    <span class="kw">type </span>MaxProposalWeight = MaxProposalWeight;
-}
-
-<span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>TechnicalCommitteeMotionDuration: BlockNumber = <span class="number">36 </span>* HOURS;
-}
-
-<span class="kw">type </span>TechnicalCommitteeCollective = pallet_collective::Instance2;
-<span class="kw">impl </span>pallet_collective::Config&lt;TechnicalCommitteeCollective&gt; <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
-    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>Proposal = RuntimeCall;
-    <span class="kw">type </span>MotionDuration = TechnicalCommitteeMotionDuration;
-    <span class="kw">type </span>MaxProposals = ConstU32&lt;<span class="number">100</span>&gt;;
-    <span class="kw">type </span>MaxMembers = ConstU32&lt;<span class="number">10</span>&gt;;
-    <span class="kw">type </span>DefaultVote = pallet_collective::PrimeDefaultVote;
-    <span class="kw">type </span>WeightInfo = pallet_collective::weights::SubstrateWeight&lt;Runtime&gt;;
-    <span class="kw">type </span>SetMembersOrigin = EnsureRoot&lt;<span class="self">Self</span>::AccountId&gt;;
-    <span class="kw">type </span>MaxProposalWeight = MaxProposalWeight;
-}
-
-<span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>ProposalBond: Permill = Permill::from_percent(<span class="number">5</span>);
-    <span class="kw">pub const </span>ProposalBondMinimum: Balance = <span class="number">100 </span>* SBY;
-    <span class="kw">pub const </span>SpendPeriod: BlockNumber = <span class="number">1 </span>* DAYS;
-}
-
-<span class="kw">impl </span>pallet_treasury::Config <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>PalletId = TreasuryPalletId;
-    <span class="kw">type </span>Currency = Balances;
-    <span class="kw">type </span>ApproveOrigin = EitherOfDiverse&lt;
-        EnsureRoot&lt;AccountId&gt;,
-        pallet_collective::EnsureProportionAtLeast&lt;AccountId, CouncilCollective, <span class="number">3</span>, <span class="number">5</span>&gt;,
-    &gt;;
-    <span class="kw">type </span>RejectOrigin = EitherOfDiverse&lt;
-        EnsureRoot&lt;AccountId&gt;,
-        pallet_collective::EnsureProportionMoreThan&lt;AccountId, CouncilCollective, <span class="number">1</span>, <span class="number">2</span>&gt;,
-    &gt;;
-    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>OnSlash = Treasury;
-    <span class="kw">type </span>ProposalBond = ProposalBond;
-    <span class="kw">type </span>ProposalBondMinimum = ProposalBondMinimum;
-    <span class="kw">type </span>ProposalBondMaximum = ();
-    <span class="kw">type </span>SpendPeriod = SpendPeriod;
-    <span class="kw">type </span>Burn = ();
-    <span class="kw">type </span>BurnDestination = ();
-    <span class="kw">type </span>SpendFunds = ();
-    <span class="kw">type </span>MaxApprovals = ConstU32&lt;<span class="number">100</span>&gt;;
-    <span class="kw">type </span>WeightInfo = pallet_treasury::weights::SubstrateWeight&lt;Runtime&gt;;
-    <span class="kw">type </span>SpendOrigin = frame_support::traits::NeverEnsureOrigin&lt;Balance&gt;;
-}
-
-<span class="macro">parameter_types! </span>{
-    <span class="kw">pub </span>LaunchPeriod: BlockNumber = <span class="number">7 </span>* DAYS;
-    <span class="kw">pub </span>VotingPeriod: BlockNumber = <span class="number">14 </span>* DAYS;
-    <span class="kw">pub </span>FastTrackVotingPeriod: BlockNumber = <span class="number">1 </span>* DAYS;
-    <span class="kw">pub const </span>MinimumDeposit: Balance = <span class="number">1000 </span>* SBY;
-    <span class="kw">pub </span>EnactmentPeriod: BlockNumber = <span class="number">2 </span>* DAYS;
-    <span class="kw">pub </span>VoteLockingPeriod: BlockNumber = <span class="number">7 </span>* DAYS;
-    <span class="kw">pub </span>CooloffPeriod: BlockNumber = <span class="number">7 </span>* DAYS;
-    <span class="kw">pub const </span>InstantAllowed: bool = <span class="bool-val">true</span>;
-}
-
-<span class="kw">impl </span>pallet_democracy::Config <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>Currency = Balances;
-    <span class="kw">type </span>EnactmentPeriod = EnactmentPeriod;
-    <span class="kw">type </span>LaunchPeriod = LaunchPeriod;
-    <span class="kw">type </span>VotingPeriod = VotingPeriod;
-    <span class="kw">type </span>VoteLockingPeriod = VoteLockingPeriod;
-    <span class="kw">type </span>MinimumDeposit = MinimumDeposit;
-    <span class="doccomment">/// A straight majority of the council can decide what their next motion is.
-    </span><span class="kw">type </span>ExternalOrigin = EitherOfDiverse&lt;
-        pallet_collective::EnsureProportionAtLeast&lt;AccountId, CouncilCollective, <span class="number">1</span>, <span class="number">2</span>&gt;,
-        EnsureRoot&lt;AccountId&gt;,
-    &gt;;
-    <span class="doccomment">/// A 60% super-majority can have the next scheduled referendum be a straight majority-carries vote.
-    </span><span class="kw">type </span>ExternalMajorityOrigin = EitherOfDiverse&lt;
-        pallet_collective::EnsureProportionAtLeast&lt;AccountId, CouncilCollective, <span class="number">3</span>, <span class="number">5</span>&gt;,
-        EnsureRoot&lt;AccountId&gt;,
-    &gt;;
-    <span class="doccomment">/// A unanimous council can have the next scheduled referendum be a straight default-carries
-    /// (NTB) vote.
-    </span><span class="kw">type </span>ExternalDefaultOrigin = EitherOfDiverse&lt;
-        pallet_collective::EnsureProportionAtLeast&lt;AccountId, CouncilCollective, <span class="number">1</span>, <span class="number">1</span>&gt;,
-        EnsureRoot&lt;AccountId&gt;,
-    &gt;;
-    <span class="kw">type </span>SubmitOrigin = EnsureSigned&lt;AccountId&gt;;
-    <span class="doccomment">/// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
-    /// be tabled immediately and with a shorter voting/enactment period.
-    </span><span class="kw">type </span>FastTrackOrigin = EitherOfDiverse&lt;
-        pallet_collective::EnsureProportionAtLeast&lt;AccountId, TechnicalCommitteeCollective, <span class="number">2</span>, <span class="number">3</span>&gt;,
-        EnsureRoot&lt;AccountId&gt;,
-    &gt;;
-    <span class="kw">type </span>InstantOrigin = EitherOfDiverse&lt;
-        pallet_collective::EnsureProportionAtLeast&lt;AccountId, TechnicalCommitteeCollective, <span class="number">1</span>, <span class="number">1</span>&gt;,
-        EnsureRoot&lt;AccountId&gt;,
-    &gt;;
-    <span class="kw">type </span>InstantAllowed = InstantAllowed;
-    <span class="kw">type </span>FastTrackVotingPeriod = FastTrackVotingPeriod;
-    <span class="comment">// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
-    </span><span class="kw">type </span>CancellationOrigin = EitherOfDiverse&lt;
-        pallet_collective::EnsureProportionAtLeast&lt;AccountId, CouncilCollective, <span class="number">2</span>, <span class="number">3</span>&gt;,
-        EnsureRoot&lt;AccountId&gt;,
-    &gt;;
-    <span class="comment">// To cancel a proposal before it has been passed, the technical committee must be unanimous or
-    // Root must agree.
-    </span><span class="kw">type </span>CancelProposalOrigin = EitherOfDiverse&lt;
-        pallet_collective::EnsureProportionAtLeast&lt;AccountId, TechnicalCommitteeCollective, <span class="number">1</span>, <span class="number">1</span>&gt;,
-        EnsureRoot&lt;AccountId&gt;,
-    &gt;;
-    <span class="kw">type </span>BlacklistOrigin = EnsureRoot&lt;AccountId&gt;;
-    <span class="comment">// Any single technical committee member may veto a coming council proposal, however they can
-    // only do it once and it lasts only for the cooloff period.
-    </span><span class="kw">type </span>VetoOrigin = pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeCollective&gt;;
-    <span class="kw">type </span>CooloffPeriod = CooloffPeriod;
-    <span class="comment">// The amount of balance that must be deposited per byte of preimage stored.
-    </span><span class="kw">type </span>Slash = Treasury;
-    <span class="kw">type </span>Scheduler = Scheduler;
-    <span class="kw">type </span>MaxVotes = ConstU32&lt;<span class="number">100</span>&gt;;
-    <span class="kw">type </span>PalletsOrigin = OriginCaller;
-    <span class="kw">type </span>WeightInfo = pallet_democracy::weights::SubstrateWeight&lt;Runtime&gt;;
-    <span class="kw">type </span>MaxProposals = ConstU32&lt;<span class="number">100</span>&gt;;
-    <span class="kw">type </span>Preimages = Preimage;
-    <span class="kw">type </span>MaxDeposits = ConstU32&lt;<span class="number">100</span>&gt;;
-    <span class="kw">type </span>MaxBlacklisted = ConstU32&lt;<span class="number">100</span>&gt;;
 }
 
 <span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
@@ -3437,8 +3173,7 @@
     </span>Balances,
     <span class="doccomment">/// All Runtime calls from Pallet Assets allowed for proxy account
     </span>Assets,
-    <span class="doccomment">/// Only Runtime Calls related to governance for proxy account
-    /// To know exact calls check InstanceFilter implementation for ProxyTypes
+    <span class="doccomment">/// Not used at the moment, but kept for backwards compatibility.
     </span>Governance,
     <span class="doccomment">/// Only provide_judgement call from pallet identity allowed for proxy account
     </span>IdentityJudgement,
@@ -3491,13 +3226,8 @@
                         | RuntimeCall::XcAssetConfig(..)
                         <span class="comment">// Skip entire EVM pallet
                         // Skip entire Ethereum pallet
-                        </span>| RuntimeCall::DynamicEvmBaseFee(..)
-                        <span class="comment">// Skip entire Contracts pallet
-                        </span>| RuntimeCall::Democracy(..)
-                        | RuntimeCall::Council(..)
-                        | RuntimeCall::TechnicalCommittee(..)
-                        | RuntimeCall::Treasury(..)
-                )
+                        </span>| RuntimeCall::DynamicEvmBaseFee(..) <span class="comment">// Skip entire Contracts pallet
+                </span>)
             }
             <span class="comment">// All Runtime calls from Pallet Balances allowed for proxy account
             </span>ProxyType::Balances =&gt; {
@@ -3506,15 +3236,6 @@
             <span class="comment">// All Runtime calls from Pallet Assets allowed for proxy account
             </span>ProxyType::Assets =&gt; {
                 <span class="macro">matches!</span>(c, RuntimeCall::Assets(..))
-            }
-            ProxyType::Governance =&gt; {
-                <span class="macro">matches!</span>(
-                    c,
-                    RuntimeCall::Democracy(..)
-                        | RuntimeCall::Council(..)
-                        | RuntimeCall::TechnicalCommittee(..)
-                        | RuntimeCall::Treasury(..)
-                )
             }
             <span class="comment">// Only provide_judgement call from pallet identity allowed for proxy account
             </span>ProxyType::IdentityJudgement =&gt; {
@@ -3542,6 +3263,8 @@
                     )
                 )
             }
+            <span class="comment">// Not used at the moment, but kept for backwards compatibility.
+            </span>ProxyType::Governance =&gt; <span class="bool-val">false</span>,
         }
     }
 
@@ -3682,11 +3405,6 @@
     <span class="kw">type </span>AddMember = AddMemberBenchmark;
 }
 
-<span class="kw">impl </span>pallet_dapp_staking_migration::Config <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-    <span class="kw">type </span>WeightInfo = pallet_dapp_staking_migration::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
-}
-
 <span class="macro">construct_runtime!</span>(
     <span class="kw">pub struct </span>Runtime
     {
@@ -3734,10 +3452,6 @@
 
         Contracts: pallet_contracts = <span class="number">70</span>,
 
-        Democracy: pallet_democracy = <span class="number">80</span>,
-        Council: pallet_collective::&lt;Instance1&gt; = <span class="number">81</span>,
-        TechnicalCommittee: pallet_collective::&lt;Instance2&gt; = <span class="number">82</span>,
-        Treasury: pallet_treasury = <span class="number">83</span>,
         Preimage: pallet_preimage = <span class="number">84</span>,
 
         Xvm: pallet_xvm = <span class="number">90</span>,
@@ -3746,8 +3460,6 @@
 
         <span class="comment">// Remove after benchmarks are available in orml_oracle
         </span>OracleBenchmarks: oracle_benchmarks = <span class="number">251</span>,
-        <span class="comment">// Remove after migrating to v6 storage
-        </span>DappStakingMigration: pallet_dapp_staking_migration = <span class="number">252</span>,
         <span class="comment">// To be removed &amp; cleaned up once proper oracle is implemented
         </span>StaticPriceProvider: pallet_static_price_provider = <span class="number">253</span>,
     }
@@ -3787,10 +3499,26 @@
     Migrations,
 &gt;;
 
+<span class="macro">parameter_types! </span>{
+    <span class="kw">pub const </span>DappStakingMigrationName: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;DappStakingMigration&quot;</span>;
+    <span class="kw">pub const </span>DemocracyName: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;Democracy&quot;</span>;
+    <span class="kw">pub const </span>CouncilName: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;Council&quot;</span>;
+    <span class="kw">pub const </span>TechnicalCommitteeName: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;TechnicalCommittee&quot;</span>;
+    <span class="kw">pub const </span>TreasuryName: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;Treasury&quot;</span>;
+
+}
+<span class="kw">use </span>frame_support::migrations::RemovePallet;
+
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-</span><span class="kw">pub type </span>Migrations = ();
+</span><span class="kw">pub type </span>Migrations = (
+    RemovePallet&lt;DappStakingMigrationName, &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight&gt;,
+    RemovePallet&lt;DemocracyName, &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight&gt;,
+    RemovePallet&lt;CouncilName, &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight&gt;,
+    RemovePallet&lt;TechnicalCommitteeName, &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight&gt;,
+    RemovePallet&lt;TreasuryName, &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight&gt;,
+);
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
@@ -3881,7 +3609,6 @@
         [pallet_price_aggregator, PriceAggregator]
         [pallet_membership, OracleMembership]
         [oracle_benchmarks, OracleBenchmarks]
-        [pallet_dapp_staking_migration, DappStakingMigration]
     );
 }
 
@@ -4361,6 +4088,17 @@
         }
     }
 
+
+    <span class="kw">impl </span>sp_genesis_builder::GenesisBuilder&lt;Block&gt; <span class="kw">for </span>Runtime {
+        <span class="kw">fn </span>create_default_config() -&gt; Vec&lt;u8&gt; {
+            create_default_config::&lt;RuntimeGenesisConfig&gt;()
+        }
+
+        <span class="kw">fn </span>build_config(config: Vec&lt;u8&gt;) -&gt; sp_genesis_builder::Result {
+            build_config::&lt;RuntimeGenesisConfig&gt;(config)
+        }
+    }
+
     <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">impl </span>frame_benchmarking::Benchmark&lt;Block&gt; <span class="kw">for </span>Runtime {
         <span class="kw">fn </span>benchmark_metadata(extra: bool) -&gt; (
@@ -4407,6 +4145,7 @@
             <span class="kw">impl </span>pallet_xcm_benchmarks::Config <span class="kw">for </span>Runtime {
                 <span class="kw">type </span>XcmConfig = xcm_config::XcmConfig;
                 <span class="kw">type </span>AccountIdConverter = xcm_config::LocationToAccountId;
+                <span class="kw">type </span>DeliveryHelper = ();
                 <span class="comment">// destination location to be used in benchmarks
                 </span><span class="kw">fn </span>valid_destination() -&gt; <span class="prelude-ty">Result</span>&lt;MultiLocation, BenchmarkError&gt; {
                     <span class="prelude-val">Ok</span>(MultiLocation::parent())
@@ -4418,6 +4157,7 @@
 
             <span class="kw">impl </span>pallet_xcm_benchmarks::generic::Config <span class="kw">for </span>Runtime {
                 <span class="kw">type </span>RuntimeCall = RuntimeCall;
+                <span class="kw">type </span>TransactAsset = Balances;
                 <span class="kw">fn </span>worst_case_response() -&gt; (u64, Response) {
                     (<span class="number">0u64</span>, Response::Version(Default::default()))
                 }

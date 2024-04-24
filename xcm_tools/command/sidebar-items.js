@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["ASSET_PRECOMPILE_ADDRESS_PREFIX"],"fn":["run"],"type":["Error"]};
+window.SIDEBAR_ITEMS = {"fn":["run"],"type":["Error"]};
