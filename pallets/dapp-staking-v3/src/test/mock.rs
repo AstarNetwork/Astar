@@ -115,7 +115,7 @@ impl PriceProvider for DummyPriceProvider {
 thread_local! {
     pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
     pub(crate) static BLOCK_BEFORE_NEW_ERA: RefCell<EraNumber> = RefCell::new(0);
-    pub(crate) static NATIVE_PRICE: RefCell<FixedU128> = RefCell::new(FixedU128::from_rational(1, 100));
+    pub(crate) static NATIVE_PRICE: RefCell<FixedU128> = RefCell::new(FixedU128::from_rational(1, 10));
 }
 
 pub struct DummyStakingRewardHandler;
