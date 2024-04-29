@@ -74,6 +74,7 @@ use astar_primitives::{
         PeriodNumber, SmartContract, StandardTierSlots, TierId,
     },
     evm::EvmRevertCodeHandler,
+    oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -327,10 +328,6 @@ parameter_types! {
     pub const MinimumStakingAmount: Balance = 500 * ASTR;
 }
 
-impl pallet_static_price_provider::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-}
-
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
@@ -365,7 +362,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type NativePriceProvider = StaticPriceProvider;
+    type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
     type Observers = Inflation;
@@ -1033,6 +1030,60 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
+parameter_types! {
+    pub const NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
+    // Aggregate values for one day.
+    pub const AggregationDuration: BlockNumber = 7200;
+}
+
+impl pallet_price_aggregator::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type MaxValuesPerBlock = ConstU32<8>;
+    type ProcessBlockValues = pallet_price_aggregator::MedianBlockValue;
+    type NativeCurrencyId = NativeCurrencyId;
+    // 7 days
+    type CircularBufferLength = ConstU32<7>;
+    type AggregationDuration = AggregationDuration;
+    type WeightInfo = pallet_price_aggregator::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    // Cannot specify `Root` so need to do it like this, unfortunately.
+    pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
+}
+
+impl orml_oracle::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type OnNewData = PriceAggregator;
+    type CombineData = DummyCombineData<Runtime>;
+    type Time = Timestamp;
+    type OracleKey = CurrencyId;
+    type OracleValue = CurrencyAmount;
+    type RootOperatorAccountId = RootOperatorAccountId;
+    type Members = OracleMembership;
+    type MaxHasDispatchedSize = ConstU32<8>;
+    type WeightInfo = oracle_benchmarks::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type MaxFeedValues = ConstU32<2>;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type MaxFeedValues = ConstU32<1>;
+}
+
+pub type OracleMembershipInstance = pallet_membership::Instance1;
+impl pallet_membership::Config<OracleMembershipInstance> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = EnsureRoot<AccountId>;
+    type RemoveOrigin = EnsureRoot<AccountId>;
+    type SwapOrigin = EnsureRoot<AccountId>;
+    type ResetOrigin = EnsureRoot<AccountId>;
+    type PrimeOrigin = EnsureRoot<AccountId>;
+
+    type MembershipInitialized = ();
+    type MembershipChanged = ();
+    type MaxMembers = ConstU32<16>;
+    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub struct Runtime
     {
@@ -1056,6 +1107,9 @@ construct_runtime!(
         Inflation: pallet_inflation = 33,
         DappStaking: pallet_dapp_staking_v3 = 34,
         Assets: pallet_assets = 36,
+        PriceAggregator: pallet_price_aggregator = 37,
+        Oracle: orml_oracle = 38,
+        OracleMembership: pallet_membership::<Instance1> = 39,
 
         Authorship: pallet_authorship = 40,
         CollatorSelection: pallet_collator_selection = 41,
@@ -1077,9 +1131,6 @@ construct_runtime!(
         Contracts: pallet_contracts = 70,
 
         Sudo: pallet_sudo = 99,
-
-        // To be removed & cleaned up once proper oracle is implemented
-        StaticPriceProvider: pallet_static_price_provider = 253,
     }
 );
 
@@ -1118,8 +1169,7 @@ pub type Executive = frame_executive::Executive<
 >;
 
 parameter_types! {
-    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
-
+    pub const StaticPriceProviderName: &'static str = "StaticPriceProvider";
 }
 
 /// All migrations that will run on the next runtime upgrade.
@@ -1127,10 +1177,35 @@ parameter_types! {
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
     frame_support::migrations::RemovePallet<
-        DappStakingMigrationName,
+        StaticPriceProviderName,
         <Runtime as frame_system::Config>::DbWeight,
     >,
+    OracleIntegrationLogic,
+    pallet_price_aggregator::PriceAggregatorInitializer<Runtime, InitPrice>,
 );
+
+pub struct InitPrice;
+impl Get<CurrencyAmount> for InitPrice {
+    fn get() -> CurrencyAmount {
+        // 0.18 $
+        CurrencyAmount::from_rational(18, 100)
+    }
+}
+
+use frame_support::traits::OnRuntimeUpgrade;
+pub struct OracleIntegrationLogic;
+impl OnRuntimeUpgrade for OracleIntegrationLogic {
+    fn on_runtime_upgrade() -> Weight {
+        // 1. Set initial storage versions for the membership pallet
+        use frame_support::traits::StorageVersion;
+        StorageVersion::new(4)
+            .put::<pallet_membership::Pallet<Runtime, OracleMembershipInstance>>();
+
+        // No storage version for the `orml_oracle` pallet, it's essentially 0
+
+        <Runtime as frame_system::Config>::DbWeight::get().writes(1)
+    }
+}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,

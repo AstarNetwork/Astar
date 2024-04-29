@@ -18,10 +18,11 @@
 
 //! Astar chain specifications.
 
+use astar_primitives::oracle::CurrencyAmount;
 use astar_runtime::{
     wasm_binary_unwrap, AccountId, AuraId, Balance, DappStakingConfig, EVMConfig, InflationConfig,
-    InflationParameters, ParachainInfoConfig, Precompiles, Signature, SystemConfig, TierThreshold,
-    ASTR,
+    InflationParameters, OracleMembershipConfig, ParachainInfoConfig, Precompiles,
+    PriceAggregatorConfig, Signature, SystemConfig, TierThreshold, ASTR,
 };
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
@@ -191,6 +192,20 @@ fn make_genesis(
         inflation: InflationConfig {
             params: InflationParameters::default(),
             ..Default::default()
+        },
+        oracle_membership: OracleMembershipConfig {
+            members: vec![
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+            ]
+            .try_into()
+            .expect("Assumption is that at least two members will be allowed."),
+            ..Default::default()
+        },
+        price_aggregator: PriceAggregatorConfig {
+            circular_buffer: vec![CurrencyAmount::from_rational(5, 10)]
+                .try_into()
+                .expect("Must work since buffer should have at least a single value."),
         },
     }
 }

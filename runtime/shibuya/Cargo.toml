@@ -114,7 +114,6 @@ pallet-evm-precompile-xcm = { workspace = true }
 pallet-evm-precompile-xvm = { workspace = true }
 pallet-inflation = { workspace = true }
 pallet-price-aggregator = { workspace = true }
-pallet-static-price-provider = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
@@ -204,7 +203,6 @@ std = [
 	"orml-oracle/std",
 	"dapp-staking-v3-runtime-api/std",
 	"pallet-inflation/std",
-	"pallet-static-price-provider/std",
 	"pallet-price-aggregator/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",
@@ -293,7 +291,6 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
 	"pallet-inflation/try-runtime",
-	"pallet-static-price-provider/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
