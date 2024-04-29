@@ -1902,13 +1902,6 @@ pub mod pallet {
 
                         era_info.migrate_to_next_era(Some(protocol_state.subperiod()));
 
-                        // Re-calculate tier configuration for the upcoming new period
-                        let tier_params = StaticTierParams::<T>::get();
-                        let average_price = T::NativePriceProvider::average_price();
-                        let new_tier_config =
-                            TierConfig::<T>::get().calculate_new(average_price, &tier_params);
-                        TierConfig::<T>::put(new_tier_config);
-
                         // Update historical cleanup marker.
                         // Must be called with the new period number.
                         Self::update_cleanup_marker(protocol_state.period_number());
@@ -1957,6 +1950,12 @@ pub mod pallet {
                 );
             }
             EraRewards::<T>::insert(&era_span_index, span);
+
+            // Re-calculate tier configuration for the upcoming new era
+            let tier_params = StaticTierParams::<T>::get();
+            let average_price = T::NativePriceProvider::average_price();
+            let new_tier_config = TierConfig::<T>::get().calculate_new(average_price, &tier_params);
+            TierConfig::<T>::put(new_tier_config);
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
             if let Some(period_event) = maybe_period_event {

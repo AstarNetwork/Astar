@@ -30,8 +30,9 @@ use frame_support::{
         fungible::Unbalanced as FunUnbalanced, Currency, Get, OnFinalize, OnInitialize,
         ReservableCurrency,
     },
+    BoundedVec,
 };
-use sp_runtime::traits::Zero;
+use sp_runtime::{traits::Zero, FixedU128};
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, EraNumber, SmartContractHandle},
@@ -2325,10 +2326,71 @@ fn force_with_safeguard_on_fails() {
 }
 
 #[test]
+fn tier_config_recalculation_works() {
+    ExtBuilder::build().execute_with(|| {
+        let init_price = NATIVE_PRICE.with(|v| v.borrow().clone());
+        let init_tier_config = TierConfig::<Test>::get();
+
+        // 1. Advance to a new era, while keeping native price the same. Expect no change in the tier config
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert_eq!(
+            init_tier_config,
+            TierConfig::<Test>::get(),
+            "Native price didn't change so tier config should remain the same."
+        );
+
+        // 2. Increase the native price, and expect number of tiers to be increased.
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = init_price * FixedU128::from(3));
+
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        let new_tier_config = TierConfig::<Test>::get();
+        assert!(
+            new_tier_config.number_of_slots > init_tier_config.number_of_slots,
+            "Price has increased, therefore number of slots must increase."
+        );
+        assert_eq!(
+            init_tier_config.slots_per_tier.len(),
+            new_tier_config.slots_per_tier.len(),
+            "Sanity check."
+        );
+        for idx in 0..init_tier_config.slots_per_tier.len() {
+            assert!(init_tier_config.slots_per_tier[idx] < new_tier_config.slots_per_tier[idx]);
+        }
+
+        // 3. Decrease the native price, and expect number of tiers to be increased.
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = init_price * FixedU128::from_rational(1, 2));
+
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        let new_tier_config = TierConfig::<Test>::get();
+        assert!(
+            new_tier_config.number_of_slots < init_tier_config.number_of_slots,
+            "Price has decreased, therefore number of slots must decrease."
+        );
+        assert_eq!(
+            init_tier_config.slots_per_tier.len(),
+            new_tier_config.slots_per_tier.len(),
+            "Sanity check."
+        );
+        for idx in 0..init_tier_config.slots_per_tier.len() {
+            assert!(init_tier_config.slots_per_tier[idx] > new_tier_config.slots_per_tier[idx]);
+        }
+    })
+}
+
+#[test]
 fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
     ExtBuilder::build().execute_with(|| {
-        // This test will rely on the configuration inside the mock file.
-        // If that changes, this test will have to be updated as well.
+        // Tier config is specially adapter for this test.
+        TierConfig::<Test>::mutate(|config| {
+            config.number_of_slots = 40;
+            config.slots_per_tier = BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap();
+        });
 
         // Scenario:
         // - 1st tier is filled up, with one dApp satisfying the threshold but not making it due to lack of tier capacity

@@ -108,13 +108,14 @@ impl pallet_balances::Config for Test {
 pub struct DummyPriceProvider;
 impl PriceProvider for DummyPriceProvider {
     fn average_price() -> FixedU128 {
-        FixedU128::from_rational(1, 10)
+        NATIVE_PRICE.with(|v| v.borrow().clone())
     }
 }
 
 thread_local! {
     pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
     pub(crate) static BLOCK_BEFORE_NEW_ERA: RefCell<EraNumber> = RefCell::new(0);
+    pub(crate) static NATIVE_PRICE: RefCell<FixedU128> = RefCell::new(FixedU128::from_rational(1, 100));
 }
 
 pub struct DummyStakingRewardHandler;
@@ -310,7 +311,7 @@ impl ExtBuilder {
                 .unwrap(),
             };
 
-            // Init tier config, based on the initial params
+            // Init tier config, based on the initial params. Needs to be adjusted to the init price.
             let init_tier_config = TiersConfiguration::<
                 <Test as Config>::NumberOfTiers,
                 <Test as Config>::TierSlots,
@@ -320,7 +321,8 @@ impl ExtBuilder {
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_thresholds: tier_params.tier_thresholds.clone(),
                 _phantom: Default::default(),
-            };
+            }
+            .calculate_new(NATIVE_PRICE.with(|v| v.borrow().clone()), &tier_params);
 
             pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);
             pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());
