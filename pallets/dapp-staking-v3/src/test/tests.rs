@@ -2386,7 +2386,7 @@ fn tier_config_recalculation_works() {
 #[test]
 fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
     ExtBuilder::build().execute_with(|| {
-        // Tier config is specially adapter for this test.
+        // Tier config is specially adapted for this test.
         TierConfig::<Test>::mutate(|config| {
             config.number_of_slots = 40;
             config.slots_per_tier = BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap();

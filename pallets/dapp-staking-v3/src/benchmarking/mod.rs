@@ -990,6 +990,9 @@ mod benchmarks {
         prepare_contracts_for_tier_assignment::<T>(x);
         force_advance_to_next_era::<T>();
 
+        // Need to ensure settings remain unchanged even after the era change
+        init_tier_settings::<T>();
+
         let reward_era = ActiveProtocolState::<T>::get().era;
         let reward_period = ActiveProtocolState::<T>::get().period_number();
         let reward_pool = Balance::from(10_000 * UNIT as u128);

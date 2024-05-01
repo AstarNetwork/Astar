@@ -154,7 +154,13 @@ pub(super) fn initial_config<T: Config>() {
         maintenance: false,
     });
 
-    // Init tier params
+    init_tier_settings::<T>();
+
+    Safeguard::<T>::put(false);
+}
+
+/// Set initial tier param & config
+pub(super) fn init_tier_settings<T: Config>() {
     let tier_params = TierParameters::<T::NumberOfTiers> {
         reward_portion: BoundedVec::try_from(vec![
             Permill::from_percent(40),
@@ -204,8 +210,6 @@ pub(super) fn initial_config<T: Config>() {
 
     StaticTierParams::<T>::put(tier_params);
     TierConfig::<T>::put(init_tier_config.clone());
-
-    Safeguard::<T>::put(false);
 }
 
 /// Maximum number of contracts that 'makes sense' - considers both contract number limit & number of slots.
