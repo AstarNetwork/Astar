@@ -65,6 +65,7 @@ impl Contains<RuntimeCall> for WhitelistedCalls {
             RuntimeCall::Assets(pallet_assets::Call::transfer { .. }) => true,
             RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset_with_fee { .. }) => true,
             RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset { .. }) => true,
+            RuntimeCall::Vesting(pallet_vesting::Call::vest { .. }) => true,
             _ => false,
         }
     }
