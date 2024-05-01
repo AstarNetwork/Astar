@@ -2361,7 +2361,7 @@ fn tier_config_recalculation_works() {
             assert!(init_tier_config.slots_per_tier[idx] < new_tier_config.slots_per_tier[idx]);
         }
 
-        // 3. Decrease the native price, and expect number of tiers to be increased.
+        // 3. Decrease the native price, and expect slots in tiers to be decreased.
         NATIVE_PRICE.with(|v| *v.borrow_mut() = init_price * FixedU128::from_rational(1, 2));
 
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
