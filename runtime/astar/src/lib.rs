@@ -1170,6 +1170,8 @@ pub type Executive = frame_executive::Executive<
 
 parameter_types! {
     pub const StaticPriceProviderName: &'static str = "StaticPriceProvider";
+    // 0.18 $
+    pub const InitPrice: CurrencyAmount = CurrencyAmount::from_rational(18, 100);
 }
 
 /// All migrations that will run on the next runtime upgrade.
@@ -1183,14 +1185,6 @@ pub type Migrations = (
     OracleIntegrationLogic,
     pallet_price_aggregator::PriceAggregatorInitializer<Runtime, InitPrice>,
 );
-
-pub struct InitPrice;
-impl Get<CurrencyAmount> for InitPrice {
-    fn get() -> CurrencyAmount {
-        // 0.18 $
-        CurrencyAmount::from_rational(18, 100)
-    }
-}
 
 use frame_support::traits::OnRuntimeUpgrade;
 pub struct OracleIntegrationLogic;
