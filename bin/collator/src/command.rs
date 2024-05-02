@@ -459,26 +459,29 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(cmd)?;
             if runner.config().chain_spec.is_astar() {
                 runner.sync_run(|config| {
-                    let PartialComponents { client, .. } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
+                    let PartialComponents { client, .. } =
+                        parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                            &config,
+                            parachain::build_import_queue,
+                        )?;
                     cmd.run(config.chain_spec.as_ref(), client.as_ref())
                 })
             } else if runner.config().chain_spec.is_shiden() {
                 runner.sync_run(|config| {
-                    let PartialComponents { client, .. } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
+                    let PartialComponents { client, .. } =
+                        parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                            &config,
+                            parachain::build_import_queue,
+                        )?;
                     cmd.run(config.chain_spec.as_ref(), client.as_ref())
                 })
             } else {
                 runner.sync_run(|config| {
-                    let PartialComponents { client, .. } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
-                        &config,
-                        parachain::build_import_queue,
-                    )?;
+                    let PartialComponents { client, .. } =
+                        parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                            &config,
+                            parachain::build_import_queue,
+                        )?;
                     cmd.run(config.chain_spec.as_ref(), client.as_ref())
                 })
             }
