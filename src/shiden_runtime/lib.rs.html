@@ -2009,6 +2009,77 @@
 <a href="#2009" id="2009">2009</a>
 <a href="#2010" id="2010">2010</a>
 <a href="#2011" id="2011">2011</a>
+<a href="#2012" id="2012">2012</a>
+<a href="#2013" id="2013">2013</a>
+<a href="#2014" id="2014">2014</a>
+<a href="#2015" id="2015">2015</a>
+<a href="#2016" id="2016">2016</a>
+<a href="#2017" id="2017">2017</a>
+<a href="#2018" id="2018">2018</a>
+<a href="#2019" id="2019">2019</a>
+<a href="#2020" id="2020">2020</a>
+<a href="#2021" id="2021">2021</a>
+<a href="#2022" id="2022">2022</a>
+<a href="#2023" id="2023">2023</a>
+<a href="#2024" id="2024">2024</a>
+<a href="#2025" id="2025">2025</a>
+<a href="#2026" id="2026">2026</a>
+<a href="#2027" id="2027">2027</a>
+<a href="#2028" id="2028">2028</a>
+<a href="#2029" id="2029">2029</a>
+<a href="#2030" id="2030">2030</a>
+<a href="#2031" id="2031">2031</a>
+<a href="#2032" id="2032">2032</a>
+<a href="#2033" id="2033">2033</a>
+<a href="#2034" id="2034">2034</a>
+<a href="#2035" id="2035">2035</a>
+<a href="#2036" id="2036">2036</a>
+<a href="#2037" id="2037">2037</a>
+<a href="#2038" id="2038">2038</a>
+<a href="#2039" id="2039">2039</a>
+<a href="#2040" id="2040">2040</a>
+<a href="#2041" id="2041">2041</a>
+<a href="#2042" id="2042">2042</a>
+<a href="#2043" id="2043">2043</a>
+<a href="#2044" id="2044">2044</a>
+<a href="#2045" id="2045">2045</a>
+<a href="#2046" id="2046">2046</a>
+<a href="#2047" id="2047">2047</a>
+<a href="#2048" id="2048">2048</a>
+<a href="#2049" id="2049">2049</a>
+<a href="#2050" id="2050">2050</a>
+<a href="#2051" id="2051">2051</a>
+<a href="#2052" id="2052">2052</a>
+<a href="#2053" id="2053">2053</a>
+<a href="#2054" id="2054">2054</a>
+<a href="#2055" id="2055">2055</a>
+<a href="#2056" id="2056">2056</a>
+<a href="#2057" id="2057">2057</a>
+<a href="#2058" id="2058">2058</a>
+<a href="#2059" id="2059">2059</a>
+<a href="#2060" id="2060">2060</a>
+<a href="#2061" id="2061">2061</a>
+<a href="#2062" id="2062">2062</a>
+<a href="#2063" id="2063">2063</a>
+<a href="#2064" id="2064">2064</a>
+<a href="#2065" id="2065">2065</a>
+<a href="#2066" id="2066">2066</a>
+<a href="#2067" id="2067">2067</a>
+<a href="#2068" id="2068">2068</a>
+<a href="#2069" id="2069">2069</a>
+<a href="#2070" id="2070">2070</a>
+<a href="#2071" id="2071">2071</a>
+<a href="#2072" id="2072">2072</a>
+<a href="#2073" id="2073">2073</a>
+<a href="#2074" id="2074">2074</a>
+<a href="#2075" id="2075">2075</a>
+<a href="#2076" id="2076">2076</a>
+<a href="#2077" id="2077">2077</a>
+<a href="#2078" id="2078">2078</a>
+<a href="#2079" id="2079">2079</a>
+<a href="#2080" id="2080">2080</a>
+<a href="#2081" id="2081">2081</a>
+<a href="#2082" id="2082">2082</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2084,7 +2155,7 @@
         PeriodNumber, SmartContract, TierId, TierSlots <span class="kw">as </span>TierSlotsFunc,
     },
     evm::EvmRevertCodeHandler,
-    oracle::CurrencyAmount,
+    oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -2338,10 +2409,6 @@
     <span class="kw">type </span>WeightInfo = pallet_multisig::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="kw">impl </span>pallet_static_price_provider::Config <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-}
-
 <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">pub struct </span>BenchmarkHelper&lt;SC, ACC&gt;(sp_std::marker::PhantomData&lt;(SC, ACC)&gt;);
 <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
@@ -2389,7 +2456,7 @@
     <span class="kw">type </span>Currency = Balances;
     <span class="kw">type </span>SmartContract = SmartContract&lt;AccountId&gt;;
     <span class="kw">type </span>ManagerOrigin = frame_system::EnsureRoot&lt;AccountId&gt;;
-    <span class="kw">type </span>NativePriceProvider = StaticPriceProvider;
+    <span class="kw">type </span>NativePriceProvider = PriceAggregator;
     <span class="kw">type </span>StakingRewardHandler = Inflation;
     <span class="kw">type </span>CycleConfiguration = InflationCycleConfig;
     <span class="kw">type </span>Observers = Inflation;
@@ -3045,6 +3112,60 @@
     <span class="kw">type </span>AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
+<span class="macro">parameter_types! </span>{
+    <span class="kw">pub const </span>NativeCurrencyId: CurrencyId = CurrencyId::SDN;
+    <span class="comment">// Aggregate values for one day.
+    </span><span class="kw">pub const </span>AggregationDuration: BlockNumber = <span class="number">7200</span>;
+}
+
+<span class="kw">impl </span>pallet_price_aggregator::Config <span class="kw">for </span>Runtime {
+    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+    <span class="kw">type </span>MaxValuesPerBlock = ConstU32&lt;<span class="number">8</span>&gt;;
+    <span class="kw">type </span>ProcessBlockValues = pallet_price_aggregator::MedianBlockValue;
+    <span class="kw">type </span>NativeCurrencyId = NativeCurrencyId;
+    <span class="comment">// 7 days
+    </span><span class="kw">type </span>CircularBufferLength = ConstU32&lt;<span class="number">7</span>&gt;;
+    <span class="kw">type </span>AggregationDuration = AggregationDuration;
+    <span class="kw">type </span>WeightInfo = pallet_price_aggregator::weights::SubstrateWeight&lt;Runtime&gt;;
+}
+
+<span class="macro">parameter_types! </span>{
+    <span class="comment">// Cannot specify `Root` so need to do it like this, unfortunately.
+    </span><span class="kw">pub </span>RootOperatorAccountId: AccountId = AccountId::from([<span class="number">0xffu8</span>; <span class="number">32</span>]);
+}
+
+<span class="kw">impl </span>orml_oracle::Config <span class="kw">for </span>Runtime {
+    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+    <span class="kw">type </span>OnNewData = PriceAggregator;
+    <span class="kw">type </span>CombineData = DummyCombineData&lt;Runtime&gt;;
+    <span class="kw">type </span>Time = Timestamp;
+    <span class="kw">type </span>OracleKey = CurrencyId;
+    <span class="kw">type </span>OracleValue = CurrencyAmount;
+    <span class="kw">type </span>RootOperatorAccountId = RootOperatorAccountId;
+    <span class="kw">type </span>Members = OracleMembership;
+    <span class="kw">type </span>MaxHasDispatchedSize = ConstU32&lt;<span class="number">8</span>&gt;;
+    <span class="kw">type </span>WeightInfo = oracle_benchmarks::weights::SubstrateWeight&lt;Runtime&gt;;
+    <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+    </span><span class="kw">type </span>MaxFeedValues = ConstU32&lt;<span class="number">2</span>&gt;;
+    <span class="attr">#[cfg(not(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
+    </span><span class="kw">type </span>MaxFeedValues = ConstU32&lt;<span class="number">1</span>&gt;;
+}
+
+<span class="kw">pub type </span>OracleMembershipInstance = pallet_membership::Instance1;
+<span class="kw">impl </span>pallet_membership::Config&lt;OracleMembershipInstance&gt; <span class="kw">for </span>Runtime {
+    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+    <span class="kw">type </span>AddOrigin = EnsureRoot&lt;AccountId&gt;;
+    <span class="kw">type </span>RemoveOrigin = EnsureRoot&lt;AccountId&gt;;
+    <span class="kw">type </span>SwapOrigin = EnsureRoot&lt;AccountId&gt;;
+    <span class="kw">type </span>ResetOrigin = EnsureRoot&lt;AccountId&gt;;
+    <span class="kw">type </span>PrimeOrigin = EnsureRoot&lt;AccountId&gt;;
+
+    <span class="kw">type </span>MembershipInitialized = ();
+    <span class="kw">type </span>MembershipChanged = ();
+    <span class="kw">type </span>MaxMembers = ConstU32&lt;<span class="number">16</span>&gt;;
+    <span class="kw">type </span>WeightInfo = pallet_membership::weights::SubstrateWeight&lt;Runtime&gt;;
+}
+
 <span class="macro">construct_runtime!</span>(
     <span class="kw">pub struct </span>Runtime
     {
@@ -3068,6 +3189,9 @@
         </span>Inflation: pallet_inflation = <span class="number">33</span>,
         DappStaking: pallet_dapp_staking_v3 = <span class="number">34</span>,
         Assets: pallet_assets = <span class="number">36</span>,
+        PriceAggregator: pallet_price_aggregator = <span class="number">37</span>,
+        Oracle: orml_oracle = <span class="number">38</span>,
+        OracleMembership: pallet_membership::&lt;Instance1&gt; = <span class="number">39</span>,
 
         Authorship: pallet_authorship = <span class="number">40</span>,
         CollatorSelection: pallet_collator_selection = <span class="number">41</span>,
@@ -3090,9 +3214,6 @@
         RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = <span class="number">71</span>,
 
         Sudo: pallet_sudo = <span class="number">99</span>,
-
-        <span class="comment">// To be removed &amp; cleaned up once proper oracle is implemented
-        </span>StaticPriceProvider: pallet_static_price_provider = <span class="number">253</span>,
     }
 );
 
@@ -3131,18 +3252,37 @@
 &gt;;
 
 <span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>DappStakingMigrationName: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;DappStakingMigration&quot;</span>;
-
+    <span class="kw">pub const </span>StaticPriceProviderName: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;StaticPriceProvider&quot;</span>;
+    <span class="comment">// 0.32 $
+    </span><span class="kw">pub const </span>InitPrice: CurrencyAmount = CurrencyAmount::from_rational(<span class="number">32</span>, <span class="number">100</span>);
 }
+
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
 </span><span class="kw">pub type </span>Migrations = (
     frame_support::migrations::RemovePallet&lt;
-        DappStakingMigrationName,
+        StaticPriceProviderName,
         &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight,
     &gt;,
+    OracleIntegrationLogic,
+    pallet_price_aggregator::PriceAggregatorInitializer&lt;Runtime, InitPrice&gt;,
 );
+
+<span class="kw">use </span>frame_support::traits::OnRuntimeUpgrade;
+<span class="kw">pub struct </span>OracleIntegrationLogic;
+<span class="kw">impl </span>OnRuntimeUpgrade <span class="kw">for </span>OracleIntegrationLogic {
+    <span class="kw">fn </span>on_runtime_upgrade() -&gt; Weight {
+        <span class="comment">// 1. Set initial storage versions for the membership pallet
+        </span><span class="kw">use </span>frame_support::traits::StorageVersion;
+        StorageVersion::new(<span class="number">4</span>)
+            .put::&lt;pallet_membership::Pallet&lt;Runtime, OracleMembershipInstance&gt;&gt;();
+
+        <span class="comment">// No storage version for the `orml_oracle` pallet, it&#39;s essentially 0
+
+        </span>&lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().writes(<span class="number">1</span>)
+    }
+}
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
@@ -3227,6 +3367,8 @@
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
+        [pallet_price_aggregator, PriceAggregator]
+        [pallet_membership, OracleMembership]
     );
 }
 

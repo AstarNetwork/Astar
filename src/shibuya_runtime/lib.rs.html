@@ -2193,12 +2193,6 @@
 <a href="#2193" id="2193">2193</a>
 <a href="#2194" id="2194">2194</a>
 <a href="#2195" id="2195">2195</a>
-<a href="#2196" id="2196">2196</a>
-<a href="#2197" id="2197">2197</a>
-<a href="#2198" id="2198">2198</a>
-<a href="#2199" id="2199">2199</a>
-<a href="#2200" id="2200">2200</a>
-<a href="#2201" id="2201">2201</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2588,10 +2582,6 @@
         PreimageHoldReason,
         LinearStoragePrice&lt;PreimageBaseDeposit, PreimageByteDeposit, Balance&gt;,
     &gt;;
-}
-
-<span class="kw">impl </span>pallet_static_price_provider::Config <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 }
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
@@ -3460,8 +3450,6 @@
 
         <span class="comment">// Remove after benchmarks are available in orml_oracle
         </span>OracleBenchmarks: oracle_benchmarks = <span class="number">251</span>,
-        <span class="comment">// To be removed &amp; cleaned up once proper oracle is implemented
-        </span>StaticPriceProvider: pallet_static_price_provider = <span class="number">253</span>,
     }
 );
 
