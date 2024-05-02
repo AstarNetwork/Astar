@@ -38,7 +38,6 @@ pub use shibuya::*;
 #[cfg(feature = "shibuya")]
 mod shibuya {
     use super::*;
-    use parity_scale_codec::Decode;
     pub use shibuya_runtime::*;
 
     /// 1 SBY.
@@ -161,7 +160,6 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
-        #[cfg(any(feature = "shibuya"))]
         // Setup initial oracle members
         <pallet_membership::GenesisConfig<Runtime, OracleMembershipInstance> as BuildStorage>::assimilate_storage(
             &pallet_membership::GenesisConfig::<Runtime, OracleMembershipInstance> {
@@ -171,7 +169,6 @@ impl ExtBuilder {
             &mut t)
         .unwrap();
 
-        #[cfg(any(feature = "shibuya"))]
         // Setup initial native currency price
         <pallet_price_aggregator::GenesisConfig<Runtime> as BuildStorage>::assimilate_storage(
             &pallet_price_aggregator::GenesisConfig::<Runtime> {
@@ -229,9 +226,7 @@ pub fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
         let block_number = System::block_number();
         TransactionPayment::on_finalize(block_number);
-        #[cfg(any(feature = "shibuya"))]
         Oracle::on_finalize(block_number);
-        #[cfg(any(feature = "shibuya"))]
         PriceAggregator::on_finalize(block_number);
         DappStaking::on_finalize(block_number);
         Authorship::on_finalize(block_number);
@@ -250,9 +245,7 @@ pub fn run_to_block(n: BlockNumber) {
         Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
         TransactionPayment::on_initialize(block_number);
         DappStaking::on_initialize(block_number);
-        #[cfg(any(feature = "shibuya"))]
         Oracle::on_initialize(block_number);
-        #[cfg(any(feature = "shibuya"))]
         PriceAggregator::on_initialize(block_number);
         Authorship::on_initialize(block_number);
         Aura::on_initialize(block_number);
