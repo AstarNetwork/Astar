@@ -59,6 +59,7 @@ pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
+pallet-membership = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
@@ -90,6 +91,7 @@ xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
 # orml dependencies
+orml-oracle = { workspace = true }
 orml-xcm-support = { workspace = true }
 orml-xtokens = { workspace = true }
 
@@ -114,9 +116,12 @@ pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
 pallet-inflation = { workspace = true }
-pallet-static-price-provider = { workspace = true }
+pallet-price-aggregator = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
+
+# Get rid of this after uplifting to high enough version of ORML so we get access to benchmark support for the pallet
+oracle-benchmarks = { workspace = true }
 
 dapp-staking-v3-runtime-api = { workspace = true }
 
@@ -146,7 +151,6 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-arithmetic/std",
-	"pallet-static-price-provider/std",
 	"sp-runtime-interface/std",
 	"sp-version/std",
 	"sp-block-builder/std",
@@ -161,6 +165,7 @@ std = [
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
+	"oracle-benchmarks/std",
 	"pallet-contracts-primitives/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
@@ -185,18 +190,21 @@ std = [
 	"pallet-evm-precompile-xcm/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",
+	"pallet-membership/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-utility/std",
 	"pallet-proxy/std",
 	"pallet-timestamp/std",
 	"pallet-vesting/std",
+	"orml-oracle/std",
 	"sp-offchain/std",
 	"sp-session/std",
 	"pallet-sudo/std",
 	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-xcm/std",
+	"pallet-price-aggregator/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",
@@ -240,12 +248,14 @@ runtime-benchmarks = [
 	"pallet-xcm/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"astar-xcm-benchmarks/runtime-benchmarks",
+	"pallet-membership/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	"pallet-xc-asset-config/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"pallet-price-aggregator/runtime-benchmarks",
 	"cumulus-primitives-utility/runtime-benchmarks",
 ]
 try-runtime = [
@@ -258,6 +268,9 @@ try-runtime = [
 	"frame-system/try-runtime",
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
+	"orml-oracle/try-runtime",
+	"pallet-price-aggregator/try-runtime",
+	"pallet-membership/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
 	"pallet-dapp-staking-migration/try-runtime",
 	"pallet-inflation/try-runtime",
@@ -266,7 +279,6 @@ try-runtime = [
 	"pallet-transaction-payment/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
-	"pallet-static-price-provider/try-runtime",
 	"pallet-ethereum/try-runtime",
 	"pallet-xc-asset-config/try-runtime",
 	"pallet-assets/try-runtime",
@@ -288,6 +300,7 @@ try-runtime = [
 	"pallet-dynamic-evm-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"orml-xtokens/try-runtime",
+	"oracle-benchmarks/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

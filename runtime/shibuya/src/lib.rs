@@ -389,10 +389,6 @@ impl pallet_preimage::Config for Runtime {
     >;
 }
 
-impl pallet_static_price_provider::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-}
-
 #[cfg(feature = "runtime-benchmarks")]
 pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
@@ -1259,8 +1255,6 @@ construct_runtime!(
 
         // Remove after benchmarks are available in orml_oracle
         OracleBenchmarks: oracle_benchmarks = 251,
-        // To be removed & cleaned up once proper oracle is implemented
-        StaticPriceProvider: pallet_static_price_provider = 253,
     }
 );
 
