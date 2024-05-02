@@ -2063,7 +2063,6 @@
 <a href="#2063" id="2063">2063</a>
 <a href="#2064" id="2064">2064</a>
 <a href="#2065" id="2065">2065</a>
-<a href="#2066" id="2066">2066</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3968,13 +3967,6 @@
 
                         era_info.migrate_to_next_era(<span class="prelude-val">Some</span>(protocol_state.subperiod()));
 
-                        <span class="comment">// Re-calculate tier configuration for the upcoming new period
-                        </span><span class="kw">let </span>tier_params = StaticTierParams::&lt;T&gt;::get();
-                        <span class="kw">let </span>average_price = T::NativePriceProvider::average_price();
-                        <span class="kw">let </span>new_tier_config =
-                            TierConfig::&lt;T&gt;::get().calculate_new(average_price, <span class="kw-2">&amp;</span>tier_params);
-                        TierConfig::&lt;T&gt;::put(new_tier_config);
-
                         <span class="comment">// Update historical cleanup marker.
                         // Must be called with the new period number.
                         </span><span class="self">Self</span>::update_cleanup_marker(protocol_state.period_number());
@@ -4023,6 +4015,12 @@
                 );
             }
             EraRewards::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>era_span_index, span);
+
+            <span class="comment">// Re-calculate tier configuration for the upcoming new era
+            </span><span class="kw">let </span>tier_params = StaticTierParams::&lt;T&gt;::get();
+            <span class="kw">let </span>average_price = T::NativePriceProvider::average_price();
+            <span class="kw">let </span>new_tier_config = TierConfig::&lt;T&gt;::get().calculate_new(average_price, <span class="kw-2">&amp;</span>tier_params);
+            TierConfig::&lt;T&gt;::put(new_tier_config);
 
             <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::NewEra { era: next_era });
             <span class="kw">if let </span><span class="prelude-val">Some</span>(period_event) = maybe_period_event {
