@@ -2067,7 +2067,7 @@ fn cleanup_expired_entries_is_ok() {
         // Scenario:
         // - 1st contract will be staked in the period that expires due to exceeded reward retention
         // - 2nd contract will be staked in the period on the edge of expiry, with loyalty flag
-        // - 3rd contract will be be staked in the period on the edge of expiry, without loyalty flag
+        // - 3rd contract will be staked in the period on the edge of expiry, without loyalty flag
         // - 4th contract will be staked in the period right before the current one, with loyalty flag
         // - 5th contract will be staked in the period right before the current one, without loyalty flag
         //

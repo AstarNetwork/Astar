@@ -796,7 +796,7 @@ mod benchmarks {
             amount,
         ));
 
-        // Register dApps up the the limit
+        // Register dApps up the limit
         for idx in 0..x {
             let owner: T::AccountId = account("dapp_owner", idx.into(), SEED);
             let smart_contract = T::BenchmarkHelper::get_smart_contract(idx as u32);
