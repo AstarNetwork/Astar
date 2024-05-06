@@ -1016,6 +1016,19 @@
 <a href="#1016" id="1016">1016</a>
 <a href="#1017" id="1017">1017</a>
 <a href="#1018" id="1018">1018</a>
+<a href="#1019" id="1019">1019</a>
+<a href="#1020" id="1020">1020</a>
+<a href="#1021" id="1021">1021</a>
+<a href="#1022" id="1022">1022</a>
+<a href="#1023" id="1023">1023</a>
+<a href="#1024" id="1024">1024</a>
+<a href="#1025" id="1025">1025</a>
+<a href="#1026" id="1026">1026</a>
+<a href="#1027" id="1027">1027</a>
+<a href="#1028" id="1028">1028</a>
+<a href="#1029" id="1029">1029</a>
+<a href="#1030" id="1030">1030</a>
+<a href="#1031" id="1031">1031</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1059,7 +1072,7 @@
 <span class="kw">use </span>sp_core::hexdisplay::HexDisplay;
 <span class="kw">use </span>sp_runtime::traits::AccountIdConversion;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
-<span class="kw">use </span>std::{io::Write, net::SocketAddr};
+<span class="kw">use </span>std::net::SocketAddr;
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">use </span>frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
@@ -1474,22 +1487,35 @@
             }
         }
         <span class="prelude-val">Some</span>(Subcommand::ExportGenesisState(cmd)) =&gt; {
-            <span class="kw">let </span>spec = cli.load_spec(<span class="kw-2">&amp;</span>cmd.shared_params.chain.clone().unwrap_or_default())<span class="question-mark">?</span>;
-            <span class="kw">let </span>state_version = Cli::runtime_version(<span class="kw-2">&amp;</span>spec).state_version();
-
-            <span class="kw">let </span>block: Block = generate_genesis_block(<span class="kw-2">&amp;*</span>spec, state_version)<span class="question-mark">?</span>;
-            <span class="kw">let </span>raw_header = block.header().encode();
-            <span class="kw">let </span>output_buf = <span class="kw">if </span>cmd.raw {
-                raw_header
+            <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
+            <span class="kw">if </span>runner.config().chain_spec.is_astar() {
+                runner.sync_run(|config| {
+                    <span class="kw">let </span>PartialComponents { client, .. } =
+                        parachain::new_partial::&lt;astar::RuntimeApi, astar::Executor, <span class="kw">_</span>&gt;(
+                            <span class="kw-2">&amp;</span>config,
+                            parachain::build_import_queue,
+                        )<span class="question-mark">?</span>;
+                    cmd.run(config.chain_spec.as_ref(), client.as_ref())
+                })
+            } <span class="kw">else if </span>runner.config().chain_spec.is_shiden() {
+                runner.sync_run(|config| {
+                    <span class="kw">let </span>PartialComponents { client, .. } =
+                        parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
+                            <span class="kw-2">&amp;</span>config,
+                            parachain::build_import_queue,
+                        )<span class="question-mark">?</span>;
+                    cmd.run(config.chain_spec.as_ref(), client.as_ref())
+                })
             } <span class="kw">else </span>{
-                <span class="macro">format!</span>(<span class="string">&quot;0x{:?}&quot;</span>, HexDisplay::from(<span class="kw-2">&amp;</span>block.header().encode())).into_bytes()
-            };
-            <span class="kw">if let </span><span class="prelude-val">Some</span>(output) = <span class="kw-2">&amp;</span>cmd.output {
-                std::fs::write(output, output_buf)<span class="question-mark">?</span>;
-            } <span class="kw">else </span>{
-                std::io::stdout().write_all(<span class="kw-2">&amp;</span>output_buf)<span class="question-mark">?</span>;
+                runner.sync_run(|config| {
+                    <span class="kw">let </span>PartialComponents { client, .. } =
+                        parachain::new_partial::&lt;shibuya::RuntimeApi, shibuya::Executor, <span class="kw">_</span>&gt;(
+                            <span class="kw-2">&amp;</span>config,
+                            parachain::build_import_queue,
+                        )<span class="question-mark">?</span>;
+                    cmd.run(config.chain_spec.as_ref(), client.as_ref())
+                })
             }
-            <span class="prelude-val">Ok</span>(())
         }
         <span class="prelude-val">Some</span>(Subcommand::ExportGenesisWasm(cmd)) =&gt; {
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
