@@ -25,22 +25,17 @@ use crate::{
         start_shibuya_node, start_shiden_node,
     },
 };
-use astar_primitives::*;
-use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::{error, info};
-use parity_scale_codec::Encode;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-    NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
+    NetworkParams, Result, SharedParams, SubstrateCli,
 };
 use sc_service::{
     config::{BasePath, PrometheusConfig},
     PartialComponents,
 };
-use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::AccountIdConversion;
-use sp_runtime::traits::Block as BlockT;
 use std::net::SocketAddr;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -146,20 +141,6 @@ impl SubstrateCli for Cli {
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
         load_spec(id)
-    }
-}
-
-impl Cli {
-    fn runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        if chain_spec.is_dev() {
-            &local_runtime::VERSION
-        } else if chain_spec.is_astar() {
-            &astar_runtime::VERSION
-        } else if chain_spec.is_shiden() {
-            &shiden_runtime::VERSION
-        } else {
-            &shibuya_runtime::VERSION
-        }
     }
 }
 
@@ -521,7 +502,9 @@ pub fn run() -> Result<()> {
                             cmd.run::<shibuya_runtime::Block, parachain::HostFunctions>(config)
                         })
                     } else {
-                        runner.sync_run(|config| cmd.run::<Block, local::HostFunctions>(config))
+                        runner.sync_run(|config| {
+                            cmd.run::<local_runtime::Block, local::HostFunctions>(config)
+                        })
                     }
                 }
                 BenchmarkCmd::Block(cmd) => {
