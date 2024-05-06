@@ -831,11 +831,6 @@ pub fn run() -> Result<()> {
                 let parachain_account =
                     AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&para_id);
 
-                let state_version = Cli::runtime_version(&config.chain_spec).state_version();
-                let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
-                    .map_err(|e| format!("{:?}", e))?;
-                let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
-
                 let polkadot_config = SubstrateCli::create_configuration(
                     &polkadot_cli,
                     &polkadot_cli,
@@ -845,7 +840,6 @@ pub fn run() -> Result<()> {
 
                 info!("Parachain id: {:?}", para_id);
                 info!("Parachain Account: {}", parachain_account);
-                info!("Parachain genesis state: {}", genesis_state);
                 info!(
                     "Is collating: {}",
                     if config.role.is_authority() {
