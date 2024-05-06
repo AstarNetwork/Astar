@@ -1023,12 +1023,6 @@
 <a href="#1023" id="1023">1023</a>
 <a href="#1024" id="1024">1024</a>
 <a href="#1025" id="1025">1025</a>
-<a href="#1026" id="1026">1026</a>
-<a href="#1027" id="1027">1027</a>
-<a href="#1028" id="1028">1028</a>
-<a href="#1029" id="1029">1029</a>
-<a href="#1030" id="1030">1030</a>
-<a href="#1031" id="1031">1031</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1862,11 +1856,6 @@
                 <span class="kw">let </span>parachain_account =
                     AccountIdConversion::&lt;polkadot_primitives::AccountId&gt;::into_account_truncating(<span class="kw-2">&amp;</span>para_id);
 
-                <span class="kw">let </span>state_version = Cli::runtime_version(<span class="kw-2">&amp;</span>config.chain_spec).state_version();
-                <span class="kw">let </span>block: Block = generate_genesis_block(<span class="kw-2">&amp;*</span>config.chain_spec, state_version)
-                    .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
-                <span class="kw">let </span>genesis_state = <span class="macro">format!</span>(<span class="string">&quot;0x{:?}&quot;</span>, HexDisplay::from(<span class="kw-2">&amp;</span>block.header().encode()));
-
                 <span class="kw">let </span>polkadot_config = SubstrateCli::create_configuration(
                     <span class="kw-2">&amp;</span>polkadot_cli,
                     <span class="kw-2">&amp;</span>polkadot_cli,
@@ -1876,7 +1865,6 @@
 
                 <span class="macro">info!</span>(<span class="string">&quot;Parachain id: {:?}&quot;</span>, para_id);
                 <span class="macro">info!</span>(<span class="string">&quot;Parachain Account: {}&quot;</span>, parachain_account);
-                <span class="macro">info!</span>(<span class="string">&quot;Parachain genesis state: {}&quot;</span>, genesis_state);
                 <span class="macro">info!</span>(
                     <span class="string">&quot;Is collating: {}&quot;</span>,
                     <span class="kw">if </span>config.role.is_authority() {
