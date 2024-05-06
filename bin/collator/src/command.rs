@@ -502,7 +502,9 @@ pub fn run() -> Result<()> {
                             cmd.run::<shibuya_runtime::Block, parachain::HostFunctions>(config)
                         })
                     } else {
-                        runner.sync_run(|config| cmd.run::<Block, local::HostFunctions>(config))
+                        runner.sync_run(|config| {
+                            cmd.run::<local_runtime::Block, local::HostFunctions>(config)
+                        })
                     }
                 }
                 BenchmarkCmd::Block(cmd) => {
