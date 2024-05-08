@@ -53,7 +53,8 @@ pub use sp_std::vec::Vec;
 use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
-        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId, TierSlots as TierSlotFunc,
+        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierAndRank, TierId,
+        TierSlots as TierSlotFunc,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -1381,7 +1382,7 @@ pub mod pallet {
                 Error::<T>::RewardExpired
             );
 
-            let (amount, tier_id) =
+            let (amount, tier_and_rank) =
                 dapp_tiers
                     .try_claim(dapp_info.id)
                     .map_err(|error| match error {
@@ -1389,6 +1390,7 @@ pub mod pallet {
                         _ => Error::<T>::InternalClaimDAppError,
                     })?;
 
+            let tier_id = tier_and_rank.tier_id();
             // Get reward destination, and deposit the reward.
             let beneficiary = dapp_info.reward_beneficiary();
             T::StakingRewardHandler::payout_reward(&beneficiary, amount)
@@ -1648,7 +1650,7 @@ pub mod pallet {
         }
 
         /// Returns the dApp tier assignment for the current era, based on the current stake amounts.
-        pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
+        pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierAndRank> {
             let protocol_state = ActiveProtocolState::<T>::get();
 
             let (dapp_tiers, _count) = Self::get_dapp_tier_assignment_and_rewards(
@@ -1724,6 +1726,7 @@ pub mod pallet {
 
             let mut global_idx = 0;
             let mut tier_id = 0;
+            let mut upper_bound = Balance::zero();
             for (tier_capacity, tier_threshold) in tier_config
                 .slots_per_tier
                 .iter()
@@ -1739,12 +1742,18 @@ pub mod pallet {
                 for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
                     if tier_threshold.is_satisfied(*stake_amount) {
                         global_idx.saturating_inc();
-                        dapp_tiers.insert(*dapp_id, tier_id);
+                        let rank = TierAndRank::find_rank(
+                            tier_threshold.threshold(),
+                            upper_bound,
+                            *stake_amount,
+                        );
+                        dapp_tiers.insert(*dapp_id, TierAndRank::new_saturated(tier_id, rank));
                     } else {
                         break;
                     }
                 }
-
+                // current threshold becomes upper bound for next tier
+                upper_bound = tier_threshold.threshold();
                 tier_id.saturating_inc();
             }
 

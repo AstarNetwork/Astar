@@ -16,7 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use astar_primitives::{dapp_staking::StandardTierSlots, Balance};
+use astar_primitives::{
+    dapp_staking::{StandardTierSlots, TierAndRank},
+    Balance,
+};
 use frame_support::assert_ok;
 use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::Permill;
@@ -2904,7 +2907,13 @@ fn dapp_tier_rewards_basic_tests() {
     get_u32_type!(NumberOfTiers, 3);
 
     // Example dApps & rewards
-    let dapps = BTreeMap::from([(1 as DAppId, 0 as TierId), (2, 0), (3, 1), (5, 1), (6, 2)]);
+    let dapps = BTreeMap::<DAppId, TierAndRank>::from([
+        (1, TierAndRank::new_saturated(0, 0)),
+        (2, TierAndRank::new_saturated(0, 0)),
+        (3, TierAndRank::new_saturated(1, 0)),
+        (5, TierAndRank::new_saturated(1, 0)),
+        (6, TierAndRank::new_saturated(2, 0)),
+    ]);
     let tier_rewards = vec![300, 20, 1];
     let period = 2;
 
@@ -2916,16 +2925,22 @@ fn dapp_tier_rewards_basic_tests() {
     .expect("Bounds are respected.");
 
     // 1st scenario - claim reward for a dApps
-    let tier_id = dapps[&1];
+    let tier_and_rank = dapps[&1];
     assert_eq!(
         dapp_tier_rewards.try_claim(1),
-        Ok((tier_rewards[tier_id as usize], tier_id))
+        Ok((
+            tier_rewards[tier_and_rank.tier_id() as usize],
+            tier_and_rank
+        ))
     );
 
-    let tier_id = dapps[&5];
+    let tier_and_rank = dapps[&5];
     assert_eq!(
         dapp_tier_rewards.try_claim(5),
-        Ok((tier_rewards[tier_id as usize], tier_id))
+        Ok((
+            tier_rewards[tier_and_rank.tier_id() as usize],
+            tier_and_rank
+        ))
     );
 
     // 2nd scenario - try to claim already claimed reward

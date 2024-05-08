@@ -21,8 +21,12 @@ use super::{oracle::CurrencyAmount, Balance, BlockNumber};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
 use frame_support::pallet_prelude::{RuntimeDebug, Weight};
+use sp_arithmetic::ArithmeticError;
 use sp_core::H160;
-use sp_runtime::{traits::UniqueSaturatedInto, FixedPointNumber};
+use sp_runtime::{
+    traits::{UniqueSaturatedInto, Zero},
+    FixedPointNumber,
+};
 use sp_std::hash::Hash;
 
 /// Era number type
@@ -33,6 +37,8 @@ pub type PeriodNumber = u32;
 pub type DAppId = u16;
 /// Tier Id type
 pub type TierId = u8;
+// Tier Rank type
+pub type Rank = u8;
 
 /// Configuration for cycles, periods, subperiods & eras.
 ///
@@ -189,5 +195,115 @@ impl TierSlots for StandardTierSlots {
     fn number_of_slots(price: CurrencyAmount) -> u16 {
         let result: u64 = price.saturating_mul_int(1000_u64).saturating_add(50);
         result.unique_saturated_into()
+    }
+}
+
+/// TierAndRank is wrapper around u8 to hold both tier and rank. u8 has 2 bytes (8bits) and they're using in this order `0xrank_tier`.
+/// First 4 bits are used to hold rank and second 4 bits are used to hold tier.
+/// i.e: 0xa1 will hold rank: 10 and tier: 1 (0xa1 & 0xf == 1; 0xa1 >> 4 == 10;)
+#[derive(Copy, Clone, Encode, Decode, Eq, PartialEq, MaxEncodedLen, scale_info::TypeInfo)]
+pub struct TierAndRank(u8);
+
+impl TierAndRank {
+    pub const MAX_RANK: u8 = 10;
+
+    pub fn new(tier: TierId, rank: Rank) -> Result<Self, ArithmeticError> {
+        if rank > Self::MAX_RANK || tier > 0xf {
+            return Err(ArithmeticError::Overflow);
+        }
+        Ok(Self(rank << 4 | tier & 0x0f))
+    }
+    pub fn new_saturated(tier: TierId, rank: Rank) -> Self {
+        Self(rank.min(Self::MAX_RANK) << 4 | tier.min(0xf) & 0x0f)
+    }
+
+    #[inline(always)]
+    pub fn tier_id(&self) -> TierId {
+        self.0 & 0x0f
+    }
+
+    #[inline(always)]
+    pub fn rank(&self) -> Rank {
+        (self.0 >> 4).min(Self::MAX_RANK)
+    }
+
+    #[inline(always)]
+    pub fn destruct(&self) -> (TierId, Rank) {
+        (self.tier_id(), self.rank())
+    }
+}
+
+impl core::fmt::Debug for TierAndRank {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("TierAndRank")
+            .field("tier", &self.tier_id())
+            .field("rank", &self.rank())
+            .finish()
+    }
+}
+
+impl TierAndRank {
+    pub fn find_rank(lower_bound: Balance, upper_bound: Balance, stake_amount: Balance) -> Rank {
+        if upper_bound.is_zero() {
+            return 0;
+        }
+        let rank_threshold = upper_bound
+            .saturating_sub(lower_bound)
+            .saturating_div(TierAndRank::MAX_RANK.into());
+        if rank_threshold.is_zero() {
+            0
+        } else {
+            <Balance as TryInto<u8>>::try_into(
+                stake_amount
+                    .saturating_sub(lower_bound.saturating_add(1))
+                    .saturating_div(rank_threshold),
+            )
+            .unwrap_or_default()
+            .min(TierAndRank::MAX_RANK)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tier_and_rank() {
+        let t = TierAndRank::new(0, 0).unwrap();
+        assert_eq!(t.destruct(), (0, 0));
+
+        let t = TierAndRank::new(15, 10).unwrap();
+        assert_eq!(t.destruct(), (15, 10));
+
+        assert_eq!(TierAndRank::new(16, 10), Err(ArithmeticError::Overflow));
+        assert_eq!(TierAndRank::new(15, 11), Err(ArithmeticError::Overflow));
+
+        let t = TierAndRank::new_saturated(0, 0);
+        assert_eq!(t.destruct(), (0, 0));
+
+        let t = TierAndRank::new_saturated(1, 1);
+        assert_eq!(t.destruct(), (1, 1));
+
+        let t = TierAndRank::new_saturated(3, 15);
+        assert_eq!(t.destruct(), (3, 10));
+
+        // max value for tier and rank
+        let t = TierAndRank::new_saturated(16, 16);
+        assert_eq!(t.destruct(), (15, 10));
+    }
+
+    #[test]
+    fn find_rank() {
+        assert_eq!(TierAndRank::find_rank(0, 0, 0), 0);
+        assert_eq!(TierAndRank::find_rank(0, 100, 10), 0);
+        assert_eq!(TierAndRank::find_rank(0, 100, 49), 4);
+        assert_eq!(TierAndRank::find_rank(0, 100, 50), 4);
+        assert_eq!(TierAndRank::find_rank(0, 100, 51), 5);
+        assert_eq!(TierAndRank::find_rank(0, 100, 100), 9);
+        assert_eq!(TierAndRank::find_rank(0, 100, 101), 10);
+
+        assert_eq!(TierAndRank::find_rank(100, 100, 100), 0);
+        assert_eq!(TierAndRank::find_rank(200, 100, 100), 0);
     }
 }

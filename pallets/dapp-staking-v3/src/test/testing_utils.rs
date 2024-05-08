@@ -1015,7 +1015,7 @@ pub(crate) fn assert_claim_dapp_reward(
         .get(&era)
         .expect("Entry must exist.")
         .clone();
-    let (expected_reward, expected_tier_id) = {
+    let (expected_reward, expected_tier_and_rank) = {
         let mut info = pre_reward_info.clone();
         info.try_claim(dapp_info.id).unwrap()
     };
@@ -1029,7 +1029,7 @@ pub(crate) fn assert_claim_dapp_reward(
     System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppReward {
         beneficiary: beneficiary.clone(),
         smart_contract: smart_contract.clone(),
-        tier_id: expected_tier_id,
+        tier_id: expected_tier_and_rank.tier_id(),
         era,
         amount: expected_reward,
     }));
