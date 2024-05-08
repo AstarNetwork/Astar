@@ -53,7 +53,7 @@ pub use sp_std::vec::Vec;
 use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
-        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierAndRank, TierId,
+        PeriodNumber, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
         TierSlots as TierSlotFunc,
     },
     oracle::PriceProvider,
@@ -1650,7 +1650,7 @@ pub mod pallet {
         }
 
         /// Returns the dApp tier assignment for the current era, based on the current stake amounts.
-        pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierAndRank> {
+        pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier> {
             let protocol_state = ActiveProtocolState::<T>::get();
 
             let (dapp_tiers, _count) = Self::get_dapp_tier_assignment_and_rewards(
@@ -1765,10 +1765,10 @@ pub mod pallet {
                 let reward_delta = tier_rewards
                     .get(tier_id.saturating_sub(1) as usize) // previous tier reward
                     .map_or(Balance::zero(), |x| x.saturating_sub(current_tier_reward)) // delta amount
-                    .saturating_div(TierAndRank::MAX_RANK.into());
+                    .saturating_div(RankedTier::MAX_RANK.into());
                 let mut tier_total_reward_available =
                     current_tier_reward.saturating_mul((*tier_capacity).into());
-                let reward_per_rank = reward_delta.saturating_div(TierAndRank::MAX_RANK.into());
+                let reward_per_rank = reward_delta.saturating_div(RankedTier::MAX_RANK.into());
 
                 // Iterate over dApps until one of two conditions has been met:
                 // 1. Tier has no more capacity
@@ -1779,7 +1779,7 @@ pub mod pallet {
                         && tier_total_reward_available >= current_tier_reward
                     {
                         let mut rank =
-                            TierAndRank::find_rank(lower_bound, upper_bound, *stake_amount);
+                            RankedTier::find_rank(lower_bound, upper_bound, *stake_amount);
                         let mut dapp_reward = current_tier_reward
                             .saturating_add(reward_per_rank.saturating_mul(rank.into()));
                         if tier_total_reward_available < dapp_reward {
@@ -1791,7 +1791,7 @@ pub mod pallet {
                         tier_total_reward_available =
                             tier_total_reward_available.saturating_sub(dapp_reward);
                         global_idx.saturating_inc();
-                        dapp_tiers.insert(*dapp_id, TierAndRank::new_saturated(tier_id, rank));
+                        dapp_tiers.insert(*dapp_id, RankedTier::new_saturated(tier_id, rank));
                     } else {
                         break;
                     }

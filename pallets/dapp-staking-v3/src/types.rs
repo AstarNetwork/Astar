@@ -75,7 +75,7 @@ use sp_runtime::{
 pub use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
 use astar_primitives::{
-    dapp_staking::{DAppId, EraNumber, PeriodNumber, TierAndRank, TierSlots as TierSlotsFunc},
+    dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier, TierSlots as TierSlotsFunc},
     Balance, BlockNumber,
 };
 
@@ -1738,7 +1738,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
 #[scale_info(skip_type_params(MD, NT))]
 pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     /// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-    pub dapps: BoundedBTreeMap<DAppId, TierAndRank, MD>,
+    pub dapps: BoundedBTreeMap<DAppId, RankedTier, MD>,
     /// Rewards for each tier. First entry refers to the first tier, and so on.
     pub rewards: BoundedVec<Balance, NT>,
     /// Period during which this struct was created.
@@ -1760,7 +1760,7 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
     /// Attempt to construct `DAppTierRewards` struct.
     /// If the provided arguments exceed the allowed capacity, return an error.
     pub fn new(
-        dapps: BTreeMap<DAppId, TierAndRank>,
+        dapps: BTreeMap<DAppId, RankedTier>,
         rewards: Vec<Balance>,
         period: PeriodNumber,
     ) -> Result<Self, ()> {
@@ -1775,7 +1775,7 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
 
     /// Consume reward for the specified dapp id, returning its amount and tier Id.
     /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
-    pub fn try_claim(&mut self, dapp_id: DAppId) -> Result<(Balance, TierAndRank), DAppTierError> {
+    pub fn try_claim(&mut self, dapp_id: DAppId) -> Result<(Balance, RankedTier), DAppTierError> {
         // Check if dApp Id exists.
         let tier_and_rank = self
             .dapps
@@ -1796,7 +1796,7 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
                 .rewards
                 .get(tier_id.saturating_sub(1) as usize) // previous tier reward
                 .map_or(Balance::zero(), |x| x.saturating_sub(amount)) // delta amount
-                .saturating_div(TierAndRank::MAX_RANK.into()); // divided by ranks
+                .saturating_div(RankedTier::MAX_RANK.into()); // divided by ranks
 
             let additional_reward = reward_per_rank.saturating_mul(rank.into());
             amount = amount.saturating_add(additional_reward);

@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::dapp_staking::{DAppId, EraNumber, PeriodNumber, TierAndRank};
+use astar_primitives::dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier};
 use astar_primitives::BlockNumber;
 pub use sp_std::collections::btree_map::BTreeMap;
 
@@ -42,6 +42,6 @@ sp_api::decl_runtime_apis! {
         fn blocks_per_era() -> BlockNumber;
 
         /// Get dApp tier assignment for the given dApp.
-        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierAndRank>;
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier>;
     }
 }

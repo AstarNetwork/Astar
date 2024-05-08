@@ -35,7 +35,7 @@ use frame_support::{
 use sp_runtime::{traits::Zero, FixedU128};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, EraNumber, SmartContractHandle, TierAndRank},
+    dapp_staking::{CycleConfiguration, EraNumber, RankedTier, SmartContractHandle},
     Balance, BlockNumber,
 };
 
@@ -2483,18 +2483,18 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
 
         // 1st tier checks
         let (dapp_1_tier, dapp_2_tier) = (tier_assignment.dapps[&0], tier_assignment.dapps[&1]);
-        assert_eq!(dapp_1_tier, TierAndRank::new_saturated(0, 0));
-        assert_eq!(dapp_2_tier, TierAndRank::new_saturated(0, 0));
+        assert_eq!(dapp_1_tier, RankedTier::new_saturated(0, 0));
+        assert_eq!(dapp_2_tier, RankedTier::new_saturated(0, 0));
 
         // 2nd tier checks
         let (dapp_3_tier, dapp_4_tier) = (tier_assignment.dapps[&2], tier_assignment.dapps[&3]);
-        assert_eq!(dapp_3_tier, TierAndRank::new_saturated(1, 9));
-        assert_eq!(dapp_4_tier, TierAndRank::new_saturated(1, 9));
+        assert_eq!(dapp_3_tier, RankedTier::new_saturated(1, 9));
+        assert_eq!(dapp_4_tier, RankedTier::new_saturated(1, 9));
 
         // 4th tier checks
         let (dapp_5_tier, dapp_6_tier) = (tier_assignment.dapps[&4], tier_assignment.dapps[&5]);
-        assert_eq!(dapp_5_tier, TierAndRank::new_saturated(3, 0));
-        assert_eq!(dapp_6_tier, TierAndRank::new_saturated(3, 0));
+        assert_eq!(dapp_5_tier, RankedTier::new_saturated(3, 0));
+        assert_eq!(dapp_6_tier, RankedTier::new_saturated(3, 0));
 
         // Sanity check - last dapp should not exists in the tier assignment
         assert!(tier_assignment

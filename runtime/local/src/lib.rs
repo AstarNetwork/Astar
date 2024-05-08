@@ -65,8 +65,8 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
     dapp_staking::{
-        CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, StandardTierSlots,
-        TierAndRank,
+        CycleConfiguration, DAppId, EraNumber, PeriodNumber, RankedTier, SmartContract,
+        StandardTierSlots,
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
@@ -1517,7 +1517,7 @@ impl_runtime_apis! {
             InflationCycleConfig::blocks_per_era()
         }
 
-        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierAndRank> {
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier> {
             DappStaking::get_dapp_tier_assignment()
         }
     }

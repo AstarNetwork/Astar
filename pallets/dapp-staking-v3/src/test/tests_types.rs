@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use astar_primitives::{
-    dapp_staking::{StandardTierSlots, TierAndRank},
+    dapp_staking::{RankedTier, StandardTierSlots},
     Balance,
 };
 use frame_support::assert_ok;
@@ -2907,12 +2907,12 @@ fn dapp_tier_rewards_basic_tests() {
     get_u32_type!(NumberOfTiers, 3);
 
     // Example dApps & rewards
-    let dapps = BTreeMap::<DAppId, TierAndRank>::from([
-        (1, TierAndRank::new_saturated(0, 0)),
-        (2, TierAndRank::new_saturated(0, 0)),
-        (3, TierAndRank::new_saturated(1, 0)),
-        (5, TierAndRank::new_saturated(1, 0)),
-        (6, TierAndRank::new_saturated(2, 0)),
+    let dapps = BTreeMap::<DAppId, RankedTier>::from([
+        (1, RankedTier::new_saturated(0, 0)),
+        (2, RankedTier::new_saturated(0, 0)),
+        (3, RankedTier::new_saturated(1, 0)),
+        (5, RankedTier::new_saturated(1, 0)),
+        (6, RankedTier::new_saturated(2, 0)),
     ]);
     let tier_rewards = vec![300, 20, 1];
     let period = 2;
