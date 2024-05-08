@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.37.0"
+version = "5.38.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -120,7 +120,7 @@ pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
 pallet-xvm = { workspace = true }
 
-# Get rid of this after running the benchmarks
+# Get rid of this after uplifting to high enough version of ORML so we get access to benchmark support for the pallet
 oracle-benchmarks = { workspace = true }
 
 dapp-staking-v3-runtime-api = { workspace = true }
