@@ -1717,45 +1717,7 @@ pub mod pallet {
             // Sort by amount staked, in reverse - top dApp will end in the first place, 0th index.
             dapp_stakes.sort_unstable_by(|(_, amount_1), (_, amount_2)| amount_2.cmp(amount_1));
 
-            // 3.
-            // Iterate over configured tier and potential dApps.
-            // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
-            // and tier capacity hasn't been filled yet.
-            let mut dapp_tiers = BTreeMap::new();
             let tier_config = TierConfig::<T>::get();
-
-            let mut global_idx = 0;
-            let mut tier_id = 0;
-            let mut upper_bound = Balance::zero();
-            for (tier_capacity, tier_threshold) in tier_config
-                .slots_per_tier
-                .iter()
-                .zip(tier_config.tier_thresholds.iter())
-            {
-                let max_idx = global_idx
-                    .saturating_add(*tier_capacity as usize)
-                    .min(dapp_stakes.len());
-
-                // Iterate over dApps until one of two conditions has been met:
-                // 1. Tier has no more capacity
-                // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
-                for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
-                    if tier_threshold.is_satisfied(*stake_amount) {
-                        global_idx.saturating_inc();
-                        let rank = TierAndRank::find_rank(
-                            tier_threshold.threshold(),
-                            upper_bound,
-                            *stake_amount,
-                        );
-                        dapp_tiers.insert(*dapp_id, TierAndRank::new_saturated(tier_id, rank));
-                    } else {
-                        break;
-                    }
-                }
-                // current threshold becomes upper bound for next tier
-                upper_bound = tier_threshold.threshold();
-                tier_id.saturating_inc();
-            }
 
             // In case when tier has 1 more free slot, but two dApps with exactly same score satisfy the threshold,
             // one of them will be assigned to the tier, and the other one will be assigned to the lower tier, if it exists.
@@ -1764,7 +1726,7 @@ pub mod pallet {
             // There is no guarantee this will persist in the future, so it's best for dApps to do their
             // best to avoid getting themselves into such situations.
 
-            // 4. Calculate rewards.
+            // 3. Calculate rewards.
             let tier_rewards = tier_config
                 .reward_portion
                 .iter()
@@ -1777,6 +1739,67 @@ pub mod pallet {
                     }
                 })
                 .collect::<Vec<_>>();
+
+            // 4.
+            // Iterate over configured tier and potential dApps.
+            // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
+            // and tier capacity hasn't been filled yet.
+            let mut dapp_tiers = BTreeMap::new();
+
+            let mut global_idx = 0;
+            let mut tier_id: TierId = 0;
+            let mut upper_bound = Balance::zero();
+            for (tier_capacity, tier_threshold) in tier_config
+                .slots_per_tier
+                .iter()
+                .zip(tier_config.tier_thresholds.iter())
+            {
+                let max_idx = global_idx
+                    .saturating_add(*tier_capacity as usize)
+                    .min(dapp_stakes.len());
+
+                let lower_bound = tier_threshold.threshold();
+                let current_tier_reward = tier_rewards
+                    .get(tier_id as usize)
+                    .map_or(Balance::zero(), |x| *x);
+                let reward_delta = tier_rewards
+                    .get(tier_id.saturating_sub(1) as usize) // previous tier reward
+                    .map_or(Balance::zero(), |x| x.saturating_sub(current_tier_reward)) // delta amount
+                    .saturating_div(TierAndRank::MAX_RANK.into());
+                let mut tier_total_reward_available =
+                    current_tier_reward.saturating_mul((*tier_capacity).into());
+                let reward_per_rank = reward_delta.saturating_div(TierAndRank::MAX_RANK.into());
+
+                // Iterate over dApps until one of two conditions has been met:
+                // 1. Tier has no more capacity
+                // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
+                for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
+                    // make sure threshold is satisfied and there's enough remaining reward
+                    if tier_threshold.is_satisfied(*stake_amount)
+                        && tier_total_reward_available >= current_tier_reward
+                    {
+                        let mut rank =
+                            TierAndRank::find_rank(lower_bound, upper_bound, *stake_amount);
+                        let mut dapp_reward = current_tier_reward
+                            .saturating_add(reward_per_rank.saturating_mul(rank.into()));
+                        if tier_total_reward_available < dapp_reward {
+                            // Not enough reward to support ranking
+                            // This dapp will claim only slot reward
+                            rank = 0;
+                            dapp_reward = current_tier_reward;
+                        }
+                        tier_total_reward_available =
+                            tier_total_reward_available.saturating_sub(dapp_reward);
+                        global_idx.saturating_inc();
+                        dapp_tiers.insert(*dapp_id, TierAndRank::new_saturated(tier_id, rank));
+                    } else {
+                        break;
+                    }
+                }
+                // current threshold becomes upper bound for next tier
+                upper_bound = lower_bound;
+                tier_id.saturating_inc();
+            }
 
             // 5.
             // Prepare and return tier & rewards info.

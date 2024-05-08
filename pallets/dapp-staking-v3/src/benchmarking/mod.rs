@@ -1041,7 +1041,7 @@ mod benchmarks {
             &cleanup_marker.dapp_tiers_index,
             DAppTierRewardsFor::<T> {
                 dapps: (0..T::MaxNumberOfContracts::get())
-                    .map(|dapp_id| (dapp_id as DAppId, TierAndRank::new(0, 0)))
+                    .map(|dapp_id| (dapp_id as DAppId, TierAndRank::new_saturated(0, 0)))
                     .collect::<BTreeMap<DAppId, TierAndRank>>()
                     .try_into()
                     .expect("Using `MaxNumberOfContracts` as length; QED."),

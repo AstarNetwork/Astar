@@ -1794,11 +1794,11 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
             // (current_tier_reward - next_tier_reward) / MAX_RANK
             let reward_per_rank = self
                 .rewards
-                .get(tier_id.saturating_add(1) as usize) // next tier reward
-                .map_or(Balance::zero(), |x| amount.saturating_sub(*x)) // delta amount
+                .get(tier_id.saturating_sub(1) as usize) // previous tier reward
+                .map_or(Balance::zero(), |x| x.saturating_sub(amount)) // delta amount
                 .saturating_div(TierAndRank::MAX_RANK.into()); // divided by ranks
 
-            let additional_reward = reward_per_rank.saturating_sub(rank.into());
+            let additional_reward = reward_per_rank.saturating_mul(rank.into());
             amount = amount.saturating_add(additional_reward);
         }
 
