@@ -2464,7 +2464,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         // Finally, the actual test
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
-        let (tier_assignment, counter, _rank_rewards) =
+        let (tier_assignment, counter, rank_rewards) =
             DappStaking::get_dapp_tier_assignment_and_rewards(
                 protocol_state.era + 1,
                 protocol_state.period_number(),
@@ -2486,16 +2486,26 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         let (dapp_1_tier, dapp_2_tier) = (tier_assignment.dapps[&0], tier_assignment.dapps[&1]);
         assert_eq!(dapp_1_tier, RankedTier::new_saturated(0, 0));
         assert_eq!(dapp_2_tier, RankedTier::new_saturated(0, 0));
+        assert_eq!(rank_rewards[0], 0); // tier 0 has no ranking therefor no reward for ranks
 
         // 2nd tier checks
         let (dapp_3_tier, dapp_4_tier) = (tier_assignment.dapps[&2], tier_assignment.dapps[&3]);
         assert_eq!(dapp_3_tier, RankedTier::new_saturated(1, 9));
         assert_eq!(dapp_4_tier, RankedTier::new_saturated(1, 9));
 
+        // There's enough reward to satisfy 100% reward per rank.
+        // Slot reward is 60_000 therefor expected rank reward is 6_000
+        assert_eq!(rank_rewards[1], 6000);
+        assert_eq!(
+            rank_rewards[1],
+            tier_assignment.rewards[1] / Into::<Balance>::into(RankedTier::MAX_RANK)
+        );
+
         // 4th tier checks
         let (dapp_5_tier, dapp_6_tier) = (tier_assignment.dapps[&4], tier_assignment.dapps[&5]);
         assert_eq!(dapp_5_tier, RankedTier::new_saturated(3, 0));
         assert_eq!(dapp_6_tier, RankedTier::new_saturated(3, 0));
+        assert_eq!(rank_rewards[3], 0); // tier 3 has no ranking therefor no reward for ranks
 
         // Sanity check - last dapp should not exists in the tier assignment
         assert!(tier_assignment
