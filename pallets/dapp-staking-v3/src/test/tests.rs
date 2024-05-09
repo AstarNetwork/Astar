@@ -2464,11 +2464,12 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         // Finally, the actual test
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
-        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment_and_rewards(
-            protocol_state.era + 1,
-            protocol_state.period_number(),
-            dapp_reward_pool,
-        );
+        let (tier_assignment, counter, _rank_rewards) =
+            DappStaking::get_dapp_tier_assignment_and_rewards(
+                protocol_state.era + 1,
+                protocol_state.period_number(),
+                dapp_reward_pool,
+            );
 
         // Basic checks
         let number_of_tiers: u32 = <Test as Config>::NumberOfTiers::get();
@@ -2533,11 +2534,12 @@ fn get_dapp_tier_assignment_and_rewards_zero_slots_per_tier_works() {
         // Calculate tier assignment (we don't need dApps for this test)
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
-        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment_and_rewards(
-            protocol_state.era,
-            protocol_state.period_number(),
-            dapp_reward_pool,
-        );
+        let (tier_assignment, counter, _rank_rewards) =
+            DappStaking::get_dapp_tier_assignment_and_rewards(
+                protocol_state.era,
+                protocol_state.period_number(),
+                dapp_reward_pool,
+            );
 
         // Basic checks
         let number_of_tiers: u32 = <Test as Config>::NumberOfTiers::get();

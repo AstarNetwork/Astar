@@ -1782,26 +1782,11 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
             .remove(&dapp_id)
             .ok_or(DAppTierError::NoDAppInTiers)?;
 
-        let (tier_id, rank) = ranked_tier.deconstruct();
-
-        let mut amount = self
+        let tier_id = ranked_tier.tier();
+        let amount = self
             .rewards
             .get(tier_id as usize)
             .map_or(Balance::zero(), |x| *x);
-
-        if !rank.is_zero() {
-            // TODO: make sure this is the correct approach & add tests
-            // (current_tier_reward - next_tier_reward) / MAX_RANK
-            let reward_per_rank = self
-                .rewards
-                .get(tier_id.saturating_sub(1) as usize) // previous tier reward
-                .map_or(Balance::zero(), |x| x.saturating_sub(amount)) // delta amount
-                .saturating_div(RankedTier::MAX_RANK.into()); // divided by ranks
-
-            let additional_reward = reward_per_rank.saturating_mul(rank.into());
-            amount = amount.saturating_add(additional_reward);
-        }
-
         Ok((amount, ranked_tier))
     }
 }

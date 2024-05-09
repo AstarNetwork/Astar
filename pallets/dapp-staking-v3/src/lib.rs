@@ -471,6 +471,10 @@ pub mod pallet {
     #[pallet::storage]
     pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
 
+    #[pallet::storage]
+    pub type RankRewards<T: Config> =
+        StorageMap<_, Twox64Concat, EraNumber, BoundedVec<Balance, T::NumberOfTiers>, ValueQuery>;
+
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T> {
@@ -1382,7 +1386,7 @@ pub mod pallet {
                 Error::<T>::RewardExpired
             );
 
-            let (amount, ranked_tier) =
+            let (mut amount, ranked_tier) =
                 dapp_tiers
                     .try_claim(dapp_info.id)
                     .map_err(|error| match error {
@@ -1390,7 +1394,17 @@ pub mod pallet {
                         _ => Error::<T>::InternalClaimDAppError,
                     })?;
 
-            let tier_id = ranked_tier.tier();
+            let (tier_id, rank) = ranked_tier.deconstruct();
+
+            if !rank.is_zero() {
+                if let Some(reward_per_rank) =
+                    RankRewards::<T>::get(&era).get(tier_id as usize).copied()
+                {
+                    let additional_reward = reward_per_rank.saturating_mul(rank.into());
+                    amount = amount.saturating_add(additional_reward);
+                }
+            }
+
             // Get reward destination, and deposit the reward.
             let beneficiary = dapp_info.reward_beneficiary();
             T::StakingRewardHandler::payout_reward(&beneficiary, amount)
@@ -1653,7 +1667,7 @@ pub mod pallet {
         pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier> {
             let protocol_state = ActiveProtocolState::<T>::get();
 
-            let (dapp_tiers, _count) = Self::get_dapp_tier_assignment_and_rewards(
+            let (dapp_tiers, _count, _rank_rewards) = Self::get_dapp_tier_assignment_and_rewards(
                 protocol_state.era,
                 protocol_state.period_number(),
                 Balance::zero(),
@@ -1671,7 +1685,11 @@ pub mod pallet {
         ///
         /// 2. Sort the entries by the score, in descending order - the top score dApp comes first.
         ///
-        /// 3. Read in tier configuration. This contains information about how many slots per tier there are,
+        /// 3. Calculate rewards for each tier.
+        ///    This is done by dividing the total reward pool into tier reward pools,
+        ///    after which the tier reward pool is divided by the number of available slots in the tier.
+        ///
+        /// 4. Read in tier configuration. This contains information about how many slots per tier there are,
         ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
         ///    Iterate over tier thresholds & capacities, starting from the top tier, and assign dApps to them.
         ///
@@ -1685,17 +1703,17 @@ pub mod pallet {
         ///    ```
         ///    (Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.)
         ///
-        /// 4. Calculate rewards for each tier.
-        ///    This is done by dividing the total reward pool into tier reward pools,
-        ///    after which the tier reward pool is divided by the number of available slots in the tier.
-        ///
         /// The returned object contains information about each dApp that made it into a tier.
         /// Alongside tier assignment info, number of read DB contract stake entries is returned.
         pub(crate) fn get_dapp_tier_assignment_and_rewards(
             era: EraNumber,
             period: PeriodNumber,
             dapp_reward_pool: Balance,
-        ) -> (DAppTierRewardsFor<T>, DAppId) {
+        ) -> (
+            DAppTierRewardsFor<T>,
+            DAppId,
+            BoundedVec<Balance, T::NumberOfTiers>,
+        ) {
             let mut dapp_stakes = Vec::with_capacity(T::MaxNumberOfContracts::get() as usize);
 
             // 1.
@@ -1745,60 +1763,58 @@ pub mod pallet {
             // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
             // and tier capacity hasn't been filled yet.
             let mut dapp_tiers = BTreeMap::new();
+            let mut tier_slots = BTreeMap::new();
 
-            let mut global_idx = 0;
-            let mut tier_id: TierId = 0;
             let mut upper_bound = Balance::zero();
-            for (tier_capacity, tier_threshold) in tier_config
+            let mut rank_rewards = BoundedVec::<Balance, T::NumberOfTiers>::new();
+
+            for (tier_id, (tier_capacity, tier_threshold)) in tier_config
                 .slots_per_tier
                 .iter()
                 .zip(tier_config.tier_thresholds.iter())
+                .enumerate()
             {
-                let max_idx = global_idx
-                    .saturating_add(*tier_capacity as usize)
-                    .min(dapp_stakes.len());
-
                 let lower_bound = tier_threshold.threshold();
-                let current_tier_reward = tier_rewards
-                    .get(tier_id as usize)
-                    .map_or(Balance::zero(), |x| *x);
-                let reward_delta = tier_rewards
-                    .get(tier_id.saturating_sub(1) as usize) // previous tier reward
-                    .map_or(Balance::zero(), |x| x.saturating_sub(current_tier_reward)) // delta amount
-                    .saturating_div(RankedTier::MAX_RANK.into());
-                let mut tier_total_reward_available =
-                    current_tier_reward.saturating_mul((*tier_capacity).into());
-                let reward_per_rank = reward_delta.saturating_div(RankedTier::MAX_RANK.into());
 
                 // Iterate over dApps until one of two conditions has been met:
                 // 1. Tier has no more capacity
                 // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
-                for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
-                    // make sure threshold is satisfied and there's enough remaining reward
-                    if tier_threshold.is_satisfied(*stake_amount)
-                        && tier_total_reward_available >= current_tier_reward
-                    {
-                        let mut rank =
-                            RankedTier::find_rank(lower_bound, upper_bound, *stake_amount);
-                        let mut dapp_reward = current_tier_reward
-                            .saturating_add(reward_per_rank.saturating_mul(rank.into()));
-                        if tier_total_reward_available < dapp_reward {
-                            // Not enough reward to support ranking
-                            // This dapp will claim only slot reward
-                            rank = 0;
-                            dapp_reward = current_tier_reward;
-                        }
-                        tier_total_reward_available =
-                            tier_total_reward_available.saturating_sub(dapp_reward);
-                        global_idx.saturating_inc();
-                        dapp_tiers.insert(*dapp_id, RankedTier::new_saturated(tier_id, rank));
-                    } else {
+                for (dapp_id, staked_amount) in dapp_stakes
+                    .iter()
+                    .skip(dapp_tiers.len())
+                    .take(*tier_capacity as usize)
+                {
+                    if !tier_threshold.is_satisfied(*staked_amount) {
                         break;
                     }
+                    let rank = RankedTier::find_rank(lower_bound, upper_bound, *staked_amount);
+                    tier_slots.insert(*dapp_id, RankedTier::new_saturated(tier_id as u8, rank));
                 }
-                // current threshold becomes upper bound for next tier
-                upper_bound = lower_bound;
-                tier_id.saturating_inc();
+
+                // sum of all ranks for this tier
+                let ranks_sum = tier_slots
+                    .iter()
+                    .fold(0u32, |accum, (_, x)| accum.saturating_add(x.rank().into()));
+
+                let reward_per_rank = if ranks_sum.is_zero() {
+                    Balance::zero()
+                } else {
+                    // calculate reward per rank
+                    let tier_reward = tier_rewards.get(tier_id).copied().unwrap_or_default();
+                    let empty_slots = tier_capacity.saturating_sub(tier_slots.len() as u16);
+                    let remaining_reward = tier_reward.saturating_mul(empty_slots.into());
+                    // make sure required reward doesn't exceed remaining reward
+                    let reward_per_rank = tier_reward.saturating_div(RankedTier::MAX_RANK.into());
+                    let expected_reward_for_ranks =
+                        reward_per_rank.saturating_mul(ranks_sum.into());
+                    let reward_for_ranks = expected_reward_for_ranks.min(remaining_reward);
+                    // re-calculate reward per rank based on available reward
+                    reward_for_ranks.saturating_div(ranks_sum.into())
+                };
+
+                let _ = rank_rewards.try_push(reward_per_rank);
+                dapp_tiers.append(&mut tier_slots);
+                upper_bound = lower_bound; // current threshold becomes upper bound for next tier
             }
 
             // 5.
@@ -1812,6 +1828,7 @@ pub mod pallet {
                 )
                 .unwrap_or_default(),
                 counter,
+                rank_rewards,
             )
         }
 
@@ -1894,7 +1911,7 @@ pub mod pallet {
                     //
                     // To help with benchmarking, it's possible to omit real tier calculation using the `Dummy` approach.
                     // This must never be used in production code, obviously.
-                    let (dapp_tier_rewards, counter) = match tier_assignment {
+                    let (dapp_tier_rewards, counter, rank_rewards) = match tier_assignment {
                         TierAssignment::Real => Self::get_dapp_tier_assignment_and_rewards(
                             current_era,
                             protocol_state.period_number(),
@@ -1903,6 +1920,9 @@ pub mod pallet {
                         #[cfg(feature = "runtime-benchmarks")]
                         TierAssignment::Dummy => (DAppTierRewardsFor::<T>::default(), 0),
                     };
+                    if rank_rewards.iter().any(|x| !x.is_zero()) {
+                        RankRewards::<T>::insert(&current_era, rank_rewards);
+                    }
                     DAppTiers::<T>::insert(&current_era, dapp_tier_rewards);
 
                     consumed_weight
@@ -2060,6 +2080,7 @@ pub mod pallet {
                     // If oldest valid era comes AFTER this span, it's safe to delete it.
                     if era_reward.last_era() < cleanup_marker.oldest_valid_era {
                         EraRewards::<T>::remove(cleanup_marker.era_reward_index);
+                        RankRewards::<T>::remove(cleanup_marker.era_reward_index);
                         cleanup_marker
                             .era_reward_index
                             .saturating_accrue(T::EraRewardSpanLength::get());
