@@ -2925,22 +2925,16 @@ fn dapp_tier_rewards_basic_tests() {
     .expect("Bounds are respected.");
 
     // 1st scenario - claim reward for a dApps
-    let tier_and_rank = dapps[&1];
+    let ranked_tier = dapps[&1];
     assert_eq!(
         dapp_tier_rewards.try_claim(1),
-        Ok((
-            tier_rewards[tier_and_rank.tier_id() as usize],
-            tier_and_rank
-        ))
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
     );
 
-    let tier_and_rank = dapps[&5];
+    let ranked_tier = dapps[&5];
     assert_eq!(
         dapp_tier_rewards.try_claim(5),
-        Ok((
-            tier_rewards[tier_and_rank.tier_id() as usize],
-            tier_and_rank
-        ))
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
     );
 
     // 2nd scenario - try to claim already claimed reward

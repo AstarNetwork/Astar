@@ -1382,7 +1382,7 @@ pub mod pallet {
                 Error::<T>::RewardExpired
             );
 
-            let (amount, tier_and_rank) =
+            let (amount, ranked_tier) =
                 dapp_tiers
                     .try_claim(dapp_info.id)
                     .map_err(|error| match error {
@@ -1390,7 +1390,7 @@ pub mod pallet {
                         _ => Error::<T>::InternalClaimDAppError,
                     })?;
 
-            let tier_id = tier_and_rank.tier_id();
+            let tier_id = ranked_tier.tier();
             // Get reward destination, and deposit the reward.
             let beneficiary = dapp_info.reward_beneficiary();
             T::StakingRewardHandler::payout_reward(&beneficiary, amount)

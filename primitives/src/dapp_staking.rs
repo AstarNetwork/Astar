@@ -218,7 +218,7 @@ impl RankedTier {
     }
 
     #[inline(always)]
-    pub fn tier_id(&self) -> TierId {
+    pub fn tier(&self) -> TierId {
         self.0 & 0x0f
     }
 
@@ -228,15 +228,15 @@ impl RankedTier {
     }
 
     #[inline(always)]
-    pub fn destruct(&self) -> (TierId, Rank) {
-        (self.tier_id(), self.rank())
+    pub fn deconstruct(&self) -> (TierId, Rank) {
+        (self.tier(), self.rank())
     }
 }
 
 impl core::fmt::Debug for RankedTier {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("TierAndRank")
-            .field("tier", &self.tier_id())
+            .field("tier", &self.tier())
             .field("rank", &self.rank())
             .finish()
     }
@@ -271,26 +271,26 @@ mod tests {
     #[test]
     fn tier_and_rank() {
         let t = RankedTier::new(0, 0).unwrap();
-        assert_eq!(t.destruct(), (0, 0));
+        assert_eq!(t.deconstruct(), (0, 0));
 
         let t = RankedTier::new(15, 10).unwrap();
-        assert_eq!(t.destruct(), (15, 10));
+        assert_eq!(t.deconstruct(), (15, 10));
 
         assert_eq!(RankedTier::new(16, 10), Err(ArithmeticError::Overflow));
         assert_eq!(RankedTier::new(15, 11), Err(ArithmeticError::Overflow));
 
         let t = RankedTier::new_saturated(0, 0);
-        assert_eq!(t.destruct(), (0, 0));
+        assert_eq!(t.deconstruct(), (0, 0));
 
         let t = RankedTier::new_saturated(1, 1);
-        assert_eq!(t.destruct(), (1, 1));
+        assert_eq!(t.deconstruct(), (1, 1));
 
         let t = RankedTier::new_saturated(3, 15);
-        assert_eq!(t.destruct(), (3, 10));
+        assert_eq!(t.deconstruct(), (3, 10));
 
         // max value for tier and rank
         let t = RankedTier::new_saturated(16, 16);
-        assert_eq!(t.destruct(), (15, 10));
+        assert_eq!(t.deconstruct(), (15, 10));
     }
 
     #[test]

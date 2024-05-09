@@ -1777,12 +1777,12 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
     /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
     pub fn try_claim(&mut self, dapp_id: DAppId) -> Result<(Balance, RankedTier), DAppTierError> {
         // Check if dApp Id exists.
-        let tier_and_rank = self
+        let ranked_tier = self
             .dapps
             .remove(&dapp_id)
             .ok_or(DAppTierError::NoDAppInTiers)?;
 
-        let (tier_id, rank) = tier_and_rank.destruct();
+        let (tier_id, rank) = ranked_tier.deconstruct();
 
         let mut amount = self
             .rewards
@@ -1802,7 +1802,7 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
             amount = amount.saturating_add(additional_reward);
         }
 
-        Ok((amount, tier_and_rank))
+        Ok((amount, ranked_tier))
     }
 }
 
