@@ -1782,8 +1782,8 @@ pub mod pallet {
                 for (dapp_id, staked_amount) in dapp_stakes
                     .iter()
                     .skip(dapp_tiers.len())
-                    .take(*tier_capacity as usize)
                     .take_while(|(_, amount)| tier_threshold.is_satisfied(*amount))
+                    .take(*tier_capacity as usize)
                 {
                     let rank = RankedTier::find_rank(lower_bound, upper_bound, *staked_amount);
                     tier_slots.insert(*dapp_id, RankedTier::new_saturated(tier_id as u8, rank));
