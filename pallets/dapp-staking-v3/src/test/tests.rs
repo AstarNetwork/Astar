@@ -18,9 +18,9 @@
 
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, ContractStake, DAppId, EraRewards, Error, Event,
-    ForcingType, IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo,
-    Subperiod, TierConfig,
+    pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
+    EraRewards, Error, Event, ForcingType, IntegratedDApps, Ledger, NextDAppId, PeriodNumber,
+    RankRewards, Safeguard, StakerInfo, Subperiod, TierConfig,
 };
 
 use frame_support::{
@@ -32,12 +32,17 @@ use frame_support::{
     },
     BoundedVec,
 };
-use sp_runtime::{traits::Zero, FixedU128};
+use sp_runtime::{
+    traits::{ConstU32, Zero},
+    BoundedBTreeMap, FixedU128,
+};
 
 use astar_primitives::{
     dapp_staking::{CycleConfiguration, EraNumber, RankedTier, SmartContractHandle},
     Balance, BlockNumber,
 };
+
+use std::collections::BTreeMap;
 
 #[test]
 fn maintenances_mode_works() {
@@ -2471,6 +2476,13 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
                 dapp_reward_pool,
             );
 
+        // There's enough reward to satisfy 100% reward per rank.
+        // Slot reward is 60_000 therefor expected rank reward is 6_000
+        assert_eq!(
+            rank_rewards,
+            BoundedVec::<Balance, ConstU32<4>>::try_from(vec![0, 6_000, 0, 0]).unwrap()
+        );
+
         // Basic checks
         let number_of_tiers: u32 = <Test as Config>::NumberOfTiers::get();
         assert_eq!(tier_assignment.period, protocol_state.period_number());
@@ -2486,26 +2498,16 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         let (dapp_1_tier, dapp_2_tier) = (tier_assignment.dapps[&0], tier_assignment.dapps[&1]);
         assert_eq!(dapp_1_tier, RankedTier::new_saturated(0, 0));
         assert_eq!(dapp_2_tier, RankedTier::new_saturated(0, 0));
-        assert_eq!(rank_rewards[0], 0); // tier 0 has no ranking therefor no reward for ranks
 
         // 2nd tier checks
         let (dapp_3_tier, dapp_4_tier) = (tier_assignment.dapps[&2], tier_assignment.dapps[&3]);
-        assert_eq!(dapp_3_tier, RankedTier::new_saturated(1, 9));
+        assert_eq!(dapp_3_tier, RankedTier::new_saturated(1, 10));
         assert_eq!(dapp_4_tier, RankedTier::new_saturated(1, 9));
-
-        // There's enough reward to satisfy 100% reward per rank.
-        // Slot reward is 60_000 therefor expected rank reward is 6_000
-        assert_eq!(rank_rewards[1], 6000);
-        assert_eq!(
-            rank_rewards[1],
-            tier_assignment.rewards[1] / Into::<Balance>::into(RankedTier::MAX_RANK)
-        );
 
         // 4th tier checks
         let (dapp_5_tier, dapp_6_tier) = (tier_assignment.dapps[&4], tier_assignment.dapps[&5]);
         assert_eq!(dapp_5_tier, RankedTier::new_saturated(3, 0));
         assert_eq!(dapp_6_tier, RankedTier::new_saturated(3, 0));
-        assert_eq!(rank_rewards[3], 0); // tier 3 has no ranking therefor no reward for ranks
 
         // Sanity check - last dapp should not exists in the tier assignment
         assert!(tier_assignment
@@ -2973,4 +2975,117 @@ fn safeguard_on_by_default() {
     ext.execute_with(|| {
         assert!(Safeguard::<Test>::get());
     });
+}
+
+#[test]
+fn ranking_will_calc_reward_correctly() {
+    ExtBuilder::build().execute_with(|| {
+        // Tier config is specially adapted for this test.
+        TierConfig::<Test>::mutate(|config| {
+            config.number_of_slots = 40;
+            config.slots_per_tier = BoundedVec::try_from(vec![2, 3, 3, 20]).unwrap();
+        });
+
+        // Register smart contracts
+        let smart_contracts: Vec<_> = (1..=7u32)
+            .map(|x| {
+                let smart_contract = MockSmartContract::Wasm(x.into());
+                assert_register(x.into(), &smart_contract);
+                smart_contract
+            })
+            .collect();
+
+        fn lock_and_stake(account: usize, smart_contract: &MockSmartContract, amount: Balance) {
+            let account = account.try_into().unwrap();
+            Balances::make_free_balance_be(&account, amount);
+            assert_lock(account, amount);
+            assert_stake(account, smart_contract, amount);
+        }
+
+        for (idx, amount) in [81, 82, 80, 79, 15, 15, 14].into_iter().enumerate() {
+            lock_and_stake(idx, &smart_contracts[idx], amount)
+        }
+
+        // Finally, the actual test
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        let (tier_assignment, counter, rank_rewards) =
+            DappStaking::get_dapp_tier_assignment_and_rewards(
+                protocol_state.era + 1,
+                protocol_state.period_number(),
+                1_000_000,
+            );
+
+        assert_eq!(
+            tier_assignment,
+            DAppTierRewardsFor::<Test> {
+                dapps: BoundedBTreeMap::try_from(BTreeMap::from([
+                    (0, RankedTier::new_saturated(0, 0)),
+                    (1, RankedTier::new_saturated(0, 0)),
+                    (2, RankedTier::new_saturated(1, 10)),
+                    (3, RankedTier::new_saturated(1, 9)),
+                    (4, RankedTier::new_saturated(3, 0)),
+                    (5, RankedTier::new_saturated(3, 0)),
+                ]))
+                .unwrap(),
+                rewards: BoundedVec::try_from(vec![200_000, 100_000, 66_666, 5_000]).unwrap(),
+                period: 1,
+            }
+        );
+
+        // one didn't make it
+        assert_eq!(counter, 7);
+
+        // Tier 0 has no ranking therefor no rank reward.
+        // For tier 1 there's not enough reward to satisfy 100% reward per rank.
+        // Only one slot is empty. Slot reward is 100_000 therefor expected rank reward is 100_000 / 19 (ranks_sum).
+        // Tier 2..3 has no ranking therefor no rank reward.
+        assert_eq!(
+            rank_rewards,
+            BoundedVec::<Balance, ConstU32<4>>::try_from(vec![0, 5_263, 0, 0]).unwrap()
+        );
+    })
+}
+
+#[test]
+fn claim_dapp_reward_with_rank() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &smart_contract);
+
+        let alice = 2;
+        let amount = 79; // very close to tier 0 so will enter tier 1 with rank 9
+        assert_lock(alice, amount);
+        assert_stake(alice, &smart_contract, amount);
+
+        // Advance 2 eras so we have an entry for reward claiming
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+
+        let era = ActiveProtocolState::<Test>::get().era - 1;
+        let slot_reward = DAppTiers::<Test>::get(era).unwrap().rewards[1];
+        let rank_rewards = RankRewards::<Test>::get(era);
+
+        // Claim dApp reward & verify event
+        assert_ok!(DappStaking::claim_dapp_reward(
+            RuntimeOrigin::signed(alice),
+            smart_contract.clone(),
+            era,
+        ));
+
+        let expected_tier = 1u8;
+        let expected_rank = 9;
+        let expected_total_reward =
+            slot_reward + expected_rank * rank_rewards[expected_tier as usize];
+        assert_eq!(slot_reward, 10_000_000);
+        assert_eq!(rank_rewards[expected_tier as usize], 1_000_000); // slot_reward / 10
+        assert_eq!(expected_total_reward, 19_000_000);
+
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppReward {
+            beneficiary: 1,
+            smart_contract: smart_contract.clone(),
+            tier_id: expected_tier,
+            era,
+            amount: expected_total_reward,
+        }));
+    })
 }

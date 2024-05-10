@@ -235,7 +235,7 @@ impl RankedTier {
 
 impl core::fmt::Debug for RankedTier {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("TierAndRank")
+        f.debug_struct("RankedTier")
             .field("tier", &self.tier())
             .field("rank", &self.rank())
             .finish()
@@ -255,7 +255,7 @@ impl RankedTier {
         } else {
             <Balance as TryInto<u8>>::try_into(
                 stake_amount
-                    .saturating_sub(lower_bound.saturating_add(1))
+                    .saturating_sub(lower_bound)
                     .saturating_div(rank_threshold),
             )
             .unwrap_or_default()
@@ -296,11 +296,11 @@ mod tests {
     #[test]
     fn find_rank() {
         assert_eq!(RankedTier::find_rank(0, 0, 0), 0);
-        assert_eq!(RankedTier::find_rank(0, 100, 10), 0);
+        assert_eq!(RankedTier::find_rank(0, 100, 9), 0);
+        assert_eq!(RankedTier::find_rank(0, 100, 10), 1);
         assert_eq!(RankedTier::find_rank(0, 100, 49), 4);
-        assert_eq!(RankedTier::find_rank(0, 100, 50), 4);
+        assert_eq!(RankedTier::find_rank(0, 100, 50), 5);
         assert_eq!(RankedTier::find_rank(0, 100, 51), 5);
-        assert_eq!(RankedTier::find_rank(0, 100, 100), 9);
         assert_eq!(RankedTier::find_rank(0, 100, 101), 10);
 
         assert_eq!(RankedTier::find_rank(100, 100, 100), 0);

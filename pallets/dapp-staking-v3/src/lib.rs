@@ -1396,6 +1396,7 @@ pub mod pallet {
 
             let (tier_id, rank) = ranked_tier.deconstruct();
 
+            // if dapp is ranked and there's reward per rank then include the extra reward to the total amount
             if !rank.is_zero() {
                 if let Some(reward_per_rank) =
                     RankRewards::<T>::get(&era).get(tier_id as usize).copied()
