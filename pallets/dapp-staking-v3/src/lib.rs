@@ -1917,9 +1917,11 @@ pub mod pallet {
                             dapp_reward_pool,
                         ),
                         #[cfg(feature = "runtime-benchmarks")]
-                        TierAssignment::Dummy => {
-                            (DAppTierRewardsFor::<T>::default(), 0, BoundedVec::new())
-                        }
+                        TierAssignment::Dummy => (
+                            DAppTierRewardsFor::<T>::default(),
+                            0,
+                            BoundedVec::truncate_from(vec![1]),
+                        ),
                     };
                     if rank_rewards.iter().any(|x| !x.is_zero()) {
                         RankRewards::<T>::insert(&current_era, rank_rewards);
