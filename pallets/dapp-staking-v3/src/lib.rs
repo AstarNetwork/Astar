@@ -1920,7 +1920,7 @@ pub mod pallet {
                         TierAssignment::Dummy => (
                             DAppTierRewardsFor::<T>::default(),
                             0,
-                            BoundedVec::truncate_from(vec![1]),
+                            BoundedVec::truncate_from([1].to_vec()),
                         ),
                     };
                     if rank_rewards.iter().any(|x| !x.is_zero()) {
