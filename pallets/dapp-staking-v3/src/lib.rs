@@ -187,6 +187,10 @@ pub mod pallet {
         #[pallet::constant]
         type NumberOfTiers: Get<u32>;
 
+        /// Tier ranking enabled.
+        #[pallet::constant]
+        type RankingEnabled: Get<bool>;
+
         /// Weight info for various calls & operations in the pallet.
         type WeightInfo: WeightInfo;
 
@@ -1397,7 +1401,7 @@ pub mod pallet {
             let (tier_id, rank) = ranked_tier.deconstruct();
 
             // if dapp is ranked and there's reward per rank then include the extra reward to the total amount
-            if !rank.is_zero() {
+            if T::RankingEnabled::get() && !rank.is_zero() {
                 if let Some(reward_per_rank) =
                     RankRewards::<T>::get(&era).get(tier_id as usize).copied()
                 {
@@ -1786,7 +1790,11 @@ pub mod pallet {
                     .take_while(|(_, amount)| tier_threshold.is_satisfied(*amount))
                     .take(*tier_capacity as usize)
                 {
-                    let rank = RankedTier::find_rank(lower_bound, upper_bound, *staked_amount);
+                    let rank = if T::RankingEnabled::get() {
+                        RankedTier::find_rank(lower_bound, upper_bound, *staked_amount)
+                    } else {
+                        0
+                    };
                     tier_slots.insert(*dapp_id, RankedTier::new_saturated(tier_id as u8, rank));
                 }
 

@@ -23,7 +23,7 @@ use frame_support::{
     assert_ok, construct_runtime, parameter_types,
     traits::{
         fungible::{Mutate as FunMutate, Unbalanced as FunUnbalanced},
-        ConstU128, ConstU64, Hooks,
+        ConstBool, ConstU128, ConstU64, Hooks,
     },
     weights::{RuntimeDbWeight, Weight},
 };
@@ -266,6 +266,7 @@ impl pallet_dapp_staking_v3::Config for Test {
     type MaxNumberOfStakedContracts = ConstU32<5>;
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
+    type RankingEnabled = ConstBool<true>;
     type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;

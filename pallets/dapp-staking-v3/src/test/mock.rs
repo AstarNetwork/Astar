@@ -24,7 +24,7 @@ use crate::{
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{fungible::Mutate as FunMutate, ConstU128, ConstU32},
+    traits::{fungible::Mutate as FunMutate, ConstBool, ConstU128, ConstU32},
     weights::Weight,
 };
 use sp_arithmetic::fixed_point::FixedU128;
@@ -216,6 +216,7 @@ impl pallet_dapp_staking::Config for Test {
     type MaxNumberOfStakedContracts = ConstU32<5>;
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
+    type RankingEnabled = ConstBool<true>;
     type WeightInfo = weights::SubstrateWeight<Test>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;
