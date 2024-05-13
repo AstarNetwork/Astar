@@ -21,9 +21,8 @@
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::{
-    pending::ConsensusDataProvider, Eth, EthApiServer, EthBlockDataCacheTask, EthFilter,
-    EthFilterApiServer, EthPubSub, EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3,
-    Web3ApiServer,
+    Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
@@ -38,7 +37,7 @@ use sc_rpc::dev::DevApiServer;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::{CallApiAt, ProvideRuntimeApi};
+use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
@@ -149,7 +148,6 @@ pub fn create_full<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
-    pending_consenus_data_provider: Box<dyn ConsensusDataProvider<Block>>,
     tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
@@ -182,12 +180,7 @@ where
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
 
-    let mut io = create_full_rpc(
-        deps,
-        subscription_task_executor,
-        pubsub_notification_sinks,
-        pending_consenus_data_provider,
-    )?;
+    let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
 
     if tracing_config.enable_txpool {
         io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
@@ -221,7 +214,6 @@ pub fn create_full<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
-    pending_consenus_data_provider: Box<dyn ConsensusDataProvider<Block>>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -248,12 +240,7 @@ where
     BE::Blockchain: BlockchainBackend<Block>,
     A: ChainApi<Block = Block> + 'static,
 {
-    create_full_rpc(
-        deps,
-        subscription_task_executor,
-        pubsub_notification_sinks,
-        pending_consenus_data_provider,
-    )
+    create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
 }
 
 fn create_full_rpc<C, P, BE, A>(
@@ -264,7 +251,6 @@ fn create_full_rpc<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
-    pending_consenus_data_provider: Box<dyn ConsensusDataProvider<Block>>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -319,6 +305,14 @@ where
 
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
+    if !client
+        .runtime_api()
+        .has_api::<dyn AuraApi<Block, AuraId>>(client.info().best_hash)
+        .unwrap_or_default()
+    {
+        return Err("EVM RPC cannot be enable at the current state. Please sync at least 200K blocks before enabling it.".into());
+    }
+
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
     let pending_create_inherent_data_providers = move |_, _| async move {
         let current = sp_timestamp::InherentDataProvider::from_system_time();
@@ -368,7 +362,9 @@ where
             10,
             None,
             pending_create_inherent_data_providers,
-            Some(pending_consenus_data_provider),
+            Some(Box::new(fc_rpc::pending::AuraConsensusDataProvider::new(
+                client.clone(),
+            ))),
         )
         .replace_config::<AstarEthConfig<C, BE>>()
         .into_rpc(),
