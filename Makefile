@@ -8,7 +8,7 @@ cargo_test = $(shell which cargo-nextest >/dev/null && echo "cargo nextest run" 
 
 .PHONY: test
 test:
-	SKIP_WASM_BUILD= ${cargo_test} --workspace
+	${cargo_test} --workspace
 
 .PHONY: test-features
 test-features:

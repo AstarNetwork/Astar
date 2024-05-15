@@ -194,7 +194,6 @@ pub(crate) mod tests {
     use sp_runtime::BuildStorage;
 
     #[test]
-    #[ignore]
     fn test_create_development_chain_spec() {
         development_config().build_storage().unwrap();
     }
