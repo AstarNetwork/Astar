@@ -10,6 +10,10 @@ cargo_test = $(shell which cargo-nextest >/dev/null && echo "cargo nextest run" 
 test:
 	SKIP_WASM_BUILD= ${cargo_test} --workspace
 
+.PHONY: test-features
+test-features:
+	SKIP_WASM_BUILD= ${cargo_test} --workspace --features try-runtime,runtime-benchmarks,evm-tracing
+
 .PHONY: test-runtimes
 test-runtimes:
 	SKIP_WASM_BUILD= ${cargo_test} -p integration-tests --features=shibuya
@@ -17,5 +21,4 @@ test-runtimes:
 	SKIP_WASM_BUILD= ${cargo_test} -p integration-tests --features=astar
 
 .PHONY: test-all
-test-all: test test-runtimes
-	SKIP_WASM_BUILD= ${cargo_test} --workspace --features try-runtime,runtime-benchmarks
+test-all: test test-runtimes test-features
