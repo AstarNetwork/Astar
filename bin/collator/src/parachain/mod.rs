@@ -31,3 +31,5 @@ pub use service::{
     astar, build_import_queue, new_partial, shibuya, shiden, start_astar_node, start_shibuya_node,
     start_shiden_node, HostFunctions,
 };
+
+pub(crate) use shell_upgrade::{AuraConsensusDataProviderFallback, PendingCrateInherentDataProvider};

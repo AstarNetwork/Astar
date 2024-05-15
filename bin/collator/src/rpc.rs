@@ -18,16 +18,14 @@
 
 //! Astar RPCs implementation.
 
-use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::{
-    pending::ConsensusDataProvider, Eth, EthApiServer, EthBlockDataCacheTask, EthFilter,
-    EthFilterApiServer, EthPubSub, EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3,
-    Web3ApiServer,
+    Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
-use polkadot_primitives::PersistedValidationData;
+
 use sc_client_api::{
     AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
 };
@@ -37,23 +35,14 @@ use sc_rpc::dev::DevApiServer;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
+use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
-use sp_consensus_aura::{
-    digests::CompatibleDigestItem,
-    sr25519::{AuthorityId as AuraId, AuthoritySignature},
-    AuraApi,
-};
-use sp_inherents::{CreateInherentDataProviders, Error, InherentData};
-use sp_runtime::{
-    traits::{BlakeTwo256, Block as BlockT, Header},
-    Digest, DigestItem,
-};
-use sp_timestamp::TimestampInherentData;
-use std::{marker::PhantomData, sync::Arc};
+use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
+use sp_runtime::traits::BlakeTwo256;
+use std::sync::Arc;
 use substrate_frame_rpc_system::{System, SystemApiServer};
 
 #[cfg(feature = "evm-tracing")]
@@ -84,7 +73,7 @@ pub fn open_frontier_backend<C>(
     config: &sc_service::Configuration,
 ) -> Result<Arc<fc_db::kv::Backend<Block>>, String>
 where
-    C: sp_blockchain::HeaderBackend<Block>,
+    C: HeaderBackend<Block>,
 {
     let config_dir = config.base_path.config_dir(config.chain_spec.id());
     let path = config_dir.join("frontier").join("db");
@@ -104,7 +93,7 @@ pub struct AstarEthConfig<C, BE>(std::marker::PhantomData<(C, BE)>);
 
 impl<C, BE> fc_rpc::EthConfig<Block, C> for AstarEthConfig<C, BE>
 where
-    C: sc_client_api::StorageProvider<Block, BE> + Sync + Send + 'static,
+    C: StorageProvider<Block, BE> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
 {
     // Use to override (adapt) evm call to precompiles for proper gas estimation.
@@ -147,74 +136,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub enable_evm_rpc: bool,
 }
 
-/// Instantiate all RPC extensions and Tracing RPC.
-#[cfg(feature = "evm-tracing")]
-pub fn create_full<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
-    subscription_task_executor: SubscriptionTaskExecutor,
-    pubsub_notification_sinks: Arc<
-        fc_mapping_sync::EthereumBlockNotificationSinks<
-            fc_mapping_sync::EthereumBlockNotification<Block>,
-        >,
-    >,
-    tracing_config: EvmTracingConfig,
-) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
-where
-    C: ProvideRuntimeApi<Block>
-        + HeaderBackend<Block>
-        + UsageProvider<Block>
-        + CallApiAt<Block>
-        + AuxStore
-        + StorageProvider<Block, BE>
-        + HeaderMetadata<Block, Error = BlockChainError>
-        + BlockchainEvents<Block>
-        + Send
-        + Sync
-        + 'static,
-    C: sc_client_api::BlockBackend<Block>,
-    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + fp_rpc::ConvertTransactionRuntimeApi<Block>
-        + fp_rpc::EthereumRuntimeRPCApi<Block>
-        + BlockBuilder<Block>
-        + AuraApi<Block, AuraId>
-        + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
-        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
-    P: TransactionPool<Block = Block> + Sync + Send + 'static,
-    BE: Backend<Block> + 'static,
-    BE::State: StateBackend<BlakeTwo256>,
-    BE::Blockchain: BlockchainBackend<Block>,
-    A: ChainApi<Block = Block> + 'static,
-{
-    let client = Arc::clone(&deps.client);
-    let graph = Arc::clone(&deps.graph);
-
-    let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
-
-    if tracing_config.enable_txpool {
-        io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
-    }
-
-    if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
-        io.merge(
-            Trace::new(
-                client,
-                trace_filter_requester,
-                tracing_config.trace_filter_max_count,
-            )
-            .into_rpc(),
-        )?;
-    }
-
-    if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
-        io.merge(Debug::new(debug_requester).into_rpc())?;
-    }
-
-    Ok(io)
-}
-
 /// Instantiate all RPC extensions.
-#[cfg(not(feature = "evm-tracing"))]
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
@@ -223,48 +145,12 @@ pub fn create_full<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
+    #[cfg(feature = "evm-tracing")] tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
         + UsageProvider<Block>
-        + CallApiAt<Block>
-        + AuxStore
-        + StorageProvider<Block, BE>
-        + HeaderMetadata<Block, Error = BlockChainError>
-        + BlockchainEvents<Block>
-        + Send
-        + Sync
-        + 'static,
-    C: sc_client_api::BlockBackend<Block>,
-    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + fp_rpc::ConvertTransactionRuntimeApi<Block>
-        + fp_rpc::EthereumRuntimeRPCApi<Block>
-        + BlockBuilder<Block>
-        + AuraApi<Block, AuraId>,
-    P: TransactionPool<Block = Block> + Sync + Send + 'static,
-    BE: Backend<Block> + 'static,
-    BE::State: StateBackend<BlakeTwo256>,
-    BE::Blockchain: BlockchainBackend<Block>,
-    A: ChainApi<Block = Block> + 'static,
-{
-    create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
-}
-
-fn create_full_rpc<C, P, BE, A>(
-    deps: FullDeps<C, P, A>,
-    subscription_task_executor: SubscriptionTaskExecutor,
-    pubsub_notification_sinks: Arc<
-        fc_mapping_sync::EthereumBlockNotificationSinks<
-            fc_mapping_sync::EthereumBlockNotification<Block>,
-        >,
-    >,
-) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
-where
-    C: ProvideRuntimeApi<Block>
-        + UsageProvider<Block>
-        + HeaderBackend<Block>
         + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
@@ -331,10 +217,10 @@ where
             // Allow 10x max allowed weight for non-transactional calls
             10,
             None,
-            PendingCrateInherentDataProvider::new(client.clone()),
-            Some(Box::new(AuraConsensusDataProviderFallback::new(
-                client.clone(),
-            ))),
+            crate::parachain::PendingCrateInherentDataProvider::new(client.clone()),
+            Some(Box::new(
+                crate::parachain::AuraConsensusDataProviderFallback::new(client.clone()),
+            )),
         )
         .replace_config::<AstarEthConfig<C, BE>>()
         .into_rpc(),
@@ -371,135 +257,27 @@ where
         .into_rpc(),
     )?;
 
+    #[cfg(feature = "evm-tracing")]
+    {
+        if tracing_config.enable_txpool {
+            io.merge(MoonbeamTxPool::new(client.clone(), graph.clone()).into_rpc())?;
+        }
+
+        if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
+            io.merge(
+                Trace::new(
+                    client,
+                    trace_filter_requester,
+                    tracing_config.trace_filter_max_count,
+                )
+                .into_rpc(),
+            )?;
+        }
+
+        if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
+            io.merge(Debug::new(debug_requester).into_rpc())?;
+        }
+    }
+
     Ok(io)
-}
-
-struct AuraConsensusDataProviderFallback<B, C> {
-    client: Arc<C>,
-    phantom_data: PhantomData<B>,
-}
-
-impl<B, C> AuraConsensusDataProviderFallback<B, C>
-where
-    B: BlockT,
-    C: AuxStore + ProvideRuntimeApi<B> + UsageProvider<B> + Send + Sync,
-    C::Api: AuraApi<B, AuraId>,
-{
-    fn new(client: Arc<C>) -> Self {
-        Self {
-            client,
-            phantom_data: Default::default(),
-        }
-    }
-}
-
-impl<B, C> ConsensusDataProvider<B> for AuraConsensusDataProviderFallback<B, C>
-where
-    B: BlockT,
-    C: AuxStore + ProvideRuntimeApi<B> + UsageProvider<B> + Send + Sync,
-    C::Api: AuraApi<B, AuraId>,
-{
-    fn create_digest(&self, parent: &B::Header, data: &InherentData) -> Result<Digest, Error> {
-        if self
-            .client
-            .runtime_api()
-            .has_api::<dyn AuraApi<Block, AuraId>>(parent.hash())
-            .unwrap_or_default()
-        {
-            let slot_duration = sc_consensus_aura::slot_duration(&*self.client)
-                .expect("slot_duration should be present at this point; qed.");
-            let timestamp = data
-                .timestamp_inherent_data()?
-                .expect("Timestamp is always present; qed");
-
-            let digest_item =
-                <DigestItem as CompatibleDigestItem<AuthoritySignature>>::aura_pre_digest(
-                    sp_consensus_aura::Slot::from_timestamp(timestamp, slot_duration),
-                );
-
-            return Ok(Digest {
-                logs: vec![digest_item],
-            });
-        }
-        Err(Error::Application("AuraApi is not present".into()))
-    }
-}
-
-struct PendingCrateInherentDataProvider<B, C> {
-    client: Arc<C>,
-    phantom_data: PhantomData<B>,
-}
-
-impl<B, C> PendingCrateInherentDataProvider<B, C>
-where
-    B: BlockT,
-    C: AuxStore + ProvideRuntimeApi<B> + UsageProvider<B> + Send + Sync,
-    C::Api: AuraApi<B, AuraId>,
-{
-    fn new(client: Arc<C>) -> Self {
-        Self {
-            client,
-            phantom_data: Default::default(),
-        }
-    }
-}
-
-#[async_trait::async_trait]
-impl<B, C> CreateInherentDataProviders<B, ()> for PendingCrateInherentDataProvider<B, C>
-where
-    B: BlockT,
-    C: AuxStore + ProvideRuntimeApi<B> + UsageProvider<B> + Send + Sync,
-    C::Api: AuraApi<B, AuraId>,
-{
-    type InherentDataProviders = (
-        sp_consensus_aura::inherents::InherentDataProvider,
-        sp_timestamp::InherentDataProvider,
-        cumulus_primitives_parachain_inherent::ParachainInherentData,
-    );
-
-    async fn create_inherent_data_providers(
-        &self,
-        parent: B::Hash,
-        _extra_args: (),
-    ) -> Result<Self::InherentDataProviders, Box<dyn std::error::Error + Send + Sync>> {
-        if !self
-            .client
-            .runtime_api()
-            .has_api::<dyn AuraApi<Block, AuraId>>(parent)
-            .unwrap_or_default()
-        {
-            return Err("AuraApi is not present".into());
-        }
-
-        let slot_duration = sc_consensus_aura::slot_duration(&*self.client)
-            .expect("slot_duration should be present at this point; qed.");
-        let current = sp_timestamp::InherentDataProvider::from_system_time();
-        let next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
-        let timestamp = sp_timestamp::InherentDataProvider::new(next_slot.into());
-        let slot =
-            sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                *timestamp,
-                slot_duration,
-            );
-        // Create a dummy parachain inherent data provider which is required to pass
-        // the checks by the para chain system. We use dummy values because in the 'pending context'
-        // neither do we have access to the real values nor do we need them.
-        let (relay_parent_storage_root, relay_chain_state) =
-            RelayStateSproofBuilder::default().into_state_root_and_proof();
-        let vfp = PersistedValidationData {
-            // This is a hack to make `cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases`
-            // happy. Relay parent number can't be bigger than u32::MAX.
-            relay_parent_number: u32::MAX,
-            relay_parent_storage_root,
-            ..Default::default()
-        };
-        let parachain_inherent_data =
-            cumulus_primitives_parachain_inherent::ParachainInherentData {
-                validation_data: vfp,
-                relay_chain_state,
-                downward_messages: Default::default(),
-                horizontal_messages: Default::default(),
-            };
-        Ok((slot, timestamp, parachain_inherent_data))
-    }
 }
