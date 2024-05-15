@@ -73,7 +73,7 @@ pub fn open_frontier_backend<C>(
     config: &sc_service::Configuration,
 ) -> Result<Arc<fc_db::kv::Backend<Block>>, String>
 where
-    C: HeaderBackend<Block>,
+    C: sp_blockchain::HeaderBackend<Block>,
 {
     let config_dir = config.base_path.config_dir(config.chain_spec.id());
     let path = config_dir.join("frontier").join("db");
@@ -93,7 +93,7 @@ pub struct AstarEthConfig<C, BE>(std::marker::PhantomData<(C, BE)>);
 
 impl<C, BE> fc_rpc::EthConfig<Block, C> for AstarEthConfig<C, BE>
 where
-    C: StorageProvider<Block, BE> + Sync + Send + 'static,
+    C: sc_client_api::StorageProvider<Block, BE> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
 {
     // Use to override (adapt) evm call to precompiles for proper gas estimation.
@@ -136,7 +136,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub enable_evm_rpc: bool,
 }
 
-/// Instantiate all RPC extensions.
+/// Instantiate all RPC extensions and Tracing RPC.
+#[cfg(feature = "evm-tracing")]
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
@@ -145,12 +146,114 @@ pub fn create_full<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
-    #[cfg(feature = "evm-tracing")] tracing_config: EvmTracingConfig,
+    tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
         + UsageProvider<Block>
+        + CallApiAt<Block>
+        + AuxStore
+        + StorageProvider<Block, BE>
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + BlockchainEvents<Block>
+        + Send
+        + Sync
+        + 'static,
+    C: sc_client_api::BlockBackend<Block>,
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>
+        + moonbeam_rpc_primitives_debug::DebugRuntimeApi<Block>
+        + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
+    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
+    BE::Blockchain: BlockchainBackend<Block>,
+    A: ChainApi<Block = Block> + 'static,
+{
+    let client = Arc::clone(&deps.client);
+    let graph = Arc::clone(&deps.graph);
+
+    let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
+
+    if tracing_config.enable_txpool {
+        io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
+    }
+
+    if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
+        io.merge(
+            Trace::new(
+                client,
+                trace_filter_requester,
+                tracing_config.trace_filter_max_count,
+            )
+            .into_rpc(),
+        )?;
+    }
+
+    if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
+        io.merge(Debug::new(debug_requester).into_rpc())?;
+    }
+
+    Ok(io)
+}
+
+/// Instantiate all RPC extensions.
+#[cfg(not(feature = "evm-tracing"))]
+pub fn create_full<C, P, BE, A>(
+    deps: FullDeps<C, P, A>,
+    subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + UsageProvider<Block>
+        + CallApiAt<Block>
+        + AuxStore
+        + StorageProvider<Block, BE>
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + BlockchainEvents<Block>
+        + Send
+        + Sync
+        + 'static,
+    C: sc_client_api::BlockBackend<Block>,
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + BlockBuilder<Block>
+        + AuraApi<Block, AuraId>,
+    P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    BE: Backend<Block> + 'static,
+    BE::State: StateBackend<BlakeTwo256>,
+    BE::Blockchain: BlockchainBackend<Block>,
+    A: ChainApi<Block = Block> + 'static,
+{
+    create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
+}
+
+fn create_full_rpc<C, P, BE, A>(
+    deps: FullDeps<C, P, A>,
+    subscription_task_executor: SubscriptionTaskExecutor,
+    pubsub_notification_sinks: Arc<
+        fc_mapping_sync::EthereumBlockNotificationSinks<
+            fc_mapping_sync::EthereumBlockNotification<Block>,
+        >,
+    >,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
+where
+    C: ProvideRuntimeApi<Block>
+        + UsageProvider<Block>
+        + HeaderBackend<Block>
         + CallApiAt<Block>
         + AuxStore
         + StorageProvider<Block, BE>
@@ -256,28 +359,6 @@ where
         )
         .into_rpc(),
     )?;
-
-    #[cfg(feature = "evm-tracing")]
-    {
-        if tracing_config.enable_txpool {
-            io.merge(MoonbeamTxPool::new(client.clone(), graph.clone()).into_rpc())?;
-        }
-
-        if let Some(trace_filter_requester) = tracing_config.tracing_requesters.trace {
-            io.merge(
-                Trace::new(
-                    client,
-                    trace_filter_requester,
-                    tracing_config.trace_filter_max_count,
-                )
-                .into_rpc(),
-            )?;
-        }
-
-        if let Some(debug_requester) = tracing_config.tracing_requesters.debug {
-            io.merge(Debug::new(debug_requester).into_rpc())?;
-        }
-    }
 
     Ok(io)
 }

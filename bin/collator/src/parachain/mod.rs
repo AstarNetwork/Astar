@@ -32,4 +32,6 @@ pub use service::{
     start_shiden_node, HostFunctions,
 };
 
-pub(crate) use shell_upgrade::{AuraConsensusDataProviderFallback, PendingCrateInherentDataProvider};
+pub(crate) use shell_upgrade::{
+    AuraConsensusDataProviderFallback, PendingCrateInherentDataProvider,
+};
