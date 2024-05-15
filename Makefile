@@ -12,7 +12,7 @@ test:
 
 .PHONY: test-features
 test-features:
-	SKIP_WASM_BUILD= ${cargo_test} --workspace --features try-runtime,runtime-benchmarks,evm-tracing
+	${cargo_test} --workspace --features try-runtime,runtime-benchmarks,evm-tracing
 
 .PHONY: test-runtimes
 test-runtimes:
