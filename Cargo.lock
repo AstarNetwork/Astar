@@ -8159,7 +8159,7 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.3.0#401f8a3e9448db854f5605b679fa085b8f445039"
+source = "git+https://github.com/AstarNetwork/polkadot-sdk?branch=astar-release-polkadot-v1.3.0#87649c1ff697e139d3b6872fa24bfbe20b3b558c"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

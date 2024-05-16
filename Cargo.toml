@@ -49,6 +49,9 @@ edition = "2021"
 homepage = "https://astar.network"
 repository = "https://github.com/AstarNetwork/Astar"
 
+[patch."https://github.com/paritytech/polkadot-sdk"]
+pallet-balances = { git = "https://github.com/AstarNetwork/polkadot-sdk", branch = "astar-release-polkadot-v1.3.0" }
+
 [workspace.dependencies]
 # General deps
 # (wasm)
