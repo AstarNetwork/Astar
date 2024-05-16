@@ -368,15 +368,10 @@ pub fn start_node(
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
             };
 
-            let pending_consensus_data_provider = Box::new(
-                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
-            );
-
             crate::rpc::create_full(
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
-                pending_consensus_data_provider,
                 rpc_config.clone(),
             )
             .map_err::<ServiceError, _>(Into::into)
@@ -656,17 +651,8 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
             };
 
-            let pending_consensus_data_provider = Box::new(
-                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
-            );
-
-            crate::rpc::create_full(
-                deps,
-                subscription,
-                pubsub_notification_sinks.clone(),
-                pending_consensus_data_provider,
-            )
-            .map_err::<ServiceError, _>(Into::into)
+            crate::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
+                .map_err::<ServiceError, _>(Into::into)
         })
     };
 

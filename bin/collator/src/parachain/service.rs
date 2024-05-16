@@ -494,17 +494,8 @@ where
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            let pending_consensus_data_provider = Box::new(
-                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
-            );
-
-            crate::rpc::create_full(
-                deps,
-                subscription,
-                pubsub_notification_sinks.clone(),
-                pending_consensus_data_provider,
-            )
-            .map_err(Into::into)
+            crate::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
+                .map_err(Into::into)
         })
     };
 
@@ -845,15 +836,10 @@ where
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            let pending_consensus_data_provider = Box::new(
-                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
-            );
-
             crate::rpc::create_full(
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
-                pending_consensus_data_provider,
                 rpc_config.clone(),
             )
             .map_err(Into::into)
