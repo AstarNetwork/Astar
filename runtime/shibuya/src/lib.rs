@@ -1292,26 +1292,10 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    pub const DappStakingMigrationName: &'static str = "DappStakingMigration";
-    pub const DemocracyName: &'static str = "Democracy";
-    pub const CouncilName: &'static str = "Council";
-    pub const TechnicalCommitteeName: &'static str = "TechnicalCommittee";
-    pub const TreasuryName: &'static str = "Treasury";
-
-}
-use frame_support::migrations::RemovePallet;
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    RemovePallet<DappStakingMigrationName, <Runtime as frame_system::Config>::DbWeight>,
-    RemovePallet<DemocracyName, <Runtime as frame_system::Config>::DbWeight>,
-    RemovePallet<CouncilName, <Runtime as frame_system::Config>::DbWeight>,
-    RemovePallet<TechnicalCommitteeName, <Runtime as frame_system::Config>::DbWeight>,
-    RemovePallet<TreasuryName, <Runtime as frame_system::Config>::DbWeight>,
-);
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
