@@ -21,19 +21,22 @@
 use astar_primitives::*;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_primitives_core::relay_chain::{Hash as PHash, PersistedValidationData};
-use cumulus_primitives_core::BlockT;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::pending::ConsensusDataProvider;
 use futures::lock::Mutex;
 use sc_client_api::{AuxStore, UsageProvider};
 use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams, ForkChoiceStrategy};
 use sp_api::{ApiExt, ProvideRuntimeApi};
-use sp_consensus_aura::digests::CompatibleDigestItem;
-use sp_consensus_aura::sr25519::AuthoritySignature;
-use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
+use sp_consensus_aura::{
+    digests::CompatibleDigestItem,
+    sr25519::{AuthorityId as AuraId, AuthoritySignature},
+    AuraApi,
+};
 use sp_inherents::{CreateInherentDataProviders, Error, InherentData};
-use sp_runtime::traits::Header as HeaderT;
-use sp_runtime::{Digest, DigestItem};
+use sp_runtime::{
+    traits::{Block as BlockT, Header as HeaderT},
+    Digest, DigestItem,
+};
 use sp_timestamp::TimestampInherentData;
 use std::{marker::PhantomData, sync::Arc};
 
