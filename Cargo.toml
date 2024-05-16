@@ -50,6 +50,7 @@ homepage = "https://astar.network"
 repository = "https://github.com/AstarNetwork/Astar"
 
 [patch."https://github.com/paritytech/polkadot-sdk"]
+# Remove this after uplifting to polkadot-sdk version `v1.12.0` or higher.
 pallet-balances = { git = "https://github.com/AstarNetwork/polkadot-sdk", branch = "astar-release-polkadot-v1.3.0" }
 
 [workspace.dependencies]
