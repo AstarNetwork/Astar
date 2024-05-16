@@ -1873,20 +1873,6 @@
 <a href="#1873" id="1873">1873</a>
 <a href="#1874" id="1874">1874</a>
 <a href="#1875" id="1875">1875</a>
-<a href="#1876" id="1876">1876</a>
-<a href="#1877" id="1877">1877</a>
-<a href="#1878" id="1878">1878</a>
-<a href="#1879" id="1879">1879</a>
-<a href="#1880" id="1880">1880</a>
-<a href="#1881" id="1881">1881</a>
-<a href="#1882" id="1882">1882</a>
-<a href="#1883" id="1883">1883</a>
-<a href="#1884" id="1884">1884</a>
-<a href="#1885" id="1885">1885</a>
-<a href="#1886" id="1886">1886</a>
-<a href="#1887" id="1887">1887</a>
-<a href="#1888" id="1888">1888</a>
-<a href="#1889" id="1889">1889</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2383,17 +2369,8 @@
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            <span class="kw">let </span>pending_consensus_data_provider = Box::new(
-                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
-            );
-
-            <span class="kw">crate</span>::rpc::create_full(
-                deps,
-                subscription,
-                pubsub_notification_sinks.clone(),
-                pending_consensus_data_provider,
-            )
-            .map_err(Into::into)
+            <span class="kw">crate</span>::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
+                .map_err(Into::into)
         })
     };
 
@@ -2734,15 +2711,10 @@
                 enable_evm_rpc: additional_config.enable_evm_rpc,
             };
 
-            <span class="kw">let </span>pending_consensus_data_provider = Box::new(
-                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
-            );
-
             <span class="kw">crate</span>::rpc::create_full(
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
-                pending_consensus_data_provider,
                 rpc_config.clone(),
             )
             .map_err(Into::into)

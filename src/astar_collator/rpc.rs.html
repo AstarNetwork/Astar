@@ -362,51 +362,6 @@
 <a href="#362" id="362">362</a>
 <a href="#363" id="363">363</a>
 <a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a>
-<a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a>
-<a href="#368" id="368">368</a>
-<a href="#369" id="369">369</a>
-<a href="#370" id="370">370</a>
-<a href="#371" id="371">371</a>
-<a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a>
-<a href="#374" id="374">374</a>
-<a href="#375" id="375">375</a>
-<a href="#376" id="376">376</a>
-<a href="#377" id="377">377</a>
-<a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
-<a href="#383" id="383">383</a>
-<a href="#384" id="384">384</a>
-<a href="#385" id="385">385</a>
-<a href="#386" id="386">386</a>
-<a href="#387" id="387">387</a>
-<a href="#388" id="388">388</a>
-<a href="#389" id="389">389</a>
-<a href="#390" id="390">390</a>
-<a href="#391" id="391">391</a>
-<a href="#392" id="392">392</a>
-<a href="#393" id="393">393</a>
-<a href="#394" id="394">394</a>
-<a href="#395" id="395">395</a>
-<a href="#396" id="396">396</a>
-<a href="#397" id="397">397</a>
-<a href="#398" id="398">398</a>
-<a href="#399" id="399">399</a>
-<a href="#400" id="400">400</a>
-<a href="#401" id="401">401</a>
-<a href="#402" id="402">402</a>
-<a href="#403" id="403">403</a>
-<a href="#404" id="404">404</a>
-<a href="#405" id="405">405</a>
-<a href="#406" id="406">406</a>
-<a href="#407" id="407">407</a>
-<a href="#408" id="408">408</a>
-<a href="#409" id="409">409</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -427,17 +382,14 @@
 
 </span><span class="doccomment">//! Astar RPCs implementation.
 
-</span><span class="kw">use </span>cumulus_primitives_parachain_inherent::ParachainInherentData;
-<span class="kw">use </span>cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-<span class="kw">use </span>fc_rpc::{
-    pending::ConsensusDataProvider, Eth, EthApiServer, EthBlockDataCacheTask, EthFilter,
-    EthFilterApiServer, EthPubSub, EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3,
-    Web3ApiServer,
+</span><span class="kw">use </span>fc_rpc::{
+    Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
 };
 <span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 <span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
-<span class="kw">use </span>polkadot_primitives::PersistedValidationData;
+
 <span class="kw">use </span>sc_client_api::{
     AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
 };
@@ -558,7 +510,6 @@
             fc_mapping_sync::EthereumBlockNotification&lt;Block&gt;,
         &gt;,
     &gt;,
-    pending_consenus_data_provider: Box&lt;<span class="kw">dyn </span>ConsensusDataProvider&lt;Block&gt;&gt;,
     tracing_config: EvmTracingConfig,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
 <span class="kw">where
@@ -591,12 +542,7 @@
     <span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span>deps.client);
     <span class="kw">let </span>graph = Arc::clone(<span class="kw-2">&amp;</span>deps.graph);
 
-    <span class="kw">let </span><span class="kw-2">mut </span>io = create_full_rpc(
-        deps,
-        subscription_task_executor,
-        pubsub_notification_sinks,
-        pending_consenus_data_provider,
-    )<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)<span class="question-mark">?</span>;
 
     <span class="kw">if </span>tracing_config.enable_txpool {
         io.merge(MoonbeamTxPool::new(Arc::clone(<span class="kw-2">&amp;</span>client), graph).into_rpc())<span class="question-mark">?</span>;
@@ -630,7 +576,6 @@
             fc_mapping_sync::EthereumBlockNotification&lt;Block&gt;,
         &gt;,
     &gt;,
-    pending_consenus_data_provider: Box&lt;<span class="kw">dyn </span>ConsensusDataProvider&lt;Block&gt;&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
 <span class="kw">where
     </span>C: ProvideRuntimeApi&lt;Block&gt;
@@ -657,12 +602,7 @@
     BE::Blockchain: BlockchainBackend&lt;Block&gt;,
     A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">&#39;static</span>,
 {
-    create_full_rpc(
-        deps,
-        subscription_task_executor,
-        pubsub_notification_sinks,
-        pending_consenus_data_provider,
-    )
+    create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
 }
 
 <span class="kw">fn </span>create_full_rpc&lt;C, P, BE, A&gt;(
@@ -673,7 +613,6 @@
             fc_mapping_sync::EthereumBlockNotification&lt;Block&gt;,
         &gt;,
     &gt;,
-    pending_consenus_data_provider: Box&lt;<span class="kw">dyn </span>ConsensusDataProvider&lt;Block&gt;&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
 <span class="kw">where
     </span>C: ProvideRuntimeApi&lt;Block&gt;
@@ -728,37 +667,6 @@
 
     <span class="kw">let </span>no_tx_converter: <span class="prelude-ty">Option</span>&lt;fp_rpc::NoTransactionConverter&gt; = <span class="prelude-val">None</span>;
 
-    <span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
-    <span class="kw">let </span>pending_create_inherent_data_providers = <span class="kw">move </span>|<span class="kw">_</span>, <span class="kw">_</span>| <span class="kw">async move </span>{
-        <span class="kw">let </span>current = sp_timestamp::InherentDataProvider::from_system_time();
-        <span class="kw">let </span>next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
-        <span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::new(next_slot.into());
-        <span class="kw">let </span>slot =
-            sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                <span class="kw-2">*</span>timestamp,
-                slot_duration,
-            );
-        <span class="comment">// Create a dummy parachain inherent data provider which is required to pass
-        // the checks by the para chain system. We use dummy values because in the &#39;pending context&#39;
-        // neither do we have access to the real values nor do we need them.
-        </span><span class="kw">let </span>(relay_parent_storage_root, relay_chain_state) =
-            RelayStateSproofBuilder::default().into_state_root_and_proof();
-        <span class="kw">let </span>vfp = PersistedValidationData {
-            <span class="comment">// This is a hack to make `cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases`
-            // happy. Relay parent number can&#39;t be bigger than u32::MAX.
-            </span>relay_parent_number: u32::MAX,
-            relay_parent_storage_root,
-            ..Default::default()
-        };
-        <span class="kw">let </span>parachain_inherent_data = ParachainInherentData {
-            validation_data: vfp,
-            relay_chain_state,
-            downward_messages: Default::default(),
-            horizontal_messages: Default::default(),
-        };
-        <span class="prelude-val">Ok</span>((slot, timestamp, parachain_inherent_data))
-    };
-
     io.merge(
         Eth::&lt;<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, ()&gt;::new(
             client.clone(),
@@ -776,8 +684,10 @@
             <span class="comment">// Allow 10x max allowed weight for non-transactional calls
             </span><span class="number">10</span>,
             <span class="prelude-val">None</span>,
-            pending_create_inherent_data_providers,
-            <span class="prelude-val">Some</span>(pending_consenus_data_provider),
+            <span class="kw">crate</span>::parachain::PendingCrateInherentDataProvider::new(client.clone()),
+            <span class="prelude-val">Some</span>(Box::new(
+                <span class="kw">crate</span>::parachain::AuraConsensusDataProviderFallback::new(client.clone()),
+            )),
         )
         .replace_config::&lt;AstarEthConfig&lt;C, BE&gt;&gt;()
         .into_rpc(),
