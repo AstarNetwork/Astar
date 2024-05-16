@@ -33,11 +33,14 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
+    - name: Install cargo-nextest
+      run: curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
+
     - name: Check all features compilation
       run: cargo check --verbose --features try-runtime,runtime-benchmarks --locked
 
     - name: Run all tests
-      run: cargo test --features try-runtime,runtime-benchmarks --locked
+      run: make test-all
 
   native-linux:
     needs: checks-and-tests

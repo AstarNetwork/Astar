@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
-  test-runtimes:
+  tests:
     runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
@@ -26,5 +26,8 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - name: Runtime integration tests
-      run: make test-runtimes
+    - name: Install cargo-nextest
+      run: curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
+
+    - name: Run all tests
+      run: make test-all
