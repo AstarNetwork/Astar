@@ -770,20 +770,6 @@
 <a href="#770" id="770">770</a>
 <a href="#771" id="771">771</a>
 <a href="#772" id="772">772</a>
-<a href="#773" id="773">773</a>
-<a href="#774" id="774">774</a>
-<a href="#775" id="775">775</a>
-<a href="#776" id="776">776</a>
-<a href="#777" id="777">777</a>
-<a href="#778" id="778">778</a>
-<a href="#779" id="779">779</a>
-<a href="#780" id="780">780</a>
-<a href="#781" id="781">781</a>
-<a href="#782" id="782">782</a>
-<a href="#783" id="783">783</a>
-<a href="#784" id="784">784</a>
-<a href="#785" id="785">785</a>
-<a href="#786" id="786">786</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1154,15 +1140,10 @@
                 enable_evm_rpc: <span class="bool-val">true</span>, <span class="comment">// enable EVM RPC for dev node by default
             </span>};
 
-            <span class="kw">let </span>pending_consensus_data_provider = Box::new(
-                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
-            );
-
             <span class="kw">crate</span>::rpc::create_full(
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
-                pending_consensus_data_provider,
                 rpc_config.clone(),
             )
             .map_err::&lt;ServiceError, <span class="kw">_</span>&gt;(Into::into)
@@ -1442,17 +1423,8 @@
                 enable_evm_rpc: <span class="bool-val">true</span>, <span class="comment">// enable EVM RPC for dev node by default
             </span>};
 
-            <span class="kw">let </span>pending_consensus_data_provider = Box::new(
-                fc_rpc::pending::AuraConsensusDataProvider::new(client.clone()),
-            );
-
-            <span class="kw">crate</span>::rpc::create_full(
-                deps,
-                subscription,
-                pubsub_notification_sinks.clone(),
-                pending_consensus_data_provider,
-            )
-            .map_err::&lt;ServiceError, <span class="kw">_</span>&gt;(Into::into)
+            <span class="kw">crate</span>::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
+                .map_err::&lt;ServiceError, <span class="kw">_</span>&gt;(Into::into)
         })
     };
 
