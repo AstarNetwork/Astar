@@ -2,10 +2,12 @@ name: E2E Tests
 on:
   workflow_dispatch:
   push:
-    branches:
-      - '*'
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
@@ -36,7 +38,7 @@ jobs:
     - name: Clone Astar E2E tests
       run: git clone https://github.com/AstarNetwork/e2e-tests.git --depth 1
 
-    - nme: Copy runtimes
+    - name: Copy runtimes
       run: |
         cp target/release/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm e2e-tests/wasm/astar_runtime.wasm
         cp target/release/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm e2e-tests/wasm/shiden_runtime.wasm
