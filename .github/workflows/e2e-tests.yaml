@@ -1,0 +1,52 @@
+name: E2E Tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '*'
+
+concurrency:
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v4
+
+    - name: setup node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'yarn'
+
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Build runtimes
+      run: cargo build --release --features astar,shiden
+
+    - name: Clone Astar E2E tests
+      run: git clone https://github.com/AstarNetwork/e2e-tests.git --depth 1
+
+    - nme: Copy runtimes
+      run: |
+        cp target/release/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm e2e-tests/wasm/astar_runtime.wasm
+        cp target/release/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm e2e-tests/wasm/shiden_runtime.wasm
+
+    - name: Run e2e test with new runtimes
+      env:
+        ASTAR_WASM: wasm/astar_runtime.wasm
+        SHIDEN_WASM: wasm/astar_runtime.wasm
+      run: |
+        cd e2e-tests
+        yarn --immutable
+        yarn update-env
+        yarn test
