@@ -17,12 +17,6 @@ jobs:
     - name: Checkout the source code
       uses: actions/checkout@v4
 
-    - name: setup node
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18.x
-        cache: 'yarn'
-
     - name: Install deps
       run: sudo apt -y install protobuf-compiler
 
@@ -42,6 +36,13 @@ jobs:
       run: |
         cp target/release/wbuild/astar-runtime/astar_runtime.compact.compressed.wasm e2e-tests/wasm/astar_runtime.wasm
         cp target/release/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm e2e-tests/wasm/shiden_runtime.wasm
+
+    - name: Setup node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'yarn'
+        cache-dependency-path: e2e-tests/yarn.lock
 
     - name: Run e2e test with new runtimes
       env:
