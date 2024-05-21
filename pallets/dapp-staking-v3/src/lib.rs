@@ -478,6 +478,7 @@ pub mod pallet {
         pub tier_thresholds: Vec<TierThreshold>,
         pub slots_per_tier: Vec<u16>,
         pub _config: PhantomData<T>,
+        pub disable_safeguard: bool,
     }
 
     #[pallet::genesis_build]
@@ -540,6 +541,10 @@ pub mod pallet {
             ActiveProtocolState::<T>::put(protocol_state);
             StaticTierParams::<T>::put(tier_params);
             TierConfig::<T>::put(tier_config.clone());
+
+            if self.disable_safeguard {
+                Safeguard::<T>::put(false);
+            }
         }
     }
 
