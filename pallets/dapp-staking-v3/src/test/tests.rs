@@ -17,7 +17,11 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::test::{mock::*, testing_utils::*};
-use crate::{pallet::Config, ActiveProtocolState, ContractStake, DAppId, EraRewards, Error, Event, ForcingType, IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo, Subperiod, TierConfig, GenesisConfig, Permill, TierThreshold};
+use crate::{
+    pallet::Config, ActiveProtocolState, ContractStake, DAppId, EraRewards, Error, Event,
+    ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Permill,
+    Safeguard, StakerInfo, Subperiod, TierConfig, TierThreshold,
+};
 
 use frame_support::{
     assert_noop, assert_ok, assert_storage_noop,
@@ -2988,9 +2992,7 @@ fn safeguard_can_be_disabled_by_genesis_config() {
                 amount: 20000,
                 minimum_amount: 15000,
             },
-            TierThreshold::FixedTvlAmount {
-                amount: 5000,
-            },
+            TierThreshold::FixedTvlAmount { amount: 5000 },
         ],
         slots_per_tier: vec![10, 20, 30, 40],
         disable_safeguard: true,
