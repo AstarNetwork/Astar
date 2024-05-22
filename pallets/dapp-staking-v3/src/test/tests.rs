@@ -17,11 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use crate::test::{mock::*, testing_utils::*};
-use crate::{
-    pallet::Config, ActiveProtocolState, ContractStake, DAppId, EraRewards, Error, Event,
-    ForcingType, IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo,
-    Subperiod, TierConfig,
-};
+use crate::{pallet::Config, ActiveProtocolState, ContractStake, DAppId, EraRewards, Error, Event, ForcingType, IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Safeguard, StakerInfo, Subperiod, TierConfig, GenesisConfig, Permill, TierThreshold};
 
 use frame_support::{
     assert_noop, assert_ok, assert_storage_noop,
@@ -2512,7 +2508,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
                 let total_tier_allocation = *reward_portion * dapp_reward_pool;
                 let tier_reward: Balance = total_tier_allocation / (*slots as Balance);
 
-                assert_eq!(tier_assignment.rewards[idx], tier_reward,);
+                assert_eq!(tier_assignment.rewards[idx], tier_reward, );
             });
     })
 }
@@ -2960,5 +2956,51 @@ fn safeguard_on_by_default() {
     let mut ext = sp_io::TestExternalities::from(storage);
     ext.execute_with(|| {
         assert!(Safeguard::<Test>::get());
+    });
+}
+
+#[test]
+fn safeguard_can_be_disabled_by_genesis_config() {
+    use sp_runtime::BuildStorage;
+    let storage = GenesisConfig::<Test> {
+        reward_portion: vec![
+            Permill::from_percent(40),
+            Permill::from_percent(30),
+            Permill::from_percent(20),
+            Permill::from_percent(10),
+        ],
+        slot_distribution: vec![
+            Permill::from_percent(10),
+            Permill::from_percent(20),
+            Permill::from_percent(30),
+            Permill::from_percent(40),
+        ],
+        tier_thresholds: vec![
+            TierThreshold::DynamicTvlAmount {
+                amount: 30000,
+                minimum_amount: 20000,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 7500,
+                minimum_amount: 5000,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 20000,
+                minimum_amount: 15000,
+            },
+            TierThreshold::FixedTvlAmount {
+                amount: 5000,
+            },
+        ],
+        slots_per_tier: vec![10, 20, 30, 40],
+        disable_safeguard: true,
+        ..Default::default()
+    }
+        .build_storage()
+        .unwrap();
+
+    let mut ext = sp_io::TestExternalities::from(storage);
+    ext.execute_with(|| {
+        assert!(!Safeguard::<Test>::get());
     });
 }
