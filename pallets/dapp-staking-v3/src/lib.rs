@@ -465,6 +465,7 @@ pub mod pallet {
     }
 
     /// Safeguard to prevent unwanted operations in production.
+    /// Safeguard can be enabled / disabled per chain via Genesis Config.
     /// Kept as a storage without extrinsic setter, so we can still enable it for some
     /// chain-fork debugging if required.
     #[pallet::storage]
