@@ -43,6 +43,10 @@ jobs:
         working-directory: frontier/ts-tests
         run: npm install --frozen
 
+      - name: Build contracts
+        working-directory: frontier/ts-tests
+        run: npm run build
+
       - name: Run frontier RPC tests
         working-directory: frontier/ts-tests
         run: npm run test

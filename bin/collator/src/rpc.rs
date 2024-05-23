@@ -136,7 +136,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub enable_evm_rpc: bool,
     /// Command sink for manual sealing
     #[cfg(feature = "manual-seal")]
-    pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<Hash>>>,
+    pub command_sink:
+        Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<Hash>>>,
 }
 
 /// Instantiate all RPC extensions and Tracing RPC.
