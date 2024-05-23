@@ -2512,7 +2512,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
                 let total_tier_allocation = *reward_portion * dapp_reward_pool;
                 let tier_reward: Balance = total_tier_allocation / (*slots as Balance);
 
-                assert_eq!(tier_assignment.rewards[idx], tier_reward, );
+                assert_eq!(tier_assignment.rewards[idx], tier_reward,);
             });
     })
 }
