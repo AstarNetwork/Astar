@@ -461,7 +461,7 @@ pub mod pallet {
     #[pallet::type_value]
     pub fn DefaultSafeguard<T: Config>() -> bool {
         // In production, safeguard is enabled by default.
-        // DefaultSafeguard can be disabled per chain via Genesis Config.
+        // Safeguard can be disabled per chain via Genesis Config.
         true
     }
 
