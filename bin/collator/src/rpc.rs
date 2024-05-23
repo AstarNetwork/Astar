@@ -134,6 +134,9 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
     /// Enable EVM RPC servers
     pub enable_evm_rpc: bool,
+    /// Command sink for manual sealing
+    #[cfg(feature = "manual-seal")]
+    pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::EngineCommand<Hash>>>,
 }
 
 /// Instantiate all RPC extensions and Tracing RPC.
@@ -291,11 +294,19 @@ where
         overrides,
         block_data_cache,
         enable_evm_rpc,
+        #[cfg(feature = "manual-seal")]
+        command_sink,
     } = deps;
 
     io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
     io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
+
+    #[cfg(feature = "manual-seal")]
+    if let Some(command_sink) = command_sink {
+        use sc_consensus_manual_seal::rpc::ManualSealApiServer;
+        io.merge(sc_consensus_manual_seal::rpc::ManualSeal::new(command_sink).into_rpc())?;
+    }
 
     if !enable_evm_rpc {
         return Ok(io);
