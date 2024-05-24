@@ -186,7 +186,7 @@ fn make_genesis(
                 TierThreshold::FixedTvlAmount { amount: 5000 * SDN },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
-            safeguard: false,
+            safeguard: Some(false),
             ..Default::default()
         },
         inflation: InflationConfig {
