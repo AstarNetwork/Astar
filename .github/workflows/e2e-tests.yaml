@@ -16,8 +16,9 @@ jobs:
     steps:
     - name: Checkout the source code
       uses: actions/checkout@v4
-      with:
-        submodules: true
+
+    - name: Clone e2e-tests
+      run: git clone https://github.com/AstarNetwork/e2e-tests.git --depth 1
 
     - name: Setup node
       uses: actions/setup-node@v4

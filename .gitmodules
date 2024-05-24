@@ -1,3 +1,0 @@
-[submodule "e2e-tests"]
-	path = e2e-tests
-	url = git@github.com:AstarNetwork/e2e-tests.git
