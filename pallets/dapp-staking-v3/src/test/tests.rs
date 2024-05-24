@@ -2964,7 +2964,7 @@ fn safeguard_on_by_default() {
 }
 
 #[test]
-fn safeguard_can_be_disabled_by_genesis_config() {
+fn safeguard_is_enabled_by_genesis_config() {
     use sp_runtime::BuildStorage;
     let storage = GenesisConfig::<Test> {
         reward_portion: vec![
@@ -2995,7 +2995,51 @@ fn safeguard_can_be_disabled_by_genesis_config() {
             TierThreshold::FixedTvlAmount { amount: 5000 },
         ],
         slots_per_tier: vec![10, 20, 30, 40],
-        disable_safeguard: true,
+        safeguard: Some(true),
+        ..Default::default()
+    }
+        .build_storage()
+        .unwrap();
+
+    let mut ext = sp_io::TestExternalities::from(storage);
+    ext.execute_with(|| {
+        assert!(Safeguard::<Test>::get());
+    });
+}
+
+#[test]
+fn safeguard_is_disabled_by_genesis_config() {
+    use sp_runtime::BuildStorage;
+    let storage = GenesisConfig::<Test> {
+        reward_portion: vec![
+            Permill::from_percent(40),
+            Permill::from_percent(30),
+            Permill::from_percent(20),
+            Permill::from_percent(10),
+        ],
+        slot_distribution: vec![
+            Permill::from_percent(10),
+            Permill::from_percent(20),
+            Permill::from_percent(30),
+            Permill::from_percent(40),
+        ],
+        tier_thresholds: vec![
+            TierThreshold::DynamicTvlAmount {
+                amount: 30000,
+                minimum_amount: 20000,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 7500,
+                minimum_amount: 5000,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 20000,
+                minimum_amount: 15000,
+            },
+            TierThreshold::FixedTvlAmount { amount: 5000 },
+        ],
+        slots_per_tier: vec![10, 20, 30, 40],
+        safeguard: Some(false),
         ..Default::default()
     }
         .build_storage()
@@ -3004,5 +3048,49 @@ fn safeguard_can_be_disabled_by_genesis_config() {
     let mut ext = sp_io::TestExternalities::from(storage);
     ext.execute_with(|| {
         assert!(!Safeguard::<Test>::get());
+    });
+}
+
+#[test]
+fn safeguard_is_not_set_by_genesis_config() {
+    use sp_runtime::BuildStorage;
+    let storage = GenesisConfig::<Test> {
+        reward_portion: vec![
+            Permill::from_percent(40),
+            Permill::from_percent(30),
+            Permill::from_percent(20),
+            Permill::from_percent(10),
+        ],
+        slot_distribution: vec![
+            Permill::from_percent(10),
+            Permill::from_percent(20),
+            Permill::from_percent(30),
+            Permill::from_percent(40),
+        ],
+        tier_thresholds: vec![
+            TierThreshold::DynamicTvlAmount {
+                amount: 30000,
+                minimum_amount: 20000,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 7500,
+                minimum_amount: 5000,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 20000,
+                minimum_amount: 15000,
+            },
+            TierThreshold::FixedTvlAmount { amount: 5000 },
+        ],
+        slots_per_tier: vec![10, 20, 30, 40],
+        safeguard: None,
+        ..Default::default()
+    }
+        .build_storage()
+        .unwrap();
+
+    let mut ext = sp_io::TestExternalities::from(storage);
+    ext.execute_with(|| {
+        assert!(Safeguard::<Test>::get());
     });
 }
