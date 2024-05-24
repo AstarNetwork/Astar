@@ -27,28 +27,28 @@ jobs:
         run: rustup target list --installed
 
       - name: Build astar-collator
-        run: cargo build --release --features manual-seal --bin astar-collator
+        run: cargo build --release --locked --features manual-seal --bin astar-collator
 
       - name: Clone frontier tests
-        run: git clone -b tests-for-astar https://github.com/AstarNetwork/frontier.git --depth 1
+        run: git clone https://github.com/AstarNetwork/frontier-tests.git --depth 1
 
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: 18.x
           cache: 'npm'
-          cache-dependency-path: frontier/ts-tests/package-lock.json
+          cache-dependency-path: frontier-tests/package-lock.json
 
       - name: Install dependencies
-        working-directory: frontier/ts-tests
+        working-directory: frontier-tests
         run: npm install --frozen
 
       - name: Build contracts
-        working-directory: frontier/ts-tests
+        working-directory: frontier-tests
         run: npm run build
 
       - name: Run frontier RPC tests
-        working-directory: frontier/ts-tests
+        working-directory: frontier-tests
         run: npm run test
         env:
           BINARY_PATH: ${{ github.workspace }}/target/release/astar-collator
