@@ -2998,7 +2998,6 @@ fn safeguard_configurable_by_genesis_config() {
         ..Default::default()
     };
 
-
     // Test case 1: Safeguard enabled via Genesis Config
     genesis_config.safeguard = Some(true);
     let storage = genesis_config.build_storage().unwrap();
