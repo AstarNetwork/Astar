@@ -318,6 +318,7 @@ impl ExternalityBuilder {
                     TierThreshold::FixedTvlAmount { amount: 10 },
                 ],
                 slots_per_tier: vec![10, 20, 30, 40],
+                safeguard: None,
                 _config: PhantomData,
             },
             &mut storage,
