@@ -175,5 +175,5 @@ evm-tracing = [
 	"moonbeam-rpc-txpool",
 ]
 manual-seal = [
-	"sc-consensus-manual-seal"
+	"sc-consensus-manual-seal",
 ]
