@@ -218,6 +218,7 @@
 <a href="#218" id="218">218</a>
 <a href="#219" id="219">219</a>
 <a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -406,6 +407,7 @@
                 TierThreshold::FixedTvlAmount { amount: <span class="number">5000 </span>* SDN },
             ],
             slots_per_tier: <span class="macro">vec!</span>[<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>, <span class="number">40</span>],
+            safeguard: <span class="prelude-val">Some</span>(<span class="bool-val">false</span>),
             ..Default::default()
         },
         inflation: InflationConfig {

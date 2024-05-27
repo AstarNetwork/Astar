@@ -2063,6 +2063,12 @@
 <a href="#2063" id="2063">2063</a>
 <a href="#2064" id="2064">2064</a>
 <a href="#2065" id="2065">2065</a>
+<a href="#2066" id="2066">2066</a>
+<a href="#2067" id="2067">2067</a>
+<a href="#2068" id="2068">2068</a>
+<a href="#2069" id="2069">2069</a>
+<a href="#2070" id="2070">2070</a>
+<a href="#2071" id="2071">2071</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2526,6 +2532,7 @@
     <span class="attr">#[pallet::type_value]
     </span><span class="kw">pub fn </span>DefaultSafeguard&lt;T: Config&gt;() -&gt; bool {
         <span class="comment">// In production, safeguard is enabled by default.
+        // Safeguard can be disabled per chain via Genesis Config.
         </span><span class="bool-val">true
     </span>}
 
@@ -2542,6 +2549,7 @@
         <span class="kw">pub </span>slot_distribution: Vec&lt;Permill&gt;,
         <span class="kw">pub </span>tier_thresholds: Vec&lt;TierThreshold&gt;,
         <span class="kw">pub </span>slots_per_tier: Vec&lt;u16&gt;,
+        <span class="kw">pub </span>safeguard: <span class="prelude-ty">Option</span>&lt;bool&gt;,
         <span class="kw">pub </span>_config: PhantomData&lt;T&gt;,
     }
 
@@ -2605,6 +2613,10 @@
             </span>ActiveProtocolState::&lt;T&gt;::put(protocol_state);
             StaticTierParams::&lt;T&gt;::put(tier_params);
             TierConfig::&lt;T&gt;::put(tier_config.clone());
+
+            <span class="kw">if </span><span class="self">self</span>.safeguard.is_some() {
+                Safeguard::&lt;T&gt;::put(<span class="self">self</span>.safeguard.unwrap());
+            }
         }
     }
 
