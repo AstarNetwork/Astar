@@ -44,6 +44,15 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
 
+      - name: Install deps
+        run: sudo apt -y install protobuf-compiler
+
+      - name: Install & display rust toolchain
+        run: rustup show
+
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+
       - name: Build EXTRA_ARGS
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         run: |
