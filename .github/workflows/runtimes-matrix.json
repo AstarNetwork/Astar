@@ -1,0 +1,17 @@
+[
+  {
+    "name": "astar",
+    "package": "astar-runtime",
+    "uri": "wss://runtime.astar.network"
+  },
+  {
+    "name": "shiden",
+    "package": "shiden-runtime",
+    "uri": "wss://runtime.shiden.astar.network"
+  },
+  {
+    "name": "shibuya",
+    "package": "shibuya-runtime",
+    "uri": "wss://runtime.shibuya.astar.network"
+  }
+]

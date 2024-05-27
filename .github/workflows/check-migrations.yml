@@ -1,0 +1,74 @@
+name: Check Migrations
+
+on:
+  push:
+    branches: ["master"]
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ steps.runtime.outputs.runtime }}
+    name: Extract tasks from matrix
+    steps:
+      - uses: actions/checkout@v4
+      - id: runtime
+        run: |
+          # Filter out runtimes that don't have a URI
+          TASKS=$(jq '[.[] | select(.uri != null)]' .github/workflows/runtimes-matrix.json)
+          SKIPPED_TASKS=$(jq '[.[] | select(.uri == null)]' .github/workflows/runtimes-matrix.json)
+          echo --- Running the following tasks ---
+          echo $TASKS
+          echo --- Skipping the following tasks due to not having a uri field ---
+          echo $SKIPPED_TASKS
+          # Strip whitespace from Tasks now that we've logged it
+          TASKS=$(echo $TASKS | jq -c .)
+          echo "runtime=$TASKS" >> $GITHUB_OUTPUT
+
+  check-migrations:
+    needs: [runtime-matrix]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime: ${{ fromJSON(needs.runtime-matrix.outputs.runtime) }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Build EXTRA_ARGS
+        if: ! startsWith(github.ref, 'refs/tags/v')
+        run: |
+          EXTRA_FLAGS+=" --disable-spec-version-check"
+          echo "Disabling the spec version check since we are not releasing"
+          echo "Flags: $EXTRA_FLAGS"
+          echo "EXTRA_ARGS=$EXTRA_FLAGS" >> $GITHUB_ENV
+
+      - name: Build ${{ matrix.runtime.name }} runtime
+        run: cargo build --release --locked --features ${{ matrix.runtime.name }},try-runtime
+
+      - name: Run ${{ matrix.runtime.name }} Runtime Checks
+        run: |
+          PACKAGE_NAME=${{ matrix.runtime.package }}
+          RUNTIME_BLOB_NAME=$(echo $PACKAGE_NAME | sed 's/-/_/g').compact.compressed.wasm
+          RUNTIME_BLOB_PATH=./target/production/wbuild/$PACKAGE_NAME/$RUNTIME_BLOB_NAME
+
+          # Store the command in a variable so we can log it
+          COMMAND="./try-runtime \
+            --runtime $RUNTIME_BLOB_PATH \
+            on-runtime-upgrade --checks=pre-and-post \
+            ${{ env.EXTRA_ARGS }} \
+            live --uri ${{ matrix.runtime.uri }}"
+
+          # Echo the command before running it, for debugging purposes
+          echo "Running command:"
+          echo "$COMMAND"
+          eval "$COMMAND"
