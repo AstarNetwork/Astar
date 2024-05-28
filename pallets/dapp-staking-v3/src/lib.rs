@@ -151,6 +151,12 @@ pub mod pallet {
 
         /// Base native currency price used to calculate base number of slots.
         /// This is used to adjust tier configuration, tier thresholds specifically, based on the native token price changes.
+        ///
+        /// When dApp staking thresholds were modeled, a base price was set from which the initial configuration is derived.
+        /// E.g. for a price of 0.05$, we get 100 slots, and certain tier thresholds.
+        /// Using these values as the base, we can adjust the configuration based on the current price.
+        ///
+        /// This is connected with the `TierSlots` associated type, since it's used to calculate the total number of slots for the given price.
         #[pallet::constant]
         type BaseNativeCurrencyPrice: Get<FixedU128>;
 
