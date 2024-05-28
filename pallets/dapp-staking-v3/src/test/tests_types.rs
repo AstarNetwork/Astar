@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use astar_primitives::{dapp_staking::StandardTierSlots, Balance};
-use frame_support::assert_ok;
+use frame_support::{assert_ok, parameter_types};
 use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::Permill;
 
@@ -2877,7 +2877,10 @@ fn tier_configuration_basic_tests() {
     assert!(params.is_valid(), "Example params must be valid!");
 
     // Create a configuration with some values
-    let init_config = TiersConfiguration::<TiersNum, StandardTierSlots> {
+    parameter_types! {
+        pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
+    }
+    let init_config = TiersConfiguration::<TiersNum, StandardTierSlots, BaseNativeCurrencyPrice> {
         number_of_slots: 100,
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),

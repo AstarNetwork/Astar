@@ -63,7 +63,7 @@ use sp_runtime::{
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
@@ -366,6 +366,7 @@ impl TierSlotsFunc for ShidenTierSlots {
 
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 50 * SDN;
+    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
 impl pallet_dapp_staking_v3::Config for Runtime {
@@ -380,6 +381,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
     type TierSlots = ShidenTierSlots;
+    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<3>;
     type MaxNumberOfContracts = ConstU32<500>;

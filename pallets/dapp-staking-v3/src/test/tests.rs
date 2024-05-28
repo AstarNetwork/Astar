@@ -35,7 +35,7 @@ use frame_support::{
 use sp_runtime::{traits::Zero, FixedU128};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, EraNumber, SmartContractHandle},
+    dapp_staking::{CycleConfiguration, EraNumber, SmartContractHandle, TierSlots},
     Balance, BlockNumber,
 };
 
@@ -3021,4 +3021,93 @@ fn safeguard_configurable_by_genesis_config() {
     ext.execute_with(|| {
         assert!(Safeguard::<Test>::get());
     });
+}
+
+#[test]
+fn base_number_of_slots_is_respected() {
+    ExtBuilder::build().execute_with(|| {
+        // 0. Get expected number of slots for the base price
+        let base_native_price = <Test as Config>::BaseNativeCurrencyPrice::get();
+        let base_number_of_slots = <Test as Config>::TierSlots::number_of_slots(base_native_price);
+
+        // 1. Make sure base native price is set initially and calculate the new config. Store the thresholds for later comparison.
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = base_native_price);
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            base_number_of_slots,
+            "Base number of slots is expected for base native currency price."
+        );
+
+        let base_thresholds = TierConfig::<Test>::get().tier_thresholds;
+
+        // 2. Increase the price significantly, and ensure number of slots has increased, and thresholds have been saturated.
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = base_native_price * FixedU128::from(1000));
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert!(
+            TierConfig::<Test>::get().number_of_slots > base_number_of_slots,
+            "Price has increased, therefore number of slots must increase."
+        );
+
+        for tier_threshold in TierConfig::<Test>::get().tier_thresholds.iter() {
+            if let TierThreshold::DynamicTvlAmount {
+                amount,
+                minimum_amount,
+            } = tier_threshold
+            {
+                assert_eq!(*amount, *minimum_amount, "Thresholds must be saturated.");
+            }
+        }
+
+        // 3. Bring it back down to the base price, and expect number of slots to be the same as the base number of slots,
+        // and thresholds to be the same as the base thresholds.
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = base_native_price);
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            base_number_of_slots,
+            "Base number of slots is expected for base native currency price."
+        );
+
+        assert_eq!(
+            TierConfig::<Test>::get().tier_thresholds,
+            base_thresholds,
+            "Thresholds must be the same as the base thresholds."
+        );
+
+        // 4. Bring it below the base price, and expect number of slots to decrease.
+        NATIVE_PRICE
+            .with(|v| *v.borrow_mut() = base_native_price * FixedU128::from_rational(1, 1000));
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert!(
+            TierConfig::<Test>::get().number_of_slots < base_number_of_slots,
+            "Price has decreased, therefore number of slots must decrease."
+        );
+
+        // 5. Bring it back to the base price, and expect number of slots to be the same as the base number of slots,
+        // and thresholds to be the same as the base thresholds.
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = base_native_price);
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            base_number_of_slots,
+            "Base number of slots is expected for base native currency price."
+        );
+
+        assert_eq!(
+            TierConfig::<Test>::get().tier_thresholds,
+            base_thresholds,
+            "Thresholds must be the same as the base thresholds."
+        );
+    })
 }
