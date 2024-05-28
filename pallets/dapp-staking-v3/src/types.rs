@@ -1698,7 +1698,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
                 });
 
             new_tier_thresholds
-        } else if new_number_of_slots < base_number_of_slots {
+        } else {
             let delta_threshold_increase = FixedU128::from_rational(
                 (base_number_of_slots - new_number_of_slots).into(),
                 new_number_of_slots.into(),
@@ -1716,8 +1716,6 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
                 });
 
             new_tier_thresholds
-        } else {
-            self.tier_thresholds.clone()
         };
 
         Self {
