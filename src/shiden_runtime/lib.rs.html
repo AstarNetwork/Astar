@@ -2052,6 +2052,8 @@
 <a href="#2052" id="2052">2052</a>
 <a href="#2053" id="2053">2053</a>
 <a href="#2054" id="2054">2054</a>
+<a href="#2055" id="2055">2055</a>
+<a href="#2056" id="2056">2056</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2117,7 +2119,7 @@
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 <span class="kw">use </span>sp_std::{collections::btree_map::BTreeMap, prelude::<span class="kw-2">*</span>};
 
@@ -2209,7 +2211,7 @@
     spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     authoring_version: <span class="number">1</span>,
-    spec_version: <span class="number">126</span>,
+    spec_version: <span class="number">127</span>,
     impl_version: <span class="number">0</span>,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: <span class="number">2</span>,
@@ -2420,6 +2422,7 @@
 
 <span class="macro">parameter_types! </span>{
     <span class="kw">pub const </span>MinimumStakingAmount: Balance = <span class="number">50 </span>* SDN;
+    <span class="kw">pub const </span>BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(<span class="number">5</span>, <span class="number">100</span>);
 }
 
 <span class="kw">impl </span>pallet_dapp_staking_v3::Config <span class="kw">for </span>Runtime {
@@ -2434,6 +2437,7 @@
     <span class="kw">type </span>Observers = Inflation;
     <span class="kw">type </span>AccountCheck = AccountCheck;
     <span class="kw">type </span>TierSlots = ShidenTierSlots;
+    <span class="kw">type </span>BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     <span class="kw">type </span>EraRewardSpanLength = ConstU32&lt;<span class="number">16</span>&gt;;
     <span class="kw">type </span>RewardRetentionInPeriods = ConstU32&lt;<span class="number">3</span>&gt;;
     <span class="kw">type </span>MaxNumberOfContracts = ConstU32&lt;<span class="number">500</span>&gt;;

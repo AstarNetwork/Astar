@@ -1820,6 +1820,10 @@
 <a href="#1820" id="1820">1820</a>
 <a href="#1821" id="1821">1821</a>
 <a href="#1822" id="1822">1822</a>
+<a href="#1823" id="1823">1823</a>
+<a href="#1824" id="1824">1824</a>
+<a href="#1825" id="1825">1825</a>
+<a href="#1826" id="1826">1826</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3401,8 +3405,8 @@
     CloneNoBound,
     TypeInfo,
 )]
-#[scale_info(skip_type_params(NT, T))]
-</span><span class="kw">pub struct </span>TiersConfiguration&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc&gt; {
+#[scale_info(skip_type_params(NT, T, P))]
+</span><span class="kw">pub struct </span>TiersConfiguration&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; {
     <span class="doccomment">/// Total number of slots.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>number_of_slots: u16,
@@ -3418,10 +3422,10 @@
     </span><span class="kw">pub </span>tier_thresholds: BoundedVec&lt;TierThreshold, NT&gt;,
     <span class="doccomment">/// Phantom data to keep track of the tier slots function.
     </span><span class="attr">#[codec(skip)]
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) _phantom: PhantomData&lt;T&gt;,
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) _phantom: PhantomData&lt;(T, P)&gt;,
 }
 
-<span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc&gt; Default <span class="kw">for </span>TiersConfiguration&lt;NT, T&gt; {
+<span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; Default <span class="kw">for </span>TiersConfiguration&lt;NT, T, P&gt; {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             number_of_slots: <span class="number">0</span>,
@@ -3438,7 +3442,7 @@
 // * There&#39;s no need to keep thresholds in two separate storage items since the calculation can always be done compared to the
 //    anchor value of 5 cents. This still needs to be checked &amp; investigated, but it&#39;s worth a try.
 
-</span><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc&gt; TiersConfiguration&lt;NT, T&gt; {
+</span><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; TiersConfiguration&lt;NT, T, P&gt; {
     <span class="doccomment">/// Check if parameters are valid.
     </span><span class="kw">pub fn </span>is_valid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="kw">let </span>number_of_tiers: usize = NT::get() <span class="kw">as </span>usize;
@@ -3473,32 +3477,38 @@
         //
         // According to formula: %_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
         //
-        // where delta_%_slots is simply: (old_num_slots - new_num_slots) / old_num_slots
+        // where delta_%_slots is simply: (base_num_slots - new_num_slots) / base_num_slots
+        //
+        // `base_num_slots` is the number of slots at the base native currency price.
         //
         // When these entries are put into the threshold formula, we get:
-        // = 1 / ( 1 - (old_num_slots - new_num_slots) / old_num_slots ) - 1
-        // = 1 / ( new / old) - 1
-        // = old / new - 1
-        // = (old - new) / new
+        // = 1 / ( 1 - (base_num_slots - new_num_slots) / base_num_slots ) - 1
+        // = 1 / ( new / base) - 1
+        // = base / new - 1
+        // = (base - new) / new
         //
         // This number can be negative. In order to keep all operations in unsigned integer domain,
         // formulas are adjusted like:
         //
         // 1. Number of slots has increased, threshold is expected to decrease
-        // %_threshold = (new_num_slots - old_num_slots) / new_num_slots
-        // new_threshold = old_threshold * (1 - %_threshold)
+        // %_threshold = (new_num_slots - base_num_slots) / new_num_slots
+        // new_threshold = base_threshold * (1 - %_threshold)
         //
         // 2. Number of slots has decreased, threshold is expected to increase
-        // %_threshold = (old_num_slots - new_num_slots) / new_num_slots
-        // new_threshold = old_threshold * (1 + %_threshold)
+        // %_threshold = (base_num_slots - new_num_slots) / new_num_slots
+        // new_threshold = base_threshold * (1 + %_threshold)
         //
-        </span><span class="kw">let </span>new_tier_thresholds = <span class="kw">if </span>new_number_of_slots &gt; <span class="self">self</span>.number_of_slots {
+        </span><span class="kw">let </span>base_number_of_slots = T::number_of_slots(P::get()).max(<span class="number">1</span>);
+
+        <span class="comment">// NOTE: even though we could ignore the situation when the new &amp; base slot numbers are equal, it&#39;s necessary to re-calculate it since
+        // other params related to calculation might have changed.
+        </span><span class="kw">let </span>new_tier_thresholds = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
             <span class="kw">let </span>delta_threshold_decrease = FixedU128::from_rational(
-                (new_number_of_slots - <span class="self">self</span>.number_of_slots).into(),
+                (new_number_of_slots - base_number_of_slots).into(),
                 new_number_of_slots.into(),
             );
 
-            <span class="kw">let </span><span class="kw-2">mut </span>new_tier_thresholds = <span class="self">self</span>.tier_thresholds.clone();
+            <span class="kw">let </span><span class="kw-2">mut </span>new_tier_thresholds = params.tier_thresholds.clone();
             new_tier_thresholds
                 .iter_mut()
                 .for_each(|threshold| <span class="kw">match </span>threshold {
@@ -3514,13 +3524,13 @@
                 });
 
             new_tier_thresholds
-        } <span class="kw">else if </span>new_number_of_slots &lt; <span class="self">self</span>.number_of_slots {
+        } <span class="kw">else </span>{
             <span class="kw">let </span>delta_threshold_increase = FixedU128::from_rational(
-                (<span class="self">self</span>.number_of_slots - new_number_of_slots).into(),
+                (base_number_of_slots - new_number_of_slots).into(),
                 new_number_of_slots.into(),
             );
 
-            <span class="kw">let </span><span class="kw-2">mut </span>new_tier_thresholds = <span class="self">self</span>.tier_thresholds.clone();
+            <span class="kw">let </span><span class="kw-2">mut </span>new_tier_thresholds = params.tier_thresholds.clone();
             new_tier_thresholds
                 .iter_mut()
                 .for_each(|threshold| <span class="kw">match </span>threshold {
@@ -3532,8 +3542,6 @@
                 });
 
             new_tier_thresholds
-        } <span class="kw">else </span>{
-            <span class="self">self</span>.tier_thresholds.clone()
         };
 
         <span class="self">Self </span>{
