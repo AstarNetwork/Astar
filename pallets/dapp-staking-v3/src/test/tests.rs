@@ -3044,13 +3044,18 @@ fn base_number_of_slots_is_respected() {
         let base_thresholds = TierConfig::<Test>::get().tier_thresholds;
 
         // 2. Increase the price significantly, and ensure number of slots has increased, and thresholds have been saturated.
-        NATIVE_PRICE.with(|v| *v.borrow_mut() = base_native_price * FixedU128::from(1000));
+        let higher_price = base_native_price * FixedU128::from(1000);
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = higher_price);
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
         run_for_blocks(1);
 
         assert!(
             TierConfig::<Test>::get().number_of_slots > base_number_of_slots,
             "Price has increased, therefore number of slots must increase."
+        );
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            <Test as Config>::TierSlots::number_of_slots(higher_price),
         );
 
         for tier_threshold in TierConfig::<Test>::get().tier_thresholds.iter() {
@@ -3082,14 +3087,18 @@ fn base_number_of_slots_is_respected() {
         );
 
         // 4. Bring it below the base price, and expect number of slots to decrease.
-        NATIVE_PRICE
-            .with(|v| *v.borrow_mut() = base_native_price * FixedU128::from_rational(1, 1000));
+        let lower_price = base_native_price * FixedU128::from_rational(1, 1000);
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = lower_price);
         assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
         run_for_blocks(1);
 
         assert!(
             TierConfig::<Test>::get().number_of_slots < base_number_of_slots,
             "Price has decreased, therefore number of slots must decrease."
+        );
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            <Test as Config>::TierSlots::number_of_slots(lower_price),
         );
 
         // 5. Bring it back to the base price, and expect number of slots to be the same as the base number of slots,
