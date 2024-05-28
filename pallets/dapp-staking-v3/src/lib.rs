@@ -44,6 +44,7 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
+use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::{
     traits::{BadOrigin, One, Saturating, UniqueSaturatedInto, Zero},
     Perbill, Permill, SaturatedConversion,
@@ -147,6 +148,17 @@ pub mod pallet {
 
         /// Used to calculate total number of tier slots for some price.
         type TierSlots: TierSlotFunc;
+
+        /// Base native currency price used to calculate base number of slots.
+        /// This is used to adjust tier configuration, tier thresholds specifically, based on the native token price changes.
+        ///
+        /// When dApp staking thresholds were modeled, a base price was set from which the initial configuration is derived.
+        /// E.g. for a price of 0.05$, we get 100 slots, and certain tier thresholds.
+        /// Using these values as the base, we can adjust the configuration based on the current price.
+        ///
+        /// This is connected with the `TierSlots` associated type, since it's used to calculate the total number of slots for the given price.
+        #[pallet::constant]
+        type BaseNativeCurrencyPrice: Get<FixedU128>;
 
         /// Maximum length of a single era reward span length entry.
         #[pallet::constant]
@@ -446,8 +458,11 @@ pub mod pallet {
 
     /// Tier configuration user for current & preceding eras.
     #[pallet::storage]
-    pub type TierConfig<T: Config> =
-        StorageValue<_, TiersConfiguration<T::NumberOfTiers, T::TierSlots>, ValueQuery>;
+    pub type TierConfig<T: Config> = StorageValue<
+        _,
+        TiersConfiguration<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice>,
+        ValueQuery,
+    >;
 
     /// Information about which tier a dApp belonged to in a specific era.
     #[pallet::storage]
@@ -509,16 +524,17 @@ pub mod pallet {
             let number_of_slots = self.slots_per_tier.iter().fold(0_u16, |acc, &slots| {
                 acc.checked_add(slots).expect("Overflow")
             });
-            let tier_config = TiersConfiguration::<T::NumberOfTiers, T::TierSlots> {
-                number_of_slots,
-                slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
-                    self.slots_per_tier.clone(),
-                )
-                .expect("Invalid number of slots per tier entries provided."),
-                reward_portion: tier_params.reward_portion.clone(),
-                tier_thresholds: tier_params.tier_thresholds.clone(),
-                _phantom: Default::default(),
-            };
+            let tier_config =
+                TiersConfiguration::<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice> {
+                    number_of_slots,
+                    slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
+                        self.slots_per_tier.clone(),
+                    )
+                    .expect("Invalid number of slots per tier entries provided."),
+                    reward_portion: tier_params.reward_portion.clone(),
+                    tier_thresholds: tier_params.tier_thresholds.clone(),
+                    _phantom: Default::default(),
+                };
             assert!(
                 tier_params.is_valid(),
                 "Invalid tier config values provided."

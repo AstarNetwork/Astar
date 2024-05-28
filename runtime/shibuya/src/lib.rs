@@ -64,7 +64,7 @@ use sp_runtime::{
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
@@ -176,7 +176,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 129,
+    spec_version: 130,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -419,6 +419,7 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
 
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 5 * SBY;
+    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
 impl pallet_dapp_staking_v3::Config for Runtime {
@@ -433,6 +434,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
     type TierSlots = StandardTierSlots;
+    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<500>;

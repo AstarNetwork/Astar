@@ -1579,8 +1579,8 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
     CloneNoBound,
     TypeInfo,
 )]
-#[scale_info(skip_type_params(NT, T))]
-pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc> {
+#[scale_info(skip_type_params(NT, T, P))]
+pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> {
     /// Total number of slots.
     #[codec(compact)]
     pub number_of_slots: u16,
@@ -1596,10 +1596,10 @@ pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc> {
     pub tier_thresholds: BoundedVec<TierThreshold, NT>,
     /// Phantom data to keep track of the tier slots function.
     #[codec(skip)]
-    pub(crate) _phantom: PhantomData<T>,
+    pub(crate) _phantom: PhantomData<(T, P)>,
 }
 
-impl<NT: Get<u32>, T: TierSlotsFunc> Default for TiersConfiguration<NT, T> {
+impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> Default for TiersConfiguration<NT, T, P> {
     fn default() -> Self {
         Self {
             number_of_slots: 0,
@@ -1616,7 +1616,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc> Default for TiersConfiguration<NT, T> {
 // * There's no need to keep thresholds in two separate storage items since the calculation can always be done compared to the
 //    anchor value of 5 cents. This still needs to be checked & investigated, but it's worth a try.
 
-impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
+impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T, P> {
     /// Check if parameters are valid.
     pub fn is_valid(&self) -> bool {
         let number_of_tiers: usize = NT::get() as usize;
@@ -1651,32 +1651,38 @@ impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
         //
         // According to formula: %_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
         //
-        // where delta_%_slots is simply: (old_num_slots - new_num_slots) / old_num_slots
+        // where delta_%_slots is simply: (base_num_slots - new_num_slots) / base_num_slots
+        //
+        // `base_num_slots` is the number of slots at the base native currency price.
         //
         // When these entries are put into the threshold formula, we get:
-        // = 1 / ( 1 - (old_num_slots - new_num_slots) / old_num_slots ) - 1
-        // = 1 / ( new / old) - 1
-        // = old / new - 1
-        // = (old - new) / new
+        // = 1 / ( 1 - (base_num_slots - new_num_slots) / base_num_slots ) - 1
+        // = 1 / ( new / base) - 1
+        // = base / new - 1
+        // = (base - new) / new
         //
         // This number can be negative. In order to keep all operations in unsigned integer domain,
         // formulas are adjusted like:
         //
         // 1. Number of slots has increased, threshold is expected to decrease
-        // %_threshold = (new_num_slots - old_num_slots) / new_num_slots
-        // new_threshold = old_threshold * (1 - %_threshold)
+        // %_threshold = (new_num_slots - base_num_slots) / new_num_slots
+        // new_threshold = base_threshold * (1 - %_threshold)
         //
         // 2. Number of slots has decreased, threshold is expected to increase
-        // %_threshold = (old_num_slots - new_num_slots) / new_num_slots
-        // new_threshold = old_threshold * (1 + %_threshold)
+        // %_threshold = (base_num_slots - new_num_slots) / new_num_slots
+        // new_threshold = base_threshold * (1 + %_threshold)
         //
-        let new_tier_thresholds = if new_number_of_slots > self.number_of_slots {
+        let base_number_of_slots = T::number_of_slots(P::get()).max(1);
+
+        // NOTE: even though we could ignore the situation when the new & base slot numbers are equal, it's necessary to re-calculate it since
+        // other params related to calculation might have changed.
+        let new_tier_thresholds = if new_number_of_slots >= base_number_of_slots {
             let delta_threshold_decrease = FixedU128::from_rational(
-                (new_number_of_slots - self.number_of_slots).into(),
+                (new_number_of_slots - base_number_of_slots).into(),
                 new_number_of_slots.into(),
             );
 
-            let mut new_tier_thresholds = self.tier_thresholds.clone();
+            let mut new_tier_thresholds = params.tier_thresholds.clone();
             new_tier_thresholds
                 .iter_mut()
                 .for_each(|threshold| match threshold {
@@ -1692,13 +1698,13 @@ impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
                 });
 
             new_tier_thresholds
-        } else if new_number_of_slots < self.number_of_slots {
+        } else {
             let delta_threshold_increase = FixedU128::from_rational(
-                (self.number_of_slots - new_number_of_slots).into(),
+                (base_number_of_slots - new_number_of_slots).into(),
                 new_number_of_slots.into(),
             );
 
-            let mut new_tier_thresholds = self.tier_thresholds.clone();
+            let mut new_tier_thresholds = params.tier_thresholds.clone();
             new_tier_thresholds
                 .iter_mut()
                 .for_each(|threshold| match threshold {
@@ -1710,8 +1716,6 @@ impl<NT: Get<u32>, T: TierSlotsFunc> TiersConfiguration<NT, T> {
                 });
 
             new_tier_thresholds
-        } else {
-            self.tier_thresholds.clone()
         };
 
         Self {

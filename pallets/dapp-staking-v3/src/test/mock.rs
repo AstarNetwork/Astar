@@ -115,7 +115,7 @@ impl PriceProvider for DummyPriceProvider {
 thread_local! {
     pub(crate) static DOES_PAYOUT_SUCCEED: RefCell<bool> = RefCell::new(false);
     pub(crate) static BLOCK_BEFORE_NEW_ERA: RefCell<EraNumber> = RefCell::new(0);
-    pub(crate) static NATIVE_PRICE: RefCell<FixedU128> = RefCell::new(FixedU128::from_rational(1, 10));
+    pub(crate) static NATIVE_PRICE: RefCell<FixedU128> = RefCell::new(BaseNativeCurrencyPrice::get());
 }
 
 pub struct DummyStakingRewardHandler;
@@ -195,6 +195,10 @@ impl AccountCheck<AccountId> for DummyAccountCheck {
     }
 }
 
+parameter_types! {
+    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
+}
+
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -207,6 +211,7 @@ impl pallet_dapp_staking::Config for Test {
     type Observers = DummyDappStakingObserver;
     type AccountCheck = DummyAccountCheck;
     type TierSlots = StandardTierSlots;
+    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<10>;
@@ -315,6 +320,7 @@ impl ExtBuilder {
             let init_tier_config = TiersConfiguration::<
                 <Test as Config>::NumberOfTiers,
                 <Test as Config>::TierSlots,
+                <Test as Config>::BaseNativeCurrencyPrice,
             > {
                 number_of_slots: 40,
                 slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
