@@ -35,7 +35,7 @@ jobs:
       run: rustup target list --installed
 
     - name: Build Astar & Shiden runtimes
-      run: cargo build --release --features astar,shiden
+      run: cargo build --release --locked -p astar-runtime -p shiden-runtime
 
     - name: Copy runtimes into test folder
       run: |
