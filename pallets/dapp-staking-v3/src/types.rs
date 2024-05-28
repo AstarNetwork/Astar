@@ -1657,9 +1657,9 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         //
         // When these entries are put into the threshold formula, we get:
         // = 1 / ( 1 - (base_num_slots - new_num_slots) / base_num_slots ) - 1
-        // = 1 / ( new / old) - 1
-        // = old / new - 1
-        // = (old - new) / new
+        // = 1 / ( new / base) - 1
+        // = base / new - 1
+        // = (base - new) / new
         //
         // This number can be negative. In order to keep all operations in unsigned integer domain,
         // formulas are adjusted like:
