@@ -19,8 +19,9 @@
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
-    EraRewards, Error, Event, ForcingType, IntegratedDApps, Ledger, NextDAppId, PeriodNumber,
-    RankRewards, Safeguard, StakerInfo, Subperiod, TierConfig,
+    EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId,
+    PeriodNumber, Permill, RankRewards, Safeguard, StakerInfo, Subperiod, TierConfig,
+    TierThreshold,
 };
 
 use frame_support::{
@@ -38,7 +39,7 @@ use sp_runtime::{
 };
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, EraNumber, RankedTier, SmartContractHandle},
+    dapp_staking::{CycleConfiguration, EraNumber, RankedTier, SmartContractHandle, TierSlots},
     Balance, BlockNumber,
 };
 
@@ -2975,6 +2976,164 @@ fn safeguard_on_by_default() {
     ext.execute_with(|| {
         assert!(Safeguard::<Test>::get());
     });
+}
+
+#[test]
+fn safeguard_configurable_by_genesis_config() {
+    use sp_runtime::BuildStorage;
+    let mut genesis_config = GenesisConfig::<Test> {
+        reward_portion: vec![
+            Permill::from_percent(40),
+            Permill::from_percent(30),
+            Permill::from_percent(20),
+            Permill::from_percent(10),
+        ],
+        slot_distribution: vec![
+            Permill::from_percent(10),
+            Permill::from_percent(20),
+            Permill::from_percent(30),
+            Permill::from_percent(40),
+        ],
+        tier_thresholds: vec![
+            TierThreshold::DynamicTvlAmount {
+                amount: 30000,
+                minimum_amount: 20000,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 7500,
+                minimum_amount: 5000,
+            },
+            TierThreshold::DynamicTvlAmount {
+                amount: 20000,
+                minimum_amount: 15000,
+            },
+            TierThreshold::FixedTvlAmount { amount: 5000 },
+        ],
+        slots_per_tier: vec![10, 20, 30, 40],
+        ..Default::default()
+    };
+
+    // Test case 1: Safeguard enabled via Genesis Config
+    genesis_config.safeguard = Some(true);
+    let storage = genesis_config.build_storage().unwrap();
+    let mut ext = sp_io::TestExternalities::from(storage);
+    ext.execute_with(|| {
+        assert!(Safeguard::<Test>::get());
+    });
+
+    // Test case 2: Safeguard disabled via Genesis Config
+    genesis_config.safeguard = Some(false);
+    let storage = genesis_config.build_storage().unwrap();
+    let mut ext = sp_io::TestExternalities::from(storage);
+    ext.execute_with(|| {
+        assert!(!Safeguard::<Test>::get());
+    });
+
+    // Test case 3: Safeguard not set via Genesis Config
+    genesis_config.safeguard = None;
+    let storage = genesis_config.build_storage().unwrap();
+    let mut ext = sp_io::TestExternalities::from(storage);
+    ext.execute_with(|| {
+        assert!(Safeguard::<Test>::get());
+    });
+}
+
+#[test]
+fn base_number_of_slots_is_respected() {
+    ExtBuilder::build().execute_with(|| {
+        // 0. Get expected number of slots for the base price
+        let base_native_price = <Test as Config>::BaseNativeCurrencyPrice::get();
+        let base_number_of_slots = <Test as Config>::TierSlots::number_of_slots(base_native_price);
+
+        // 1. Make sure base native price is set initially and calculate the new config. Store the thresholds for later comparison.
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = base_native_price);
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            base_number_of_slots,
+            "Base number of slots is expected for base native currency price."
+        );
+
+        let base_thresholds = TierConfig::<Test>::get().tier_thresholds;
+
+        // 2. Increase the price significantly, and ensure number of slots has increased, and thresholds have been saturated.
+        let higher_price = base_native_price * FixedU128::from(1000);
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = higher_price);
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert!(
+            TierConfig::<Test>::get().number_of_slots > base_number_of_slots,
+            "Price has increased, therefore number of slots must increase."
+        );
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            <Test as Config>::TierSlots::number_of_slots(higher_price),
+        );
+
+        for tier_threshold in TierConfig::<Test>::get().tier_thresholds.iter() {
+            if let TierThreshold::DynamicTvlAmount {
+                amount,
+                minimum_amount,
+            } = tier_threshold
+            {
+                assert_eq!(*amount, *minimum_amount, "Thresholds must be saturated.");
+            }
+        }
+
+        // 3. Bring it back down to the base price, and expect number of slots to be the same as the base number of slots,
+        // and thresholds to be the same as the base thresholds.
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = base_native_price);
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            base_number_of_slots,
+            "Base number of slots is expected for base native currency price."
+        );
+
+        assert_eq!(
+            TierConfig::<Test>::get().tier_thresholds,
+            base_thresholds,
+            "Thresholds must be the same as the base thresholds."
+        );
+
+        // 4. Bring it below the base price, and expect number of slots to decrease.
+        let lower_price = base_native_price * FixedU128::from_rational(1, 1000);
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = lower_price);
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert!(
+            TierConfig::<Test>::get().number_of_slots < base_number_of_slots,
+            "Price has decreased, therefore number of slots must decrease."
+        );
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            <Test as Config>::TierSlots::number_of_slots(lower_price),
+        );
+
+        // 5. Bring it back to the base price, and expect number of slots to be the same as the base number of slots,
+        // and thresholds to be the same as the base thresholds.
+        NATIVE_PRICE.with(|v| *v.borrow_mut() = base_native_price);
+        assert_ok!(DappStaking::force(RuntimeOrigin::root(), ForcingType::Era));
+        run_for_blocks(1);
+
+        assert_eq!(
+            TierConfig::<Test>::get().number_of_slots,
+            base_number_of_slots,
+            "Base number of slots is expected for base native currency price."
+        );
+
+        assert_eq!(
+            TierConfig::<Test>::get().tier_thresholds,
+            base_thresholds,
+            "Thresholds must be the same as the base thresholds."
+        );
+    })
 }
 
 #[test]

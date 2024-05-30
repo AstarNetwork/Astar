@@ -187,6 +187,7 @@ fn make_genesis(
                 },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
+            safeguard: Some(false),
             ..Default::default()
         },
         inflation: InflationConfig {

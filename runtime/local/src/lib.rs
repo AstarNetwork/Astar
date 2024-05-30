@@ -59,7 +59,7 @@ use sp_runtime::{
         DispatchInfoOf, Dispatchable, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
@@ -448,6 +448,10 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
     }
 }
 
+parameter_types! {
+    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
+}
+
 impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -460,6 +464,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type Observers = Inflation;
     type AccountCheck = ();
     type TierSlots = StandardTierSlots;
+    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<8>;
     type RewardRetentionInPeriods = ConstU32<2>;
     type MaxNumberOfContracts = ConstU32<100>;

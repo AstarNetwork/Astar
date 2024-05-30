@@ -18,17 +18,14 @@
 
 //! Astar RPCs implementation.
 
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
-use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::{
-    pending::ConsensusDataProvider, Eth, EthApiServer, EthBlockDataCacheTask, EthFilter,
-    EthFilterApiServer, EthPubSub, EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3,
-    Web3ApiServer,
+    Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use jsonrpsee::RpcModule;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
-use polkadot_primitives::PersistedValidationData;
+
 use sc_client_api::{
     AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider, UsageProvider,
 };
@@ -149,7 +146,6 @@ pub fn create_full<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
-    pending_consenus_data_provider: Box<dyn ConsensusDataProvider<Block>>,
     tracing_config: EvmTracingConfig,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
@@ -182,12 +178,7 @@ where
     let client = Arc::clone(&deps.client);
     let graph = Arc::clone(&deps.graph);
 
-    let mut io = create_full_rpc(
-        deps,
-        subscription_task_executor,
-        pubsub_notification_sinks,
-        pending_consenus_data_provider,
-    )?;
+    let mut io = create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)?;
 
     if tracing_config.enable_txpool {
         io.merge(MoonbeamTxPool::new(Arc::clone(&client), graph).into_rpc())?;
@@ -221,7 +212,6 @@ pub fn create_full<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
-    pending_consenus_data_provider: Box<dyn ConsensusDataProvider<Block>>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -248,12 +238,7 @@ where
     BE::Blockchain: BlockchainBackend<Block>,
     A: ChainApi<Block = Block> + 'static,
 {
-    create_full_rpc(
-        deps,
-        subscription_task_executor,
-        pubsub_notification_sinks,
-        pending_consenus_data_provider,
-    )
+    create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
 }
 
 fn create_full_rpc<C, P, BE, A>(
@@ -264,7 +249,6 @@ fn create_full_rpc<C, P, BE, A>(
             fc_mapping_sync::EthereumBlockNotification<Block>,
         >,
     >,
-    pending_consenus_data_provider: Box<dyn ConsensusDataProvider<Block>>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
@@ -319,37 +303,6 @@ where
 
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
-    let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-    let pending_create_inherent_data_providers = move |_, _| async move {
-        let current = sp_timestamp::InherentDataProvider::from_system_time();
-        let next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
-        let timestamp = sp_timestamp::InherentDataProvider::new(next_slot.into());
-        let slot =
-            sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                *timestamp,
-                slot_duration,
-            );
-        // Create a dummy parachain inherent data provider which is required to pass
-        // the checks by the para chain system. We use dummy values because in the 'pending context'
-        // neither do we have access to the real values nor do we need them.
-        let (relay_parent_storage_root, relay_chain_state) =
-            RelayStateSproofBuilder::default().into_state_root_and_proof();
-        let vfp = PersistedValidationData {
-            // This is a hack to make `cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases`
-            // happy. Relay parent number can't be bigger than u32::MAX.
-            relay_parent_number: u32::MAX,
-            relay_parent_storage_root,
-            ..Default::default()
-        };
-        let parachain_inherent_data = ParachainInherentData {
-            validation_data: vfp,
-            relay_chain_state,
-            downward_messages: Default::default(),
-            horizontal_messages: Default::default(),
-        };
-        Ok((slot, timestamp, parachain_inherent_data))
-    };
-
     io.merge(
         Eth::<_, _, _, _, _, _, _, ()>::new(
             client.clone(),
@@ -367,8 +320,10 @@ where
             // Allow 10x max allowed weight for non-transactional calls
             10,
             None,
-            pending_create_inherent_data_providers,
-            Some(pending_consenus_data_provider),
+            crate::parachain::PendingCrateInherentDataProvider::new(client.clone()),
+            Some(Box::new(
+                crate::parachain::AuraConsensusDataProviderFallback::new(client.clone()),
+            )),
         )
         .replace_config::<AstarEthConfig<C, BE>>()
         .into_rpc(),

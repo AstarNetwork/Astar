@@ -63,7 +63,7 @@ use sp_runtime::{
         DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
@@ -155,7 +155,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 125,
+    spec_version: 127,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -366,6 +366,7 @@ impl TierSlotsFunc for ShidenTierSlots {
 
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 50 * SDN;
+    pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 
 impl pallet_dapp_staking_v3::Config for Runtime {
@@ -380,6 +381,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type Observers = Inflation;
     type AccountCheck = AccountCheck;
     type TierSlots = ShidenTierSlots;
+    type BaseNativeCurrencyPrice = BaseNativeCurrencyPrice;
     type EraRewardSpanLength = ConstU32<16>;
     type RewardRetentionInPeriods = ConstU32<3>;
     type MaxNumberOfContracts = ConstU32<500>;
@@ -1170,38 +1172,10 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-parameter_types! {
-    pub const StaticPriceProviderName: &'static str = "StaticPriceProvider";
-    // 0.32 $
-    pub const InitPrice: CurrencyAmount = CurrencyAmount::from_rational(32, 100);
-}
-
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    frame_support::migrations::RemovePallet<
-        StaticPriceProviderName,
-        <Runtime as frame_system::Config>::DbWeight,
-    >,
-    OracleIntegrationLogic,
-    pallet_price_aggregator::PriceAggregatorInitializer<Runtime, InitPrice>,
-);
-
-use frame_support::traits::OnRuntimeUpgrade;
-pub struct OracleIntegrationLogic;
-impl OnRuntimeUpgrade for OracleIntegrationLogic {
-    fn on_runtime_upgrade() -> Weight {
-        // 1. Set initial storage versions for the membership pallet
-        use frame_support::traits::StorageVersion;
-        StorageVersion::new(4)
-            .put::<pallet_membership::Pallet<Runtime, OracleMembershipInstance>>();
-
-        // No storage version for the `orml_oracle` pallet, it's essentially 0
-
-        <Runtime as frame_system::Config>::DbWeight::get().writes(1)
-    }
-}
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
