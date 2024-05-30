@@ -3161,7 +3161,7 @@ fn ranking_will_calc_reward_correctly() {
             assert_stake(account, smart_contract, amount);
         }
 
-        for (idx, amount) in [81, 82, 80, 79, 15, 15, 14].into_iter().enumerate() {
+        for (idx, amount) in [101, 102, 100, 99, 15, 16, 14].into_iter().enumerate() {
             lock_and_stake(idx, &smart_contracts[idx], amount)
         }
 
@@ -3213,7 +3213,7 @@ fn claim_dapp_reward_with_rank() {
         assert_register(1, &smart_contract);
 
         let alice = 2;
-        let amount = 79; // very close to tier 0 so will enter tier 1 with rank 9
+        let amount = 99; // very close to tier 0 so will enter tier 1 with rank 9
         assert_lock(alice, amount);
         assert_stake(alice, &smart_contract, amount);
 
@@ -3235,9 +3235,9 @@ fn claim_dapp_reward_with_rank() {
         let expected_rank = 9;
         let expected_total_reward =
             slot_reward + expected_rank * rank_rewards[expected_tier as usize];
-        assert_eq!(slot_reward, 10_000_000);
-        assert_eq!(rank_rewards[expected_tier as usize], 1_000_000); // slot_reward / 10
-        assert_eq!(expected_total_reward, 19_000_000);
+        assert_eq!(slot_reward, 15_000_000);
+        assert_eq!(rank_rewards[expected_tier as usize], 1_500_000); // slot_reward / 10
+        assert_eq!(expected_total_reward, 28_500_000);
 
         System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppReward {
             beneficiary: 1,
