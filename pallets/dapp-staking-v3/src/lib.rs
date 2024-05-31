@@ -491,10 +491,6 @@ pub mod pallet {
     #[pallet::storage]
     pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
 
-    #[pallet::storage]
-    pub type RankRewards<T: Config> =
-        StorageMap<_, Twox64Concat, EraNumber, BoundedVec<Balance, T::NumberOfTiers>, ValueQuery>;
-
     #[pallet::genesis_config]
     #[derive(frame_support::DefaultNoBound)]
     pub struct GenesisConfig<T> {
@@ -1412,7 +1408,7 @@ pub mod pallet {
                 Error::<T>::RewardExpired
             );
 
-            let (mut amount, ranked_tier) =
+            let (amount, ranked_tier) =
                 dapp_tiers
                     .try_claim(dapp_info.id)
                     .map_err(|error| match error {
@@ -1420,17 +1416,7 @@ pub mod pallet {
                         _ => Error::<T>::InternalClaimDAppError,
                     })?;
 
-            let (tier_id, rank) = ranked_tier.deconstruct();
-
-            // if dapp is ranked and there's reward per rank then include the extra reward to the total amount
-            if T::RankingEnabled::get() && !rank.is_zero() {
-                if let Some(reward_per_rank) =
-                    RankRewards::<T>::get(&era).get(tier_id as usize).copied()
-                {
-                    let additional_reward = reward_per_rank.saturating_mul(rank.into());
-                    amount = amount.saturating_add(additional_reward);
-                }
-            }
+            let (tier_id, _rank) = ranked_tier.deconstruct();
 
             // Get reward destination, and deposit the reward.
             let beneficiary = dapp_info.reward_beneficiary();
@@ -1694,7 +1680,7 @@ pub mod pallet {
         pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier> {
             let protocol_state = ActiveProtocolState::<T>::get();
 
-            let (dapp_tiers, _count, _rank_rewards) = Self::get_dapp_tier_assignment_and_rewards(
+            let (dapp_tiers, _count) = Self::get_dapp_tier_assignment_and_rewards(
                 protocol_state.era,
                 protocol_state.period_number(),
                 Balance::zero(),
@@ -1736,11 +1722,7 @@ pub mod pallet {
             era: EraNumber,
             period: PeriodNumber,
             dapp_reward_pool: Balance,
-        ) -> (
-            DAppTierRewardsFor<T>,
-            DAppId,
-            BoundedVec<Balance, T::NumberOfTiers>,
-        ) {
+        ) -> (DAppTierRewardsFor<T>, DAppId) {
             let mut dapp_stakes = Vec::with_capacity(T::MaxNumberOfContracts::get() as usize);
 
             // 1.
@@ -1793,7 +1775,7 @@ pub mod pallet {
             let mut tier_slots = BTreeMap::new();
 
             let mut upper_bound = Balance::zero();
-            let mut rank_rewards = BoundedVec::<Balance, T::NumberOfTiers>::new();
+            let mut rank_rewards = Vec::new();
 
             for (tier_id, (tier_capacity, tier_threshold)) in tier_config
                 .slots_per_tier
@@ -1841,7 +1823,7 @@ pub mod pallet {
                     reward_for_ranks.saturating_div(ranks_sum.into())
                 };
 
-                let _ = rank_rewards.try_push(reward_per_rank);
+                rank_rewards.push(reward_per_rank);
                 dapp_tiers.append(&mut tier_slots);
                 upper_bound = lower_bound; // current threshold becomes upper bound for next tier
             }
@@ -1854,10 +1836,10 @@ pub mod pallet {
                     dapp_tiers,
                     tier_rewards,
                     period,
+                    rank_rewards,
                 )
                 .unwrap_or_default(),
                 counter,
-                rank_rewards,
             )
         }
 
@@ -1940,7 +1922,7 @@ pub mod pallet {
                     //
                     // To help with benchmarking, it's possible to omit real tier calculation using the `Dummy` approach.
                     // This must never be used in production code, obviously.
-                    let (dapp_tier_rewards, counter, rank_rewards) = match tier_assignment {
+                    let (dapp_tier_rewards, counter) = match tier_assignment {
                         TierAssignment::Real => Self::get_dapp_tier_assignment_and_rewards(
                             current_era,
                             protocol_state.period_number(),
@@ -1953,9 +1935,6 @@ pub mod pallet {
                             BoundedVec::truncate_from([1].to_vec()),
                         ),
                     };
-                    if rank_rewards.iter().any(|x| !x.is_zero()) {
-                        RankRewards::<T>::insert(&current_era, rank_rewards);
-                    }
                     DAppTiers::<T>::insert(&current_era, dapp_tier_rewards);
 
                     consumed_weight
@@ -2113,7 +2092,6 @@ pub mod pallet {
                     // If oldest valid era comes AFTER this span, it's safe to delete it.
                     if era_reward.last_era() < cleanup_marker.oldest_valid_era {
                         EraRewards::<T>::remove(cleanup_marker.era_reward_index);
-                        RankRewards::<T>::remove(cleanup_marker.era_reward_index);
                         cleanup_marker
                             .era_reward_index
                             .saturating_accrue(T::EraRewardSpanLength::get());

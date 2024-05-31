@@ -20,8 +20,7 @@ use crate::test::{mock::*, testing_utils::*};
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
     EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId,
-    PeriodNumber, Permill, RankRewards, Safeguard, StakerInfo, Subperiod, TierConfig,
-    TierThreshold,
+    PeriodNumber, Permill, Safeguard, StakerInfo, Subperiod, TierConfig, TierThreshold,
 };
 
 use frame_support::{
@@ -2470,17 +2469,16 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         // Finally, the actual test
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
-        let (tier_assignment, counter, rank_rewards) =
-            DappStaking::get_dapp_tier_assignment_and_rewards(
-                protocol_state.era + 1,
-                protocol_state.period_number(),
-                dapp_reward_pool,
-            );
+        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment_and_rewards(
+            protocol_state.era + 1,
+            protocol_state.period_number(),
+            dapp_reward_pool,
+        );
 
         // There's enough reward to satisfy 100% reward per rank.
         // Slot reward is 60_000 therefor expected rank reward is 6_000
         assert_eq!(
-            rank_rewards,
+            tier_assignment.rank_rewards,
             BoundedVec::<Balance, ConstU32<4>>::try_from(vec![0, 6_000, 0, 0]).unwrap()
         );
 
@@ -2547,12 +2545,11 @@ fn get_dapp_tier_assignment_and_rewards_zero_slots_per_tier_works() {
         // Calculate tier assignment (we don't need dApps for this test)
         let protocol_state = ActiveProtocolState::<Test>::get();
         let dapp_reward_pool = 1000000;
-        let (tier_assignment, counter, _rank_rewards) =
-            DappStaking::get_dapp_tier_assignment_and_rewards(
-                protocol_state.era,
-                protocol_state.period_number(),
-                dapp_reward_pool,
-            );
+        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment_and_rewards(
+            protocol_state.era,
+            protocol_state.period_number(),
+            dapp_reward_pool,
+        );
 
         // Basic checks
         let number_of_tiers: u32 = <Test as Config>::NumberOfTiers::get();
@@ -3167,12 +3164,11 @@ fn ranking_will_calc_reward_correctly() {
 
         // Finally, the actual test
         let protocol_state = ActiveProtocolState::<Test>::get();
-        let (tier_assignment, counter, rank_rewards) =
-            DappStaking::get_dapp_tier_assignment_and_rewards(
-                protocol_state.era + 1,
-                protocol_state.period_number(),
-                1_000_000,
-            );
+        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment_and_rewards(
+            protocol_state.era + 1,
+            protocol_state.period_number(),
+            1_000_000,
+        );
 
         assert_eq!(
             tier_assignment,
@@ -3188,20 +3184,16 @@ fn ranking_will_calc_reward_correctly() {
                 .unwrap(),
                 rewards: BoundedVec::try_from(vec![200_000, 100_000, 66_666, 5_000]).unwrap(),
                 period: 1,
+                // Tier 0 has no ranking therefor no rank reward.
+                // For tier 1 there's not enough reward to satisfy 100% reward per rank.
+                // Only one slot is empty. Slot reward is 100_000 therefor expected rank reward is 100_000 / 19 (ranks_sum).
+                // Tier 2..3 has no ranking therefor no rank reward.
+                rank_rewards: BoundedVec::try_from(vec![0, 5_263, 0, 0]).unwrap()
             }
         );
 
         // one didn't make it
         assert_eq!(counter, 7);
-
-        // Tier 0 has no ranking therefor no rank reward.
-        // For tier 1 there's not enough reward to satisfy 100% reward per rank.
-        // Only one slot is empty. Slot reward is 100_000 therefor expected rank reward is 100_000 / 19 (ranks_sum).
-        // Tier 2..3 has no ranking therefor no rank reward.
-        assert_eq!(
-            rank_rewards,
-            BoundedVec::<Balance, ConstU32<4>>::try_from(vec![0, 5_263, 0, 0]).unwrap()
-        );
     })
 }
 
@@ -3221,8 +3213,10 @@ fn claim_dapp_reward_with_rank() {
         advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
 
         let era = ActiveProtocolState::<Test>::get().era - 1;
-        let slot_reward = DAppTiers::<Test>::get(era).unwrap().rewards[1];
-        let rank_rewards = RankRewards::<Test>::get(era);
+        let tiers = DAppTiers::<Test>::get(era).unwrap();
+
+        let slot_reward = tiers.rewards[1];
+        let rank_reward = tiers.rank_rewards[1];
 
         // Claim dApp reward & verify event
         assert_ok!(DappStaking::claim_dapp_reward(
@@ -3231,18 +3225,16 @@ fn claim_dapp_reward_with_rank() {
             era,
         ));
 
-        let expected_tier = 1u8;
         let expected_rank = 9;
-        let expected_total_reward =
-            slot_reward + expected_rank * rank_rewards[expected_tier as usize];
+        let expected_total_reward = slot_reward + expected_rank * rank_reward;
         assert_eq!(slot_reward, 15_000_000);
-        assert_eq!(rank_rewards[expected_tier as usize], 1_500_000); // slot_reward / 10
+        assert_eq!(rank_reward, 1_500_000); // slot_reward / 10
         assert_eq!(expected_total_reward, 28_500_000);
 
         System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppReward {
             beneficiary: 1,
             smart_contract: smart_contract.clone(),
-            tier_id: expected_tier,
+            tier_id: 1,
             era,
             amount: expected_total_reward,
         }));

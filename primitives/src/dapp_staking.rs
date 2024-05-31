@@ -207,12 +207,16 @@ pub struct RankedTier(u8);
 impl RankedTier {
     pub const MAX_RANK: u8 = 10;
 
+    /// Create new encoded RankedTier from tier and rank.
+    /// Returns Err(ArithmeticError::Overflow) if max value is not respected.
     pub fn new(tier: TierId, rank: Rank) -> Result<Self, ArithmeticError> {
         if rank > Self::MAX_RANK || tier > 0xf {
             return Err(ArithmeticError::Overflow);
         }
         Ok(Self(rank << 4 | tier & 0x0f))
     }
+
+    /// Create new encoded RankedTier from tier and rank with saturation.
     pub fn new_saturated(tier: TierId, rank: Rank) -> Self {
         Self(rank.min(Self::MAX_RANK) << 4 | tier.min(0xf) & 0x0f)
     }
@@ -243,6 +247,12 @@ impl core::fmt::Debug for RankedTier {
 }
 
 impl RankedTier {
+    /// Find rank based on lower/upper bounds and staked amount.
+    /// Delta between upper and lower bound is divided in 10 and will increase rank
+    /// by one for each threshold staked amount will reach.
+    /// i.e. find_rank(10, 20, 10) -> 0
+    /// i.e. find_rank(10, 20, 15) -> 5
+    /// i.e. find_rank(10, 20, 20) -> 10
     pub fn find_rank(lower_bound: Balance, upper_bound: Balance, stake_amount: Balance) -> Rank {
         if upper_bound.is_zero() {
             return 0;

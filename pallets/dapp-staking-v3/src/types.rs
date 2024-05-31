@@ -1748,6 +1748,8 @@ pub struct DAppTierRewards<MD: Get<u32>, NT: Get<u32>> {
     /// Period during which this struct was created.
     #[codec(compact)]
     pub period: PeriodNumber,
+    /// Rank reward for each tier. First entry refers to the first tier, and so on.
+    pub rank_rewards: BoundedVec<Balance, NT>,
 }
 
 impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
@@ -1756,6 +1758,7 @@ impl<MD: Get<u32>, NT: Get<u32>> Default for DAppTierRewards<MD, NT> {
             dapps: BoundedBTreeMap::default(),
             rewards: BoundedVec::default(),
             period: 0,
+            rank_rewards: BoundedVec::default(),
         }
     }
 }
@@ -1767,13 +1770,16 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
         dapps: BTreeMap<DAppId, RankedTier>,
         rewards: Vec<Balance>,
         period: PeriodNumber,
+        rank_rewards: Vec<Balance>,
     ) -> Result<Self, ()> {
         let dapps = BoundedBTreeMap::try_from(dapps).map_err(|_| ())?;
         let rewards = BoundedVec::try_from(rewards).map_err(|_| ())?;
+        let rank_rewards = BoundedVec::try_from(rank_rewards).map_err(|_| ())?;
         Ok(Self {
             dapps,
             rewards,
             period,
+            rank_rewards,
         })
     }
 
@@ -1786,11 +1792,20 @@ impl<MD: Get<u32>, NT: Get<u32>> DAppTierRewards<MD, NT> {
             .remove(&dapp_id)
             .ok_or(DAppTierError::NoDAppInTiers)?;
 
-        let tier_id = ranked_tier.tier();
-        let amount = self
+        let (tier_id, rank) = ranked_tier.deconstruct();
+        let mut amount = self
             .rewards
             .get(tier_id as usize)
             .map_or(Balance::zero(), |x| *x);
+
+        let reward_per_rank = self
+            .rank_rewards
+            .get(tier_id as usize)
+            .map_or(Balance::zero(), |x| *x);
+
+        let additional_reward = reward_per_rank.saturating_mul(rank.into());
+        amount = amount.saturating_add(additional_reward);
+
         Ok((amount, ranked_tier))
     }
 }

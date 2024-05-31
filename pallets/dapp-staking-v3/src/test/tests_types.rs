@@ -2924,6 +2924,7 @@ fn dapp_tier_rewards_basic_tests() {
         dapps.clone(),
         tier_rewards.clone(),
         period,
+        vec![0, 0, 0],
     )
     .expect("Bounds are respected.");
 
