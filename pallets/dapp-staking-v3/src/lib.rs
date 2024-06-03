@@ -72,7 +72,9 @@ mod benchmarking;
 mod types;
 pub use types::*;
 
+pub mod migration;
 pub mod weights;
+
 pub use weights::WeightInfo;
 
 const LOG_TARGET: &str = "dapp-staking";
@@ -92,7 +94,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(6);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(7);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
