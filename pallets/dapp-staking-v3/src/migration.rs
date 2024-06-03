@@ -34,7 +34,7 @@ pub mod versioned_migrations {
     pub type V6ToV7<T> = frame_support::migrations::VersionedMigration<
         6,
         7,
-        v7::VersionUncheckedMigrateV6ToV7<T>,
+        v7::VersionMigrateV6ToV7<T>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -45,9 +45,9 @@ mod v7 {
     use super::*;
     use crate::migration::v6::DAppTierRewards as DAppTierRewardsV6;
 
-    pub struct VersionUncheckedMigrateV6ToV7<T>(PhantomData<T>);
+    pub struct VersionMigrateV6ToV7<T>(PhantomData<T>);
 
-    impl<T: Config> OnRuntimeUpgrade for VersionUncheckedMigrateV6ToV7<T> {
+    impl<T: Config> OnRuntimeUpgrade for VersionMigrateV6ToV7<T> {
         fn on_runtime_upgrade() -> Weight {
             let current = Pallet::<T>::current_storage_version();
 

@@ -1300,6 +1300,7 @@ pub type Executive = frame_executive::Executive<
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
     pallet_preimage::migration::v1::Migration<Runtime>,
+    // Migrate to ranking system
     pallet_dapp_staking_v3::migration::versioned_migrations::V6ToV7<Runtime>,
 );
 
