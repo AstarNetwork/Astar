@@ -1049,7 +1049,9 @@ mod benchmarks {
                     .try_into()
                     .expect("Using `NumberOfTiers` as length; QED."),
                 period: 1,
-                rank_rewards: vec![0; T::NumberOfTiers::get() as usize],
+                rank_rewards: vec![0; T::NumberOfTiers::get() as usize]
+                    .try_into()
+                    .expect("Using `NumberOfTiers` as length; QED."),
             },
         );
 
