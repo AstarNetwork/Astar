@@ -362,6 +362,18 @@
 <a href="#362" id="362">362</a>
 <a href="#363" id="363">363</a>
 <a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -498,6 +510,10 @@
     </span><span class="kw">pub </span>block_data_cache: Arc&lt;EthBlockDataCacheTask&lt;Block&gt;&gt;,
     <span class="doccomment">/// Enable EVM RPC servers
     </span><span class="kw">pub </span>enable_evm_rpc: bool,
+    <span class="doccomment">/// Command sink for manual sealing
+    </span><span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
+    </span><span class="kw">pub </span>command_sink:
+        <span class="prelude-ty">Option</span>&lt;futures::channel::mpsc::Sender&lt;sc_consensus_manual_seal::EngineCommand&lt;Hash&gt;&gt;&gt;,
 }
 
 <span class="doccomment">/// Instantiate all RPC extensions and Tracing RPC.
@@ -655,11 +671,19 @@
         overrides,
         block_data_cache,
         enable_evm_rpc,
+        <span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
+        </span>command_sink,
     } = deps;
 
     io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())<span class="question-mark">?</span>;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
     io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())<span class="question-mark">?</span>;
+
+    <span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
+    </span><span class="kw">if let </span><span class="prelude-val">Some</span>(command_sink) = command_sink {
+        <span class="kw">use </span>sc_consensus_manual_seal::rpc::ManualSealApiServer;
+        io.merge(sc_consensus_manual_seal::rpc::ManualSeal::new(command_sink).into_rpc())<span class="question-mark">?</span>;
+    }
 
     <span class="kw">if </span>!enable_evm_rpc {
         <span class="kw">return </span><span class="prelude-val">Ok</span>(io);
