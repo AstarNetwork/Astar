@@ -139,6 +139,15 @@ pub fn new_partial(
     let frontier_block_import =
         FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
+
+    #[cfg(feature = "manual-seal")]
+    let import_queue = sc_consensus_manual_seal::import_queue(
+        Box::new(client.clone()),
+        &task_manager.spawn_essential_handle(),
+        config.prometheus_registry(),
+    );
+
+    #[cfg(not(feature = "manual-seal"))]
     let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
         ImportQueueParams {
             block_import: frontier_block_import.clone(),
@@ -366,6 +375,8 @@ pub fn start_node(
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
+                #[cfg(feature = "manual-seal")]
+                command_sink: None,
             };
 
             crate::rpc::create_full(
@@ -626,6 +637,10 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         prometheus_registry.clone(),
     ));
 
+    // Channel for the rpc handler to communicate with the authorship task.
+    #[cfg(feature = "manual-seal")]
+    let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
+
     let rpc_extensions_builder = {
         let client = client.clone();
         let network = network.clone();
@@ -649,6 +664,8 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
+                #[cfg(feature = "manual-seal")]
+                command_sink: Some(command_sink.clone()),
             };
 
             crate::rpc::create_full(deps, subscription, pubsub_notification_sinks.clone())
@@ -682,6 +699,33 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
 
         let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 
+        #[cfg(feature = "manual-seal")]
+        let aura = sc_consensus_manual_seal::run_manual_seal(
+            sc_consensus_manual_seal::ManualSealParams {
+                block_import,
+                env: proposer_factory,
+                client: client.clone(),
+                pool: transaction_pool.clone(),
+                commands_stream,
+                select_chain,
+                consensus_data_provider: Some(Box::new(
+                    sc_consensus_manual_seal::consensus::aura::AuraConsensusDataProvider::new(
+                        client.clone(),
+                    ),
+                )),
+                create_inherent_data_providers: move |_, ()| async move {
+                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+                    let slot =
+                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                            *timestamp,
+                            slot_duration.clone(),
+                        );
+                    Ok((slot, timestamp))
+                },
+            },
+        );
+
+        #[cfg(not(feature = "manual-seal"))]
         let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
