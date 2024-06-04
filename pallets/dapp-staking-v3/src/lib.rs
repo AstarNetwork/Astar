@@ -54,7 +54,7 @@ pub use sp_std::vec::Vec;
 use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
-        PeriodNumber, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
+        PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
         TierSlots as TierSlotFunc,
     },
     oracle::PriceProvider,
@@ -296,6 +296,7 @@ pub mod pallet {
             beneficiary: T::AccountId,
             smart_contract: T::SmartContract,
             tier_id: TierId,
+            rank: Rank,
             era: EraNumber,
             amount: Balance,
         },
@@ -1418,7 +1419,7 @@ pub mod pallet {
                         _ => Error::<T>::InternalClaimDAppError,
                     })?;
 
-            let (tier_id, _rank) = ranked_tier.deconstruct();
+            let (tier_id, rank) = ranked_tier.deconstruct();
 
             // Get reward destination, and deposit the reward.
             let beneficiary = dapp_info.reward_beneficiary();
@@ -1432,6 +1433,7 @@ pub mod pallet {
                 beneficiary: beneficiary.clone(),
                 smart_contract,
                 tier_id,
+                rank,
                 era,
                 amount,
             });

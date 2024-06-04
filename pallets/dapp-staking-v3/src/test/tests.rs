@@ -2476,7 +2476,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         );
 
         // There's enough reward to satisfy 100% reward per rank.
-        // Slot reward is 60_000 therefor expected rank reward is 6_000
+        // Slot reward is 60_000 therefore expected rank reward is 6_000
         assert_eq!(
             tier_assignment.rank_rewards,
             BoundedVec::<Balance, ConstU32<4>>::try_from(vec![0, 6_000, 0, 0]).unwrap()
@@ -3138,12 +3138,11 @@ fn ranking_will_calc_reward_correctly() {
     ExtBuilder::build().execute_with(|| {
         // Tier config is specially adapted for this test.
         TierConfig::<Test>::mutate(|config| {
-            config.number_of_slots = 40;
-            config.slots_per_tier = BoundedVec::try_from(vec![2, 3, 3, 20]).unwrap();
+            config.slots_per_tier = BoundedVec::try_from(vec![2, 3, 2, 20]).unwrap();
         });
 
         // Register smart contracts
-        let smart_contracts: Vec<_> = (1..=7u32)
+        let smart_contracts: Vec<_> = (1..=8u32)
             .map(|x| {
                 let smart_contract = MockSmartContract::Wasm(x.into());
                 assert_register(x.into(), &smart_contract);
@@ -3158,7 +3157,7 @@ fn ranking_will_calc_reward_correctly() {
             assert_stake(account, smart_contract, amount);
         }
 
-        for (idx, amount) in [101, 102, 100, 99, 15, 16, 14].into_iter().enumerate() {
+        for (idx, amount) in [101, 102, 100, 99, 15, 49, 35, 14].into_iter().enumerate() {
             lock_and_stake(idx, &smart_contracts[idx], amount)
         }
 
@@ -3178,22 +3177,24 @@ fn ranking_will_calc_reward_correctly() {
                     (1, RankedTier::new_saturated(0, 0)),
                     (2, RankedTier::new_saturated(1, 10)),
                     (3, RankedTier::new_saturated(1, 9)),
+                    (5, RankedTier::new_saturated(2, 9)),
+                    (6, RankedTier::new_saturated(2, 5)),
                     (4, RankedTier::new_saturated(3, 0)),
-                    (5, RankedTier::new_saturated(3, 0)),
                 ]))
                 .unwrap(),
-                rewards: BoundedVec::try_from(vec![200_000, 100_000, 66_666, 5_000]).unwrap(),
+                rewards: BoundedVec::try_from(vec![200_000, 100_000, 100_000, 5_000]).unwrap(),
                 period: 1,
-                // Tier 0 has no ranking therefor no rank reward.
+                // Tier 0 has no ranking therefore no rank reward.
                 // For tier 1 there's not enough reward to satisfy 100% reward per rank.
-                // Only one slot is empty. Slot reward is 100_000 therefor expected rank reward is 100_000 / 19 (ranks_sum).
-                // Tier 2..3 has no ranking therefor no rank reward.
+                // Only one slot is empty. Slot reward is 100_000 therefore expected rank reward is 100_000 / 19 (ranks_sum).
+                // Tier 2 has ranking but there's no empty slot therefore no rank reward.
+                // Tier 3 has no ranking therefore no rank reward.
                 rank_rewards: BoundedVec::try_from(vec![0, 5_263, 0, 0]).unwrap()
             }
         );
 
         // one didn't make it
-        assert_eq!(counter, 7);
+        assert_eq!(counter, 8);
     })
 }
 
@@ -3235,6 +3236,7 @@ fn claim_dapp_reward_with_rank() {
             beneficiary: 1,
             smart_contract: smart_contract.clone(),
             tier_id: 1,
+            rank: 9,
             era,
             amount: expected_total_reward,
         }));

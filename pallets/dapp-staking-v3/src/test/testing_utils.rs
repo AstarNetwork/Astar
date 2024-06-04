@@ -1030,6 +1030,7 @@ pub(crate) fn assert_claim_dapp_reward(
         beneficiary: beneficiary.clone(),
         smart_contract: smart_contract.clone(),
         tier_id: expected_ranked_tier.tier(),
+        rank: expected_ranked_tier.rank(),
         era,
         amount: expected_reward,
     }));

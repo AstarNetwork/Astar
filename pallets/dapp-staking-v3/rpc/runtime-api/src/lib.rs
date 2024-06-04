@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use astar_primitives::dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier};
+use astar_primitives::dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier, TierId};
 use astar_primitives::BlockNumber;
 pub use sp_std::collections::btree_map::BTreeMap;
 
@@ -27,6 +27,7 @@ sp_api::decl_runtime_apis! {
     /// dApp Staking Api.
     ///
     /// Used to provide information otherwise not available via RPC.
+    #[api_version(2)]
     pub trait DappStakingApi {
 
         /// How many periods are there in one cycle.
@@ -42,6 +43,10 @@ sp_api::decl_runtime_apis! {
         fn blocks_per_era() -> BlockNumber;
 
         /// Get dApp tier assignment for the given dApp.
+        #[changed_in(2)]
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId>;
+
+        /// Get dApp ranked tier assignment for the given dApp.
         fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier>;
     }
 }

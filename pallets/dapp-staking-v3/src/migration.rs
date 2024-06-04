@@ -57,11 +57,17 @@ mod v7 {
                 _,
             >(|_key, old_value| {
                 translated.saturating_inc();
+
+                // fill rank_rewards with zero
+                let mut rank_rewards = Vec::new();
+                rank_rewards.resize_with(old_value.rewards.len(), || Balance::zero());
+
                 Some(DAppTierRewards {
                     dapps: old_value.dapps,
                     rewards: old_value.rewards,
                     period: old_value.period,
-                    rank_rewards: Default::default(),
+                    rank_rewards: BoundedVec::<Balance, T::NumberOfTiers>::try_from(rank_rewards)
+                        .unwrap_or_default(),
                 })
             });
 

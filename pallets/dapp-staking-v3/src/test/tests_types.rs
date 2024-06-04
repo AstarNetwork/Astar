@@ -2991,3 +2991,55 @@ fn cleanup_marker_works() {
         "There are pending cleanups for era reward spans."
     );
 }
+
+#[test]
+fn dapp_tier_rewards_with_rank() {
+    get_u32_type!(NumberOfDApps, 8);
+    get_u32_type!(NumberOfTiers, 3);
+
+    // Example dApps & rewards
+    let dapps = BTreeMap::<DAppId, RankedTier>::from([
+        (1, RankedTier::new_saturated(0, 5)),
+        (2, RankedTier::new_saturated(0, 0)),
+        (3, RankedTier::new_saturated(1, 10)),
+        (5, RankedTier::new_saturated(1, 5)),
+        (6, RankedTier::new_saturated(2, 0)),
+    ]);
+    let tier_rewards = vec![300, 20, 1];
+    let rank_rewards = vec![0, 2, 0];
+    let period = 2;
+
+    let mut dapp_tier_rewards = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+        dapps.clone(),
+        tier_rewards.clone(),
+        period,
+        rank_rewards.clone(),
+    )
+    .expect("Bounds are respected.");
+
+    // has rank but no reward per rank
+    // receive only tier reward
+    let ranked_tier = dapps[&1];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(1),
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
+    );
+
+    // has no rank, receive only tier reward
+    let ranked_tier = dapps[&2];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(2),
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
+    );
+
+    // receives both tier and rank rewards
+    let ranked_tier = dapps[&3];
+    let (tier, rank) = ranked_tier.deconstruct();
+    assert_eq!(
+        dapp_tier_rewards.try_claim(3),
+        Ok((
+            tier_rewards[tier as usize] + rank_rewards[tier as usize] * rank as Balance,
+            ranked_tier
+        ))
+    );
+}
