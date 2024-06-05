@@ -40,6 +40,14 @@ jobs:
       - name: Check targets are installed correctly
         run: rustup target list --installed
 
+      - name: Build EXTRA_ARGS
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          EXTRA_FLAGS+="--disable-spec-check"
+          echo "Disabling the spec check since we are not releasing"
+          echo "Flags: $EXTRA_FLAGS"
+          echo "EXTRA_ARGS=$EXTRA_FLAGS" >> $GITHUB_ENV
+
       - name: Build ${{ matrix.runtime }} runtime
         run: cargo build --release --locked --package ${{ matrix.runtime }}-runtime --features try-runtime
 
@@ -49,4 +57,4 @@ jobs:
           RUNTIME_BLOB_NAME=$(echo $PACKAGE_NAME | sed 's/-/_/g').compact.compressed.wasm
           RUNTIME_BLOB_PATH=./target/release/wbuild/$PACKAGE_NAME/$RUNTIME_BLOB_NAME
 
-          npx @acala-network/chopsticks@beta try-runtime -c ${{ matrix.runtime }} --checks All --runtime $RUNTIME_BLOB_PATH
+          npx @acala-network/chopsticks@beta try-runtime -c ${{ matrix.runtime }} --checks All --runtime $RUNTIME_BLOB_PATH ${{ env.EXTRA_ARGS }}
