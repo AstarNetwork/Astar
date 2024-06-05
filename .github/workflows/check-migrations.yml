@@ -38,7 +38,7 @@ jobs:
       - name: Build ${{ matrix.runtime }} runtime
         run: cargo build --release --locked --package ${{ matrix.runtime }}-runtime --features try-runtime
 
-      - name: Run ${{ matrix.runtime.name }} Runtime Checks
+      - name: Run ${{ matrix.runtime }} Runtime Checks
         run: |
           PACKAGE_NAME=${{ matrix.runtime }}
           RUNTIME_BLOB_NAME=$(echo $PACKAGE_NAME | sed 's/-/_/g').compact.compressed.wasm
