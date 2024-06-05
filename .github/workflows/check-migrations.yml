@@ -1,0 +1,47 @@
+name: Check Migrations
+
+on:
+  push:
+    branches: ["master"]
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-migrations:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime:
+          - astar
+          - shiden
+          - shibuya
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: sudo apt -y install protobuf-compiler
+
+      - name: Install & display rust toolchain
+        run: rustup show
+
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+
+      - name: Build ${{ matrix.runtime }} runtime
+        run: cargo build --release --locked --package ${{ matrix.runtime }}-runtime --features try-runtime
+
+      - name: Run ${{ matrix.runtime.name }} Runtime Checks
+        run: |
+          PACKAGE_NAME=${{ matrix.runtime }}
+          RUNTIME_BLOB_NAME=$(echo $PACKAGE_NAME | sed 's/-/_/g').compact.compressed.wasm
+          RUNTIME_BLOB_PATH=./target/release/wbuild/$PACKAGE_NAME/$RUNTIME_BLOB_NAME
+
+          npx @acala-network/chopsticks@beta try-runtime -c ${{ matrix.runtime }} --checks All --runtime $RUNTIME_BLOB_PATH
