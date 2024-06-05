@@ -5,7 +5,6 @@ on:
     branches: ["master"]
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
-  pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -51,7 +50,7 @@ jobs:
       - name: Build ${{ matrix.runtime }} runtime
         run: cargo build --release --locked --package ${{ matrix.runtime }}-runtime --features try-runtime
 
-      - name: Run ${{ matrix.runtime }} Runtime Checks
+      - name: Run ${{ matrix.runtime }} runtime checks
         run: |
           PACKAGE_NAME=${{ matrix.runtime }}-runtime
           RUNTIME_BLOB_NAME=$(echo $PACKAGE_NAME | sed 's/-/_/g').compact.compressed.wasm
