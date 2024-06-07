@@ -23,6 +23,7 @@
 #![recursion_limit = "256"]
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
@@ -48,7 +49,7 @@ use frame_system::{
 use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
-use pallet_identity::simple::IdentityInfo;
+use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
@@ -91,6 +92,7 @@ use sp_version::RuntimeVersion;
 
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
+use parachains_common::message_queue::NarrowOriginToSibling;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -284,7 +286,7 @@ impl pallet_timestamp::Config for Runtime {
 
 parameter_types! {
     pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
-    pub const FieldDeposit: Balance = deposit(0, 66);  // 66 bytes on-chain
+    pub const ByteDeposit: Balance = deposit(0, 66);  // 66 bytes on-chain
     pub const SubAccountDeposit: Balance = deposit(1, 53);  // 53 bytes on-chain
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
@@ -295,10 +297,9 @@ impl pallet_identity::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type BasicDeposit = BasicDeposit;
-    type FieldDeposit = FieldDeposit;
+    type ByteDeposit = ByteDeposit;
     type SubAccountDeposit = SubAccountDeposit;
     type MaxSubAccounts = MaxSubAccounts;
-    type MaxAdditionalFields = MaxAdditionalFields;
     type IdentityInformation = IdentityInfo<MaxAdditionalFields>;
     type MaxRegistrars = MaxRegistrars;
     type Slashed = ();
@@ -432,6 +433,7 @@ impl pallet_utility::Config for Runtime {
 parameter_types! {
     pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
     pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -439,11 +441,12 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type OnSystemEvent = ();
     type SelfParaId = parachain_info::Pallet<Runtime>;
     type OutboundXcmpMessageSource = XcmpQueue;
-    type DmpMessageHandler = DmpQueue;
+    type DmpQueue = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
     type ReservedDmpWeight = ReservedDmpWeight;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+    type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -682,6 +685,7 @@ impl pallet_contracts::Config for Runtime {
     type Debug = ();
     type Environment = ();
     type Migrations = ();
+    type Xcm = ();
 }
 
 // These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -886,6 +890,47 @@ impl pallet_xc_asset_config::Config for Runtime {
     type AssetId = AssetId;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
+}
+
+parameter_types! {
+	/// The amount of weight (if any) which should be provided to the message queue for
+    /// servicing enqueued items.
+    ///
+    /// This may be legitimately `None` in the case that you will call
+    /// `ServiceQueues::service_queues` manually.
+	pub MessageQueueServiceWeight: Weight =
+		Perbill::from_percent(25) * RuntimeBlockWeights::get().max_block;
+	/// The maximum number of stale pages (i.e. of overweight messages) allowed before culling
+    /// can happen. Once there are more stale pages than this, then historical pages may be
+    /// dropped, even if they contain unprocessed overweight messages.
+	pub const MessageQueueMaxStale: u32 = 8;
+	/// The size of the page; this implies the maximum message size which can be sent
+    /// A good value depends on the expected message sizes, their weights, the weight that is
+    /// available for processing them and the maximal needed message size. The maximal message
+    /// size is slightly lower than this as defined by [`MaxMessageLenOf`].
+	pub const MessageQueueHeapSize: u32 = 128 * 1048;
+}
+
+impl pallet_message_queue::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = pallet_message_queue::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
+        cumulus_primitives_core::AggregateMessageOrigin,
+    >;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type MessageProcessor = xcm_builder::ProcessXcmMessage<
+        AggregateMessageOrigin,
+        xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+        RuntimeCall,
+    >;
+    type Size = u32;
+    // The XCMP queue pallet is only ever able to handle the `Sibling(ParaId)` origin:
+    type QueueChangeHandler = NarrowOriginToSibling<XcmpQueue>;
+    type QueuePausedQuery = NarrowOriginToSibling<XcmpQueue>;
+    type HeapSize = MessageQueueHeapSize;
+    type MaxStale = MessageQueueMaxStale;
+    type ServiceWeight = MessageQueueServiceWeight;
 }
 
 /// The type used to represent the kinds of proxying allowed.
@@ -1125,6 +1170,7 @@ construct_runtime!(
         DmpQueue: cumulus_pallet_dmp_queue = 53,
         XcAssetConfig: pallet_xc_asset_config = 54,
         XTokens: orml_xtokens = 55,
+        MessageQueue: pallet_message_queue = 56,
 
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
@@ -1659,7 +1705,7 @@ impl_runtime_apis! {
             gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractExecResult<Balance, EventRecord> {
+        ) -> pallet_contracts::ContractExecResult<Balance, EventRecord> {
             let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
             Contracts::bare_call(
                 origin,
@@ -1679,10 +1725,10 @@ impl_runtime_apis! {
             value: Balance,
             gas_limit: Option<Weight>,
             storage_deposit_limit: Option<Balance>,
-            code: pallet_contracts_primitives::Code<Hash>,
+            code: pallet_contracts::Code<Hash>,
             data: Vec<u8>,
             salt: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance, EventRecord> {
+        ) -> pallet_contracts::ContractInstantiateResult<AccountId, Balance, EventRecord> {
             let gas_limit = gas_limit.unwrap_or(RuntimeBlockWeights::get().max_block);
             Contracts::bare_instantiate(
                 origin,
@@ -1702,7 +1748,7 @@ impl_runtime_apis! {
             code: Vec<u8>,
             storage_deposit_limit: Option<Balance>,
             determinism: pallet_contracts::Determinism,
-        ) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
+        ) -> pallet_contracts::CodeUploadResult<Hash, Balance>
         {
             Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
         }
@@ -1710,7 +1756,7 @@ impl_runtime_apis! {
         fn get_storage(
             address: AccountId,
             key: Vec<u8>,
-        ) -> pallet_contracts_primitives::GetStorageResult {
+        ) -> pallet_contracts::GetStorageResult {
             Contracts::get_storage(address, key)
         }
     }

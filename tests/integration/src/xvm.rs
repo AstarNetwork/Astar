@@ -26,8 +26,9 @@ use astar_primitives::{
 };
 use fp_evm::{ExecutionInfoV2, ExitReason, ExitRevert};
 use frame_support::{dispatch::PostDispatchInfo, traits::Currency, weights::Weight};
+use pallet_contracts::ExecReturnValue;
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
-use pallet_contracts_primitives::{ExecReturnValue, ReturnFlags};
+use pallet_contracts_uapi::ReturnFlags;
 use parity_scale_codec::Encode;
 use precompile_utils::{prelude::*, solidity};
 use sp_runtime::MultiAddress;

@@ -17,7 +17,8 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{traits::fungible::Inspect, weights::Weight};
-use pallet_contracts_primitives::{Code, ReturnFlags};
+use pallet_contracts::Code;
+use pallet_contracts_uapi::ReturnFlags;
 use parity_scale_codec::Decode;
 use sp_runtime::traits::Hash;
 

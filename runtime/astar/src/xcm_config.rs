@@ -18,8 +18,9 @@
 
 use super::{
     AccountId, AllPalletsWithSystem, AssetId, Assets, AstarAssetLocationIdConverter, Balance,
-    Balances, DealWithFees, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
-    RuntimeEvent, RuntimeOrigin, TreasuryAccountId, XcAssetConfig, XcmWeightToFee, XcmpQueue,
+    Balances, DealWithFees, MessageQueue, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
+    RuntimeCall, RuntimeEvent, RuntimeOrigin, TreasuryAccountId, XcAssetConfig, XcmWeightToFee,
+    XcmpQueue,
 };
 use crate::weights;
 use frame_support::{
@@ -31,7 +32,9 @@ use frame_system::EnsureRoot;
 use sp_runtime::traits::{Convert, MaybeEquivalence};
 
 // Polkadot imports
-use cumulus_primitives_core::ParaId;
+use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
+use frame_support::traits::TransformOrigin;
+use parachains_common::message_queue::ParaIdToSibling;
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -330,20 +333,27 @@ impl cumulus_pallet_xcm::Config for Runtime {
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
     type ChannelInfo = ParachainSystem;
     type VersionWrapper = PolkadotXcm;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
+    type MaxInboundSuspended = ConstU32<1_000>;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
     type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
     type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
+}
+
+// TODO: This pallet should be removed after the lazy migration is done and
+// event `Completed` is emitted.
+// https://github.com/paritytech/polkadot-sdk/pull/1246
 impl cumulus_pallet_dmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type DmpSink = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
+    type WeightInfo = cumulus_pallet_dmp_queue::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {

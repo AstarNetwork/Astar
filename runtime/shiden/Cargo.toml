@@ -46,7 +46,6 @@ pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
@@ -166,7 +165,6 @@ std = [
 	"pallet-balances/std",
 	"pallet-contracts/std",
 	"oracle-benchmarks/std",
-	"pallet-contracts-primitives/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",

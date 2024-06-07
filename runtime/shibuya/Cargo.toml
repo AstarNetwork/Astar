@@ -45,7 +45,6 @@ pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
@@ -176,7 +175,6 @@ std = [
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
-	"pallet-contracts-primitives/std",
 	"pallet-chain-extension-xvm/std",
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dynamic-evm-base-fee/std",
