@@ -69,6 +69,7 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
+pallet-message-queue = { workspace = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
@@ -80,6 +81,7 @@ cumulus-primitives-core = { workspace = true }
 cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-utility = { workspace = true }
 parachain-info = { workspace = true }
+parachains-common = { workspace = true }
 
 # polkadot dependencies
 polkadot-parachain = { workspace = true }
@@ -230,6 +232,8 @@ std = [
 	"orml-xtokens/std",
 	"orml-xcm-support/std",
 	"astar-primitives/std",
+	"pallet-message-queue/std",
+	"parachains-common/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -299,6 +303,7 @@ try-runtime = [
 	"pallet-evm/try-runtime",
 	"orml-xtokens/try-runtime",
 	"oracle-benchmarks/try-runtime",
+	"pallet-message-queue/runtime-benchmarks",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",
