@@ -264,14 +264,34 @@ fn register_is_ok() {
         // Register two contracts using the same owner
         assert_register(7, &MockSmartContract::Wasm(2));
         assert_register(7, &MockSmartContract::Wasm(3));
+
+        // Register a contract using non-root origin
+        let smart_contract = MockSmartContract::Wasm(4);
+        let owner = 11;
+        let dapp_id = NextDAppId::<Test>::get();
+        assert_ok!(DappStaking::register(
+            RuntimeOrigin::signed(ContractRegistryAccount::get()),
+            owner,
+            smart_contract.clone()
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppRegistered {
+            owner,
+            smart_contract,
+            dapp_id,
+        }));
     })
 }
 
 #[test]
 fn register_with_incorrect_origin_fails() {
     ExtBuilder::build().execute_with(|| {
+        // Test assumes that Contract registry & Manager origins are different.
         assert_noop!(
-            DappStaking::register(RuntimeOrigin::signed(1), 3, MockSmartContract::Wasm(2)),
+            DappStaking::register(
+                RuntimeOrigin::signed(ManagerAccount::get()),
+                3,
+                MockSmartContract::Wasm(2)
+            ),
             BadOrigin
         );
     })
@@ -427,6 +447,19 @@ fn unregister_no_stake_is_ok() {
 
         // Nothing staked on contract, just unregister it.
         assert_unregister(&smart_contract);
+
+        // Prepare another dApp, unregister it using non-root origin
+        let smart_contract = MockSmartContract::Wasm(5);
+        assert_register(owner, &smart_contract);
+
+        assert_ok!(DappStaking::unregister(
+            RuntimeOrigin::signed(ContractRegistryAccount::get()),
+            smart_contract.clone(),
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppUnregistered {
+            smart_contract: smart_contract.clone(),
+            era: ActiveProtocolState::<Test>::get().era,
+        }));
     })
 }
 

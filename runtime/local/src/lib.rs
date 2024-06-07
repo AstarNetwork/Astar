@@ -69,6 +69,13 @@ use astar_primitives::{
         TierId,
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
+    governance::{
+        CouncilCollectiveInst, CouncilMembershipInst, DappStakingCommitteeCollectiveInst,
+        DappStakingCommitteeMembershipInst, EnsureRootOrAllCouncil,
+        EnsureRootOrAllTechnicalCommittee, EnsureRootOrTwoThirdsCouncil,
+        EnsureRootOrTwoThirdsDappStakingCommittee, EnsureRootOrTwoThirdsTechnicalCommittee,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+    },
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
 
@@ -457,7 +464,8 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractRegistryOrigin = EnsureRootOrTwoThirdsDappStakingCommittee;
+    type ManagerOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
     type NativePriceProvider = StaticPriceProvider;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
@@ -874,6 +882,143 @@ impl pallet_proxy::Config for Runtime {
     type AnnouncementDepositFactor = ConstU128<{ MILLIAST * 660 }>;
 }
 
+parameter_types! {
+    pub const CouncilMaxMembers: u32 = 5;
+    pub const TechnicalCommitteeMaxMembers: u32 = 3;
+    pub const DappStakingCommitteeMaxMembers: u32 = 10;
+}
+
+impl pallet_membership::Config<CouncilMembershipInst> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = EnsureRootOrTwoThirdsCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsCouncil;
+    type MembershipInitialized = Council;
+    type MembershipChanged = Council;
+    type MaxMembers = CouncilMaxMembers;
+    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_membership::Config<TechnicalCommitteeMembershipInst> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = EnsureRootOrTwoThirdsCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsCouncil;
+    type MembershipInitialized = TechnicalCommittee;
+    type MembershipChanged = TechnicalCommittee;
+    type MaxMembers = TechnicalCommitteeMaxMembers;
+    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_membership::Config<DappStakingCommitteeMembershipInst> for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AddOrigin = EnsureRootOrTwoThirdsCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsCouncil;
+    type MembershipInitialized = DappStakingCommittee;
+    type MembershipChanged = DappStakingCommittee;
+    type MaxMembers = DappStakingCommitteeMaxMembers;
+    type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
+}
+
+impl pallet_collective::Config<CouncilCollectiveInst> for Runtime {
+    type RuntimeOrigin = RuntimeOrigin;
+    type Proposal = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type MotionDuration = ConstU32<{ 5 * MINUTES }>;
+    type MaxProposals = ConstU32<16>;
+    type MaxMembers = CouncilMaxMembers;
+    type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
+    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_collective::Config<TechnicalCommitteeCollectiveInst> for Runtime {
+    type RuntimeOrigin = RuntimeOrigin;
+    type Proposal = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type MotionDuration = ConstU32<{ 5 * MINUTES }>;
+    type MaxProposals = ConstU32<16>;
+    type MaxMembers = TechnicalCommitteeMaxMembers;
+    type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
+    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_collective::Config<DappStakingCommitteeCollectiveInst> for Runtime {
+    type RuntimeOrigin = RuntimeOrigin;
+    type Proposal = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type MotionDuration = ConstU32<{ 5 * MINUTES }>;
+    type MaxProposals = ConstU32<16>;
+    type MaxMembers = DappStakingCommitteeMaxMembers;
+    type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
+    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_democracy::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type EnactmentPeriod = ConstU32<{ 1 * MINUTES }>;
+    type LaunchPeriod = ConstU32<{ 1 * MINUTES }>;
+    type VotingPeriod = ConstU32<{ 3 * MINUTES }>;
+    type VoteLockingPeriod = ConstU32<{ 10 * MINUTES }>;
+    type MinimumDeposit = ConstU128<{ 10 * AST }>;
+    type FastTrackVotingPeriod = ConstU32<{ MINUTES / 2 }>;
+    type CooloffPeriod = ConstU32<{ 2 * MINUTES }>;
+
+    type MaxVotes = ConstU32<128>;
+    type MaxProposals = ConstU32<128>;
+    type MaxDeposits = ConstU32<128>;
+    type MaxBlacklisted = ConstU32<128>;
+
+    /// A two third majority of the Council can choose the next external "super majority approve" proposal.
+    type ExternalOrigin = EnsureRootOrTwoThirdsCouncil;
+    /// A two third majority of the Council can choose the next external "majority approve" proposal. Also bypasses blacklist filter.
+    type ExternalMajorityOrigin = EnsureRootOrTwoThirdsCouncil;
+    /// Unanimous approval of the Council can choose the next external "super majority against" proposal.
+    type ExternalDefaultOrigin = EnsureRootOrAllCouncil;
+    /// A two third majority of the Technical Committee can have an external proposal tabled immediately
+    /// for a _fast track_ vote, and a custom enactment period.
+    type FastTrackOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+    /// Unanimous approval of the Technical Committee can have an external proposal tabled immediately
+    /// for a completely custom _voting period length_ vote, and a custom enactment period.
+    type InstantOrigin = EnsureRootOrAllTechnicalCommittee;
+    type InstantAllowed = ConstBool<true>;
+
+    /// A two third majority of the Council can cancel a passed proposal. Can happen only once per unique proposal.
+    type CancellationOrigin = EnsureRootOrTwoThirdsCouncil;
+    /// Only a passed public referendum can permanently blacklist a proposal.
+    type BlacklistOrigin = EnsureRoot<AccountId>;
+    /// An unanimous Technical Committee can cancel a public proposal, slashing the deposit(s).
+    type CancelProposalOrigin = EnsureRootOrAllTechnicalCommittee;
+    /// Any member of the Technical Committee can veto Council's proposal. This can be only done once per proposal, and _veto_ lasts for a _cooloff_ period.
+    type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollectiveInst>;
+
+    type SubmitOrigin = EnsureSigned<AccountId>;
+    type PalletsOrigin = OriginCaller;
+    type Preimages = Preimage;
+    type Scheduler = Scheduler;
+    type Slash = ();
+    type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+}
+
+// Need to skip formatting since it removes '::' from the pallet declarations (https://github.com/rust-lang/rustfmt/issues/5526).
+#[rustfmt::skip]
 construct_runtime!(
     pub struct Runtime {
         System: frame_system,
@@ -888,6 +1033,16 @@ construct_runtime!(
         Inflation: pallet_inflation,
         StaticPriceProvider: pallet_static_price_provider,
         TransactionPayment: pallet_transaction_payment,
+
+        // Governance
+        CouncilMembership: pallet_membership::<Instance2>,
+        TechnicalCommitteeMembership: pallet_membership::<Instance3>,
+        DappStakingCommitteeMembership: pallet_membership::<Instance4>,
+        Council: pallet_collective::<Instance2>,
+        TechnicalCommittee: pallet_collective::<Instance3>,
+        DappStakingCommittee: pallet_collective::<Instance4>,
+        Democracy: pallet_democracy,
+
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,
         DynamicEvmBaseFee: pallet_dynamic_evm_base_fee,

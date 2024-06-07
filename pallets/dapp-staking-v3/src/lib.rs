@@ -128,6 +128,9 @@ pub mod pallet {
             + MaxEncodedLen
             + SmartContractHandle<Self::AccountId>;
 
+        /// Privileged origin that is allowed to register & unregister smart contracts to & from the protocol.
+        type ContractRegistryOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
+
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
@@ -656,7 +659,7 @@ pub mod pallet {
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
+            T::ContractRegistryOrigin::ensure_origin(origin)?;
 
             ensure!(
                 !IntegratedDApps::<T>::contains_key(&smart_contract),
@@ -744,7 +747,7 @@ pub mod pallet {
             new_owner: T::AccountId,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            let origin = Self::ensure_signed_or_manager(origin)?;
+            let origin = Self::ensure_signed_or_root(origin)?;
 
             IntegratedDApps::<T>::try_mutate(
                 &smart_contract,
@@ -783,7 +786,7 @@ pub mod pallet {
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
+            T::ContractRegistryOrigin::ensure_origin(origin)?;
 
             let dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
@@ -1565,7 +1568,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::force())]
         pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
+            ensure_root(origin)?;
 
             ensure!(!Safeguard::<T>::get(), Error::<T>::ForceNotAllowed);
 
@@ -1609,13 +1612,13 @@ pub mod pallet {
             }
         }
 
-        /// Ensure that the origin is either the `ManagerOrigin` or a signed origin.
+        /// Ensure that the origin is either the root or a signed origin.
         ///
-        /// In case of manager, `Ok(None)` is returned, and if signed origin `Ok(Some(AccountId))` is returned.
-        pub(crate) fn ensure_signed_or_manager(
+        /// In case of root, `Ok(None)` is returned, and if signed origin `Ok(Some(AccountId))` is returned.
+        fn ensure_signed_or_root(
             origin: T::RuntimeOrigin,
         ) -> Result<Option<T::AccountId>, BadOrigin> {
-            if T::ManagerOrigin::ensure_origin(origin.clone()).is_ok() {
+            if ensure_root(origin.clone()).is_ok() {
                 return Ok(None);
             }
             let who = ensure_signed(origin)?;

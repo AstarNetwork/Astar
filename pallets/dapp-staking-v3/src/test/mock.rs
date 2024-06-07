@@ -23,8 +23,8 @@ use crate::{
 };
 
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{fungible::Mutate as FunMutate, ConstU128, ConstU32},
+    construct_runtime, ord_parameter_types, parameter_types,
+    traits::{fungible::Mutate as FunMutate, ConstU128, ConstU32, EitherOfDiverse},
     weights::Weight,
 };
 use sp_arithmetic::fixed_point::FixedU128;
@@ -40,6 +40,7 @@ use astar_primitives::{
     dapp_staking::{Observer as DappStakingObserver, SmartContract, StandardTierSlots},
     Balance, BlockNumber,
 };
+use frame_system::{EnsureRoot, EnsureSignedBy};
 
 pub(crate) type AccountId = u64;
 
@@ -198,13 +199,20 @@ impl AccountCheck<AccountId> for DummyAccountCheck {
 parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
+ord_parameter_types! {
+    pub const ContractRegistryAccount: AccountId = 1337;
+    pub const ManagerAccount: AccountId = 25711;
+}
 
 impl pallet_dapp_staking::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = MockSmartContract;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractRegistryOrigin =
+        EitherOfDiverse<EnsureRoot<AccountId>, EnsureSignedBy<ContractRegistryAccount, AccountId>>;
+    type ManagerOrigin =
+        EitherOfDiverse<EnsureRoot<AccountId>, EnsureSignedBy<ManagerAccount, AccountId>>;
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
     type CycleConfiguration = DummyCycleConfiguration;
