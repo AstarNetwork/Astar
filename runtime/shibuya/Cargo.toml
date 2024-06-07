@@ -58,6 +58,7 @@ pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
+pallet-message-queue = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
@@ -69,7 +70,6 @@ pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
-pallet-message-queue = { workspace = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }
