@@ -1,0 +1,44 @@
+name: Chain Sync
+
+on:
+  push:
+    branches: ["master"]
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chain-sync:
+    continue-on-error: true
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: sudo apt -y install protobuf-compiler
+
+      - name: Install & display rust toolchain
+        run: rustup show
+
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - name: Test astar sync
+        run: ./scripts/sync.sh astar
+
+      - name: Test shiden sync
+        run: ./scripts/sync.sh shiden
+
+      - name: Test shibuya sync
+        run: ./scripts/sync.sh shibuya
