@@ -57,6 +57,7 @@ pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-membership = { workspace = true }
+pallet-message-queue = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
@@ -67,7 +68,6 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
-pallet-message-queue = { workspace = true }
 
 # cumulus dependencies
 cumulus-pallet-aura-ext = { workspace = true }

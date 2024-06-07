@@ -893,22 +893,22 @@ impl pallet_xc_asset_config::Config for Runtime {
 }
 
 parameter_types! {
-	/// The amount of weight (if any) which should be provided to the message queue for
+    /// The amount of weight (if any) which should be provided to the message queue for
     /// servicing enqueued items.
     ///
     /// This may be legitimately `None` in the case that you will call
     /// `ServiceQueues::service_queues` manually.
-	pub MessageQueueServiceWeight: Weight =
-		Perbill::from_percent(25) * RuntimeBlockWeights::get().max_block;
-	/// The maximum number of stale pages (i.e. of overweight messages) allowed before culling
+    pub MessageQueueServiceWeight: Weight =
+        Perbill::from_percent(25) * RuntimeBlockWeights::get().max_block;
+    /// The maximum number of stale pages (i.e. of overweight messages) allowed before culling
     /// can happen. Once there are more stale pages than this, then historical pages may be
     /// dropped, even if they contain unprocessed overweight messages.
-	pub const MessageQueueMaxStale: u32 = 8;
-	/// The size of the page; this implies the maximum message size which can be sent
+    pub const MessageQueueMaxStale: u32 = 8;
+    /// The size of the page; this implies the maximum message size which can be sent
     /// A good value depends on the expected message sizes, their weights, the weight that is
     /// available for processing them and the maximal needed message size. The maximal message
     /// size is slightly lower than this as defined by [`MaxMessageLenOf`].
-	pub const MessageQueueHeapSize: u32 = 128 * 1048;
+    pub const MessageQueueHeapSize: u32 = 128 * 1048;
 }
 
 impl pallet_message_queue::Config for Runtime {
