@@ -54,9 +54,9 @@ shiden-runtime = { workspace = true, optional = true }
 
 # evm-tracing tests
 ethereum = { workspace = true, features = ["with-codec"], optional = true }
-pallet-ethereum = { workspace = true, optional = true }
-moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 fp-rpc = { workspace = true, optional = true }
+moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
+pallet-ethereum = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
