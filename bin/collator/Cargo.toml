@@ -24,7 +24,7 @@ futures = { workspace = true }
 log = { workspace = true, features = ["std"] }
 parity-scale-codec = { workspace = true, features = ["std"] }
 serde = { workspace = true }
-serde_json = { workspace = true }
+serde_json = { workspace = true, features = ["arbitrary_precision"] }
 tokio = { workspace = true }
 url = { workspace = true }
 

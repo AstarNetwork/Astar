@@ -130,6 +130,7 @@ impl pallet_contracts::Config for TestRuntime {
     type Migrations = ();
     type Debug = ();
     type Environment = ();
+    type Xcm = ();
 }
 
 thread_local! {

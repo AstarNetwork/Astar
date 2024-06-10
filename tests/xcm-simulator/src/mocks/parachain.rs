@@ -63,7 +63,7 @@ use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::{
     dapp_staking::{
-        AccountCheck, CycleConfiguration, SmartContract, SmartContractHandle, StakingRewardHandler,
+        AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler,
     },
     oracle::PriceProvider,
     xcm::{
@@ -271,6 +271,7 @@ impl pallet_contracts::Config for Runtime {
     type Migrations = ();
     type Debug = ();
     type Environment = ();
+    type Xcm = ();
 }
 
 pub struct BurnFees;
