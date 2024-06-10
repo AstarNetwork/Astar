@@ -52,6 +52,12 @@ astar-test-utils = { workspace = true }
 shibuya-runtime = { workspace = true, optional = true }
 shiden-runtime = { workspace = true, optional = true }
 
+# evm-tracing tests
+ethereum = { workspace = true, features = ["with-codec"], optional = true }
+pallet-ethereum = { workspace = true, optional = true }
+moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
+fp-rpc = { workspace = true, optional = true }
+
 [features]
 default = ["std"]
 std = [
@@ -64,3 +70,13 @@ std = [
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]
 astar = ["astar-runtime"]
+
+evm-tracing = [
+	"shibuya-runtime?/evm-tracing",
+	"shiden-runtime?/evm-tracing",
+	"astar-runtime?/evm-tracing",
+	"ethereum",
+	"pallet-ethereum",
+	"moonbeam-rpc-primitives-debug",
+	"fp-rpc",
+]
