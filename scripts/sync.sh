@@ -6,14 +6,14 @@ set -e
 chain="$@"
 
 # run node
-./target/release/astar-collator --chain $chain --no-telemetry --no-prometheus --tmp & CHAIN_PID=$!
+./target/release/astar-collator --chain $chain --no-telemetry --no-prometheus --tmp -- --no-telemetry --no-prometheus & CHAIN_PID=$!
 
 printf "Waiting for RPC to be ready"
 attempts=12 # 1 minutes
 until nc -z localhost 9944; do
   attempts=$((attempts - 1))
   if [ $attempts -eq 0 ]; then
-	echo "Chain RPC failed to start"
+	echo "ERROR: Chain RPC failed to start"
 	exit 1
   fi
   sleep 5
@@ -29,10 +29,10 @@ number=$(curl --location http://localhost:9944 \
     "method": "chain_getHeader",
     "params": [],
     "id": 1
-  }' | jq '.result.number' | xargs | { read hex_number; printf "%d\n" $hex_number; })
+  }' | jq '.result.number' | xargs printf "%d")
 
 if [ "$number" -lt 1000 ]; then
-  echo "Chain failed to sync 1000 blocks in 30 seconds"
+  echo "ERROR: Chain failed to sync 1000 blocks in 30 seconds"
   exit 1
 fi
 
