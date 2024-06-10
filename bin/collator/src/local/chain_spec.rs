@@ -21,7 +21,7 @@
 use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, DappStakingConfig,
     EVMConfig, GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles,
-    RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig, TierThreshold, VestingConfig, AST,
+    RuntimeGenesisConfig, Signature, SudoConfig, TierThreshold, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};

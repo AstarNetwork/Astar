@@ -23,7 +23,7 @@ use astar_primitives::oracle::CurrencyAmount;
 use astar_runtime::{
     wasm_binary_unwrap, AccountId, AuraId, Balance, DappStakingConfig, EVMConfig, InflationConfig,
     InflationParameters, OracleMembershipConfig, ParachainInfoConfig, Precompiles,
-    PriceAggregatorConfig, Signature, SystemConfig, TierThreshold, ASTR,
+    PriceAggregatorConfig, Signature, TierThreshold, ASTR,
 };
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
@@ -59,7 +59,7 @@ pub fn get_chain_spec() -> AstarChainSpec {
     properties.insert("tokenDecimals".into(), 18.into());
 
     AstarChainSpec::builder(
-        local_runtime::wasm_binary_unwrap(),
+        wasm_binary_unwrap(),
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),

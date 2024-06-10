@@ -62,7 +62,7 @@ pub fn get_chain_spec() -> ShibuyaChainSpec {
     properties.insert("tokenDecimals".into(), 18.into());
 
     ShibuyaChainSpec::builder(
-        local_runtime::wasm_binary_unwrap(),
+        wasm_binary_unwrap(),
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),

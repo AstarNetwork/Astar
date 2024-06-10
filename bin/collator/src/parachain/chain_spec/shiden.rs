@@ -23,7 +23,7 @@ use sc_service::ChainType;
 use shiden_runtime::{
     wasm_binary_unwrap, AccountId, AuraId, Balance, DappStakingConfig, EVMConfig, InflationConfig,
     InflationParameters, OracleMembershipConfig, ParachainInfoConfig, Precompiles,
-    PriceAggregatorConfig, RuntimeGenesisConfig, Signature, SystemConfig, TierThreshold, SDN,
+    PriceAggregatorConfig, RuntimeGenesisConfig, Signature, TierThreshold, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 

@@ -215,7 +215,11 @@ pub fn start_node(
             .expect("Genesis block exists; qed"),
         &config.chain_spec,
     );
-    let net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+    let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+
+    let (grandpa_protocol_config, grandpa_notification_service) =
+        sc_consensus_grandpa::grandpa_peers_set_config(protocol_name.clone());
+    net_config.add_notification_protocol(grandpa_protocol_config);
 
     let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
@@ -484,6 +488,7 @@ pub fn start_node(
             link: grandpa_link,
             network,
             sync: sync_service,
+            notification_service: grandpa_notification_service,
             voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
             prometheus_registry,
             shared_voter_state: SharedVoterState::empty(),
@@ -526,7 +531,11 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             .expect("Genesis block exists; qed"),
         &config.chain_spec,
     );
-    let net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+    let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+
+    let (grandpa_protocol_config, grandpa_notification_service) =
+        sc_consensus_grandpa::grandpa_peers_set_config(protocol_name.clone());
+    net_config.add_notification_protocol(grandpa_protocol_config);
 
     let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
@@ -795,6 +804,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             link: grandpa_link,
             network,
             sync: Arc::new(sync_service),
+            notification_service: grandpa_notification_service,
             voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
             prometheus_registry,
             shared_voter_state: SharedVoterState::empty(),

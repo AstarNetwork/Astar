@@ -171,7 +171,8 @@ where
         + sp_offchain::OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>,
-    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
+        sc_client_api::backend::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
@@ -319,7 +320,8 @@ where
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + cumulus_primitives_core::CollectCollationInfo<Block>
         + AuraApi<Block, AuraId>,
-    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
+        sc_client_api::backend::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
@@ -637,7 +639,8 @@ where
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + cumulus_primitives_core::CollectCollationInfo<Block>
         + AuraApi<Block, AuraId>,
-    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
+        sc_client_api::backend::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
@@ -961,7 +964,8 @@ where
         + sp_block_builder::BlockBuilder<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + sp_consensus_aura::AuraApi<Block, AuraId>,
-    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
+        sc_client_api::backend::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let client2 = client.clone();
