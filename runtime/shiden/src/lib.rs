@@ -1288,7 +1288,7 @@ mod benches {
         [pallet_inflation, Inflation]
         [pallet_xc_asset_config, XcAssetConfig]
         [pallet_collator_selection, CollatorSelection]
-        [pallet_xcm, PolkadotXcm]
+        [pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
@@ -1791,6 +1791,7 @@ impl_runtime_apis! {
         ) {
             use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
+            use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
             use frame_system_benchmarking::Pallet as SystemBench;
             use baseline::Pallet as BaselineBench;
 
@@ -1818,6 +1819,38 @@ impl_runtime_apis! {
             use xcm::latest::prelude::*;
             use xcm_builder::MintLocation;
             use astar_primitives::benchmarks::XcmBenchmarkHelper;
+            use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
+                        impl pallet_xcm::benchmarking::Config for Runtime {
+				fn reachable_dest() -> Option<MultiLocation> {
+					Some(Parent.into())
+				}
+
+				fn teleportable_asset_and_dest() -> Option<(MultiAsset, MultiLocation)> {
+					// Relay/native token can be teleported between AH and Relay.
+					Some((
+						MultiAsset {
+							fun: Fungible(ExistentialDeposit::get()),
+							id: Concrete(Parent.into())
+						},
+						Parent.into(),
+					))
+				}
+
+				fn reserve_transferable_asset_and_dest() -> Option<(MultiAsset, MultiLocation)> {
+					// AH can reserve transfer native token to some random parachain.
+					let random_para_id = 43211234;
+					ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
+						random_para_id.into()
+					);
+					Some((
+						MultiAsset {
+							fun: Fungible(ExistentialDeposit::get()),
+							id: Concrete(Parent.into())
+						},
+						ParentThen(Parachain(random_para_id).into()).into(),
+					))
+				}
+			}
 
             impl frame_system_benchmarking::Config for Runtime {}
             impl baseline::Config for Runtime {}

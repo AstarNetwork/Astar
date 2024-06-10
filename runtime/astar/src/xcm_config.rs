@@ -288,11 +288,6 @@ pub type XcmRouter = (
     XcmpQueue,
 );
 
-#[cfg(feature = "runtime-benchmarks")]
-parameter_types! {
-    pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
-}
-
 pub type Weigher =
     WeightInfoBounds<weights::xcm::XcmWeight<Runtime, RuntimeCall>, RuntimeCall, MaxInstructions>;
 
@@ -321,8 +316,6 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = weights::pallet_xcm::SubstrateWeight<Runtime>;
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type ReachableDest = ReachableDest;
     type AdminOrigin = EnsureRoot<AccountId>;
 }
 
