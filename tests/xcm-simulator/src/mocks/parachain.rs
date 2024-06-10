@@ -62,9 +62,7 @@ use orml_xcm_support::DisabledParachainFee;
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::{
-    dapp_staking::{
-        AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler,
-    },
+    dapp_staking::{AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler},
     oracle::PriceProvider,
     xcm::{
         AllowTopLevelPaidExecutionFrom, AssetLocationIdConverter, FixedRateOfForeignAsset,
