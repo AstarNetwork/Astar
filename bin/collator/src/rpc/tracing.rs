@@ -28,11 +28,11 @@ use sc_client_api::{
     Backend, BlockOf, BlockchainEvents, HeaderBackend, StateBackend, StorageProvider,
 };
 use sc_service::TaskManager;
-use sp_api::{BlockT, HeaderT, ProvideRuntimeApi};
+use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata};
 use sp_core::H256;
-use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT, Header as HeaderT};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 

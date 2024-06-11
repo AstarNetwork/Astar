@@ -691,7 +691,7 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<MockSmartContract, AccountId>
     for BenchmarkHelper<MockSmartContract, AccountId>
 {
     fn get_smart_contract(id: u32) -> MockSmartContract {
-        MockSmartContract::wasm(AccountId::from([id as u8; 32]))
+        MockSmartContract::Wasm(AccountId::from([id as u8; 32]))
     }
 
     fn set_balance(account: &AccountId, amount: Balance) {
