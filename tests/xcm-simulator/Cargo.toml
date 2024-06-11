@@ -82,6 +82,7 @@ std = [
 	"orml-traits/std",
 	"orml-xcm-support/std",
 	"pallet-dapp-staking-v3/std",
+	"pallet-contracts-uapi/std",
 ]
 runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
