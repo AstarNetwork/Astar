@@ -20,7 +20,7 @@ jobs:
         df -h
 
     - name: Checkout the source code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: true
 
@@ -53,7 +53,7 @@ jobs:
 
     steps:
     - name: Checkout the source code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: true
 
@@ -98,7 +98,7 @@ jobs:
       id: artifact-name
       run: echo "::set-output name=name::astar-ubuntu-latest-${TARGET%%-*}"
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.artifact-name.outputs.name }}
         path: target/${{ matrix.target }}/release/astar-collator
@@ -109,7 +109,7 @@ jobs:
     steps:
 
     - name: Checkout the source code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: true
 
@@ -131,7 +131,7 @@ jobs:
     - name: Build optimized binary with evm tracing
       run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target x86_64-unknown-linux-gnu --features evm-tracing --verbose --locked
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: astar-evm-tracing-ubuntu-latest-x86_64-unknown-linux-gnu
         path: target/x86_64-unknown-linux-gnu/release/astar-collator
@@ -142,17 +142,17 @@ jobs:
         mv target/x86_64-unknown-linux-gnu/release/wbuild/shiden-runtime/shiden_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/release/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
         mv target/x86_64-unknown-linux-gnu/release/wbuild/shibuya-runtime/shibuya_runtime.compact.compressed.wasm target/x86_64-unknown-linux-gnu/release/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: astar-evm-tracing-runtime
         path: target/x86_64-unknown-linux-gnu/release/wbuild/astar-runtime/astar_evm_tracing_runtime.compact.compressed.wasm
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: shiden-evm-tracing-runtime
         path: target/x86_64-unknown-linux-gnu/release/wbuild/shiden-runtime/shiden_evm_tracing_runtime.compact.compressed.wasm
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: shibuya-evm-tracing-runtime
         path: target/x86_64-unknown-linux-gnu/release/wbuild/shibuya-runtime/shibuya_evm_tracing_runtime.compact.compressed.wasm
@@ -170,7 +170,7 @@ jobs:
       contents: read
     steps:
     - name: Checkout the source code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: true
 
@@ -196,7 +196,7 @@ jobs:
     - name: Show sccache stats
       run: sccache --show-stats
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: astar-macOS-latest-x86_64
         path: target/release/astar-collator
@@ -206,7 +206,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the source code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: true
 
@@ -228,7 +228,7 @@ jobs:
         tag-sha: true # add git short SHA as Docker tag
 
     - name: Download pre-built linux collator binary
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: astar-ubuntu-latest-x86_64
 
@@ -251,7 +251,7 @@ jobs:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -273,7 +273,7 @@ jobs:
 
     # it takes a while to build the runtime, so let's save the artifact as soon as we have it
     - name: Archive Artifacts for ${{ matrix.chain }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.chain }}-runtime
         path: |
@@ -311,7 +311,7 @@ jobs:
           tee ${{ matrix.chain }}-diff.txt
 
     - name: Archive Subwasm results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.chain }}-runtime
         path: |
@@ -327,24 +327,24 @@ jobs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
     - name: Download astar runtime
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: astar-runtime
         path: runtime-artifacts
 
     - name: Download shiden runtime
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: shiden-runtime
         path: runtime-artifacts
 
     - name: Download shibuya runtime
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: shibuya-runtime
         path: runtime-artifacts
@@ -398,7 +398,7 @@ jobs:
         mkdir -p ubuntu-tracing-bin
 
     - name: Download pre-built collator binary
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: astar-${{ matrix.os }}-latest-${{ matrix.arch }}
         path: ${{ matrix.os }}-${{ matrix.arch }}-bin
@@ -427,7 +427,7 @@ jobs:
         chain: ["astar", "shiden", "shibuya"]
     steps:
     - name: Download runtime
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: ${{ matrix.chain }}-runtime
 
@@ -491,25 +491,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download pre-built collator binary for evm tracing
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: astar-evm-tracing-ubuntu-latest-x86_64-unknown-linux-gnu
         path: evm-tracing-artifacts
 
     - name: Download evm tracing runtime
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: astar-evm-tracing-runtime
         path: evm-tracing-artifacts
 
     - name: Download evm tracing runtime
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: shiden-evm-tracing-runtime
         path: evm-tracing-artifacts
     
     - name: Download evm tracing runtime
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: shibuya-evm-tracing-runtime
         path: evm-tracing-artifacts
@@ -535,3 +535,25 @@ jobs:
         asset_path:  evm-tracing-artifacts.tar.gz
         asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
         asset_content_type: application/gzip
+
+  chain-sync:
+    needs: native-linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chain: [ "astar", "shiden", "shibuya" ]
+
+    steps:
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+
+      - name: Download pre-built collator binary
+        uses: actions/download-artifact@v4
+        with:
+          name: astar-ubuntu-latest-x86_64
+          path: target/release
+
+      - name: Sync chain ${{ matrix.chain }}
+        run: |
+          chmod +x target/release/astar-collator
+          ./scripts/sync.sh ${{ matrix.chain }}
