@@ -25,5 +25,5 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-contracts/std",
-	"pallet-contracts-uapi/std",
+
 ]

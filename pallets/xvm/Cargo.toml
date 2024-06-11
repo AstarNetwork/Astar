@@ -51,7 +51,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-contracts/std",
-	"pallet-contracts-uapi/std",
 	"pallet-evm/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"scale-info/std",
