@@ -115,7 +115,6 @@ sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "
 sp-staking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.5.0", default-features = false }
 sp-externalities = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.5.0", default-features = false }
 sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.5.0", default-features = false }
-sp_state_machine = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.5.0", default-features = false }
 
 # (native)
 sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.5.0" }
