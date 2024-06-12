@@ -351,6 +351,9 @@ pub fn start_node(
         prometheus_registry.clone(),
     ));
 
+    #[cfg(feature = "manual-seal")]
+    let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
+
     let rpc_extensions_builder = {
         let client = client.clone();
         let network = network.clone();
@@ -380,7 +383,7 @@ pub fn start_node(
                 overrides: overrides.clone(),
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
                 #[cfg(feature = "manual-seal")]
-                command_sink: None,
+                command_sink: Some(command_sink.clone()),
             };
 
             crate::rpc::create_full(
@@ -419,6 +422,33 @@ pub fn start_node(
 
         let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 
+        #[cfg(feature = "manual-seal")]
+        let aura = sc_consensus_manual_seal::run_manual_seal(
+            sc_consensus_manual_seal::ManualSealParams {
+                block_import,
+                env: proposer_factory,
+                client: client.clone(),
+                pool: transaction_pool.clone(),
+                commands_stream,
+                select_chain,
+                consensus_data_provider: Some(Box::new(
+                    sc_consensus_manual_seal::consensus::aura::AuraConsensusDataProvider::new(
+                        client.clone(),
+                    ),
+                )),
+                create_inherent_data_providers: move |_, ()| async move {
+                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+                    let slot =
+                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                            *timestamp,
+                            slot_duration.clone(),
+                        );
+                    Ok((slot, timestamp))
+                },
+            },
+        );
+
+        #[cfg(not(feature = "manual-seal"))]
         let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
