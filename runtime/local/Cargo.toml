@@ -45,6 +45,7 @@ pallet-scheduler = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
+pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 sp-api = { workspace = true }
@@ -155,6 +156,7 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
+	"pallet-treasury/std",
 	"pallet-utility/std",
 	"pallet-vesting/std",
 	"pallet-proxy/std",
@@ -192,6 +194,7 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-democracy/runtime-benchmarks",
@@ -216,6 +219,7 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
+	"pallet-treasury/try-runtime",
 	"pallet-inflation/try-runtime",
 	"pallet-membership/try-runtime",
 	"pallet-grandpa/try-runtime",

@@ -29,9 +29,10 @@ use frame_support::{
     genesis_builder_helper::{build_config, create_default_config},
     parameter_types,
     traits::{
-        fungible::HoldConsideration, AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64,
-        Currency, EqualPrivilegeOnly, FindAuthor, Get, InstanceFilter, LinearStoragePrice, Nothing,
-        OnFinalize, WithdrawReasons,
+        fungible::HoldConsideration,
+        tokens::{PayFromAccount, UnityAssetBalanceConversion},
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EqualPrivilegeOnly,
+        FindAuthor, Get, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize, WithdrawReasons,
     },
     weights::{
         constants::{ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -56,7 +57,8 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        DispatchInfoOf, Dispatchable, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto,
+        DispatchInfoOf, Dispatchable, IdentityLookup, NumberFor, PostDispatchInfoOf,
+        UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
     ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
@@ -1018,6 +1020,47 @@ impl pallet_democracy::Config for Runtime {
     type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const ProposalBond: Permill = Permill::from_percent(5);
+    pub TreasuryAccount: AccountId = Treasury::account_id();
+}
+
+impl pallet_treasury::Config for Runtime {
+    type PalletId = TreasuryPalletId;
+    type Currency = Balances;
+    type RuntimeEvent = RuntimeEvent;
+
+    // Two origins which can either approve or reject the spending proposal
+    type ApproveOrigin = EnsureRootOrTwoThirdsCouncil;
+    type RejectOrigin = EnsureRootOrTwoThirdsCouncil;
+
+    type OnSlash = Treasury;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMinimum = ConstU128<{ 10 * AST }>;
+    // TODO: do we even want this or should we make it unlimited?
+    type ProposalBondMaximum = ConstU128<{ 100 * AST }>;
+    type SpendPeriod = ConstU32<{ 5 * MINUTES }>;
+    type PayoutPeriod = ConstU32<{ 5 * MINUTES }>;
+
+    // We don't do periodic burns of the treasury
+    type Burn = ();
+    type BurnDestination = ();
+    type SpendFunds = ();
+
+    type MaxApprovals = ConstU32<32>;
+    type AssetKind = ();
+    type Beneficiary = AccountId;
+    type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
+    type Paymaster = PayFromAccount<Balances, TreasuryAccount>;
+    type BalanceConverter = UnityAssetBalanceConversion;
+
+    // New approach to using treasury, not really used by parachains
+    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
+    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+}
+
 // Need to skip formatting since it removes '::' from the pallet declarations (https://github.com/rust-lang/rustfmt/issues/5526).
 #[rustfmt::skip]
 construct_runtime!(
@@ -1043,6 +1086,7 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance3>,
         DappStakingCommittee: pallet_collective::<Instance4>,
         Democracy: pallet_democracy,
+        Treasury: pallet_treasury,
 
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,
