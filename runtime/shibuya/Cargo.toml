@@ -282,6 +282,7 @@ runtime-benchmarks = [
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 	"cumulus-primitives-utility/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",

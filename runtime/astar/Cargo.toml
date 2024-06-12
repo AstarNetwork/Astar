@@ -258,6 +258,7 @@ runtime-benchmarks = [
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",

@@ -259,6 +259,7 @@ runtime-benchmarks = [
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 	"pallet-price-aggregator/runtime-benchmarks",
 	"cumulus-primitives-utility/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 ]
 try-runtime = [
 	"astar-primitives/try-runtime",
