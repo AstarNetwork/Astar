@@ -362,7 +362,8 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
-    type ContractRegistryOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;

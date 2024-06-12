@@ -128,8 +128,11 @@ pub mod pallet {
             + MaxEncodedLen
             + SmartContractHandle<Self::AccountId>;
 
-        /// Privileged origin that is allowed to register & unregister smart contracts to & from the protocol.
-        type ContractRegistryOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
+        /// Privileged origin that is allowed to register smart contracts to the protocol.
+        type ContractRegisterOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
+
+        /// Privileged origin that is allowed to unregister smart contracts from the protocol.
+        type ContractUnregisterOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
@@ -659,7 +662,7 @@ pub mod pallet {
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            T::ContractRegistryOrigin::ensure_origin(origin)?;
+            T::ContractRegisterOrigin::ensure_origin(origin)?;
 
             ensure!(
                 !IntegratedDApps::<T>::contains_key(&smart_contract),
@@ -786,7 +789,7 @@ pub mod pallet {
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            T::ContractRegistryOrigin::ensure_origin(origin)?;
+            T::ContractUnregisterOrigin::ensure_origin(origin)?;
 
             let dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;

@@ -270,7 +270,7 @@ fn register_is_ok() {
         let owner = 11;
         let dapp_id = NextDAppId::<Test>::get();
         assert_ok!(DappStaking::register(
-            RuntimeOrigin::signed(ContractRegistryAccount::get()),
+            RuntimeOrigin::signed(ContractRegisterAccount::get()),
             owner,
             smart_contract.clone()
         ));
@@ -289,6 +289,16 @@ fn register_with_incorrect_origin_fails() {
         assert_noop!(
             DappStaking::register(
                 RuntimeOrigin::signed(ManagerAccount::get()),
+                3,
+                MockSmartContract::Wasm(2)
+            ),
+            BadOrigin
+        );
+
+        // Test assumes register & unregister origins are different.
+        assert_noop!(
+            DappStaking::register(
+                RuntimeOrigin::signed(ContractUnregisterAccount::get()),
                 3,
                 MockSmartContract::Wasm(2)
             ),
@@ -453,7 +463,7 @@ fn unregister_no_stake_is_ok() {
         assert_register(owner, &smart_contract);
 
         assert_ok!(DappStaking::unregister(
-            RuntimeOrigin::signed(ContractRegistryAccount::get()),
+            RuntimeOrigin::signed(ContractUnregisterAccount::get()),
             smart_contract.clone(),
         ));
         System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppUnregistered {
@@ -494,6 +504,13 @@ fn unregister_fails() {
         assert_register(owner, &smart_contract);
         assert_noop!(
             DappStaking::unregister(RuntimeOrigin::signed(owner), smart_contract),
+            BadOrigin
+        );
+        assert_noop!(
+            DappStaking::unregister(
+                RuntimeOrigin::signed(ContractRegisterAccount::get()),
+                smart_contract
+            ),
             BadOrigin
         );
 

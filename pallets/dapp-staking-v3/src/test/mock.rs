@@ -200,7 +200,8 @@ parameter_types! {
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
 }
 ord_parameter_types! {
-    pub const ContractRegistryAccount: AccountId = 1337;
+    pub const ContractRegisterAccount: AccountId = 1337;
+    pub const ContractUnregisterAccount: AccountId = 1779;
     pub const ManagerAccount: AccountId = 25711;
 }
 
@@ -209,8 +210,12 @@ impl pallet_dapp_staking::Config for Test {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = MockSmartContract;
-    type ContractRegistryOrigin =
-        EitherOfDiverse<EnsureRoot<AccountId>, EnsureSignedBy<ContractRegistryAccount, AccountId>>;
+    type ContractRegisterOrigin =
+        EitherOfDiverse<EnsureRoot<AccountId>, EnsureSignedBy<ContractRegisterAccount, AccountId>>;
+    type ContractUnregisterOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        EnsureSignedBy<ContractUnregisterAccount, AccountId>,
+    >;
     type ManagerOrigin =
         EitherOfDiverse<EnsureRoot<AccountId>, EnsureSignedBy<ManagerAccount, AccountId>>;
     type NativePriceProvider = DummyPriceProvider;
