@@ -25,7 +25,7 @@ jobs:
         run: rustup target list --installed
 
       - name: Build astar-collator
-        run: cargo build --release --locked --features manual-seal --bin astar-collator
+        run: cargo build --release --locked --features manual-seal,evm-tracing --bin astar-collator
 
       - name: Clone frontier tests
         run: git clone https://github.com/AstarNetwork/frontier-tests.git --depth 1

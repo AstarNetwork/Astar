@@ -76,12 +76,16 @@ pub struct EvmTracingConfig {
 #[derive(Debug, Parser)]
 pub struct EthApiOptions {
     /// Enable EVM tracing module on a non-authority node.
-    #[clap(
-        long,
-        conflicts_with = "collator",
-        conflicts_with = "validator",
-        value_delimiter = ','
+    #[cfg_attr(
+        not(feature = "manual-seal"),
+        clap(
+            long,
+            conflicts_with = "collator",
+            conflicts_with = "validator",
+            value_delimiter = ','
+        )
     )]
+    #[cfg_attr(feature = "manual-seal", clap(long))]
     pub ethapi: Vec<EthApi>,
 
     /// Number of concurrent tracing tasks. Meant to be shared by both "debug" and "trace" modules.
