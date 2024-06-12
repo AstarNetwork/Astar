@@ -117,6 +117,10 @@
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -195,12 +199,16 @@
 <span class="attr">#[derive(Debug, Parser)]
 </span><span class="kw">pub struct </span>EthApiOptions {
     <span class="doccomment">/// Enable EVM tracing module on a non-authority node.
-    </span><span class="attr">#[clap(
-        long,
-        conflicts_with = <span class="string">&quot;collator&quot;</span>,
-        conflicts_with = <span class="string">&quot;validator&quot;</span>,
-        value_delimiter = <span class="string">&#39;,&#39;
-    </span>)]
+    </span><span class="attr">#[cfg_attr(
+        not(feature = <span class="string">&quot;manual-seal&quot;</span>),
+        clap(
+            long,
+            conflicts_with = <span class="string">&quot;collator&quot;</span>,
+            conflicts_with = <span class="string">&quot;validator&quot;</span>,
+            value_delimiter = <span class="string">&#39;,&#39;
+        </span>)
+    )]
+    #[cfg_attr(feature = <span class="string">&quot;manual-seal&quot;</span>, clap(long))]
     </span><span class="kw">pub </span>ethapi: Vec&lt;EthApi&gt;,
 
     <span class="doccomment">/// Number of concurrent tracing tasks. Meant to be shared by both &quot;debug&quot; and &quot;trace&quot; modules.
