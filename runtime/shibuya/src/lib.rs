@@ -315,7 +315,7 @@ impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
     pub const BasicDeposit: Balance = deposit(1, 258);  // 258 bytes on-chain
-    pub const ByteDeposit: Balance = deposit(0, 66);  // 66 bytes on-chain
+    pub const ByteDeposit: Balance = deposit(0, 1);
     pub const SubAccountDeposit: Balance = deposit(1, 53);  // 53 bytes on-chain
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
@@ -1111,8 +1111,6 @@ impl pallet_xc_asset_config::Config for Runtime {
 parameter_types! {
     pub MessageQueueServiceWeight: Weight =
         Perbill::from_percent(25) * RuntimeBlockWeights::get().max_block;
-    pub const MessageQueueMaxStale: u32 = 8;
-    pub const MessageQueueHeapSize: u32 = 128 * 1048;
 }
 
 impl pallet_message_queue::Config for Runtime {
@@ -1131,8 +1129,8 @@ impl pallet_message_queue::Config for Runtime {
     type Size = u32;
     type QueueChangeHandler = NarrowOriginToSibling<XcmpQueue>;
     type QueuePausedQuery = NarrowOriginToSibling<XcmpQueue>;
-    type HeapSize = MessageQueueHeapSize;
-    type MaxStale = MessageQueueMaxStale;
+    type HeapSize = ConstU32<{ 128 * 1048 }>;
+    type MaxStale = ConstU32<8>;
     type ServiceWeight = MessageQueueServiceWeight;
 }
 
@@ -1956,18 +1954,10 @@ impl_runtime_apis! {
                 }
 
                 fn teleportable_asset_and_dest() -> Option<(MultiAsset, MultiLocation)> {
-                    // Relay/native token can be teleported between AH and Relay.
-                    Some((
-                        MultiAsset {
-                            fun: Fungible(ExistentialDeposit::get()),
-                            id: Concrete(Parent.into())
-                        },
-                        Parent.into(),
-                    ))
+                    None
                 }
 
                 fn reserve_transferable_asset_and_dest() -> Option<(MultiAsset, MultiLocation)> {
-                    // AH can reserve transfer native token to some random parachain.
                     let random_para_id = 43211234;
                     ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
                         random_para_id.into()
