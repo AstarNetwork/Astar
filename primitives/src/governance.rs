@@ -30,6 +30,9 @@ pub type CouncilCollectiveInst = pallet_collective::Instance2;
 pub type TechnicalCommitteeCollectiveInst = pallet_collective::Instance3;
 pub type DappStakingCommitteeCollectiveInst = pallet_collective::Instance4;
 
+pub type MainTreasuryInst = pallet_treasury::Instance1;
+pub type CommunityTreasuryInst = pallet_treasury::Instance2;
+
 // Council
 pub type EnsureRootOrAllCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,

@@ -24,6 +24,7 @@ frame-system = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-membership = { workspace = true }
+pallet-treasury = { workspace = true }
 sp-arithmetic = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
@@ -59,6 +60,7 @@ std = [
 	"ethereum/std",
 	"fp-evm/std",
 	"frame-support/std",
+	"pallet-treasury/std",
 	"frame-system/std",
 	"pallet-membership/std",
 	"pallet-collective/std",
@@ -81,4 +83,4 @@ std = [
 	"sp-arithmetic/std",
 ]
 runtime-benchmarks = ["xcm-builder/runtime-benchmarks", "pallet-assets/runtime-benchmarks"]
-try-runtime = ["pallet-contracts/try-runtime", "pallet-membership/try-runtime", "pallet-collective/try-runtime"]
+try-runtime = ["pallet-contracts/try-runtime", "pallet-membership/try-runtime", "pallet-collective/try-runtime", "pallet-treasury/try-runtime"]

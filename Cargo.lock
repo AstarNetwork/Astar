@@ -745,6 +745,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-dispatch",
  "pallet-membership",
+ "pallet-treasury",
  "pallet-xc-asset-config",
  "parity-scale-codec",
  "scale-info",

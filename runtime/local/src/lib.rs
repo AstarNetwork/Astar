@@ -76,7 +76,7 @@ use astar_primitives::{
         DappStakingCommitteeMembershipInst, EnsureRootOrAllCouncil,
         EnsureRootOrAllTechnicalCommittee, EnsureRootOrTwoThirdsCouncil,
         EnsureRootOrTwoThirdsDappStakingCommittee, EnsureRootOrTwoThirdsTechnicalCommittee,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        MainTreasuryInst, TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
@@ -1025,7 +1025,7 @@ parameter_types! {
     pub TreasuryAccount: AccountId = Treasury::account_id();
 }
 
-impl pallet_treasury::Config for Runtime {
+impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type PalletId = TreasuryPalletId;
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
@@ -1039,23 +1039,24 @@ impl pallet_treasury::Config for Runtime {
     type ProposalBondMinimum = ConstU128<{ 10 * AST }>;
     // TODO: do we even want this or should we make it unlimited?
     type ProposalBondMaximum = ConstU128<{ 100 * AST }>;
-    type SpendPeriod = ConstU32<{ 5 * MINUTES }>;
-    type PayoutPeriod = ConstU32<{ 5 * MINUTES }>;
+    type SpendPeriod = ConstU32<{ 1 * MINUTES }>;
 
     // We don't do periodic burns of the treasury
     type Burn = ();
     type BurnDestination = ();
     type SpendFunds = ();
 
-    type MaxApprovals = ConstU32<32>;
-    type AssetKind = ();
+    type MaxApprovals = ConstU32<64>;
+    type AssetKind = (); // Only native asset is supported
     type Beneficiary = AccountId;
     type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
     type Paymaster = PayFromAccount<Balances, TreasuryAccount>;
     type BalanceConverter = UnityAssetBalanceConversion;
 
-    // New approach to using treasury, not really used by parachains
+    // New approach to using treasury, useful for OpenGov but not necessarily for us.
     type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+    // Only used by 'spend' approach which is disabled
+    type PayoutPeriod = ConstU32<0>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
@@ -1086,7 +1087,7 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance3>,
         DappStakingCommittee: pallet_collective::<Instance4>,
         Democracy: pallet_democracy,
-        Treasury: pallet_treasury,
+        Treasury: pallet_treasury::<Instance1>,
 
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,

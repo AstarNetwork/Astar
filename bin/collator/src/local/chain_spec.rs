@@ -216,6 +216,7 @@ fn testnet_genesis(
         technical_committee: Default::default(),
         dapp_staking_committee: Default::default(),
         democracy: Default::default(),
+        treasury: Default::default(),
     }
 }
 
