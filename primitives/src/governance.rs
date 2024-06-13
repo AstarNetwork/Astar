@@ -21,27 +21,27 @@ use frame_support::traits::EitherOfDiverse;
 use frame_system::EnsureRoot;
 
 pub type OracleMembershipInst = pallet_membership::Instance1;
-pub type CouncilMembershipInst = pallet_membership::Instance2;
+pub type MainCouncilMembershipInst = pallet_membership::Instance2;
 pub type TechnicalCommitteeMembershipInst = pallet_membership::Instance3;
-pub type DappStakingCommitteeMembershipInst = pallet_membership::Instance4;
+pub type CommunityCouncilMembershipInst = pallet_membership::Instance4;
 
 // Leaving instance 1 for potentially having an oracle membership collective instance
-pub type CouncilCollectiveInst = pallet_collective::Instance2;
+pub type MainCouncilCollectiveInst = pallet_collective::Instance2;
 pub type TechnicalCommitteeCollectiveInst = pallet_collective::Instance3;
-pub type DappStakingCommitteeCollectiveInst = pallet_collective::Instance4;
+pub type CommunityCouncilCollectiveInst = pallet_collective::Instance4;
 
 pub type MainTreasuryInst = pallet_treasury::Instance1;
 pub type CommunityTreasuryInst = pallet_treasury::Instance2;
 
-// Council
-pub type EnsureRootOrAllCouncil = EitherOfDiverse<
+// Main Council
+pub type EnsureRootOrAllMainCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollectiveInst, 1, 1>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, MainCouncilCollectiveInst, 1, 1>,
 >;
 
-pub type EnsureRootOrTwoThirdsCouncil = EitherOfDiverse<
+pub type EnsureRootOrTwoThirdsMainCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollectiveInst, 2, 3>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, MainCouncilCollectiveInst, 2, 3>,
 >;
 
 // Technical Committee
@@ -55,13 +55,13 @@ pub type EnsureRootOrTwoThirdsTechnicalCommittee = EitherOfDiverse<
     pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollectiveInst, 2, 3>,
 >;
 
-// Dapp Staking Committee
-pub type EnsureRootOrAllDappStakingCommittee = EitherOfDiverse<
+// Community Council
+pub type EnsureRootOrAllCommunityCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionAtLeast<AccountId, DappStakingCommitteeCollectiveInst, 1, 1>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, CommunityCouncilCollectiveInst, 1, 1>,
 >;
 
-pub type EnsureRootOrTwoThirdsDappStakingCommittee = EitherOfDiverse<
+pub type EnsureRootOrTwoThirdsCommunityCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionAtLeast<AccountId, DappStakingCommitteeCollectiveInst, 2, 3>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, CommunityCouncilCollectiveInst, 2, 3>,
 >;

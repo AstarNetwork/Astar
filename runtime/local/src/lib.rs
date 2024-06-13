@@ -72,11 +72,11 @@ use astar_primitives::{
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     governance::{
-        CouncilCollectiveInst, CouncilMembershipInst, DappStakingCommitteeCollectiveInst,
-        DappStakingCommitteeMembershipInst, EnsureRootOrAllCouncil,
-        EnsureRootOrAllTechnicalCommittee, EnsureRootOrTwoThirdsCouncil,
-        EnsureRootOrTwoThirdsDappStakingCommittee, EnsureRootOrTwoThirdsTechnicalCommittee,
-        MainTreasuryInst, TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, EnsureRootOrAllMainCouncil,
+        EnsureRootOrAllTechnicalCommittee, EnsureRootOrTwoThirdsCommunityCouncil,
+        EnsureRootOrTwoThirdsMainCouncil, EnsureRootOrTwoThirdsTechnicalCommittee,
+        MainCouncilCollectiveInst, MainCouncilMembershipInst, MainTreasuryInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
@@ -466,7 +466,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
-    type ContractRegisterOrigin = EnsureRootOrTwoThirdsDappStakingCommittee;
+    type ContractRegisterOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
     type ContractUnregisterOrigin = EnsureRoot<AccountId>;
     type ManagerOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
     type NativePriceProvider = StaticPriceProvider;
@@ -888,16 +888,16 @@ impl pallet_proxy::Config for Runtime {
 parameter_types! {
     pub const CouncilMaxMembers: u32 = 5;
     pub const TechnicalCommitteeMaxMembers: u32 = 3;
-    pub const DappStakingCommitteeMaxMembers: u32 = 10;
+    pub const CommunityCouncilMaxMembers: u32 = 10;
 }
 
-impl pallet_membership::Config<CouncilMembershipInst> for Runtime {
+impl pallet_membership::Config<MainCouncilMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsCouncil;
+    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
     type MembershipInitialized = Council;
     type MembershipChanged = Council;
     type MaxMembers = CouncilMaxMembers;
@@ -906,27 +906,27 @@ impl pallet_membership::Config<CouncilMembershipInst> for Runtime {
 
 impl pallet_membership::Config<TechnicalCommitteeMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsCouncil;
+    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
     type MembershipInitialized = TechnicalCommittee;
     type MembershipChanged = TechnicalCommittee;
     type MaxMembers = TechnicalCommitteeMaxMembers;
     type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_membership::Config<DappStakingCommitteeMembershipInst> for Runtime {
+impl pallet_membership::Config<CommunityCouncilMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRootOrTwoThirdsCouncil;
-    type RemoveOrigin = EnsureRootOrTwoThirdsCouncil;
-    type SwapOrigin = EnsureRootOrTwoThirdsCouncil;
-    type ResetOrigin = EnsureRootOrTwoThirdsCouncil;
-    type PrimeOrigin = EnsureRootOrTwoThirdsCouncil;
-    type MembershipInitialized = DappStakingCommittee;
-    type MembershipChanged = DappStakingCommittee;
-    type MaxMembers = DappStakingCommitteeMaxMembers;
+    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type MembershipInitialized = CommunityCouncil;
+    type MembershipChanged = CommunityCouncil;
+    type MaxMembers = CommunityCouncilMaxMembers;
     type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
 }
 
@@ -934,7 +934,7 @@ parameter_types! {
     pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
-impl pallet_collective::Config<CouncilCollectiveInst> for Runtime {
+impl pallet_collective::Config<MainCouncilCollectiveInst> for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type Proposal = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
@@ -960,13 +960,13 @@ impl pallet_collective::Config<TechnicalCommitteeCollectiveInst> for Runtime {
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_collective::Config<DappStakingCommitteeCollectiveInst> for Runtime {
+impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type Proposal = RuntimeCall;
     type RuntimeEvent = RuntimeEvent;
     type MotionDuration = ConstU32<{ 5 * MINUTES }>;
     type MaxProposals = ConstU32<16>;
-    type MaxMembers = DappStakingCommitteeMaxMembers;
+    type MaxMembers = CommunityCouncilMaxMembers;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type SetMembersOrigin = EnsureRoot<AccountId>;
     type MaxProposalWeight = MaxProposalWeight;
@@ -990,11 +990,11 @@ impl pallet_democracy::Config for Runtime {
     type MaxBlacklisted = ConstU32<128>;
 
     /// A two third majority of the Council can choose the next external "super majority approve" proposal.
-    type ExternalOrigin = EnsureRootOrTwoThirdsCouncil;
+    type ExternalOrigin = EnsureRootOrTwoThirdsMainCouncil;
     /// A two third majority of the Council can choose the next external "majority approve" proposal. Also bypasses blacklist filter.
-    type ExternalMajorityOrigin = EnsureRootOrTwoThirdsCouncil;
+    type ExternalMajorityOrigin = EnsureRootOrTwoThirdsMainCouncil;
     /// Unanimous approval of the Council can choose the next external "super majority against" proposal.
-    type ExternalDefaultOrigin = EnsureRootOrAllCouncil;
+    type ExternalDefaultOrigin = EnsureRootOrAllMainCouncil;
     /// A two third majority of the Technical Committee can have an external proposal tabled immediately
     /// for a _fast track_ vote, and a custom enactment period.
     type FastTrackOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
@@ -1004,7 +1004,7 @@ impl pallet_democracy::Config for Runtime {
     type InstantAllowed = ConstBool<true>;
 
     /// A two third majority of the Council can cancel a passed proposal. Can happen only once per unique proposal.
-    type CancellationOrigin = EnsureRootOrTwoThirdsCouncil;
+    type CancellationOrigin = EnsureRootOrTwoThirdsMainCouncil;
     /// Only a passed public referendum can permanently blacklist a proposal.
     type BlacklistOrigin = EnsureRoot<AccountId>;
     /// An unanimous Technical Committee can cancel a public proposal, slashing the deposit(s).
@@ -1031,8 +1031,8 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
 
     // Two origins which can either approve or reject the spending proposal
-    type ApproveOrigin = EnsureRootOrTwoThirdsCouncil;
-    type RejectOrigin = EnsureRootOrTwoThirdsCouncil;
+    type ApproveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type RejectOrigin = EnsureRootOrTwoThirdsMainCouncil;
 
     type OnSlash = Treasury;
     type ProposalBond = ProposalBond;
@@ -1082,10 +1082,10 @@ construct_runtime!(
         // Governance
         CouncilMembership: pallet_membership::<Instance2>,
         TechnicalCommitteeMembership: pallet_membership::<Instance3>,
-        DappStakingCommitteeMembership: pallet_membership::<Instance4>,
+        CommunityCouncilMembership: pallet_membership::<Instance4>,
         Council: pallet_collective::<Instance2>,
         TechnicalCommittee: pallet_collective::<Instance3>,
-        DappStakingCommittee: pallet_collective::<Instance4>,
+        CommunityCouncil: pallet_collective::<Instance4>,
         Democracy: pallet_democracy,
         Treasury: pallet_treasury::<Instance1>,
 

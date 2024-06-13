@@ -19,10 +19,11 @@
 //! Chain specifications.
 
 use local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, CouncilMembershipConfig,
-    DappStakingCommitteeMembershipConfig, DappStakingConfig, EVMConfig, GrandpaConfig, GrandpaId,
-    InflationConfig, InflationParameters, Precompiles, RuntimeGenesisConfig, Signature, SudoConfig,
-    SystemConfig, TechnicalCommitteeMembershipConfig, TierThreshold, VestingConfig, AST,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig,
+    CommunityCouncilMembershipConfig, CouncilMembershipConfig, DappStakingConfig, EVMConfig,
+    GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles,
+    RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig, TechnicalCommitteeMembershipConfig,
+    TierThreshold, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -206,7 +207,7 @@ fn testnet_genesis(
                 .expect("Should support at least 3 members."),
             phantom: Default::default(),
         },
-        dapp_staking_committee_membership: DappStakingCommitteeMembershipConfig {
+        community_council_membership: CommunityCouncilMembershipConfig {
             members: accounts
                 .try_into()
                 .expect("Should support at least 5 members."),
@@ -214,7 +215,7 @@ fn testnet_genesis(
         },
         council: Default::default(),
         technical_committee: Default::default(),
-        dapp_staking_committee: Default::default(),
+        community_council: Default::default(),
         democracy: Default::default(),
         treasury: Default::default(),
     }
