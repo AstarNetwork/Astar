@@ -72,11 +72,12 @@ use astar_primitives::{
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     governance::{
-        CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, EnsureRootOrAllMainCouncil,
-        EnsureRootOrAllTechnicalCommittee, EnsureRootOrTwoThirdsCommunityCouncil,
-        EnsureRootOrTwoThirdsMainCouncil, EnsureRootOrTwoThirdsTechnicalCommittee,
-        MainCouncilCollectiveInst, MainCouncilMembershipInst, MainTreasuryInst,
-        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
+        CommunityCouncilCollectiveInst, CommunityCouncilMembershipInst, CommunityTreasuryInst,
+        EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
+        EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
+        EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
+        MainCouncilMembershipInst, MainTreasuryInst, TechnicalCommitteeCollectiveInst,
+        TechnicalCommitteeMembershipInst,
     },
     Address, AssetId, Balance, BlockNumber, Hash, Header, Nonce,
 };
@@ -1022,7 +1023,7 @@ impl pallet_democracy::Config for Runtime {
 
 parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(5);
-    pub TreasuryAccount: AccountId = Treasury::account_id();
+    pub MainTreasuryAccount: AccountId = Treasury::account_id();
 }
 
 impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
@@ -1050,7 +1051,48 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type AssetKind = (); // Only native asset is supported
     type Beneficiary = AccountId;
     type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
-    type Paymaster = PayFromAccount<Balances, TreasuryAccount>;
+    type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
+    type BalanceConverter = UnityAssetBalanceConversion;
+
+    // New approach to using treasury, useful for OpenGov but not necessarily for us.
+    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+    // Only used by 'spend' approach which is disabled
+    type PayoutPeriod = ConstU32<0>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
+    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub const CommunityTreasuryPalletId: PalletId = PalletId(*b"py/comtr");
+}
+
+impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
+    type PalletId = CommunityTreasuryPalletId;
+    type Currency = Balances;
+    type RuntimeEvent = RuntimeEvent;
+
+    // Two origins which can either approve or reject the spending proposal
+    type ApproveOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    type RejectOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+
+    type OnSlash = CommunityTreasury;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMinimum = ConstU128<{ 10 * AST }>;
+    // TODO: do we even want this or should we make it unlimited?
+    type ProposalBondMaximum = ConstU128<{ 100 * AST }>;
+    type SpendPeriod = ConstU32<{ 1 * MINUTES }>;
+
+    // We don't do periodic burns of the community treasury
+    type Burn = ();
+    type BurnDestination = ();
+    type SpendFunds = ();
+
+    type MaxApprovals = ConstU32<64>;
+    type AssetKind = (); // Only native asset is supported
+    type Beneficiary = AccountId;
+    type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
+    type Paymaster = PayFromAccount<Balances, MainTreasuryAccount>;
     type BalanceConverter = UnityAssetBalanceConversion;
 
     // New approach to using treasury, useful for OpenGov but not necessarily for us.
@@ -1088,6 +1130,7 @@ construct_runtime!(
         CommunityCouncil: pallet_collective::<Instance4>,
         Democracy: pallet_democracy,
         Treasury: pallet_treasury::<Instance1>,
+        CommunityTreasury: pallet_treasury::<Instance2>,
 
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,
