@@ -56,4 +56,4 @@ jobs:
           RUNTIME_BLOB_NAME=$(echo $PACKAGE_NAME | sed 's/-/_/g').compact.compressed.wasm
           RUNTIME_BLOB_PATH=./target/release/wbuild/$PACKAGE_NAME/$RUNTIME_BLOB_NAME
 
-          npx @acala-network/chopsticks@beta try-runtime -c ${{ matrix.runtime }} --checks All --runtime $RUNTIME_BLOB_PATH ${{ env.EXTRA_ARGS }}
+          npx @acala-network/chopsticks try-runtime -c ${{ matrix.runtime }} --import-storage .github/try-runtime-storage.yml --checks All --runtime $RUNTIME_BLOB_PATH ${{ env.EXTRA_ARGS }}
