@@ -304,7 +304,7 @@ try-runtime = [
 	"pallet-evm/try-runtime",
 	"orml-xtokens/try-runtime",
 	"oracle-benchmarks/try-runtime",
-	"pallet-message-queue/runtime-benchmarks",
+	"pallet-message-queue/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",
