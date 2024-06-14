@@ -46,7 +46,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::{
-    traits::{BadOrigin, One, Saturating, UniqueSaturatedInto, Zero},
+    traits::{One, Saturating, UniqueSaturatedInto, Zero},
     Perbill, Permill, SaturatedConversion,
 };
 pub use sp_std::vec::Vec;
@@ -750,7 +750,7 @@ pub mod pallet {
             new_owner: T::AccountId,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            let origin = Self::ensure_signed_or_root(origin)?;
+            let origin = ensure_signed_or_root(origin)?;
 
             IntegratedDApps::<T>::try_mutate(
                 &smart_contract,
@@ -1613,19 +1613,6 @@ pub mod pallet {
             } else {
                 Ok(())
             }
-        }
-
-        /// Ensure that the origin is either the root or a signed origin.
-        ///
-        /// In case of root, `Ok(None)` is returned, and if signed origin `Ok(Some(AccountId))` is returned.
-        fn ensure_signed_or_root(
-            origin: T::RuntimeOrigin,
-        ) -> Result<Option<T::AccountId>, BadOrigin> {
-            if ensure_root(origin.clone()).is_ok() {
-                return Ok(None);
-            }
-            let who = ensure_signed(origin)?;
-            Ok(Some(who))
         }
 
         /// Update the account ledger, and dApp staking balance freeze.
