@@ -1,0 +1,116 @@
+// This file is part of Astar.
+
+// Copyright (C) Stake Technologies Pte.Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see <http://www.gnu.org/licenses/>.
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+use frame_support::{
+    dispatch::GetDispatchInfo,
+    pallet_prelude::*,
+    traits::{InstanceFilter, IsType, OriginTrait},
+    weights::Weight,
+};
+use frame_system::pallet_prelude::*;
+use sp_runtime::traits::Dispatchable;
+
+pub use pallet::*;
+
+// TODO
+
+// #[cfg(test)]
+// mod test;
+
+// #[cfg(feature = "runtime-benchmarks")]
+// mod benchmarking;
+
+// pub mod weights;
+// pub use weights::WeightInfo;
+
+#[frame_support::pallet]
+pub mod pallet {
+    use super::*;
+
+    #[pallet::pallet]
+    pub struct Pallet<T>(_);
+
+    // TODO: probably should add instances.
+    // Still, this approach looks ineffective. It would be better to associate a triplet of (custom origin, account id, call filter) with a pallet.
+
+    /// Configuration trait.
+    #[pallet::config]
+    pub trait Config: frame_system::Config {
+        /// The overarching event type.
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+        /// The overarching call type.
+        type RuntimeCall: Parameter
+            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
+            + GetDispatchInfo
+            + From<frame_system::Call<Self>>
+            + IsType<<Self as frame_system::Config>::RuntimeCall>;
+
+        /// Origin that can act on behalf of the community.
+        type CommunityOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
+
+        /// Account representing the community treasury.
+        type CommunityAccountId: Get<Self::AccountId>;
+
+        /// Filter to determine whether a call can be executed or not.
+        type CallFilter: InstanceFilter<<Self as Config>::RuntimeCall> + Default;
+
+        // TODO
+        // type WeightInfo: WeightInfo;
+    }
+
+    #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config> {
+        /// Community proxy call executed successfully.
+        CommunityProxyExecuted { result: DispatchResult },
+    }
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        #[pallet::call_index(0)]
+        #[pallet::weight(Weight::from_parts(0, 0))] // TODO: benchmark empty call + weight of the `call` argument
+        pub fn execute_call(
+            origin: OriginFor<T>,
+            call: Box<<T as Config>::RuntimeCall>,
+        ) -> DispatchResult {
+            // Ensure origin is valid.
+            T::CommunityOrigin::ensure_origin(origin)?;
+
+            // Account authentication is ensured by the `CommunityManager` origin check.
+            let mut origin: T::RuntimeOrigin =
+                frame_system::RawOrigin::Signed(T::CommunityAccountId::get()).into();
+
+            // Ensure custom filter is applied.
+            origin.add_filter(move |c: &<T as frame_system::Config>::RuntimeCall| {
+                let c = <T as Config>::RuntimeCall::from_ref(c);
+                T::CallFilter::default().filter(c)
+            });
+
+            // Dispatch the call.
+            let e = call.dispatch(origin);
+            Self::deposit_event(Event::CommunityProxyExecuted {
+                result: e.map(|_| ()).map_err(|e| e.error),
+            });
+
+            Ok(())
+        }
+    }
+}

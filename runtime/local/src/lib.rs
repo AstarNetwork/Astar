@@ -1104,6 +1104,26 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub CommunityTreasuryAccountId: AccountId = CommunityTreasuryPalletId::get().into_account_truncating();
+}
+
+#[derive(Default)]
+pub struct CommunityCouncilCallFilter;
+impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        matches!(c, RuntimeCall::DappStaking(..))
+    }
+}
+
+impl pallet_community_proxy::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type CommunityOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
+    type CommunityAccountId = CommunityTreasuryAccountId;
+    type CallFilter = CommunityCouncilCallFilter;
+}
+
 // Need to skip formatting since it removes '::' from the pallet declarations (https://github.com/rust-lang/rustfmt/issues/5526).
 #[rustfmt::skip]
 construct_runtime!(
@@ -1131,6 +1151,7 @@ construct_runtime!(
         Democracy: pallet_democracy,
         Treasury: pallet_treasury::<Instance1>,
         CommunityTreasury: pallet_treasury::<Instance2>,
+        CommunityProxy: pallet_community_proxy,
 
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,
