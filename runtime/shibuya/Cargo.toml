@@ -45,7 +45,6 @@ pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
@@ -59,6 +58,7 @@ pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
+pallet-message-queue = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
@@ -81,6 +81,7 @@ cumulus-primitives-core = { workspace = true }
 cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-utility = { workspace = true }
 parachain-info = { workspace = true }
+parachains-common = { workspace = true }
 
 # polkadot dependencies
 polkadot-parachain = { workspace = true }
@@ -176,7 +177,6 @@ std = [
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
-	"pallet-contracts-primitives/std",
 	"pallet-chain-extension-xvm/std",
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dynamic-evm-base-fee/std",
@@ -249,6 +249,8 @@ std = [
 	"orml-xtokens/std",
 	"orml-xcm-support/std",
 	"astar-primitives/std",
+	"pallet-message-queue/std",
+	"parachains-common/std",
 ]
 runtime-benchmarks = [
 	"astar-xcm-benchmarks/runtime-benchmarks",
@@ -279,6 +281,8 @@ runtime-benchmarks = [
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 	"cumulus-primitives-utility/runtime-benchmarks",
+	"pallet-message-queue/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -327,6 +331,7 @@ try-runtime = [
 	"pallet-unified-accounts/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
 	"orml-xtokens/try-runtime",
+	"pallet-message-queue/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

@@ -16,7 +16,6 @@ log = { workspace = true }
 num-traits = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-core = { workspace = true }
@@ -37,7 +36,6 @@ std = [
 	"frame-system/std",
 	"num-traits/std",
 	"pallet-contracts/std",
-	"pallet-contracts-primitives/std",
 	"scale-info/std",
 	"sp-std/std",
 	"sp-core/std",

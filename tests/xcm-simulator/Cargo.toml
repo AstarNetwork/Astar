@@ -20,7 +20,6 @@ frame-system = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-timestamp = { workspace = true }
@@ -71,7 +70,6 @@ std = [
 	"pallet-balances/std",
 	"pallet-timestamp/std",
 	"pallet-contracts/std",
-	"pallet-contracts-primitives/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-xcm/std",
 	"cumulus-pallet-xcm/std",

@@ -232,7 +232,7 @@ pub struct XcmFungibleFeeHandler<AccountId, Matcher, Assets, FeeDestination>(
     sp_std::marker::PhantomData<(AccountId, Matcher, Assets, FeeDestination)>,
 );
 impl<
-        AccountId,
+        AccountId: Eq,
         Assets: fungibles::Mutate<AccountId>,
         Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
         FeeDestination: Get<AccountId>,

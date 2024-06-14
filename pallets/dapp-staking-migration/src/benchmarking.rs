@@ -21,7 +21,6 @@ use super::{Pallet as Migration, *};
 use astar_primitives::{dapp_staking::SmartContractHandle, Balance};
 use frame_benchmarking::{account as benchmark_account, v2::*};
 use pallet_dapp_staking_v3::StakeAmount;
-use sp_std::vec;
 
 fn smart_contract<T: Config>(idx: u8) -> T::SmartContract {
     let address: T::AccountId = benchmark_account("smart_contract", idx.into(), 456);

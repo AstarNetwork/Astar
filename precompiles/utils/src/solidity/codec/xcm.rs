@@ -105,6 +105,11 @@ pub(crate) fn network_id_to_bytes(network_id: Option<NetworkId>) -> Vec<u8> {
             encoded.push(9u8);
             encoded
         }
+        Some(NetworkId::PolkadotBulletin) => {
+            encoded.push(11u8);
+            encoded.push(10u8);
+            encoded
+        }
     }
 }
 

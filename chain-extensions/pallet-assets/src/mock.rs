@@ -115,6 +115,7 @@ impl pallet_contracts::Config for Test {
     type MaxDelegateDependencies = MaxDelegateDependencies;
     type Migrations = ();
     type RuntimeHoldReason = RuntimeHoldReason;
+    type Xcm = ();
 }
 
 impl RegisteredChainExtension<Test> for AssetsExtension<Test> {

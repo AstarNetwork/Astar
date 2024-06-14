@@ -23,7 +23,7 @@ use sc_service::ChainType;
 use shiden_runtime::{
     wasm_binary_unwrap, AccountId, AuraId, Balance, DappStakingConfig, EVMConfig, InflationConfig,
     InflationParameters, OracleMembershipConfig, ParachainInfoConfig, Precompiles,
-    PriceAggregatorConfig, Signature, SystemConfig, TierThreshold, SDN,
+    PriceAggregatorConfig, RuntimeGenesisConfig, Signature, TierThreshold, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -60,22 +60,24 @@ pub fn get_chain_spec() -> ShidenChainSpec {
     properties.insert("tokenSymbol".into(), "SDN".into());
     properties.insert("tokenDecimals".into(), 18.into());
 
-    ShidenChainSpec::from_genesis(
-        "Shiden Testnet",
-        "shiden",
-        ChainType::Development,
-        move || make_genesis(endowned.clone(), sudo_key.clone(), PARA_ID.into()),
-        vec![],
-        None,
-        None,
-        None,
-        Some(properties),
+    ShidenChainSpec::builder(
+        wasm_binary_unwrap(),
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
             para_id: PARA_ID,
         },
     )
+    .with_name("Shiden Testnet")
+    .with_id("shiden")
+    .with_chain_type(ChainType::Development)
+    .with_properties(properties)
+    .with_genesis_config(make_genesis(
+        endowned.clone(),
+        sudo_key.clone(),
+        PARA_ID.into(),
+    ))
+    .build()
 }
 
 fn session_keys(aura: AuraId) -> shiden_runtime::SessionKeys {
@@ -87,7 +89,7 @@ fn make_genesis(
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     parachain_id: ParaId,
-) -> shiden_runtime::RuntimeGenesisConfig {
+) -> serde_json::Value {
     let authorities = vec![
         (
             get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -105,11 +107,8 @@ fn make_genesis(
     // (PUSH1 0x00 PUSH1 0x00 REVERT)
     let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
 
-    shiden_runtime::RuntimeGenesisConfig {
-        system: SystemConfig {
-            code: wasm_binary_unwrap().to_vec(),
-            ..Default::default()
-        },
+    let config = RuntimeGenesisConfig {
+        system: Default::default(),
         sudo: shiden_runtime::SudoConfig {
             key: Some(root_key),
         },
@@ -207,7 +206,9 @@ fn make_genesis(
                 .try_into()
                 .expect("Must work since buffer should have at least a single value."),
         },
-    }
+    };
+
+    serde_json::to_value(&config).expect("Could not build genesis config.")
 }
 
 type AccountPublic = <Signature as Verify>::Signer;

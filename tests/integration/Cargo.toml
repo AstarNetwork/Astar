@@ -25,7 +25,7 @@ orml-oracle = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
+pallet-contracts-uapi = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-utility = { workspace = true }

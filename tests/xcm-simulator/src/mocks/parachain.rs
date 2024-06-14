@@ -62,9 +62,7 @@ use orml_xcm_support::DisabledParachainFee;
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::{
-    dapp_staking::{
-        AccountCheck, CycleConfiguration, SmartContract, SmartContractHandle, StakingRewardHandler,
-    },
+    dapp_staking::{AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler},
     oracle::PriceProvider,
     xcm::{
         AllowTopLevelPaidExecutionFrom, AssetLocationIdConverter, FixedRateOfForeignAsset,
@@ -271,6 +269,7 @@ impl pallet_contracts::Config for Runtime {
     type Migrations = ();
     type Debug = ();
     type Environment = ();
+    type Xcm = ();
 }
 
 pub struct BurnFees;
@@ -536,11 +535,6 @@ impl mock_msg_queue::Config for Runtime {
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
 
-#[cfg(feature = "runtime-benchmarks")]
-parameter_types! {
-    pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
-}
-
 impl pallet_xcm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -565,8 +559,6 @@ impl pallet_xcm::Config for Runtime {
     type WeightInfo = pallet_xcm::TestWeightInfo;
     type MaxRemoteLockConsumers = ConstU32<0>;
     type RemoteLockConsumerIdentifier = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type ReachableDest = ReachableDest;
     type AdminOrigin = EnsureRoot<AccountId>;
 }
 
@@ -699,7 +691,7 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<MockSmartContract, AccountId>
     for BenchmarkHelper<MockSmartContract, AccountId>
 {
     fn get_smart_contract(id: u32) -> MockSmartContract {
-        MockSmartContract::wasm(AccountId::from([id as u8; 32]))
+        MockSmartContract::Wasm(AccountId::from([id as u8; 32]))
     }
 
     fn set_balance(account: &AccountId, amount: Balance) {

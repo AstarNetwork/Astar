@@ -46,7 +46,6 @@ pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
@@ -60,6 +59,7 @@ pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
 pallet-membership = { workspace = true }
+pallet-message-queue = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
@@ -81,6 +81,7 @@ cumulus-primitives-core = { workspace = true }
 cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-utility = { workspace = true }
 parachain-info = { workspace = true }
+parachains-common = { workspace = true }
 
 # polkadot dependencies
 polkadot-parachain = { workspace = true }
@@ -166,7 +167,6 @@ std = [
 	"pallet-balances/std",
 	"pallet-contracts/std",
 	"oracle-benchmarks/std",
-	"pallet-contracts-primitives/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
@@ -232,6 +232,8 @@ std = [
 	"orml-xtokens/std",
 	"orml-xcm-support/std",
 	"astar-primitives/std",
+	"pallet-message-queue/std",
+	"parachains-common/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -257,6 +259,7 @@ runtime-benchmarks = [
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
 	"pallet-price-aggregator/runtime-benchmarks",
 	"cumulus-primitives-utility/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
 ]
 try-runtime = [
 	"astar-primitives/try-runtime",
@@ -301,6 +304,7 @@ try-runtime = [
 	"pallet-evm/try-runtime",
 	"orml-xtokens/try-runtime",
 	"oracle-benchmarks/try-runtime",
+	"pallet-message-queue/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

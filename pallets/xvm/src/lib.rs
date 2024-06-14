@@ -43,7 +43,7 @@ use alloc::format;
 use fp_evm::ExitReason;
 use frame_support::{ensure, traits::fungible::Inspect, weights::Weight};
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
-use pallet_contracts_primitives::ReturnFlags;
+use pallet_contracts_uapi::ReturnFlags;
 use pallet_evm::GasWeightMapping;
 use parity_scale_codec::Decode;
 use sp_core::{H160, U256};
