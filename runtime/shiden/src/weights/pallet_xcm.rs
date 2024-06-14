@@ -279,10 +279,10 @@ impl<T: frame_system::Config> pallet_xcm::WeightInfo for SubstrateWeight<T> {
 	}
 
 	fn new_query() -> Weight {
-		todo!()
+		Weight::MAX
 	}
 
 	fn take_response() -> Weight {
-		todo!()
+		Weight::MAX
 	}
 }
