@@ -1833,7 +1833,7 @@ impl_runtime_apis! {
                     Some((
                         MultiAsset {
                             fun: Fungible(ExistentialDeposit::get()),
-                            id: Concrete(Parent.into())
+                            id: Concrete(Here.into())
                         },
                         ParentThen(Parachain(random_para_id).into()).into(),
                     ))
