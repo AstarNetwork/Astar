@@ -16,14 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-///! Special [`ParachainConsensus`] implementation that waits for the upgrade from
-///! shell to a parachain runtime that implements Aura.
+//! Utility for the upgrade from shell to a parachain runtime that implements Aura.
 use astar_primitives::*;
-use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
-use cumulus_primitives_core::relay_chain::{Hash as PHash, PersistedValidationData};
+use cumulus_primitives_core::relay_chain::PersistedValidationData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::pending::ConsensusDataProvider;
-use futures::lock::Mutex;
 use sc_client_api::{AuxStore, UsageProvider};
 use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams, ForkChoiceStrategy};
 use sp_api::{ApiExt, ProvideRuntimeApi};
