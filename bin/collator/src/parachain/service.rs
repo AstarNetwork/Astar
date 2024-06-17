@@ -1024,8 +1024,9 @@ where
     Ok((task_manager, client))
 }
 
-/// Build the import queue.
-pub fn build_import_queue<RuntimeApi, Executor>(
+/// Build aura import queue with fallback to relay-chain verifier.
+/// Starts with relay-chain verifier until aura becomes available.
+pub fn build_import_queue_fallback<RuntimeApi, Executor>(
     client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
     block_import: ParachainBlockImport<
         Block,
@@ -1052,7 +1053,7 @@ where
         + sp_offchain::OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
-        + sp_consensus_aura::AuraApi<Block, AuraId>,
+        + AuraApi<Block, AuraId>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
@@ -1107,6 +1108,67 @@ where
     ))
 }
 
+/// Build aura only import queue.
+pub fn build_import_queue<RuntimeApi, Executor>(
+    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+    block_import: ParachainBlockImport<
+        Block,
+        FrontierBlockImport<
+            Block,
+            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        >,
+        TFullBackend<Block>,
+    >,
+    config: &Configuration,
+    telemetry_handle: Option<TelemetryHandle>,
+    task_manager: &TaskManager,
+) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+        + Send
+        + Sync
+        + 'static,
+    RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+        + sp_api::Metadata<Block>
+        + sp_session::SessionKeys<Block>
+        + sp_api::ApiExt<Block>
+        + sp_offchain::OffchainWorkerApi<Block>
+        + sp_block_builder::BlockBuilder<Block>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + AuraApi<Block, AuraId>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+{
+    let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
+    cumulus_client_consensus_aura::import_queue::<
+        AuraPair,
+        _,
+        _,
+        _,
+        _,
+        _,
+    >(cumulus_client_consensus_aura::ImportQueueParams {
+        block_import,
+        client,
+        create_inherent_data_providers: move |_, _| async move {
+            let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+
+            let slot =
+                sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                    *timestamp,
+                    slot_duration,
+                );
+
+            Ok((slot, timestamp))
+        },
+        registry: config.prometheus_registry(),
+        spawner: &task_manager.spawn_essential_handle(),
+        telemetry: telemetry_handle,
+    }).map_err(Into::into)
+}
+
 /// Start a parachain node for Astar.
 pub async fn start_astar_node(
     parachain_config: Configuration,
@@ -1124,41 +1186,9 @@ pub async fn start_astar_node(
         collator_options,
         id,
         additional_config.clone(),
-        |client,
-         block_import,
-         config,
-         telemetry,
-         task_manager| {
-            let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
-
-            cumulus_client_consensus_aura::import_queue::<
-                AuraPair,
-                _,
-                _,
-                _,
-                _,
-                _,
-            >(cumulus_client_consensus_aura::ImportQueueParams {
-                block_import,
-                client,
-                create_inherent_data_providers: move |_, _| async move {
-                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-                    let slot =
-                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                            *timestamp,
-                            slot_duration,
-                        );
-
-                    Ok((slot, timestamp))
-                },
-                registry: config.prometheus_registry(),
-                spawner: &task_manager.spawn_essential_handle(),
-                telemetry,
-            })
-            .map_err(Into::into)
-        },
-    ).await
+        build_import_queue,
+    )
+    .await
 }
 
 /// Start a parachain node for Shiden.
@@ -1178,7 +1208,7 @@ pub async fn start_shiden_node(
         collator_options,
         id,
         additional_config.clone(),
-        build_import_queue,
+        build_import_queue_fallback,
     )
     .await
 }
@@ -1200,38 +1230,7 @@ pub async fn start_shibuya_node(
         collator_options,
         id,
         additional_config.clone(),
-        |client,
-         block_import,
-         config,
-         telemetry,
-         task_manager| {
-            let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
-
-            cumulus_client_consensus_aura::import_queue::<
-                AuraPair,
-                _,
-                _,
-                _,
-                _,
-                _,
-            >(cumulus_client_consensus_aura::ImportQueueParams {
-                block_import,
-                client,
-                create_inherent_data_providers: move |_, _| async move {
-                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-                    let slot =
-                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                            *timestamp,
-                            slot_duration,
-                        );
-
-                    Ok((slot, timestamp))
-                },
-                registry: config.prometheus_registry(),
-                spawner: &task_manager.spawn_essential_handle(),
-                telemetry,
-            })
-            .map_err(Into::into)
-        }).await
+        build_import_queue,
+    )
+    .await
 }
