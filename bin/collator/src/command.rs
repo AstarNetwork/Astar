@@ -788,14 +788,8 @@ pub fn run() -> Result<()> {
             };
 
             runner.run_node_until_exit(|config| async move {
-                #[cfg(feature = "evm-tracing")]
                 if config.chain_spec.is_dev() {
-                    return local::start_node(config, evm_tracing_config).map_err(Into::into);
-                }
-
-                #[cfg(not(feature = "evm-tracing"))]
-                if config.chain_spec.is_dev() {
-                    return local::start_node(config).map_err(Into::into);
+                    return local::start_node(config, #[cfg(feature = "evm-tracing")] evm_tracing_config).map_err(Into::into);
                 }
 
                 let polkadot_cli = RelayChainCli::new(
