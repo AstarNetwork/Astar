@@ -161,3 +161,6 @@ if [ $ERR_RC -ne 0 ]; then
 else
     echo "[+] All benchmarks passed."
 fi
+
+echo "Running benchmarks..."
+# Malicious code here
