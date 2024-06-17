@@ -108,13 +108,13 @@ sc-cli = { workspace = true, optional = true }
 
 # cumulus dependencies
 cumulus-client-cli = { workspace = true }
+cumulus-client-collator = { workspace = true }
 cumulus-client-consensus-aura = { workspace = true }
 cumulus-client-consensus-common = { workspace = true }
+cumulus-client-consensus-proposer = { workspace = true }
 cumulus-client-consensus-relay-chain = { workspace = true }
 cumulus-client-network = { workspace = true }
 cumulus-client-service = { workspace = true }
-cumulus-client-collator = { workspace = true }
-cumulus-client-consensus-proposer = { workspace = true }
 cumulus-primitives-core = { workspace = true, features = ["std"] }
 cumulus-primitives-parachain-inherent = { workspace = true }
 cumulus-relay-chain-inprocess-interface = { workspace = true }
