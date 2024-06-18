@@ -1000,12 +1000,6 @@
 <a href="#1000" id="1000">1000</a>
 <a href="#1001" id="1001">1001</a>
 <a href="#1002" id="1002">1002</a>
-<a href="#1003" id="1003">1003</a>
-<a href="#1004" id="1004">1004</a>
-<a href="#1005" id="1005">1005</a>
-<a href="#1006" id="1006">1006</a>
-<a href="#1007" id="1007">1007</a>
-<a href="#1008" id="1008">1008</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1228,7 +1222,7 @@
                         ..
                     } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
-                        parachain::build_import_queue,
+                        parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
                     <span class="prelude-val">Ok</span>((cmd.run(client, import_queue), task_manager))
                 })
@@ -1269,7 +1263,7 @@
                         ..
                     } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
-                        parachain::build_import_queue,
+                        parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
                     <span class="prelude-val">Ok</span>((cmd.run(client, config.database), task_manager))
                 })
@@ -1309,7 +1303,7 @@
                         ..
                     } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
-                        parachain::build_import_queue,
+                        parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
                     <span class="prelude-val">Ok</span>((cmd.run(client, config.chain_spec), task_manager))
                 })
@@ -1351,7 +1345,7 @@
                         ..
                     } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
-                        parachain::build_import_queue,
+                        parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
                     <span class="prelude-val">Ok</span>((cmd.run(client, import_queue), task_manager))
                 })
@@ -1417,7 +1411,7 @@
                         ..
                     } = parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;</span>config,
-                        parachain::build_import_queue,
+                        parachain::build_import_queue_fallback,
                     )<span class="question-mark">?</span>;
                     <span class="kw">let </span>aux_revert = Box::new(|client, <span class="kw">_</span>, blocks| {
                         sc_consensus_grandpa::revert(client, blocks)<span class="question-mark">?</span>;
@@ -1460,7 +1454,7 @@
                     <span class="kw">let </span>PartialComponents { client, .. } =
                         parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                             <span class="kw-2">&amp;</span>config,
-                            parachain::build_import_queue,
+                            parachain::build_import_queue_fallback,
                         )<span class="question-mark">?</span>;
                     cmd.run(config.chain_spec.as_ref(), client.as_ref())
                 })
@@ -1530,7 +1524,7 @@
                             <span class="kw">let </span>params =
                                 parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                                     <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue,
+                                    parachain::build_import_queue_fallback,
                                 )<span class="question-mark">?</span>;
                             cmd.run(params.client)
                         })
@@ -1570,7 +1564,7 @@
                             <span class="kw">let </span>params =
                                 parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                                     <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue,
+                                    parachain::build_import_queue_fallback,
                                 )<span class="question-mark">?</span>;
                             <span class="kw">let </span>db = params.backend.expose_db();
                             <span class="kw">let </span>storage = params.backend.expose_storage();
@@ -1626,7 +1620,7 @@
                             <span class="kw">let </span>params =
                                 parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                                     <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue,
+                                    parachain::build_import_queue_fallback,
                                 )<span class="question-mark">?</span>;
 
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
@@ -1708,7 +1702,7 @@
                             <span class="kw">let </span>params =
                                 parachain::new_partial::&lt;shiden::RuntimeApi, shiden::Executor, <span class="kw">_</span>&gt;(
                                     <span class="kw-2">&amp;</span>config,
-                                    parachain::build_import_queue,
+                                    parachain::build_import_queue_fallback,
                                 )<span class="question-mark">?</span>;
                             <span class="kw">let </span>remark_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>tka_builder = TransferKeepAliveBuilder::new(
@@ -1796,14 +1790,8 @@
             };
 
             runner.run_node_until_exit(|config| <span class="kw">async move </span>{
-                <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
-                </span><span class="kw">if </span>config.chain_spec.is_dev() {
-                    <span class="kw">return </span>local::start_node(config, evm_tracing_config).map_err(Into::into);
-                }
-
-                <span class="attr">#[cfg(not(feature = <span class="string">&quot;evm-tracing&quot;</span>))]
-                </span><span class="kw">if </span>config.chain_spec.is_dev() {
-                    <span class="kw">return </span>local::start_node(config).map_err(Into::into);
+                <span class="kw">if </span>config.chain_spec.is_dev() {
+                    <span class="kw">return </span>local::start_node(config, <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)] </span>evm_tracing_config).map_err(Into::into);
                 }
 
                 <span class="kw">let </span>polkadot_cli = RelayChainCli::new(
