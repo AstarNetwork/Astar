@@ -220,7 +220,7 @@ pub fn run() -> Result<()> {
                         ..
                     } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        parachain::build_import_queue_fallback,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, import_queue), task_manager))
                 })
@@ -261,7 +261,7 @@ pub fn run() -> Result<()> {
                         ..
                     } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        parachain::build_import_queue_fallback,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, config.database), task_manager))
                 })
@@ -301,7 +301,7 @@ pub fn run() -> Result<()> {
                         ..
                     } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        parachain::build_import_queue_fallback,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, config.chain_spec), task_manager))
                 })
@@ -343,7 +343,7 @@ pub fn run() -> Result<()> {
                         ..
                     } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        parachain::build_import_queue_fallback,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, import_queue), task_manager))
                 })
@@ -409,7 +409,7 @@ pub fn run() -> Result<()> {
                         ..
                     } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        parachain::build_import_queue_fallback,
+                        parachain::build_import_queue,
                     )?;
                     let aux_revert = Box::new(|client, _, blocks| {
                         sc_consensus_grandpa::revert(client, blocks)?;
@@ -452,7 +452,7 @@ pub fn run() -> Result<()> {
                     let PartialComponents { client, .. } =
                         parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                             &config,
-                            parachain::build_import_queue_fallback,
+                            parachain::build_import_queue,
                         )?;
                     cmd.run(config.chain_spec.as_ref(), client.as_ref())
                 })
@@ -522,7 +522,7 @@ pub fn run() -> Result<()> {
                             let params =
                                 parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                                     &config,
-                                    parachain::build_import_queue_fallback,
+                                    parachain::build_import_queue,
                                 )?;
                             cmd.run(params.client)
                         })
@@ -562,7 +562,7 @@ pub fn run() -> Result<()> {
                             let params =
                                 parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                                     &config,
-                                    parachain::build_import_queue_fallback,
+                                    parachain::build_import_queue,
                                 )?;
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
@@ -618,7 +618,7 @@ pub fn run() -> Result<()> {
                             let params =
                                 parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                                     &config,
-                                    parachain::build_import_queue_fallback,
+                                    parachain::build_import_queue,
                                 )?;
 
                             let ext_builder = RemarkBuilder::new(params.client.clone());
@@ -700,7 +700,7 @@ pub fn run() -> Result<()> {
                             let params =
                                 parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                                     &config,
-                                    parachain::build_import_queue_fallback,
+                                    parachain::build_import_queue,
                                 )?;
                             let remark_builder = RemarkBuilder::new(params.client.clone());
                             let tka_builder = TransferKeepAliveBuilder::new(
@@ -788,8 +788,14 @@ pub fn run() -> Result<()> {
             };
 
             runner.run_node_until_exit(|config| async move {
+                #[cfg(feature = "evm-tracing")]
                 if config.chain_spec.is_dev() {
-                    return local::start_node(config, #[cfg(feature = "evm-tracing")] evm_tracing_config).map_err(Into::into);
+                    return local::start_node(config, evm_tracing_config).map_err(Into::into);
+                }
+
+                #[cfg(not(feature = "evm-tracing"))]
+                if config.chain_spec.is_dev() {
+                    return local::start_node(config).map_err(Into::into);
                 }
 
                 let polkadot_cli = RelayChainCli::new(
