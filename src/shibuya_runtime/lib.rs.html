@@ -2179,6 +2179,11 @@
 <a href="#2179" id="2179">2179</a>
 <a href="#2180" id="2180">2180</a>
 <a href="#2181" id="2181">2181</a>
+<a href="#2182" id="2182">2182</a>
+<a href="#2183" id="2183">2183</a>
+<a href="#2184" id="2184">2184</a>
+<a href="#2185" id="2185">2185</a>
+<a href="#2186" id="2186">2186</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2252,7 +2257,7 @@
 <span class="kw">use </span>astar_primitives::{
     dapp_staking::{
         AccountCheck <span class="kw">as </span>DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, StandardTierSlots, TierId,
+        PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
@@ -2625,6 +2630,7 @@
     <span class="kw">type </span>MaxNumberOfStakedContracts = ConstU32&lt;<span class="number">8</span>&gt;;
     <span class="kw">type </span>MinimumStakeAmount = MinimumStakingAmount;
     <span class="kw">type </span>NumberOfTiers = ConstU32&lt;<span class="number">4</span>&gt;;
+    <span class="kw">type </span>RankingEnabled = ConstBool&lt;<span class="bool-val">true</span>&gt;;
     <span class="kw">type </span>WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight&lt;Runtime&gt;;
     <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">type </span>BenchmarkHelper = BenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;;
@@ -3478,7 +3484,11 @@
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-</span><span class="kw">pub type </span>Migrations = ();
+</span><span class="kw">pub type </span>Migrations = (
+    pallet_preimage::migration::v1::Migration&lt;Runtime&gt;,
+    <span class="comment">// Migrate to ranking system
+    </span>pallet_dapp_staking_v3::migration::versioned_migrations::V6ToV7&lt;Runtime&gt;,
+);
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
@@ -4043,7 +4053,7 @@
             InflationCycleConfig::blocks_per_era()
         }
 
-        <span class="kw">fn </span>get_dapp_tier_assignment() -&gt; BTreeMap&lt;DAppId, TierId&gt; {
+        <span class="kw">fn </span>get_dapp_tier_assignment() -&gt; BTreeMap&lt;DAppId, RankedTier&gt; {
             DappStaking::get_dapp_tier_assignment()
         }
     }

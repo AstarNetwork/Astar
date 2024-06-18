@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["SmartContract"],"struct":["StandardTierSlots"],"trait":["AccountCheck","CycleConfiguration","Observer","SmartContractHandle","StakingRewardHandler","TierSlots"],"type":["DAppId","EraNumber","PeriodNumber","TierId"]};
+window.SIDEBAR_ITEMS = {"enum":["SmartContract"],"struct":["RankedTier","StandardTierSlots"],"trait":["AccountCheck","CycleConfiguration","Observer","SmartContractHandle","StakingRewardHandler","TierSlots"],"type":["DAppId","EraNumber","PeriodNumber","Rank","TierId"]};

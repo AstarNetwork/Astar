@@ -1824,6 +1824,21 @@
 <a href="#1824" id="1824">1824</a>
 <a href="#1825" id="1825">1825</a>
 <a href="#1826" id="1826">1826</a>
+<a href="#1827" id="1827">1827</a>
+<a href="#1828" id="1828">1828</a>
+<a href="#1829" id="1829">1829</a>
+<a href="#1830" id="1830">1830</a>
+<a href="#1831" id="1831">1831</a>
+<a href="#1832" id="1832">1832</a>
+<a href="#1833" id="1833">1833</a>
+<a href="#1834" id="1834">1834</a>
+<a href="#1835" id="1835">1835</a>
+<a href="#1836" id="1836">1836</a>
+<a href="#1837" id="1837">1837</a>
+<a href="#1838" id="1838">1838</a>
+<a href="#1839" id="1839">1839</a>
+<a href="#1840" id="1840">1840</a>
+<a href="#1841" id="1841">1841</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1901,7 +1916,7 @@
 <span class="kw">pub use </span>sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec::Vec};
 
 <span class="kw">use </span>astar_primitives::{
-    dapp_staking::{DAppId, EraNumber, PeriodNumber, TierId, TierSlots <span class="kw">as </span>TierSlotsFunc},
+    dapp_staking::{DAppId, EraNumber, PeriodNumber, RankedTier, TierSlots <span class="kw">as </span>TierSlotsFunc},
     Balance, BlockNumber,
 };
 
@@ -3568,12 +3583,14 @@
 #[scale_info(skip_type_params(MD, NT))]
 </span><span class="kw">pub struct </span>DAppTierRewards&lt;MD: Get&lt;u32&gt;, NT: Get&lt;u32&gt;&gt; {
     <span class="doccomment">/// DApps and their corresponding tiers (or `None` if they have been claimed in the meantime)
-    </span><span class="kw">pub </span>dapps: BoundedBTreeMap&lt;DAppId, TierId, MD&gt;,
+    </span><span class="kw">pub </span>dapps: BoundedBTreeMap&lt;DAppId, RankedTier, MD&gt;,
     <span class="doccomment">/// Rewards for each tier. First entry refers to the first tier, and so on.
     </span><span class="kw">pub </span>rewards: BoundedVec&lt;Balance, NT&gt;,
     <span class="doccomment">/// Period during which this struct was created.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>period: PeriodNumber,
+    <span class="doccomment">/// Rank reward for each tier. First entry refers to the first tier, and so on.
+    </span><span class="kw">pub </span>rank_rewards: BoundedVec&lt;Balance, NT&gt;,
 }
 
 <span class="kw">impl</span>&lt;MD: Get&lt;u32&gt;, NT: Get&lt;u32&gt;&gt; Default <span class="kw">for </span>DAppTierRewards&lt;MD, NT&gt; {
@@ -3582,6 +3599,7 @@
             dapps: BoundedBTreeMap::default(),
             rewards: BoundedVec::default(),
             period: <span class="number">0</span>,
+            rank_rewards: BoundedVec::default(),
         }
     }
 }
@@ -3590,34 +3608,46 @@
     <span class="doccomment">/// Attempt to construct `DAppTierRewards` struct.
     /// If the provided arguments exceed the allowed capacity, return an error.
     </span><span class="kw">pub fn </span>new(
-        dapps: BTreeMap&lt;DAppId, TierId&gt;,
+        dapps: BTreeMap&lt;DAppId, RankedTier&gt;,
         rewards: Vec&lt;Balance&gt;,
         period: PeriodNumber,
+        rank_rewards: Vec&lt;Balance&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ()&gt; {
         <span class="kw">let </span>dapps = BoundedBTreeMap::try_from(dapps).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
         <span class="kw">let </span>rewards = BoundedVec::try_from(rewards).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
+        <span class="kw">let </span>rank_rewards = BoundedVec::try_from(rank_rewards).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             dapps,
             rewards,
             period,
+            rank_rewards,
         })
     }
 
     <span class="doccomment">/// Consume reward for the specified dapp id, returning its amount and tier Id.
     /// In case dapp isn&#39;t applicable for rewards, or they have already been consumed, returns `None`.
-    </span><span class="kw">pub fn </span>try_claim(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dapp_id: DAppId) -&gt; <span class="prelude-ty">Result</span>&lt;(Balance, TierId), DAppTierError&gt; {
+    </span><span class="kw">pub fn </span>try_claim(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dapp_id: DAppId) -&gt; <span class="prelude-ty">Result</span>&lt;(Balance, RankedTier), DAppTierError&gt; {
         <span class="comment">// Check if dApp Id exists.
-        </span><span class="kw">let </span>tier_id = <span class="self">self
+        </span><span class="kw">let </span>ranked_tier = <span class="self">self
             </span>.dapps
             .remove(<span class="kw-2">&amp;</span>dapp_id)
             .ok_or(DAppTierError::NoDAppInTiers)<span class="question-mark">?</span>;
 
-        <span class="prelude-val">Ok</span>((
-            <span class="self">self</span>.rewards
-                .get(tier_id <span class="kw">as </span>usize)
-                .map_or(Balance::zero(), |x| <span class="kw-2">*</span>x),
-            tier_id,
-        ))
+        <span class="kw">let </span>(tier_id, rank) = ranked_tier.deconstruct();
+        <span class="kw">let </span><span class="kw-2">mut </span>amount = <span class="self">self
+            </span>.rewards
+            .get(tier_id <span class="kw">as </span>usize)
+            .map_or(Balance::zero(), |x| <span class="kw-2">*</span>x);
+
+        <span class="kw">let </span>reward_per_rank = <span class="self">self
+            </span>.rank_rewards
+            .get(tier_id <span class="kw">as </span>usize)
+            .map_or(Balance::zero(), |x| <span class="kw-2">*</span>x);
+
+        <span class="kw">let </span>additional_reward = reward_per_rank.saturating_mul(rank.into());
+        amount = amount.saturating_add(additional_reward);
+
+        <span class="prelude-val">Ok</span>((amount, ranked_tier))
     }
 }
 

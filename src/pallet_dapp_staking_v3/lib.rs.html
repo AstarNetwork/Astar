@@ -2085,6 +2085,48 @@
 <a href="#2085" id="2085">2085</a>
 <a href="#2086" id="2086">2086</a>
 <a href="#2087" id="2087">2087</a>
+<a href="#2088" id="2088">2088</a>
+<a href="#2089" id="2089">2089</a>
+<a href="#2090" id="2090">2090</a>
+<a href="#2091" id="2091">2091</a>
+<a href="#2092" id="2092">2092</a>
+<a href="#2093" id="2093">2093</a>
+<a href="#2094" id="2094">2094</a>
+<a href="#2095" id="2095">2095</a>
+<a href="#2096" id="2096">2096</a>
+<a href="#2097" id="2097">2097</a>
+<a href="#2098" id="2098">2098</a>
+<a href="#2099" id="2099">2099</a>
+<a href="#2100" id="2100">2100</a>
+<a href="#2101" id="2101">2101</a>
+<a href="#2102" id="2102">2102</a>
+<a href="#2103" id="2103">2103</a>
+<a href="#2104" id="2104">2104</a>
+<a href="#2105" id="2105">2105</a>
+<a href="#2106" id="2106">2106</a>
+<a href="#2107" id="2107">2107</a>
+<a href="#2108" id="2108">2108</a>
+<a href="#2109" id="2109">2109</a>
+<a href="#2110" id="2110">2110</a>
+<a href="#2111" id="2111">2111</a>
+<a href="#2112" id="2112">2112</a>
+<a href="#2113" id="2113">2113</a>
+<a href="#2114" id="2114">2114</a>
+<a href="#2115" id="2115">2115</a>
+<a href="#2116" id="2116">2116</a>
+<a href="#2117" id="2117">2117</a>
+<a href="#2118" id="2118">2118</a>
+<a href="#2119" id="2119">2119</a>
+<a href="#2120" id="2120">2120</a>
+<a href="#2121" id="2121">2121</a>
+<a href="#2122" id="2122">2122</a>
+<a href="#2123" id="2123">2123</a>
+<a href="#2124" id="2124">2124</a>
+<a href="#2125" id="2125">2125</a>
+<a href="#2126" id="2126">2126</a>
+<a href="#2127" id="2127">2127</a>
+<a href="#2128" id="2128">2128</a>
+<a href="#2129" id="2129">2129</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2141,7 +2183,8 @@
 <span class="kw">use </span>astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer <span class="kw">as </span>DAppStakingObserver,
-        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId, TierSlots <span class="kw">as </span>TierSlotFunc,
+        PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
+        TierSlots <span class="kw">as </span>TierSlotFunc,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -2158,7 +2201,9 @@
 <span class="kw">mod </span>types;
 <span class="kw">pub use </span>types::<span class="kw-2">*</span>;
 
+<span class="kw">pub mod </span>migration;
 <span class="kw">pub mod </span>weights;
+
 <span class="kw">pub use </span>weights::WeightInfo;
 
 <span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;dapp-staking&quot;</span>;
@@ -2178,7 +2223,7 @@
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
     <span class="doccomment">/// The current storage version.
-    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">6</span>);
+    </span><span class="kw">pub const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">7</span>);
 
     <span class="attr">#[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -2285,6 +2330,10 @@
         </span><span class="attr">#[pallet::constant]
         </span><span class="kw">type </span>NumberOfTiers: Get&lt;u32&gt;;
 
+        <span class="doccomment">/// Tier ranking enabled.
+        </span><span class="attr">#[pallet::constant]
+        </span><span class="kw">type </span>RankingEnabled: Get&lt;bool&gt;;
+
         <span class="doccomment">/// Weight info for various calls &amp; operations in the pallet.
         </span><span class="kw">type </span>WeightInfo: WeightInfo;
 
@@ -2376,6 +2425,7 @@
             beneficiary: T::AccountId,
             smart_contract: T::SmartContract,
             tier_id: TierId,
+            rank: Rank,
             era: EraNumber,
             amount: Balance,
         },
@@ -3490,13 +3540,15 @@
                 Error::&lt;T&gt;::RewardExpired
             );
 
-            <span class="kw">let </span>(amount, tier_id) =
+            <span class="kw">let </span>(amount, ranked_tier) =
                 dapp_tiers
                     .try_claim(dapp_info.id)
                     .map_err(|error| <span class="kw">match </span>error {
                         DAppTierError::NoDAppInTiers =&gt; Error::&lt;T&gt;::NoClaimableRewards,
                         <span class="kw">_ </span>=&gt; Error::&lt;T&gt;::InternalClaimDAppError,
                     })<span class="question-mark">?</span>;
+
+            <span class="kw">let </span>(tier_id, rank) = ranked_tier.deconstruct();
 
             <span class="comment">// Get reward destination, and deposit the reward.
             </span><span class="kw">let </span>beneficiary = dapp_info.reward_beneficiary();
@@ -3510,6 +3562,7 @@
                 beneficiary: beneficiary.clone(),
                 smart_contract,
                 tier_id,
+                rank,
                 era,
                 amount,
             });
@@ -3757,7 +3810,7 @@
         }
 
         <span class="doccomment">/// Returns the dApp tier assignment for the current era, based on the current stake amounts.
-        </span><span class="kw">pub fn </span>get_dapp_tier_assignment() -&gt; BTreeMap&lt;DAppId, TierId&gt; {
+        </span><span class="kw">pub fn </span>get_dapp_tier_assignment() -&gt; BTreeMap&lt;DAppId, RankedTier&gt; {
             <span class="kw">let </span>protocol_state = ActiveProtocolState::&lt;T&gt;::get();
 
             <span class="kw">let </span>(dapp_tiers, _count) = <span class="self">Self</span>::get_dapp_tier_assignment_and_rewards(
@@ -3778,7 +3831,11 @@
         ///
         /// 2. Sort the entries by the score, in descending order - the top score dApp comes first.
         ///
-        /// 3. Read in tier configuration. This contains information about how many slots per tier there are,
+        /// 3. Calculate rewards for each tier.
+        ///    This is done by dividing the total reward pool into tier reward pools,
+        ///    after which the tier reward pool is divided by the number of available slots in the tier.
+        ///
+        /// 4. Read in tier configuration. This contains information about how many slots per tier there are,
         ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
         ///    Iterate over tier thresholds &amp; capacities, starting from the top tier, and assign dApps to them.
         ///
@@ -3791,10 +3848,6 @@
         ///               exit loop since no more dApps will satisfy the threshold since they are sorted by score
         ///    ```
         ///    (Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.)
-        ///
-        /// 4. Calculate rewards for each tier.
-        ///    This is done by dividing the total reward pool into tier reward pools,
-        ///    after which the tier reward pool is divided by the number of available slots in the tier.
         ///
         /// The returned object contains information about each dApp that made it into a tier.
         /// Alongside tier assignment info, number of read DB contract stake entries is returned.
@@ -3824,38 +3877,7 @@
             // Sort by amount staked, in reverse - top dApp will end in the first place, 0th index.
             </span>dapp_stakes.sort_unstable_by(|(<span class="kw">_</span>, amount_1), (<span class="kw">_</span>, amount_2)| amount_2.cmp(amount_1));
 
-            <span class="comment">// 3.
-            // Iterate over configured tier and potential dApps.
-            // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
-            // and tier capacity hasn&#39;t been filled yet.
-            </span><span class="kw">let </span><span class="kw-2">mut </span>dapp_tiers = BTreeMap::new();
             <span class="kw">let </span>tier_config = TierConfig::&lt;T&gt;::get();
-
-            <span class="kw">let </span><span class="kw-2">mut </span>global_idx = <span class="number">0</span>;
-            <span class="kw">let </span><span class="kw-2">mut </span>tier_id = <span class="number">0</span>;
-            <span class="kw">for </span>(tier_capacity, tier_threshold) <span class="kw">in </span>tier_config
-                .slots_per_tier
-                .iter()
-                .zip(tier_config.tier_thresholds.iter())
-            {
-                <span class="kw">let </span>max_idx = global_idx
-                    .saturating_add(<span class="kw-2">*</span>tier_capacity <span class="kw">as </span>usize)
-                    .min(dapp_stakes.len());
-
-                <span class="comment">// Iterate over dApps until one of two conditions has been met:
-                // 1. Tier has no more capacity
-                // 2. dApp doesn&#39;t satisfy the tier threshold (since they&#39;re sorted, none of the following dApps will satisfy the condition either)
-                </span><span class="kw">for </span>(dapp_id, stake_amount) <span class="kw">in </span>dapp_stakes[global_idx..max_idx].iter() {
-                    <span class="kw">if </span>tier_threshold.is_satisfied(<span class="kw-2">*</span>stake_amount) {
-                        global_idx.saturating_inc();
-                        dapp_tiers.insert(<span class="kw-2">*</span>dapp_id, tier_id);
-                    } <span class="kw">else </span>{
-                        <span class="kw">break</span>;
-                    }
-                }
-
-                tier_id.saturating_inc();
-            }
 
             <span class="comment">// In case when tier has 1 more free slot, but two dApps with exactly same score satisfy the threshold,
             // one of them will be assigned to the tier, and the other one will be assigned to the lower tier, if it exists.
@@ -3864,7 +3886,7 @@
             // There is no guarantee this will persist in the future, so it&#39;s best for dApps to do their
             // best to avoid getting themselves into such situations.
 
-            // 4. Calculate rewards.
+            // 3. Calculate rewards.
             </span><span class="kw">let </span>tier_rewards = tier_config
                 .reward_portion
                 .iter()
@@ -3878,6 +3900,67 @@
                 })
                 .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
+            <span class="comment">// 4.
+            // Iterate over configured tier and potential dApps.
+            // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
+            // and tier capacity hasn&#39;t been filled yet.
+            </span><span class="kw">let </span><span class="kw-2">mut </span>dapp_tiers = BTreeMap::new();
+            <span class="kw">let </span><span class="kw-2">mut </span>tier_slots = BTreeMap::new();
+
+            <span class="kw">let </span><span class="kw-2">mut </span>upper_bound = Balance::zero();
+            <span class="kw">let </span><span class="kw-2">mut </span>rank_rewards = Vec::new();
+
+            <span class="kw">for </span>(tier_id, (tier_capacity, tier_threshold)) <span class="kw">in </span>tier_config
+                .slots_per_tier
+                .iter()
+                .zip(tier_config.tier_thresholds.iter())
+                .enumerate()
+            {
+                <span class="kw">let </span>lower_bound = tier_threshold.threshold();
+
+                <span class="comment">// Iterate over dApps until one of two conditions has been met:
+                // 1. Tier has no more capacity
+                // 2. dApp doesn&#39;t satisfy the tier threshold (since they&#39;re sorted, none of the following dApps will satisfy the condition either)
+                </span><span class="kw">for </span>(dapp_id, staked_amount) <span class="kw">in </span>dapp_stakes
+                    .iter()
+                    .skip(dapp_tiers.len())
+                    .take_while(|(<span class="kw">_</span>, amount)| tier_threshold.is_satisfied(<span class="kw-2">*</span>amount))
+                    .take(<span class="kw-2">*</span>tier_capacity <span class="kw">as </span>usize)
+                {
+                    <span class="kw">let </span>rank = <span class="kw">if </span>T::RankingEnabled::get() {
+                        RankedTier::find_rank(lower_bound, upper_bound, <span class="kw-2">*</span>staked_amount)
+                    } <span class="kw">else </span>{
+                        <span class="number">0
+                    </span>};
+                    tier_slots.insert(<span class="kw-2">*</span>dapp_id, RankedTier::new_saturated(tier_id <span class="kw">as </span>u8, rank));
+                }
+
+                <span class="comment">// sum of all ranks for this tier
+                </span><span class="kw">let </span>ranks_sum = tier_slots
+                    .iter()
+                    .fold(<span class="number">0u32</span>, |accum, (<span class="kw">_</span>, x)| accum.saturating_add(x.rank().into()));
+
+                <span class="kw">let </span>reward_per_rank = <span class="kw">if </span>ranks_sum.is_zero() {
+                    Balance::zero()
+                } <span class="kw">else </span>{
+                    <span class="comment">// calculate reward per rank
+                    </span><span class="kw">let </span>tier_reward = tier_rewards.get(tier_id).copied().unwrap_or_default();
+                    <span class="kw">let </span>empty_slots = tier_capacity.saturating_sub(tier_slots.len() <span class="kw">as </span>u16);
+                    <span class="kw">let </span>remaining_reward = tier_reward.saturating_mul(empty_slots.into());
+                    <span class="comment">// make sure required reward doesn&#39;t exceed remaining reward
+                    </span><span class="kw">let </span>reward_per_rank = tier_reward.saturating_div(RankedTier::MAX_RANK.into());
+                    <span class="kw">let </span>expected_reward_for_ranks =
+                        reward_per_rank.saturating_mul(ranks_sum.into());
+                    <span class="kw">let </span>reward_for_ranks = expected_reward_for_ranks.min(remaining_reward);
+                    <span class="comment">// re-calculate reward per rank based on available reward
+                    </span>reward_for_ranks.saturating_div(ranks_sum.into())
+                };
+
+                rank_rewards.push(reward_per_rank);
+                dapp_tiers.append(<span class="kw-2">&amp;mut </span>tier_slots);
+                upper_bound = lower_bound; <span class="comment">// current threshold becomes upper bound for next tier
+            </span>}
+
             <span class="comment">// 5.
             // Prepare and return tier &amp; rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
@@ -3886,6 +3969,7 @@
                     dapp_tiers,
                     tier_rewards,
                     period,
+                    rank_rewards,
                 )
                 .unwrap_or_default(),
                 counter,

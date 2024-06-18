@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"type":["V6ToV7"]};

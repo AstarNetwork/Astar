@@ -27,7 +27,7 @@ var srcIndex = JSON.parse('{\
 "pallet_chain_extension_xvm":["",[],["lib.rs"]],\
 "pallet_collator_selection":["",[],["lib.rs","weights.rs"]],\
 "pallet_dapp_staking_migration":["",[],["lib.rs","weights.rs"]],\
-"pallet_dapp_staking_v3":["",[],["lib.rs","types.rs","weights.rs"]],\
+"pallet_dapp_staking_v3":["",[],["lib.rs","migration.rs","types.rs","weights.rs"]],\
 "pallet_dynamic_evm_base_fee":["",[],["lib.rs","weights.rs"]],\
 "pallet_ethereum_checked":["",[],["lib.rs","weights.rs"]],\
 "pallet_evm_precompile_assets_erc20":["",[],["lib.rs"]],\
