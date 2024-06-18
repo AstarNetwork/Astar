@@ -70,7 +70,7 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, TierId, TierSlots as TierSlotsFunc,
+        PeriodNumber, RankedTier, SmartContract, TierSlots as TierSlotsFunc,
     },
     evm::EvmRevertCodeHandler,
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
@@ -391,6 +391,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MaxNumberOfStakedContracts = ConstU32<16>;
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
+    type RankingEnabled = ();
     type WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
@@ -1174,7 +1175,10 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = ();
+pub type Migrations = (
+    // Migrate to ranking system
+    pallet_dapp_staking_v3::migration::versioned_migrations::V6ToV7<Runtime>,
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1735,7 +1739,7 @@ impl_runtime_apis! {
             InflationCycleConfig::blocks_per_era()
         }
 
-        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier> {
             DappStaking::get_dapp_tier_assignment()
         }
     }

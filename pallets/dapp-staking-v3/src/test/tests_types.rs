@@ -16,7 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use astar_primitives::{dapp_staking::StandardTierSlots, Balance};
+use astar_primitives::{
+    dapp_staking::{RankedTier, StandardTierSlots},
+    Balance,
+};
 use frame_support::{assert_ok, parameter_types};
 use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::Permill;
@@ -2907,7 +2910,13 @@ fn dapp_tier_rewards_basic_tests() {
     get_u32_type!(NumberOfTiers, 3);
 
     // Example dApps & rewards
-    let dapps = BTreeMap::from([(1 as DAppId, 0 as TierId), (2, 0), (3, 1), (5, 1), (6, 2)]);
+    let dapps = BTreeMap::<DAppId, RankedTier>::from([
+        (1, RankedTier::new_saturated(0, 0)),
+        (2, RankedTier::new_saturated(0, 0)),
+        (3, RankedTier::new_saturated(1, 0)),
+        (5, RankedTier::new_saturated(1, 0)),
+        (6, RankedTier::new_saturated(2, 0)),
+    ]);
     let tier_rewards = vec![300, 20, 1];
     let period = 2;
 
@@ -2915,20 +2924,21 @@ fn dapp_tier_rewards_basic_tests() {
         dapps.clone(),
         tier_rewards.clone(),
         period,
+        vec![0, 0, 0],
     )
     .expect("Bounds are respected.");
 
     // 1st scenario - claim reward for a dApps
-    let tier_id = dapps[&1];
+    let ranked_tier = dapps[&1];
     assert_eq!(
         dapp_tier_rewards.try_claim(1),
-        Ok((tier_rewards[tier_id as usize], tier_id))
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
     );
 
-    let tier_id = dapps[&5];
+    let ranked_tier = dapps[&5];
     assert_eq!(
         dapp_tier_rewards.try_claim(5),
-        Ok((tier_rewards[tier_id as usize], tier_id))
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
     );
 
     // 2nd scenario - try to claim already claimed reward
@@ -2979,5 +2989,57 @@ fn cleanup_marker_works() {
     assert!(
         cleanup_marker.has_pending_cleanups(),
         "There are pending cleanups for era reward spans."
+    );
+}
+
+#[test]
+fn dapp_tier_rewards_with_rank() {
+    get_u32_type!(NumberOfDApps, 8);
+    get_u32_type!(NumberOfTiers, 3);
+
+    // Example dApps & rewards
+    let dapps = BTreeMap::<DAppId, RankedTier>::from([
+        (1, RankedTier::new_saturated(0, 5)),
+        (2, RankedTier::new_saturated(0, 0)),
+        (3, RankedTier::new_saturated(1, 10)),
+        (5, RankedTier::new_saturated(1, 5)),
+        (6, RankedTier::new_saturated(2, 0)),
+    ]);
+    let tier_rewards = vec![300, 20, 1];
+    let rank_rewards = vec![0, 2, 0];
+    let period = 2;
+
+    let mut dapp_tier_rewards = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+        dapps.clone(),
+        tier_rewards.clone(),
+        period,
+        rank_rewards.clone(),
+    )
+    .expect("Bounds are respected.");
+
+    // has rank but no reward per rank
+    // receive only tier reward
+    let ranked_tier = dapps[&1];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(1),
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
+    );
+
+    // has no rank, receive only tier reward
+    let ranked_tier = dapps[&2];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(2),
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
+    );
+
+    // receives both tier and rank rewards
+    let ranked_tier = dapps[&3];
+    let (tier, rank) = ranked_tier.deconstruct();
+    assert_eq!(
+        dapp_tier_rewards.try_claim(3),
+        Ok((
+            tier_rewards[tier as usize] + rank_rewards[tier as usize] * rank as Balance,
+            ranked_tier
+        ))
     );
 }
