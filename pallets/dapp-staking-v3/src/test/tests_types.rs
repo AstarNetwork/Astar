@@ -2243,6 +2243,59 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 }
 
 #[test]
+fn singular_staking_info_unstake_era_amount_pairs_are_ok() {
+    let period_number = 1;
+    let subperiod = Subperiod::BuildAndEarn;
+
+    // 1. Unstake only reduces the amount from a the future era
+    {
+        let era = 3;
+        let stake_amount = 13;
+        let unstake_amount = 3;
+        let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+        staking_info.stake(stake_amount, era, Subperiod::BuildAndEarn);
+
+        assert_eq!(
+            staking_info.unstake(unstake_amount, era, Subperiod::BuildAndEarn),
+            vec![(era + 1, unstake_amount)]
+        );
+    }
+
+    // 2. Unstake reduces the amount from the current & next era.
+    {
+        let era = 3;
+        let stake_amount = 17;
+        let unstake_amount = 5;
+        let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+        staking_info.stake(stake_amount, era, Subperiod::BuildAndEarn);
+
+        assert_eq!(
+            staking_info
+                .clone()
+                .unstake(unstake_amount, era + 1, Subperiod::BuildAndEarn),
+            vec![(era + 1, unstake_amount), (era + 2, unstake_amount)]
+        );
+    }
+
+    // 3. Unstake reduces the amount from the current & next era.
+    //    Unlike the previous example, entries are not aligned with the current era
+    {
+        let era = 3;
+        let stake_amount = 17;
+        let unstake_amount = 5;
+        let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+        staking_info.stake(stake_amount, era, Subperiod::BuildAndEarn);
+
+        assert_eq!(
+            staking_info
+                .clone()
+                .unstake(unstake_amount, era + 2, Subperiod::BuildAndEarn),
+            vec![(era + 2, unstake_amount), (era + 3, unstake_amount)]
+        );
+    }
+}
+
+#[test]
 fn contract_stake_amount_basic_get_checks_work() {
     // Sanity checks for empty struct
     let contract_stake = ContractStakeAmount {
