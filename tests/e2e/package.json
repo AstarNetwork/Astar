@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Astar end to end tests.",
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "test": "LOG_LEVEL=error vitest --silent --no-color",
     "test:runtime-upgrade-shibuya": "RUNTIME=shibuya yarn test tests/runtime-upgrade.test.ts",
@@ -10,10 +11,10 @@
     "test:runtime-upgrade-astar": "RUNTIME=astar yarn test tests/runtime-upgrade.test.ts"
   },
   "dependencies": {
-    "@acala-network/chopsticks-testing": "^0.6.4",
-    "@polkadot/util-crypto": "^10.1.10",
-    "typescript": "^4.8.4",
-    "vitest": "^0.31.0"
+    "@acala-network/chopsticks-testing": "^0.12.2",
+    "@polkadot/util-crypto": "^12.6.2",
+    "typescript": "^5.3.0",
+    "vitest": "^1.4.0"
   },
   "prettier": {
     "tabWidth": 2,
