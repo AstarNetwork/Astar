@@ -9,11 +9,6 @@ const endpoints = {
   astar: 'wss://astar.api.onfinality.io/public-ws',
 };
 
-const specVersion = async (api) => {
-  const version = await api.rpc.state.getRuntimeVersion();
-  return version.specVersion.toNumber();
-};
-
 describe('runtime upgrade', async () => {
   const { alice } = testingPairs();
 
@@ -60,7 +55,7 @@ describe('runtime upgrade', async () => {
   it('runtime upgrade works', async () => {
     await beforeUpgrade();
 
-    const prevSpecVersion = await specVersion(api);
+    const prevSpecVersion = api.runtimeVersion.specVersion.toNumber();
     console.log('SpecVersion before upgrade: ', prevSpecVersion);
 
     console.log(`Upgrading ${runtime} runtime...`);
@@ -78,12 +73,12 @@ describe('runtime upgrade', async () => {
 
     // Do block production.
     await dev.newBlock({ count: 2 });
-    // wait a bit for pjs/api to update
+    // wait a bit for pjs/api to reflect runtimeVersion change
     await new Promise((r) => setTimeout(r, 1000));
 
     // The spec version is increased.
-    const curSpecVersion = await specVersion(api);
-    console.log('SpecVersion before upgrade: ', curSpecVersion);
+    const curSpecVersion = api.runtimeVersion.specVersion.toNumber();
+    console.log('SpecVersion after upgrade: ', curSpecVersion);
     expect(curSpecVersion).toBeGreaterThan(prevSpecVersion);
 
     await afterUpgrade();
