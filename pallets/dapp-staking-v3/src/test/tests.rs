@@ -3242,3 +3242,47 @@ fn claim_dapp_reward_with_rank() {
         }));
     })
 }
+
+#[test]
+fn unstake_correctly_reduces_future_contract_stake() {
+    ExtBuilder::build().execute_with(|| {
+        // 0. Register smart contract, lock&stake some amount with staker 1 during the voting subperiod
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &smart_contract);
+
+        let (staker_1, amount_1) = (1, 29);
+        assert_lock(staker_1, amount_1);
+        assert_stake(staker_1, &smart_contract, amount_1);
+
+        // 1. Advance to the build&earn subperiod, stake some amount with staker 2
+        advance_to_next_era();
+        let (staker_2, amount_2) = (2, 11);
+        assert_lock(staker_2, amount_2);
+        assert_stake(staker_2, &smart_contract, amount_2);
+
+        // 2. Advance a few eras, creating a gap but remaining within the same period.
+        //    Claim all rewards for staker 1.
+        //    Lock & stake some amount with staker 3.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().period_number(),
+            1,
+            "Sanity check."
+        );
+        for _ in 0..required_number_of_reward_claims(staker_1) {
+            assert_claim_staker_rewards(staker_1);
+        }
+
+        // This ensures contract stake entry is aligned to the current era, and future entry refers to the era after this one.
+        //
+        // This is important to reproduce an issue where the (era, amount) pairs returned by the `unstake` function don't correctly
+        // cover the next era.
+        let (staker_3, amount_3) = (3, 13);
+        assert_lock(staker_3, amount_3);
+        assert_stake(staker_3, &smart_contract, amount_3);
+
+        // 3. Unstake from staker 1, and ensure the future stake is reduced.
+        //    Unstake amount should be slightly higher than the 2nd stake amount to ensure whole b&e stake amount is removed.
+        assert_unstake(staker_1, &smart_contract, amount_2 + 3);
+    })
+}
