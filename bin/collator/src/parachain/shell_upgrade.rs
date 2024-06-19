@@ -16,14 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-///! Special [`ParachainConsensus`] implementation that waits for the upgrade from
-///! shell to a parachain runtime that implements Aura.
+//! Utility for the upgrade from shell to a parachain runtime that implements Aura.
 use astar_primitives::*;
-use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
-use cumulus_primitives_core::relay_chain::{Hash as PHash, PersistedValidationData};
+use cumulus_primitives_core::relay_chain::PersistedValidationData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::pending::ConsensusDataProvider;
-use futures::lock::Mutex;
 use sc_client_api::{AuxStore, UsageProvider};
 use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams, ForkChoiceStrategy};
 use sp_api::{ApiExt, ProvideRuntimeApi};
@@ -58,57 +55,6 @@ impl<R> BuildOnAccess<R> {
     }
 }
 
-pub struct WaitForAuraConsensus<Client> {
-    pub client: Arc<Client>,
-    pub aura_consensus: Arc<Mutex<BuildOnAccess<Box<dyn ParachainConsensus<Block>>>>>,
-    pub relay_chain_consensus: Arc<Mutex<Box<dyn ParachainConsensus<Block>>>>,
-}
-
-impl<Client> Clone for WaitForAuraConsensus<Client> {
-    fn clone(&self) -> Self {
-        Self {
-            client: self.client.clone(),
-            aura_consensus: self.aura_consensus.clone(),
-            relay_chain_consensus: self.relay_chain_consensus.clone(),
-        }
-    }
-}
-
-#[async_trait::async_trait]
-impl<Client> ParachainConsensus<Block> for WaitForAuraConsensus<Client>
-where
-    Client: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
-    Client::Api: AuraApi<Block, AuraId>,
-{
-    async fn produce_candidate(
-        &mut self,
-        parent: &Header,
-        relay_parent: PHash,
-        validation_data: &PersistedValidationData,
-    ) -> Option<ParachainCandidate<Block>> {
-        let block_hash = parent.hash();
-        if self
-            .client
-            .runtime_api()
-            .has_api::<dyn AuraApi<Block, AuraId>>(block_hash)
-            .unwrap_or(false)
-        {
-            self.aura_consensus
-                .lock()
-                .await
-                .get_mut()
-                .produce_candidate(parent, relay_parent, validation_data)
-                .await
-        } else {
-            self.relay_chain_consensus
-                .lock()
-                .await
-                .produce_candidate(parent, relay_parent, validation_data)
-                .await
-        }
-    }
-}
-
 pub struct Verifier<Client> {
     pub client: Arc<Client>,
     pub aura_verifier: BuildOnAccess<Box<dyn VerifierT<Block>>>,
@@ -118,7 +64,7 @@ pub struct Verifier<Client> {
 #[async_trait::async_trait]
 impl<Client> VerifierT<Block> for Verifier<Client>
 where
-    Client: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
+    Client: ProvideRuntimeApi<Block> + Send + Sync,
     Client::Api: AuraApi<Block, AuraId>,
 {
     async fn verify(
