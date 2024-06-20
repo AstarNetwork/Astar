@@ -26,6 +26,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::Dispatchable;
+use sp_std::prelude::*;
 
 pub use pallet::*;
 
