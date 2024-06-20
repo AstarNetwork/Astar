@@ -29,11 +29,12 @@ use sp_std::prelude::*;
 
 pub use pallet::*;
 
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+
 // TODO
-
-// #[cfg(test)]
-// mod test;
-
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
 
@@ -47,8 +48,10 @@ pub mod pallet {
     #[pallet::pallet]
     pub struct Pallet<T>(_);
 
-    // TODO: probably should add instances.
-    // Still, this approach looks ineffective. It would be better to associate a triplet of (custom origin, account id, call filter) with a pallet.
+    // TODO: The pallet is intentionally very basic. It could be improved to handle more origins, more aliases, etc. 
+    // There could also be different instances, if such approach was needed.
+    // However, it's supposed to be the simplest solution possible to cover a specific scenario.
+    // Pallet is stateless and can easily be upgraded in the future.
 
     /// Configuration trait.
     #[pallet::config]
@@ -85,11 +88,15 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Executes the call on a behalf of an aliased account.
+        ///
+        /// The `origin` of the call is supposed to be a _collective_ (but can be anything) which can dispatch `call` on behalf of the aliased account.
+        /// It's essentially a proxy call that can be made by arbitrary origin type.
         #[pallet::call_index(0)]
         #[pallet::weight({
 			let di = call.get_dispatch_info();
 			(T::WeightInfo::execute_call().saturating_add(di.weight), di.class)
-		})] // TODO: benchmark empty call + weight of the `call` argument
+		})]
         pub fn execute_call(
             origin: OriginFor<T>,
             call: Box<<T as Config>::RuntimeCall>,

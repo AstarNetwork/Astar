@@ -8051,6 +8051,7 @@ dependencies = [
 name = "pallet-collective-proxy"
 version = "0.1.0"
 dependencies = [
+ "astar-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
