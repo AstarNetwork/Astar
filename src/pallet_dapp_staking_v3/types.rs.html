@@ -1839,6 +1839,10 @@
 <a href="#1839" id="1839">1839</a>
 <a href="#1840" id="1840">1840</a>
 <a href="#1841" id="1841">1841</a>
+<a href="#1842" id="1842">1842</a>
+<a href="#1843" id="1843">1843</a>
+<a href="#1844" id="1844">1844</a>
+<a href="#1845" id="1845">1845</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2888,7 +2892,7 @@
         <span class="kw">let </span><span class="kw-2">mut </span>result = Vec::new();
         <span class="kw">let </span>staked_snapshot = <span class="self">self</span>.staked;
 
-        <span class="comment">// 1. Modify current staked amount, and update the result.
+        <span class="comment">// 1. Modify &#39;current&#39; staked amount, and update the result.
         </span><span class="self">self</span>.staked.subtract(amount);
         <span class="kw">let </span>unstaked_amount = staked_snapshot.total().saturating_sub(<span class="self">self</span>.staked.total());
         <span class="self">self</span>.staked.era = <span class="self">self</span>.staked.era.max(current_era);
@@ -2946,6 +2950,9 @@
                 }
                 <span class="kw">_ </span>=&gt; {}
             }
+        } <span class="kw">else if </span><span class="self">self</span>.staked.era == current_era {
+            <span class="comment">// In case the `staked` era was already the current era, it also means we&#39;re chipping away from the future era.
+            </span>result.push((<span class="self">self</span>.staked.era.saturating_add(<span class="number">1</span>), unstaked_amount));
         }
 
         <span class="comment">// 5. Convenience cleanup
@@ -3092,6 +3099,8 @@
             <span class="comment">// Future entry has an older era, but periods match so overwrite the &#39;current&#39; entry with it
             </span><span class="prelude-val">Some</span>(stake_amount) <span class="kw">if </span>stake_amount.period == period_info.number =&gt; {
                 <span class="self">self</span>.staked = <span class="kw-2">*</span>stake_amount;
+                <span class="comment">// Align the eras to keep it simple
+                </span><span class="self">self</span>.staked.era = current_era;
             }
             <span class="comment">// Otherwise do nothing
             </span><span class="kw">_ </span>=&gt; (),
@@ -3144,7 +3153,6 @@
         }
 
         <span class="comment">// 2. Value updates - only after alignment
-
         </span><span class="kw">for </span>(era, amount) <span class="kw">in </span>era_and_amount_pairs {
             <span class="kw">if </span><span class="self">self</span>.staked.era == era {
                 <span class="self">self</span>.staked.subtract(amount);
