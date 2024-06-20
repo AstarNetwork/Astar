@@ -727,15 +727,16 @@ pub(crate) fn assert_unstake(
     let unstaked_amount_era_pairs =
         pre_staker_info
             .clone()
-            .unstake(expected_amount, unstake_period, unstake_subperiod);
+            .unstake(expected_amount, unstake_era, unstake_subperiod);
     assert!(unstaked_amount_era_pairs.len() <= 2 && unstaked_amount_era_pairs.len() > 0);
-    {
-        let (last_unstake_era, last_unstake_amount) = unstaked_amount_era_pairs
-            .last()
-            .expect("Has to exist due to success of previous check");
-        assert_eq!(*last_unstake_era, unstake_era.max(pre_staker_info.era()));
-        assert_eq!(*last_unstake_amount, expected_amount);
-    }
+
+    // If unstake from next era exists, it must exactly match the expected unstake amount.
+    unstaked_amount_era_pairs
+        .iter()
+        .filter(|(era, _)| *era > unstake_era)
+        .for_each(|(_, amount)| {
+            assert_eq!(*amount, expected_amount);
+        });
 
     // 3. verify contract stake
     // =========================
@@ -753,21 +754,31 @@ pub(crate) fn assert_unstake(
         "Staked amount must decreased by the 'amount'"
     );
 
-    // Ensure staked amounts are updated as expected, unless it's full unstake.
-    if !is_full_unstake {
-        for (unstake_era_iter, unstake_amount_iter) in unstaked_amount_era_pairs {
-            assert_eq!(
-                post_contract_stake
-                    .get(unstake_era_iter, unstake_period)
-                    .expect("Must exist.")
-                    .total(),
-                pre_contract_stake
-                    .get(unstake_era_iter, unstake_period)
-                    .expect("Must exist")
-                    .total()
-                    - unstake_amount_iter
-            );
-        }
+    // A generic check, comparing what was received in the (era, amount) pairs and the impact it had on the contract stake.
+    for (unstake_era_iter, unstake_amount_iter) in unstaked_amount_era_pairs {
+        assert_eq!(
+            post_contract_stake
+                .get(unstake_era_iter, unstake_period)
+                .unwrap_or_default() // it's possible that full unstake cleared the entry
+                .total(),
+            pre_contract_stake
+                .get(unstake_era_iter, unstake_period)
+                .expect("Must exist")
+                .total()
+                - unstake_amount_iter
+        );
+    }
+
+    // More precise check, independent of the generic check above.
+    // If next era entry exists, it must be reduced by the unstake amount, nothing less.
+    if let Some(entry) = pre_contract_stake.get(unstake_era + 1, unstake_period) {
+        assert_eq!(
+            post_contract_stake
+                .get(unstake_era + 1, unstake_period)
+                .unwrap_or_default()
+                .total(),
+            entry.total() - expected_amount
+        );
     }
 
     // 4. verify era info

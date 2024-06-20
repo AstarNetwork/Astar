@@ -1047,7 +1047,7 @@ impl SingularStakingInfo {
         let mut result = Vec::new();
         let staked_snapshot = self.staked;
 
-        // 1. Modify current staked amount, and update the result.
+        // 1. Modify 'current' staked amount, and update the result.
         self.staked.subtract(amount);
         let unstaked_amount = staked_snapshot.total().saturating_sub(self.staked.total());
         self.staked.era = self.staked.era.max(current_era);
@@ -1105,6 +1105,9 @@ impl SingularStakingInfo {
                 }
                 _ => {}
             }
+        } else if self.staked.era == current_era {
+            // In case the `staked` era was already the current era, it also means we're chipping away from the future era.
+            result.push((self.staked.era.saturating_add(1), unstaked_amount));
         }
 
         // 5. Convenience cleanup
@@ -1251,6 +1254,8 @@ impl ContractStakeAmount {
             // Future entry has an older era, but periods match so overwrite the 'current' entry with it
             Some(stake_amount) if stake_amount.period == period_info.number => {
                 self.staked = *stake_amount;
+                // Align the eras to keep it simple
+                self.staked.era = current_era;
             }
             // Otherwise do nothing
             _ => (),
@@ -1303,7 +1308,6 @@ impl ContractStakeAmount {
         }
 
         // 2. Value updates - only after alignment
-
         for (era, amount) in era_and_amount_pairs {
             if self.staked.era == era {
                 self.staked.subtract(amount);
