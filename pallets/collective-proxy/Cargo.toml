@@ -1,7 +1,7 @@
 [package]
-name = "pallet-community-proxy"
+name = "pallet-collective-proxy"
 version = "0.1.0"
-description = "Proxy for community calls."
+description = "Proxy for collective calls."
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true

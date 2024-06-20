@@ -1116,11 +1116,11 @@ impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
     }
 }
 
-impl pallet_community_proxy::Config for Runtime {
+impl pallet_collective_proxy::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
-    type CommunityOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
-    type CommunityAccountId = CommunityTreasuryAccountId;
+    type CollectiveProxy = EnsureRootOrTwoThirdsCommunityCouncil;
+    type ProxyAccountId = CommunityTreasuryAccountId;
     type CallFilter = CommunityCouncilCallFilter;
 }
 
@@ -1151,7 +1151,7 @@ construct_runtime!(
         Democracy: pallet_democracy,
         Treasury: pallet_treasury::<Instance1>,
         CommunityTreasury: pallet_treasury::<Instance2>,
-        CommunityProxy: pallet_community_proxy,
+        CollectiveProxy: pallet_collective_proxy,
 
         EVM: pallet_evm,
         Ethereum: pallet_ethereum,

@@ -63,11 +63,11 @@ pub mod pallet {
             + From<frame_system::Call<Self>>
             + IsType<<Self as frame_system::Config>::RuntimeCall>;
 
-        /// Origin that can act on behalf of the community.
-        type CommunityOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
+        /// Origin that can act on behalf of the collective.
+        type CollectiveProxy: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
-        /// Account representing the community treasury.
-        type CommunityAccountId: Get<Self::AccountId>;
+        /// Account representing the collective treasury.
+        type ProxyAccountId: Get<Self::AccountId>;
 
         /// Filter to determine whether a call can be executed or not.
         type CallFilter: InstanceFilter<<Self as Config>::RuntimeCall> + Default;
@@ -80,7 +80,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Community proxy call executed successfully.
-        CommunityProxyExecuted { result: DispatchResult },
+        CollectiveProxyExecuted { result: DispatchResult },
     }
 
     #[pallet::call]
@@ -92,11 +92,11 @@ pub mod pallet {
             call: Box<<T as Config>::RuntimeCall>,
         ) -> DispatchResult {
             // Ensure origin is valid.
-            T::CommunityOrigin::ensure_origin(origin)?;
+            T::CollectiveProxy::ensure_origin(origin)?;
 
-            // Account authentication is ensured by the `CommunityManager` origin check.
+            // Account authentication is ensured by the `CollectiveProxy` origin check.
             let mut origin: T::RuntimeOrigin =
-                frame_system::RawOrigin::Signed(T::CommunityAccountId::get()).into();
+                frame_system::RawOrigin::Signed(T::ProxyAccountId::get()).into();
 
             // Ensure custom filter is applied.
             origin.add_filter(move |c: &<T as frame_system::Config>::RuntimeCall| {
@@ -106,7 +106,7 @@ pub mod pallet {
 
             // Dispatch the call.
             let e = call.dispatch(origin);
-            Self::deposit_event(Event::CommunityProxyExecuted {
+            Self::deposit_event(Event::CollectiveProxyExecuted {
                 result: e.map(|_| ()).map_err(|e| e.error),
             });
 

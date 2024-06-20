@@ -6466,7 +6466,7 @@ dependencies = [
  "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
  "pallet-collective",
- "pallet-community-proxy",
+ "pallet-collective-proxy",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapp-staking-v3",
@@ -8048,7 +8048,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-community-proxy"
+name = "pallet-collective-proxy"
 version = "0.1.0"
 dependencies = [
  "frame-benchmarking",
