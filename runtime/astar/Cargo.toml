@@ -297,6 +297,7 @@ try-runtime = [
 	"pallet-contracts/try-runtime",
 	"pallet-evm/try-runtime",
 	"orml-xtokens/try-runtime",
+	"astar-primitives/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

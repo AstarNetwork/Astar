@@ -48,7 +48,7 @@ pub mod pallet {
     #[pallet::pallet]
     pub struct Pallet<T>(_);
 
-    // TODO: The pallet is intentionally very basic. It could be improved to handle more origins, more aliases, etc. 
+    // TODO: The pallet is intentionally very basic. It could be improved to handle more origins, more aliases, etc.
     // There could also be different instances, if such approach was needed.
     // However, it's supposed to be the simplest solution possible to cover a specific scenario.
     // Pallet is stateless and can easily be upgraded in the future.
