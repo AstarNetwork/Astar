@@ -22,7 +22,6 @@ use frame_support::{
     dispatch::GetDispatchInfo,
     pallet_prelude::*,
     traits::{InstanceFilter, IsType, OriginTrait},
-    weights::Weight,
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::Dispatchable;
@@ -38,8 +37,8 @@ pub use pallet::*;
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
 
-// pub mod weights;
-// pub use weights::WeightInfo;
+pub mod weights;
+pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -73,8 +72,8 @@ pub mod pallet {
         /// Filter to determine whether a call can be executed or not.
         type CallFilter: InstanceFilter<<Self as Config>::RuntimeCall> + Default;
 
-        // TODO
-        // type WeightInfo: WeightInfo;
+        /// Weight info
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::event]
@@ -87,7 +86,10 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
-        #[pallet::weight(Weight::from_parts(0, 0))] // TODO: benchmark empty call + weight of the `call` argument
+        #[pallet::weight({
+			let di = call.get_dispatch_info();
+			(T::WeightInfo::execute_call().saturating_add(di.weight), di.class)
+		})] // TODO: benchmark empty call + weight of the `call` argument
         pub fn execute_call(
             origin: OriginFor<T>,
             call: Box<<T as Config>::RuntimeCall>,

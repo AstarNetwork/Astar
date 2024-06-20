@@ -1122,6 +1122,7 @@ impl pallet_collective_proxy::Config for Runtime {
     type CollectiveProxy = EnsureRootOrTwoThirdsCommunityCouncil;
     type ProxyAccountId = CommunityTreasuryAccountId;
     type CallFilter = CommunityCouncilCallFilter;
+    type WeightInfo = pallet_collective_proxy::weights::SubstrateWeight<Runtime>;
 }
 
 // Need to skip formatting since it removes '::' from the pallet declarations (https://github.com/rust-lang/rustfmt/issues/5526).
