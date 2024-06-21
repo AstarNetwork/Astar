@@ -176,7 +176,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 131,
+    spec_version: 132,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1298,11 +1298,7 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    pallet_preimage::migration::v1::Migration<Runtime>,
-    // Migrate to ranking system
-    pallet_dapp_staking_v3::migration::versioned_migrations::V6ToV7<Runtime>,
-);
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
