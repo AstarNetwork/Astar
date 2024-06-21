@@ -838,7 +838,7 @@ pub mod pallet {
 
             // Calculate & check amount available for locking
             let available_balance =
-                T::Currency::total_balance(&account).saturating_sub(ledger.active_locked_amount());
+                T::Currency::total_balance(&account).saturating_sub(ledger.total_locked_amount());
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 

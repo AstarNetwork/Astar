@@ -86,9 +86,9 @@ impl MemorySnapshot {
     /// Returns locked balance in dApp staking for the specified account.
     /// In case no balance is locked, returns zero.
     pub fn locked_balance(&self, account: &AccountId) -> Balance {
-        self.ledger
-            .get(&account)
-            .map_or(Balance::zero(), |ledger| ledger.active_locked_amount())
+        self.ledger.get(&account).map_or(Balance::zero(), |ledger| {
+            ledger.locked + ledger.unlocking.iter().fold(0, |acc, x| acc + x.amount)
+        })
     }
 }
 
@@ -240,10 +240,15 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
         "Total locked balance should be increased by the amount locked."
     );
 
+    let post_frozen_balance = Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account);
     assert_eq!(
         init_frozen_balance + expected_lock_amount,
-        Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account)
+        post_frozen_balance
     );
+    assert!(
+        Balances::total_balance(&account) >= post_frozen_balance,
+        "Total balance should never be less than frozen balance."
+    )
 }
 
 /// Start the unlocking process for locked funds and assert success.
