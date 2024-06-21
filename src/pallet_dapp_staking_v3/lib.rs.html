@@ -2967,7 +2967,7 @@
 
             <span class="comment">// Calculate &amp; check amount available for locking
             </span><span class="kw">let </span>available_balance =
-                T::Currency::total_balance(<span class="kw-2">&amp;</span>account).saturating_sub(ledger.active_locked_amount());
+                T::Currency::total_balance(<span class="kw-2">&amp;</span>account).saturating_sub(ledger.total_locked_amount());
             <span class="kw">let </span>amount_to_lock = available_balance.min(amount);
             <span class="macro">ensure!</span>(!amount_to_lock.is_zero(), Error::&lt;T&gt;::ZeroAmount);
 
