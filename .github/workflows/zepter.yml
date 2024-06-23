@@ -23,6 +23,9 @@ jobs:
     - name: Checkout the source code
       uses: actions/checkout@v4
 
+    - name: Install deps
+      run: sudo apt -y install protobuf-compiler
+
     - name: Install & display rust toolchain
       run: rustup show
 
