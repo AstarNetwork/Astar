@@ -55,4 +55,6 @@ std = [
 	"pallet-evm/std",
 	"pallet-balances/std",
 	"pallet-timestamp/std",
+	"fp-evm/std",
+	"pallet-evm-precompile-dispatch/std",
 ]

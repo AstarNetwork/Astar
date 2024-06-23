@@ -26,4 +26,6 @@ std = [
 	"frame-system/std",
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
+	"scale-info/std",
+	"sp-runtime/std",
 ]

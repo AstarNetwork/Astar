@@ -42,6 +42,7 @@ std = [
 	"astar-primitives/std",
 	"sp-core/std",
 	"pallet-balances/std",
+	"sp-runtime/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -50,5 +51,12 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"pallet-dapp-staking-v3/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"astar-primitives/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-dapp-staking-v3/try-runtime",
+	"sp-runtime/try-runtime",
+]

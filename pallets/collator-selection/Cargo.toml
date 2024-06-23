@@ -44,6 +44,9 @@ runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"sp-staking/runtime-benchmarks",
 ]
 std = [
 	"parity-scale-codec/std",
@@ -60,6 +63,13 @@ std = [
 	"pallet-session/std",
 	"pallet-aura/std",
 	"pallet-balances/std",
+	"serde/std",
 ]
 
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-authorship/try-runtime",
+	"pallet-session/try-runtime",
+	"sp-runtime/try-runtime",
+]

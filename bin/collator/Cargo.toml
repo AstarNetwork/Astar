@@ -166,9 +166,37 @@ runtime-benchmarks = [
 	"sp-keyring",
 	"polkadot-runtime-common",
 	"astar-primitives/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-benchmarking-cli?/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-ethereum/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"polkadot-parachain/runtime-benchmarks",
+	"polkadot-primitives/runtime-benchmarks",
+	"polkadot-runtime-common?/runtime-benchmarks",
+	"polkadot-service/runtime-benchmarks",
+	"sc-client-db/runtime-benchmarks",
+	"sc-service/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
 ]
 cli = ["try-runtime-cli"]
-try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]
+try-runtime = [
+	"local-runtime/try-runtime",
+	"try-runtime-cli/try-runtime",
+	"astar-primitives/try-runtime",
+	"astar-runtime/try-runtime",
+	"frame-system/try-runtime",
+	"frame-try-runtime/try-runtime",
+	"pallet-ethereum/try-runtime",
+	"pallet-evm/try-runtime",
+	"pallet-transaction-payment/try-runtime",
+	"polkadot-cli?/try-runtime",
+	"polkadot-runtime-common?/try-runtime",
+	"polkadot-service/try-runtime",
+	"shibuya-runtime/try-runtime",
+	"shiden-runtime/try-runtime",
+	"sp-runtime/try-runtime",
+]
 evm-tracing = [
 	"moonbeam-rpc-debug",
 	"moonbeam-rpc-primitives-debug",
@@ -177,5 +205,7 @@ evm-tracing = [
 	"moonbeam-rpc-txpool",
 	"shibuya-runtime/evm-tracing",
 	"shiden-runtime/evm-tracing",
+	"astar-runtime/evm-tracing",
+	"local-runtime/evm-tracing",
 ]
 manual-seal = ["sc-consensus-manual-seal"]
