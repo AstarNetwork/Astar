@@ -33,30 +33,20 @@ sp-core = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
-	"log/std",
-	"pallet-balances/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde",
-	"serde?/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"xcm/std",
+	"pallet-balances/std",
+	"frame-benchmarking?/std",
 ]
 
 runtime-benchmarks = [
 	"frame-benchmarking",
-	"frame-benchmarking/runtime-benchmarks",
-	"frame-support/runtime-benchmarks",
-	"frame-system/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
 ]
-try-runtime = [
-	"frame-support/try-runtime",
-	"frame-system/try-runtime",
-	"sp-runtime/try-runtime",
-]
+try-runtime = ["frame-support/try-runtime"]

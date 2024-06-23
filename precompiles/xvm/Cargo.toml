@@ -44,18 +44,15 @@ sp-runtime = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"astar-primitives/std",
+	"parity-scale-codec/std",
 	"fp-evm/std",
 	"frame-support/std",
 	"frame-system/std",
-	"hex/std",
-	"log/std",
-	"num_enum/std",
 	"pallet-evm/std",
-	"parity-scale-codec/std",
 	"precompile-utils/std",
 	"sp-core/std",
+	"sp-std/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"sp-std/std",
+	"astar-primitives/std",
 ]

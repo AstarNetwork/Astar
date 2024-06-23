@@ -22,9 +22,9 @@ sp-std = { workspace = true }
 [features]
 default = ["std"]
 std = [
+	"parity-scale-codec/std",
 	"ethereum-types/std",
 	"evm-tracing-events/std",
-	"parity-scale-codec/std",
 	"sp-externalities/std",
 	"sp-runtime-interface/std",
 	"sp-std/std",

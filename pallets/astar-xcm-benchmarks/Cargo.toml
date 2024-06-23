@@ -16,9 +16,7 @@ serde = { workspace = true, optional = true }
 # Substrate
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-parity-scale-codec = { workspace = true, optional = true, features = [
-	"derive",
-] }
+parity-scale-codec = { workspace = true, optional = true, features = ["derive"] }
 scale-info = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
@@ -48,34 +46,22 @@ std = [
 	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
-	"log/std",
 	"pallet-xcm-benchmarks/std",
 	"parity-scale-codec/std",
-	"scale-info/std",
 	"serde",
-	"serde?/std",
-	"sp-runtime/std",
 	"sp-std/std",
-	"xcm-executor/std",
+	"sp-runtime/std",
 	"xcm/std",
 ]
 
-try-runtime = [
-	"astar-primitives/try-runtime",
-	"frame-support/try-runtime",
-	"frame-system/try-runtime",
-	"sp-runtime/try-runtime",
-]
+try-runtime = ["frame-support/try-runtime"]
 
 runtime-benchmarks = [
-	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking",
-	"frame-benchmarking/runtime-benchmarks",
-	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"parity-scale-codec",
-	"sp-runtime/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
 ]

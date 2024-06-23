@@ -31,6 +31,7 @@ pallet-evm = { workspace = true }
 [features]
 default = ["std"]
 std = [
+	"parity-scale-codec/std",
 	"ethereum-types/std",
 	"evm-gasometer/std",
 	"evm-runtime/std",
@@ -40,9 +41,7 @@ std = [
 	"fp-evm/std",
 	"moonbeam-primitives-ext/std",
 	"pallet-evm/std",
-	"parity-scale-codec/std",
 	"sp-core/std",
-	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
 ]

@@ -32,32 +32,19 @@ sp-io = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"assets-chain-extension-types/std",
+	"parity-scale-codec/std",
 	"frame-support/std",
 	"frame-system/std",
-	"log/std",
 	"num-traits/std",
-	"pallet-assets/std",
-	"pallet-balances/std",
-	"pallet-contracts-primitives/std",
 	"pallet-contracts/std",
-	"parity-scale-codec/std",
+	"pallet-contracts-primitives/std",
 	"scale-info/std",
+	"sp-std/std",
 	"sp-core/std",
 	"sp-runtime/std",
-	"sp-std/std",
+	"pallet-assets/std",
+	"assets-chain-extension-types/std",
+	"pallet-balances/std",
 ]
-try-runtime = [
-	"frame-support/try-runtime",
-	"frame-system/try-runtime",
-	"pallet-assets/try-runtime",
-	"pallet-contracts/try-runtime",
-	"sp-runtime/try-runtime",
-]
-runtime-benchmarks = [
-	"frame-support/runtime-benchmarks",
-	"frame-system/runtime-benchmarks",
-	"pallet-assets/runtime-benchmarks",
-	"pallet-contracts/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
-]
+try-runtime = ["frame-support/try-runtime"]
+runtime-benchmarks = ["pallet-assets/runtime-benchmarks"]

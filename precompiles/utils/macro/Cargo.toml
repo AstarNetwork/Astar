@@ -37,7 +37,6 @@ default = ["std"]
 std = [
 	"fp-evm/std",
 	"frame-support/std",
-	"num_enum/std",
 	"sp-core-hashing/std",
 	"sp-std/std",
 ]

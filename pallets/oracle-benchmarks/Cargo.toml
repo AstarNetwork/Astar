@@ -30,32 +30,23 @@ frame-benchmarking = { workspace = true, optional = true }
 [features]
 default = ["std"]
 std = [
-	"astar-primitives/std",
-	"frame-benchmarking?/std",
-	"frame-support/std",
-	"frame-system/std",
-	"log/std",
-	"orml-oracle/std",
-	"orml-traits/std",
 	"parity-scale-codec/std",
+	"log/std",
 	"scale-info/std",
 	"serde/std",
-	"sp-arithmetic/std",
-	"sp-runtime/std",
 	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+	"astar-primitives/std",
+	"sp-arithmetic/std",
+	"orml-traits/std",
+	"orml-oracle/std",
 ]
 runtime-benchmarks = [
-	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking",
-	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"astar-primitives/runtime-benchmarks",
 ]
-try-runtime = [
-	"astar-primitives/try-runtime",
-	"frame-support/try-runtime",
-	"frame-system/try-runtime",
-	"orml-oracle/try-runtime",
-	"sp-runtime/try-runtime",
-]
+try-runtime = ["frame-support/try-runtime"]

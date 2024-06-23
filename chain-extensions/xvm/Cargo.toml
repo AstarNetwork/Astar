@@ -29,19 +29,17 @@ xvm-chain-extension-types = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	# Astar
-	"astar-primitives/std",
+	"parity-scale-codec/std",
 	"frame-support/std",
 	"frame-system/std",
-	"log/std",
 	"num-traits/std",
-	"pallet-contracts-primitives/std",
 	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
 	"pallet-unified-accounts/std",
-	"parity-scale-codec/std",
 	"scale-info/std",
+	"sp-std/std",
 	"sp-core/std",
 	"sp-runtime/std",
-	"sp-std/std",
-	"xvm-chain-extension-types/std",
+	# Astar
+	"astar-primitives/std",
 ]
