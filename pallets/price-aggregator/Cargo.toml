@@ -32,26 +32,34 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"parity-scale-codec/std",
-	"log/std",
-	"sp-core/std",
-	"scale-info/std",
-	"serde/std",
-	"sp-std/std",
+	"astar-primitives/std",
+	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-balances/std",
-	"astar-primitives/std",
-	"sp-arithmetic/std",
+	"log/std",
 	"orml-traits/std",
+	"pallet-balances/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"serde/std",
+	"sp-arithmetic/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
 ]
 runtime-benchmarks = [
+	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
-	"astar-primitives/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"astar-primitives/try-runtime",
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+]

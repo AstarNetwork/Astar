@@ -33,10 +33,11 @@ sp-core-hashing = { workspace = true }
 sp-std = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
 	"fp-evm/std",
 	"frame-support/std",
+	"num_enum/std",
 	"sp-core-hashing/std",
 	"sp-std/std",
 ]

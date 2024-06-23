@@ -24,15 +24,6 @@ jobs:
       - name: Check fmt
         run: cargo fmt -- --check
 
-      - name: Check Cargo.toml format
-        run: |
-          if taplo --version &> /dev/null; then
-            echo "taplo-cli is already installed"
-          else
-            cargo install taplo-cli
-          fi
-          taplo fmt --check
-
   clippy:
     if: github.event.pull_request.draft == false
     runs-on: [self-hosted, Linux, X64]

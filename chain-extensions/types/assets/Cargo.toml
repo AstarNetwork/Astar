@@ -15,10 +15,10 @@ scale-info = { workspace = true }
 sp-runtime = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
 	"num_enum/std",
-	"scale-info/std",
 	"parity-scale-codec/std",
+	"scale-info/std",
 	"sp-runtime/std",
 ]

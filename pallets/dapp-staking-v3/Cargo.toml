@@ -31,30 +31,36 @@ frame-benchmarking = { workspace = true, optional = true }
 pallet-balances = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"serde/std",
-	"log/std",
-	"parity-scale-codec/std",
-	"scale-info/std",
-	"num-traits/std",
-	"sp-core/std",
-	"sp-runtime/std",
-	"sp-arithmetic/std",
-	"sp-io/std",
-	"sp-std/std",
-	"frame-support/std",
-	"frame-system/std",
-	"pallet-balances/std",
 	"astar-primitives/std",
 	"frame-benchmarking/std",
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	"num-traits/std",
+	"pallet-balances/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"serde/std",
+	"sp-arithmetic/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
 ]
 runtime-benchmarks = [
+	"assert_matches",
+	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
-	"astar-primitives/runtime-benchmarks",
-	"assert_matches",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"astar-primitives/try-runtime",
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+]

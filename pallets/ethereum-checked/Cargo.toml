@@ -35,34 +35,42 @@ pallet-timestamp = { workspace = true }
 sp-io = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"hex/std",
-	"parity-scale-codec/std",
-	"scale-info/std",
-	"ethereum/std",
+	"astar-primitives/std",
 	"ethereum-types/std",
+	"ethereum/std",
 	"fp-ethereum/std",
 	"fp-evm/std",
-	"pallet-evm/std",
-	"sp-std/std",
-	"sp-runtime/std",
-	"sp-io/std",
+	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
+	"hex/std",
 	"pallet-balances/std",
-	"pallet-timestamp/std",
-	"pallet-evm/std",
 	"pallet-ethereum/std",
-	"astar-primitives/std",
+	"pallet-evm/std",
+	"pallet-timestamp/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
 ]
 runtime-benchmarks = [
-	"hex",
+	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
+	"hex",
 	"pallet-ethereum/runtime-benchmarks",
-	"astar-primitives/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"astar-primitives/try-runtime",
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-evm/try-runtime",
+	"sp-runtime/try-runtime",
+]

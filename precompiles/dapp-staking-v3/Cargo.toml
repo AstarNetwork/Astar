@@ -42,21 +42,30 @@ sp-arithmetic = { workspace = true }
 sp-io = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"parity-scale-codec/std",
-	"scale-info/std",
 	"astar-primitives/std",
-	"sp-std/std",
-	"sp-core/std",
-	"sp-runtime/std",
 	"fp-evm/std",
 	"frame-support/std",
 	"frame-system/std",
+	"log/std",
+	"num_enum/std",
+	"pallet-balances/std",
 	"pallet-dapp-staking-v3/std",
 	"pallet-evm/std",
+	"parity-scale-codec/std",
 	"precompile-utils/std",
-	"pallet-balances/std",
+	"scale-info/std",
 	"sp-arithmetic/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
 ]
-runtime-benchmarks = ["pallet-dapp-staking-v3/runtime-benchmarks"]
+runtime-benchmarks = [
+	"astar-primitives/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-dapp-staking-v3/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]

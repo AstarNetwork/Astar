@@ -154,28 +154,58 @@ sc-service = { workspace = true, optional = true }
 substrate-build-script-utils = { workspace = true }
 
 [features]
-default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/rocksdb"]
+default = [ "polkadot-cli", "sc-cli", "sc-service", "sc-service/rocksdb" ]
 runtime-benchmarks = [
+	"astar-primitives/runtime-benchmarks",
+	"astar-runtime/runtime-benchmarks",
 	"frame-benchmarking-cli",
+	"frame-benchmarking-cli?/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
 	"local-runtime/runtime-benchmarks",
+	"pallet-ethereum/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"polkadot-cli/runtime-benchmarks",
+	"polkadot-parachain/runtime-benchmarks",
+	"polkadot-primitives/runtime-benchmarks",
+	"polkadot-runtime-common",
+	"polkadot-runtime-common/std",
+	"polkadot-runtime-common?/runtime-benchmarks",
+	"polkadot-service/runtime-benchmarks",
+	"sc-client-db/runtime-benchmarks",
+	"sc-service/runtime-benchmarks",
 	"shibuya-runtime/runtime-benchmarks",
 	"shiden-runtime/runtime-benchmarks",
-	"astar-runtime/runtime-benchmarks",
-	"polkadot-cli/runtime-benchmarks",
-	"polkadot-runtime-common/std",
 	"sp-keyring",
-	"polkadot-runtime-common",
-	"astar-primitives/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
 ]
-cli = ["try-runtime-cli"]
-try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]
+cli = [ "try-runtime-cli" ]
+try-runtime = [
+	"astar-primitives/try-runtime",
+	"astar-runtime/try-runtime",
+	"frame-system/try-runtime",
+	"frame-try-runtime/try-runtime",
+	"local-runtime/try-runtime",
+	"pallet-ethereum/try-runtime",
+	"pallet-evm/try-runtime",
+	"pallet-transaction-payment/try-runtime",
+	"polkadot-cli?/try-runtime",
+	"polkadot-runtime-common?/try-runtime",
+	"polkadot-service/try-runtime",
+	"shibuya-runtime/try-runtime",
+	"shiden-runtime/try-runtime",
+	"sp-runtime/try-runtime",
+	"try-runtime-cli/try-runtime",
+]
 evm-tracing = [
+	"astar-runtime/evm-tracing",
+	"local-runtime/evm-tracing",
 	"moonbeam-rpc-debug",
 	"moonbeam-rpc-primitives-debug",
 	"moonbeam-rpc-primitives-txpool",
 	"moonbeam-rpc-trace",
 	"moonbeam-rpc-txpool",
+	"shibuya-runtime/evm-tracing",
+	"shiden-runtime/evm-tracing",
 ]
-manual-seal = [
-	"sc-consensus-manual-seal",
-]
+manual-seal = [ "sc-consensus-manual-seal" ]

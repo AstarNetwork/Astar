@@ -24,14 +24,16 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"parity-scale-codec/std",
 	"environmental/std",
 	"ethereum-types/std",
 	"ethereum/std",
 	"hex",
+	"hex?/std",
+	"parity-scale-codec/std",
 	"serde",
+	"serde?/std",
 	"serde_json",
 	"sp-api/std",
 	"sp-core/std",

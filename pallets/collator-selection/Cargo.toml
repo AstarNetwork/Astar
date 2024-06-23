@@ -39,27 +39,37 @@ sp-io = { workspace = true }
 sp-tracing = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 runtime-benchmarks = [
 	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"sp-staking/runtime-benchmarks",
 ]
 std = [
-	"parity-scale-codec/std",
+	"frame-benchmarking/std",
+	"frame-support/std",
+	"frame-system/std",
 	"log/std",
-	"scale-info/std",
+	"pallet-aura/std",
+	"pallet-authorship/std",
+	"pallet-balances/std",
+	"pallet-session/std",
+	"parity-scale-codec/std",
 	"rand/std",
+	"scale-info/std",
+	"serde/std",
 	"sp-runtime/std",
 	"sp-staking/std",
 	"sp-std/std",
-	"frame-support/std",
-	"frame-system/std",
-	"frame-benchmarking/std",
-	"pallet-authorship/std",
-	"pallet-session/std",
-	"pallet-aura/std",
-	"pallet-balances/std",
 ]
 
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-authorship/try-runtime",
+	"pallet-session/try-runtime",
+	"sp-runtime/try-runtime",
+]

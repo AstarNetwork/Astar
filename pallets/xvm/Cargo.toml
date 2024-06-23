@@ -42,31 +42,43 @@ pallet-timestamp = { workspace = true, features = ["std"] }
 sp-io = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
+	"astar-primitives/std",
 	"environmental/std",
-	"log/std",
-	"parity-scale-codec/std",
 	"fp-evm/std",
+	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-contracts/std",
+	"log/std",
 	"pallet-contracts-primitives/std",
+	"pallet-contracts/std",
 	"pallet-evm/std",
 	"pallet-insecure-randomness-collective-flip/std",
+	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde",
+	"serde?/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"astar-primitives/std",
 ]
 
 runtime-benchmarks = [
+	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-contracts/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
+	"astar-primitives/try-runtime",
 	"frame-support/try-runtime",
+	"frame-system/try-runtime",
 	"pallet-contracts/try-runtime",
 	"pallet-evm/try-runtime",
+	"sp-runtime/try-runtime",
 ]

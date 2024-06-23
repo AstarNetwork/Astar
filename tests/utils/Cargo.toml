@@ -19,11 +19,13 @@ pallet-contracts-primitives = { workspace = true }
 sp-runtime = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"parity-scale-codec/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
+	"pallet-contracts/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-runtime/std",
 ]

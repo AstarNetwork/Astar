@@ -38,21 +38,23 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-	"log/std",
+	"astar-primitives/std",
+	"fp-evm/std",
+	"frame-support/std",
+	"frame-system/std",
 	"libsecp256k1/std",
+	"log/std",
+	"pallet-balances/std",
+	"pallet-evm-precompile-dispatch/std",
+	"pallet-evm/std",
+	"pallet-timestamp/std",
 	"parity-scale-codec/std",
+	"precompile-utils/std",
 	"scale-info/std",
-	"sp-std/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"frame-support/std",
-	"frame-system/std",
-	"astar-primitives/std",
-	"precompile-utils/std",
-	"pallet-evm/std",
-	"pallet-balances/std",
-	"pallet-timestamp/std",
+	"sp-std/std",
 ]

@@ -42,35 +42,43 @@ pallet-evm = { workspace = true }
 pallet-timestamp = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
+	"astar-primitives/std",
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
 	"hex/std",
-	"log/std",
 	"libsecp256k1",
 	"libsecp256k1/std",
+	"log/std",
+	"pallet-balances/std",
+	"pallet-ethereum/std",
+	"pallet-evm/std",
+	"pallet-timestamp/std",
 	"parity-scale-codec/std",
+	"precompile-utils/std",
 	"scale-info/std",
-	"sp-std/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"frame-support/std",
-	"frame-system/std",
-	"astar-primitives/std",
-	"precompile-utils/std",
-	"pallet-evm/std",
-	"pallet-balances/std",
-	"pallet-timestamp/std",
-	"pallet-ethereum/std",
+	"sp-std/std",
 ]
 runtime-benchmarks = [
-	"libsecp256k1/hmac",
+	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking",
+	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
-	"astar-primitives/runtime-benchmarks",
+	"libsecp256k1/hmac",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime", "pallet-evm/try-runtime"]
+try-runtime = [
+	"astar-primitives/try-runtime",
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-evm/try-runtime",
+	"sp-runtime/try-runtime",
+]
