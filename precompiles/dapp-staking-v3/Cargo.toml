@@ -42,7 +42,7 @@ sp-arithmetic = { workspace = true }
 sp-io = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"astar-primitives/std",
 	"fp-evm/std",

@@ -31,7 +31,7 @@ pallet-timestamp = { workspace = true }
 sp-io = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	# Frontier
 	"fp-evm/std",

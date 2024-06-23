@@ -147,7 +147,7 @@ frame-try-runtime = { workspace = true, optional = true }
 substrate-wasm-builder = { workspace = true, optional = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"astar-primitives/std",
 	"astar-xcm-benchmarks?/std",

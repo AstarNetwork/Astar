@@ -59,7 +59,7 @@ moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
 pallet-ethereum = { workspace = true, optional = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"assets-chain-extension-types/std",
 	"astar-primitives/std",
@@ -101,9 +101,9 @@ std = [
 	"sp-runtime/std",
 	"unified-accounts-chain-extension-types/std",
 ]
-shibuya = [ "shibuya-runtime" ]
-shiden = [ "shiden-runtime" ]
-astar = [ "astar-runtime" ]
+shibuya = ["shibuya-runtime"]
+shiden = ["shiden-runtime"]
+astar = ["astar-runtime"]
 
 evm-tracing = [
 	"astar-runtime?/evm-tracing",

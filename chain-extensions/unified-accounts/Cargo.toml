@@ -27,7 +27,7 @@ pallet-unified-accounts = { workspace = true }
 unified-accounts-chain-extension-types = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	# Astar
 	"astar-primitives/std",

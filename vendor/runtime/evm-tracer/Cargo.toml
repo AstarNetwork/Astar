@@ -29,7 +29,7 @@ fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"ethereum-types/std",
 	"evm-gasometer/std",

@@ -19,7 +19,7 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"ethereum/std",
 	"parity-scale-codec/std",

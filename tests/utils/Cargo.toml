@@ -19,7 +19,7 @@ pallet-contracts-primitives = { workspace = true }
 sp-runtime = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"frame-support/std",
 	"frame-system/std",

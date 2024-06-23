@@ -29,7 +29,7 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"astar-primitives/std",
 	"frame-benchmarking?/std",

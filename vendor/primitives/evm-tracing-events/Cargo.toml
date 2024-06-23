@@ -22,7 +22,7 @@ evm-gasometer = { workspace = true }
 evm-runtime = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"environmental/std",
 	"ethereum-types/std",
@@ -33,4 +33,4 @@ std = [
 	"parity-scale-codec/std",
 	"sp-runtime-interface/std",
 ]
-evm-tracing = [ "evm-gasometer/tracing", "evm-runtime/tracing", "evm/tracing" ]
+evm-tracing = ["evm-gasometer/tracing", "evm-runtime/tracing", "evm/tracing"]

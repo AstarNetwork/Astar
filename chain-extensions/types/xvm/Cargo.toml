@@ -16,7 +16,7 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"astar-primitives/std",
 	"parity-scale-codec/std",

@@ -33,12 +33,9 @@ workflows:
         '--locked',
         '--quiet',
       ]
-      # Format the features into canonical format:
-    - ['format', 'features', '--offline', '--locked', '--quiet']
   # Same as `check`, but actually fix the issues instead of just reporting them:
   default:
     - [ $check.0, '--fix' ]
-    - [ $check.1, '--fix' ]
 
 # Will be displayed when any workflow fails:
 help:

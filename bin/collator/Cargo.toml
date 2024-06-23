@@ -154,7 +154,7 @@ sc-service = { workspace = true, optional = true }
 substrate-build-script-utils = { workspace = true }
 
 [features]
-default = [ "polkadot-cli", "sc-cli", "sc-service", "sc-service/rocksdb" ]
+default = ["polkadot-cli", "sc-cli", "sc-service", "sc-service/rocksdb"]
 runtime-benchmarks = [
 	"astar-primitives/runtime-benchmarks",
 	"astar-runtime/runtime-benchmarks",
@@ -179,7 +179,7 @@ runtime-benchmarks = [
 	"sp-keyring",
 	"sp-runtime/runtime-benchmarks",
 ]
-cli = [ "try-runtime-cli" ]
+cli = ["try-runtime-cli"]
 try-runtime = [
 	"astar-primitives/try-runtime",
 	"astar-runtime/try-runtime",
@@ -208,4 +208,4 @@ evm-tracing = [
 	"shibuya-runtime/evm-tracing",
 	"shiden-runtime/evm-tracing",
 ]
-manual-seal = [ "sc-consensus-manual-seal" ]
+manual-seal = ["sc-consensus-manual-seal"]

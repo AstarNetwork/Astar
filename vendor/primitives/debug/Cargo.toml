@@ -24,7 +24,7 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"environmental/std",
 	"ethereum-types/std",

@@ -17,5 +17,5 @@ sp-std = { workspace = true }
 astar-primitives = { workspace = true }
 
 [features]
-default = [ "std" ]
-std = [ "astar-primitives/std", "sp-api/std", "sp-std/std" ]
+default = ["std"]
+std = ["astar-primitives/std", "sp-api/std", "sp-std/std"]

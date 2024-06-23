@@ -27,7 +27,7 @@ astar-primitives = { workspace = true }
 xvm-chain-extension-types = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	# Astar
 	"astar-primitives/std",

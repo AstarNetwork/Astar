@@ -31,7 +31,7 @@ pallet-timestamp = { workspace = true }
 sp-core = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"frame-benchmarking?/std",
 	"frame-support/std",

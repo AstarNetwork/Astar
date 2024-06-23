@@ -42,7 +42,7 @@ hex-literal = { workspace = true }
 xcm = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"environmental/std",
 	"evm/std",
@@ -62,7 +62,7 @@ std = [
 	"sp-std/std",
 	"xcm?/std",
 ]
-codec-xcm = [ "xcm" ]
+codec-xcm = ["xcm"]
 testing = [
 	"derive_more",
 	"hex-literal",

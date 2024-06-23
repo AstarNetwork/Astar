@@ -17,7 +17,7 @@ serde = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 parity-scale-codec = { workspace = true, optional = true, features = [
-    "derive",
+	"derive",
 ] }
 scale-info = { workspace = true }
 sp-runtime = { workspace = true }
@@ -42,7 +42,7 @@ sp-io = { workspace = true, features = ["std"] }
 xcm-builder = { workspace = true, features = ["std"] }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"astar-primitives/std",
 	"frame-benchmarking/std",

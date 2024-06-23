@@ -31,7 +31,7 @@ frame-benchmarking = { workspace = true, optional = true }
 pallet-balances = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"astar-primitives/std",
 	"frame-benchmarking/std",
