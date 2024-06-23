@@ -1,0 +1,49 @@
+# Configuration for the Zepter CLI to ensure correct feature configuration in the Rust workspace.
+# <https://crates.io/crates/zepter>
+
+version:
+  # File format for parsing it:
+  format: 1
+  # Minimum version of the binary that is expected to work. This is just for printing a nice error
+  # message when someone tries to use an older version.
+  binary: 1.5.0
+
+# The examples in this file assume crate `A` to have a dependency on crate `B`.
+workflows:
+  # Check that everything is good without modifying anything:
+  check:
+    - [
+        'lint',
+        # Check that `A` activates the features of `B`.
+        'propagate-feature',
+        # These are the features to check:
+        '--features=try-runtime,runtime-benchmarks,evm-tracing,std',
+        # Ignore the features of dependencies that are exclusively used as dev or build.
+        '--dep-kinds=normal:check,dev:ignore,build:ignore',
+        # Do not try to add a new section into `[features]` of `A` only because `B` expose that feature. There are edge-cases where this is still needed, but we can add them manually.
+        '--left-side-feature-missing=ignore',
+        # Ignore the case that `A` it outside of the workspace. Otherwise it will report errors in external dependencies that we have no influence on.
+        '--left-side-outside-workspace=ignore',
+        # Some features imply that they activate a specific dependency as non-optional. Otherwise the default behaviour with a `?` is used.
+        '--feature-enables-dep=try-runtime:frame-try-runtime,runtime-benchmarks:frame-benchmarking',
+        # Show the paths of failed crates to have them clickable in the terminal: 
+        '--show-path',
+        # Aux
+        '--offline',
+        '--locked',
+        '--quiet',
+      ]
+      # Format the features into canonical format:
+    - ['format', 'features', '--offline', '--locked', '--quiet']
+  # Same as `check`, but actually fix the issues instead of just reporting them:
+  default:
+    - [ $check.0, '--fix' ]
+    - [ $check.1, '--fix' ]
+
+# Will be displayed when any workflow fails:
+help:
+  text: |
+    Astar uses the Zepter CLI to detect abnormalities in the feature configuration.
+    It looks like at least one check failed; please see the console output. You can try to automatically address them by running `zepter`.
+  links:
+    - "https://github.com/ggwpez/zepter"
