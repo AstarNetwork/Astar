@@ -387,7 +387,7 @@ pub mod pallet {
         /// Force call is not allowed in production.
         ForceNotAllowed,
         /// Account doesn't have the freeze inconsistency
-        InvalidAccount, // TODO: can be removed after call `fix_account` is removed
+        AccountNotInconsistent, // TODO: can be removed after call `fix_account` is removed
     }
 
     /// General information about dApp staking protocol state.
@@ -1596,7 +1596,7 @@ pub mod pallet {
         /// The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
         /// Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
         #[pallet::call_index(100)]
-        #[pallet::weight(T::WeightInfo::claim_unlocked(T::MaxNumberOfStakedContracts::get()).saturating_add(Weight::from_parts(1_000_000_000, 0)))]
+        #[pallet::weight(T::DbWeight::get().reads_writes(4, 1))]
         pub fn fix_account(
             origin: OriginFor<T>,
             account: T::AccountId,
@@ -1632,7 +1632,7 @@ pub mod pallet {
                 result
             } else {
                 // The above logic is designed for a specific scenario and cannot be used otherwise.
-                Err(Error::<T>::InvalidAccount.into())
+                Err(Error::<T>::AccountNotInconsistent.into())
             }
         }
     }

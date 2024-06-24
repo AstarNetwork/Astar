@@ -3311,13 +3311,13 @@ fn fix_account_scenarios_work() {
         assert_lock(account_1, lock_1);
         assert_noop!(
             DappStaking::fix_account(RuntimeOrigin::signed(11), account_1),
-            Error::<Test>::InvalidAccount
+            Error::<Test>::AccountNotInconsistent
         );
 
         assert_unlock(account_1, lock_1);
         assert_noop!(
             DappStaking::fix_account(RuntimeOrigin::signed(11), account_1),
-            Error::<Test>::InvalidAccount
+            Error::<Test>::AccountNotInconsistent
         );
 
         // 2. Reproduce the issue where the account has more frozen than balance
@@ -3370,7 +3370,7 @@ fn fix_account_scenarios_work() {
         // Cannot fix the same account again.
         assert_noop!(
             DappStaking::fix_account(RuntimeOrigin::signed(11), account_2),
-            Error::<Test>::InvalidAccount
+            Error::<Test>::AccountNotInconsistent
         );
     })
 }
