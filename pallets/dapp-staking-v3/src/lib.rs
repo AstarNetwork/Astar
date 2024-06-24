@@ -386,6 +386,8 @@ pub mod pallet {
         NoExpiredEntries,
         /// Force call is not allowed in production.
         ForceNotAllowed,
+        /// Account doesn't have the freeze inconsistency
+        AccountNotInconsistent, // TODO: can be removed after call `fix_account` is removed
     }
 
     /// General information about dApp staking protocol state.
@@ -931,28 +933,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let mut ledger = Ledger::<T>::get(&account);
-
-            let current_block = frame_system::Pallet::<T>::block_number();
-            let amount = ledger.claim_unlocked(current_block.saturated_into());
-            ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
-
-            // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
-            let removed_entries = if ledger.is_empty() {
-                let _ = StakerInfo::<T>::clear_prefix(&account, ledger.contract_stake_count, None);
-                ledger.contract_stake_count
-            } else {
-                0
-            };
-
-            Self::update_ledger(&account, ledger)?;
-            CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unlocking_removed(amount);
-            });
-
-            Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
-
-            Ok(Some(T::WeightInfo::claim_unlocked(removed_entries)).into())
+            Self::internal_claim_unlocked(account)
         }
 
         #[pallet::call_index(10)]
@@ -1603,6 +1584,50 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what's available.
+        ///
+        /// The approach is as simple as possible:
+        /// 1. Caller provides an account to fix.
+        /// 2. If account is eligible for the fix, all unlocking chunks are modified to be claimable immediately.
+        /// 3. The `claim_unlocked` call is executed using the provided account as the origin.
+        /// 4. All states are updated accordingly, and the account is no longer in an inconsistent state.
+        ///
+        /// The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
+        /// Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
+        #[pallet::call_index(100)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(4, 1))]
+        pub fn fix_account(
+            origin: OriginFor<T>,
+            account: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            Self::ensure_pallet_enabled()?;
+            ensure_signed(origin)?;
+
+            let mut ledger = Ledger::<T>::get(&account);
+            let locked_amount_ledger = ledger.total_locked_amount();
+            let total_balance = T::Currency::total_balance(&account);
+
+            if locked_amount_ledger > total_balance {
+                // 1. Modify all unlocking chunks so they can be unlocked immediately.
+                let current_block: BlockNumber =
+                    frame_system::Pallet::<T>::block_number().saturated_into();
+                ledger
+                    .unlocking
+                    .iter_mut()
+                    .for_each(|chunk| chunk.unlock_block = current_block);
+                Ledger::<T>::insert(&account, ledger);
+
+                // 2. Execute the unlock call, clearing all of the unlocking chunks.
+                Self::internal_claim_unlocked(account)?;
+
+                // 3. In case of success, ensure no fee is paid.
+                Ok(Pays::No.into())
+            } else {
+                // The above logic is designed for a specific scenario and cannot be used otherwise.
+                Err(Error::<T>::AccountNotInconsistent.into())
+            }
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -2124,6 +2149,31 @@ pub mod pallet {
 
             // It could end up being less than this weight, but this won't occur often enough to be important.
             T::WeightInfo::on_idle_cleanup()
+        }
+
+        fn internal_claim_unlocked(account: T::AccountId) -> DispatchResultWithPostInfo {
+            let mut ledger = Ledger::<T>::get(&account);
+
+            let current_block = frame_system::Pallet::<T>::block_number();
+            let amount = ledger.claim_unlocked(current_block.saturated_into());
+            ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
+
+            // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
+            let removed_entries = if ledger.is_empty() {
+                let _ = StakerInfo::<T>::clear_prefix(&account, ledger.contract_stake_count, None);
+                ledger.contract_stake_count
+            } else {
+                0
+            };
+
+            Self::update_ledger(&account, ledger)?;
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.unlocking_removed(amount);
+            });
+
+            Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
+
+            Ok(Some(T::WeightInfo::claim_unlocked(removed_entries)).into())
         }
     }
 }
