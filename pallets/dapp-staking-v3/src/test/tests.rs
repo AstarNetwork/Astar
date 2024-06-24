@@ -3358,3 +3358,18 @@ fn fix_account_scenarios_work() {
         );
     })
 }
+
+fn lock_correctly_considers_unlocking_amount() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock the entire amount & immediately start the unlocking process
+        let (staker, unlock_amount) = (1, 13);
+        let total_balance = Balances::total_balance(&staker);
+        assert_lock(staker, total_balance);
+        assert_unlock(staker, unlock_amount);
+
+        assert_noop!(
+            DappStaking::lock(RuntimeOrigin::signed(staker), 1),
+            Error::<Test>::ZeroAmount
+        );
+    })
+}
