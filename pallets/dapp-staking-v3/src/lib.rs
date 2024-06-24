@@ -386,6 +386,8 @@ pub mod pallet {
         NoExpiredEntries,
         /// Force call is not allowed in production.
         ForceNotAllowed,
+        /// Account doesn't have the freeze inconsistency
+        InvalidAccount, // TODO: can be removed after call `fix_account` is removed
     }
 
     /// General information about dApp staking protocol state.
@@ -838,7 +840,7 @@ pub mod pallet {
 
             // Calculate & check amount available for locking
             let available_balance =
-                T::Currency::total_balance(&account).saturating_sub(ledger.active_locked_amount());
+                T::Currency::total_balance(&account).saturating_sub(ledger.total_locked_amount());
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 
@@ -928,7 +930,10 @@ pub mod pallet {
         #[pallet::call_index(9)]
         #[pallet::weight(T::WeightInfo::claim_unlocked(T::MaxNumberOfStakedContracts::get()))]
         pub fn claim_unlocked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            Self::internal_claim_unlocked(origin)
+            Self::ensure_pallet_enabled()?;
+            let account = ensure_signed(origin)?;
+
+            Self::internal_claim_unlocked(account)
         }
 
         #[pallet::call_index(10)]
@@ -1588,27 +1593,22 @@ pub mod pallet {
         /// 3. The `claim_unlocked` call is executed using the provided account as the origin.
         /// 4. All states are updated accordingly, and the account is no longer in an inconsistent state.
         ///
+        /// The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
+        /// Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
         #[pallet::call_index(100)]
-        #[pallet::weight(T::WeightInfo::claim_unlocked(T::MaxNumberOfStakedContracts::get()))] // TODO: make it heavier
+        #[pallet::weight(T::WeightInfo::claim_unlocked(T::MaxNumberOfStakedContracts::get()).saturating_add(Weight::from_parts(1_000_000_000, 0)))]
         pub fn fix_account(
             origin: OriginFor<T>,
             account: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             Self::ensure_pallet_enabled()?;
-
-            // TODO: extra safety - use EnsureSignedBy to only allow specific account to call it?
             ensure_signed(origin)?;
-
-            use frame_support::traits::fungible::InspectFreeze;
 
             let mut ledger = Ledger::<T>::get(&account);
             let locked_amount_ledger = ledger.total_locked_amount();
-            let frozen_amount_currency =
-                T::Currency::balance_frozen(&FreezeReason::DAppStaking.into(), &account);
+            let total_balance = T::Currency::total_balance(&account);
 
-            if locked_amount_ledger > frozen_amount_currency
-                && ledger.active_locked_amount() < frozen_amount_currency
-            {
+            if locked_amount_ledger > total_balance {
                 // 1. Modify all unlocking chunks so they can be unlocked immediately.
                 let current_block: BlockNumber =
                     frame_system::Pallet::<T>::block_number().saturated_into();
@@ -1618,12 +1618,21 @@ pub mod pallet {
                     .for_each(|chunk| chunk.unlock_block = current_block);
                 Ledger::<T>::insert(&account, ledger);
 
-                // 2. Execute the unlock call using the provided account as the origin
-                let origin: T::RuntimeOrigin = frame_system::RawOrigin::Signed(account).into();
-                Self::internal_claim_unlocked(origin)
+                // 2. Execute the unlock call, clearing all of the unlocking chunks.
+                let result = Self::internal_claim_unlocked(account);
+
+                // 3. Adjust consumed weight to consume the max possible weight (as defined in the weight macro).
+                match result {
+                    Ok(mut info) => {
+                        info.pays_fee = Pays::No;
+                        info.actual_weight = None;
+                    }
+                    Err(mut info) => info.post_info.actual_weight = None,
+                }
+                result
             } else {
-                // all is good!
-                Ok(().into())
+                // The above logic is designed for a specific scenario and cannot be used otherwise.
+                Err(Error::<T>::InvalidAccount.into())
             }
         }
     }
@@ -2149,10 +2158,7 @@ pub mod pallet {
             T::WeightInfo::on_idle_cleanup()
         }
 
-        fn internal_claim_unlocked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            Self::ensure_pallet_enabled()?;
-            let account = ensure_signed(origin)?;
-
+        fn internal_claim_unlocked(account: T::AccountId) -> DispatchResultWithPostInfo {
             let mut ledger = Ledger::<T>::get(&account);
 
             let current_block = frame_system::Pallet::<T>::block_number();

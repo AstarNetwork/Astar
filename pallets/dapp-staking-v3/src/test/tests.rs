@@ -3286,3 +3286,75 @@ fn unstake_correctly_reduces_future_contract_stake() {
         assert_unstake(staker_1, &smart_contract, amount_2 + 3);
     })
 }
+
+#[test]
+fn fix_account_scenarios_work() {
+    ExtBuilder::build().execute_with(|| {
+        // 1. Lock some amount correctly, unstake it, try to fix it, and ensure the call fails
+        let (account_1, lock_1) = (1, 100);
+        assert_lock(account_1, lock_1);
+        assert_noop!(
+            DappStaking::fix_account(RuntimeOrigin::signed(11), account_1),
+            Error::<Test>::InvalidAccount
+        );
+
+        assert_unlock(account_1, lock_1);
+        assert_noop!(
+            DappStaking::fix_account(RuntimeOrigin::signed(11), account_1),
+            Error::<Test>::InvalidAccount
+        );
+
+        // 2. Reproduce the issue where the account has more frozen than balance
+        let (account_2, unlock_2) = (2, 13);
+        let lock_2 = Balances::total_balance(&account_2);
+        assert_lock(account_2, lock_2);
+        assert_unlock(account_2, unlock_2);
+
+        // With the fix implemented, the scenario needs to be reproduced by hand.
+        // Account calls `lock`, specifying the amount that is undergoing the unlocking process.
+        // It can be either more or less, it doesn't matter for the test or the issue.
+
+        // But first, a sanity check.
+        assert_noop!(
+            DappStaking::lock(RuntimeOrigin::signed(account_2), unlock_2),
+            Error::<Test>::ZeroAmount,
+        );
+
+        // Now reproduce the incorrect lock/freeze operation.
+        let mut ledger = Ledger::<Test>::get(&account_2);
+        ledger.add_lock_amount(unlock_2);
+        assert_ok!(DappStaking::update_ledger(&account_2, ledger));
+        use crate::CurrentEraInfo;
+        CurrentEraInfo::<Test>::mutate(|era_info| {
+            era_info.add_locked(unlock_2);
+        });
+        assert!(
+            Balances::free_balance(&account_2)
+                < Ledger::<Test>::get(&account_2).total_locked_amount(),
+            "Sanity check."
+        );
+
+        // Now fix the account
+        assert_ok!(DappStaking::fix_account(
+            RuntimeOrigin::signed(11),
+            account_2
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::ClaimedUnlocked {
+            account: account_2,
+            amount: unlock_2,
+        }));
+
+        // Post-fix checks
+        assert_eq!(
+            Balances::free_balance(&account_2),
+            Ledger::<Test>::get(&account_2).total_locked_amount(),
+            "After the fix, balances should be equal."
+        );
+
+        // Cannot fix the same account again.
+        assert_noop!(
+            DappStaking::fix_account(RuntimeOrigin::signed(11), account_2),
+            Error::<Test>::InvalidAccount
+        );
+    })
+}
