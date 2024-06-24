@@ -1619,17 +1619,10 @@ pub mod pallet {
                 Ledger::<T>::insert(&account, ledger);
 
                 // 2. Execute the unlock call, clearing all of the unlocking chunks.
-                let result = Self::internal_claim_unlocked(account);
+                Self::internal_claim_unlocked(account)?;
 
-                // 3. Adjust consumed weight to consume the max possible weight (as defined in the weight macro).
-                match result {
-                    Ok(mut info) => {
-                        info.pays_fee = Pays::No;
-                        info.actual_weight = None;
-                    }
-                    Err(mut info) => info.post_info.actual_weight = None,
-                }
-                result
+                // 3. In case of success, ensure no fee is paid.
+                Ok(Pays::No.into())
             } else {
                 // The above logic is designed for a specific scenario and cannot be used otherwise.
                 Err(Error::<T>::AccountNotInconsistent.into())
