@@ -3288,6 +3288,22 @@ fn unstake_correctly_reduces_future_contract_stake() {
 }
 
 #[test]
+fn lock_correctly_considers_unlocking_amount() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock the entire amount & immediately start the unlocking process
+        let (staker, unlock_amount) = (1, 13);
+        let total_balance = Balances::total_balance(&staker);
+        assert_lock(staker, total_balance);
+        assert_unlock(staker, unlock_amount);
+
+        assert_noop!(
+            DappStaking::lock(RuntimeOrigin::signed(staker), 1),
+            Error::<Test>::ZeroAmount
+        );
+    })
+}
+
+#[test]
 fn fix_account_scenarios_work() {
     ExtBuilder::build().execute_with(|| {
         // 1. Lock some amount correctly, unstake it, try to fix it, and ensure the call fails
@@ -3355,21 +3371,6 @@ fn fix_account_scenarios_work() {
         assert_noop!(
             DappStaking::fix_account(RuntimeOrigin::signed(11), account_2),
             Error::<Test>::InvalidAccount
-        );
-    })
-}
-
-fn lock_correctly_considers_unlocking_amount() {
-    ExtBuilder::build().execute_with(|| {
-        // Lock the entire amount & immediately start the unlocking process
-        let (staker, unlock_amount) = (1, 13);
-        let total_balance = Balances::total_balance(&staker);
-        assert_lock(staker, total_balance);
-        assert_unlock(staker, unlock_amount);
-
-        assert_noop!(
-            DappStaking::lock(RuntimeOrigin::signed(staker), 1),
-            Error::<Test>::ZeroAmount
         );
     })
 }
