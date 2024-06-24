@@ -59,4 +59,7 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"astar-primitives/std",
+	"hex/std",
+	"log/std",
+	"num_enum/std",
 ]
