@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"pallet_dapp_staking_v3":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.73.0/core/iter/traits/iterator/trait.Iterator.html\" title=\"trait core::iter::traits::iterator::Iterator\">Iterator</a> for <a class=\"struct\" href=\"pallet_dapp_staking_v3/struct.EraStakePairIter.html\" title=\"struct pallet_dapp_staking_v3::EraStakePairIter\">EraStakePairIter</a>"]]
+"pallet_dapp_staking_v3":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.74.0/core/iter/traits/iterator/trait.Iterator.html\" title=\"trait core::iter::traits::iterator::Iterator\">Iterator</a> for <a class=\"struct\" href=\"pallet_dapp_staking_v3/struct.EraStakePairIter.html\" title=\"struct pallet_dapp_staking_v3::EraStakePairIter\">EraStakePairIter</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
