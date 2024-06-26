@@ -16,10 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use super::{Pallet as CollectiveProxy, *};
+use super::*;
 
 use frame_benchmarking::v2::*;
-use sp_std::prelude::*;
 
 /// Assert that the last event equals the provided one.
 pub(super) fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
