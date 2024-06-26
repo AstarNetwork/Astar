@@ -507,7 +507,7 @@ pub mod pallet {
         }
 
         /// Slash candidate deposit and return the rest of funds.
-        fn slash_unbonding_candidate(who: &T::AccountId) {
+        fn slash_non_candidate(who: &T::AccountId) {
             NonCandidates::<T>::mutate_exists(who, |maybe| {
                 if let Some((_index, deposit)) = maybe.take() {
                     let slash = T::SlashRatio::get() * deposit;
@@ -552,11 +552,11 @@ pub mod pallet {
                             log::warn!("Failed to remove candidate {:?}", why);
                             continue;
                         }
-                        Self::slash_unbonding_candidate(&who);
+                        Self::slash_non_candidate(&who);
                     }
                 } else {
                     // slash un-bonding candidate
-                    Self::slash_unbonding_candidate(&who);
+                    Self::slash_non_candidate(&who);
                 }
             }
             (count, count - Self::candidates().len() as u32)
