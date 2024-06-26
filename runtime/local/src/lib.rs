@@ -1126,47 +1126,47 @@ impl pallet_collective_proxy::Config for Runtime {
     type WeightInfo = pallet_collective_proxy::weights::SubstrateWeight<Runtime>;
 }
 
-// Need to skip formatting since it removes '::' from the pallet declarations (https://github.com/rust-lang/rustfmt/issues/5526).
-#[rustfmt::skip]
 construct_runtime!(
     pub struct Runtime {
-        System: frame_system,
-        Utility: pallet_utility,
-        Timestamp: pallet_timestamp,
-        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
-        Aura: pallet_aura,
-        Grandpa: pallet_grandpa,
-        Balances: pallet_balances,
-        Vesting: pallet_vesting,
-        DappStaking: pallet_dapp_staking_v3,
-        Inflation: pallet_inflation,
-        StaticPriceProvider: pallet_static_price_provider,
-        TransactionPayment: pallet_transaction_payment,
+        System: frame_system = 10,
+        Utility: pallet_utility = 11,
+        Timestamp: pallet_timestamp = 13,
+        RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 16,
+        Scheduler: pallet_scheduler = 17,
+        Proxy: pallet_proxy = 18,
+
+        TransactionPayment: pallet_transaction_payment = 30,
+        Balances: pallet_balances = 31,
+        Vesting: pallet_vesting = 32,
+        DappStaking: pallet_dapp_staking_v3 = 34,
+        Inflation: pallet_inflation = 35,
+        Assets: pallet_assets = 36,
+        StaticPriceProvider: pallet_static_price_provider = 37,
+
+        Aura: pallet_aura = 43,
+        Grandpa: pallet_grandpa = 44,
+        EVM: pallet_evm = 60,
+        Ethereum: pallet_ethereum = 61,
+        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = 62,
+        EthereumChecked: pallet_ethereum_checked = 64,
+        UnifiedAccounts: pallet_unified_accounts = 65,
+
+        Contracts: pallet_contracts = 70,
+        Preimage: pallet_preimage = 84,
+        Xvm: pallet_xvm = 90,
 
         // Governance
-        CouncilMembership: pallet_membership::<Instance2>,
-        TechnicalCommitteeMembership: pallet_membership::<Instance3>,
-        CommunityCouncilMembership: pallet_membership::<Instance4>,
-        Council: pallet_collective::<Instance2>,
-        TechnicalCommittee: pallet_collective::<Instance3>,
-        CommunityCouncil: pallet_collective::<Instance4>,
-        Democracy: pallet_democracy,
-        Treasury: pallet_treasury::<Instance1>,
-        CommunityTreasury: pallet_treasury::<Instance2>,
-        CollectiveProxy: pallet_collective_proxy,
-
-        EVM: pallet_evm,
-        Ethereum: pallet_ethereum,
-        DynamicEvmBaseFee: pallet_dynamic_evm_base_fee,
-        Contracts: pallet_contracts,
-        Sudo: pallet_sudo,
-        Assets: pallet_assets,
-        Scheduler: pallet_scheduler,
-        Xvm: pallet_xvm,
-        Proxy: pallet_proxy,
-        Preimage: pallet_preimage,
-        EthereumChecked: pallet_ethereum_checked,
-        UnifiedAccounts: pallet_unified_accounts,
+        Sudo: pallet_sudo = 99,
+        CouncilMembership: pallet_membership::<Instance2> = 100,
+        TechnicalCommitteeMembership: pallet_membership::<Instance3> = 101,
+        CommunityCouncilMembership: pallet_membership::<Instance4> = 102,
+        Council: pallet_collective::<Instance2> = 103,
+        TechnicalCommittee: pallet_collective::<Instance3> = 104,
+        CommunityCouncil: pallet_collective::<Instance4> = 105,
+        Democracy: pallet_democracy = 106,
+        Treasury: pallet_treasury::<Instance1> = 107,
+        CommunityTreasury: pallet_treasury::<Instance2> = 108,
+        CollectiveProxy: pallet_collective_proxy = 109,
     }
 );
 
