@@ -95,7 +95,7 @@ runtime-benchmarks = [
 	"xcm-executor/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
-	"pallet-treasury/runtime-benchmarks"
+	"pallet-treasury/runtime-benchmarks",
 ]
 try-runtime = [
 	"pallet-contracts/try-runtime",
@@ -108,5 +108,5 @@ try-runtime = [
 	"sp-runtime/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-membership/try-runtime",
-	"pallet-treasury/try-runtime"
+	"pallet-treasury/try-runtime",
 ]

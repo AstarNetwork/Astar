@@ -1440,7 +1440,10 @@ parameter_types! {
 pub struct CommunityCouncilCallFilter;
 impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
     fn filter(&self, c: &RuntimeCall) -> bool {
-        matches!(c, RuntimeCall::DappStaking(..))
+        matches!(
+            c,
+            RuntimeCall::DappStaking(..) | RuntimeCall::System(frame_system::Call::remark { .. })
+        )
     }
 }
 
@@ -1650,6 +1653,7 @@ mod benches {
         [pallet_price_aggregator, PriceAggregator]
         [pallet_membership, OracleMembership]
         [oracle_benchmarks, OracleBenchmarks]
+        [pallet_collective_proxy, CollectiveProxy]
     );
 }
 

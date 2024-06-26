@@ -110,6 +110,7 @@ impl InstanceFilter<RuntimeCall> for MockCallFilter {
         matches!(
             c,
             RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. })
+                | RuntimeCall::System(frame_system::Call::remark { .. })
         )
     }
 }
