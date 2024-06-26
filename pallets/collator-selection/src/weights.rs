@@ -53,6 +53,7 @@ pub trait WeightInfo {
 	fn set_candidacy_bond() -> Weight;
 	fn register_as_candidate(c: u32, ) -> Weight;
 	fn leave_intent(c: u32, ) -> Weight;
+	fn withdraw_bond() -> Weight;
 	fn note_author() -> Weight;
 	fn new_session(r: u32, c: u32, ) -> Weight;
 }
@@ -141,10 +142,25 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 			.saturating_add(Weight::from_parts(0, 49).saturating_mul(c.into()))
 	}
-	/// Storage: System Account (r:2 w:2)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `CollatorSelection::UnbondingCandidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::UnbondingCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn withdraw_bond() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `720`
+		//  Estimated: `4185`
+		// Minimum execution time: 28_000_000 picoseconds.
+		Weight::from_parts(28_000_000, 4185)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn note_author() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `226`
@@ -265,10 +281,25 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 			.saturating_add(Weight::from_parts(0, 49).saturating_mul(c.into()))
 	}
-	/// Storage: System Account (r:2 w:2)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
+	/// Storage: `CollatorSelection::UnbondingCandidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::UnbondingCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	fn withdraw_bond() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `720`
+		//  Estimated: `4185`
+		// Minimum execution time: 28_000_000 picoseconds.
+		Weight::from_parts(28_000_000, 4185)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	fn note_author() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `226`

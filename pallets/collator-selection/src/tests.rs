@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use crate as collator_selection;
-use crate::{mock::*, CandidateInfo, Error};
+use crate::{mock::*, CandidateInfo, Error, NonCandidates};
 use frame_support::{
     assert_noop, assert_ok,
     traits::{Currency, OnInitialize},
@@ -265,6 +265,7 @@ fn leave_intent() {
             RuntimeOrigin::signed(5)
         ));
         assert_eq!(Balances::free_balance(5), 90);
+        assert_eq!(Balances::reserved_balance(3), 10);
 
         // cannot leave if not candidate.
         assert_noop!(
@@ -272,11 +273,87 @@ fn leave_intent() {
             Error::<Test>::NotCandidate
         );
 
-        // bond is returned
+        // candidacy removed and unbonding started
         assert_ok!(CollatorSelection::leave_intent(RuntimeOrigin::signed(3)));
-        assert_eq!(Balances::free_balance(3), 100);
-        assert_eq!(CollatorSelection::last_authored_block(3), 0);
+        assert_eq!(Balances::free_balance(3), 90);
+        assert_eq!(Balances::reserved_balance(3), 10);
+        assert_eq!(CollatorSelection::last_authored_block(3), 10);
+        // 10 unbonding from session 1
+        assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
     });
+}
+
+#[test]
+fn withdraw_unbound() {
+    new_test_ext().execute_with(|| {
+        // register a candidate.
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(3)
+        ));
+        // register too so can leave above min candidates
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(5)
+        ));
+        assert_ok!(CollatorSelection::leave_intent(RuntimeOrigin::signed(3)));
+
+        initialize_to_block(9);
+
+        // cannot register again during un-bonding
+        assert_noop!(
+            CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)),
+            Error::<Test>::BondStillLocked
+        );
+        assert_noop!(
+            CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)),
+            Error::<Test>::BondStillLocked
+        );
+
+        initialize_to_block(10);
+        assert_ok!(CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)));
+        assert_eq!(NonCandidates::<Test>::get(3), (0, 0));
+        assert_eq!(Balances::free_balance(3), 100);
+        assert_eq!(Balances::reserved_balance(3), 0);
+
+        assert_noop!(
+            CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)),
+            Error::<Test>::NoCandidacyBond
+        );
+    });
+}
+
+#[test]
+fn re_register_with_unbonding() {
+    new_test_ext().execute_with(|| {
+        // register a candidate.
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(3)
+        ));
+        // register too so can leave above min candidates
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(5)
+        ));
+        assert_eq!(Balances::free_balance(3), 90);
+        assert_eq!(Balances::reserved_balance(3), 10);
+        assert_ok!(CollatorSelection::leave_intent(RuntimeOrigin::signed(3)));
+        assert_eq!(Balances::free_balance(3), 90);
+        assert_eq!(Balances::reserved_balance(3), 10);
+
+        // still on current session
+        initialize_to_block(9);
+
+        // cannot register again during un-bonding
+        assert_noop!(
+            CollatorSelection::register_as_candidate(RuntimeOrigin::signed(3)),
+            Error::<Test>::BondStillLocked
+        );
+        initialize_to_block(10);
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(3)
+        ));
+        // previous bound is unreserved and reserved again
+        assert_eq!(Balances::free_balance(3), 90);
+        assert_eq!(Balances::reserved_balance(3), 10);
+    })
 }
 
 #[test]
@@ -343,12 +420,12 @@ fn session_management_works() {
         initialize_to_block(1);
 
         assert_eq!(SessionChangeBlock::get(), 0);
-        assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+        assert_eq!(SessionCollators::get(), vec![1, 2]);
 
         initialize_to_block(4);
 
         assert_eq!(SessionChangeBlock::get(), 0);
-        assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+        assert_eq!(SessionCollators::get(), vec![1, 2]);
 
         // add a new collator
         assert_ok!(CollatorSelection::register_as_candidate(
@@ -356,7 +433,7 @@ fn session_management_works() {
         ));
 
         // session won't see this.
-        assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+        assert_eq!(SessionCollators::get(), vec![1, 2]);
         // but we have a new candidate.
         assert_eq!(CollatorSelection::candidates().len(), 1);
 
@@ -367,12 +444,12 @@ fn session_management_works() {
         // queued ones are changed, and now we have 3.
         assert_eq!(Session::queued_keys().len(), 3);
         // session handlers (aura, et. al.) cannot see this yet.
-        assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
+        assert_eq!(SessionCollators::get(), vec![1, 2]);
 
         initialize_to_block(20);
         assert_eq!(SessionChangeBlock::get(), 20);
         // changed are now reflected to session handlers.
-        assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3]);
+        assert_eq!(SessionCollators::get(), vec![1, 2, 3]);
     });
 }
 
@@ -392,10 +469,11 @@ fn kick_and_slash_mechanism() {
         assert_eq!(CollatorSelection::candidates().len(), 2);
         initialize_to_block(20);
         assert_eq!(SessionChangeBlock::get(), 20);
-        // 4 authored this block, gets to stay 3 was kicked
+        // 4 authored this block, gets to stay. 3 was kicked
         assert_eq!(CollatorSelection::candidates().len(), 1);
         // 3 will be kicked after 1 session delay
-        assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3, 4]);
+        assert_eq!(SessionCollators::get(), vec![1, 2, 3, 4]);
+        assert_eq!(NextSessionCollators::get(), vec![1, 2, 4]);
         let collator = CandidateInfo {
             who: 4,
             deposit: 10,
@@ -404,8 +482,54 @@ fn kick_and_slash_mechanism() {
         assert_eq!(CollatorSelection::last_authored_block(4), 20);
         initialize_to_block(30);
         // 3 gets kicked after 1 session delay
-        assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 4]);
+        assert_eq!(SessionCollators::get(), vec![1, 2, 4]);
         // kicked collator gets funds back except slashed 10% (of 10 bond)
+        assert_eq!(Balances::free_balance(3), 99);
+        assert_eq!(Balances::free_balance(5), 101);
+    });
+}
+
+#[test]
+fn slash_mechanism_for_unbonding_candidates() {
+    new_test_ext().execute_with(|| {
+        // Define slash destination account
+        <crate::SlashDestination<Test>>::put(5);
+        // add a new collator
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(3)
+        ));
+        assert_ok!(CollatorSelection::register_as_candidate(
+            RuntimeOrigin::signed(4)
+        ));
+        assert_eq!(CollatorSelection::last_authored_block(3), 10);
+        assert_eq!(CollatorSelection::last_authored_block(4), 10);
+
+        initialize_to_block(10);
+        // gets included into next session, expected to build blocks
+        assert_eq!(NextSessionCollators::get(), vec![1, 2, 3, 4]);
+        // candidate left but still expected to produce blocks for current session
+        assert_ok!(CollatorSelection::leave_intent(RuntimeOrigin::signed(3)));
+        assert_eq!(Balances::free_balance(3), 90); // funds un-bonding
+        initialize_to_block(19);
+        // not there yet
+        assert_noop!(
+            CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)),
+            Error::<Test>::BondStillLocked
+        );
+        // new session, candidate gets slashed
+        initialize_to_block(20);
+        assert_eq!(CollatorSelection::candidates().len(), 1);
+        assert_eq!(SessionChangeBlock::get(), 20);
+        assert_eq!(CollatorSelection::last_authored_block(3), 0);
+        assert_eq!(CollatorSelection::last_authored_block(4), 20);
+
+        // slashed, remaining bond was refunded
+        assert_noop!(
+            CollatorSelection::withdraw_bond(RuntimeOrigin::signed(3)),
+            Error::<Test>::NoCandidacyBond
+        );
+
+        // slashed collator gets funds back except slashed 10% (of 10 bond)
         assert_eq!(Balances::free_balance(3), 99);
         assert_eq!(Balances::free_balance(5), 101);
     });
@@ -425,21 +549,23 @@ fn should_not_kick_mechanism_too_few() {
         assert_eq!(CollatorSelection::candidates().len(), 2);
         initialize_to_block(20);
         assert_eq!(SessionChangeBlock::get(), 20);
-        // 4 authored this block, 5 gets to stay too few 3 was kicked
+        // 4 authored this block, 3 gets to stay too few, 5 was kicked
         assert_eq!(CollatorSelection::candidates().len(), 1);
-        // 3 will be kicked after 1 session delay
-        assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3, 5]);
-        let collator = CandidateInfo {
-            who: 5,
-            deposit: 10,
-        };
-        assert_eq!(CollatorSelection::candidates(), vec![collator]);
+        // 5 will be kicked for next session
+        assert_eq!(NextSessionCollators::get(), vec![1, 2, 3]);
+        assert_eq!(
+            CollatorSelection::candidates(),
+            vec![CandidateInfo {
+                who: 3,
+                deposit: 10,
+            }]
+        );
         assert_eq!(CollatorSelection::last_authored_block(4), 20);
-        initialize_to_block(30);
-        // 3 gets kicked after 1 session delay
-        assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 5]);
         // kicked collator gets funds back (but slashed)
-        assert_eq!(Balances::free_balance(3), 99);
+        assert_eq!(Balances::free_balance(5), 99);
+        initialize_to_block(30);
+        // next session doesn't include 5
+        assert_eq!(SessionCollators::get(), vec![1, 2, 3]);
     });
 }
 

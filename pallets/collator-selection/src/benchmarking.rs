@@ -195,6 +195,25 @@ benchmarks! {
         assert_last_event::<T>(Event::CandidateRemoved(leaving).into());
     }
 
+    withdraw_bond {
+        use frame_support::traits::{EstimateNextSessionRotation, Hooks};
+
+        <CandidacyBond<T>>::put(T::Currency::minimum_balance());
+        <DesiredCandidates<T>>::put(T::MinCandidates::get() + 1);
+        register_validators::<T>(T::MinCandidates::get() + 1);
+        register_candidates::<T>(T::MinCandidates::get() + 1);
+
+        let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
+        whitelist!(leaving);
+        assert_ok!(CollatorSelection::<T>::leave_intent(RawOrigin::Signed(leaving.clone()).into()));
+        let session_length = <T as session::Config>::NextSessionRotation::average_session_length();
+        session::Pallet::<T>::on_initialize(session_length);
+        assert_eq!(<NonCandidates<T>>::get(&leaving), (1u32, T::Currency::minimum_balance()));
+    }: _(RawOrigin::Signed(leaving.clone()))
+    verify {
+        assert_eq!(<NonCandidates<T>>::get(&leaving), (0u32, BalanceOf::<T>::default()));
+    }
+
     // worse case is paying a non-existing candidate account.
     note_author {
         <CandidacyBond<T>>::put(T::Currency::minimum_balance());
