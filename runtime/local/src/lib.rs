@@ -1039,7 +1039,6 @@ impl pallet_treasury::Config<MainTreasuryInst> for Runtime {
     type OnSlash = Treasury;
     type ProposalBond = ProposalBond;
     type ProposalBondMinimum = ConstU128<{ 10 * AST }>;
-    // TODO: do we even want this or should we make it unlimited?
     type ProposalBondMaximum = ConstU128<{ 100 * AST }>;
     type SpendPeriod = ConstU32<{ 1 * MINUTES }>;
 
@@ -1080,7 +1079,6 @@ impl pallet_treasury::Config<CommunityTreasuryInst> for Runtime {
     type OnSlash = CommunityTreasury;
     type ProposalBond = ProposalBond;
     type ProposalBondMinimum = ConstU128<{ 10 * AST }>;
-    // TODO: do we even want this or should we make it unlimited?
     type ProposalBondMaximum = ConstU128<{ 100 * AST }>;
     type SpendPeriod = ConstU32<{ 1 * MINUTES }>;
 
