@@ -414,6 +414,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d5dde061bd34119e902bbb2d9b90c5692635cf59fb91d582c2b68043f1b8293"
 
 [[package]]
+name = "array-init"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23589ecb866b460d3a0f1278834750268c607e8e28a1b982c907219f3178cd72"
+dependencies = [
+ "nodrop",
+]
+
+[[package]]
 name = "arrayref"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -497,15 +506,17 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.39.1"
+version = "5.41.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
  "async-trait",
  "clap",
  "cumulus-client-cli",
+ "cumulus-client-collator",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
+ "cumulus-client-consensus-proposer",
  "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",
  "cumulus-client-service",
@@ -635,7 +646,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.39.1"
+version = "5.41.0"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -2894,6 +2905,17 @@ dependencies = [
 [[package]]
 name = "derive-syn-parse"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d65d7ce8132b7c0e54497a4d9a55a1c2a0912a0d786cf894472ba818fba45762"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
+]
+
+[[package]]
+name = "derive_builder"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d65d7ce8132b7c0e54497a4d9a55a1c2a0912a0d786cf894472ba818fba45762"
 dependencies = [
@@ -5487,12 +5509,15 @@ dependencies = [
  "astar-primitives",
  "astar-runtime",
  "astar-test-utils",
- "env_logger 0.10.2",
+ "env_logger 0.10.0",
+ "ethereum",
  "fp-evm",
+ "fp-rpc",
  "frame-support",
  "frame-system",
  "hex",
  "libsecp256k1",
+ "moonbeam-rpc-primitives-debug",
  "orml-oracle",
  "pallet-assets",
  "pallet-balances",
@@ -5500,6 +5525,7 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapp-staking-v3",
+ "pallet-ethereum",
  "pallet-ethereum-checked",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -6440,7 +6466,7 @@ checksum = "643cb0b8d4fcc284004d5fd0d67ccf61dfffadb7f75e1e71bc420f4688a3a704"
 
 [[package]]
 name = "local-runtime"
-version = "5.39.1"
+version = "5.40.0"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -13612,7 +13638,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.39.1"
+version = "5.41.0"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -13732,7 +13758,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.39.1"
+version = "5.41.0"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",

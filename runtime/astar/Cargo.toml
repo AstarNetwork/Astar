@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "5.39.1"
+version = "5.41.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -228,6 +228,13 @@ std = [
 	"orml-xtokens/std",
 	"orml-xcm-support/std",
 	"astar-primitives/std",
+	"astar-xcm-benchmarks?/std",
+	"frame-system-benchmarking?/std",
+	"log?/std",
+	"num_enum/std",
+	"pallet-xcm-benchmarks?/std",
+	"precompile-utils/std",
+	"scale-info/std",
 ]
 runtime-benchmarks = [
 	'frame-benchmarking',
@@ -255,6 +262,25 @@ runtime-benchmarks = [
 	"cumulus-primitives-utility/runtime-benchmarks",
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"cumulus-pallet-parachain-system/runtime-benchmarks",
+	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"oracle-benchmarks/runtime-benchmarks",
+	"pallet-chain-extension-assets/runtime-benchmarks",
+	"pallet-contracts/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
+	"pallet-evm-precompile-dapp-staking-v3/runtime-benchmarks",
+	"pallet-evm-precompile-xcm/runtime-benchmarks",
+	"pallet-identity/runtime-benchmarks",
+	"pallet-multisig/runtime-benchmarks",
+	"pallet-sudo/runtime-benchmarks",
+	"pallet-utility/runtime-benchmarks",
+	"pallet-vesting/runtime-benchmarks",
+	"polkadot-parachain/runtime-benchmarks",
+	"polkadot-primitives/runtime-benchmarks",
+	"polkadot-runtime-common/runtime-benchmarks",
+	"xcm-executor/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -298,6 +324,10 @@ try-runtime = [
 	"pallet-evm/try-runtime",
 	"orml-xtokens/try-runtime",
 	"astar-primitives/try-runtime",
+	"astar-xcm-benchmarks?/try-runtime",
+	"pallet-chain-extension-assets/try-runtime",
+	"polkadot-runtime-common/try-runtime",
+	"sp-runtime/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

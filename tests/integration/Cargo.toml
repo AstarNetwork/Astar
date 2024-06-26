@@ -52,6 +52,12 @@ astar-test-utils = { workspace = true }
 shibuya-runtime = { workspace = true, optional = true }
 shiden-runtime = { workspace = true, optional = true }
 
+# evm-tracing tests
+ethereum = { workspace = true, features = ["with-codec"], optional = true }
+fp-rpc = { workspace = true, optional = true }
+moonbeam-rpc-primitives-debug = { workspace = true, optional = true }
+pallet-ethereum = { workspace = true, optional = true }
+
 [features]
 default = ["std"]
 std = [
@@ -60,7 +66,51 @@ std = [
 	"shiden-runtime/std",
 	"astar-primitives/std",
 	"astar-test-utils/std",
+	"assets-chain-extension-types/std",
+	"ethereum?/std",
+	"fp-evm/std",
+	"fp-rpc?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"hex/std",
+	"libsecp256k1/std",
+	"moonbeam-rpc-primitives-debug?/std",
+	"orml-oracle/std",
+	"pallet-assets/std",
+	"pallet-balances/std",
+	"pallet-collator-selection/std",
+	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
+	"pallet-dapp-staking-v3/std",
+	"pallet-ethereum?/std",
+	"pallet-ethereum-checked/std",
+	"pallet-evm/std",
+	"pallet-evm-precompile-assets-erc20/std",
+	"pallet-evm-precompile-dispatch/std",
+	"pallet-inflation/std",
+	"pallet-membership/std",
+	"pallet-price-aggregator/std",
+	"pallet-proxy/std",
+	"pallet-unified-accounts/std",
+	"pallet-utility/std",
+	"parity-scale-codec/std",
+	"precompile-utils/std",
+	"sha3/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"unified-accounts-chain-extension-types/std",
 ]
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]
 astar = ["astar-runtime"]
+
+evm-tracing = [
+	"shibuya-runtime?/evm-tracing",
+	"shiden-runtime?/evm-tracing",
+	"astar-runtime?/evm-tracing",
+	"ethereum",
+	"pallet-ethereum",
+	"moonbeam-rpc-primitives-debug",
+	"fp-rpc",
+]

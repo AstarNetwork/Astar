@@ -67,8 +67,8 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 use astar_primitives::{
     dapp_staking::{
-        CycleConfiguration, DAppId, EraNumber, PeriodNumber, SmartContract, StandardTierSlots,
-        TierId,
+        CycleConfiguration, DAppId, EraNumber, PeriodNumber, RankedTier, SmartContract,
+        StandardTierSlots,
     },
     evm::{EvmRevertCodeHandler, HashedDefaultMappings},
     governance::{
@@ -486,6 +486,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MaxNumberOfStakedContracts = ConstU32<3>;
     type MinimumStakeAmount = ConstU128<AST>;
     type NumberOfTiers = ConstU32<4>;
+    type RankingEnabled = ConstBool<true>;
     type WeightInfo = pallet_dapp_staking_v3::weights::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
@@ -1788,7 +1789,7 @@ impl_runtime_apis! {
             InflationCycleConfig::blocks_per_era()
         }
 
-        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier> {
             DappStaking::get_dapp_tier_assignment()
         }
     }

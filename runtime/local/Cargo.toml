@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.39.1"
+version = "5.40.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -187,6 +187,12 @@ std = [
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
 	"astar-primitives/std",
+	"frame-system-benchmarking?/std",
+	"log?/std",
+	"num_enum/std",
+	"pallet-evm-precompile-assets-erc20/std",
+	"precompile-utils/std",
+	"scale-info/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -210,6 +216,20 @@ runtime-benchmarks = [
 	"pallet-inflation/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"pallet-chain-extension-assets/runtime-benchmarks",
+	"pallet-contracts/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
+	"pallet-evm-precompile-dapp-staking-v3/runtime-benchmarks",
+	"pallet-grandpa/runtime-benchmarks",
+	"pallet-proxy/runtime-benchmarks",
+	"pallet-scheduler/runtime-benchmarks",
+	"pallet-static-price-provider/runtime-benchmarks",
+	"pallet-sudo/runtime-benchmarks",
+	"pallet-utility/runtime-benchmarks",
+	"pallet-vesting/runtime-benchmarks",
+	"pallet-xvm/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -246,6 +266,9 @@ try-runtime = [
 	"pallet-evm/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
 	"pallet-static-price-provider/try-runtime",
+	"astar-primitives/try-runtime",
+	"pallet-chain-extension-assets/try-runtime",
+	"sp-runtime/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

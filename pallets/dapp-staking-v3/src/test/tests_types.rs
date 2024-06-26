@@ -16,7 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use astar_primitives::{dapp_staking::StandardTierSlots, Balance};
+use astar_primitives::{
+    dapp_staking::{RankedTier, StandardTierSlots},
+    Balance,
+};
 use frame_support::{assert_ok, parameter_types};
 use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::Permill;
@@ -2112,7 +2115,8 @@ fn singular_staking_info_unstake_during_voting_is_ok() {
     let remaining_stake = staking_info.total_staked_amount();
     assert_eq!(
         staking_info.unstake(remaining_stake + 1, era_2, Subperiod::Voting),
-        vec![(era_2, remaining_stake)]
+        vec![(era_2, remaining_stake), (era_2 + 1, remaining_stake)],
+        "Also chipping away from the next era since the unstake is relevant to the ongoing era."
     );
     assert!(staking_info.total_staked_amount().is_zero());
     assert!(
@@ -2214,7 +2218,8 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 
     assert_eq!(
         staking_info.unstake(unstake_2, era_2, Subperiod::BuildAndEarn),
-        vec![(era_2, unstake_2)]
+        vec![(era_2, unstake_2), (era_2 + 1, unstake_2)],
+        "Also chipping away from the next era since the unstake is relevant to the ongoing era."
     );
     assert_eq!(
         staking_info.total_staked_amount(),
@@ -2235,6 +2240,59 @@ fn singular_staking_info_unstake_during_bep_is_ok() {
 
     assert_eq!(staking_info.previous_staked.total(), current_total_stake);
     assert_eq!(staking_info.previous_staked.era, era_2 - 1);
+}
+
+#[test]
+fn singular_staking_info_unstake_era_amount_pairs_are_ok() {
+    let period_number = 1;
+    let subperiod = Subperiod::BuildAndEarn;
+
+    // 1. Unstake only reduces the amount from a the future era
+    {
+        let era = 3;
+        let stake_amount = 13;
+        let unstake_amount = 3;
+        let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+        staking_info.stake(stake_amount, era, Subperiod::BuildAndEarn);
+
+        assert_eq!(
+            staking_info.unstake(unstake_amount, era, Subperiod::BuildAndEarn),
+            vec![(era + 1, unstake_amount)]
+        );
+    }
+
+    // 2. Unstake reduces the amount from the current & next era.
+    {
+        let era = 3;
+        let stake_amount = 17;
+        let unstake_amount = 5;
+        let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+        staking_info.stake(stake_amount, era, Subperiod::BuildAndEarn);
+
+        assert_eq!(
+            staking_info
+                .clone()
+                .unstake(unstake_amount, era + 1, Subperiod::BuildAndEarn),
+            vec![(era + 1, unstake_amount), (era + 2, unstake_amount)]
+        );
+    }
+
+    // 3. Unstake reduces the amount from the current & next era.
+    //    Unlike the previous example, entries are not aligned with the current era
+    {
+        let era = 3;
+        let stake_amount = 17;
+        let unstake_amount = 5;
+        let mut staking_info = SingularStakingInfo::new(period_number, subperiod);
+        staking_info.stake(stake_amount, era, Subperiod::BuildAndEarn);
+
+        assert_eq!(
+            staking_info
+                .clone()
+                .unstake(unstake_amount, era + 2, Subperiod::BuildAndEarn),
+            vec![(era + 2, unstake_amount), (era + 3, unstake_amount)]
+        );
+    }
 }
 
 #[test]
@@ -2410,9 +2468,18 @@ fn contract_stake_amount_stake_is_ok() {
     let stake_era_2 = era_2 + 1;
     let amount_2 = 37;
     contract_stake.stake(amount_2, period_info_1, era_2);
-    let entry_2_1 = contract_stake.get(stake_era_1, period_1).unwrap();
+    let entry_2_1 = contract_stake
+        .get(era_2, period_1)
+        .expect("Since stake will change next era, entries should be aligned.");
     let entry_2_2 = contract_stake.get(stake_era_2, period_1).unwrap();
-    assert_eq!(entry_2_1, entry_1_2, "Old entry must remain unchanged.");
+    assert_eq!(
+        entry_2_1.for_type(Subperiod::Voting),
+        entry_1_2.for_type(Subperiod::Voting)
+    );
+    assert_eq!(
+        entry_2_1.for_type(Subperiod::BuildAndEarn),
+        entry_1_2.for_type(Subperiod::BuildAndEarn)
+    );
     assert_eq!(entry_2_2.era, stake_era_2);
     assert_eq!(entry_2_2.period, period_1);
     assert_eq!(
@@ -2439,7 +2506,7 @@ fn contract_stake_amount_stake_is_ok() {
 
     contract_stake.stake(amount_3, period_info_2, era_3);
     assert!(
-        contract_stake.get(stake_era_1, period_1).is_none(),
+        contract_stake.get(era_2, period_1).is_none(),
         "Old period must be removed."
     );
     assert!(
@@ -2907,7 +2974,13 @@ fn dapp_tier_rewards_basic_tests() {
     get_u32_type!(NumberOfTiers, 3);
 
     // Example dApps & rewards
-    let dapps = BTreeMap::from([(1 as DAppId, 0 as TierId), (2, 0), (3, 1), (5, 1), (6, 2)]);
+    let dapps = BTreeMap::<DAppId, RankedTier>::from([
+        (1, RankedTier::new_saturated(0, 0)),
+        (2, RankedTier::new_saturated(0, 0)),
+        (3, RankedTier::new_saturated(1, 0)),
+        (5, RankedTier::new_saturated(1, 0)),
+        (6, RankedTier::new_saturated(2, 0)),
+    ]);
     let tier_rewards = vec![300, 20, 1];
     let period = 2;
 
@@ -2915,20 +2988,21 @@ fn dapp_tier_rewards_basic_tests() {
         dapps.clone(),
         tier_rewards.clone(),
         period,
+        vec![0, 0, 0],
     )
     .expect("Bounds are respected.");
 
     // 1st scenario - claim reward for a dApps
-    let tier_id = dapps[&1];
+    let ranked_tier = dapps[&1];
     assert_eq!(
         dapp_tier_rewards.try_claim(1),
-        Ok((tier_rewards[tier_id as usize], tier_id))
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
     );
 
-    let tier_id = dapps[&5];
+    let ranked_tier = dapps[&5];
     assert_eq!(
         dapp_tier_rewards.try_claim(5),
-        Ok((tier_rewards[tier_id as usize], tier_id))
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
     );
 
     // 2nd scenario - try to claim already claimed reward
@@ -2979,5 +3053,57 @@ fn cleanup_marker_works() {
     assert!(
         cleanup_marker.has_pending_cleanups(),
         "There are pending cleanups for era reward spans."
+    );
+}
+
+#[test]
+fn dapp_tier_rewards_with_rank() {
+    get_u32_type!(NumberOfDApps, 8);
+    get_u32_type!(NumberOfTiers, 3);
+
+    // Example dApps & rewards
+    let dapps = BTreeMap::<DAppId, RankedTier>::from([
+        (1, RankedTier::new_saturated(0, 5)),
+        (2, RankedTier::new_saturated(0, 0)),
+        (3, RankedTier::new_saturated(1, 10)),
+        (5, RankedTier::new_saturated(1, 5)),
+        (6, RankedTier::new_saturated(2, 0)),
+    ]);
+    let tier_rewards = vec![300, 20, 1];
+    let rank_rewards = vec![0, 2, 0];
+    let period = 2;
+
+    let mut dapp_tier_rewards = DAppTierRewards::<NumberOfDApps, NumberOfTiers>::new(
+        dapps.clone(),
+        tier_rewards.clone(),
+        period,
+        rank_rewards.clone(),
+    )
+    .expect("Bounds are respected.");
+
+    // has rank but no reward per rank
+    // receive only tier reward
+    let ranked_tier = dapps[&1];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(1),
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
+    );
+
+    // has no rank, receive only tier reward
+    let ranked_tier = dapps[&2];
+    assert_eq!(
+        dapp_tier_rewards.try_claim(2),
+        Ok((tier_rewards[ranked_tier.tier() as usize], ranked_tier))
+    );
+
+    // receives both tier and rank rewards
+    let ranked_tier = dapps[&3];
+    let (tier, rank) = ranked_tier.deconstruct();
+    assert_eq!(
+        dapp_tier_rewards.try_claim(3),
+        Ok((
+            tier_rewards[tier as usize] + rank_rewards[tier as usize] * rank as Balance,
+            ranked_tier
+        ))
     );
 }

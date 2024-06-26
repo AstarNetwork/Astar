@@ -54,7 +54,8 @@ pub use sp_std::vec::Vec;
 use astar_primitives::{
     dapp_staking::{
         AccountCheck, CycleConfiguration, DAppId, EraNumber, Observer as DAppStakingObserver,
-        PeriodNumber, SmartContractHandle, StakingRewardHandler, TierId, TierSlots as TierSlotFunc,
+        PeriodNumber, Rank, RankedTier, SmartContractHandle, StakingRewardHandler, TierId,
+        TierSlots as TierSlotFunc,
     },
     oracle::PriceProvider,
     Balance, BlockNumber,
@@ -71,7 +72,9 @@ mod benchmarking;
 mod types;
 pub use types::*;
 
+pub mod migration;
 pub mod weights;
+
 pub use weights::WeightInfo;
 
 const LOG_TARGET: &str = "dapp-staking";
@@ -91,7 +94,7 @@ pub mod pallet {
     use super::*;
 
     /// The current storage version.
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(6);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(7);
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -204,6 +207,10 @@ pub mod pallet {
         #[pallet::constant]
         type NumberOfTiers: Get<u32>;
 
+        /// Tier ranking enabled.
+        #[pallet::constant]
+        type RankingEnabled: Get<bool>;
+
         /// Weight info for various calls & operations in the pallet.
         type WeightInfo: WeightInfo;
 
@@ -295,6 +302,7 @@ pub mod pallet {
             beneficiary: T::AccountId,
             smart_contract: T::SmartContract,
             tier_id: TierId,
+            rank: Rank,
             era: EraNumber,
             amount: Balance,
         },
@@ -384,6 +392,8 @@ pub mod pallet {
         NoExpiredEntries,
         /// Force call is not allowed in production.
         ForceNotAllowed,
+        /// Account doesn't have the freeze inconsistency
+        AccountNotInconsistent, // TODO: can be removed after call `fix_account` is removed
     }
 
     /// General information about dApp staking protocol state.
@@ -836,7 +846,7 @@ pub mod pallet {
 
             // Calculate & check amount available for locking
             let available_balance =
-                T::Currency::total_balance(&account).saturating_sub(ledger.active_locked_amount());
+                T::Currency::total_balance(&account).saturating_sub(ledger.total_locked_amount());
             let amount_to_lock = available_balance.min(amount);
             ensure!(!amount_to_lock.is_zero(), Error::<T>::ZeroAmount);
 
@@ -929,28 +939,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let mut ledger = Ledger::<T>::get(&account);
-
-            let current_block = frame_system::Pallet::<T>::block_number();
-            let amount = ledger.claim_unlocked(current_block.saturated_into());
-            ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
-
-            // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
-            let removed_entries = if ledger.is_empty() {
-                let _ = StakerInfo::<T>::clear_prefix(&account, ledger.contract_stake_count, None);
-                ledger.contract_stake_count
-            } else {
-                0
-            };
-
-            Self::update_ledger(&account, ledger)?;
-            CurrentEraInfo::<T>::mutate(|era_info| {
-                era_info.unlocking_removed(amount);
-            });
-
-            Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
-
-            Ok(Some(T::WeightInfo::claim_unlocked(removed_entries)).into())
+            Self::internal_claim_unlocked(account)
         }
 
         #[pallet::call_index(10)]
@@ -1409,13 +1398,15 @@ pub mod pallet {
                 Error::<T>::RewardExpired
             );
 
-            let (amount, tier_id) =
+            let (amount, ranked_tier) =
                 dapp_tiers
                     .try_claim(dapp_info.id)
                     .map_err(|error| match error {
                         DAppTierError::NoDAppInTiers => Error::<T>::NoClaimableRewards,
                         _ => Error::<T>::InternalClaimDAppError,
                     })?;
+
+            let (tier_id, rank) = ranked_tier.deconstruct();
 
             // Get reward destination, and deposit the reward.
             let beneficiary = dapp_info.reward_beneficiary();
@@ -1429,6 +1420,7 @@ pub mod pallet {
                 beneficiary: beneficiary.clone(),
                 smart_contract,
                 tier_id,
+                rank,
                 era,
                 amount,
             });
@@ -1598,6 +1590,50 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what's available.
+        ///
+        /// The approach is as simple as possible:
+        /// 1. Caller provides an account to fix.
+        /// 2. If account is eligible for the fix, all unlocking chunks are modified to be claimable immediately.
+        /// 3. The `claim_unlocked` call is executed using the provided account as the origin.
+        /// 4. All states are updated accordingly, and the account is no longer in an inconsistent state.
+        ///
+        /// The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
+        /// Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
+        #[pallet::call_index(100)]
+        #[pallet::weight(T::DbWeight::get().reads_writes(4, 1))]
+        pub fn fix_account(
+            origin: OriginFor<T>,
+            account: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            Self::ensure_pallet_enabled()?;
+            ensure_signed(origin)?;
+
+            let mut ledger = Ledger::<T>::get(&account);
+            let locked_amount_ledger = ledger.total_locked_amount();
+            let total_balance = T::Currency::total_balance(&account);
+
+            if locked_amount_ledger > total_balance {
+                // 1. Modify all unlocking chunks so they can be unlocked immediately.
+                let current_block: BlockNumber =
+                    frame_system::Pallet::<T>::block_number().saturated_into();
+                ledger
+                    .unlocking
+                    .iter_mut()
+                    .for_each(|chunk| chunk.unlock_block = current_block);
+                Ledger::<T>::insert(&account, ledger);
+
+                // 2. Execute the unlock call, clearing all of the unlocking chunks.
+                Self::internal_claim_unlocked(account)?;
+
+                // 3. In case of success, ensure no fee is paid.
+                Ok(Pays::No.into())
+            } else {
+                // The above logic is designed for a specific scenario and cannot be used otherwise.
+                Err(Error::<T>::AccountNotInconsistent.into())
+            }
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -1663,7 +1699,7 @@ pub mod pallet {
         }
 
         /// Returns the dApp tier assignment for the current era, based on the current stake amounts.
-        pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
+        pub fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier> {
             let protocol_state = ActiveProtocolState::<T>::get();
 
             let (dapp_tiers, _count) = Self::get_dapp_tier_assignment_and_rewards(
@@ -1684,7 +1720,11 @@ pub mod pallet {
         ///
         /// 2. Sort the entries by the score, in descending order - the top score dApp comes first.
         ///
-        /// 3. Read in tier configuration. This contains information about how many slots per tier there are,
+        /// 3. Calculate rewards for each tier.
+        ///    This is done by dividing the total reward pool into tier reward pools,
+        ///    after which the tier reward pool is divided by the number of available slots in the tier.
+        ///
+        /// 4. Read in tier configuration. This contains information about how many slots per tier there are,
         ///    as well as the threshold for each tier. Threshold is the minimum amount of stake required to be eligible for a tier.
         ///    Iterate over tier thresholds & capacities, starting from the top tier, and assign dApps to them.
         ///
@@ -1697,10 +1737,6 @@ pub mod pallet {
         ///               exit loop since no more dApps will satisfy the threshold since they are sorted by score
         ///    ```
         ///    (Sort the entries by dApp ID, in ascending order. This is so we can efficiently search for them using binary search.)
-        ///
-        /// 4. Calculate rewards for each tier.
-        ///    This is done by dividing the total reward pool into tier reward pools,
-        ///    after which the tier reward pool is divided by the number of available slots in the tier.
         ///
         /// The returned object contains information about each dApp that made it into a tier.
         /// Alongside tier assignment info, number of read DB contract stake entries is returned.
@@ -1730,38 +1766,7 @@ pub mod pallet {
             // Sort by amount staked, in reverse - top dApp will end in the first place, 0th index.
             dapp_stakes.sort_unstable_by(|(_, amount_1), (_, amount_2)| amount_2.cmp(amount_1));
 
-            // 3.
-            // Iterate over configured tier and potential dApps.
-            // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
-            // and tier capacity hasn't been filled yet.
-            let mut dapp_tiers = BTreeMap::new();
             let tier_config = TierConfig::<T>::get();
-
-            let mut global_idx = 0;
-            let mut tier_id = 0;
-            for (tier_capacity, tier_threshold) in tier_config
-                .slots_per_tier
-                .iter()
-                .zip(tier_config.tier_thresholds.iter())
-            {
-                let max_idx = global_idx
-                    .saturating_add(*tier_capacity as usize)
-                    .min(dapp_stakes.len());
-
-                // Iterate over dApps until one of two conditions has been met:
-                // 1. Tier has no more capacity
-                // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
-                for (dapp_id, stake_amount) in dapp_stakes[global_idx..max_idx].iter() {
-                    if tier_threshold.is_satisfied(*stake_amount) {
-                        global_idx.saturating_inc();
-                        dapp_tiers.insert(*dapp_id, tier_id);
-                    } else {
-                        break;
-                    }
-                }
-
-                tier_id.saturating_inc();
-            }
 
             // In case when tier has 1 more free slot, but two dApps with exactly same score satisfy the threshold,
             // one of them will be assigned to the tier, and the other one will be assigned to the lower tier, if it exists.
@@ -1770,7 +1775,7 @@ pub mod pallet {
             // There is no guarantee this will persist in the future, so it's best for dApps to do their
             // best to avoid getting themselves into such situations.
 
-            // 4. Calculate rewards.
+            // 3. Calculate rewards.
             let tier_rewards = tier_config
                 .reward_portion
                 .iter()
@@ -1784,6 +1789,67 @@ pub mod pallet {
                 })
                 .collect::<Vec<_>>();
 
+            // 4.
+            // Iterate over configured tier and potential dApps.
+            // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
+            // and tier capacity hasn't been filled yet.
+            let mut dapp_tiers = BTreeMap::new();
+            let mut tier_slots = BTreeMap::new();
+
+            let mut upper_bound = Balance::zero();
+            let mut rank_rewards = Vec::new();
+
+            for (tier_id, (tier_capacity, tier_threshold)) in tier_config
+                .slots_per_tier
+                .iter()
+                .zip(tier_config.tier_thresholds.iter())
+                .enumerate()
+            {
+                let lower_bound = tier_threshold.threshold();
+
+                // Iterate over dApps until one of two conditions has been met:
+                // 1. Tier has no more capacity
+                // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
+                for (dapp_id, staked_amount) in dapp_stakes
+                    .iter()
+                    .skip(dapp_tiers.len())
+                    .take_while(|(_, amount)| tier_threshold.is_satisfied(*amount))
+                    .take(*tier_capacity as usize)
+                {
+                    let rank = if T::RankingEnabled::get() {
+                        RankedTier::find_rank(lower_bound, upper_bound, *staked_amount)
+                    } else {
+                        0
+                    };
+                    tier_slots.insert(*dapp_id, RankedTier::new_saturated(tier_id as u8, rank));
+                }
+
+                // sum of all ranks for this tier
+                let ranks_sum = tier_slots
+                    .iter()
+                    .fold(0u32, |accum, (_, x)| accum.saturating_add(x.rank().into()));
+
+                let reward_per_rank = if ranks_sum.is_zero() {
+                    Balance::zero()
+                } else {
+                    // calculate reward per rank
+                    let tier_reward = tier_rewards.get(tier_id).copied().unwrap_or_default();
+                    let empty_slots = tier_capacity.saturating_sub(tier_slots.len() as u16);
+                    let remaining_reward = tier_reward.saturating_mul(empty_slots.into());
+                    // make sure required reward doesn't exceed remaining reward
+                    let reward_per_rank = tier_reward.saturating_div(RankedTier::MAX_RANK.into());
+                    let expected_reward_for_ranks =
+                        reward_per_rank.saturating_mul(ranks_sum.into());
+                    let reward_for_ranks = expected_reward_for_ranks.min(remaining_reward);
+                    // re-calculate reward per rank based on available reward
+                    reward_for_ranks.saturating_div(ranks_sum.into())
+                };
+
+                rank_rewards.push(reward_per_rank);
+                dapp_tiers.append(&mut tier_slots);
+                upper_bound = lower_bound; // current threshold becomes upper bound for next tier
+            }
+
             // 5.
             // Prepare and return tier & rewards info.
             // In case rewards creation fails, we just write the default value. This should never happen though.
@@ -1792,6 +1858,7 @@ pub mod pallet {
                     dapp_tiers,
                     tier_rewards,
                     period,
+                    rank_rewards,
                 )
                 .unwrap_or_default(),
                 counter,
@@ -2075,6 +2142,31 @@ pub mod pallet {
 
             // It could end up being less than this weight, but this won't occur often enough to be important.
             T::WeightInfo::on_idle_cleanup()
+        }
+
+        fn internal_claim_unlocked(account: T::AccountId) -> DispatchResultWithPostInfo {
+            let mut ledger = Ledger::<T>::get(&account);
+
+            let current_block = frame_system::Pallet::<T>::block_number();
+            let amount = ledger.claim_unlocked(current_block.saturated_into());
+            ensure!(amount > Zero::zero(), Error::<T>::NoUnlockedChunksToClaim);
+
+            // In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
+            let removed_entries = if ledger.is_empty() {
+                let _ = StakerInfo::<T>::clear_prefix(&account, ledger.contract_stake_count, None);
+                ledger.contract_stake_count
+            } else {
+                0
+            };
+
+            Self::update_ledger(&account, ledger)?;
+            CurrentEraInfo::<T>::mutate(|era_info| {
+                era_info.unlocking_removed(amount);
+            });
+
+            Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
+
+            Ok(Some(T::WeightInfo::claim_unlocked(removed_entries)).into())
         }
     }
 }

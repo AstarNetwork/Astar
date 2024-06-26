@@ -21,8 +21,12 @@ use super::{oracle::CurrencyAmount, Balance, BlockNumber};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 
 use frame_support::pallet_prelude::{RuntimeDebug, Weight};
+use sp_arithmetic::ArithmeticError;
 use sp_core::H160;
-use sp_runtime::{traits::UniqueSaturatedInto, FixedPointNumber};
+use sp_runtime::{
+    traits::{UniqueSaturatedInto, Zero},
+    FixedPointNumber,
+};
 use sp_std::hash::Hash;
 
 /// Era number type
@@ -33,6 +37,8 @@ pub type PeriodNumber = u32;
 pub type DAppId = u16;
 /// Tier Id type
 pub type TierId = u8;
+// Tier Rank type
+pub type Rank = u8;
 
 /// Configuration for cycles, periods, subperiods & eras.
 ///
@@ -189,5 +195,125 @@ impl TierSlots for StandardTierSlots {
     fn number_of_slots(price: CurrencyAmount) -> u16 {
         let result: u64 = price.saturating_mul_int(1000_u64).saturating_add(50);
         result.unique_saturated_into()
+    }
+}
+
+/// RankedTier is wrapper around u8 to hold both tier and rank. u8 has 2 bytes (8bits) and they're using in this order `0xrank_tier`.
+/// First 4 bits are used to hold rank and second 4 bits are used to hold tier.
+/// i.e: 0xa1 will hold rank: 10 and tier: 1 (0xa1 & 0xf == 1; 0xa1 >> 4 == 10;)
+#[derive(Copy, Clone, Encode, Decode, Eq, PartialEq, MaxEncodedLen, scale_info::TypeInfo)]
+pub struct RankedTier(u8);
+
+impl RankedTier {
+    pub const MAX_RANK: u8 = 10;
+
+    /// Create new encoded RankedTier from tier and rank.
+    /// Returns Err(ArithmeticError::Overflow) if max value is not respected.
+    pub fn new(tier: TierId, rank: Rank) -> Result<Self, ArithmeticError> {
+        if rank > Self::MAX_RANK || tier > 0xf {
+            return Err(ArithmeticError::Overflow);
+        }
+        Ok(Self(rank << 4 | tier & 0x0f))
+    }
+
+    /// Create new encoded RankedTier from tier and rank with saturation.
+    pub fn new_saturated(tier: TierId, rank: Rank) -> Self {
+        Self(rank.min(Self::MAX_RANK) << 4 | tier.min(0xf) & 0x0f)
+    }
+
+    #[inline(always)]
+    pub fn tier(&self) -> TierId {
+        self.0 & 0x0f
+    }
+
+    #[inline(always)]
+    pub fn rank(&self) -> Rank {
+        (self.0 >> 4).min(Self::MAX_RANK)
+    }
+
+    #[inline(always)]
+    pub fn deconstruct(&self) -> (TierId, Rank) {
+        (self.tier(), self.rank())
+    }
+}
+
+impl core::fmt::Debug for RankedTier {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("RankedTier")
+            .field("tier", &self.tier())
+            .field("rank", &self.rank())
+            .finish()
+    }
+}
+
+impl RankedTier {
+    /// Find rank based on lower/upper bounds and staked amount.
+    /// Delta between upper and lower bound is divided in 10 and will increase rank
+    /// by one for each threshold staked amount will reach.
+    /// i.e. find_rank(10, 20, 10) -> 0
+    /// i.e. find_rank(10, 20, 15) -> 5
+    /// i.e. find_rank(10, 20, 20) -> 10
+    pub fn find_rank(lower_bound: Balance, upper_bound: Balance, stake_amount: Balance) -> Rank {
+        if upper_bound.is_zero() {
+            return 0;
+        }
+        let rank_threshold = upper_bound
+            .saturating_sub(lower_bound)
+            .saturating_div(RankedTier::MAX_RANK.into());
+        if rank_threshold.is_zero() {
+            0
+        } else {
+            <Balance as TryInto<u8>>::try_into(
+                stake_amount
+                    .saturating_sub(lower_bound)
+                    .saturating_div(rank_threshold),
+            )
+            .unwrap_or_default()
+            .min(RankedTier::MAX_RANK)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tier_and_rank() {
+        let t = RankedTier::new(0, 0).unwrap();
+        assert_eq!(t.deconstruct(), (0, 0));
+
+        let t = RankedTier::new(15, 10).unwrap();
+        assert_eq!(t.deconstruct(), (15, 10));
+
+        assert_eq!(RankedTier::new(16, 10), Err(ArithmeticError::Overflow));
+        assert_eq!(RankedTier::new(15, 11), Err(ArithmeticError::Overflow));
+
+        let t = RankedTier::new_saturated(0, 0);
+        assert_eq!(t.deconstruct(), (0, 0));
+
+        let t = RankedTier::new_saturated(1, 1);
+        assert_eq!(t.deconstruct(), (1, 1));
+
+        let t = RankedTier::new_saturated(3, 15);
+        assert_eq!(t.deconstruct(), (3, 10));
+
+        // max value for tier and rank
+        let t = RankedTier::new_saturated(16, 16);
+        assert_eq!(t.deconstruct(), (15, 10));
+    }
+
+    #[test]
+    fn find_rank() {
+        assert_eq!(RankedTier::find_rank(0, 0, 0), 0);
+        assert_eq!(RankedTier::find_rank(0, 100, 9), 0);
+        assert_eq!(RankedTier::find_rank(0, 100, 10), 1);
+        assert_eq!(RankedTier::find_rank(0, 100, 49), 4);
+        assert_eq!(RankedTier::find_rank(0, 100, 50), 5);
+        assert_eq!(RankedTier::find_rank(0, 100, 51), 5);
+        assert_eq!(RankedTier::find_rank(0, 100, 101), 10);
+
+        assert_eq!(RankedTier::find_rank(100, 100, 100), 0);
+        assert_eq!(RankedTier::find_rank(200, 100, 100), 0);
     }
 }

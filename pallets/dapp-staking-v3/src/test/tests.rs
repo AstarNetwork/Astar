@@ -18,9 +18,9 @@
 
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
-    pallet::Config, ActiveProtocolState, ContractStake, DAppId, EraRewards, Error, Event,
-    ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId, PeriodNumber, Permill,
-    Safeguard, StakerInfo, Subperiod, TierConfig, TierThreshold,
+    pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
+    EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId,
+    PeriodNumber, Permill, Safeguard, StakerInfo, Subperiod, TierConfig, TierThreshold,
 };
 
 use frame_support::{
@@ -32,12 +32,17 @@ use frame_support::{
     },
     BoundedVec,
 };
-use sp_runtime::{traits::Zero, FixedU128};
+use sp_runtime::{
+    traits::{ConstU32, Zero},
+    BoundedBTreeMap, FixedU128,
+};
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, EraNumber, SmartContractHandle, TierSlots},
+    dapp_staking::{CycleConfiguration, EraNumber, RankedTier, SmartContractHandle, TierSlots},
     Balance, BlockNumber,
 };
+
+use std::collections::BTreeMap;
 
 #[test]
 fn maintenances_mode_works() {
@@ -2520,6 +2525,13 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             dapp_reward_pool,
         );
 
+        // There's enough reward to satisfy 100% reward per rank.
+        // Slot reward is 60_000 therefore expected rank reward is 6_000
+        assert_eq!(
+            tier_assignment.rank_rewards,
+            BoundedVec::<Balance, ConstU32<4>>::try_from(vec![0, 6_000, 0, 0]).unwrap()
+        );
+
         // Basic checks
         let number_of_tiers: u32 = <Test as Config>::NumberOfTiers::get();
         assert_eq!(tier_assignment.period, protocol_state.period_number());
@@ -2533,18 +2545,18 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
 
         // 1st tier checks
         let (dapp_1_tier, dapp_2_tier) = (tier_assignment.dapps[&0], tier_assignment.dapps[&1]);
-        assert_eq!(dapp_1_tier, 0);
-        assert_eq!(dapp_2_tier, 0);
+        assert_eq!(dapp_1_tier, RankedTier::new_saturated(0, 0));
+        assert_eq!(dapp_2_tier, RankedTier::new_saturated(0, 0));
 
         // 2nd tier checks
         let (dapp_3_tier, dapp_4_tier) = (tier_assignment.dapps[&2], tier_assignment.dapps[&3]);
-        assert_eq!(dapp_3_tier, 1);
-        assert_eq!(dapp_4_tier, 1);
+        assert_eq!(dapp_3_tier, RankedTier::new_saturated(1, 10));
+        assert_eq!(dapp_4_tier, RankedTier::new_saturated(1, 9));
 
         // 4th tier checks
         let (dapp_5_tier, dapp_6_tier) = (tier_assignment.dapps[&4], tier_assignment.dapps[&5]);
-        assert_eq!(dapp_5_tier, 3);
-        assert_eq!(dapp_6_tier, 3);
+        assert_eq!(dapp_5_tier, RankedTier::new_saturated(3, 0));
+        assert_eq!(dapp_6_tier, RankedTier::new_saturated(3, 0));
 
         // Sanity check - last dapp should not exists in the tier assignment
         assert!(tier_assignment
@@ -3167,6 +3179,248 @@ fn base_number_of_slots_is_respected() {
             TierConfig::<Test>::get().tier_thresholds,
             base_thresholds,
             "Thresholds must be the same as the base thresholds."
+        );
+    })
+}
+
+#[test]
+fn ranking_will_calc_reward_correctly() {
+    ExtBuilder::build().execute_with(|| {
+        // Tier config is specially adapted for this test.
+        TierConfig::<Test>::mutate(|config| {
+            config.slots_per_tier = BoundedVec::try_from(vec![2, 3, 2, 20]).unwrap();
+        });
+
+        // Register smart contracts
+        let smart_contracts: Vec<_> = (1..=8u32)
+            .map(|x| {
+                let smart_contract = MockSmartContract::Wasm(x.into());
+                assert_register(x.into(), &smart_contract);
+                smart_contract
+            })
+            .collect();
+
+        fn lock_and_stake(account: usize, smart_contract: &MockSmartContract, amount: Balance) {
+            let account = account.try_into().unwrap();
+            Balances::make_free_balance_be(&account, amount);
+            assert_lock(account, amount);
+            assert_stake(account, smart_contract, amount);
+        }
+
+        for (idx, amount) in [101, 102, 100, 99, 15, 49, 35, 14].into_iter().enumerate() {
+            lock_and_stake(idx, &smart_contracts[idx], amount)
+        }
+
+        // Finally, the actual test
+        let protocol_state = ActiveProtocolState::<Test>::get();
+        let (tier_assignment, counter) = DappStaking::get_dapp_tier_assignment_and_rewards(
+            protocol_state.era + 1,
+            protocol_state.period_number(),
+            1_000_000,
+        );
+
+        assert_eq!(
+            tier_assignment,
+            DAppTierRewardsFor::<Test> {
+                dapps: BoundedBTreeMap::try_from(BTreeMap::from([
+                    (0, RankedTier::new_saturated(0, 0)),
+                    (1, RankedTier::new_saturated(0, 0)),
+                    (2, RankedTier::new_saturated(1, 10)),
+                    (3, RankedTier::new_saturated(1, 9)),
+                    (5, RankedTier::new_saturated(2, 9)),
+                    (6, RankedTier::new_saturated(2, 5)),
+                    (4, RankedTier::new_saturated(3, 0)),
+                ]))
+                .unwrap(),
+                rewards: BoundedVec::try_from(vec![200_000, 100_000, 100_000, 5_000]).unwrap(),
+                period: 1,
+                // Tier 0 has no ranking therefore no rank reward.
+                // For tier 1 there's not enough reward to satisfy 100% reward per rank.
+                // Only one slot is empty. Slot reward is 100_000 therefore expected rank reward is 100_000 / 19 (ranks_sum).
+                // Tier 2 has ranking but there's no empty slot therefore no rank reward.
+                // Tier 3 has no ranking therefore no rank reward.
+                rank_rewards: BoundedVec::try_from(vec![0, 5_263, 0, 0]).unwrap()
+            }
+        );
+
+        // one didn't make it
+        assert_eq!(counter, 8);
+    })
+}
+
+#[test]
+fn claim_dapp_reward_with_rank() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &smart_contract);
+
+        let alice = 2;
+        let amount = 99; // very close to tier 0 so will enter tier 1 with rank 9
+        assert_lock(alice, amount);
+        assert_stake(alice, &smart_contract, amount);
+
+        // Advance 2 eras so we have an entry for reward claiming
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+
+        let era = ActiveProtocolState::<Test>::get().era - 1;
+        let tiers = DAppTiers::<Test>::get(era).unwrap();
+
+        let slot_reward = tiers.rewards[1];
+        let rank_reward = tiers.rank_rewards[1];
+
+        // Claim dApp reward & verify event
+        assert_ok!(DappStaking::claim_dapp_reward(
+            RuntimeOrigin::signed(alice),
+            smart_contract.clone(),
+            era,
+        ));
+
+        let expected_rank = 9;
+        let expected_total_reward = slot_reward + expected_rank * rank_reward;
+        assert_eq!(slot_reward, 15_000_000);
+        assert_eq!(rank_reward, 1_500_000); // slot_reward / 10
+        assert_eq!(expected_total_reward, 28_500_000);
+
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppReward {
+            beneficiary: 1,
+            smart_contract: smart_contract.clone(),
+            tier_id: 1,
+            rank: 9,
+            era,
+            amount: expected_total_reward,
+        }));
+    })
+}
+
+#[test]
+fn unstake_correctly_reduces_future_contract_stake() {
+    ExtBuilder::build().execute_with(|| {
+        // 0. Register smart contract, lock&stake some amount with staker 1 during the voting subperiod
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(1, &smart_contract);
+
+        let (staker_1, amount_1) = (1, 29);
+        assert_lock(staker_1, amount_1);
+        assert_stake(staker_1, &smart_contract, amount_1);
+
+        // 1. Advance to the build&earn subperiod, stake some amount with staker 2
+        advance_to_next_era();
+        let (staker_2, amount_2) = (2, 11);
+        assert_lock(staker_2, amount_2);
+        assert_stake(staker_2, &smart_contract, amount_2);
+
+        // 2. Advance a few eras, creating a gap but remaining within the same period.
+        //    Claim all rewards for staker 1.
+        //    Lock & stake some amount with staker 3.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 3);
+        assert_eq!(
+            ActiveProtocolState::<Test>::get().period_number(),
+            1,
+            "Sanity check."
+        );
+        for _ in 0..required_number_of_reward_claims(staker_1) {
+            assert_claim_staker_rewards(staker_1);
+        }
+
+        // This ensures contract stake entry is aligned to the current era, and future entry refers to the era after this one.
+        //
+        // This is important to reproduce an issue where the (era, amount) pairs returned by the `unstake` function don't correctly
+        // cover the next era.
+        let (staker_3, amount_3) = (3, 13);
+        assert_lock(staker_3, amount_3);
+        assert_stake(staker_3, &smart_contract, amount_3);
+
+        // 3. Unstake from staker 1, and ensure the future stake is reduced.
+        //    Unstake amount should be slightly higher than the 2nd stake amount to ensure whole b&e stake amount is removed.
+        assert_unstake(staker_1, &smart_contract, amount_2 + 3);
+    })
+}
+
+#[test]
+fn lock_correctly_considers_unlocking_amount() {
+    ExtBuilder::build().execute_with(|| {
+        // Lock the entire amount & immediately start the unlocking process
+        let (staker, unlock_amount) = (1, 13);
+        let total_balance = Balances::total_balance(&staker);
+        assert_lock(staker, total_balance);
+        assert_unlock(staker, unlock_amount);
+
+        assert_noop!(
+            DappStaking::lock(RuntimeOrigin::signed(staker), 1),
+            Error::<Test>::ZeroAmount
+        );
+    })
+}
+
+#[test]
+fn fix_account_scenarios_work() {
+    ExtBuilder::build().execute_with(|| {
+        // 1. Lock some amount correctly, unstake it, try to fix it, and ensure the call fails
+        let (account_1, lock_1) = (1, 100);
+        assert_lock(account_1, lock_1);
+        assert_noop!(
+            DappStaking::fix_account(RuntimeOrigin::signed(11), account_1),
+            Error::<Test>::AccountNotInconsistent
+        );
+
+        assert_unlock(account_1, lock_1);
+        assert_noop!(
+            DappStaking::fix_account(RuntimeOrigin::signed(11), account_1),
+            Error::<Test>::AccountNotInconsistent
+        );
+
+        // 2. Reproduce the issue where the account has more frozen than balance
+        let (account_2, unlock_2) = (2, 13);
+        let lock_2 = Balances::total_balance(&account_2);
+        assert_lock(account_2, lock_2);
+        assert_unlock(account_2, unlock_2);
+
+        // With the fix implemented, the scenario needs to be reproduced by hand.
+        // Account calls `lock`, specifying the amount that is undergoing the unlocking process.
+        // It can be either more or less, it doesn't matter for the test or the issue.
+
+        // But first, a sanity check.
+        assert_noop!(
+            DappStaking::lock(RuntimeOrigin::signed(account_2), unlock_2),
+            Error::<Test>::ZeroAmount,
+        );
+
+        // Now reproduce the incorrect lock/freeze operation.
+        let mut ledger = Ledger::<Test>::get(&account_2);
+        ledger.add_lock_amount(unlock_2);
+        assert_ok!(DappStaking::update_ledger(&account_2, ledger));
+        use crate::CurrentEraInfo;
+        CurrentEraInfo::<Test>::mutate(|era_info| {
+            era_info.add_locked(unlock_2);
+        });
+        assert!(
+            Balances::free_balance(&account_2)
+                < Ledger::<Test>::get(&account_2).total_locked_amount(),
+            "Sanity check."
+        );
+
+        // Now fix the account
+        assert_ok!(DappStaking::fix_account(
+            RuntimeOrigin::signed(11),
+            account_2
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::ClaimedUnlocked {
+            account: account_2,
+            amount: unlock_2,
+        }));
+
+        // Post-fix checks
+        assert_eq!(
+            Balances::free_balance(&account_2),
+            Ledger::<Test>::get(&account_2).total_locked_amount(),
+            "After the fix, balances should be equal."
+        );
+
+        // Cannot fix the same account again.
+        assert_noop!(
+            DappStaking::fix_account(RuntimeOrigin::signed(11), account_2),
+            Error::<Test>::AccountNotInconsistent
         );
     })
 }
