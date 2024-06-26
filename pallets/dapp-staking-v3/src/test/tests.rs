@@ -3447,6 +3447,7 @@ fn claim_staker_rewards_for_basic_example_is_ok() {
 
         // Basic checks, since the entire claim logic is already covered by other tests
         let claimer_account = 3;
+        let (init_staker_balance, init_claimer_balance) = (Balances::free_balance(&staker_account), Balances::free_balance(&claimer_account));
         assert_ok!(DappStaking::claim_staker_rewards_for(
             RuntimeOrigin::signed(claimer_account),
             staker_account
@@ -3457,6 +3458,11 @@ fn claim_staker_rewards_for_basic_example_is_ok() {
             // for this simple test, entire staker reward pool goes to the staker
             amount: <Test as Config>::StakingRewardHandler::staker_and_dapp_reward_pools(0).0,
         }));
+
+        assert!(
+            Balances::free_balance(&staker_account) > init_staker_balance, "Balance must have increased due to the reward payout."
+        );
+        assert_eq!(init_claimer_balance, Balances::free_balance(&claimer_account), , "Claimer balance must not change since reward is deposited to the staker.");
     })
 }
 
@@ -3477,6 +3483,8 @@ fn claim_bonus_reward_for_works() {
         // Advance to the next period, and claim the bonus
         advance_to_next_period();
         let claimer_account = 3;
+        let (init_staker_balance, init_claimer_balance) = (Balances::free_balance(&staker_account), Balances::free_balance(&claimer_account));
+
         assert_ok!(DappStaking::claim_bonus_reward_for(
             RuntimeOrigin::signed(claimer_account),
             staker_account,
@@ -3489,5 +3497,11 @@ fn claim_bonus_reward_for_works() {
             // for this simple test, entire bonus reward pool goes to the staker
             amount: <Test as Config>::StakingRewardHandler::bonus_reward_pool(),
         }));
+
+        assert!(
+            Balances::free_balance(&staker_account) > init_staker_balance, "Balance must have increased due to the reward payout."
+        );
+        assert_eq!(init_claimer_balance, Balances::free_balance(&claimer_account), , "Claimer balance must not change since reward is deposited to the staker.");
+
     })
 }
