@@ -38,7 +38,10 @@ use sp_runtime::{
 };
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, EraNumber, RankedTier, SmartContractHandle, TierSlots},
+    dapp_staking::{
+        CycleConfiguration, EraNumber, RankedTier, SmartContractHandle, StakingRewardHandler,
+        TierSlots,
+    },
     Balance, BlockNumber,
 };
 
@@ -3422,5 +3425,69 @@ fn fix_account_scenarios_work() {
             DappStaking::fix_account(RuntimeOrigin::signed(11), account_2),
             Error::<Test>::AccountNotInconsistent
         );
+    })
+}
+
+#[test]
+fn claim_staker_rewards_for_basic_example_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+
+        let staker_account = 2;
+        let lock_amount = 300;
+        assert_lock(staker_account, lock_amount);
+        let stake_amount = 93;
+        assert_stake(staker_account, &smart_contract, stake_amount);
+
+        // Advance into Build&Earn period, and allow one era to pass. Claim reward for 1 era.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+
+        // Basic checks, since the entire claim logic is already covered by other tests
+        let claimer_account = 3;
+        assert_ok!(DappStaking::claim_staker_rewards_for(
+            RuntimeOrigin::signed(claimer_account),
+            staker_account
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::Reward {
+            account: staker_account,
+            era: ActiveProtocolState::<Test>::get().era - 1,
+            // for this simple test, entire staker reward pool goes to the staker
+            amount: <Test as Config>::StakingRewardHandler::staker_and_dapp_reward_pools(0).0,
+        }));
+    })
+}
+
+#[test]
+fn claim_bonus_reward_for_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+
+        let staker_account = 2;
+        let lock_amount = 300;
+        assert_lock(staker_account, lock_amount);
+        let stake_amount = 93;
+        assert_stake(staker_account, &smart_contract, stake_amount);
+
+        // Advance to the next period, and claim the bonus
+        advance_to_next_period();
+        let claimer_account = 3;
+        assert_ok!(DappStaking::claim_bonus_reward_for(
+            RuntimeOrigin::signed(claimer_account),
+            staker_account,
+            smart_contract.clone()
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::BonusReward {
+            account: staker_account,
+            period: ActiveProtocolState::<Test>::get().period_number() - 1,
+            smart_contract,
+            // for this simple test, entire bonus reward pool goes to the staker
+            amount: <Test as Config>::StakingRewardHandler::bonus_reward_pool(),
+        }));
     })
 }

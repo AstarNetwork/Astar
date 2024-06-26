@@ -24,7 +24,7 @@ use crate::{
 
 use frame_support::{
     construct_runtime, ord_parameter_types, parameter_types,
-    traits::{fungible::Mutate as FunMutate, ConstU128, ConstU32, EitherOfDiverse},
+    traits::{fungible::Mutate as FunMutate, ConstBool, ConstU128, ConstU32, EitherOfDiverse},
     weights::Weight,
 };
 use sp_arithmetic::fixed_point::FixedU128;
