@@ -32,12 +32,3 @@ while ps $SETUP_PID > /dev/null ; do
     sleep 1
 done
 chmod +x polkadot polkadot-execute-worker polkadot-prepare-worker
-
-# if env.CHAIN is not set then use shibuya-dev
-if [[ ! -v CHAIN ]]; then
-  export CHAIN="shibuya-dev"
-fi
-
-echo "Start zombienet for $CHAIN"
-
-zombienet -p native test smoke.zndsl

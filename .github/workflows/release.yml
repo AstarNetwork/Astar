@@ -580,8 +580,12 @@ jobs:
           chmod +x target/release/astar-collator
           mv target/release/astar-collator third-party/zombienet
 
-      - name: Sync chain ${{ matrix.chain }}
+      - name: Setup zombienet
+        working-directory: third-party/zombienet
+        run: ./setup.sh
+
+      - name: ${{ matrix.chain }} build blocks
         working-directory: third-party/zombienet
         env:
           CHAIN: ${{ matrix.chain }}
-        run: ./smoke.sh
+        run: zombienet -p native test smoke.zndsl
