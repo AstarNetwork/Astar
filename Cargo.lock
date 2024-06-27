@@ -5502,6 +5502,7 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "pallet-collator-selection",
+ "pallet-collective-proxy",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapp-staking-v3",
