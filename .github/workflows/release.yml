@@ -583,5 +583,5 @@ jobs:
       - name: Sync chain ${{ matrix.chain }}
         working-directory: third-party/zombienet
         env:
-          - CHAIN: ${{ matrix.chain }}
+          CHAIN: ${{ matrix.chain }}
         run: ./smoke.sh
