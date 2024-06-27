@@ -581,6 +581,7 @@ jobs:
           mv target/release/astar-collator third-party/zombienet
 
       - name: Sync chain ${{ matrix.chain }}
+        working-directory: third-party/zombienet
         env:
           - CHAIN: ${{ matrix.chain }}
-        run: ./third-party/zombienet/smoke.sh
+        run: ./smoke.sh
