@@ -26,6 +26,7 @@ pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
+pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-utility = { workspace = true }
@@ -81,6 +82,7 @@ std = [
 	"pallet-collator-selection/std",
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
+	"pallet-democracy/std",
 	"pallet-dapp-staking-v3/std",
 	"pallet-ethereum?/std",
 	"pallet-ethereum-checked/std",

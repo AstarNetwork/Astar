@@ -5505,6 +5505,7 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-dapp-staking-v3",
+ "pallet-democracy",
  "pallet-ethereum",
  "pallet-ethereum-checked",
  "pallet-evm",
