@@ -536,7 +536,7 @@ jobs:
         asset_name: evm-tracing-artifacts-${{ github.ref_name }}.tar.gz
         asset_content_type: application/gzip
 
-  chain-sync:
+  chain-sync-smoke:
     needs: native-linux
     runs-on: ubuntu-latest
     strategy:
@@ -556,4 +556,31 @@ jobs:
       - name: Sync chain ${{ matrix.chain }}
         run: |
           chmod +x target/release/astar-collator
-          ./scripts/sync.sh ${{ matrix.chain }}
+          ./scripts/sync-smoke.sh ${{ matrix.chain }}
+
+  zombienet-smoke:
+    needs: native-linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chain: [ "astar-dev", "shiden-dev", "shibuya-dev" ]
+
+    steps:
+      - name: Checkout the source code
+        uses: actions/checkout@v4
+
+      - name: Download pre-built collator binary
+        uses: actions/download-artifact@v3
+        with:
+          name: astar-ubuntu-latest-x86_64
+          path: target/release
+
+      - name: Setup
+        run: |
+          chmod +x target/release/astar-collator
+          mv target/release/astar-collator third-party/zombienet
+
+      - name: Sync chain ${{ matrix.chain }}
+        env:
+          - CHAIN: ${{ matrix.chain }}
+        run: ./third-party/zombienet/smoke.sh
