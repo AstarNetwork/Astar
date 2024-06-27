@@ -29,7 +29,13 @@ pub use sp_io::hashing::keccak_256;
 pub use sp_runtime::{AccountId32, MultiAddress};
 
 pub use astar_primitives::{
-    dapp_staking::CycleConfiguration, evm::UnifiedAddressMapper, oracle::CurrencyAmount,
+    dapp_staking::CycleConfiguration,
+    evm::UnifiedAddressMapper,
+    governance::{
+        CommunityCouncilMembershipInst, MainCouncilMembershipInst, OracleMembershipInst,
+        TechnicalCommitteeMembershipInst,
+    },
+    oracle::CurrencyAmount,
     BlockNumber,
 };
 
@@ -161,8 +167,8 @@ impl ExtBuilder {
         .unwrap();
 
         // Setup initial oracle members
-        <pallet_membership::GenesisConfig<Runtime, OracleMembershipInstance> as BuildStorage>::assimilate_storage(
-            &pallet_membership::GenesisConfig::<Runtime, OracleMembershipInstance> {
+        <pallet_membership::GenesisConfig<Runtime, OracleMembershipInst> as BuildStorage>::assimilate_storage(
+            &pallet_membership::GenesisConfig::<Runtime, OracleMembershipInst> {
                 members: vec![ALICE, BOB].try_into().expect("Safe to assume at least 2 members are supported."),
                 ..Default::default()
             },
@@ -185,6 +191,34 @@ impl ExtBuilder {
         )
         .unwrap();
 
+        #[cfg(any(feature = "shibuya"))]
+        // Governance related storage initialization
+        {
+            <pallet_membership::GenesisConfig<Runtime, MainCouncilMembershipInst> as BuildStorage>::assimilate_storage(
+                &pallet_membership::GenesisConfig::<Runtime, MainCouncilMembershipInst> {
+                    members: vec![ALICE, BOB, CAT].try_into().expect("Safe to assume at least 3 members are supported."),
+                    ..Default::default()
+                },
+                &mut t)
+            .unwrap();
+
+            <pallet_membership::GenesisConfig<Runtime, TechnicalCommitteeMembershipInst> as BuildStorage>::assimilate_storage(
+                &pallet_membership::GenesisConfig::<Runtime, TechnicalCommitteeMembershipInst> {
+                    members: vec![ALICE, BOB, CAT].try_into().expect("Safe to assume at least 3 members are supported."),
+                    ..Default::default()
+                },
+                &mut t)
+            .unwrap();
+
+            <pallet_membership::GenesisConfig<Runtime, CommunityCouncilMembershipInst> as BuildStorage>::assimilate_storage(
+                &pallet_membership::GenesisConfig::<Runtime, CommunityCouncilMembershipInst> {
+                    members: vec![ALICE, BOB, CAT].try_into().expect("Safe to assume at least 3 members are supported."),
+                    ..Default::default()
+                },
+                &mut t)
+            .unwrap();
+        }
+
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| {
             System::set_block_number(1);
@@ -204,6 +238,9 @@ impl ExtBuilder {
                 maintenance: false,
             });
             pallet_dapp_staking_v3::Safeguard::<Runtime>::put(false);
+
+            // Ensure the initial state is set for the first block
+            on_initialize();
         });
         ext
     }
@@ -224,42 +261,82 @@ pub const BLOCK_TIME: u64 = 12_000;
 
 pub fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
+        on_finalize();
+
+        System::set_block_number(System::block_number() + 1);
+        on_initialize();
+
         let block_number = System::block_number();
-        TransactionPayment::on_finalize(block_number);
-        Oracle::on_finalize(block_number);
-        PriceAggregator::on_finalize(block_number);
-        DappStaking::on_finalize(block_number);
-        Authorship::on_finalize(block_number);
-        Session::on_finalize(block_number);
-        AuraExt::on_finalize(block_number);
-        PolkadotXcm::on_finalize(block_number);
-        Ethereum::on_finalize(block_number);
-        CollatorSelection::on_finalize(block_number);
-        DynamicEvmBaseFee::on_finalize(block_number);
-        Inflation::on_finalize(block_number);
-
-        System::set_block_number(block_number + 1);
-        let block_number = System::block_number();
-
-        Inflation::on_initialize(block_number);
-        Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
-        TransactionPayment::on_initialize(block_number);
-        DappStaking::on_initialize(block_number);
-        Oracle::on_initialize(block_number);
-        PriceAggregator::on_initialize(block_number);
-        Authorship::on_initialize(block_number);
-        Aura::on_initialize(block_number);
-        AuraExt::on_initialize(block_number);
-        CollatorSelection::on_initialize(block_number);
-        Ethereum::on_initialize(block_number);
-        DynamicEvmBaseFee::on_initialize(block_number);
-        #[cfg(any(feature = "shibuya", feature = "shiden"))]
-        RandomnessCollectiveFlip::on_initialize(block_number);
-
         XcmpQueue::on_idle(block_number, Weight::MAX);
         DmpQueue::on_idle(block_number, Weight::MAX);
         Contracts::on_idle(block_number, Weight::MAX);
     }
+}
+
+fn on_initialize() {
+    let block_number = System::block_number();
+
+    Inflation::on_initialize(block_number);
+    Timestamp::set_timestamp(block_number as u64 * BLOCK_TIME);
+    TransactionPayment::on_initialize(block_number);
+    DappStaking::on_initialize(block_number);
+    Oracle::on_initialize(block_number);
+    PriceAggregator::on_initialize(block_number);
+    Authorship::on_initialize(block_number);
+    Aura::on_initialize(block_number);
+    AuraExt::on_initialize(block_number);
+    CollatorSelection::on_initialize(block_number);
+    Ethereum::on_initialize(block_number);
+    DynamicEvmBaseFee::on_initialize(block_number);
+    #[cfg(any(feature = "shibuya", feature = "shiden"))]
+    RandomnessCollectiveFlip::on_initialize(block_number);
+
+    #[cfg(any(feature = "shibuya"))]
+    // Governance pallets
+    {
+        CollectiveProxy::on_initialize(block_number);
+        CommunityTreasury::on_initialize(block_number);
+        Treasury::on_initialize(block_number);
+        Democracy::on_initialize(block_number);
+        CommunityCouncil::on_initialize(block_number);
+        TechnicalCommittee::on_initialize(block_number);
+        Council::on_initialize(block_number);
+        CommunityCouncilMembership::on_initialize(block_number);
+        TechnicalCommitteeMembership::on_initialize(block_number);
+        CouncilMembership::on_initialize(block_number);
+    }
+}
+
+fn on_finalize() {
+    let block_number = System::block_number();
+
+    #[cfg(any(feature = "shibuya"))]
+    // Governance pallets
+    {
+        CouncilMembership::on_finalize(block_number);
+        TechnicalCommitteeMembership::on_finalize(block_number);
+        CommunityCouncilMembership::on_finalize(block_number);
+        Council::on_finalize(block_number);
+        TechnicalCommittee::on_finalize(block_number);
+        CommunityCouncil::on_finalize(block_number);
+        Democracy::on_finalize(block_number);
+        Treasury::on_finalize(block_number);
+        CommunityTreasury::on_finalize(block_number);
+        CollectiveProxy::on_finalize(block_number);
+    }
+
+    TransactionPayment::on_finalize(block_number);
+    Oracle::on_finalize(block_number);
+    PriceAggregator::on_finalize(block_number);
+    DappStaking::on_finalize(block_number);
+    Authorship::on_finalize(block_number);
+    Session::on_finalize(block_number);
+    AuraExt::on_finalize(block_number);
+    PolkadotXcm::on_finalize(block_number);
+    Ethereum::on_finalize(block_number);
+    CollatorSelection::on_finalize(block_number);
+    DynamicEvmBaseFee::on_finalize(block_number);
+    Inflation::on_finalize(block_number);
 }
 
 pub fn run_for_blocks(n: BlockNumber) {

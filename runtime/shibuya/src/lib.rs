@@ -82,8 +82,8 @@ use astar_primitives::{
         EnsureRootOrAllMainCouncil, EnsureRootOrAllTechnicalCommittee,
         EnsureRootOrTwoThirdsCommunityCouncil, EnsureRootOrTwoThirdsMainCouncil,
         EnsureRootOrTwoThirdsTechnicalCommittee, MainCouncilCollectiveInst,
-        MainCouncilMembershipInst, MainTreasuryInst, TechnicalCommitteeCollectiveInst,
-        TechnicalCommitteeMembershipInst,
+        MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
+        TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
     xcm::AssetLocationIdConverter,
@@ -1172,8 +1172,7 @@ impl orml_oracle::Config for Runtime {
     type MaxFeedValues = ConstU32<1>;
 }
 
-pub type OracleMembershipInstance = pallet_membership::Instance1;
-impl pallet_membership::Config<OracleMembershipInstance> for Runtime {
+impl pallet_membership::Config<OracleMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AddOrigin = EnsureRoot<AccountId>;
     type RemoveOrigin = EnsureRoot<AccountId>;
@@ -1203,7 +1202,7 @@ impl oracle_benchmarks::AddMember<AccountId> for AddMemberBenchmark {
         use frame_support::assert_ok;
         use frame_system::RawOrigin;
         assert_ok!(
-            pallet_membership::Pallet::<Runtime, OracleMembershipInstance>::add_member(
+            pallet_membership::Pallet::<Runtime, OracleMembershipInst>::add_member(
                 RawOrigin::Root.into(),
                 account.into()
             )
