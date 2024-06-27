@@ -1,0 +1,11 @@
+Description: Parachain build blocks
+Network: ./smoke.toml
+Creds: config
+
+alice: is up
+collator1: is up
+collator2: is up
+
+## test the block height
+collator1: reports block height is greater than 5 within 200 seconds
+collator2: reports block height is greater than 5 within 200 seconds
