@@ -5489,6 +5489,10 @@ dependencies = [
  "astar-primitives",
  "astar-runtime",
  "astar-test-utils",
+ "cumulus-pallet-parachain-system",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
  "env_logger 0.10.2",
  "ethereum",
  "fp-evm",
@@ -5516,6 +5520,7 @@ dependencies = [
  "pallet-membership",
  "pallet-price-aggregator",
  "pallet-proxy",
+ "pallet-timestamp",
  "pallet-unified-accounts",
  "pallet-utility",
  "parity-scale-codec",
@@ -5526,6 +5531,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-trie",
  "unified-accounts-chain-extension-types",
 ]
 
