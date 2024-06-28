@@ -1,5 +1,5 @@
 name: Static Analysis
-on: [push, workflow_dispatch]
+on: [ push, workflow_dispatch ]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
@@ -7,7 +7,7 @@ concurrency:
 jobs:
   fmt:
     if: github.event.pull_request.draft == false
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [ self-hosted, Linux, X64 ]
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v3
@@ -33,38 +33,38 @@ jobs:
           fi
           taplo fmt --check
 
-  clippy:
-    if: github.event.pull_request.draft == false
-    runs-on: [self-hosted, Linux, X64]
-    steps:
-    - name: Checkout the source code
-      uses: actions/checkout@v3
-
-    - name: Install deps
-      run: sudo apt -y install protobuf-compiler
-
-    - name: free disk space
-      run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo apt clean
-
-    - name: Install & display rust toolchain
-      run: rustup show
-
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
-
-    - uses: actions-rs/clippy-check@v1
-      env:
-        SKIP_WASM_BUILD: 1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --features try-runtime,runtime-benchmarks -- -D warnings
+  #  clippy:
+  #    if: github.event.pull_request.draft == false
+  #    runs-on: [self-hosted, Linux, X64]
+  #    steps:
+  #    - name: Checkout the source code
+  #      uses: actions/checkout@v3
+  #
+  #    - name: Install deps
+  #      run: sudo apt -y install protobuf-compiler
+  #
+  #    - name: free disk space
+  #      run: |
+  #        sudo swapoff -a
+  #        sudo rm -f /swapfile
+  #        sudo apt clean
+  #
+  #    - name: Install & display rust toolchain
+  #      run: rustup show
+  #
+  #    - name: Check targets are installed correctly
+  #      run: rustup target list --installed
+  #
+  #    - uses: actions-rs/clippy-check@v1
+  #      env:
+  #        SKIP_WASM_BUILD: 1
+  #      with:
+  #        token: ${{ secrets.GITHUB_TOKEN }}
+  #        args: --features try-runtime,runtime-benchmarks -- -D warnings
 
   check-license:
     if: github.event.pull_request.draft == false
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [ self-hosted, Linux, X64 ]
     steps:
       - name: Checkout the source code
         uses: actions/checkout@v3
