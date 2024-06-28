@@ -74,7 +74,7 @@ mod tests;
 mod benchmarking;
 pub mod weights;
 
-#[frame_support::pallet(dev_mode)]
+#[frame_support::pallet]
 pub mod pallet {
     pub use crate::weights::WeightInfo;
     use core::ops::Div;
