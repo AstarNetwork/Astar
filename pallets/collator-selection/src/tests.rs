@@ -284,7 +284,7 @@ fn leave_intent() {
 }
 
 #[test]
-fn withdraw_unbound() {
+fn withdraw_unbond() {
     new_test_ext().execute_with(|| {
         // register a candidate.
         assert_ok!(CollatorSelection::register_as_candidate(
@@ -350,7 +350,7 @@ fn re_register_with_unbonding() {
         assert_ok!(CollatorSelection::register_as_candidate(
             RuntimeOrigin::signed(3)
         ));
-        // previous bound is unreserved and reserved again
+        // previous bond is unreserved and reserved again
         assert_eq!(Balances::free_balance(3), 90);
         assert_eq!(Balances::reserved_balance(3), 10);
     })

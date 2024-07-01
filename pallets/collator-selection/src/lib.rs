@@ -296,9 +296,9 @@ pub mod pallet {
         ValidatorNotRegistered,
         /// Account is now allowed to be a candidate due to an external reason (e.g. it might be participating in dApp staking)
         NotAllowedCandidate,
-        /// Candidacy bound is still on un-bonding period.
+        /// The candidacy bond is currently in the un-bonding period.
         BondStillLocked,
-        /// No candidacy bound to withdraw.
+        /// No candidacy bond available for withdrawal.
         NoCandidacyBond,
     }
 
