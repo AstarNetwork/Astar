@@ -548,10 +548,8 @@ pub mod pallet {
                 // still candidate, kick and slash
                 if Self::is_account_candidate(&who) {
                     if Self::candidates().len() > T::MinCandidates::get() as usize {
-                        if let Err(why) = Self::try_remove_candidate(&who) {
-                            log::warn!("Failed to remove candidate {:?}", why);
-                            continue;
-                        }
+                        // no error, who is a candidate
+                        let _ = Self::try_remove_candidate(&who);
                         Self::slash_non_candidate(&who);
                     }
                 } else {
