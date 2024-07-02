@@ -254,6 +254,8 @@ impl pallet_dapp_staking_v3::Config for Test {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = MockSmartContract;
+    type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;

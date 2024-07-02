@@ -73,6 +73,7 @@ use astar_primitives::{
         PeriodNumber, RankedTier, SmartContract, TierSlots as TierSlotsFunc,
     },
     evm::EvmRevertCodeHandler,
+    governance::OracleMembershipInst,
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
@@ -374,6 +375,8 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
+    type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
@@ -1072,8 +1075,7 @@ impl orml_oracle::Config for Runtime {
     type MaxFeedValues = ConstU32<1>;
 }
 
-pub type OracleMembershipInstance = pallet_membership::Instance1;
-impl pallet_membership::Config<OracleMembershipInstance> for Runtime {
+impl pallet_membership::Config<OracleMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AddOrigin = EnsureRoot<AccountId>;
     type RemoveOrigin = EnsureRoot<AccountId>;

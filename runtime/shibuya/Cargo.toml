@@ -44,8 +44,11 @@ pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
+pallet-collective = { workspace = true }
+pallet-collective-proxy = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-primitives = { workspace = true }
+pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
@@ -68,6 +71,7 @@ pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
+pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 
@@ -154,6 +158,10 @@ std = [
 	"fp-self-contained/std",
 	"sp-std/std",
 	"sp-api/std",
+	"pallet-democracy/std",
+	"pallet-collective/std",
+	"pallet-collective-proxy/std",
+	"pallet-treasury/std",
 	"sp-core/std",
 	"sp-genesis-builder/std",
 	"sp-consensus-aura/std",
@@ -261,6 +269,10 @@ runtime-benchmarks = [
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"oracle-benchmarks/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"pallet-collective-proxy/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
+	"pallet-democracy/runtime-benchmarks",
+	"pallet-collective/runtime-benchmarks",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
@@ -328,6 +340,10 @@ try-runtime = [
 	"pallet-ethereum/try-runtime",
 	"pallet-membership/try-runtime",
 	"pallet-xc-asset-config/try-runtime",
+	"pallet-collective-proxy/try-runtime",
+	"pallet-treasury/try-runtime",
+	"pallet-collective/try-runtime",
+	"pallet-democracy/try-runtime",
 	"pallet-assets/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-collator-selection/try-runtime",

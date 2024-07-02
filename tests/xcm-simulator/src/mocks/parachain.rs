@@ -62,9 +62,7 @@ use orml_xcm_support::DisabledParachainFee;
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 use astar_primitives::{
-    dapp_staking::{
-        AccountCheck, CycleConfiguration, SmartContract, SmartContractHandle, StakingRewardHandler,
-    },
+    dapp_staking::{AccountCheck, CycleConfiguration, SmartContract, StakingRewardHandler},
     oracle::PriceProvider,
     xcm::{
         AllowTopLevelPaidExecutionFrom, AssetLocationIdConverter, FixedRateOfForeignAsset,
@@ -699,7 +697,7 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<MockSmartContract, AccountId>
     for BenchmarkHelper<MockSmartContract, AccountId>
 {
     fn get_smart_contract(id: u32) -> MockSmartContract {
-        MockSmartContract::wasm(AccountId::from([id as u8; 32]))
+        MockSmartContract::Wasm(AccountId::from([id as u8; 32]))
     }
 
     fn set_balance(account: &AccountId, amount: Balance) {
@@ -718,6 +716,8 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = MockSmartContract;
+    type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;

@@ -22,10 +22,11 @@ use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
-    CollatorSelectionConfig, DappStakingConfig, EVMChainIdConfig, EVMConfig, InflationConfig,
-    InflationParameters, OracleMembershipConfig, ParachainInfoConfig, Precompiles,
-    PriceAggregatorConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
-    SystemConfig, TierThreshold, VestingConfig, SBY,
+    CollatorSelectionConfig, CommunityCouncilMembershipConfig, CouncilMembershipConfig,
+    DappStakingConfig, EVMChainIdConfig, EVMConfig, InflationConfig, InflationParameters,
+    OracleMembershipConfig, ParachainInfoConfig, Precompiles, PriceAggregatorConfig,
+    RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig,
+    TechnicalCommitteeMembershipConfig, TierThreshold, VestingConfig, SBY,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -99,6 +100,10 @@ fn make_genesis(
             get_from_seed::<AuraId>("Bob"),
         ),
     ];
+    let accounts: Vec<AccountId> = vec!["Alice", "Bob", "Charlie", "Dave", "Eve"]
+        .iter()
+        .map(|s| get_account_id_from_seed::<sr25519::Public>(s))
+        .collect();
 
     // This is supposed the be the simplest bytecode to revert without returning any data.
     // We will pre-deploy it under all of our precompiles to ensure they can be called from
@@ -212,6 +217,32 @@ fn make_genesis(
                 .try_into()
                 .expect("Must work since buffer should have at least a single value."),
         },
+        council_membership: CouncilMembershipConfig {
+            members: accounts
+                .clone()
+                .try_into()
+                .expect("Should support at least 5 members."),
+            phantom: Default::default(),
+        },
+        technical_committee_membership: TechnicalCommitteeMembershipConfig {
+            members: accounts[..3]
+                .to_vec()
+                .try_into()
+                .expect("Should support at least 3 members."),
+            phantom: Default::default(),
+        },
+        community_council_membership: CommunityCouncilMembershipConfig {
+            members: accounts
+                .try_into()
+                .expect("Should support at least 5 members."),
+            phantom: Default::default(),
+        },
+        council: Default::default(),
+        technical_committee: Default::default(),
+        community_council: Default::default(),
+        democracy: Default::default(),
+        treasury: Default::default(),
+        community_treasury: Default::default(),
     }
 }
 

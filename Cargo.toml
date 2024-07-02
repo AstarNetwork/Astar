@@ -181,6 +181,9 @@ pallet-scheduler = { git = "https://github.com/paritytech/polkadot-sdk", branch 
 pallet-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 pallet-message-queue = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 pallet-membership = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
+pallet-collective = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
+pallet-democracy = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
+pallet-treasury = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 
 # EVM & Ethereum
 # (wasm)
@@ -290,6 +293,7 @@ pallet-unified-accounts = { path = "./pallets/unified-accounts", default-feature
 astar-xcm-benchmarks = { path = "./pallets/astar-xcm-benchmarks", default-features = false }
 pallet-static-price-provider = { path = "./pallets/static-price-provider", default-features = false }
 pallet-price-aggregator = { path = "./pallets/price-aggregator", default-features = false }
+pallet-collective-proxy = { path = "./pallets/collective-proxy", default-features = false }
 
 # Get rid of this once orml-oracle has been updated with benchmarks
 oracle-benchmarks = { path = "./pallets/oracle-benchmarks", default-features = false }

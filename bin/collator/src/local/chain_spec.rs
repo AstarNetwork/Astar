@@ -19,14 +19,16 @@
 //! Chain specifications.
 
 use local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, DappStakingConfig,
-    EVMConfig, GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles,
-    RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig, TierThreshold, VestingConfig, AST,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig,
+    CommunityCouncilMembershipConfig, CommunityTreasuryPalletId, CouncilMembershipConfig,
+    DappStakingConfig, EVMConfig, GrandpaConfig, GrandpaId, InflationConfig, InflationParameters,
+    Precompiles, RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig,
+    TechnicalCommitteeMembershipConfig, TierThreshold, TreasuryPalletId, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_runtime::{
-    traits::{IdentifyAccount, Verify},
+    traits::{AccountIdConversion, IdentifyAccount, Verify},
     Permill,
 };
 
@@ -75,6 +77,8 @@ pub fn development_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Charlie"),
                     get_account_id_from_seed::<sr25519::Public>("Eve"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                    TreasuryPalletId::get().into_account_truncating(),
+                    CommunityTreasuryPalletId::get().into_account_truncating(),
                     // Arrakis.TEST account in MetaMask
                     // Import known test account with private key
                     // 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
@@ -98,6 +102,11 @@ fn testnet_genesis(
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
 ) -> RuntimeGenesisConfig {
+    let accounts: Vec<AccountId> = vec!["Alice", "Bob", "Charlie", "Dave", "Eve"]
+        .iter()
+        .map(|s| get_account_id_from_seed::<sr25519::Public>(s))
+        .collect();
+
     // This is supposed the be the simplest bytecode to revert without returning any data.
     // We will pre-deploy it under all of our precompiles to ensure they can be called from
     // within contracts.
@@ -186,6 +195,32 @@ fn testnet_genesis(
             params: InflationParameters::default(),
             ..Default::default()
         },
+        council_membership: CouncilMembershipConfig {
+            members: accounts
+                .clone()
+                .try_into()
+                .expect("Should support at least 5 members."),
+            phantom: Default::default(),
+        },
+        technical_committee_membership: TechnicalCommitteeMembershipConfig {
+            members: accounts[..3]
+                .to_vec()
+                .try_into()
+                .expect("Should support at least 3 members."),
+            phantom: Default::default(),
+        },
+        community_council_membership: CommunityCouncilMembershipConfig {
+            members: accounts
+                .try_into()
+                .expect("Should support at least 5 members."),
+            phantom: Default::default(),
+        },
+        council: Default::default(),
+        technical_committee: Default::default(),
+        community_council: Default::default(),
+        democracy: Default::default(),
+        treasury: Default::default(),
+        community_treasury: Default::default(),
     }
 }
 

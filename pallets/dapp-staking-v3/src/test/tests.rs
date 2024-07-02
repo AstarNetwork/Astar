@@ -38,7 +38,10 @@ use sp_runtime::{
 };
 
 use astar_primitives::{
-    dapp_staking::{CycleConfiguration, EraNumber, RankedTier, SmartContractHandle, TierSlots},
+    dapp_staking::{
+        CycleConfiguration, EraNumber, RankedTier, SmartContractHandle, StakingRewardHandler,
+        TierSlots,
+    },
     Balance, BlockNumber,
 };
 
@@ -269,14 +272,44 @@ fn register_is_ok() {
         // Register two contracts using the same owner
         assert_register(7, &MockSmartContract::Wasm(2));
         assert_register(7, &MockSmartContract::Wasm(3));
+
+        // Register a contract using non-root origin
+        let smart_contract = MockSmartContract::Wasm(4);
+        let owner = 11;
+        let dapp_id = NextDAppId::<Test>::get();
+        assert_ok!(DappStaking::register(
+            RuntimeOrigin::signed(ContractRegisterAccount::get()),
+            owner,
+            smart_contract.clone()
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppRegistered {
+            owner,
+            smart_contract,
+            dapp_id,
+        }));
     })
 }
 
 #[test]
 fn register_with_incorrect_origin_fails() {
     ExtBuilder::build().execute_with(|| {
+        // Test assumes that Contract registry & Manager origins are different.
         assert_noop!(
-            DappStaking::register(RuntimeOrigin::signed(1), 3, MockSmartContract::Wasm(2)),
+            DappStaking::register(
+                RuntimeOrigin::signed(ManagerAccount::get()),
+                3,
+                MockSmartContract::Wasm(2)
+            ),
+            BadOrigin
+        );
+
+        // Test assumes register & unregister origins are different.
+        assert_noop!(
+            DappStaking::register(
+                RuntimeOrigin::signed(ContractUnregisterAccount::get()),
+                3,
+                MockSmartContract::Wasm(2)
+            ),
             BadOrigin
         );
     })
@@ -432,6 +465,19 @@ fn unregister_no_stake_is_ok() {
 
         // Nothing staked on contract, just unregister it.
         assert_unregister(&smart_contract);
+
+        // Prepare another dApp, unregister it using non-root origin
+        let smart_contract = MockSmartContract::Wasm(5);
+        assert_register(owner, &smart_contract);
+
+        assert_ok!(DappStaking::unregister(
+            RuntimeOrigin::signed(ContractUnregisterAccount::get()),
+            smart_contract.clone(),
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppUnregistered {
+            smart_contract: smart_contract.clone(),
+            era: ActiveProtocolState::<Test>::get().era,
+        }));
     })
 }
 
@@ -466,6 +512,13 @@ fn unregister_fails() {
         assert_register(owner, &smart_contract);
         assert_noop!(
             DappStaking::unregister(RuntimeOrigin::signed(owner), smart_contract),
+            BadOrigin
+        );
+        assert_noop!(
+            DappStaking::unregister(
+                RuntimeOrigin::signed(ContractRegisterAccount::get()),
+                smart_contract
+            ),
             BadOrigin
         );
 
@@ -3371,6 +3424,99 @@ fn fix_account_scenarios_work() {
         assert_noop!(
             DappStaking::fix_account(RuntimeOrigin::signed(11), account_2),
             Error::<Test>::AccountNotInconsistent
+        );
+    })
+}
+
+#[test]
+fn claim_staker_rewards_for_basic_example_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+
+        let staker_account = 2;
+        let lock_amount = 300;
+        assert_lock(staker_account, lock_amount);
+        let stake_amount = 93;
+        assert_stake(staker_account, &smart_contract, stake_amount);
+
+        // Advance into Build&Earn period, and allow one era to pass. Claim reward for 1 era.
+        advance_to_era(ActiveProtocolState::<Test>::get().era + 2);
+
+        // Basic checks, since the entire claim logic is already covered by other tests
+        let claimer_account = 3;
+        let (init_staker_balance, init_claimer_balance) = (
+            Balances::free_balance(&staker_account),
+            Balances::free_balance(&claimer_account),
+        );
+        assert_ok!(DappStaking::claim_staker_rewards_for(
+            RuntimeOrigin::signed(claimer_account),
+            staker_account
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::Reward {
+            account: staker_account,
+            era: ActiveProtocolState::<Test>::get().era - 1,
+            // for this simple test, entire staker reward pool goes to the staker
+            amount: <Test as Config>::StakingRewardHandler::staker_and_dapp_reward_pools(0).0,
+        }));
+
+        assert!(
+            Balances::free_balance(&staker_account) > init_staker_balance,
+            "Balance must have increased due to the reward payout."
+        );
+        assert_eq!(
+            init_claimer_balance,
+            Balances::free_balance(&claimer_account),
+            "Claimer balance must not change since reward is deposited to the staker."
+        );
+    })
+}
+
+#[test]
+fn claim_bonus_reward_for_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Register smart contract, lock&stake some amount
+        let dev_account = 1;
+        let smart_contract = MockSmartContract::wasm(1 as AccountId);
+        assert_register(dev_account, &smart_contract);
+
+        let staker_account = 2;
+        let lock_amount = 300;
+        assert_lock(staker_account, lock_amount);
+        let stake_amount = 93;
+        assert_stake(staker_account, &smart_contract, stake_amount);
+
+        // Advance to the next period, and claim the bonus
+        advance_to_next_period();
+        let claimer_account = 3;
+        let (init_staker_balance, init_claimer_balance) = (
+            Balances::free_balance(&staker_account),
+            Balances::free_balance(&claimer_account),
+        );
+
+        assert_ok!(DappStaking::claim_bonus_reward_for(
+            RuntimeOrigin::signed(claimer_account),
+            staker_account,
+            smart_contract.clone()
+        ));
+        System::assert_last_event(RuntimeEvent::DappStaking(Event::BonusReward {
+            account: staker_account,
+            period: ActiveProtocolState::<Test>::get().period_number() - 1,
+            smart_contract,
+            // for this simple test, entire bonus reward pool goes to the staker
+            amount: <Test as Config>::StakingRewardHandler::bonus_reward_pool(),
+        }));
+
+        assert!(
+            Balances::free_balance(&staker_account) > init_staker_balance,
+            "Balance must have increased due to the reward payout."
+        );
+        assert_eq!(
+            init_claimer_balance,
+            Balances::free_balance(&claimer_account),
+            "Claimer balance must not change since reward is deposited to the staker."
         );
     })
 }

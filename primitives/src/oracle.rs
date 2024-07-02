@@ -21,9 +21,6 @@ use sp_arithmetic::fixed_point::FixedU128;
 use sp_std::vec::Vec;
 
 /// Interface for fetching price of the native token.
-///
-/// **NOTE:** This is just a temporary interface, and will be replaced with a proper oracle which will average
-/// the price over a certain period of time.
 pub trait PriceProvider {
     /// Get the price of the native token.
     fn average_price() -> CurrencyAmount;

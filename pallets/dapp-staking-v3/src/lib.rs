@@ -46,7 +46,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::fixed_point::FixedU128;
 use sp_runtime::{
-    traits::{BadOrigin, One, Saturating, UniqueSaturatedInto, Zero},
+    traits::{One, Saturating, UniqueSaturatedInto, Zero},
     Perbill, Permill, SaturatedConversion,
 };
 pub use sp_std::vec::Vec;
@@ -130,6 +130,12 @@ pub mod pallet {
             + Member
             + MaxEncodedLen
             + SmartContractHandle<Self::AccountId>;
+
+        /// Privileged origin that is allowed to register smart contracts to the protocol.
+        type ContractRegisterOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
+
+        /// Privileged origin that is allowed to unregister smart contracts from the protocol.
+        type ContractUnregisterOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
 
         /// Privileged origin for managing dApp staking pallet.
         type ManagerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin>;
@@ -666,7 +672,7 @@ pub mod pallet {
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
+            T::ContractRegisterOrigin::ensure_origin(origin)?;
 
             ensure!(
                 !IntegratedDApps::<T>::contains_key(&smart_contract),
@@ -754,7 +760,7 @@ pub mod pallet {
             new_owner: T::AccountId,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            let origin = Self::ensure_signed_or_manager(origin)?;
+            let origin = ensure_signed_or_root(origin)?;
 
             IntegratedDApps::<T>::try_mutate(
                 &smart_contract,
@@ -793,7 +799,7 @@ pub mod pallet {
             smart_contract: T::SmartContract,
         ) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
+            T::ContractUnregisterOrigin::ensure_origin(origin)?;
 
             let dapp_info =
                 IntegratedDApps::<T>::get(&smart_contract).ok_or(Error::<T>::ContractNotFound)?;
@@ -1217,87 +1223,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let mut ledger = Ledger::<T>::get(&account);
-            let staked_period = ledger
-                .staked_period()
-                .ok_or(Error::<T>::NoClaimableRewards)?;
-
-            // Check if the rewards have expired
-            let protocol_state = ActiveProtocolState::<T>::get();
-            ensure!(
-                staked_period >= Self::oldest_claimable_period(protocol_state.period_number()),
-                Error::<T>::RewardExpired
-            );
-
-            // Calculate the reward claim span
-            let earliest_staked_era = ledger
-                .earliest_staked_era()
-                .ok_or(Error::<T>::InternalClaimStakerError)?;
-            let era_rewards =
-                EraRewards::<T>::get(Self::era_reward_span_index(earliest_staked_era))
-                    .ok_or(Error::<T>::NoClaimableRewards)?;
-
-            // The last era for which we can theoretically claim rewards.
-            // And indicator if we know the period's ending era.
-            let (last_period_era, period_end) = if staked_period == protocol_state.period_number() {
-                (protocol_state.era.saturating_sub(1), None)
-            } else {
-                PeriodEnd::<T>::get(&staked_period)
-                    .map(|info| (info.final_era, Some(info.final_era)))
-                    .ok_or(Error::<T>::InternalClaimStakerError)?
-            };
-
-            // The last era for which we can claim rewards for this account.
-            let last_claim_era = era_rewards.last_era().min(last_period_era);
-
-            // Get chunks for reward claiming
-            let rewards_iter =
-                ledger
-                    .claim_up_to_era(last_claim_era, period_end)
-                    .map_err(|err| match err {
-                        AccountLedgerError::NothingToClaim => Error::<T>::NoClaimableRewards,
-                        _ => Error::<T>::InternalClaimStakerError,
-                    })?;
-
-            // Calculate rewards
-            let mut rewards: Vec<_> = Vec::new();
-            let mut reward_sum = Balance::zero();
-            for (era, amount) in rewards_iter {
-                let era_reward = era_rewards
-                    .get(era)
-                    .ok_or(Error::<T>::InternalClaimStakerError)?;
-
-                // Optimization, and zero-division protection
-                if amount.is_zero() || era_reward.staked.is_zero() {
-                    continue;
-                }
-                let staker_reward = Perbill::from_rational(amount, era_reward.staked)
-                    * era_reward.staker_reward_pool;
-
-                rewards.push((era, staker_reward));
-                reward_sum.saturating_accrue(staker_reward);
-            }
-            let rewards_len: u32 = rewards.len().unique_saturated_into();
-
-            T::StakingRewardHandler::payout_reward(&account, reward_sum)
-                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
-
-            Self::update_ledger(&account, ledger)?;
-
-            rewards.into_iter().for_each(|(era, reward)| {
-                Self::deposit_event(Event::<T>::Reward {
-                    account: account.clone(),
-                    era,
-                    amount: reward,
-                });
-            });
-
-            Ok(Some(if period_end.is_some() {
-                T::WeightInfo::claim_staker_rewards_past_period(rewards_len)
-            } else {
-                T::WeightInfo::claim_staker_rewards_ongoing_period(rewards_len)
-            })
-            .into())
+            Self::internal_claim_staker_rewards_for(account)
         }
 
         /// Used to claim bonus reward for a smart contract, if eligible.
@@ -1310,59 +1236,7 @@ pub mod pallet {
             Self::ensure_pallet_enabled()?;
             let account = ensure_signed(origin)?;
 
-            let staker_info = StakerInfo::<T>::get(&account, &smart_contract)
-                .ok_or(Error::<T>::NoClaimableRewards)?;
-            let protocol_state = ActiveProtocolState::<T>::get();
-
-            // Ensure:
-            // 1. Period for which rewards are being claimed has ended.
-            // 2. Account has been a loyal staker.
-            // 3. Rewards haven't expired.
-            let staked_period = staker_info.period_number();
-            ensure!(
-                staked_period < protocol_state.period_number(),
-                Error::<T>::NoClaimableRewards
-            );
-            ensure!(
-                staker_info.is_loyal(),
-                Error::<T>::NotEligibleForBonusReward
-            );
-            ensure!(
-                staker_info.period_number()
-                    >= Self::oldest_claimable_period(protocol_state.period_number()),
-                Error::<T>::RewardExpired
-            );
-
-            let period_end_info =
-                PeriodEnd::<T>::get(&staked_period).ok_or(Error::<T>::InternalClaimBonusError)?;
-            // Defensive check - we should never get this far in function if no voting period stake exists.
-            ensure!(
-                !period_end_info.total_vp_stake.is_zero(),
-                Error::<T>::InternalClaimBonusError
-            );
-
-            let eligible_amount = staker_info.staked_amount(Subperiod::Voting);
-            let bonus_reward =
-                Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
-                    * period_end_info.bonus_reward_pool;
-
-            T::StakingRewardHandler::payout_reward(&account, bonus_reward)
-                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
-
-            // Cleanup entry since the reward has been claimed
-            StakerInfo::<T>::remove(&account, &smart_contract);
-            Ledger::<T>::mutate(&account, |ledger| {
-                ledger.contract_stake_count.saturating_dec();
-            });
-
-            Self::deposit_event(Event::<T>::BonusReward {
-                account: account.clone(),
-                smart_contract,
-                period: staked_period,
-                amount: bonus_reward,
-            });
-
-            Ok(())
+            Self::internal_claim_bonus_reward_for(account, smart_contract)
         }
 
         /// Used to claim dApp reward for the specified era.
@@ -1552,12 +1426,12 @@ pub mod pallet {
         /// Used for testing purposes, when we want to force an era change, or a subperiod change.
         /// Not intended to be used in production, except in case of unforeseen circumstances.
         ///
-        /// Can only be called by manager origin.
+        /// Can only be called by the root origin.
         #[pallet::call_index(18)]
         #[pallet::weight(T::WeightInfo::force())]
         pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
             Self::ensure_pallet_enabled()?;
-            T::ManagerOrigin::ensure_origin(origin)?;
+            ensure_root(origin)?;
 
             ensure!(!Safeguard::<T>::get(), Error::<T>::ForceNotAllowed);
 
@@ -1583,6 +1457,38 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::Force { forcing_type });
 
             Ok(())
+        }
+
+        /// Claims some staker rewards for the specified account, if they have any.
+        /// In the case of a successful call, at least one era will be claimed, with the possibility of multiple claims happening.
+        #[pallet::call_index(19)]
+        #[pallet::weight({
+            let max_span_length = T::EraRewardSpanLength::get();
+            T::WeightInfo::claim_staker_rewards_ongoing_period(max_span_length)
+                .max(T::WeightInfo::claim_staker_rewards_past_period(max_span_length))
+        })]
+        pub fn claim_staker_rewards_for(
+            origin: OriginFor<T>,
+            account: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            Self::ensure_pallet_enabled()?;
+            ensure_signed(origin)?;
+
+            Self::internal_claim_staker_rewards_for(account)
+        }
+
+        /// Used to claim bonus reward for a smart contract on behalf of the specified account, if eligible.
+        #[pallet::call_index(20)]
+        #[pallet::weight(T::WeightInfo::claim_bonus_reward())]
+        pub fn claim_bonus_reward_for(
+            origin: OriginFor<T>,
+            account: T::AccountId,
+            smart_contract: T::SmartContract,
+        ) -> DispatchResult {
+            Self::ensure_pallet_enabled()?;
+            ensure_signed(origin)?;
+
+            Self::internal_claim_bonus_reward_for(account, smart_contract)
         }
 
         /// A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what's available.
@@ -1643,19 +1549,6 @@ pub mod pallet {
             } else {
                 Ok(())
             }
-        }
-
-        /// Ensure that the origin is either the `ManagerOrigin` or a signed origin.
-        ///
-        /// In case of manager, `Ok(None)` is returned, and if signed origin `Ok(Some(AccountId))` is returned.
-        pub(crate) fn ensure_signed_or_manager(
-            origin: T::RuntimeOrigin,
-        ) -> Result<Option<T::AccountId>, BadOrigin> {
-            if T::ManagerOrigin::ensure_origin(origin.clone()).is_ok() {
-                return Ok(None);
-            }
-            let who = ensure_signed(origin)?;
-            Ok(Some(who))
         }
 
         /// Update the account ledger, and dApp staking balance freeze.
@@ -2151,6 +2044,7 @@ pub mod pallet {
             T::WeightInfo::on_idle_cleanup()
         }
 
+        /// Internal function that executes the `claim_unlocked` logic for the specified account.
         fn internal_claim_unlocked(account: T::AccountId) -> DispatchResultWithPostInfo {
             let mut ledger = Ledger::<T>::get(&account);
 
@@ -2174,6 +2068,151 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::ClaimedUnlocked { account, amount });
 
             Ok(Some(T::WeightInfo::claim_unlocked(removed_entries)).into())
+        }
+
+        /// Internal function that executes the `claim_staker_rewards_` logic for the specified account.
+        fn internal_claim_staker_rewards_for(account: T::AccountId) -> DispatchResultWithPostInfo {
+            let mut ledger = Ledger::<T>::get(&account);
+            let staked_period = ledger
+                .staked_period()
+                .ok_or(Error::<T>::NoClaimableRewards)?;
+
+            // Check if the rewards have expired
+            let protocol_state = ActiveProtocolState::<T>::get();
+            ensure!(
+                staked_period >= Self::oldest_claimable_period(protocol_state.period_number()),
+                Error::<T>::RewardExpired
+            );
+
+            // Calculate the reward claim span
+            let earliest_staked_era = ledger
+                .earliest_staked_era()
+                .ok_or(Error::<T>::InternalClaimStakerError)?;
+            let era_rewards =
+                EraRewards::<T>::get(Self::era_reward_span_index(earliest_staked_era))
+                    .ok_or(Error::<T>::NoClaimableRewards)?;
+
+            // The last era for which we can theoretically claim rewards.
+            // And indicator if we know the period's ending era.
+            let (last_period_era, period_end) = if staked_period == protocol_state.period_number() {
+                (protocol_state.era.saturating_sub(1), None)
+            } else {
+                PeriodEnd::<T>::get(&staked_period)
+                    .map(|info| (info.final_era, Some(info.final_era)))
+                    .ok_or(Error::<T>::InternalClaimStakerError)?
+            };
+
+            // The last era for which we can claim rewards for this account.
+            let last_claim_era = era_rewards.last_era().min(last_period_era);
+
+            // Get chunks for reward claiming
+            let rewards_iter =
+                ledger
+                    .claim_up_to_era(last_claim_era, period_end)
+                    .map_err(|err| match err {
+                        AccountLedgerError::NothingToClaim => Error::<T>::NoClaimableRewards,
+                        _ => Error::<T>::InternalClaimStakerError,
+                    })?;
+
+            // Calculate rewards
+            let mut rewards: Vec<_> = Vec::new();
+            let mut reward_sum = Balance::zero();
+            for (era, amount) in rewards_iter {
+                let era_reward = era_rewards
+                    .get(era)
+                    .ok_or(Error::<T>::InternalClaimStakerError)?;
+
+                // Optimization, and zero-division protection
+                if amount.is_zero() || era_reward.staked.is_zero() {
+                    continue;
+                }
+                let staker_reward = Perbill::from_rational(amount, era_reward.staked)
+                    * era_reward.staker_reward_pool;
+
+                rewards.push((era, staker_reward));
+                reward_sum.saturating_accrue(staker_reward);
+            }
+            let rewards_len: u32 = rewards.len().unique_saturated_into();
+
+            T::StakingRewardHandler::payout_reward(&account, reward_sum)
+                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
+
+            Self::update_ledger(&account, ledger)?;
+
+            rewards.into_iter().for_each(|(era, reward)| {
+                Self::deposit_event(Event::<T>::Reward {
+                    account: account.clone(),
+                    era,
+                    amount: reward,
+                });
+            });
+
+            Ok(Some(if period_end.is_some() {
+                T::WeightInfo::claim_staker_rewards_past_period(rewards_len)
+            } else {
+                T::WeightInfo::claim_staker_rewards_ongoing_period(rewards_len)
+            })
+            .into())
+        }
+
+        /// Internal function that executes the `claim_bonus_reward` logic for the specified account & smart contract.
+        fn internal_claim_bonus_reward_for(
+            account: T::AccountId,
+            smart_contract: T::SmartContract,
+        ) -> DispatchResult {
+            let staker_info = StakerInfo::<T>::get(&account, &smart_contract)
+                .ok_or(Error::<T>::NoClaimableRewards)?;
+            let protocol_state = ActiveProtocolState::<T>::get();
+
+            // Ensure:
+            // 1. Period for which rewards are being claimed has ended.
+            // 2. Account has been a loyal staker.
+            // 3. Rewards haven't expired.
+            let staked_period = staker_info.period_number();
+            ensure!(
+                staked_period < protocol_state.period_number(),
+                Error::<T>::NoClaimableRewards
+            );
+            ensure!(
+                staker_info.is_loyal(),
+                Error::<T>::NotEligibleForBonusReward
+            );
+            ensure!(
+                staker_info.period_number()
+                    >= Self::oldest_claimable_period(protocol_state.period_number()),
+                Error::<T>::RewardExpired
+            );
+
+            let period_end_info =
+                PeriodEnd::<T>::get(&staked_period).ok_or(Error::<T>::InternalClaimBonusError)?;
+            // Defensive check - we should never get this far in function if no voting period stake exists.
+            ensure!(
+                !period_end_info.total_vp_stake.is_zero(),
+                Error::<T>::InternalClaimBonusError
+            );
+
+            let eligible_amount = staker_info.staked_amount(Subperiod::Voting);
+            let bonus_reward =
+                Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
+                    * period_end_info.bonus_reward_pool;
+
+            T::StakingRewardHandler::payout_reward(&account, bonus_reward)
+                .map_err(|_| Error::<T>::RewardPayoutFailed)?;
+
+            // Cleanup entry since the reward has been claimed
+            StakerInfo::<T>::remove(&account, &smart_contract);
+            Ledger::<T>::mutate(&account, |ledger| {
+                ledger.contract_stake_count.saturating_dec();
+            });
+
+            Self::deposit_event(Event::<T>::BonusReward {
+                account: account.clone(),
+                smart_contract,
+                period: staked_period,
+                amount: bonus_reward,
+            });
+
+            Ok(())
         }
     }
 }
