@@ -1426,7 +1426,7 @@ pub mod pallet {
         /// Used for testing purposes, when we want to force an era change, or a subperiod change.
         /// Not intended to be used in production, except in case of unforeseen circumstances.
         ///
-        /// Can only be called by manager origin.
+        /// Can only be called by the root origin.
         #[pallet::call_index(18)]
         #[pallet::weight(T::WeightInfo::force())]
         pub fn force(origin: OriginFor<T>, forcing_type: ForcingType) -> DispatchResult {
@@ -2044,7 +2044,7 @@ pub mod pallet {
             T::WeightInfo::on_idle_cleanup()
         }
 
-        /// Internal function that executes teh `claim_unlocked` logic for the specified account.
+        /// Internal function that executes the `claim_unlocked` logic for the specified account.
         fn internal_claim_unlocked(account: T::AccountId) -> DispatchResultWithPostInfo {
             let mut ledger = Ledger::<T>::get(&account);
 
