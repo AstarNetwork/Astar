@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use crate as collator_selection;
-use crate::{mock::*, CandidateInfo, Error, NonCandidates};
+use crate::{mock::*, CandidateInfo, Error, LastAuthoredBlock, NonCandidates};
 use frame_support::{
     assert_noop, assert_ok,
     traits::{Currency, OnInitialize},
@@ -520,7 +520,7 @@ fn slash_mechanism_for_unbonding_candidates() {
         initialize_to_block(20);
         assert_eq!(CollatorSelection::candidates().len(), 1);
         assert_eq!(SessionChangeBlock::get(), 20);
-        assert_eq!(CollatorSelection::last_authored_block(3), 0);
+        assert_eq!(LastAuthoredBlock::<Test>::contains_key(3), false);
         assert_eq!(CollatorSelection::last_authored_block(4), 20);
 
         // slashed, remaining bond was refunded

@@ -265,11 +265,17 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// New invulnerables candidates were set.
         NewInvulnerables(Vec<T::AccountId>),
+        /// The number of desired candidates was set.
         NewDesiredCandidates(u32),
+        /// The candidacy bond was set.
         NewCandidacyBond(BalanceOf<T>),
+        /// A new candidate joined.
         CandidateAdded(T::AccountId, BalanceOf<T>),
+        /// A candidate was removed.
         CandidateRemoved(T::AccountId),
+        /// A candidate was slashed.
         CandidateSlashed(T::AccountId),
     }
 
@@ -557,7 +563,7 @@ pub mod pallet {
                     Self::slash_non_candidate(&who);
                 }
             }
-            (count, count - Self::candidates().len() as u32)
+            (count, count.saturating_sub(Self::candidates().len() as u32))
         }
 
         /// Check whether an account is a candidate.
