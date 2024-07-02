@@ -224,6 +224,37 @@
 <a href="#224" id="224">224</a>
 <a href="#225" id="225">225</a>
 <a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -248,10 +279,11 @@
 <span class="kw">use </span>sc_service::ChainType;
 <span class="kw">use </span>shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
-    CollatorSelectionConfig, DappStakingConfig, EVMChainIdConfig, EVMConfig, InflationConfig,
-    InflationParameters, OracleMembershipConfig, ParachainInfoConfig, Precompiles,
-    PriceAggregatorConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
-    SystemConfig, TierThreshold, VestingConfig, SBY,
+    CollatorSelectionConfig, CommunityCouncilMembershipConfig, CouncilMembershipConfig,
+    DappStakingConfig, EVMChainIdConfig, EVMConfig, InflationConfig, InflationParameters,
+    OracleMembershipConfig, ParachainInfoConfig, Precompiles, PriceAggregatorConfig,
+    RuntimeGenesisConfig, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig,
+    TechnicalCommitteeMembershipConfig, TierThreshold, VestingConfig, SBY,
 };
 <span class="kw">use </span>sp_core::{sr25519, Pair, Public};
 
@@ -325,6 +357,10 @@
             get_from_seed::&lt;AuraId&gt;(<span class="string">&quot;Bob&quot;</span>),
         ),
     ];
+    <span class="kw">let </span>accounts: Vec&lt;AccountId&gt; = <span class="macro">vec!</span>[<span class="string">&quot;Alice&quot;</span>, <span class="string">&quot;Bob&quot;</span>, <span class="string">&quot;Charlie&quot;</span>, <span class="string">&quot;Dave&quot;</span>, <span class="string">&quot;Eve&quot;</span>]
+        .iter()
+        .map(|s| get_account_id_from_seed::&lt;sr25519::Public&gt;(s))
+        .collect();
 
     <span class="comment">// This is supposed the be the simplest bytecode to revert without returning any data.
     // We will pre-deploy it under all of our precompiles to ensure they can be called from
@@ -438,6 +474,32 @@
                 .try_into()
                 .expect(<span class="string">&quot;Must work since buffer should have at least a single value.&quot;</span>),
         },
+        council_membership: CouncilMembershipConfig {
+            members: accounts
+                .clone()
+                .try_into()
+                .expect(<span class="string">&quot;Should support at least 5 members.&quot;</span>),
+            phantom: Default::default(),
+        },
+        technical_committee_membership: TechnicalCommitteeMembershipConfig {
+            members: accounts[..<span class="number">3</span>]
+                .to_vec()
+                .try_into()
+                .expect(<span class="string">&quot;Should support at least 3 members.&quot;</span>),
+            phantom: Default::default(),
+        },
+        community_council_membership: CommunityCouncilMembershipConfig {
+            members: accounts
+                .try_into()
+                .expect(<span class="string">&quot;Should support at least 5 members.&quot;</span>),
+            phantom: Default::default(),
+        },
+        council: Default::default(),
+        technical_committee: Default::default(),
+        community_council: Default::default(),
+        democracy: Default::default(),
+        treasury: Default::default(),
+        community_treasury: Default::default(),
     }
 }
 

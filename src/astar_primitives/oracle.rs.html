@@ -52,9 +52,6 @@
 <a href="#52" id="52">52</a>
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
-<a href="#55" id="55">55</a>
-<a href="#56" id="56">56</a>
-<a href="#57" id="57">57</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -78,9 +75,6 @@
 <span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="doccomment">/// Interface for fetching price of the native token.
-///
-/// **NOTE:** This is just a temporary interface, and will be replaced with a proper oracle which will average
-/// the price over a certain period of time.
 </span><span class="kw">pub trait </span>PriceProvider {
     <span class="doccomment">/// Get the price of the native token.
     </span><span class="kw">fn </span>average_price() -&gt; CurrencyAmount;

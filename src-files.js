@@ -1,7 +1,7 @@
 var srcIndex = JSON.parse('{\
 "assets_chain_extension_types":["",[],["lib.rs"]],\
 "astar_collator":["",[["local",[],["chain_spec.rs","mod.rs","service.rs"]],["parachain",[["chain_spec",[],["astar.rs","mod.rs","shibuya.rs","shiden.rs"]]],["mod.rs","service.rs","shell_upgrade.rs"]]],["cli.rs","command.rs","evm_tracing_types.rs","lib.rs","rpc.rs"]],\
-"astar_primitives":["",[["xcm",[],["mod.rs"]]],["dapp_staking.rs","ethereum_checked.rs","evm.rs","lib.rs","oracle.rs","precompiles.rs","testing.rs","xvm.rs"]],\
+"astar_primitives":["",[["xcm",[],["mod.rs"]]],["dapp_staking.rs","ethereum_checked.rs","evm.rs","governance.rs","lib.rs","oracle.rs","precompiles.rs","testing.rs","xvm.rs"]],\
 "astar_runtime":["",[["weights",[["xcm",[],["fungible.rs","generic.rs","mod.rs"]]],["mod.rs","pallet_assets.rs","pallet_dapp_staking_v3.rs","pallet_inflation.rs","pallet_xcm.rs"]]],["chain_extensions.rs","lib.rs","precompiles.rs","xcm_config.rs"]],\
 "astar_test_utils":["",[],["lib.rs"]],\
 "astar_xcm_benchmarks":["",[["fungible",[],["mod.rs"]],["generic",[],["mod.rs"]]],["lib.rs"]],\
@@ -26,6 +26,7 @@ var srcIndex = JSON.parse('{\
 "pallet_chain_extension_unified_accounts":["",[],["lib.rs"]],\
 "pallet_chain_extension_xvm":["",[],["lib.rs"]],\
 "pallet_collator_selection":["",[],["lib.rs","weights.rs"]],\
+"pallet_collective_proxy":["",[],["lib.rs","weights.rs"]],\
 "pallet_dapp_staking_migration":["",[],["lib.rs","weights.rs"]],\
 "pallet_dapp_staking_v3":["",[],["lib.rs","migration.rs","types.rs","weights.rs"]],\
 "pallet_dynamic_evm_base_fee":["",[],["lib.rs","weights.rs"]],\

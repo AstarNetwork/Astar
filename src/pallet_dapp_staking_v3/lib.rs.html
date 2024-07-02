@@ -2177,6 +2177,45 @@
 <a href="#2177" id="2177">2177</a>
 <a href="#2178" id="2178">2178</a>
 <a href="#2179" id="2179">2179</a>
+<a href="#2180" id="2180">2180</a>
+<a href="#2181" id="2181">2181</a>
+<a href="#2182" id="2182">2182</a>
+<a href="#2183" id="2183">2183</a>
+<a href="#2184" id="2184">2184</a>
+<a href="#2185" id="2185">2185</a>
+<a href="#2186" id="2186">2186</a>
+<a href="#2187" id="2187">2187</a>
+<a href="#2188" id="2188">2188</a>
+<a href="#2189" id="2189">2189</a>
+<a href="#2190" id="2190">2190</a>
+<a href="#2191" id="2191">2191</a>
+<a href="#2192" id="2192">2192</a>
+<a href="#2193" id="2193">2193</a>
+<a href="#2194" id="2194">2194</a>
+<a href="#2195" id="2195">2195</a>
+<a href="#2196" id="2196">2196</a>
+<a href="#2197" id="2197">2197</a>
+<a href="#2198" id="2198">2198</a>
+<a href="#2199" id="2199">2199</a>
+<a href="#2200" id="2200">2200</a>
+<a href="#2201" id="2201">2201</a>
+<a href="#2202" id="2202">2202</a>
+<a href="#2203" id="2203">2203</a>
+<a href="#2204" id="2204">2204</a>
+<a href="#2205" id="2205">2205</a>
+<a href="#2206" id="2206">2206</a>
+<a href="#2207" id="2207">2207</a>
+<a href="#2208" id="2208">2208</a>
+<a href="#2209" id="2209">2209</a>
+<a href="#2210" id="2210">2210</a>
+<a href="#2211" id="2211">2211</a>
+<a href="#2212" id="2212">2212</a>
+<a href="#2213" id="2213">2213</a>
+<a href="#2214" id="2214">2214</a>
+<a href="#2215" id="2215">2215</a>
+<a href="#2216" id="2216">2216</a>
+<a href="#2217" id="2217">2217</a>
+<a href="#2218" id="2218">2218</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2225,7 +2264,7 @@
 <span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>sp_arithmetic::fixed_point::FixedU128;
 <span class="kw">use </span>sp_runtime::{
-    traits::{BadOrigin, One, Saturating, UniqueSaturatedInto, Zero},
+    traits::{One, Saturating, UniqueSaturatedInto, Zero},
     Perbill, Permill, SaturatedConversion,
 };
 <span class="kw">pub use </span>sp_std::vec::Vec;
@@ -2309,6 +2348,12 @@
             + Member
             + MaxEncodedLen
             + SmartContractHandle&lt;<span class="self">Self</span>::AccountId&gt;;
+
+        <span class="doccomment">/// Privileged origin that is allowed to register smart contracts to the protocol.
+        </span><span class="kw">type </span>ContractRegisterOrigin: EnsureOrigin&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeOrigin&gt;;
+
+        <span class="doccomment">/// Privileged origin that is allowed to unregister smart contracts from the protocol.
+        </span><span class="kw">type </span>ContractUnregisterOrigin: EnsureOrigin&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeOrigin&gt;;
 
         <span class="doccomment">/// Privileged origin for managing dApp staking pallet.
         </span><span class="kw">type </span>ManagerOrigin: EnsureOrigin&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeOrigin&gt;;
@@ -2845,7 +2890,7 @@
             smart_contract: T::SmartContract,
         ) -&gt; DispatchResult {
             <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
-            T::ManagerOrigin::ensure_origin(origin)<span class="question-mark">?</span>;
+            T::ContractRegisterOrigin::ensure_origin(origin)<span class="question-mark">?</span>;
 
             <span class="macro">ensure!</span>(
                 !IntegratedDApps::&lt;T&gt;::contains_key(<span class="kw-2">&amp;</span>smart_contract),
@@ -2933,7 +2978,7 @@
             new_owner: T::AccountId,
         ) -&gt; DispatchResult {
             <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
-            <span class="kw">let </span>origin = <span class="self">Self</span>::ensure_signed_or_manager(origin)<span class="question-mark">?</span>;
+            <span class="kw">let </span>origin = ensure_signed_or_root(origin)<span class="question-mark">?</span>;
 
             IntegratedDApps::&lt;T&gt;::try_mutate(
                 <span class="kw-2">&amp;</span>smart_contract,
@@ -2972,7 +3017,7 @@
             smart_contract: T::SmartContract,
         ) -&gt; DispatchResult {
             <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
-            T::ManagerOrigin::ensure_origin(origin)<span class="question-mark">?</span>;
+            T::ContractUnregisterOrigin::ensure_origin(origin)<span class="question-mark">?</span>;
 
             <span class="kw">let </span>dapp_info =
                 IntegratedDApps::&lt;T&gt;::get(<span class="kw-2">&amp;</span>smart_contract).ok_or(Error::&lt;T&gt;::ContractNotFound)<span class="question-mark">?</span>;
@@ -3396,87 +3441,7 @@
             <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
             <span class="kw">let </span>account = ensure_signed(origin)<span class="question-mark">?</span>;
 
-            <span class="kw">let </span><span class="kw-2">mut </span>ledger = Ledger::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account);
-            <span class="kw">let </span>staked_period = ledger
-                .staked_period()
-                .ok_or(Error::&lt;T&gt;::NoClaimableRewards)<span class="question-mark">?</span>;
-
-            <span class="comment">// Check if the rewards have expired
-            </span><span class="kw">let </span>protocol_state = ActiveProtocolState::&lt;T&gt;::get();
-            <span class="macro">ensure!</span>(
-                staked_period &gt;= <span class="self">Self</span>::oldest_claimable_period(protocol_state.period_number()),
-                Error::&lt;T&gt;::RewardExpired
-            );
-
-            <span class="comment">// Calculate the reward claim span
-            </span><span class="kw">let </span>earliest_staked_era = ledger
-                .earliest_staked_era()
-                .ok_or(Error::&lt;T&gt;::InternalClaimStakerError)<span class="question-mark">?</span>;
-            <span class="kw">let </span>era_rewards =
-                EraRewards::&lt;T&gt;::get(<span class="self">Self</span>::era_reward_span_index(earliest_staked_era))
-                    .ok_or(Error::&lt;T&gt;::NoClaimableRewards)<span class="question-mark">?</span>;
-
-            <span class="comment">// The last era for which we can theoretically claim rewards.
-            // And indicator if we know the period&#39;s ending era.
-            </span><span class="kw">let </span>(last_period_era, period_end) = <span class="kw">if </span>staked_period == protocol_state.period_number() {
-                (protocol_state.era.saturating_sub(<span class="number">1</span>), <span class="prelude-val">None</span>)
-            } <span class="kw">else </span>{
-                PeriodEnd::&lt;T&gt;::get(<span class="kw-2">&amp;</span>staked_period)
-                    .map(|info| (info.final_era, <span class="prelude-val">Some</span>(info.final_era)))
-                    .ok_or(Error::&lt;T&gt;::InternalClaimStakerError)<span class="question-mark">?
-            </span>};
-
-            <span class="comment">// The last era for which we can claim rewards for this account.
-            </span><span class="kw">let </span>last_claim_era = era_rewards.last_era().min(last_period_era);
-
-            <span class="comment">// Get chunks for reward claiming
-            </span><span class="kw">let </span>rewards_iter =
-                ledger
-                    .claim_up_to_era(last_claim_era, period_end)
-                    .map_err(|err| <span class="kw">match </span>err {
-                        AccountLedgerError::NothingToClaim =&gt; Error::&lt;T&gt;::NoClaimableRewards,
-                        <span class="kw">_ </span>=&gt; Error::&lt;T&gt;::InternalClaimStakerError,
-                    })<span class="question-mark">?</span>;
-
-            <span class="comment">// Calculate rewards
-            </span><span class="kw">let </span><span class="kw-2">mut </span>rewards: Vec&lt;<span class="kw">_</span>&gt; = Vec::new();
-            <span class="kw">let </span><span class="kw-2">mut </span>reward_sum = Balance::zero();
-            <span class="kw">for </span>(era, amount) <span class="kw">in </span>rewards_iter {
-                <span class="kw">let </span>era_reward = era_rewards
-                    .get(era)
-                    .ok_or(Error::&lt;T&gt;::InternalClaimStakerError)<span class="question-mark">?</span>;
-
-                <span class="comment">// Optimization, and zero-division protection
-                </span><span class="kw">if </span>amount.is_zero() || era_reward.staked.is_zero() {
-                    <span class="kw">continue</span>;
-                }
-                <span class="kw">let </span>staker_reward = Perbill::from_rational(amount, era_reward.staked)
-                    * era_reward.staker_reward_pool;
-
-                rewards.push((era, staker_reward));
-                reward_sum.saturating_accrue(staker_reward);
-            }
-            <span class="kw">let </span>rewards_len: u32 = rewards.len().unique_saturated_into();
-
-            T::StakingRewardHandler::payout_reward(<span class="kw-2">&amp;</span>account, reward_sum)
-                .map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::RewardPayoutFailed)<span class="question-mark">?</span>;
-
-            <span class="self">Self</span>::update_ledger(<span class="kw-2">&amp;</span>account, ledger)<span class="question-mark">?</span>;
-
-            rewards.into_iter().for_each(|(era, reward)| {
-                <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::Reward {
-                    account: account.clone(),
-                    era,
-                    amount: reward,
-                });
-            });
-
-            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw">if </span>period_end.is_some() {
-                T::WeightInfo::claim_staker_rewards_past_period(rewards_len)
-            } <span class="kw">else </span>{
-                T::WeightInfo::claim_staker_rewards_ongoing_period(rewards_len)
-            })
-            .into())
+            <span class="self">Self</span>::internal_claim_staker_rewards_for(account)
         }
 
         <span class="doccomment">/// Used to claim bonus reward for a smart contract, if eligible.
@@ -3489,59 +3454,7 @@
             <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
             <span class="kw">let </span>account = ensure_signed(origin)<span class="question-mark">?</span>;
 
-            <span class="kw">let </span>staker_info = StakerInfo::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract)
-                .ok_or(Error::&lt;T&gt;::NoClaimableRewards)<span class="question-mark">?</span>;
-            <span class="kw">let </span>protocol_state = ActiveProtocolState::&lt;T&gt;::get();
-
-            <span class="comment">// Ensure:
-            // 1. Period for which rewards are being claimed has ended.
-            // 2. Account has been a loyal staker.
-            // 3. Rewards haven&#39;t expired.
-            </span><span class="kw">let </span>staked_period = staker_info.period_number();
-            <span class="macro">ensure!</span>(
-                staked_period &lt; protocol_state.period_number(),
-                Error::&lt;T&gt;::NoClaimableRewards
-            );
-            <span class="macro">ensure!</span>(
-                staker_info.is_loyal(),
-                Error::&lt;T&gt;::NotEligibleForBonusReward
-            );
-            <span class="macro">ensure!</span>(
-                staker_info.period_number()
-                    &gt;= <span class="self">Self</span>::oldest_claimable_period(protocol_state.period_number()),
-                Error::&lt;T&gt;::RewardExpired
-            );
-
-            <span class="kw">let </span>period_end_info =
-                PeriodEnd::&lt;T&gt;::get(<span class="kw-2">&amp;</span>staked_period).ok_or(Error::&lt;T&gt;::InternalClaimBonusError)<span class="question-mark">?</span>;
-            <span class="comment">// Defensive check - we should never get this far in function if no voting period stake exists.
-            </span><span class="macro">ensure!</span>(
-                !period_end_info.total_vp_stake.is_zero(),
-                Error::&lt;T&gt;::InternalClaimBonusError
-            );
-
-            <span class="kw">let </span>eligible_amount = staker_info.staked_amount(Subperiod::Voting);
-            <span class="kw">let </span>bonus_reward =
-                Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
-                    * period_end_info.bonus_reward_pool;
-
-            T::StakingRewardHandler::payout_reward(<span class="kw-2">&amp;</span>account, bonus_reward)
-                .map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::RewardPayoutFailed)<span class="question-mark">?</span>;
-
-            <span class="comment">// Cleanup entry since the reward has been claimed
-            </span>StakerInfo::&lt;T&gt;::remove(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract);
-            Ledger::&lt;T&gt;::mutate(<span class="kw-2">&amp;</span>account, |ledger| {
-                ledger.contract_stake_count.saturating_dec();
-            });
-
-            <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::BonusReward {
-                account: account.clone(),
-                smart_contract,
-                period: staked_period,
-                amount: bonus_reward,
-            });
-
-            <span class="prelude-val">Ok</span>(())
+            <span class="self">Self</span>::internal_claim_bonus_reward_for(account, smart_contract)
         }
 
         <span class="doccomment">/// Used to claim dApp reward for the specified era.
@@ -3731,12 +3644,12 @@
         /// Used for testing purposes, when we want to force an era change, or a subperiod change.
         /// Not intended to be used in production, except in case of unforeseen circumstances.
         ///
-        /// Can only be called by manager origin.
+        /// Can only be called by the root origin.
         </span><span class="attr">#[pallet::call_index(<span class="number">18</span>)]
         #[pallet::weight(T::WeightInfo::force())]
         </span><span class="kw">pub fn </span>force(origin: OriginFor&lt;T&gt;, forcing_type: ForcingType) -&gt; DispatchResult {
             <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
-            T::ManagerOrigin::ensure_origin(origin)<span class="question-mark">?</span>;
+            ensure_root(origin)<span class="question-mark">?</span>;
 
             <span class="macro">ensure!</span>(!Safeguard::&lt;T&gt;::get(), Error::&lt;T&gt;::ForceNotAllowed);
 
@@ -3762,6 +3675,38 @@
             <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::Force { forcing_type });
 
             <span class="prelude-val">Ok</span>(())
+        }
+
+        <span class="doccomment">/// Claims some staker rewards for the specified account, if they have any.
+        /// In the case of a successful call, at least one era will be claimed, with the possibility of multiple claims happening.
+        </span><span class="attr">#[pallet::call_index(<span class="number">19</span>)]
+        #[pallet::weight({
+            <span class="kw">let </span>max_span_length = T::EraRewardSpanLength::get();
+            T::WeightInfo::claim_staker_rewards_ongoing_period(max_span_length)
+                .max(T::WeightInfo::claim_staker_rewards_past_period(max_span_length))
+        })]
+        </span><span class="kw">pub fn </span>claim_staker_rewards_for(
+            origin: OriginFor&lt;T&gt;,
+            account: T::AccountId,
+        ) -&gt; DispatchResultWithPostInfo {
+            <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
+            ensure_signed(origin)<span class="question-mark">?</span>;
+
+            <span class="self">Self</span>::internal_claim_staker_rewards_for(account)
+        }
+
+        <span class="doccomment">/// Used to claim bonus reward for a smart contract on behalf of the specified account, if eligible.
+        </span><span class="attr">#[pallet::call_index(<span class="number">20</span>)]
+        #[pallet::weight(T::WeightInfo::claim_bonus_reward())]
+        </span><span class="kw">pub fn </span>claim_bonus_reward_for(
+            origin: OriginFor&lt;T&gt;,
+            account: T::AccountId,
+            smart_contract: T::SmartContract,
+        ) -&gt; DispatchResult {
+            <span class="self">Self</span>::ensure_pallet_enabled()<span class="question-mark">?</span>;
+            ensure_signed(origin)<span class="question-mark">?</span>;
+
+            <span class="self">Self</span>::internal_claim_bonus_reward_for(account, smart_contract)
         }
 
         <span class="doccomment">/// A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what&#39;s available.
@@ -3822,19 +3767,6 @@
             } <span class="kw">else </span>{
                 <span class="prelude-val">Ok</span>(())
             }
-        }
-
-        <span class="doccomment">/// Ensure that the origin is either the `ManagerOrigin` or a signed origin.
-        ///
-        /// In case of manager, `Ok(None)` is returned, and if signed origin `Ok(Some(AccountId))` is returned.
-        </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>ensure_signed_or_manager(
-            origin: T::RuntimeOrigin,
-        ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;T::AccountId&gt;, BadOrigin&gt; {
-            <span class="kw">if </span>T::ManagerOrigin::ensure_origin(origin.clone()).is_ok() {
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
-            }
-            <span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
-            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(who))
         }
 
         <span class="doccomment">/// Update the account ledger, and dApp staking balance freeze.
@@ -4330,7 +4262,8 @@
             </span>T::WeightInfo::on_idle_cleanup()
         }
 
-        <span class="kw">fn </span>internal_claim_unlocked(account: T::AccountId) -&gt; DispatchResultWithPostInfo {
+        <span class="doccomment">/// Internal function that executes the `claim_unlocked` logic for the specified account.
+        </span><span class="kw">fn </span>internal_claim_unlocked(account: T::AccountId) -&gt; DispatchResultWithPostInfo {
             <span class="kw">let </span><span class="kw-2">mut </span>ledger = Ledger::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account);
 
             <span class="kw">let </span>current_block = frame_system::Pallet::&lt;T&gt;::block_number();
@@ -4353,6 +4286,151 @@
             <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::ClaimedUnlocked { account, amount });
 
             <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(T::WeightInfo::claim_unlocked(removed_entries)).into())
+        }
+
+        <span class="doccomment">/// Internal function that executes the `claim_staker_rewards_` logic for the specified account.
+        </span><span class="kw">fn </span>internal_claim_staker_rewards_for(account: T::AccountId) -&gt; DispatchResultWithPostInfo {
+            <span class="kw">let </span><span class="kw-2">mut </span>ledger = Ledger::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account);
+            <span class="kw">let </span>staked_period = ledger
+                .staked_period()
+                .ok_or(Error::&lt;T&gt;::NoClaimableRewards)<span class="question-mark">?</span>;
+
+            <span class="comment">// Check if the rewards have expired
+            </span><span class="kw">let </span>protocol_state = ActiveProtocolState::&lt;T&gt;::get();
+            <span class="macro">ensure!</span>(
+                staked_period &gt;= <span class="self">Self</span>::oldest_claimable_period(protocol_state.period_number()),
+                Error::&lt;T&gt;::RewardExpired
+            );
+
+            <span class="comment">// Calculate the reward claim span
+            </span><span class="kw">let </span>earliest_staked_era = ledger
+                .earliest_staked_era()
+                .ok_or(Error::&lt;T&gt;::InternalClaimStakerError)<span class="question-mark">?</span>;
+            <span class="kw">let </span>era_rewards =
+                EraRewards::&lt;T&gt;::get(<span class="self">Self</span>::era_reward_span_index(earliest_staked_era))
+                    .ok_or(Error::&lt;T&gt;::NoClaimableRewards)<span class="question-mark">?</span>;
+
+            <span class="comment">// The last era for which we can theoretically claim rewards.
+            // And indicator if we know the period&#39;s ending era.
+            </span><span class="kw">let </span>(last_period_era, period_end) = <span class="kw">if </span>staked_period == protocol_state.period_number() {
+                (protocol_state.era.saturating_sub(<span class="number">1</span>), <span class="prelude-val">None</span>)
+            } <span class="kw">else </span>{
+                PeriodEnd::&lt;T&gt;::get(<span class="kw-2">&amp;</span>staked_period)
+                    .map(|info| (info.final_era, <span class="prelude-val">Some</span>(info.final_era)))
+                    .ok_or(Error::&lt;T&gt;::InternalClaimStakerError)<span class="question-mark">?
+            </span>};
+
+            <span class="comment">// The last era for which we can claim rewards for this account.
+            </span><span class="kw">let </span>last_claim_era = era_rewards.last_era().min(last_period_era);
+
+            <span class="comment">// Get chunks for reward claiming
+            </span><span class="kw">let </span>rewards_iter =
+                ledger
+                    .claim_up_to_era(last_claim_era, period_end)
+                    .map_err(|err| <span class="kw">match </span>err {
+                        AccountLedgerError::NothingToClaim =&gt; Error::&lt;T&gt;::NoClaimableRewards,
+                        <span class="kw">_ </span>=&gt; Error::&lt;T&gt;::InternalClaimStakerError,
+                    })<span class="question-mark">?</span>;
+
+            <span class="comment">// Calculate rewards
+            </span><span class="kw">let </span><span class="kw-2">mut </span>rewards: Vec&lt;<span class="kw">_</span>&gt; = Vec::new();
+            <span class="kw">let </span><span class="kw-2">mut </span>reward_sum = Balance::zero();
+            <span class="kw">for </span>(era, amount) <span class="kw">in </span>rewards_iter {
+                <span class="kw">let </span>era_reward = era_rewards
+                    .get(era)
+                    .ok_or(Error::&lt;T&gt;::InternalClaimStakerError)<span class="question-mark">?</span>;
+
+                <span class="comment">// Optimization, and zero-division protection
+                </span><span class="kw">if </span>amount.is_zero() || era_reward.staked.is_zero() {
+                    <span class="kw">continue</span>;
+                }
+                <span class="kw">let </span>staker_reward = Perbill::from_rational(amount, era_reward.staked)
+                    * era_reward.staker_reward_pool;
+
+                rewards.push((era, staker_reward));
+                reward_sum.saturating_accrue(staker_reward);
+            }
+            <span class="kw">let </span>rewards_len: u32 = rewards.len().unique_saturated_into();
+
+            T::StakingRewardHandler::payout_reward(<span class="kw-2">&amp;</span>account, reward_sum)
+                .map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::RewardPayoutFailed)<span class="question-mark">?</span>;
+
+            <span class="self">Self</span>::update_ledger(<span class="kw-2">&amp;</span>account, ledger)<span class="question-mark">?</span>;
+
+            rewards.into_iter().for_each(|(era, reward)| {
+                <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::Reward {
+                    account: account.clone(),
+                    era,
+                    amount: reward,
+                });
+            });
+
+            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw">if </span>period_end.is_some() {
+                T::WeightInfo::claim_staker_rewards_past_period(rewards_len)
+            } <span class="kw">else </span>{
+                T::WeightInfo::claim_staker_rewards_ongoing_period(rewards_len)
+            })
+            .into())
+        }
+
+        <span class="doccomment">/// Internal function that executes the `claim_bonus_reward` logic for the specified account &amp; smart contract.
+        </span><span class="kw">fn </span>internal_claim_bonus_reward_for(
+            account: T::AccountId,
+            smart_contract: T::SmartContract,
+        ) -&gt; DispatchResult {
+            <span class="kw">let </span>staker_info = StakerInfo::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract)
+                .ok_or(Error::&lt;T&gt;::NoClaimableRewards)<span class="question-mark">?</span>;
+            <span class="kw">let </span>protocol_state = ActiveProtocolState::&lt;T&gt;::get();
+
+            <span class="comment">// Ensure:
+            // 1. Period for which rewards are being claimed has ended.
+            // 2. Account has been a loyal staker.
+            // 3. Rewards haven&#39;t expired.
+            </span><span class="kw">let </span>staked_period = staker_info.period_number();
+            <span class="macro">ensure!</span>(
+                staked_period &lt; protocol_state.period_number(),
+                Error::&lt;T&gt;::NoClaimableRewards
+            );
+            <span class="macro">ensure!</span>(
+                staker_info.is_loyal(),
+                Error::&lt;T&gt;::NotEligibleForBonusReward
+            );
+            <span class="macro">ensure!</span>(
+                staker_info.period_number()
+                    &gt;= <span class="self">Self</span>::oldest_claimable_period(protocol_state.period_number()),
+                Error::&lt;T&gt;::RewardExpired
+            );
+
+            <span class="kw">let </span>period_end_info =
+                PeriodEnd::&lt;T&gt;::get(<span class="kw-2">&amp;</span>staked_period).ok_or(Error::&lt;T&gt;::InternalClaimBonusError)<span class="question-mark">?</span>;
+            <span class="comment">// Defensive check - we should never get this far in function if no voting period stake exists.
+            </span><span class="macro">ensure!</span>(
+                !period_end_info.total_vp_stake.is_zero(),
+                Error::&lt;T&gt;::InternalClaimBonusError
+            );
+
+            <span class="kw">let </span>eligible_amount = staker_info.staked_amount(Subperiod::Voting);
+            <span class="kw">let </span>bonus_reward =
+                Perbill::from_rational(eligible_amount, period_end_info.total_vp_stake)
+                    * period_end_info.bonus_reward_pool;
+
+            T::StakingRewardHandler::payout_reward(<span class="kw-2">&amp;</span>account, bonus_reward)
+                .map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::RewardPayoutFailed)<span class="question-mark">?</span>;
+
+            <span class="comment">// Cleanup entry since the reward has been claimed
+            </span>StakerInfo::&lt;T&gt;::remove(<span class="kw-2">&amp;</span>account, <span class="kw-2">&amp;</span>smart_contract);
+            Ledger::&lt;T&gt;::mutate(<span class="kw-2">&amp;</span>account, |ledger| {
+                ledger.contract_stake_count.saturating_dec();
+            });
+
+            <span class="self">Self</span>::deposit_event(Event::&lt;T&gt;::BonusReward {
+                account: account.clone(),
+                smart_contract,
+                period: staked_period,
+                amount: bonus_reward,
+            });
+
+            <span class="prelude-val">Ok</span>(())
         }
     }
 }

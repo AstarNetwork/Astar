@@ -199,6 +199,41 @@
 <a href="#199" id="199">199</a>
 <a href="#200" id="200">200</a>
 <a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -220,14 +255,16 @@
 </span><span class="doccomment">//! Chain specifications.
 
 </span><span class="kw">use </span>local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, DappStakingConfig,
-    EVMConfig, GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles,
-    RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig, TierThreshold, VestingConfig, AST,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig,
+    CommunityCouncilMembershipConfig, CommunityTreasuryPalletId, CouncilMembershipConfig,
+    DappStakingConfig, EVMConfig, GrandpaConfig, GrandpaId, InflationConfig, InflationParameters,
+    Precompiles, RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig,
+    TechnicalCommitteeMembershipConfig, TierThreshold, TreasuryPalletId, VestingConfig, AST,
 };
 <span class="kw">use </span>sc_service::ChainType;
 <span class="kw">use </span>sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 <span class="kw">use </span>sp_runtime::{
-    traits::{IdentifyAccount, Verify},
+    traits::{AccountIdConversion, IdentifyAccount, Verify},
     Permill,
 };
 
@@ -276,6 +313,8 @@
                     get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Charlie&quot;</span>),
                     get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Eve&quot;</span>),
                     get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Ferdie&quot;</span>),
+                    TreasuryPalletId::get().into_account_truncating(),
+                    CommunityTreasuryPalletId::get().into_account_truncating(),
                     <span class="comment">// Arrakis.TEST account in MetaMask
                     // Import known test account with private key
                     // 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
@@ -299,6 +338,11 @@
     root_key: AccountId,
     endowed_accounts: Vec&lt;AccountId&gt;,
 ) -&gt; RuntimeGenesisConfig {
+    <span class="kw">let </span>accounts: Vec&lt;AccountId&gt; = <span class="macro">vec!</span>[<span class="string">&quot;Alice&quot;</span>, <span class="string">&quot;Bob&quot;</span>, <span class="string">&quot;Charlie&quot;</span>, <span class="string">&quot;Dave&quot;</span>, <span class="string">&quot;Eve&quot;</span>]
+        .iter()
+        .map(|s| get_account_id_from_seed::&lt;sr25519::Public&gt;(s))
+        .collect();
+
     <span class="comment">// This is supposed the be the simplest bytecode to revert without returning any data.
     // We will pre-deploy it under all of our precompiles to ensure they can be called from
     // within contracts.
@@ -387,6 +431,32 @@
             params: InflationParameters::default(),
             ..Default::default()
         },
+        council_membership: CouncilMembershipConfig {
+            members: accounts
+                .clone()
+                .try_into()
+                .expect(<span class="string">&quot;Should support at least 5 members.&quot;</span>),
+            phantom: Default::default(),
+        },
+        technical_committee_membership: TechnicalCommitteeMembershipConfig {
+            members: accounts[..<span class="number">3</span>]
+                .to_vec()
+                .try_into()
+                .expect(<span class="string">&quot;Should support at least 3 members.&quot;</span>),
+            phantom: Default::default(),
+        },
+        community_council_membership: CommunityCouncilMembershipConfig {
+            members: accounts
+                .try_into()
+                .expect(<span class="string">&quot;Should support at least 5 members.&quot;</span>),
+            phantom: Default::default(),
+        },
+        council: Default::default(),
+        technical_committee: Default::default(),
+        community_council: Default::default(),
+        democracy: Default::default(),
+        treasury: Default::default(),
+        community_treasury: Default::default(),
     }
 }
 

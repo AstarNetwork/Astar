@@ -49,6 +49,9 @@
 <a href="#49" id="49">49</a>
 <a href="#50" id="50">50</a>
 <a href="#51" id="51">51</a>
+<a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -100,4 +103,7 @@
 
 <span class="attr">#[cfg(any(feature = <span class="string">&quot;shibuya&quot;</span>, feature = <span class="string">&quot;shiden&quot;</span>, feature = <span class="string">&quot;astar&quot;</span>))]
 </span><span class="kw">mod </span>evm_tracing;
+
+<span class="attr">#[cfg(any(feature = <span class="string">&quot;shibuya&quot;</span>))]
+</span><span class="kw">mod </span>governance;
 </code></pre></div></section></main></body></html>
