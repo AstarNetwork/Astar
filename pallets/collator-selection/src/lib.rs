@@ -87,7 +87,7 @@ pub mod pallet {
         },
         traits::{
             Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
-            ValidatorRegistration,
+            ValidatorRegistration, ValidatorSet,
         },
         DefaultNoBound, PalletId,
     };
@@ -146,7 +146,7 @@ pub mod pallet {
         /// Used only for benchmarking.
         type MaxInvulnerables: Get<u32>;
 
-        // Will be kicked if block is not produced in threshold.
+        /// Will be kicked if block is not produced in threshold.
         type KickThreshold: Get<BlockNumberFor<Self>>;
 
         /// A stable ID for a validator.
@@ -159,6 +159,9 @@ pub mod pallet {
 
         /// Validate a user is registered
         type ValidatorRegistration: ValidatorRegistration<Self::ValidatorId>;
+
+        /// Something that can give information about the current validator set.
+        type ValidatorSet: ValidatorSet<Self::AccountId, ValidatorId = Self::AccountId>;
 
         /// How many in perc kicked collators should be slashed (set 0 to disable)
         type SlashRatio: Get<Perbill>;
@@ -193,6 +196,11 @@ pub mod pallet {
     #[pallet::getter(fn candidates)]
     pub type Candidates<T: Config> =
         StorageValue<_, Vec<CandidateInfo<T::AccountId, BalanceOf<T>>>, ValueQuery>;
+
+    /// Candidates who initiated leave intent or kicked.
+    #[pallet::storage]
+    pub type NonCandidates<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, (SessionIndex, BalanceOf<T>), ValueQuery>;
 
     /// Last block authored by collator.
     #[pallet::storage]
@@ -257,11 +265,17 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
+        /// New invulnerables candidates were set.
         NewInvulnerables(Vec<T::AccountId>),
+        /// The number of desired candidates was set.
         NewDesiredCandidates(u32),
+        /// The candidacy bond was set.
         NewCandidacyBond(BalanceOf<T>),
+        /// A new candidate joined.
         CandidateAdded(T::AccountId, BalanceOf<T>),
+        /// A candidate was removed.
         CandidateRemoved(T::AccountId),
+        /// A candidate was slashed.
         CandidateSlashed(T::AccountId),
     }
 
@@ -288,6 +302,10 @@ pub mod pallet {
         ValidatorNotRegistered,
         /// Account is now allowed to be a candidate due to an external reason (e.g. it might be participating in dApp staking)
         NotAllowedCandidate,
+        /// The candidacy bond is currently in the un-bonding period.
+        BondStillLocked,
+        /// No candidacy bond available for withdrawal.
+        NoCandidacyBond,
     }
 
     #[pallet::hooks]
@@ -388,6 +406,19 @@ pub mod pallet {
                 Error::<T>::ValidatorNotRegistered
             );
 
+            // ensure candidacy has no previous locked un-bonding
+            <NonCandidates<T>>::try_mutate_exists(&who, |maybe| -> DispatchResult {
+                if let Some((index, deposit)) = maybe.take() {
+                    ensure!(
+                        T::ValidatorSet::session_index() >= index,
+                        Error::<T>::BondStillLocked
+                    );
+                    // unreserve previous deposit and continue with registration
+                    T::Currency::unreserve(&who, deposit);
+                }
+                Ok(())
+            })?;
+
             let deposit = Self::candidacy_bond();
             // First authored block is current block plus kick threshold to handle session delay
             let incoming = CandidateInfo {
@@ -403,7 +434,7 @@ pub mod pallet {
                         T::Currency::reserve(&who, deposit)?;
                         candidates.push(incoming);
                         <LastAuthoredBlock<T>>::insert(
-                            who.clone(),
+                            &who,
                             frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
                         );
                         Ok(candidates.len())
@@ -415,7 +446,7 @@ pub mod pallet {
         }
 
         /// Deregister `origin` as a collator candidate. Note that the collator can only leave on
-        /// session change. The `CandidacyBond` will be unreserved immediately.
+        /// session change. The `CandidacyBond` will start un-bonding process.
         ///
         /// This call will fail if the total number of candidates would drop below `MinCandidates`.
         ///
@@ -428,9 +459,32 @@ pub mod pallet {
                 Self::candidates().len() as u32 > T::MinCandidates::get(),
                 Error::<T>::TooFewCandidates
             );
-            let current_count = Self::try_remove_candidate(&who, false)?;
-
+            let current_count = Self::try_remove_candidate(&who)?;
             Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
+        }
+
+        /// Withdraw `CandidacyBond` after un-bonding period has finished.
+        /// This call will fail called during un-bonding or if there's no `CandidacyBound` reserved.
+        #[pallet::call_index(5)]
+        #[pallet::weight(T::WeightInfo::withdraw_bond())]
+        pub fn withdraw_bond(origin: OriginFor<T>) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            <NonCandidates<T>>::try_mutate_exists(&who, |maybe| -> DispatchResult {
+                if let Some((index, deposit)) = maybe.take() {
+                    ensure!(
+                        T::ValidatorSet::session_index() >= index,
+                        Error::<T>::BondStillLocked
+                    );
+                    T::Currency::unreserve(&who, deposit);
+                    <LastAuthoredBlock<T>>::remove(&who);
+                    Ok(())
+                } else {
+                    Err(Error::<T>::NoCandidacyBond.into())
+                }
+            })?;
+
+            Ok(())
         }
     }
 
@@ -439,38 +493,44 @@ pub mod pallet {
         pub fn account_id() -> T::AccountId {
             T::PotId::get().into_account_truncating()
         }
-        /// Removes a candidate if they exist and sends them back their deposit
-        /// If second argument is `true` then a candidate will be slashed
-        fn try_remove_candidate(who: &T::AccountId, slash: bool) -> Result<usize, DispatchError> {
+
+        /// Removes a candidate if they exist. Start deposit un-bonding
+        fn try_remove_candidate(who: &T::AccountId) -> Result<usize, DispatchError> {
             let current_count =
                 <Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
                     let index = candidates
                         .iter()
                         .position(|candidate| candidate.who == *who)
                         .ok_or(Error::<T>::NotCandidate)?;
-                    let deposit = candidates[index].deposit;
 
-                    if slash {
-                        let slash = T::SlashRatio::get() * deposit;
-                        let remain = deposit - slash;
-
-                        let (imbalance, _) = T::Currency::slash_reserved(who, slash);
-                        T::Currency::unreserve(who, remain);
-
-                        if let Some(dest) = Self::slash_destination() {
-                            T::Currency::resolve_creating(&dest, imbalance);
-                        }
-
-                        Self::deposit_event(Event::CandidateSlashed(who.clone()));
-                    } else {
-                        T::Currency::unreserve(who, deposit);
-                    }
-                    candidates.remove(index);
-                    <LastAuthoredBlock<T>>::remove(who.clone());
+                    let candidate = candidates.remove(index);
+                    let session_index = T::ValidatorSet::session_index().saturating_add(1);
+                    <NonCandidates<T>>::insert(&who, (session_index, candidate.deposit));
                     Ok(candidates.len())
                 })?;
             Self::deposit_event(Event::CandidateRemoved(who.clone()));
             Ok(current_count)
+        }
+
+        /// Slash candidate deposit and return the rest of funds.
+        fn slash_non_candidate(who: &T::AccountId) {
+            NonCandidates::<T>::mutate_exists(who, |maybe| {
+                if let Some((_index, deposit)) = maybe.take() {
+                    let slash = T::SlashRatio::get() * deposit;
+                    let remain = deposit.saturating_sub(slash);
+
+                    let (imbalance, _) = T::Currency::slash_reserved(who, slash);
+                    T::Currency::unreserve(who, remain);
+
+                    if let Some(dest) = Self::slash_destination() {
+                        T::Currency::resolve_creating(&dest, imbalance);
+                    }
+
+                    <LastAuthoredBlock<T>>::remove(who);
+
+                    Self::deposit_event(Event::CandidateSlashed(who.clone()));
+                }
+            });
         }
 
         /// Assemble the current set of candidates and invulnerables into the next collator set.
@@ -478,34 +538,32 @@ pub mod pallet {
         /// This is done on the fly, as frequent as we are told to do so, as the session manager.
         pub fn assemble_collators(candidates: Vec<T::AccountId>) -> Vec<T::AccountId> {
             let mut collators = Self::invulnerables();
-            collators.extend(candidates.into_iter().collect::<Vec<_>>());
+            collators.extend(candidates.into_iter());
             collators
         }
         /// Kicks out and candidates that did not produce a block in the kick threshold.
-        pub fn kick_stale_candidates(
-            candidates: Vec<CandidateInfo<T::AccountId, BalanceOf<T>>>,
-        ) -> Vec<T::AccountId> {
+        /// Return length of candidates before and number of kicked candidates.
+        pub fn kick_stale_candidates() -> (u32, u32) {
             let now = frame_system::Pallet::<T>::block_number();
             let kick_threshold = T::KickThreshold::get();
-            candidates
-                .into_iter()
-                .filter_map(|c| {
-                    let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
-                    let since_last = now.saturating_sub(last_block);
-                    if since_last < kick_threshold
-                        || Self::candidates().len() as u32 <= T::MinCandidates::get()
-                    {
-                        Some(c.who)
-                    } else {
-                        let outcome = Self::try_remove_candidate(&c.who, true);
-                        if let Err(why) = outcome {
-                            log::warn!("Failed to remove candidate {:?}", why);
-                            debug_assert!(false, "failed to remove candidate {:?}", why);
-                        }
-                        None
+            let count = Self::candidates().len() as u32;
+            for (who, last_authored) in LastAuthoredBlock::<T>::iter() {
+                if now.saturating_sub(last_authored) < kick_threshold {
+                    continue;
+                }
+                // still candidate, kick and slash
+                if Self::is_account_candidate(&who) {
+                    if Self::candidates().len() > T::MinCandidates::get() as usize {
+                        // no error, who is a candidate
+                        let _ = Self::try_remove_candidate(&who);
+                        Self::slash_non_candidate(&who);
                     }
-                })
-                .collect::<Vec<_>>()
+                } else {
+                    // slash un-bonding candidate
+                    Self::slash_non_candidate(&who);
+                }
+            }
+            (count, count.saturating_sub(Self::candidates().len() as u32))
         }
 
         /// Check whether an account is a candidate.
@@ -547,18 +605,18 @@ pub mod pallet {
                 <frame_system::Pallet<T>>::block_number(),
             );
 
-            let candidates = Self::candidates();
-            let candidates_len_before = candidates.len();
-            let active_candidates = Self::kick_stale_candidates(candidates);
-            let active_candidates_len = active_candidates.len();
-            let result = Self::assemble_collators(active_candidates);
-            let removed = candidates_len_before - active_candidates_len;
-
+            let (candidates_len_before, removed) = Self::kick_stale_candidates();
             frame_system::Pallet::<T>::register_extra_weight_unchecked(
-                T::WeightInfo::new_session(candidates_len_before as u32, removed as u32),
+                T::WeightInfo::new_session(candidates_len_before, removed),
                 DispatchClass::Mandatory,
             );
-            Some(result)
+
+            let active_candidates = Self::candidates()
+                .into_iter()
+                .map(|x| x.who)
+                .collect::<Vec<_>>();
+
+            Some(Self::assemble_collators(active_candidates))
         }
         fn start_session(_: SessionIndex) {
             // we don't care.
