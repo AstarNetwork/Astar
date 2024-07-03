@@ -2444,6 +2444,45 @@
 <a href="#2444" id="2444">2444</a>
 <a href="#2445" id="2445">2445</a>
 <a href="#2446" id="2446">2446</a>
+<a href="#2447" id="2447">2447</a>
+<a href="#2448" id="2448">2448</a>
+<a href="#2449" id="2449">2449</a>
+<a href="#2450" id="2450">2450</a>
+<a href="#2451" id="2451">2451</a>
+<a href="#2452" id="2452">2452</a>
+<a href="#2453" id="2453">2453</a>
+<a href="#2454" id="2454">2454</a>
+<a href="#2455" id="2455">2455</a>
+<a href="#2456" id="2456">2456</a>
+<a href="#2457" id="2457">2457</a>
+<a href="#2458" id="2458">2458</a>
+<a href="#2459" id="2459">2459</a>
+<a href="#2460" id="2460">2460</a>
+<a href="#2461" id="2461">2461</a>
+<a href="#2462" id="2462">2462</a>
+<a href="#2463" id="2463">2463</a>
+<a href="#2464" id="2464">2464</a>
+<a href="#2465" id="2465">2465</a>
+<a href="#2466" id="2466">2466</a>
+<a href="#2467" id="2467">2467</a>
+<a href="#2468" id="2468">2468</a>
+<a href="#2469" id="2469">2469</a>
+<a href="#2470" id="2470">2470</a>
+<a href="#2471" id="2471">2471</a>
+<a href="#2472" id="2472">2472</a>
+<a href="#2473" id="2473">2473</a>
+<a href="#2474" id="2474">2474</a>
+<a href="#2475" id="2475">2475</a>
+<a href="#2476" id="2476">2476</a>
+<a href="#2477" id="2477">2477</a>
+<a href="#2478" id="2478">2478</a>
+<a href="#2479" id="2479">2479</a>
+<a href="#2480" id="2480">2480</a>
+<a href="#2481" id="2481">2481</a>
+<a href="#2482" id="2482">2482</a>
+<a href="#2483" id="2483">2483</a>
+<a href="#2484" id="2484">2484</a>
+<a href="#2485" id="2485">2485</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -4007,7 +4046,46 @@
 <span class="doccomment">/// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-</span><span class="kw">pub type </span>Migrations = ();
+</span><span class="kw">pub type </span>Migrations = (GovernancePalletsVersionSetting,);
+
+<span class="kw">use </span>frame_support::traits::{GetStorageVersion, OnRuntimeUpgrade};
+<span class="kw">pub struct </span>GovernancePalletsVersionSetting;
+<span class="kw">impl </span>OnRuntimeUpgrade <span class="kw">for </span>GovernancePalletsVersionSetting {
+    <span class="kw">fn </span>on_runtime_upgrade() -&gt; Weight {
+        <span class="comment">// 1. Membership pallet instances
+        </span><span class="kw">let </span>membership_storage_version = pallet_membership::Pallet::&lt;
+            Runtime,
+            MainCouncilMembershipInst,
+        &gt;::current_storage_version();
+
+        membership_storage_version
+            .put::&lt;pallet_membership::Pallet&lt;Runtime, MainCouncilMembershipInst&gt;&gt;();
+        membership_storage_version
+            .put::&lt;pallet_membership::Pallet&lt;Runtime, TechnicalCommitteeCollectiveInst&gt;&gt;();
+        membership_storage_version
+            .put::&lt;pallet_membership::Pallet&lt;Runtime, CommunityCouncilMembershipInst&gt;&gt;();
+
+        <span class="comment">// 2. Collective pallet instances
+        </span><span class="kw">let </span>collective_storage_version = pallet_collective::Pallet::&lt;
+            Runtime,
+            MainCouncilCollectiveInst,
+        &gt;::current_storage_version();
+
+        collective_storage_version
+            .put::&lt;pallet_collective::Pallet&lt;Runtime, MainCouncilCollectiveInst&gt;&gt;();
+        collective_storage_version
+            .put::&lt;pallet_collective::Pallet&lt;Runtime, TechnicalCommitteeCollectiveInst&gt;&gt;();
+        collective_storage_version
+            .put::&lt;pallet_collective::Pallet&lt;Runtime, CommunityCouncilCollectiveInst&gt;&gt;();
+
+        <span class="comment">// 3. Democracy pallet
+        </span><span class="kw">let </span>democracy_storage_version =
+            pallet_democracy::Pallet::&lt;Runtime&gt;::current_storage_version();
+        democracy_storage_version.put::&lt;pallet_democracy::Pallet&lt;Runtime&gt;&gt;();
+
+        &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().writes(<span class="number">7</span>)
+    }
+}
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
