@@ -1598,7 +1598,7 @@ impl OnRuntimeUpgrade for GovernancePalletsVersionSetting {
             pallet_democracy::Pallet::<Runtime>::current_storage_version();
         democracy_storage_version.put::<pallet_democracy::Pallet<Runtime>>();
 
-        <Runtime as frame_system::Config>::DbWeight::get().writes(6)
+        <Runtime as frame_system::Config>::DbWeight::get().writes(7)
     }
 }
 
