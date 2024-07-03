@@ -1561,7 +1561,46 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = ();
+pub type Migrations = (GovernancePalletsVersionSetting,);
+
+use frame_support::traits::{GetStorageVersion, OnRuntimeUpgrade};
+pub struct GovernancePalletsVersionSetting;
+impl OnRuntimeUpgrade for GovernancePalletsVersionSetting {
+    fn on_runtime_upgrade() -> Weight {
+        // 1. Membership pallet instances
+        let membership_storage_version = pallet_membership::Pallet::<
+            Runtime,
+            MainCouncilMembershipInst,
+        >::current_storage_version();
+
+        membership_storage_version
+            .put::<pallet_membership::Pallet<Runtime, MainCouncilMembershipInst>>();
+        membership_storage_version
+            .put::<pallet_membership::Pallet<Runtime, TechnicalCommitteeCollectiveInst>>();
+        membership_storage_version
+            .put::<pallet_membership::Pallet<Runtime, CommunityCouncilMembershipInst>>();
+
+        // 2. Collective pallet instances
+        let collective_storage_version = pallet_collective::Pallet::<
+            Runtime,
+            MainCouncilCollectiveInst,
+        >::current_storage_version();
+
+        collective_storage_version
+            .put::<pallet_collective::Pallet<Runtime, MainCouncilCollectiveInst>>();
+        collective_storage_version
+            .put::<pallet_collective::Pallet<Runtime, TechnicalCommitteeCollectiveInst>>();
+        collective_storage_version
+            .put::<pallet_collective::Pallet<Runtime, CommunityCouncilCollectiveInst>>();
+
+        // 3. Democracy pallet
+        let democracy_storage_version =
+            pallet_democracy::Pallet::<Runtime>::current_storage_version();
+        democracy_storage_version.put::<pallet_democracy::Pallet<Runtime>>();
+
+        <Runtime as frame_system::Config>::DbWeight::get().writes(7)
+    }
+}
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
