@@ -438,9 +438,9 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
-    type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractRegisterOrigin = EnsureRootOrTwoThirdsCommunityCouncil;
     type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ManagerOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
     type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
     type CycleConfiguration = InflationCycleConfig;
@@ -1441,7 +1441,9 @@ impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
     fn filter(&self, c: &RuntimeCall) -> bool {
         matches!(
             c,
-            RuntimeCall::DappStaking(..) | RuntimeCall::System(frame_system::Call::remark { .. })
+            RuntimeCall::DappStaking(..)
+                | RuntimeCall::System(frame_system::Call::remark { .. })
+                | RuntimeCall::Utility(..)
         )
     }
 }
