@@ -146,7 +146,8 @@ impl From<UintAuthorityId> for MockSessionKeys {
 }
 
 parameter_types! {
-    pub static SessionHandlerCollators: Vec<u64> = Vec::new();
+    pub static SessionCollators: Vec<u64> = Vec::new();
+    pub static NextSessionCollators: Vec<u64> = Vec::new();
     pub static SessionChangeBlock: u64 = 0;
 }
 
@@ -154,12 +155,13 @@ pub struct TestSessionHandler;
 impl pallet_session::SessionHandler<u64> for TestSessionHandler {
     const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[UintAuthorityId::ID];
     fn on_genesis_session<Ks: OpaqueKeys>(keys: &[(u64, Ks)]) {
-        SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+        SessionCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
-    fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
+    fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], next_keys: &[(u64, Ks)]) {
         SessionChangeBlock::set(System::block_number());
         dbg!(keys.len());
-        SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+        SessionCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>());
+        NextSessionCollators::set(next_keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>());
     }
     fn on_before_session_ending() {}
     fn on_disabled(_: u32) {}
@@ -228,6 +230,7 @@ impl Config for Test {
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = IdentityCollator;
     type ValidatorRegistration = IsRegistered;
+    type ValidatorSet = Session;
     type SlashRatio = SlashRatio;
     type AccountCheck = DummyAccountCheck;
     type WeightInfo = ();
