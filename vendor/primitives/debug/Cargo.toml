@@ -9,11 +9,10 @@ version = "0.1.0"
 
 [dependencies]
 environmental = { workspace = true }
-ethereum = { workspace = true, features = ["with-codec"] }
+ethereum = { workspace = true }
 ethereum-types = { workspace = true }
-hex = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
+hex = { workspace = true, optional = true, features = ["serde"] }
+serde = { workspace = true, optional = true, features = ["derive"] }
 
 # Substrate
 parity-scale-codec = { workspace = true }
@@ -32,12 +31,9 @@ std = [
 	"ethereum/std",
 	"hex",
 	"serde",
-	"serde_json",
 	"sp-api/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"hex?/std",
-	"serde?/std",
 ]
