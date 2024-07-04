@@ -2456,7 +2456,7 @@
     <span class="kw">type </span>MaxNumberOfStakedContracts = ConstU32&lt;<span class="number">16</span>&gt;;
     <span class="kw">type </span>MinimumStakeAmount = MinimumStakingAmount;
     <span class="kw">type </span>NumberOfTiers = ConstU32&lt;<span class="number">4</span>&gt;;
-    <span class="kw">type </span>RankingEnabled = ();
+    <span class="kw">type </span>RankingEnabled = ConstBool&lt;<span class="bool-val">true</span>&gt;;
     <span class="kw">type </span>WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight&lt;Runtime&gt;;
     <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">type </span>BenchmarkHelper = BenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;;
