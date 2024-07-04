@@ -92,7 +92,6 @@ std = [
 	"pallet-contracts/std",
 	"cumulus-primitives-parachain-inherent/std",
 	"cumulus-primitives-core/std",
-	"pallet-contracts-uapi/std",
 	"cumulus-pallet-parachain-system/std",
 	"pallet-democracy/std",
 	"pallet-timestamp/std",
