@@ -72,14 +72,14 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use astar_primitives::{
     dapp_staking::{
         AccountCheck as DappStakingAccountCheck, CycleConfiguration, DAppId, EraNumber,
-        PeriodNumber, SmartContract, StandardTierSlots, TierId,
+        PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
     },
     evm::EvmRevertCodeHandler,
     oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
-pub use astar_primitives::{AccountId, Balance, Signature};
+pub use astar_primitives::{governance::OracleMembershipInst, AccountId, Balance, Signature};
 
 pub use pallet_dapp_staking_v3::TierThreshold;
 pub use pallet_inflation::InflationParameters;
@@ -156,7 +156,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 88,
+    spec_version: 90,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -363,6 +363,8 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = SmartContract<AccountId>;
+    type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = PriceAggregator;
     type StakingRewardHandler = Inflation;
@@ -380,6 +382,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MaxNumberOfStakedContracts = ConstU32<16>;
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
+    type RankingEnabled = ();
     type WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
@@ -1101,8 +1104,7 @@ impl orml_oracle::Config for Runtime {
     type MaxFeedValues = ConstU32<1>;
 }
 
-pub type OracleMembershipInstance = pallet_membership::Instance1;
-impl pallet_membership::Config<OracleMembershipInstance> for Runtime {
+impl pallet_membership::Config<OracleMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AddOrigin = EnsureRoot<AccountId>;
     type RemoveOrigin = EnsureRoot<AccountId>;
@@ -1204,7 +1206,11 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,);
+pub type Migrations = (
+    cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
+    // Migrate to ranking system
+    pallet_dapp_staking_v3::migration::versioned_migrations::V6ToV7<Runtime>,
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1763,7 +1769,7 @@ impl_runtime_apis! {
             InflationCycleConfig::blocks_per_era()
         }
 
-        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, TierId> {
+        fn get_dapp_tier_assignment() -> BTreeMap<DAppId, RankedTier> {
             DappStaking::get_dapp_tier_assignment()
         }
     }

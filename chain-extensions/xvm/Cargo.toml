@@ -40,4 +40,6 @@ std = [
 	"sp-runtime/std",
 	# Astar
 	"astar-primitives/std",
+	"log/std",
+	"xvm-chain-extension-types/std",
 ]

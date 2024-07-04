@@ -42,6 +42,8 @@ std = [
 	"pallet-balances/std",
 	"astar-primitives/std",
 	"sp-arithmetic/std",
+	"frame-benchmarking?/std",
+	"sp-runtime/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -49,5 +51,11 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"astar-primitives/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+]

@@ -1,0 +1,4 @@
+System:
+  $removePrefix: ["Account"]
+EVM:
+  $removePrefix: ["AccountCodes", "AccountStorages"]

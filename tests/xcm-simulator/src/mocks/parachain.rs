@@ -710,6 +710,8 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type Currency = Balances;
     type SmartContract = MockSmartContract;
+    type ContractRegisterOrigin = frame_system::EnsureRoot<AccountId>;
+    type ContractUnregisterOrigin = frame_system::EnsureRoot<AccountId>;
     type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
     type NativePriceProvider = DummyPriceProvider;
     type StakingRewardHandler = DummyStakingRewardHandler;
@@ -727,6 +729,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MaxNumberOfStakedContracts = ConstU32<5>;
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
+    type RankingEnabled = ConstBool<true>;
     type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;

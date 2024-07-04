@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "5.39.1"
+version = "5.41.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -44,7 +44,11 @@ pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
+pallet-collective = { workspace = true }
+pallet-collective-proxy = { workspace = true }
 pallet-contracts = { workspace = true }
+pallet-contracts-uapi = { workspace = true }
+pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
@@ -68,6 +72,7 @@ pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
+pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 
@@ -155,6 +160,10 @@ std = [
 	"fp-self-contained/std",
 	"sp-std/std",
 	"sp-api/std",
+	"pallet-democracy/std",
+	"pallet-collective/std",
+	"pallet-collective-proxy/std",
+	"pallet-treasury/std",
 	"sp-core/std",
 	"sp-genesis-builder/std",
 	"sp-consensus-aura/std",
@@ -251,11 +260,22 @@ std = [
 	"astar-primitives/std",
 	"pallet-message-queue/std",
 	"parachains-common/std",
+	"astar-xcm-benchmarks?/std",
+	"frame-system-benchmarking?/std",
+	"log?/std",
+	"num_enum/std",
+	"pallet-xcm-benchmarks?/std",
+	"precompile-utils/std",
+	"scale-info/std",
 ]
 runtime-benchmarks = [
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"oracle-benchmarks/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"pallet-collective-proxy/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
+	"pallet-democracy/runtime-benchmarks",
+	"pallet-collective/runtime-benchmarks",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
@@ -283,6 +303,25 @@ runtime-benchmarks = [
 	"cumulus-primitives-utility/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
+	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"pallet-chain-extension-assets/runtime-benchmarks",
+	"pallet-contracts/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
+	"pallet-evm-precompile-dapp-staking-v3/runtime-benchmarks",
+	"pallet-evm-precompile-xcm/runtime-benchmarks",
+	"pallet-identity/runtime-benchmarks",
+	"pallet-multisig/runtime-benchmarks",
+	"pallet-proxy/runtime-benchmarks",
+	"pallet-scheduler/runtime-benchmarks",
+	"pallet-sudo/runtime-benchmarks",
+	"pallet-utility/runtime-benchmarks",
+	"pallet-vesting/runtime-benchmarks",
+	"polkadot-parachain/runtime-benchmarks",
+	"polkadot-primitives/runtime-benchmarks",
+	"polkadot-runtime-common/runtime-benchmarks",
+	"xcm-executor/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -305,6 +344,10 @@ try-runtime = [
 	"pallet-ethereum/try-runtime",
 	"pallet-membership/try-runtime",
 	"pallet-xc-asset-config/try-runtime",
+	"pallet-collective-proxy/try-runtime",
+	"pallet-treasury/try-runtime",
+	"pallet-collective/try-runtime",
+	"pallet-democracy/try-runtime",
 	"pallet-assets/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-collator-selection/try-runtime",
@@ -332,6 +375,11 @@ try-runtime = [
 	"pallet-ethereum-checked/try-runtime",
 	"orml-xtokens/try-runtime",
 	"pallet-message-queue/try-runtime",
+	"astar-primitives/try-runtime",
+	"astar-xcm-benchmarks?/try-runtime",
+	"pallet-chain-extension-assets/try-runtime",
+	"polkadot-runtime-common/try-runtime",
+	"sp-runtime/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

@@ -19,9 +19,11 @@
 //! Chain specifications.
 
 use local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, DappStakingConfig,
-    EVMConfig, GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles,
-    RuntimeGenesisConfig, Signature, SudoConfig, TierThreshold, VestingConfig, AST,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig,
+    CommunityCouncilMembershipConfig, CouncilMembershipConfig, DappStakingConfig, EVMConfig,
+    GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles,
+    RuntimeGenesisConfig, Signature, SudoConfig, TechnicalCommitteeMembershipConfig, TierThreshold,
+    VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -91,6 +93,11 @@ fn testnet_genesis(
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
 ) -> serde_json::Value {
+    let accounts: Vec<AccountId> = vec!["Alice", "Bob", "Charlie", "Dave", "Eve"]
+        .iter()
+        .map(|s| get_account_id_from_seed::<sr25519::Public>(s))
+        .collect();
+
     // This is supposed the be the simplest bytecode to revert without returning any data.
     // We will pre-deploy it under all of our precompiles to ensure they can be called from
     // within contracts.
@@ -176,8 +183,33 @@ fn testnet_genesis(
             params: InflationParameters::default(),
             ..Default::default()
         },
+        council_membership: CouncilMembershipConfig {
+            members: accounts
+                .clone()
+                .try_into()
+                .expect("Should support at least 5 members."),
+            phantom: Default::default(),
+        },
+        technical_committee_membership: TechnicalCommitteeMembershipConfig {
+            members: accounts[..3]
+                .to_vec()
+                .try_into()
+                .expect("Should support at least 3 members."),
+            phantom: Default::default(),
+        },
+        community_council_membership: CommunityCouncilMembershipConfig {
+            members: accounts
+                .try_into()
+                .expect("Should support at least 5 members."),
+            phantom: Default::default(),
+        },
+        council: Default::default(),
+        technical_committee: Default::default(),
+        community_council: Default::default(),
+        democracy: Default::default(),
+        treasury: Default::default(),
+        community_treasury: Default::default(),
     };
-
     serde_json::to_value(&config).expect("Could not build genesis config.")
 }
 
