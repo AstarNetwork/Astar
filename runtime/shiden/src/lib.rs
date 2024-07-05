@@ -388,6 +388,15 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
             .expect("Must succeed in test/benchmark environment.");
     }
 }
+#[cfg(feature = "runtime-benchmarks")]
+impl<SC, ACC> orml_oracle::BenchmarkHelper<CurrencyId, FixedU128, ConstU32<2>>
+    for BenchmarkHelper<SC, ACC>
+{
+    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, FixedU128), ConstU32<2>>
+    {
+        sp_runtime::BoundedVec::default()
+    }
+}
 
 pub struct AccountCheck;
 impl DappStakingAccountCheck<AccountId> for AccountCheck {
@@ -1120,6 +1129,8 @@ impl orml_oracle::Config for Runtime {
     type MaxFeedValues = ConstU32<2>;
     #[cfg(not(feature = "runtime-benchmarks"))]
     type MaxFeedValues = ConstU32<1>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
 
 impl pallet_membership::Config<OracleMembershipInst> for Runtime {
