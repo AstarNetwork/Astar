@@ -1124,7 +1124,9 @@ impl InstanceFilter<RuntimeCall> for CommunityCouncilCallFilter {
     fn filter(&self, c: &RuntimeCall) -> bool {
         matches!(
             c,
-            RuntimeCall::DappStaking(..) | RuntimeCall::System(frame_system::Call::remark { .. })
+            RuntimeCall::DappStaking(..)
+                | RuntimeCall::System(frame_system::Call::remark { .. })
+                | RuntimeCall::Utility(..)
         )
     }
 }

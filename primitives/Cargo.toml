@@ -99,6 +99,7 @@ runtime-benchmarks = [
 	"pallet-collective/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
+	"orml-oracle/runtime-benchmarks",
 ]
 try-runtime = [
 	"pallet-contracts/try-runtime",

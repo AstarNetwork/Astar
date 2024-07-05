@@ -98,11 +98,11 @@ shiden-runtime = { workspace = true, features = ["std"] }
 astar-primitives = { workspace = true }
 
 # frame dependencies
+frame-metadata-hash-extension = { workspace = true }
 frame-system = { workspace = true, features = ["std"] }
 pallet-transaction-payment = { workspace = true, features = ["std"] }
 pallet-transaction-payment-rpc = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
-frame-metadata-hash-extension = { workspace = true }
 
 # CLI-specific dependencies
 sc-cli = { workspace = true, optional = true }
@@ -179,6 +179,7 @@ runtime-benchmarks = [
 	"sc-client-db/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"cumulus-primitives-core/runtime-benchmarks",
 ]
 cli = ["try-runtime-cli"]
 try-runtime = [

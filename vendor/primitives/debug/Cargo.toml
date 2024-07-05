@@ -36,4 +36,6 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"hex?/std",
+	"serde?/std",
 ]

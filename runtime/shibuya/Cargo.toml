@@ -48,7 +48,6 @@ pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-collective-proxy = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-uapi = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
@@ -324,6 +323,10 @@ runtime-benchmarks = [
 	"polkadot-primitives/runtime-benchmarks",
 	"polkadot-runtime-common/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
+	"cumulus-pallet-dmp-queue/runtime-benchmarks",
+	"cumulus-primitives-core/runtime-benchmarks",
+	"parachains-common/runtime-benchmarks",
+	"orml-oracle/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",

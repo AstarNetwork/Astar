@@ -20,10 +20,10 @@
 
 use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig,
-    CommunityCouncilMembershipConfig, CouncilMembershipConfig, DappStakingConfig, EVMConfig,
-    GrandpaConfig, GrandpaId, InflationConfig, InflationParameters, Precompiles,
-    RuntimeGenesisConfig, Signature, SudoConfig, TechnicalCommitteeMembershipConfig, TierThreshold,
-    VestingConfig, AST,
+    CommunityCouncilMembershipConfig, CommunityTreasuryPalletId, CouncilMembershipConfig,
+    DappStakingConfig, EVMConfig, GrandpaConfig, GrandpaId, InflationConfig, InflationParameters,
+    Precompiles, RuntimeGenesisConfig, Signature, SudoConfig, TechnicalCommitteeMembershipConfig,
+    TierThreshold, TreasuryPalletId, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -77,6 +77,8 @@ pub fn development_config() -> ChainSpec {
                 get_account_id_from_seed::<sr25519::Public>("Charlie"),
                 get_account_id_from_seed::<sr25519::Public>("Eve"),
                 get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                TreasuryPalletId::get().into_account_truncating(),
+                CommunityTreasuryPalletId::get().into_account_truncating(),
                 // Arrakis.TEST account in MetaMask
                 // Import known test account with private key
                 // 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
@@ -210,6 +212,7 @@ fn testnet_genesis(
         treasury: Default::default(),
         community_treasury: Default::default(),
     };
+
     serde_json::to_value(&config).expect("Could not build genesis config.")
 }
 

@@ -243,6 +243,7 @@ fn make_genesis(
         treasury: Default::default(),
         community_treasury: Default::default(),
     };
+
     serde_json::to_value(&config).expect("Could not build genesis config.")
 }
 
