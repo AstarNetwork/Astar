@@ -1843,8 +1843,28 @@ impl_runtime_apis! {
             use xcm_builder::MintLocation;
             use astar_primitives::benchmarks::XcmBenchmarkHelper;
             use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
+
+            pub struct TestDeliveryHelper;
+            impl xcm_builder::EnsureDelivery for TestDeliveryHelper {
+                fn ensure_successful_delivery(
+                    origin_ref: &Location,
+                    _dest: &Location,
+                    _fee_reason: xcm_executor::traits::FeeReason,
+                ) -> (Option<xcm_executor::FeesMode>, Option<Assets>) {
+                    use xcm_executor::traits::ConvertLocation;
+                    let account = xcm_config::LocationToAccountId::convert_location(origin_ref)
+                        .expect("Invalid location");
+                    // Give the existential deposit at least
+                    let balance = ExistentialDeposit::get();
+                    let _ = <Balances as frame_support::traits::Currency<_>>::
+                        make_free_balance_be(&account.into(), balance);
+
+                    (None, None)
+                }
+            }
+
             impl pallet_xcm::benchmarking::Config for Runtime {
-                type DeliveryHelper = ();
+                type DeliveryHelper = TestDeliveryHelper;
 
                 fn reachable_dest() -> Option<Location> {
                     Some(Parent.into())
@@ -1869,29 +1889,9 @@ impl_runtime_apis! {
                 }
 
                 fn get_asset() -> Asset {
-                    let min_balance = 100u128;
-                    // create the transact asset and make it sufficient
-                    assert_ok!(pallet_assets::Pallet::<Runtime>::force_create(
-                        RuntimeOrigin::root(),
-                        TransactAssetId::get().into(),
-                        Address::Id([0u8; 32].into()),
-                        true,
-                        // min balance
-                        min_balance
-                    ));
-
-                    // convert mapping for asset id
-                    assert_ok!(
-                        XcAssetConfig::register_asset_location(
-                            RuntimeOrigin::root(),
-                            Box::new(TransactAssetLocation::get().into_versioned()),
-                            TransactAssetId::get(),
-                        )
-                    );
-
                     Asset {
-                        id: AssetId(TransactAssetLocation::get()),
-                        fun: Fungible(min_balance * 100),
+                        id: AssetId(Here.into()),
+                        fun: Fungible(ExistentialDeposit::get()),
                     }
                 }
             }
