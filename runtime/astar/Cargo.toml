@@ -37,6 +37,7 @@ sp-version = { workspace = true }
 
 # frame dependencies
 frame-executive = { workspace = true }
+frame-metadata-hash-extension = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-rpc-runtime-api = { workspace = true }
@@ -164,6 +165,7 @@ std = [
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-try-runtime/std",
+	"frame-metadata-hash-extension/std",
 	"pallet-assets/std",
 	"pallet-authorship/std",
 	"pallet-aura/std",
@@ -338,3 +340,10 @@ evm-tracing = [
 	"moonbeam-rpc-primitives-debug",
 	"moonbeam-rpc-primitives-txpool",
 ]
+
+# Enable metadata hash generation at compile time for the `CheckMetadataHash` extension.
+metadata-hash = ["substrate-wasm-builder?/metadata-hash"]
+
+# A feature that should be enabled when the runtime should be built for on-chain
+# deployment. This will disable stuff that shouldn't be part of the on-chain wasm
+on-chain-release-build = ["metadata-hash"]
