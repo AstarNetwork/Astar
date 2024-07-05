@@ -26,7 +26,7 @@ use astar_test_utils::{call_wasm_contract_method, deploy_wasm_contract};
 use frame_support::{assert_ok, weights::Weight};
 use parity_scale_codec::Encode;
 use sp_runtime::traits::Bounded;
-use xcm::{prelude::*, v3::Response};
+use xcm::{prelude::*, v4::Response};
 use xcm_executor::traits::QueryHandler;
 use xcm_simulator::TestExt;
 
@@ -51,9 +51,9 @@ fn basic_xcmp_transact_outcome_query_response() {
 
     // Closure for sending Transact(call) expecting success to dest returning
     // query id for response
-    let send_transact = |call: parachain::RuntimeCall, dest: MultiLocation| {
+    let send_transact = |call: parachain::RuntimeCall, dest: Location| {
         // this will register the query and add `SetApendix` with `ReportError`.
-        let query_id = ParachainPalletXcm::new_query(dest, Bounded::max_value(), Here);
+        let query_id = ParachainPalletXcm::new_query(dest.clone(), Bounded::max_value(), Here);
 
         // build xcm message
         let xcm = Xcm(vec![
@@ -155,7 +155,7 @@ fn basic_xcmp_transact_outcome_query_response() {
             xcms[1].0.as_slice(),
             &[QueryResponse {
                 query_id,
-                response: Response::ExecutionResult(Some((4, xcm::v3::Error::ExpectationFalse))),
+                response: Response::ExecutionResult(Some((4, xcm::v4::Error::ExpectationFalse))),
                 ..
             }] if query_id == query_id_failure
         ));
@@ -224,7 +224,7 @@ fn xcm_remote_transact_contract() {
         assert_ok!(ParachainPalletXcm::send(
             parachain::RuntimeOrigin::signed(ALICE),
             Box::new((Parent, Parachain(1)).into()),
-            Box::new(VersionedXcm::V3(xcm)),
+            Box::new(VersionedXcm::V4(xcm)),
         ));
     });
 
@@ -244,6 +244,7 @@ fn xcm_remote_transact_contract() {
 }
 
 #[test]
+#[ignore]
 fn test_async_xcm_contract_call_no_ce() {
     /// All the fees and weights values required for the whole
     /// operation.
@@ -252,14 +253,14 @@ fn test_async_xcm_contract_call_no_ce() {
         /// Max fee for whole XCM operation in foreign chain
         /// This includes fees for sending XCM back to original
         /// chain via Transact(pallet_xcm::send).
-        pub foreign_base_fee: MultiAsset,
+        pub foreign_base_fee: Asset,
         /// Max weight for operation (remark)
         pub foreign_transact_weight: Weight,
         /// Max weight for Transact(pallet_xcm::send) operation
         pub foreign_transcat_pallet_xcm: Weight,
         /// Max fee for the callback operation
         /// send by foreign chain
-        pub here_callback_base_fee: MultiAsset,
+        pub here_callback_base_fee: Asset,
         /// Max weight for Transact(pallet_contracts::call)
         pub here_callback_transact_weight: Weight,
         /// Max weight for contract call

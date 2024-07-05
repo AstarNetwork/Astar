@@ -61,17 +61,17 @@ pub const MAX_ASSETS: u32 = 64;
 /// This implementation relies on `XcAssetConfig` pallet to handle mapping.
 /// In case asset location hasn't been mapped, it means the asset isn't supported (yet).
 pub struct AssetLocationIdConverter<AssetId, AssetMapper>(PhantomData<(AssetId, AssetMapper)>);
-impl<AssetId, AssetMapper> MaybeEquivalence<MultiLocation, AssetId>
+impl<AssetId, AssetMapper> MaybeEquivalence<Location, AssetId>
     for AssetLocationIdConverter<AssetId, AssetMapper>
 where
     AssetId: Clone + Eq + Bounded,
     AssetMapper: XcAssetLocation<AssetId>,
 {
-    fn convert(location: &MultiLocation) -> Option<AssetId> {
+    fn convert(location: &Location) -> Option<AssetId> {
         AssetMapper::get_asset_id(location.clone())
     }
 
-    fn convert_back(id: &AssetId) -> Option<MultiLocation> {
+    fn convert_back(id: &AssetId) -> Option<Location> {
         AssetMapper::get_xc_asset_location(id.clone())
     }
 }
@@ -85,8 +85,8 @@ pub struct FixedRateOfForeignAsset<T: ExecutionPaymentRate, R: TakeRevenue> {
     weight: Weight,
     /// Total consumed assets
     consumed: u128,
-    /// Asset Id (as MultiLocation) and units per second for payment
-    asset_location_and_units_per_second: Option<(MultiLocation, u128)>,
+    /// Asset Id (as Location) and units per second for payment
+    asset_location_and_units_per_second: Option<(Location, u128)>,
     _pd: PhantomData<(T, R)>,
 }
 
@@ -103,9 +103,9 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
     fn buy_weight(
         &mut self,
         weight: Weight,
-        payment: xcm_executor::Assets,
+        payment: xcm_executor::AssetsInHolding,
         _: &XcmContext,
-    ) -> Result<xcm_executor::Assets, XcmError> {
+    ) -> Result<xcm_executor::AssetsInHolding, XcmError> {
         log::trace!(
             target: "xcm::weight",
             "FixedRateOfForeignAsset::buy_weight weight: {:?}, payment: {:?}",
@@ -119,8 +119,8 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
             .ok_or(XcmError::TooExpensive)?;
 
         match payment_asset {
-            MultiAsset {
-                id: xcm::latest::AssetId::Concrete(asset_location),
+            Asset {
+                id: AssetId(asset_location),
                 fun: Fungibility::Fungible(_),
             } => {
                 if let Some(units_per_second) = T::get_units_per_second(asset_location.clone()) {
@@ -160,7 +160,7 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
         }
     }
 
-    fn refund_weight(&mut self, weight: Weight, _: &XcmContext) -> Option<MultiAsset> {
+    fn refund_weight(&mut self, weight: Weight, _: &XcmContext) -> Option<Asset> {
         log::trace!(target: "xcm::weight", "FixedRateOfForeignAsset::refund_weight weight: {:?}", weight);
 
         if let Some((asset_location, units_per_second)) =
@@ -200,19 +200,16 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> Drop for FixedRateOfForeignAsset<T
 /// in order to support the xc-asset, we need to first register it in the `XcAssetConfig` pallet.
 ///
 pub struct ReserveAssetFilter;
-impl ContainsPair<MultiAsset, MultiLocation> for ReserveAssetFilter {
-    fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+impl ContainsPair<Asset, Location> for ReserveAssetFilter {
+    fn contains(asset: &Asset, origin: &Location) -> bool {
         // We assume that relay chain and sibling parachain assets are trusted reserves for their assets
-        let reserve_location = if let Concrete(location) = &asset.id {
-            match (location.parents, location.first_interior()) {
-                // sibling parachain
-                (1, Some(Parachain(id))) => Some(MultiLocation::new(1, X1(Parachain(*id)))),
-                // relay chain
-                (1, _) => Some(MultiLocation::parent()),
-                _ => None,
-            }
-        } else {
-            None
+        let AssetId(location) = &asset.id;
+        let reserve_location = match (location.parents, location.first_interior()) {
+            // sibling parachain
+            (1, Some(Parachain(id))) => Some(Location::new(1, [Parachain(*id)])),
+            // relay chain
+            (1, _) => Some(Location::parent()),
+            _ => None,
         };
 
         if let Some(ref reserve) = reserve_location {
@@ -238,7 +235,7 @@ impl<
         FeeDestination: Get<AccountId>,
     > TakeRevenue for XcmFungibleFeeHandler<AccountId, Matcher, Assets, FeeDestination>
 {
-    fn take_revenue(revenue: MultiAsset) {
+    fn take_revenue(revenue: Asset) {
         match Matcher::matches_fungibles(&revenue) {
             Ok((asset_id, amount)) => {
                 if amount > Zero::zero() {
@@ -268,28 +265,28 @@ impl<
     }
 }
 
-/// Convert `AccountId` to `MultiLocation`.
+/// Convert `AccountId` to `Location`.
 pub struct AccountIdToMultiLocation;
-impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
-    fn convert(account: AccountId) -> MultiLocation {
-        X1(AccountId32 {
+impl Convert<AccountId, Location> for AccountIdToMultiLocation {
+    fn convert(account: AccountId) -> Location {
+        AccountId32 {
             network: None,
             id: account.into(),
-        })
+        }
         .into()
     }
 }
 
-/// `MultiAsset` reserve location provider. It's based on `RelativeReserveProvider` and in
+/// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
 /// addition will convert self absolute location to relative location.
 pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
-impl<AbsoluteLocation: Get<MultiLocation>> Reserve
+impl<AbsoluteLocation: Get<Location>> Reserve
     for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
 {
-    fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
+    fn reserve(asset: &Asset) -> Option<Location> {
         RelativeReserveProvider::reserve(asset).map(|reserve_location| {
             if reserve_location == AbsoluteLocation::get() {
-                MultiLocation::here()
+                Location::here()
             } else {
                 reserve_location
             }
@@ -309,9 +306,9 @@ const MAX_ASSETS_FOR_BUY_EXECUTION: usize = 2;
 /// Only allows for `TeleportAsset`, `WithdrawAsset`, `ClaimAsset` and `ReserveAssetDeposit` XCMs
 /// because they are the only ones that place assets in the Holding Register to pay for execution.
 pub struct AllowTopLevelPaidExecutionFrom<T>(PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFrom<T> {
+impl<T: Contains<Location>> ShouldExecute for AllowTopLevelPaidExecutionFrom<T> {
     fn should_execute<RuntimeCall>(
-        origin: &MultiLocation,
+        origin: &Location,
         instructions: &mut [Instruction<RuntimeCall>],
         max_weight: Weight,
         _properties: &mut Properties,

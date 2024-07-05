@@ -40,7 +40,7 @@ mod benchmarks {
         executor.set_holding(holding);
 
         // A fungible asset
-        let fee_asset = Concrete(MultiLocation::parent());
+        let fee_asset = Location::parent();
 
         let instruction = Instruction::<XcmCallOf<T>>::BuyExecution {
             fees: (fee_asset, u128::MAX).into(), // should be something inside of holding
@@ -56,29 +56,6 @@ mod benchmarks {
             executor.bench_process(xcm)?;
         }
         // The completion of execution above is enough to validate this is completed.
-        Ok(())
-    }
-
-    /// Re-write as upstream one has hardcoded system pallet index as 1 whereas our runtimes
-    /// uses index 10.
-    #[benchmark]
-    fn expect_pallet() -> Result<(), BenchmarkError> {
-        let mut executor = new_executor::<T>(Default::default());
-
-        let instruction = Instruction::ExpectPallet {
-            // used index 10 for our runtimes
-            index: 10,
-            name: b"System".to_vec(),
-            module_name: b"frame_system".to_vec(),
-            crate_major: 4,
-            min_crate_minor: 0,
-        };
-        let xcm = Xcm(vec![instruction]);
-
-        #[block]
-        {
-            executor.bench_process(xcm)?;
-        }
         Ok(())
     }
 

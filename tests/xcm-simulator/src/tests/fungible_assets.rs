@@ -45,15 +45,16 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
     // Next step is to send some of parachain A native asset to parachain B.
     let withdraw_amount = 567;
     ParaA::execute_with(|| {
-        let destination = MultiLocation {
+        let destination = Location {
             parents: 1,
-            interior: X2(
+            interior: [
                 Parachain(2),
                 AccountId32 {
                     network: None,
                     id: ALICE.into(),
                 },
-            ),
+            ]
+            .into(),
         };
         assert_ok!(ParachainXtokens::transfer_multiasset(
             parachain::RuntimeOrigin::signed(ALICE),
@@ -88,15 +89,16 @@ fn para_to_para_reserve_transfer_and_back_via_xtokens() {
 
     // send assets back to ParaA
     ParaB::execute_with(|| {
-        let destination: MultiLocation = MultiLocation {
+        let destination: Location = Location {
             parents: 1,
-            interior: X2(
+            interior: [
                 Parachain(1),
                 AccountId32 {
                     network: None,
                     id: ALICE.into(),
                 },
-            ),
+            ]
+            .into(),
         };
 
         assert_ok!(ParachainXtokens::transfer_multiasset(
@@ -216,7 +218,7 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
     MockNet::reset();
 
     let local_asset_id = 123 as u128;
-    let local_asset: MultiLocation = (PalletInstance(4u8), GeneralIndex(local_asset_id)).into();
+    let local_asset: Location = (PalletInstance(4u8), GeneralIndex(local_asset_id)).into();
 
     let para_a_local_asset = local_asset
         .clone()
@@ -225,7 +227,7 @@ fn para_to_para_reserve_transfer_and_back_with_extra_native() {
         .prepended_with(Parent)
         .unwrap();
 
-    let para_b_native: MultiLocation = (Parent, Parachain(2)).into();
+    let para_b_native: Location = (Parent, Parachain(2)).into();
     let para_b_native_on_para_a = 456;
 
     let mint_amount = 300_000_000_000_000;
@@ -337,7 +339,7 @@ fn para_to_para_reserve_transfer_local_asset() {
     MockNet::reset();
 
     let asset_id = 123;
-    let local_asset: MultiLocation = (PalletInstance(4u8), GeneralIndex(asset_id)).into();
+    let local_asset: Location = (PalletInstance(4u8), GeneralIndex(asset_id)).into();
     let para_a_local_asset = local_asset
         .clone()
         .pushed_front_with_interior(Parachain(1))
@@ -480,9 +482,9 @@ fn receive_relay_asset_from_relay_and_send_them_back_via_xtokens() {
         relay_alice_balance_before_sending = relay_chain::Balances::free_balance(&ALICE);
     });
 
-    let destination: MultiLocation = MultiLocation {
+    let destination: Location = Location {
         parents: 1,
-        interior: X1(alice.into()),
+        interior: alice.into(),
     };
 
     ParaA::execute_with(|| {
@@ -698,7 +700,7 @@ fn send_relay_asset_to_para_b_with_extra_native() {
         id: ALICE.into(),
     };
 
-    let para_a_native: MultiLocation = (Parent, Parachain(1)).into();
+    let para_a_native: Location = (Parent, Parachain(1)).into();
     let para_a_native_on_para_b = 456;
 
     // On parachain A create an asset which representes a derivative of relay native asset.
@@ -953,7 +955,7 @@ fn para_asset_trap_and_claim() {
 
         assert_ok!(ParachainPalletXcm::execute(
             parachain::RuntimeOrigin::signed(ALICE.into()),
-            Box::new(VersionedXcm::V3(xcm)),
+            Box::new(VersionedXcm::V4(xcm)),
             Weight::from_parts(100_000_000_000, 1024 * 1024)
         ));
 
@@ -985,7 +987,7 @@ fn para_asset_trap_and_claim() {
 
         assert_ok!(ParachainPalletXcm::execute(
             parachain::RuntimeOrigin::signed(ALICE.into()),
-            Box::new(VersionedXcm::V3(xcm)),
+            Box::new(VersionedXcm::V4(xcm)),
             Weight::from_parts(100_000_000_000, 1024 * 1024)
         ));
 

@@ -35,7 +35,7 @@ use sp_core::{H160, H256, U256};
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 
-use xcm::{latest::prelude::*, VersionedMultiAsset, VersionedMultiAssets, VersionedMultiLocation};
+use xcm::{latest::prelude::*, VersionedAsset, VersionedAssets, VersionedLocation};
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use precompile_utils::prelude::*;
@@ -85,7 +85,7 @@ where
     XBalanceOf<Runtime>: TryFrom<U256> + Into<U256> + From<u128>,
     <Runtime as orml_xtokens::Config>::CurrencyId:
         From<<Runtime as pallet_assets::Config>::AssetId>,
-    C: MaybeEquivalence<MultiLocation, <Runtime as pallet_assets::Config>::AssetId>,
+    C: MaybeEquivalence<Location, <Runtime as pallet_assets::Config>::AssetId>,
 {
     #[precompile::public("assets_withdraw(address[],uint256[],bytes32,bool,uint256,uint256)")]
     fn assets_withdraw_native_v1(
@@ -155,7 +155,7 @@ where
             .filter_map(|address| {
                 Runtime::address_to_asset_id(address.into()).and_then(|x| C::convert_back(&x))
             })
-            .collect::<Vec<MultiLocation>>();
+            .collect::<Vec<Location>>();
 
         let amounts = amounts
             .into_iter()
@@ -179,9 +179,9 @@ where
             .map_err(|_| revert("error converting fee_index, maybe value too large"))?;
 
         let mut destination = if is_relay {
-            MultiLocation::parent()
+            Location::parent()
         } else {
-            X1(Junction::Parachain(parachain_id)).into_exterior(1)
+            Junctions::from(Junction::Parachain(parachain_id)).into_exterior(1)
         };
 
         destination
@@ -193,7 +193,7 @@ where
             .cloned()
             .zip(amounts.iter().cloned())
             .map(Into::into)
-            .collect::<Vec<MultiAsset>>();
+            .collect::<Vec<Asset>>();
 
         log::trace!(target: "xcm-precompile:assets_withdraw", "Processed arguments: assets {:?}, destination: {:?}", assets, destination);
 
@@ -204,9 +204,9 @@ where
         .into();
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
-            assets: Box::new(VersionedMultiAssets::V3(assets.into())),
+            assets: Box::new(VersionedAssets::V4(assets.into())),
             fee_item,
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit: WeightLimit::Unlimited,
         };
 
@@ -242,9 +242,9 @@ where
 
         // Process arguments
         let dest = if is_relay {
-            MultiLocation::parent()
+            Location::parent()
         } else {
-            X1(Junction::Parachain(para_id)).into_exterior(1)
+            Junctions::from(Junction::Parachain(para_id)).into_exterior(1)
         };
 
         let fee_asset = {
@@ -263,9 +263,9 @@ where
         };
 
         let context = <Runtime as pallet_xcm::Config>::UniversalLocation::get();
-        let fee_multilocation: MultiAsset = (fee_asset, fee_amount).into();
+        let fee_multilocation: Asset = (fee_asset, fee_amount).into();
         let fee_multilocation = fee_multilocation
-            .reanchored(&dest, context)
+            .reanchored(&dest, &context)
             .map_err(|_| revert("Failed to reanchor fee asset"))?;
 
         // Prepare XCM
@@ -291,7 +291,7 @@ where
         .into();
         let call = pallet_xcm::Call::<Runtime>::send {
             dest: Box::new(dest.into()),
-            message: Box::new(xcm::VersionedXcm::V3(xcm)),
+            message: Box::new(xcm::VersionedXcm::V4(xcm)),
         };
 
         // Dispatch a call.
@@ -309,7 +309,7 @@ where
         parachain_id: U256,
         fee_item: U256,
     ) -> EvmResult<bool> {
-        let assets: Vec<MultiLocation> = assets
+        let assets: Vec<Location> = assets
             .iter()
             .cloned()
             .filter_map(|address| {
@@ -346,9 +346,9 @@ where
 
         // Prepare pallet-xcm call arguments
         let mut destination = if is_relay {
-            MultiLocation::parent()
+            Location::parent()
         } else {
-            X1(Junction::Parachain(parachain_id)).into_exterior(1)
+            Junctions::from(Junction::Parachain(parachain_id)).into_exterior(1)
         };
 
         destination
@@ -360,7 +360,7 @@ where
             .cloned()
             .zip(amounts.iter().cloned())
             .map(Into::into)
-            .collect::<Vec<MultiAsset>>();
+            .collect::<Vec<Asset>>();
 
         log::trace!(target: "xcm-precompile:assets_reserve_transfer", "Processed arguments: assets {:?}, destination: {:?}", assets, destination);
 
@@ -371,9 +371,9 @@ where
         .into();
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
-            assets: Box::new(VersionedMultiAssets::V3(assets.into())),
+            assets: Box::new(VersionedAssets::V4(assets.into())),
             fee_item,
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit: WeightLimit::Unlimited,
         };
 
@@ -442,11 +442,11 @@ where
     #[precompile::public("send_xcm((uint8,bytes[]),bytes)")]
     fn send_xcm(
         handle: &mut impl PrecompileHandle,
-        dest: MultiLocation,
+        dest: Location,
         xcm_call: BoundedBytes<GetXcmSizeLimit>,
     ) -> EvmResult<bool> {
         // Raw call arguments
-        let dest: MultiLocation = dest.into();
+        let dest: Location = dest.into();
         let xcm_call: Vec<u8> = xcm_call.into();
 
         log::trace!(target:"xcm-precompile::send_xcm", "Raw arguments: dest: {:?}, xcm_call: {:?}", dest, xcm_call);
@@ -478,7 +478,7 @@ where
         handle: &mut impl PrecompileHandle,
         currency_address: Address,
         amount_of_tokens: U256,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -> EvmResult<bool> {
         // Read call arguments
@@ -499,10 +499,10 @@ where
                 currency_address, amount_of_tokens, destination, weight );
 
                 orml_xtokens::Call::<Runtime>::transfer_multiasset {
-                    asset: Box::new(VersionedMultiAsset::V3(
-                        (MultiLocation::here(), amount_of_tokens).into(),
+                    asset: Box::new(VersionedAsset::V4(
+                        (Location::here(), amount_of_tokens).into(),
                     )),
-                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    dest: Box::new(VersionedLocation::V4(destination)),
                     dest_weight_limit,
                 }
             } else {
@@ -516,7 +516,7 @@ where
                 orml_xtokens::Call::<Runtime>::transfer {
                     currency_id: asset_id.into(),
                     amount: amount_of_tokens.into(),
-                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    dest: Box::new(VersionedLocation::V4(destination)),
                     dest_weight_limit,
                 }
             }
@@ -541,7 +541,7 @@ where
         currency_address: Address,
         amount_of_tokens: U256,
         fee: U256,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -> EvmResult<bool> {
         // Read call arguments
@@ -563,11 +563,11 @@ where
                 currency_address, amount_of_tokens, destination, weight, fee );
 
                 orml_xtokens::Call::<Runtime>::transfer_multiasset_with_fee {
-                    asset: Box::new(VersionedMultiAsset::V3(
-                        (MultiLocation::here(), amount_of_tokens).into(),
+                    asset: Box::new(VersionedAsset::V4(
+                        (Location::here(), amount_of_tokens).into(),
                     )),
-                    fee: Box::new(VersionedMultiAsset::V3((MultiLocation::here(), fee).into())),
-                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    fee: Box::new(VersionedAsset::V4((Location::here(), fee).into())),
+                    dest: Box::new(VersionedLocation::V4(destination)),
                     dest_weight_limit,
                 }
             } else {
@@ -582,7 +582,7 @@ where
                     currency_id: asset_id.into(),
                     amount: amount_of_tokens.into(),
                     fee: fee.into(),
-                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    dest: Box::new(VersionedLocation::V4(destination)),
                     dest_weight_limit,
                 }
             }
@@ -604,9 +604,9 @@ where
     )]
     fn transfer_multiasset(
         handle: &mut impl PrecompileHandle,
-        asset_location: MultiLocation,
+        asset_location: Location,
         amount_of_tokens: U256,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -> EvmResult<bool> {
         // Read call arguments
@@ -625,10 +625,10 @@ where
         asset_location, amount_of_tokens, destination, weight);
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiasset {
-            asset: Box::new(VersionedMultiAsset::V3(
+            asset: Box::new(VersionedAsset::V4(
                 (asset_location, amount_of_tokens).into(),
             )),
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit,
         };
 
@@ -648,10 +648,10 @@ where
     )]
     fn transfer_multiasset_with_fee(
         handle: &mut impl PrecompileHandle,
-        asset_location: MultiLocation,
+        asset_location: Location,
         amount_of_tokens: U256,
         fee: U256,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -> EvmResult<bool> {
         // Read call arguments
@@ -671,11 +671,11 @@ where
         asset_location, amount_of_tokens, fee, destination, weight);
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiasset_with_fee {
-            asset: Box::new(VersionedMultiAsset::V3(
-                (asset_location, amount_of_tokens).into(),
+            asset: Box::new(VersionedAsset::V4(
+                (asset_location.clone(), amount_of_tokens).into(),
             )),
-            fee: Box::new(VersionedMultiAsset::V3((asset_location, fee).into())),
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            fee: Box::new(VersionedAsset::V4((asset_location, fee).into())),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit,
         };
 
@@ -697,7 +697,7 @@ where
         handle: &mut impl PrecompileHandle,
         currencies: BoundedVec<Currency, GetMaxAssets<Runtime>>,
         fee_item: u32,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -> EvmResult<bool> {
         let currencies: Vec<_> = currencies.into();
@@ -731,7 +731,7 @@ where
         let call = orml_xtokens::Call::<Runtime>::transfer_multicurrencies {
             currencies,
             fee_item,
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit,
         };
 
@@ -753,7 +753,7 @@ where
         handle: &mut impl PrecompileHandle,
         assets: BoundedVec<EvmMultiAsset, GetMaxAssets<Runtime>>,
         fee_item: u32,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -> EvmResult<bool> {
         let assets: Vec<_> = assets.into();
@@ -768,7 +768,7 @@ where
         weight: {:?}",
         assets, fee_item, destination, weight);
 
-        let multiasset_vec: EvmResult<Vec<MultiAsset>> = assets
+        let multiasset_vec: EvmResult<Vec<Asset>> = assets
             .into_iter()
             .map(|evm_multiasset| {
                 let to_balance: u128 = evm_multiasset
@@ -781,15 +781,14 @@ where
 
         // Since multiassets sorts them, we need to check whether the index is still correct,
         // and error otherwise as there is not much we can do other than that
-        let multiassets =
-            MultiAssets::from_sorted_and_deduplicated(multiasset_vec?).map_err(|_| {
-                revert("In field Assets, Provided assets either not sorted nor deduplicated")
-            })?;
+        let multiassets = Assets::from_sorted_and_deduplicated(multiasset_vec?).map_err(|_| {
+            revert("In field Assets, Provided assets either not sorted nor deduplicated")
+        })?;
 
         let call = orml_xtokens::Call::<Runtime>::transfer_multiassets {
-            assets: Box::new(VersionedMultiAssets::V3(multiassets)),
+            assets: Box::new(VersionedAssets::V4(multiassets)),
             fee_item,
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit,
         };
 
@@ -855,12 +854,12 @@ impl From<(Address, U256)> for Currency {
 
 #[derive(Debug, Clone, solidity::Codec)]
 pub struct EvmMultiAsset {
-    location: MultiLocation,
+    location: Location,
     amount: U256,
 }
 
-impl From<(MultiLocation, U256)> for EvmMultiAsset {
-    fn from(tuple: (MultiLocation, U256)) -> Self {
+impl From<(Location, U256)> for EvmMultiAsset {
+    fn from(tuple: (Location, U256)) -> Self {
         EvmMultiAsset {
             location: tuple.0,
             amount: tuple.1,
@@ -869,8 +868,8 @@ impl From<(MultiLocation, U256)> for EvmMultiAsset {
 }
 
 impl EvmMultiAsset {
-    pub fn get_location(&self) -> MultiLocation {
-        self.location
+    pub fn get_location(&self) -> Location {
+        self.location.clone()
     }
 
     pub fn get_amount(&self) -> U256 {

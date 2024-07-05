@@ -727,6 +727,7 @@ where
         if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
                 &additional_config.evm_tracing_config,
+                prometheus_registry.clone(),
                 tracing::SpawnTasksParams {
                     task_manager: &task_manager,
                     client: client.clone(),
@@ -935,7 +936,8 @@ where
         + sp_block_builder::BlockBuilder<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + AuraApi<Block, AuraId>,
-    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sc_client_api::StateBackend<BlakeTwo256>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
+        sc_client_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let client2 = client.clone();
@@ -1018,7 +1020,8 @@ where
         + sp_block_builder::BlockBuilder<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + AuraApi<Block, AuraId>,
-    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sc_client_api::StateBackend<BlakeTwo256>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
+        sc_client_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
@@ -1092,7 +1095,8 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + AuraApi<Block, AuraId>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
-    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sc_client_api::StateBackend<BlakeTwo256>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
+        sc_client_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let mut proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
@@ -1240,7 +1244,8 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + AuraApi<Block, AuraId>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
-    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sc_client_api::StateBackend<BlakeTwo256>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
+        sc_client_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let mut proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(

@@ -278,6 +278,7 @@ pub fn start_node(
         if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
                 &evm_tracing_config,
+                config.prometheus_registry().cloned(),
                 tracing::SpawnTasksParams {
                     task_manager: &task_manager,
                     client: client.clone(),

@@ -25,7 +25,7 @@ use {
     frame_support::{ensure, traits::ConstU32},
     sp_core::H256,
     sp_std::vec::Vec,
-    xcm::latest::{Junction, Junctions, MultiLocation, NetworkId},
+    xcm::latest::{Junction, Junctions, Location, NetworkId},
 };
 
 pub const JUNCTION_SIZE_LIMIT: u32 = 2u32.pow(16);
@@ -353,12 +353,12 @@ impl Codec for Junctions {
 }
 
 // Cannot used derive macro since it is a foreign struct.
-impl Codec for MultiLocation {
+impl Codec for Location {
     fn read(reader: &mut Reader) -> MayRevert<Self> {
         let (parents, interior) = reader
             .read()
             .map_in_tuple_to_field(&["parents", "interior"])?;
-        Ok(MultiLocation { parents, interior })
+        Ok(Location { parents, interior })
     }
 
     fn write(writer: &mut Writer, value: Self) {

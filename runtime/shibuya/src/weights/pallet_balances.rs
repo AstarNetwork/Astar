@@ -157,4 +157,8 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for SubstrateWeight<T>
 		// Minimum execution time: 30_151_000 picoseconds.
 		Weight::from_parts(30_968_000, 0)
 	}
+
+    fn force_adjust_total_issuance() -> Weight {
+        Weight::MAX
+    }
 }

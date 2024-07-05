@@ -445,7 +445,7 @@ pub fn run() -> Result<()> {
                             &config,
                             parachain::build_import_queue,
                         )?;
-                    cmd.run(config.chain_spec.as_ref(), client.as_ref())
+                    cmd.run(client)
                 })
             } else if runner.config().chain_spec.is_shiden() {
                 runner.sync_run(|config| {
@@ -454,7 +454,7 @@ pub fn run() -> Result<()> {
                             &config,
                             parachain::build_import_queue_fallback,
                         )?;
-                    cmd.run(config.chain_spec.as_ref(), client.as_ref())
+                    cmd.run(client)
                 })
             } else {
                 runner.sync_run(|config| {
@@ -463,7 +463,7 @@ pub fn run() -> Result<()> {
                             &config,
                             parachain::build_import_queue,
                         )?;
-                    cmd.run(config.chain_spec.as_ref(), client.as_ref())
+                    cmd.run(client)
                 })
             }
         }
@@ -483,6 +483,7 @@ pub fn run() -> Result<()> {
         Some(Subcommand::Benchmark(cmd)) => {
             use crate::benchmarking::*;
             use sp_keyring::Sr25519Keyring;
+            use sp_runtime::traits::HashingFor;
 
             let runner = cli.create_runner(cmd)?;
             let chain_spec = &runner.config().chain_spec;
@@ -491,19 +492,27 @@ pub fn run() -> Result<()> {
                 BenchmarkCmd::Pallet(cmd) => {
                     if chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            cmd.run::<astar_runtime::Block, parachain::HostFunctions>(config)
+                            cmd.run::<HashingFor<astar_runtime::Block>, parachain::HostFunctions>(
+                                config,
+                            )
                         })
                     } else if chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            cmd.run::<shiden_runtime::Block, parachain::HostFunctions>(config)
+                            cmd.run::<HashingFor<shiden_runtime::Block>, parachain::HostFunctions>(
+                                config,
+                            )
                         })
                     } else if chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            cmd.run::<shibuya_runtime::Block, parachain::HostFunctions>(config)
+                            cmd.run::<HashingFor<shibuya_runtime::Block>, parachain::HostFunctions>(
+                                config,
+                            )
                         })
                     } else {
                         runner.sync_run(|config| {
-                            cmd.run::<local_runtime::Block, local::HostFunctions>(config)
+                            cmd.run::<HashingFor<local_runtime::Block>, local::HostFunctions>(
+                                config,
+                            )
                         })
                     }
                 }

@@ -24,12 +24,12 @@ use crate::Pallet as XcAssetConfig;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 use sp_std::boxed::Box;
-use xcm::v3::MultiLocation;
+use xcm::v4::Location;
 
 benchmarks! {
 
     register_asset_location {
-        let asset_location = MultiLocation::parent();
+        let asset_location = Location::parent();
         let asset_id = T::AssetId::default();
 
     }: _(RawOrigin::Root, Box::new(asset_location.clone().into_versioned()), asset_id)
@@ -38,7 +38,7 @@ benchmarks! {
     }
 
     set_asset_units_per_second {
-        let asset_location = MultiLocation::parent();
+        let asset_location = Location::parent();
         let asset_id = T::AssetId::default();
         let units = 123;
 
@@ -50,14 +50,14 @@ benchmarks! {
     }
 
     change_existing_asset_location {
-        let asset_location = MultiLocation::parent();
+        let asset_location = Location::parent();
         let asset_id = T::AssetId::default();
         let units = 123;
 
         XcAssetConfig::<T>::register_asset_location(RawOrigin::Root.into(), Box::new(asset_location.clone().into_versioned()), asset_id)?;
         XcAssetConfig::<T>::set_asset_units_per_second(RawOrigin::Root.into(), Box::new(asset_location.clone().into_versioned()), units)?;
 
-        let new_asset_location = MultiLocation::here();
+        let new_asset_location = Location::here();
 
     }: _(RawOrigin::Root, Box::new(new_asset_location.clone().into_versioned()), asset_id)
     verify {
@@ -67,7 +67,7 @@ benchmarks! {
     }
 
     remove_payment_asset {
-        let asset_location = MultiLocation::parent();
+        let asset_location = Location::parent();
         let asset_id = T::AssetId::default();
         let units = 123;
 
@@ -80,7 +80,7 @@ benchmarks! {
     }
 
     remove_asset {
-        let asset_location = MultiLocation::parent();
+        let asset_location = Location::parent();
         let asset_id = T::AssetId::default();
         let units = 123;
 

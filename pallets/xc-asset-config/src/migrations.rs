@@ -99,8 +99,8 @@ impl<T: Config> OnRuntimeUpgrade for MigrationXcmV3<T> {
     fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
         assert_eq!(Pallet::<T>::on_chain_storage_version(), 2);
 
-        use xcm::VersionedMultiLocation;
-        let legacy_id_to_location_entries: Vec<(T::AssetId, VersionedMultiLocation)> =
+        use xcm::VersionedLocation;
+        let legacy_id_to_location_entries: Vec<(T::AssetId, VersionedLocation)> =
             Decode::decode(&mut state.as_ref())
                 .map_err(|_| "Cannot decode data from pre_upgrade")?;
 

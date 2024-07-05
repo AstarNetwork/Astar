@@ -24,8 +24,8 @@ use super::{
 };
 use crate::weights;
 use frame_support::{
-    match_types, parameter_types,
-    traits::{ConstU32, Everything, Nothing},
+    parameter_types,
+    traits::{ConstU32, Contains, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -39,7 +39,7 @@ use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
-    ConvertedConcreteId, CurrencyAdapter, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin,
+    ConvertedConcreteId, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin, FungibleAdapter,
     FungiblesAdapter, HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
@@ -59,13 +59,13 @@ use astar_primitives::xcm::{
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Rococo);
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-    pub UniversalLocation: InteriorMultiLocation =
-        X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
-    pub const ShibuyaLocation: MultiLocation = Here.into_location();
+    pub UniversalLocation: InteriorLocation =
+    [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into())].into();
+    pub const ShibuyaLocation: Location = Here.into_location();
     pub DummyCheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
-/// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
+/// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
@@ -75,18 +75,18 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<polkadot_parachain::primitives::Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
-    // Generates private `AccountId`s from `MultiLocation`s, in a stable & safe way.
+    // Generates private `AccountId`s from `Location`s, in a stable & safe way.
     // Replaces the old `Account32Hash` approach.
     HashedDescription<AccountId, DescribeFamily<DescribeAllTerminal>>,
 );
 
 /// Means for transacting the native currency on this chain.
-pub type CurrencyTransactor = CurrencyAdapter<
+pub type CurrencyTransactor = FungibleAdapter<
     // Use this currency:
     Balances,
     // Use this currency when it is a fungible asset matching the given location or name:
     IsConcrete<ShibuyaLocation>,
-    // Convert an XCM MultiLocation into a local account id:
+    // Convert an XCM Location into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
@@ -100,7 +100,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
     Assets,
     // Use this currency when it is a fungible asset matching the given location or name:
     ConvertedConcreteId<AssetId, Balance, ShibuyaAssetLocationIdConverter, JustTry>,
-    // Convert an XCM MultiLocation into a local account id:
+    // Convert an XCM Location into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
@@ -145,11 +145,11 @@ parameter_types! {
     pub const MaxAssetsIntoHolding: u32 = MAX_ASSETS;
 }
 
-match_types! {
-    pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
-        MultiLocation { parents: 1, interior: Here } |
-        MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
-    };
+pub struct ParentOrParentsPlurality;
+impl Contains<Location> for ParentOrParentsPlurality {
+    fn contains(location: &Location) -> bool {
+        matches!(location.unpack(), (1, []) | (1, [Plurality { .. }]))
+    }
 }
 
 pub type XcmBarrier = (
@@ -206,6 +206,7 @@ impl xcm_executor::Config for XcmConfig {
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
     type Aliasers = Nothing;
+    type TransactionalProcessor = ();
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -276,22 +277,21 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
     /// The absolute location in perspective of the whole network.
-    pub ShibuyaLocationAbsolute: MultiLocation = MultiLocation {
+    pub ShibuyaLocationAbsolute: Location = Location {
         parents: 1,
-        interior: X1(
-            Parachain(ParachainInfo::parachain_id().into())
-        )
+        interior: Parachain(ParachainInfo::parachain_id().into()).into()
+
     };
     /// Max asset types for one cross-chain transfer. `2` covers all current use cases.
     /// Can be updated with extra test cases in the future if needed.
     pub const MaxAssetsForTransfer: usize = 2;
 }
 
-/// Convert `AssetId` to optional `MultiLocation`. The impl is a wrapper
+/// Convert `AssetId` to optional `Location`. The impl is a wrapper
 /// on `ShibuyaAssetLocationIdConverter`.
 pub struct AssetIdConvert;
-impl Convert<AssetId, Option<MultiLocation>> for AssetIdConvert {
-    fn convert(asset_id: AssetId) -> Option<MultiLocation> {
+impl Convert<AssetId, Option<Location>> for AssetIdConvert {
+    fn convert(asset_id: AssetId) -> Option<Location> {
         ShibuyaAssetLocationIdConverter::convert_back(&asset_id)
     }
 }
@@ -301,7 +301,7 @@ impl orml_xtokens::Config for Runtime {
     type Balance = Balance;
     type CurrencyId = AssetId;
     type CurrencyIdConvert = AssetIdConvert;
-    type AccountIdToMultiLocation = AccountIdToMultiLocation;
+    type AccountIdToLocation = AccountIdToMultiLocation;
     type SelfLocation = ShibuyaLocation;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type Weigher = Weigher;
@@ -310,6 +310,8 @@ impl orml_xtokens::Config for Runtime {
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     // Default impl. Refer to `orml-xtokens` docs for more details.
     type MinXcmFee = DisabledParachainFee;
-    type MultiLocationsFilter = Everything;
+    type LocationsFilter = Everything;
     type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShibuyaLocationAbsolute>;
+    type RateLimiter = ();
+    type RateLimiterId = ();
 }

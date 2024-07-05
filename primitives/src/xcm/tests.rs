@@ -18,39 +18,40 @@
 
 use super::*;
 use frame_support::assert_ok;
+use once_cell::unsync::Lazy;
 use sp_runtime::traits::{MaybeEquivalence, Zero};
 
 type AssetId = u128;
 
 // Primitive, perhaps I improve it later
-const PARENT: MultiLocation = MultiLocation::parent();
-const PARACHAIN: MultiLocation = MultiLocation {
+const PARENT: Location = Location::parent();
+const PARACHAIN: Lazy<Location> = Lazy::new(|| Location {
     parents: 1,
-    interior: Junctions::X1(Parachain(10)),
-};
-const GENERAL_INDEX: MultiLocation = MultiLocation {
+    interior: [Parachain(10)].into(),
+});
+const GENERAL_INDEX: Lazy<Location> = Lazy::new(|| Location {
     parents: 2,
-    interior: Junctions::X1(GeneralIndex(20)),
-};
+    interior: [GeneralIndex(20)].into(),
+});
 const RELAY_ASSET: AssetId = AssetId::MAX;
 
 /// Helper struct used for testing `AssetLocationIdConverter`
 struct AssetLocationMapper;
 impl XcAssetLocation<AssetId> for AssetLocationMapper {
-    fn get_xc_asset_location(asset_id: AssetId) -> Option<MultiLocation> {
+    fn get_xc_asset_location(asset_id: AssetId) -> Option<Location> {
         match asset_id {
             RELAY_ASSET => Some(PARENT),
-            20 => Some(PARACHAIN),
-            30 => Some(GENERAL_INDEX),
+            20 => Some((*PARACHAIN).clone()),
+            30 => Some((*GENERAL_INDEX).clone()),
             _ => None,
         }
     }
 
-    fn get_asset_id(asset_location: MultiLocation) -> Option<AssetId> {
+    fn get_asset_id(asset_location: Location) -> Option<AssetId> {
         match asset_location {
             a if a == PARENT => Some(RELAY_ASSET),
-            a if a == PARACHAIN => Some(20),
-            a if a == GENERAL_INDEX => Some(30),
+            a if a == (*PARACHAIN).clone() => Some(20),
+            a if a == (*GENERAL_INDEX).clone() => Some(30),
             _ => None,
         }
     }
@@ -59,11 +60,11 @@ impl XcAssetLocation<AssetId> for AssetLocationMapper {
 /// Helper struct used for testing `FixedRateOfForeignAsset`
 struct ExecutionPayment;
 impl ExecutionPaymentRate for ExecutionPayment {
-    fn get_units_per_second(asset_location: MultiLocation) -> Option<u128> {
+    fn get_units_per_second(asset_location: Location) -> Option<u128> {
         match asset_location {
             a if a == PARENT => Some(1_000_000),
-            a if a == PARACHAIN => Some(2_000_000),
-            a if a == GENERAL_INDEX => Some(3_000_000),
+            a if a == *PARACHAIN => Some(2_000_000),
+            a if a == *GENERAL_INDEX => Some(3_000_000),
             _ => None,
         }
     }
@@ -76,23 +77,23 @@ fn execution_fee(weight: Weight, units_per_second: u128) -> u128 {
 
 #[test]
 fn asset_location_to_id() {
-    // Test cases where the MultiLocation is valid
+    // Test cases where the Location is valid
     assert_eq!(
         AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert(&PARENT),
         Some(u128::MAX)
     );
     assert_eq!(
-        AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert(&PARACHAIN),
+        AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert(&*PARACHAIN),
         Some(20)
     );
     assert_eq!(
-        AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert(&GENERAL_INDEX),
+        AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert(&*GENERAL_INDEX),
         Some(30)
     );
 
-    // Test case where MultiLocation isn't supported
+    // Test case where Location isn't supported
     assert_eq!(
-        AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert(&MultiLocation::here()),
+        AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert(&Location::here()),
         None
     );
 }
@@ -106,11 +107,11 @@ fn asset_id_to_location() {
     );
     assert_eq!(
         AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert_back(&20),
-        Some(PARACHAIN)
+        Some((*PARACHAIN).clone())
     );
     assert_eq!(
         AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert_back(&30),
-        Some(GENERAL_INDEX)
+        Some((*GENERAL_INDEX).clone())
     );
 
     // Test case where the AssetId isn't supported
@@ -126,14 +127,14 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
 
     // The amount we have designated for payment (doesn't mean it will be used though)
     let total_payment = 10_000;
-    let payment_multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(PARENT),
+    let payment_multi_asset = Asset {
+        id: xcm::latest::AssetId(PARENT),
         fun: Fungibility::Fungible(total_payment),
     };
     let weight: Weight = Weight::from_parts(1_000_000_000, 0);
     let ctx = XcmContext {
         // arbitary ML
-        origin: Some(MultiLocation::here()),
+        origin: Some(Location::here()),
         message_id: XcmHash::default(),
         topic: None,
     };
@@ -151,7 +152,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
         // We expect only one unused payment asset and specific amount
         assert_eq!(assets.len(), 1);
         assert_ok!(assets.ensure_contains(
-            &MultiAsset::from((PARENT, total_payment - expected_execution_fee)).into()
+            &Asset::from((PARENT, total_payment - expected_execution_fee)).into()
         ));
 
         assert_eq!(fixed_rate_trader.consumed, expected_execution_fee);
@@ -182,7 +183,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
         // We expect only one unused payment asset and specific amount
         assert_eq!(assets.len(), 1);
         assert_ok!(assets.ensure_contains(
-            &MultiAsset::from((PARENT, total_payment - expected_execution_fee)).into()
+            &Asset::from((PARENT, total_payment - expected_execution_fee)).into()
         ));
 
         assert_eq!(
@@ -206,15 +207,15 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
 
     // Note that the concrete asset type differs now from previous buys
     let total_payment = 20_000;
-    let payment_multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(PARACHAIN),
+    let payment_multi_asset = Asset {
+        id: xcm::latest::AssetId((*PARACHAIN).clone()),
         fun: Fungibility::Fungible(total_payment),
     };
 
     let weight: Weight = Weight::from_parts(1_750_000_000, 0);
     let expected_execution_fee = execution_fee(
         weight,
-        ExecutionPayment::get_units_per_second(PARACHAIN).unwrap(),
+        ExecutionPayment::get_units_per_second((*PARACHAIN).clone()).unwrap(),
     );
     assert!(expected_execution_fee > 0); // sanity check
 
@@ -223,7 +224,7 @@ fn fixed_rate_of_foreign_asset_buy_is_ok() {
         // We expect only one unused payment asset and specific amount
         assert_eq!(assets.len(), 1);
         assert_ok!(assets.ensure_contains(
-            &MultiAsset::from((PARACHAIN, total_payment - expected_execution_fee)).into()
+            &Asset::from(((*PARACHAIN).clone(), total_payment - expected_execution_fee)).into()
         ));
 
         assert_eq!(fixed_rate_trader.weight, weight + old_weight);
@@ -248,14 +249,14 @@ fn fixed_rate_of_foreign_asset_buy_execution_fails() {
 
     // The amount we have designated for payment (doesn't mean it will be used though)
     let total_payment = 1000;
-    let payment_multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(PARENT),
+    let payment_multi_asset = Asset {
+        id: xcm::latest::AssetId(PARENT),
         fun: Fungibility::Fungible(total_payment),
     };
     let weight: Weight = Weight::from_parts(3_000_000_000, 0);
     let ctx = XcmContext {
         // arbitary ML
-        origin: Some(MultiLocation::here()),
+        origin: Some(Location::here()),
         message_id: XcmHash::default(),
         topic: None,
     };
@@ -275,8 +276,8 @@ fn fixed_rate_of_foreign_asset_buy_execution_fails() {
     );
 
     // Try to pay with unsupported funds, expect failure
-    let payment_multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(MultiLocation::here()),
+    let payment_multi_asset = Asset {
+        id: xcm::latest::AssetId(Location::here()),
         fun: Fungibility::Fungible(total_payment),
     };
     assert_eq!(
@@ -291,14 +292,14 @@ fn fixed_rate_of_foreign_asset_refund_is_ok() {
 
     // The amount we have designated for payment (doesn't mean it will be used though)
     let total_payment = 10_000;
-    let payment_multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(PARENT),
+    let payment_multi_asset = Asset {
+        id: xcm::latest::AssetId(PARENT),
         fun: Fungibility::Fungible(total_payment),
     };
     let weight: Weight = Weight::from_parts(1_000_000_000, 0);
     let ctx = XcmContext {
         // arbitary ML
-        origin: Some(MultiLocation::here()),
+        origin: Some(Location::here()),
         message_id: XcmHash::default(),
         topic: None,
     };
@@ -338,17 +339,17 @@ fn fixed_rate_of_foreign_asset_refund_is_ok() {
 
 #[test]
 fn reserve_asset_filter_for_sibling_parachain_is_ok() {
-    let asset_xc_location = MultiLocation {
+    let asset_xc_location = Location {
         parents: 1,
-        interior: X2(Parachain(20), GeneralIndex(30)),
+        interior: [Parachain(20), GeneralIndex(30)].into(),
     };
-    let multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(asset_xc_location),
+    let multi_asset = Asset {
+        id: xcm::latest::AssetId(asset_xc_location),
         fun: Fungibility::Fungible(123456),
     };
-    let origin = MultiLocation {
+    let origin = Location {
         parents: 1,
-        interior: X1(Parachain(20)),
+        interior: [Parachain(20)].into(),
     };
 
     assert!(ReserveAssetFilter::contains(&multi_asset, &origin));
@@ -356,15 +357,15 @@ fn reserve_asset_filter_for_sibling_parachain_is_ok() {
 
 #[test]
 fn reserve_asset_filter_for_relay_chain_is_ok() {
-    let asset_xc_location = MultiLocation {
+    let asset_xc_location = Location {
         parents: 1,
         interior: Here,
     };
-    let multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(asset_xc_location),
+    let multi_asset = Asset {
+        id: xcm::latest::AssetId(asset_xc_location),
         fun: Fungibility::Fungible(123456),
     };
-    let origin = MultiLocation {
+    let origin = Location {
         parents: 1,
         interior: Here,
     };
@@ -374,15 +375,15 @@ fn reserve_asset_filter_for_relay_chain_is_ok() {
 
 #[test]
 fn reserve_asset_filter_with_origin_mismatch() {
-    let asset_xc_location = MultiLocation {
+    let asset_xc_location = Location {
         parents: 1,
-        interior: X2(Parachain(20), GeneralIndex(30)),
+        interior: [Parachain(20), GeneralIndex(30)].into(),
     };
-    let multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(asset_xc_location),
+    let multi_asset = Asset {
+        id: xcm::latest::AssetId(asset_xc_location),
         fun: Fungibility::Fungible(123456),
     };
-    let origin = MultiLocation {
+    let origin = Location {
         parents: 1,
         interior: Here,
     };
@@ -393,15 +394,15 @@ fn reserve_asset_filter_with_origin_mismatch() {
 #[test]
 fn reserve_asset_filter_for_unsupported_asset_multi_location() {
     // 1st case
-    let asset_xc_location = MultiLocation {
+    let asset_xc_location = Location {
         parents: 0,
-        interior: X2(Parachain(20), GeneralIndex(30)),
+        interior: [Parachain(20), GeneralIndex(30)].into(),
     };
-    let multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(asset_xc_location),
+    let multi_asset = Asset {
+        id: xcm::latest::AssetId(asset_xc_location),
         fun: Fungibility::Fungible(123456),
     };
-    let origin = MultiLocation {
+    let origin = Location {
         parents: 0,
         interior: Here,
     };
@@ -409,17 +410,17 @@ fn reserve_asset_filter_for_unsupported_asset_multi_location() {
     assert!(!ReserveAssetFilter::contains(&multi_asset, &origin));
 
     // 2nd case
-    let asset_xc_location = MultiLocation {
+    let asset_xc_location = Location {
         parents: 1,
-        interior: X2(GeneralIndex(50), GeneralIndex(30)),
+        interior: [GeneralIndex(50), GeneralIndex(30)].into(),
     };
-    let multi_asset = MultiAsset {
-        id: xcm::latest::AssetId::Concrete(asset_xc_location),
+    let multi_asset = Asset {
+        id: xcm::latest::AssetId(asset_xc_location),
         fun: Fungibility::Fungible(123456),
     };
-    let origin = MultiLocation {
+    let origin = Location {
         parents: 1,
-        interior: X1(GeneralIndex(50)),
+        interior: [GeneralIndex(50)].into(),
     };
 
     assert!(!ReserveAssetFilter::contains(&multi_asset, &origin));

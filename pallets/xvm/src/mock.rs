@@ -30,6 +30,7 @@ use frame_support::{
     parameter_types,
     traits::{ConstBool, ConstU128, ConstU64, Nothing},
 };
+use frame_system::EnsureSigned;
 use sp_core::{H160, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -67,6 +68,12 @@ impl frame_system::Config for TestRuntime {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type RuntimeTask = RuntimeTask;
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 impl pallet_balances::Config for TestRuntime {
@@ -82,7 +89,6 @@ impl pallet_balances::Config for TestRuntime {
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type RuntimeFreezeReason = ();
-    type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<0>;
 }
 
@@ -131,6 +137,9 @@ impl pallet_contracts::Config for TestRuntime {
     type Debug = ();
     type Environment = ();
     type Xcm = ();
+    type UploadOrigin = EnsureSigned<AccountId>;
+    type InstantiateOrigin = EnsureSigned<AccountId>;
+    type ApiVersion = ();
 }
 
 thread_local! {

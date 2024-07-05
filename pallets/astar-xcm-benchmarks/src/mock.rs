@@ -45,7 +45,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system = 10,
         Balances: pallet_balances,
-        Assets: pallet_assets,
+        PalletAssets: pallet_assets,
         PolkadotXcmGenericBenchmarks: pallet_xcm_benchmarks::generic,
         PolkadotXcmFungibleBenchmarks: pallet_xcm_benchmarks::fungible,
         XcmAssetsBenchmark: fungible,
@@ -55,12 +55,11 @@ frame_support::construct_runtime!(
 
 pub struct AccountIdConverter;
 impl xcm_executor::traits::ConvertLocation<u64> for AccountIdConverter {
-    fn convert_location(ml: &MultiLocation) -> Option<u64> {
-        match ml {
-            MultiLocation {
-                parents: 0,
-                interior: X1(Junction::AccountId32 { id, .. }),
-            } => <u64 as parity_scale_codec::Decode>::decode(&mut &*id.to_vec()).ok(),
+    fn convert_location(ml: &Location) -> Option<u64> {
+        match ml.unpack() {
+            (0, [AccountId32 { id, .. }]) => {
+                <u64 as parity_scale_codec::Decode>::decode(&mut &*id.to_vec()).ok()
+            }
             _ => None,
         }
     }
@@ -72,10 +71,10 @@ impl SendXcm for DevNull {
     type Ticket = ();
 
     fn validate(
-        _destination: &mut Option<MultiLocation>,
+        _destination: &mut Option<Location>,
         _message: &mut Option<opaque::Xcm>,
     ) -> SendResult<Self::Ticket> {
-        Ok(((), MultiAssets::new()))
+        Ok(((), Assets::new()))
     }
 
     fn deliver(_: Self::Ticket) -> Result<XcmHash, SendError> {
@@ -84,13 +83,13 @@ impl SendXcm for DevNull {
 }
 
 impl xcm_executor::traits::OnResponse for DevNull {
-    fn expecting_response(_: &MultiLocation, _: u64, _: Option<&MultiLocation>) -> bool {
+    fn expecting_response(_: &Location, _: u64, _: Option<&Location>) -> bool {
         false
     }
     fn on_response(
-        _: &MultiLocation,
+        _: &Location,
         _: u64,
-        _: Option<&MultiLocation>,
+        _: Option<&Location>,
         _: Response,
         _: Weight,
         _: &XcmContext,
@@ -103,7 +102,7 @@ parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, u64::MAX));
-    pub UniversalLocation: InteriorMultiLocation = Here;
+    pub UniversalLocation: InteriorLocation = Here;
 }
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
@@ -129,6 +128,12 @@ impl frame_system::Config for Test {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = ConstU32<16>;
+    type RuntimeTask = RuntimeTask;
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 parameter_types! {
@@ -148,7 +153,6 @@ impl pallet_balances::Config for Test {
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type RuntimeFreezeReason = ();
-    type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
 }
 
@@ -175,19 +179,19 @@ impl pallet_assets::Config for Test {
     type BenchmarkHelper = ();
 }
 
-pub struct MatchOnlyAsset<Asset>(PhantomData<Asset>);
-impl<Asset: Get<AssetId>> xcm_executor::traits::MatchesFungibles<AssetId, Balance>
-    for MatchOnlyAsset<Asset>
+pub struct MatchOnlyAsset<MatchAsset>(PhantomData<MatchAsset>);
+impl<MatchAsset: Get<AssetId>> xcm_executor::traits::MatchesFungibles<AssetId, Balance>
+    for MatchOnlyAsset<MatchAsset>
 {
     fn matches_fungibles(
-        a: &MultiAsset,
+        a: &Asset,
     ) -> core::result::Result<(AssetId, Balance), xcm_executor::traits::prelude::Error> {
         use sp_runtime::traits::SaturatedConversion;
         match a {
-            MultiAsset {
+            Asset {
                 fun: Fungible(amount),
                 ..
-            } => Ok((Asset::get(), (*amount).saturated_into::<u64>())),
+            } => Ok((MatchAsset::get(), (*amount).saturated_into::<u64>())),
             _ => Err(xcm_executor::traits::prelude::Error::AssetNotHandled),
         }
     }
@@ -198,12 +202,11 @@ parameter_types! {
 
     // AssetId used as a fungible for benchmarks
     pub const TransactAssetId: u128 = 1;
-    pub const TransactAssetLocation: MultiLocation = MultiLocation { parents: 0, interior: X1(GeneralIndex(TransactAssetId::get())) };
 }
 
 // Use ONLY assets as the asset transactor.
 pub type AssetTransactor = FungiblesAdapter<
-    Assets,
+    PalletAssets,
     MatchOnlyAsset<TransactAssetId>,
     AccountIdConverter,
     AccountId,
@@ -217,7 +220,7 @@ parameter_types! {
     pub const MaxInstructions: u32 = 100;
     pub const MaxAssetsIntoHolding: u32 = 64;
 
-    pub WeightPrice: (xcm::latest::AssetId, u128, u128) = (Concrete(Parent.into()), 1_000_000, 1024);
+    pub WeightPrice: (xcm::latest::AssetId, u128, u128) = (Parent.into(), 1_000_000, 1024);
     pub const UnitWeightCost: u64 = 10;
 }
 
@@ -247,6 +250,7 @@ impl xcm_executor::Config for XcmConfig {
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
     type Aliasers = Nothing;
+    type TransactionalProcessor = ();
 }
 
 impl pallet_xcm_benchmarks::Config for Test {
@@ -254,18 +258,18 @@ impl pallet_xcm_benchmarks::Config for Test {
     type AccountIdConverter = AccountIdConverter;
     type DeliveryHelper = ();
 
-    fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-        let valid_destination: MultiLocation = X1(AccountId32 {
+    fn valid_destination() -> Result<Location, BenchmarkError> {
+        let valid_destination: Location = AccountId32 {
             network: None,
             id: [0u8; 32],
-        })
+        }
         .into();
 
         Ok(valid_destination)
     }
-    fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
-        let assets: Vec<MultiAsset> = vec![MultiAsset {
-            id: Concrete(MultiLocation::parent()),
+    fn worst_case_holding(_depositable_count: u32) -> Assets {
+        let assets: Vec<Asset> = vec![Asset {
+            id: AssetId(Location::parent()),
             fun: Fungible(u128::MAX),
         }];
         assets.into()
@@ -277,68 +281,72 @@ impl pallet_xcm_benchmarks::generic::Config for Test {
     type TransactAsset = Balances;
 
     fn worst_case_response() -> (u64, Response) {
-        let assets: MultiAssets = (Concrete(Here.into()), 100).into();
+        let assets: Assets = (AssetId(Here.into()), 100).into();
         (0, Response::Assets(assets))
     }
 
-    fn worst_case_asset_exchange() -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+    fn worst_case_asset_exchange() -> Result<(Assets, Assets), BenchmarkError> {
         Err(BenchmarkError::Skip)
     }
 
-    fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
+    fn universal_alias() -> Result<(Location, Junction), BenchmarkError> {
         Err(BenchmarkError::Skip)
     }
 
     fn export_message_origin_and_destination(
-    ) -> Result<(MultiLocation, NetworkId, Junctions), BenchmarkError> {
+    ) -> Result<(Location, NetworkId, Junctions), BenchmarkError> {
         Err(BenchmarkError::Skip)
     }
 
-    fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
+    fn transact_origin_and_runtime_call() -> Result<(Location, RuntimeCall), BenchmarkError> {
         Ok((
             Default::default(),
             frame_system::Call::remark_with_event { remark: vec![] }.into(),
         ))
     }
 
-    fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
+    fn subscribe_origin() -> Result<Location, BenchmarkError> {
         Ok(Default::default())
     }
 
-    fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-        let assets: MultiAssets = (Concrete(Here.into()), 100).into();
-        let ticket = MultiLocation {
+    fn claimable_asset() -> Result<(Location, Location, Assets), BenchmarkError> {
+        let assets: Assets = (AssetId(Here.into()), 100).into();
+        let ticket = Location {
             parents: 0,
-            interior: X1(GeneralIndex(0)),
+            interior: [GeneralIndex(0)].into(),
         };
         Ok((Default::default(), ticket, assets))
     }
 
-    fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+    fn unlockable_asset() -> Result<(Location, Location, Asset), BenchmarkError> {
         Err(BenchmarkError::Skip)
     }
 
-    fn alias_origin() -> Result<(MultiLocation, MultiLocation), BenchmarkError> {
+    fn alias_origin() -> Result<(Location, Location), BenchmarkError> {
         Err(BenchmarkError::Skip)
+    }
+
+    fn fee_asset() -> Result<Asset, BenchmarkError> {
+        Ok((AssetId(Here.into()), 100).into())
     }
 }
 
 parameter_types! {
     pub const CheckingAccount: Option<(u64, MintLocation)> = None;
-    pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+    pub const TrustedTeleporter: Option<(Location, Asset)> = None;
 }
 
 impl pallet_xcm_benchmarks::fungible::Config for Test {
-    type TransactAsset = ItemOf<Assets, TransactAssetId, AccountId>;
+    type TransactAsset = ItemOf<PalletAssets, TransactAssetId, AccountId>;
     type CheckedAccount = CheckingAccount;
     type TrustedTeleporter = TrustedTeleporter;
     type TrustedReserve = TrustedReserve;
 
-    fn get_multi_asset() -> MultiAsset {
+    fn get_asset() -> Asset {
         let min_balance = 100u64;
-        let asset_location: MultiLocation = GeneralIndex(TransactAssetId::get()).into();
+        let asset_location: Location = GeneralIndex(TransactAssetId::get()).into();
 
-        assert_ok!(Assets::force_create(
+        assert_ok!(PalletAssets::force_create(
             RuntimeOrigin::root(),
             TransactAssetId::get(),
             0u64,
@@ -346,17 +354,17 @@ impl pallet_xcm_benchmarks::fungible::Config for Test {
             min_balance,
         ));
 
-        MultiAsset {
-            id: Concrete(asset_location),
+        Asset {
+            id: AssetId(asset_location),
             fun: Fungible((min_balance * 100).into()),
         }
     }
 }
 
 parameter_types! {
-    pub TrustedReserveLocation: MultiLocation = Parent.into();
-    pub TrustedReserveAsset: MultiAsset = MultiAsset { id: Concrete(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
-    pub TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
+    pub TrustedReserveLocation: Location = Parent.into();
+    pub TrustedReserveAsset: Asset = Asset { id: AssetId(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
+    pub TrustedReserve: Option<(Location, Asset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
 }
 
 impl fungible::Config for Test {}

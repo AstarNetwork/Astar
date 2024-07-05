@@ -21,7 +21,7 @@
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
-    match_types, parameter_types,
+    parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains, Currency,
         Everything, Imbalance, InstanceFilter, Nothing, OnUnbalanced,
@@ -49,8 +49,8 @@ use super::msg_queue::*;
 use xcm::latest::prelude::{AssetId as XcmAssetId, *};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowUnpaidExecutionFrom, ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin,
-    FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, IsConcrete, NoChecking,
+    AllowUnpaidExecutionFrom, ConvertedConcreteId, EnsureXcmOrigin, FixedRateOfFungible,
+    FixedWeightBounds, FungibleAdapter, FungiblesAdapter, IsConcrete, NoChecking,
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
     SovereignSignedViaLocation, TakeWeightCredit, WithComputedOrigin,
@@ -106,6 +106,12 @@ impl frame_system::Config for Runtime {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type RuntimeTask = RuntimeTask;
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 parameter_types! {
@@ -127,7 +133,6 @@ impl pallet_balances::Config for Runtime {
     type RuntimeHoldReason = RuntimeHoldReason;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = RuntimeFreezeReason;
-    type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<1>;
 }
 
@@ -270,6 +275,9 @@ impl pallet_contracts::Config for Runtime {
     type Debug = ();
     type Environment = ();
     type Xcm = ();
+    type UploadOrigin = EnsureSigned<AccountId32>;
+    type InstantiateOrigin = EnsureSigned<AccountId32>;
+    type ApiVersion = ();
 }
 
 pub struct BurnFees;
@@ -382,13 +390,13 @@ parameter_types! {
 parameter_types! {
     pub RelayNetwork: Option<NetworkId> = Some(NetworkId::Kusama);
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-    pub UniversalLocation: InteriorMultiLocation =
-        X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(MsgQueue::parachain_id().into()));
-    pub const ShidenLocation: MultiLocation = Here.into_location();
+    pub UniversalLocation: InteriorLocation =
+        [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(MsgQueue::parachain_id().into())].into();
+    pub const ShidenLocation: Location = Here.into_location();
     pub DummyCheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
-/// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
+/// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
@@ -403,12 +411,12 @@ pub type LocationToAccountId = (
 );
 
 /// Means for transacting the native currency on this chain.
-pub type CurrencyTransactor = CurrencyAdapter<
+pub type CurrencyTransactor = FungibleAdapter<
     // Use this currency:
     Balances,
     // Use this currency when it is a fungible asset matching the given location or name:
     IsConcrete<ShidenLocation>,
-    // Convert an XCM MultiLocation into a local account id:
+    // Convert an XCM Location into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
@@ -422,7 +430,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
     Assets,
     // Use this currency when it is a fungible asset matching the given location or name:
     ConvertedConcreteId<AssetId, Balance, ShidenAssetLocationIdConverter, JustTry>,
-    // Convert an XCM MultiLocation into a local account id:
+    // Convert an XCM Location into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
     AccountId,
@@ -462,16 +470,16 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
     pub const UnitWeightCost: Weight = Weight::from_parts(10, 0);
     pub const MaxInstructions: u32 = 100;
-    pub NativePerSecond: (XcmAssetId, u128, u128) = (Concrete(ShidenLocation::get()), 1_000_000_000_000, 1024 * 1024);
+    pub NativePerSecond: (XcmAssetId, u128, u128) = (AssetId(ShidenLocation::get()), 1_000_000_000_000, 1024 * 1024);
 }
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
 
-match_types! {
-    pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
-        MultiLocation { parents: 1, interior: Here } |
-        MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
-    };
+pub struct ParentOrParentsPlurality;
+impl Contains<Location> for ParentOrParentsPlurality {
+    fn contains(location: &Location) -> bool {
+        matches!(location.unpack(), (1, []) | (1, [Plurality { .. }]))
+    }
 }
 
 pub type XcmBarrier = (
@@ -526,6 +534,7 @@ impl xcm_executor::Config for XcmConfig {
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
     type Aliasers = Nothing;
+    type TransactionalProcessor = ();
 }
 
 impl mock_msg_queue::Config for Runtime {
@@ -562,50 +571,48 @@ impl pallet_xcm::Config for Runtime {
     type AdminOrigin = EnsureRoot<AccountId>;
 }
 
-/// Convert `AccountId` to `MultiLocation`.
-pub struct AccountIdToMultiLocation;
-impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
-    fn convert(account: AccountId) -> MultiLocation {
-        X1(Junction::AccountId32 {
+/// Convert `AccountId` to `Location`.
+pub struct AccountIdToLocation;
+impl Convert<AccountId, Location> for AccountIdToLocation {
+    fn convert(account: AccountId) -> Location {
+        Junction::AccountId32 {
             network: None,
             id: account.into(),
-        })
+        }
         .into()
     }
 }
 
 parameter_types! {
     /// The absolute location in perspective of the whole network.
-    pub ShidenLocationAbsolute: MultiLocation = MultiLocation {
+    pub ShidenLocationAbsolute: Location = Location {
         parents: 1,
-        interior: X1(
-            Parachain(MsgQueue::parachain_id().into())
-        )
+        interior: Parachain(MsgQueue::parachain_id().into()).into()
     };
     /// Max asset types for one cross-chain transfer. `2` covers all current use cases.
     /// Can be updated with extra test cases in the future if needed.
     pub const MaxAssetsForTransfer: usize = 2;
 }
 
-/// Convert `AssetId` to optional `MultiLocation`. The impl is a wrapper
+/// Convert `AssetId` to optional `Location`. The impl is a wrapper
 /// on `ShidenAssetLocationIdConverter`.
 pub struct AssetIdConvert;
-impl Convert<AssetId, Option<MultiLocation>> for AssetIdConvert {
-    fn convert(asset_id: AssetId) -> Option<MultiLocation> {
+impl Convert<AssetId, Option<Location>> for AssetIdConvert {
+    fn convert(asset_id: AssetId) -> Option<Location> {
         ShidenAssetLocationIdConverter::convert_back(&asset_id)
     }
 }
 
-/// `MultiAsset` reserve location provider. It's based on `RelativeReserveProvider` and in
+/// `Asset` reserve location provider. It's based on `RelativeReserveProvider` and in
 /// addition will convert self absolute location to relative location.
 pub struct AbsoluteAndRelativeReserveProvider<AbsoluteLocation>(PhantomData<AbsoluteLocation>);
-impl<AbsoluteLocation: Get<MultiLocation>> Reserve
+impl<AbsoluteLocation: Get<Location>> Reserve
     for AbsoluteAndRelativeReserveProvider<AbsoluteLocation>
 {
-    fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
+    fn reserve(asset: &Asset) -> Option<Location> {
         RelativeReserveProvider::reserve(asset).map(|reserve_location| {
             if reserve_location == AbsoluteLocation::get() {
-                MultiLocation::here()
+                Location::here()
             } else {
                 reserve_location
             }
@@ -618,7 +625,7 @@ impl orml_xtokens::Config for Runtime {
     type Balance = Balance;
     type CurrencyId = AssetId;
     type CurrencyIdConvert = AssetIdConvert;
-    type AccountIdToMultiLocation = AccountIdToMultiLocation;
+    type AccountIdToLocation = AccountIdToLocation;
     type SelfLocation = ShidenLocation;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type Weigher = Weigher;
@@ -627,8 +634,10 @@ impl orml_xtokens::Config for Runtime {
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     // Default impl. Refer to `orml-xtokens` docs for more details.
     type MinXcmFee = DisabledParachainFee;
-    type MultiLocationsFilter = Everything;
+    type LocationsFilter = Everything;
     type ReserveProvider = AbsoluteAndRelativeReserveProvider<ShidenLocationAbsolute>;
+    type RateLimiter = ();
+    type RateLimiterId = ();
 }
 
 pub struct DummyCycleConfiguration;

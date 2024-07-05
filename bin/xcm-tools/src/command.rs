@@ -43,14 +43,14 @@ pub fn run() -> Result<(), Error> {
     match &cli.subcommand {
         Some(Subcommand::RelayChainAccount) => {
             let relay_account =
-                ParentIsPreset::<AccountId>::convert_location(&MultiLocation::parent()).unwrap();
+                ParentIsPreset::<AccountId>::convert_location(&Location::parent()).unwrap();
             println!("{}", relay_account);
         }
         Some(Subcommand::SovereignAccount(cmd)) => {
             let parachain_account = if cmd.sibling {
-                let location = MultiLocation {
+                let location = Location {
                     parents: 1,
-                    interior: X1(Parachain(cmd.parachain_id)),
+                    interior: Parachain(cmd.parachain_id).into(),
                 };
                 SiblingParachainConvertsVia::<Sibling, AccountId>::convert_location(&location)
                     .unwrap()
@@ -69,31 +69,31 @@ pub fn run() -> Result<(), Error> {
             println!("EVM XC20: 0x{}", HexDisplay::from(&data));
         }
         Some(Subcommand::RemoteAccount(cmd)) => {
-            let mut sender_multilocation = MultiLocation::parent();
+            let mut sender_multilocation = Location::parent();
 
             if let Some(parachain_id) = cmd.parachain_id {
                 sender_multilocation
-                    .append_with(X1(Parachain(parachain_id)))
+                    .append_with(Parachain(parachain_id))
                     .expect("infallible, short sequence");
             }
 
             match cmd.account_key {
                 AccountWrapper::SS58(id) => {
                     sender_multilocation
-                        .append_with(X1(AccountId32 {
+                        .append_with(AccountId32 {
                             id,
                             // network is not relevant for account derivation
                             network: None,
-                        }))
+                        })
                         .expect("infallible, short sequence");
                 }
                 AccountWrapper::H160(key) => {
                     sender_multilocation
-                        .append_with(X1(AccountKey20 {
+                        .append_with(AccountKey20 {
                             key,
                             // network is not relevant for account derivation
                             network: None,
-                        }))
+                        })
                         .expect("infallible, short sequence");
                 }
             }

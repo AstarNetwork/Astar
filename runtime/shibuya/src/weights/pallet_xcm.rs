@@ -285,4 +285,9 @@ impl<T: frame_system::Config> pallet_xcm::WeightInfo for SubstrateWeight<T> {
 	fn take_response() -> Weight {
 		Weight::MAX
 	}
+
+    fn claim_assets() -> Weight {
+        // TODO: run benchmarks
+		Weight::MAX
+	}
 }

@@ -49,7 +49,7 @@ mod v7 {
 
     impl<T: Config> OnRuntimeUpgrade for VersionMigrateV6ToV7<T> {
         fn on_runtime_upgrade() -> Weight {
-            let current = Pallet::<T>::current_storage_version();
+            let current = Pallet::<T>::in_code_storage_version();
 
             let mut translated = 0usize;
             DAppTiers::<T>::translate::<
