@@ -28,7 +28,7 @@ use local_runtime::{
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_runtime::{
-    traits::{IdentifyAccount, Verify},
+    traits::{AccountIdConversion, IdentifyAccount, Verify},
     Permill,
 };
 
