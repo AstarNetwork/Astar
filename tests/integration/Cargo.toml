@@ -19,6 +19,10 @@ fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
 # frame dependencies
+cumulus-pallet-parachain-system = { workspace = true }
+cumulus-primitives-core = { workspace = true }
+cumulus-primitives-parachain-inherent = { workspace = true }
+cumulus-test-relay-sproof-builder = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 orml-oracle = { workspace = true }
@@ -26,16 +30,20 @@ pallet-assets = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
 pallet-contracts-uapi = { workspace = true }
+pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-proxy = { workspace = true }
+pallet-timestamp = { workspace = true }
 pallet-utility = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
+sp-trie = { workspace = true }
 
 # astar dependencies
 assets-chain-extension-types = { workspace = true }
 pallet-collator-selection = { workspace = true }
+pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
@@ -66,6 +74,47 @@ std = [
 	"shiden-runtime/std",
 	"astar-primitives/std",
 	"astar-test-utils/std",
+	"assets-chain-extension-types/std",
+	"pallet-collective-proxy/std",
+	"ethereum?/std",
+	"fp-evm/std",
+	"fp-rpc?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"hex/std",
+	"libsecp256k1/std",
+	"moonbeam-rpc-primitives-debug?/std",
+	"orml-oracle/std",
+	"pallet-assets/std",
+	"sp-trie/std",
+	"pallet-balances/std",
+	"pallet-collator-selection/std",
+	"pallet-contracts/std",
+	"cumulus-primitives-parachain-inherent/std",
+	"cumulus-primitives-core/std",
+	"cumulus-pallet-parachain-system/std",
+	"pallet-democracy/std",
+	"pallet-timestamp/std",
+	"pallet-dapp-staking-v3/std",
+	"pallet-ethereum?/std",
+	"pallet-ethereum-checked/std",
+	"pallet-evm/std",
+	"pallet-evm-precompile-assets-erc20/std",
+	"pallet-evm-precompile-dispatch/std",
+	"pallet-inflation/std",
+	"pallet-membership/std",
+	"pallet-price-aggregator/std",
+	"cumulus-test-relay-sproof-builder/std",
+	"pallet-proxy/std",
+	"pallet-unified-accounts/std",
+	"pallet-utility/std",
+	"parity-scale-codec/std",
+	"precompile-utils/std",
+	"sha3/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"unified-accounts-chain-extension-types/std",
 ]
 shibuya = ["shibuya-runtime"]
 shiden = ["shiden-runtime"]

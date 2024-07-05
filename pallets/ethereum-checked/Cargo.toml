@@ -55,6 +55,7 @@ std = [
 	"pallet-evm/std",
 	"pallet-ethereum/std",
 	"astar-primitives/std",
+	"frame-benchmarking?/std",
 ]
 runtime-benchmarks = [
 	"hex",
@@ -64,5 +65,13 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"astar-primitives/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-evm/try-runtime",
+	"sp-runtime/try-runtime",
+]

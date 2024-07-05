@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "5.39.1"
+version = "5.40.0"
 build = "build.rs"
 authors.workspace = true
 edition.workspace = true
@@ -22,7 +22,9 @@ frame-system = { workspace = true }
 pallet-assets = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
+pallet-collective = { workspace = true }
 pallet-contracts = { workspace = true }
+pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
 pallet-evm = { workspace = true }
@@ -35,12 +37,14 @@ pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-grandpa = { workspace = true }
 pallet-insecure-randomness-collective-flip = { workspace = true }
+pallet-membership = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
+pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-vesting = { workspace = true }
 sp-api = { workspace = true }
@@ -66,6 +70,7 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 astar-primitives = { workspace = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
 pallet-chain-extension-xvm = { workspace = true }
+pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-evm-precompile-assets-erc20 = { workspace = true }
@@ -112,9 +117,11 @@ std = [
 	"frame-executive/std",
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",
+	"pallet-collective-proxy/std",
 	"frame-system/std",
 	"pallet-assets/std",
 	"pallet-aura/std",
+	"pallet-membership/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
 	"pallet-chain-extension-xvm/std",
@@ -143,10 +150,13 @@ std = [
 	"pallet-grandpa/std",
 	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-preimage/std",
+	"pallet-collective/std",
+	"pallet-democracy/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
+	"pallet-treasury/std",
 	"pallet-utility/std",
 	"pallet-vesting/std",
 	"pallet-proxy/std",
@@ -175,24 +185,49 @@ std = [
 	"substrate-wasm-builder",
 	"pallet-chain-extension-assets/std",
 	"astar-primitives/std",
+	"frame-system-benchmarking?/std",
+	"log?/std",
+	"num_enum/std",
+	"pallet-evm-precompile-assets-erc20/std",
+	"precompile-utils/std",
+	"scale-info/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system-benchmarking/runtime-benchmarks",
+	"pallet-collective-proxy/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-preimage/runtime-benchmarks",
+	"pallet-democracy/runtime-benchmarks",
+	"pallet-collective/runtime-benchmarks",
 	"pallet-ethereum-checked/runtime-benchmarks",
 	"pallet-unified-accounts/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-dapp-staking-v3/runtime-benchmarks",
 	"pallet-inflation/runtime-benchmarks",
+	"pallet-membership/runtime-benchmarks",
 	"pallet-dynamic-evm-base-fee/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"pallet-chain-extension-assets/runtime-benchmarks",
+	"pallet-contracts/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
+	"pallet-evm-precompile-dapp-staking-v3/runtime-benchmarks",
+	"pallet-grandpa/runtime-benchmarks",
+	"pallet-proxy/runtime-benchmarks",
+	"pallet-scheduler/runtime-benchmarks",
+	"pallet-static-price-provider/runtime-benchmarks",
+	"pallet-sudo/runtime-benchmarks",
+	"pallet-utility/runtime-benchmarks",
+	"pallet-vesting/runtime-benchmarks",
+	"pallet-xvm/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -204,8 +239,11 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-contracts/try-runtime",
+	"pallet-collective-proxy/try-runtime",
 	"pallet-dapp-staking-v3/try-runtime",
+	"pallet-treasury/try-runtime",
 	"pallet-inflation/try-runtime",
+	"pallet-membership/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-insecure-randomness-collective-flip/try-runtime",
 	"pallet-sudo/try-runtime",
@@ -220,10 +258,15 @@ try-runtime = [
 	"pallet-scheduler/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-preimage/try-runtime",
+	"pallet-collective/try-runtime",
+	"pallet-democracy/try-runtime",
 	"pallet-dynamic-evm-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"pallet-ethereum-checked/try-runtime",
 	"pallet-static-price-provider/try-runtime",
+	"astar-primitives/try-runtime",
+	"pallet-chain-extension-assets/try-runtime",
+	"sp-runtime/try-runtime",
 ]
 evm-tracing = [
 	"moonbeam-evm-tracer",

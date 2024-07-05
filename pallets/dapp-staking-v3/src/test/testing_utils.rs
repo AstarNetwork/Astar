@@ -86,9 +86,9 @@ impl MemorySnapshot {
     /// Returns locked balance in dApp staking for the specified account.
     /// In case no balance is locked, returns zero.
     pub fn locked_balance(&self, account: &AccountId) -> Balance {
-        self.ledger
-            .get(&account)
-            .map_or(Balance::zero(), |ledger| ledger.active_locked_amount())
+        self.ledger.get(&account).map_or(Balance::zero(), |ledger| {
+            ledger.locked + ledger.unlocking.iter().fold(0, |acc, x| acc + x.amount)
+        })
     }
 }
 
@@ -240,10 +240,15 @@ pub(crate) fn assert_lock(account: AccountId, amount: Balance) {
         "Total locked balance should be increased by the amount locked."
     );
 
+    let post_frozen_balance = Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account);
     assert_eq!(
         init_frozen_balance + expected_lock_amount,
-        Balances::balance_frozen(&FreezeReason::DAppStaking.into(), &account)
+        post_frozen_balance
     );
+    assert!(
+        Balances::total_balance(&account) >= post_frozen_balance,
+        "Total balance should never be less than frozen balance."
+    )
 }
 
 /// Start the unlocking process for locked funds and assert success.
@@ -727,15 +732,16 @@ pub(crate) fn assert_unstake(
     let unstaked_amount_era_pairs =
         pre_staker_info
             .clone()
-            .unstake(expected_amount, unstake_period, unstake_subperiod);
+            .unstake(expected_amount, unstake_era, unstake_subperiod);
     assert!(unstaked_amount_era_pairs.len() <= 2 && unstaked_amount_era_pairs.len() > 0);
-    {
-        let (last_unstake_era, last_unstake_amount) = unstaked_amount_era_pairs
-            .last()
-            .expect("Has to exist due to success of previous check");
-        assert_eq!(*last_unstake_era, unstake_era.max(pre_staker_info.era()));
-        assert_eq!(*last_unstake_amount, expected_amount);
-    }
+
+    // If unstake from next era exists, it must exactly match the expected unstake amount.
+    unstaked_amount_era_pairs
+        .iter()
+        .filter(|(era, _)| *era > unstake_era)
+        .for_each(|(_, amount)| {
+            assert_eq!(*amount, expected_amount);
+        });
 
     // 3. verify contract stake
     // =========================
@@ -753,21 +759,31 @@ pub(crate) fn assert_unstake(
         "Staked amount must decreased by the 'amount'"
     );
 
-    // Ensure staked amounts are updated as expected, unless it's full unstake.
-    if !is_full_unstake {
-        for (unstake_era_iter, unstake_amount_iter) in unstaked_amount_era_pairs {
-            assert_eq!(
-                post_contract_stake
-                    .get(unstake_era_iter, unstake_period)
-                    .expect("Must exist.")
-                    .total(),
-                pre_contract_stake
-                    .get(unstake_era_iter, unstake_period)
-                    .expect("Must exist")
-                    .total()
-                    - unstake_amount_iter
-            );
-        }
+    // A generic check, comparing what was received in the (era, amount) pairs and the impact it had on the contract stake.
+    for (unstake_era_iter, unstake_amount_iter) in unstaked_amount_era_pairs {
+        assert_eq!(
+            post_contract_stake
+                .get(unstake_era_iter, unstake_period)
+                .unwrap_or_default() // it's possible that full unstake cleared the entry
+                .total(),
+            pre_contract_stake
+                .get(unstake_era_iter, unstake_period)
+                .expect("Must exist")
+                .total()
+                - unstake_amount_iter
+        );
+    }
+
+    // More precise check, independent of the generic check above.
+    // If next era entry exists, it must be reduced by the unstake amount, nothing less.
+    if let Some(entry) = pre_contract_stake.get(unstake_era + 1, unstake_period) {
+        assert_eq!(
+            post_contract_stake
+                .get(unstake_era + 1, unstake_period)
+                .unwrap_or_default()
+                .total(),
+            entry.total() - expected_amount
+        );
     }
 
     // 4. verify era info
@@ -1015,7 +1031,7 @@ pub(crate) fn assert_claim_dapp_reward(
         .get(&era)
         .expect("Entry must exist.")
         .clone();
-    let (expected_reward, expected_tier_id) = {
+    let (expected_reward, expected_ranked_tier) = {
         let mut info = pre_reward_info.clone();
         info.try_claim(dapp_info.id).unwrap()
     };
@@ -1029,7 +1045,8 @@ pub(crate) fn assert_claim_dapp_reward(
     System::assert_last_event(RuntimeEvent::DappStaking(Event::DAppReward {
         beneficiary: beneficiary.clone(),
         smart_contract: smart_contract.clone(),
-        tier_id: expected_tier_id,
+        tier_id: expected_ranked_tier.tier(),
+        rank: expected_ranked_tier.rank(),
         era,
         amount: expected_reward,
     }));

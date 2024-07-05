@@ -999,7 +999,7 @@ mod benchmarks {
 
         #[block]
         {
-            let (dapp_tiers, _) = Pallet::<T>::get_dapp_tier_assignment_and_rewards(
+            let (dapp_tiers, _count) = Pallet::<T>::get_dapp_tier_assignment_and_rewards(
                 reward_era,
                 reward_period,
                 reward_pool,
@@ -1041,14 +1041,17 @@ mod benchmarks {
             &cleanup_marker.dapp_tiers_index,
             DAppTierRewardsFor::<T> {
                 dapps: (0..T::MaxNumberOfContracts::get())
-                    .map(|dapp_id| (dapp_id as DAppId, 0))
-                    .collect::<BTreeMap<DAppId, TierId>>()
+                    .map(|dapp_id| (dapp_id as DAppId, RankedTier::new_saturated(0, 0)))
+                    .collect::<BTreeMap<DAppId, RankedTier>>()
                     .try_into()
                     .expect("Using `MaxNumberOfContracts` as length; QED."),
                 rewards: vec![1_000_000_000_000; T::NumberOfTiers::get() as usize]
                     .try_into()
                     .expect("Using `NumberOfTiers` as length; QED."),
                 period: 1,
+                rank_rewards: vec![0; T::NumberOfTiers::get() as usize]
+                    .try_into()
+                    .expect("Using `NumberOfTiers` as length; QED."),
             },
         );
 

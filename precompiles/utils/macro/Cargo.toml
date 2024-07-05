@@ -39,4 +39,5 @@ std = [
 	"frame-support/std",
 	"sp-core-hashing/std",
 	"sp-std/std",
+	"num_enum/std",
 ]

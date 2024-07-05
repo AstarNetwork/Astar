@@ -56,5 +56,11 @@ runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"assert_matches",
+	"frame-benchmarking/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+	"astar-primitives/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+]

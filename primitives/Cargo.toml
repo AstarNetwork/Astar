@@ -22,6 +22,9 @@ fp-evm = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-assets = { workspace = true }
+pallet-collective = { workspace = true }
+pallet-membership = { workspace = true }
+pallet-treasury = { workspace = true }
 sp-arithmetic = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
@@ -57,7 +60,10 @@ std = [
 	"ethereum/std",
 	"fp-evm/std",
 	"frame-support/std",
+	"pallet-treasury/std",
 	"frame-system/std",
+	"pallet-membership/std",
+	"pallet-collective/std",
 	"sp-std/std",
 	"sp-runtime/std",
 	"sp-core/std",
@@ -76,5 +82,31 @@ std = [
 	"pallet-evm-precompile-dispatch/std",
 	"sp-arithmetic/std",
 ]
-runtime-benchmarks = ["xcm-builder/runtime-benchmarks", "pallet-assets/runtime-benchmarks"]
-try-runtime = ["pallet-contracts/try-runtime"]
+runtime-benchmarks = [
+	"xcm-builder/runtime-benchmarks",
+	"pallet-assets/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-contracts/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"pallet-evm-precompile-assets-erc20/runtime-benchmarks",
+	"pallet-xc-asset-config/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"xcm-executor/runtime-benchmarks",
+	"pallet-collective/runtime-benchmarks",
+	"pallet-membership/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
+]
+try-runtime = [
+	"pallet-contracts/try-runtime",
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"orml-oracle/try-runtime",
+	"pallet-assets/try-runtime",
+	"pallet-evm/try-runtime",
+	"pallet-xc-asset-config/try-runtime",
+	"sp-runtime/try-runtime",
+	"pallet-collective/try-runtime",
+	"pallet-membership/try-runtime",
+	"pallet-treasury/try-runtime",
+]

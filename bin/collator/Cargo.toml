@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "5.39.1"
+version = "5.41.0"
 description = "Astar collator implementation in Rust."
 build = "build.rs"
 default-run = "astar-collator"
@@ -108,8 +108,10 @@ sc-cli = { workspace = true, optional = true }
 
 # cumulus dependencies
 cumulus-client-cli = { workspace = true }
+cumulus-client-collator = { workspace = true }
 cumulus-client-consensus-aura = { workspace = true }
 cumulus-client-consensus-common = { workspace = true }
+cumulus-client-consensus-proposer = { workspace = true }
 cumulus-client-consensus-relay-chain = { workspace = true }
 cumulus-client-network = { workspace = true }
 cumulus-client-service = { workspace = true }
@@ -164,16 +166,47 @@ runtime-benchmarks = [
 	"sp-keyring",
 	"polkadot-runtime-common",
 	"astar-primitives/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-benchmarking-cli?/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-ethereum/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+	"polkadot-parachain/runtime-benchmarks",
+	"polkadot-primitives/runtime-benchmarks",
+	"polkadot-runtime-common?/runtime-benchmarks",
+	"polkadot-service/runtime-benchmarks",
+	"sc-client-db/runtime-benchmarks",
+	"sc-service/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+	"cumulus-primitives-core/runtime-benchmarks",
 ]
 cli = ["try-runtime-cli"]
-try-runtime = ["local-runtime/try-runtime", "try-runtime-cli/try-runtime"]
+try-runtime = [
+	"local-runtime/try-runtime",
+	"try-runtime-cli/try-runtime",
+	"astar-primitives/try-runtime",
+	"astar-runtime/try-runtime",
+	"frame-system/try-runtime",
+	"frame-try-runtime/try-runtime",
+	"pallet-ethereum/try-runtime",
+	"pallet-evm/try-runtime",
+	"pallet-transaction-payment/try-runtime",
+	"polkadot-cli?/try-runtime",
+	"polkadot-runtime-common?/try-runtime",
+	"polkadot-service/try-runtime",
+	"shibuya-runtime/try-runtime",
+	"shiden-runtime/try-runtime",
+	"sp-runtime/try-runtime",
+]
 evm-tracing = [
 	"moonbeam-rpc-debug",
 	"moonbeam-rpc-primitives-debug",
 	"moonbeam-rpc-primitives-txpool",
 	"moonbeam-rpc-trace",
 	"moonbeam-rpc-txpool",
+	"shibuya-runtime/evm-tracing",
+	"shiden-runtime/evm-tracing",
+	"astar-runtime/evm-tracing",
+	"local-runtime/evm-tracing",
 ]
-manual-seal = [
-	"sc-consensus-manual-seal",
-]
+manual-seal = ["sc-consensus-manual-seal"]

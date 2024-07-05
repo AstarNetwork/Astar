@@ -615,15 +615,17 @@ dependencies = [
 
 [[package]]
 name = "astar-collator"
-version = "5.39.1"
+version = "5.41.0"
 dependencies = [
  "astar-primitives",
  "astar-runtime",
  "async-trait",
  "clap",
  "cumulus-client-cli",
+ "cumulus-client-collator",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
+ "cumulus-client-consensus-proposer",
  "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",
  "cumulus-client-service",
@@ -731,10 +733,13 @@ dependencies = [
  "orml-oracle",
  "orml-traits",
  "pallet-assets",
+ "pallet-collective",
  "pallet-contracts",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-dispatch",
+ "pallet-membership",
+ "pallet-treasury",
  "pallet-xc-asset-config",
  "parity-scale-codec",
  "scale-info",
@@ -750,7 +755,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "5.39.1"
+version = "5.41.0"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -5507,6 +5512,10 @@ dependencies = [
  "astar-primitives",
  "astar-runtime",
  "astar-test-utils",
+ "cumulus-pallet-parachain-system",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
  "env_logger 0.10.2",
  "ethereum",
  "fp-evm",
@@ -5520,9 +5529,11 @@ dependencies = [
  "pallet-assets",
  "pallet-balances",
  "pallet-collator-selection 3.3.2",
+ "pallet-collective-proxy",
  "pallet-contracts",
  "pallet-contracts-uapi",
  "pallet-dapp-staking-v3",
+ "pallet-democracy",
  "pallet-ethereum",
  "pallet-ethereum-checked",
  "pallet-evm",
@@ -5532,6 +5543,7 @@ dependencies = [
  "pallet-membership",
  "pallet-price-aggregator",
  "pallet-proxy",
+ "pallet-timestamp",
  "pallet-unified-accounts",
  "pallet-utility",
  "parity-scale-codec",
@@ -5542,6 +5554,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-trie",
  "unified-accounts-chain-extension-types",
 ]
 
@@ -6458,7 +6471,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "5.39.1"
+version = "5.40.0"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -6483,8 +6496,11 @@ dependencies = [
  "pallet-chain-extension-assets",
  "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
+ "pallet-collective",
+ "pallet-collective-proxy",
  "pallet-contracts",
  "pallet-dapp-staking-v3",
+ "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
  "pallet-ethereum-checked",
@@ -6506,6 +6522,7 @@ dependencies = [
  "pallet-grandpa",
  "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
+ "pallet-membership",
  "pallet-preimage",
  "pallet-proxy",
  "pallet-scheduler",
@@ -6514,6 +6531,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
  "pallet-unified-accounts",
  "pallet-utility",
  "pallet-vesting",
@@ -8180,6 +8198,26 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 8.0.0",
+]
+
+[[package]]
+name = "pallet-collective-proxy"
+version = "0.1.0"
+dependencies = [
+ "astar-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -13880,7 +13918,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "5.39.1"
+version = "5.41.0"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
@@ -13921,8 +13959,11 @@ dependencies = [
  "pallet-chain-extension-unified-accounts",
  "pallet-chain-extension-xvm",
  "pallet-collator-selection 3.3.2",
+ "pallet-collective",
+ "pallet-collective-proxy",
  "pallet-contracts",
  "pallet-dapp-staking-v3",
+ "pallet-democracy",
  "pallet-dynamic-evm-base-fee",
  "pallet-ethereum",
  "pallet-ethereum-checked",
@@ -13958,6 +13999,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
  "pallet-unified-accounts",
  "pallet-utility",
  "pallet-vesting",
@@ -13997,7 +14039,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "5.39.1"
+version = "5.41.0"
 dependencies = [
  "array-bytes 6.2.3",
  "astar-primitives",
