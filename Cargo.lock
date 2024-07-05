@@ -643,6 +643,7 @@ dependencies = [
  "fp-storage",
  "frame-benchmarking",
  "frame-benchmarking-cli",
+ "frame-metadata-hash-extension",
  "frame-system",
  "frame-try-runtime",
  "futures 0.3.30",
