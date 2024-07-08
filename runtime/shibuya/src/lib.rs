@@ -1628,6 +1628,9 @@ pub type Migrations = (
     GovernancePalletsVersionSetting,
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
+    // XCM V3 -> V4
+    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
+    // TODO: identity
 );
 
 use frame_support::traits::{GetStorageVersion, OnRuntimeUpgrade};

@@ -1237,10 +1237,11 @@ pub type Executive = frame_executive::Executive<
 /// Once done, migrations should be removed from the tuple.
 pub type Migrations = (
     cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
-    // Migrate to ranking system
-    pallet_dapp_staking_v3::migration::versioned_migrations::V6ToV7<Runtime>,
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
+    // XCM V3 -> V4
+    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
+    // TODO: identity
 );
 
 type EventRecord = frame_system::EventRecord<
