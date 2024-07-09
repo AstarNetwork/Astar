@@ -503,7 +503,7 @@ pub mod pallet {
     pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
 
     #[pallet::genesis_config]
-    #[cfg_attr(not(test), derive(frame_support::DefaultNoBound))]
+    #[derive(frame_support::DefaultNoBound, PartialEq)]
     pub struct GenesisConfig<T> {
         pub reward_portion: Vec<Permill>,
         pub slot_distribution: Vec<Permill>,
@@ -516,6 +516,12 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
+            if self == &Default::default() {
+                // Default config is an empty config, no build is needed
+                // Remove this is default genesis changes
+                return;
+            }
+
             // Prepare tier parameters & verify their correctness
             let tier_params = TierParameters::<T::NumberOfTiers> {
                 reward_portion: BoundedVec::<Permill, T::NumberOfTiers>::try_from(
