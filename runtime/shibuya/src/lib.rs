@@ -1175,12 +1175,11 @@ impl orml_oracle::Config for Runtime {
 
 impl pallet_membership::Config<OracleMembershipInst> for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AddOrigin = EnsureRoot<AccountId>;
-    type RemoveOrigin = EnsureRoot<AccountId>;
-    type SwapOrigin = EnsureRoot<AccountId>;
-    type ResetOrigin = EnsureRoot<AccountId>;
-    type PrimeOrigin = EnsureRoot<AccountId>;
-
+    type AddOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type RemoveOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type SwapOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type ResetOrigin = EnsureRootOrTwoThirdsMainCouncil;
+    type PrimeOrigin = EnsureRootOrTwoThirdsMainCouncil;
     type MembershipInitialized = ();
     type MembershipChanged = ();
     type MaxMembers = ConstU32<16>;
@@ -1307,10 +1306,10 @@ impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
 impl pallet_democracy::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type EnactmentPeriod = ConstU32<{ 1 * HOURS }>;
-    type LaunchPeriod = ConstU32<{ 1 * DAYS }>;
-    type VotingPeriod = ConstU32<{ 1 * DAYS }>;
-    type VoteLockingPeriod = ConstU32<{ 2 * DAYS }>;
+    type EnactmentPeriod = ConstU32<{ 2 * HOURS }>;
+    type LaunchPeriod = ConstU32<{ 3 * DAYS }>;
+    type VotingPeriod = ConstU32<{ 3 * DAYS }>;
+    type VoteLockingPeriod = ConstU32<{ 1 * DAYS }>;
     type MinimumDeposit = ConstU128<{ 10 * SBY }>;
     type FastTrackVotingPeriod = ConstU32<{ 1 * HOURS }>;
     type CooloffPeriod = ConstU32<{ 1 * DAYS }>;
