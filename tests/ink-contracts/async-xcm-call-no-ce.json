@@ -427,7 +427,7 @@
                 "fields": [
                   {
                     "type": 10,
-                    "typeName": "Location"
+                    "typeName": "MultiLocation"
                   }
                 ],
                 "index": 0,
@@ -477,7 +477,7 @@
           "xcm",
           "v3",
           "multilocation",
-          "Location"
+          "MultiLocation"
         ]
       }
     },

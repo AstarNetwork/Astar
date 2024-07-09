@@ -244,7 +244,6 @@ fn xcm_remote_transact_contract() {
 }
 
 #[test]
-#[ignore]
 fn test_async_xcm_contract_call_no_ce() {
     /// All the fees and weights values required for the whole
     /// operation.
@@ -253,14 +252,14 @@ fn test_async_xcm_contract_call_no_ce() {
         /// Max fee for whole XCM operation in foreign chain
         /// This includes fees for sending XCM back to original
         /// chain via Transact(pallet_xcm::send).
-        pub foreign_base_fee: Asset,
+        pub foreign_base_fee: xcm::v3::MultiAsset, // match smart-contract xcm version
         /// Max weight for operation (remark)
         pub foreign_transact_weight: Weight,
         /// Max weight for Transact(pallet_xcm::send) operation
         pub foreign_transcat_pallet_xcm: Weight,
         /// Max fee for the callback operation
         /// send by foreign chain
-        pub here_callback_base_fee: Asset,
+        pub here_callback_base_fee: xcm::v3::MultiAsset, // match smart-contract xcm version
         /// Max weight for Transact(pallet_contracts::call)
         pub here_callback_transact_weight: Weight,
         /// Max weight for contract call
@@ -323,13 +322,19 @@ fn test_async_xcm_contract_call_no_ce() {
                     2u32.encode(),
                     [1u8, 2u8, 3u8].to_vec().encode(),
                     WeightsAndFees {
-                        foreign_base_fee: (Here, 100_000_000_000_000_000_000_u128).into(),
+                        foreign_base_fee: xcm::v3::MultiAsset::from((
+                            xcm::v3::Junctions::Here,
+                            100_000_000_000_000_000_000_u128
+                        )),
                         foreign_transact_weight: GAS_LIMIT,
                         foreign_transcat_pallet_xcm: Weight::from_parts(
                             2_000_000_000_000,
                             3 * 1024 * 1024
                         ),
-                        here_callback_base_fee: (Here, 100_000_000_000_000_000_u128).into(),
+                        here_callback_base_fee: xcm::v3::MultiAsset::from((
+                            xcm::v3::Junctions::Here,
+                            100_000_000_000_000_000_u128
+                        )),
                         here_callback_contract_weight: Weight::from_parts(
                             400_000_000_000,
                             1024 * 1024,
