@@ -1630,7 +1630,7 @@ pub type Migrations = (
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
     // XCM V3 -> V4
     pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
-    // TODO: identity
+    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
 );
 
 use frame_support::traits::{GetStorageVersion, OnRuntimeUpgrade};
