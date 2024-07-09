@@ -503,6 +503,7 @@ pub mod pallet {
     pub type Safeguard<T: Config> = StorageValue<_, bool, ValueQuery, DefaultSafeguard<T>>;
 
     #[pallet::genesis_config]
+    #[cfg_attr(not(test), derive(frame_support::DefaultNoBound))]
     pub struct GenesisConfig<T> {
         pub reward_portion: Vec<Permill>,
         pub slot_distribution: Vec<Permill>,
@@ -510,26 +511,6 @@ pub mod pallet {
         pub slots_per_tier: Vec<u16>,
         pub safeguard: Option<bool>,
         pub _config: PhantomData<T>,
-    }
-
-    /// TODO: default valid config?
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            use sp_std::vec;
-            let num_tiers = T::NumberOfTiers::get();
-            Self {
-                reward_portion: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
-                slot_distribution: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
-                tier_thresholds: (0..num_tiers)
-                    .map(|i| TierThreshold::FixedTvlAmount {
-                        amount: (10 * i).into(),
-                    })
-                    .collect(),
-                slots_per_tier: vec![100; num_tiers as usize],
-                safeguard: Some(false),
-                _config: ::core::default::Default::default(),
-            }
-        }
     }
 
     #[pallet::genesis_build]

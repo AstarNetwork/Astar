@@ -360,6 +360,26 @@ impl ExtBuilder {
     }
 }
 
+// Default implementation of GenesisConfig used for testing
+impl Default for GenesisConfig<Test> {
+    fn default() -> Self {
+        use sp_std::vec;
+        let num_tiers = <<Test as Config>::NumberOfTiers as Get<u32>>::get();
+        Self {
+            reward_portion: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
+            slot_distribution: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
+            tier_thresholds: (0..num_tiers)
+                .map(|i| TierThreshold::FixedTvlAmount {
+                    amount: (10 * i).into(),
+                })
+                .collect(),
+            slots_per_tier: vec![100; num_tiers as usize],
+            safeguard: Some(false),
+            _config: ::core::default::Default::default(),
+        }
+    }
+}
+
 /// Run to the specified block number.
 /// Function assumes first block has been initialized.
 pub(crate) fn run_to_block(n: BlockNumber) {
