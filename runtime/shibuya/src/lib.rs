@@ -2473,12 +2473,17 @@ impl_runtime_apis! {
         fn trace_transaction(
             extrinsics: Vec<<Block as BlockT>::Extrinsic>,
             traced_transaction: &pallet_ethereum::Transaction,
-            _header: &<Block as BlockT>::Header,
+            header: &<Block as BlockT>::Header,
         ) -> Result<
             (),
             sp_runtime::DispatchError,
         > {
             use moonbeam_evm_tracer::tracer::EvmTracer;
+
+            // Initialize block: calls the "on_initialize" hook on every pallet
+            // in AllPalletsWithSystem is needed because pallet message queue was introduced,
+            // and it executes messages "on_initialize" instead of "setValidationData" it used to do before.
+            Executive::initialize_block(header);
 
             // Apply the a subset of extrinsics: all the substrate-specific or ethereum
             // transactions that preceded the requested transaction.
@@ -2503,7 +2508,7 @@ impl_runtime_apis! {
         fn trace_block(
             extrinsics: Vec<<Block as BlockT>::Extrinsic>,
             known_transactions: Vec<H256>,
-            _header: &<Block as BlockT>::Header,
+            header: &<Block as BlockT>::Header,
         ) -> Result<
             (),
             sp_runtime::DispatchError,
@@ -2512,6 +2517,11 @@ impl_runtime_apis! {
 
             let mut config = <Runtime as pallet_evm::Config>::config().clone();
             config.estimate = true;
+
+            // Initialize block: calls the "on_initialize" hook on every pallet
+            // in AllPalletsWithSystem is needed because pallet message queue was introduced,
+            // and it executes messages "on_initialize" instead of "setValidationData" it used to do before.
+            Executive::initialize_block(header);
 
             // Apply all extrinsics. Ethereum extrinsics are traced.
             for ext in extrinsics.into_iter() {
