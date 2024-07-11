@@ -379,13 +379,8 @@ where
                 // The block is initialized inside "trace_block"
                 api.trace_block(parent_block_hash, exts, eth_tx_hashes, &header)
             } else {
-                // Pre pallet-message-queue
-
-                // Initialize block: calls the "on_initialize" hook on every pallet
-                // in AllPalletsWithSystem
-                // This was fine before pallet-message-queue because the XCM messages
-                // were processed by the "setValidationData" inherent call and not on an
-                // "on_initialize" hook, which runs before enabling XCM tracing
+                // Old "trace_block" api did not initialize block before applying transactions,
+                // so we need to do it here before calling "trace_block".
                 api.initialize_block(parent_block_hash, &header)
                     .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
 
@@ -532,11 +527,8 @@ where
                         // The block is initialized inside "trace_transaction"
                         api.trace_transaction(parent_block_hash, exts, &transaction, &header)
                     } else {
-                        // Initialize block: calls the "on_initialize" hook on every pallet
-                        // in AllPalletsWithSystem
-                        // This was fine before pallet-message-queue because the XCM messages
-                        // were processed by the "setValidationData" inherent call and not on an
-                        // "on_initialize" hook, which runs before enabling XCM tracing
+                        // Old "trace_transaction" api did not initialize block before applying transactions,
+                        // so we need to do it here before calling "trace_transaction".
                         api.initialize_block(parent_block_hash, &header)
                             .map_err(|e| {
                                 internal_err(format!("Runtime api access error: {:?}", e))

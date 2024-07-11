@@ -2048,9 +2048,8 @@ impl_runtime_apis! {
         > {
             use moonbeam_evm_tracer::tracer::EvmTracer;
 
-            // Initialize block: calls the "on_initialize" hook on every pallet
-            // in AllPalletsWithSystem is needed because pallet message queue was introduced,
-            // and it executes messages "on_initialize" instead of "setValidationData" it used to do before.
+            // We need to follow the order when replaying the transactions.
+            // Block initialize happens first then apply_extrinsic.
             Executive::initialize_block(header);
 
             // Apply the a subset of extrinsics: all the substrate-specific or ethereum
@@ -2083,9 +2082,8 @@ impl_runtime_apis! {
         > {
             use moonbeam_evm_tracer::tracer::EvmTracer;
 
-            // Initialize block: calls the "on_initialize" hook on every pallet
-            // in AllPalletsWithSystem is needed because pallet message queue was introduced,
-            // and it executes messages "on_initialize" instead of "setValidationData" it used to do before.
+            // We need to follow the order when replaying the transactions.
+            // Block initialize happens first then apply_extrinsic.
             Executive::initialize_block(header);
 
             // Apply all extrinsics. Ethereum extrinsics are traced.
