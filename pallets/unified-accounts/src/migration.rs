@@ -46,6 +46,6 @@ impl<T: Config> OnRuntimeUpgrade for ClearCorruptedUnifiedMappings<T> {
             None
         });
         log::info!("Removed {count} corrupt entries");
-        T::DbWeight::get().reads_writes(healthy_count + writes, count)
+        T::DbWeight::get().reads_writes(healthy_count + count, count)
     }
 }
