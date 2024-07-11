@@ -86,7 +86,7 @@ use astar_primitives::{
         MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
         TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
-    oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
+    oracle::{CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -415,10 +415,10 @@ impl pallet_preimage::Config for Runtime {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
+pub struct DAppStakingBenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId>
-    for BenchmarkHelper<SmartContract<AccountId>, AccountId>
+    for DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>
 {
     fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
         let id_bytes = id.to_le_bytes();
@@ -432,15 +432,6 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
         use frame_support::traits::fungible::Unbalanced as FunUnbalanced;
         Balances::write_balance(account, amount)
             .expect("Must succeed in test/benchmark environment.");
-    }
-}
-#[cfg(feature = "runtime-benchmarks")]
-impl<SC, ACC> orml_oracle::BenchmarkHelper<CurrencyId, FixedU128, ConstU32<2>>
-    for BenchmarkHelper<SC, ACC>
-{
-    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, FixedU128), ConstU32<2>>
-    {
-        sp_runtime::BoundedVec::default()
     }
 }
 
@@ -483,7 +474,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RankingEnabled = ConstBool<true>;
     type WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
+    type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
 
 pub struct InflationPayoutPerBlock;
@@ -1206,6 +1197,19 @@ impl pallet_price_aggregator::Config for Runtime {
     type WeightInfo = pallet_price_aggregator::weights::SubstrateWeight<Runtime>;
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct OracleBenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+impl orml_oracle::BenchmarkHelper<CurrencyId, Price, ConstU32<2>> for OracleBenchmarkHelper {
+    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, Price), ConstU32<2>> {
+        sp_runtime::BoundedVec::try_from(vec![
+            (CurrencyId::ASTR, Price::from_rational(15, 100)),
+            (CurrencyId::ASTR, Price::from_rational(15, 100)),
+        ])
+        .expect("out of bounds")
+    }
+}
+
 parameter_types! {
     // Cannot specify `Root` so need to do it like this, unfortunately.
     pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
@@ -1217,8 +1221,11 @@ impl orml_oracle::Config for Runtime {
     type CombineData = DummyCombineData<Runtime>;
     type Time = Timestamp;
     type OracleKey = CurrencyId;
-    type OracleValue = CurrencyAmount;
+    type OracleValue = Price;
     type RootOperatorAccountId = RootOperatorAccountId;
+    #[cfg(feature = "runtime-benchmarks")]
+    type Members = OracleMembershipWrapper;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type Members = OracleMembership;
     type MaxHasDispatchedSize = ConstU32<8>;
     type WeightInfo = oracle_benchmarks::weights::SubstrateWeight<Runtime>;
@@ -1227,7 +1234,7 @@ impl orml_oracle::Config for Runtime {
     #[cfg(not(feature = "runtime-benchmarks"))]
     type MaxFeedValues = ConstU32<1>;
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
+    type BenchmarkHelper = OracleBenchmarkHelper;
 }
 
 impl pallet_membership::Config<OracleMembershipInst> for Runtime {
@@ -1244,33 +1251,22 @@ impl pallet_membership::Config<OracleMembershipInst> for Runtime {
     type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
 }
 
-// The oracle-benchmarks pallet should be removed once we uplift to high enough version
-// (assumption is `polkadot-v1.10.0`) to have access to normal oracle pallet benchmarks).
-//
-// The pallet is stateless so in order to remove it, only code needs to be cleaned up.
-pub struct DummyKeyPairValue;
-impl Get<(CurrencyId, CurrencyAmount)> for DummyKeyPairValue {
-    fn get() -> (CurrencyId, CurrencyAmount) {
-        (CurrencyId::ASTR, CurrencyAmount::from_rational(15, 100))
-    }
-}
-pub struct AddMemberBenchmark;
-impl oracle_benchmarks::AddMember<AccountId> for AddMemberBenchmark {
-    fn add_member(account: AccountId) {
-        use frame_support::assert_ok;
-        use frame_system::RawOrigin;
-        assert_ok!(
-            pallet_membership::Pallet::<Runtime, OracleMembershipInst>::add_member(
-                RawOrigin::Root.into(),
-                account.into()
-            )
-        );
-    }
-}
+/// OracleMembership wrapper used by benchmarks
+#[cfg(feature = "runtime-benchmarks")]
+pub struct OracleMembershipWrapper;
 
-impl oracle_benchmarks::Config for Runtime {
-    type BenchmarkCurrencyIdValuePair = DummyKeyPairValue;
-    type AddMember = AddMemberBenchmark;
+#[cfg(feature = "runtime-benchmarks")]
+impl frame_support::traits::SortedMembers<AccountId> for OracleMembershipWrapper {
+    fn sorted_members() -> Vec<AccountId> {
+        OracleMembership::sorted_members()
+    }
+
+    fn add(account: &AccountId) {
+        frame_support::assert_ok!(OracleMembership::add_member(
+            frame_system::RawOrigin::Root.into(),
+            account.to_owned().into()
+        ));
+    }
 }
 
 parameter_types! {
@@ -1579,9 +1575,6 @@ construct_runtime!(
         Treasury: pallet_treasury::<Instance1> = 107,
         CommunityTreasury: pallet_treasury::<Instance2> = 108,
         CollectiveProxy: pallet_collective_proxy = 109,
-
-        // Remove after benchmarks are available in orml_oracle
-        OracleBenchmarks: oracle_benchmarks = 251,
     }
 );
 
@@ -1721,8 +1714,8 @@ mod benches {
         [xcm_benchmarks_fungible, XcmFungible]
         [pallet_price_aggregator, PriceAggregator]
         [pallet_membership, OracleMembership]
-        [oracle_benchmarks, OracleBenchmarks]
         [pallet_collective_proxy, CollectiveProxy]
+        [orml_oracle, Oracle]
     );
 }
 

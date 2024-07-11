@@ -75,7 +75,7 @@ use astar_primitives::{
         PeriodNumber, RankedTier, SmartContract, StandardTierSlots,
     },
     evm::EvmRevertCodeHandler,
-    oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
+    oracle::{CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -364,12 +364,12 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
     }
 }
 #[cfg(feature = "runtime-benchmarks")]
-impl<SC, ACC> orml_oracle::BenchmarkHelper<CurrencyId, FixedU128, ConstU32<2>>
+impl<SC, ACC> orml_oracle::BenchmarkHelper<CurrencyId, Price, ConstU32<2>>
     for BenchmarkHelper<SC, ACC>
 {
-    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, FixedU128), ConstU32<2>>
-    {
-        sp_runtime::BoundedVec::default()
+    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, Price), ConstU32<2>> {
+        sp_runtime::BoundedVec::try_from(vec![(CurrencyId::ASTR, Price::from_rational(15, 100))])
+            .expect("out of bounds")
     }
 }
 
@@ -1119,7 +1119,7 @@ impl orml_oracle::Config for Runtime {
     type CombineData = DummyCombineData<Runtime>;
     type Time = Timestamp;
     type OracleKey = CurrencyId;
-    type OracleValue = CurrencyAmount;
+    type OracleValue = Price;
     type RootOperatorAccountId = RootOperatorAccountId;
     type Members = OracleMembership;
     type MaxHasDispatchedSize = ConstU32<8>;
@@ -1327,6 +1327,7 @@ mod benches {
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [xcm_benchmarks_generic, XcmGeneric]
         [xcm_benchmarks_fungible, XcmFungible]
+        [orml_oracle, Oracle]
     );
 }
 

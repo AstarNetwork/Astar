@@ -75,7 +75,7 @@ use astar_primitives::{
     },
     evm::EvmRevertCodeHandler,
     governance::OracleMembershipInst,
-    oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
+    oracle::{CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -389,12 +389,12 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
     }
 }
 #[cfg(feature = "runtime-benchmarks")]
-impl<SC, ACC> orml_oracle::BenchmarkHelper<CurrencyId, FixedU128, ConstU32<2>>
+impl<SC, ACC> orml_oracle::BenchmarkHelper<CurrencyId, Price, ConstU32<2>>
     for BenchmarkHelper<SC, ACC>
 {
-    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, FixedU128), ConstU32<2>>
-    {
-        sp_runtime::BoundedVec::default()
+    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, Price), ConstU32<2>> {
+        sp_runtime::BoundedVec::try_from(vec![(CurrencyId::ASTR, Price::from_rational(15, 100))])
+            .expect("out of bounds")
     }
 }
 
@@ -407,7 +407,7 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
 
 pub struct ShidenTierSlots;
 impl TierSlotsFunc for ShidenTierSlots {
-    fn number_of_slots(price: CurrencyAmount) -> u16 {
+    fn number_of_slots(price: Price) -> u16 {
         // According to the forum proposal, the original formula's factor is reduced from 1000x to 100x.
         let result: u64 = price.saturating_mul_int(100_u64).saturating_add(50);
         result.unique_saturated_into()
@@ -1120,7 +1120,7 @@ impl orml_oracle::Config for Runtime {
     type CombineData = DummyCombineData<Runtime>;
     type Time = Timestamp;
     type OracleKey = CurrencyId;
-    type OracleValue = CurrencyAmount;
+    type OracleValue = Price;
     type RootOperatorAccountId = RootOperatorAccountId;
     type Members = OracleMembership;
     type MaxHasDispatchedSize = ConstU32<8>;
@@ -1331,6 +1331,7 @@ mod benches {
         [xcm_benchmarks_fungible, XcmFungible]
         [pallet_price_aggregator, PriceAggregator]
         [pallet_membership, OracleMembership]
+        [orml_oracle, Oracle]
     );
 }
 
