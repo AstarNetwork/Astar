@@ -344,10 +344,10 @@ parameter_types! {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
+pub struct DAppStakingBenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId>
-    for BenchmarkHelper<SmartContract<AccountId>, AccountId>
+    for DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>
 {
     fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
         let id_bytes = id.to_le_bytes();
@@ -361,15 +361,6 @@ impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId
         use frame_support::traits::fungible::Unbalanced as FunUnbalanced;
         Balances::write_balance(account, amount)
             .expect("Must succeed in test/benchmark environment.");
-    }
-}
-#[cfg(feature = "runtime-benchmarks")]
-impl<SC, ACC> orml_oracle::BenchmarkHelper<CurrencyId, Price, ConstU32<2>>
-    for BenchmarkHelper<SC, ACC>
-{
-    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, Price), ConstU32<2>> {
-        sp_runtime::BoundedVec::try_from(vec![(CurrencyId::ASTR, Price::from_rational(15, 100))])
-            .expect("out of bounds")
     }
 }
 
@@ -407,7 +398,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RankingEnabled = ConstBool<true>;
     type WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
+    type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
 
 pub struct InflationPayoutPerBlock;
@@ -1108,6 +1099,19 @@ impl pallet_price_aggregator::Config for Runtime {
     type WeightInfo = pallet_price_aggregator::weights::SubstrateWeight<Runtime>;
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct OracleBenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+impl orml_oracle::BenchmarkHelper<CurrencyId, Price, ConstU32<2>> for OracleBenchmarkHelper {
+    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, Price), ConstU32<2>> {
+        sp_runtime::BoundedVec::try_from(vec![
+            (CurrencyId::ASTR, Price::from_rational(15, 100)),
+            (CurrencyId::ASTR, Price::from_rational(15, 100)),
+        ])
+        .expect("out of bounds")
+    }
+}
+
 parameter_types! {
     // Cannot specify `Root` so need to do it like this, unfortunately.
     pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
@@ -1121,6 +1125,9 @@ impl orml_oracle::Config for Runtime {
     type OracleKey = CurrencyId;
     type OracleValue = Price;
     type RootOperatorAccountId = RootOperatorAccountId;
+    #[cfg(feature = "runtime-benchmarks")]
+    type Members = OracleMembershipWrapper;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type Members = OracleMembership;
     type MaxHasDispatchedSize = ConstU32<8>;
     type WeightInfo = oracle_benchmarks::weights::SubstrateWeight<Runtime>;
@@ -1129,7 +1136,7 @@ impl orml_oracle::Config for Runtime {
     #[cfg(not(feature = "runtime-benchmarks"))]
     type MaxFeedValues = ConstU32<1>;
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
+    type BenchmarkHelper = OracleBenchmarkHelper;
 }
 
 impl pallet_membership::Config<OracleMembershipInst> for Runtime {
@@ -1144,6 +1151,24 @@ impl pallet_membership::Config<OracleMembershipInst> for Runtime {
     type MembershipChanged = ();
     type MaxMembers = ConstU32<16>;
     type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
+/// OracleMembership wrapper used by benchmarks
+#[cfg(feature = "runtime-benchmarks")]
+pub struct OracleMembershipWrapper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl frame_support::traits::SortedMembers<AccountId> for OracleMembershipWrapper {
+    fn sorted_members() -> Vec<AccountId> {
+        OracleMembership::sorted_members()
+    }
+
+    fn add(account: &AccountId) {
+        frame_support::assert_ok!(OracleMembership::add_member(
+            frame_system::RawOrigin::Root.into(),
+            account.to_owned().into()
+        ));
+    }
 }
 
 construct_runtime!(
