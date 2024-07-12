@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/local/service.rs`."><title>service.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../astar_collator/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/local/service.rs`."><title>service.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../astar_collator/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -549,18 +547,6 @@
 <a href="#547" id="547">547</a>
 <a href="#548" id="548">548</a>
 <a href="#549" id="549">549</a>
-<a href="#550" id="550">550</a>
-<a href="#551" id="551">551</a>
-<a href="#552" id="552">552</a>
-<a href="#553" id="553">553</a>
-<a href="#554" id="554">554</a>
-<a href="#555" id="555">555</a>
-<a href="#556" id="556">556</a>
-<a href="#557" id="557">557</a>
-<a href="#558" id="558">558</a>
-<a href="#559" id="559">559</a>
-<a href="#560" id="560">560</a>
-<a href="#561" id="561">561</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -592,10 +578,10 @@
 <span class="kw">use </span>sc_transaction_pool_api::OffchainTransactionPoolFactory;
 <span class="kw">use </span>std::{collections::BTreeMap, sync::Arc, time::Duration};
 
-<span class="attr">#[cfg(not(feature = <span class="string">"manual-seal"</span>))]
+<span class="attr">#[cfg(not(feature = <span class="string">&quot;manual-seal&quot;</span>))]
 </span><span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair <span class="kw">as </span>AuraPair;
 
-<span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
 </span><span class="kw">use crate</span>::{evm_tracing_types::EthApi <span class="kw">as </span>EthApiCmd, rpc::tracing};
 
 <span class="kw">pub use </span>local_runtime::RuntimeApi;
@@ -607,21 +593,11 @@
 </span><span class="kw">const </span>GRANDPA_JUSTIFICATION_PERIOD: u32 = <span class="number">512</span>;
 
 <span class="doccomment">/// Extra host functions
-</span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 </span><span class="kw">pub type </span>HostFunctions = (
     <span class="comment">// benchmarking host functions
     </span>frame_benchmarking::benchmarking::HostFunctions,
     <span class="comment">// evm tracing host functions
     </span>moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-    cumulus_client_service::storage_proof_size::HostFunctions,
-);
-
-<span class="doccomment">/// Extra host functions
-</span><span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
-</span><span class="kw">pub type </span>HostFunctions = (
-    <span class="comment">// evm tracing host functions
-    </span>moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-    cumulus_client_service::storage_proof_size::HostFunctions,
 );
 
 <span class="doccomment">/// Local runtime native executor.
@@ -685,17 +661,16 @@
     <span class="kw">let </span>executor = sc_service::new_native_or_wasm_executor(<span class="kw-2">&amp;</span>config);
 
     <span class="kw">let </span>(client, backend, keystore_container, task_manager) =
-        sc_service::new_full_parts_record_import::&lt;Block, RuntimeApi, <span class="kw">_</span>&gt;(
+        sc_service::new_full_parts::&lt;Block, RuntimeApi, <span class="kw">_</span>&gt;(
             config,
             telemetry.as_ref().map(|(<span class="kw">_</span>, telemetry)| telemetry.handle()),
             executor,
-            <span class="bool-val">true</span>,
         )<span class="question-mark">?</span>;
     <span class="kw">let </span>client = Arc::new(client);
     <span class="kw">let </span>telemetry = telemetry.map(|(worker, telemetry)| {
         task_manager
             .spawn_handle()
-            .spawn(<span class="string">"telemetry"</span>, <span class="prelude-val">None</span>, worker.run());
+            .spawn(<span class="string">&quot;telemetry&quot;</span>, <span class="prelude-val">None</span>, worker.run());
         telemetry
     });
     <span class="kw">let </span>select_chain = sc_consensus::LongestChain::new(backend.clone());
@@ -717,14 +692,14 @@
     <span class="kw">let </span>frontier_block_import =
         FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
 
-    <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
     </span><span class="kw">let </span>import_queue = sc_consensus_manual_seal::import_queue(
         Box::new(client.clone()),
         <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
         config.prometheus_registry(),
     );
 
-    <span class="attr">#[cfg(not(feature = <span class="string">"manual-seal"</span>))]
+    <span class="attr">#[cfg(not(feature = <span class="string">&quot;manual-seal&quot;</span>))]
     </span><span class="kw">let </span>import_queue = {
         <span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
         sc_consensus_aura::import_queue::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
@@ -770,7 +745,7 @@
 <span class="doccomment">/// Builds a new service.
 </span><span class="kw">pub fn </span>start_node(
     config: Configuration,
-    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)] </span>evm_tracing_config: <span class="kw">crate</span>::evm_tracing_types::EvmTracingConfig,
+    <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)] </span>evm_tracing_config: <span class="kw">crate</span>::evm_tracing_types::EvmTracingConfig,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt; {
     <span class="kw">let </span>sc_service::PartialComponents {
         client,
@@ -788,7 +763,7 @@
             .block_hash(<span class="number">0</span>)
             .ok()
             .flatten()
-            .expect(<span class="string">"Genesis block exists; qed"</span>),
+            .expect(<span class="string">&quot;Genesis block exists; qed&quot;</span>),
         <span class="kw-2">&amp;</span>config.chain_spec,
     );
     <span class="kw">let </span><span class="kw-2">mut </span>net_config = sc_network::config::FullNetworkConfiguration::new(<span class="kw-2">&amp;</span>config.network);
@@ -812,8 +787,8 @@
 
     <span class="kw">if </span>config.offchain_worker.enabled {
         task_manager.spawn_handle().spawn(
-            <span class="string">"offchain-workers-runner"</span>,
-            <span class="string">"offchain-work"</span>,
+            <span class="string">&quot;offchain-workers-runner&quot;</span>,
+            <span class="string">&quot;offchain-work&quot;</span>,
             sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
                 runtime_api_provider: client.clone(),
                 keystore: <span class="prelude-val">Some</span>(keystore_container.keystore()),
@@ -844,15 +819,14 @@
     &gt; = Default::default();
     <span class="kw">let </span>pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
 
-    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
     </span><span class="kw">let </span>ethapi_cmd = evm_tracing_config.ethapi.clone();
 
-    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
     </span><span class="kw">let </span>tracing_requesters =
         <span class="kw">if </span>ethapi_cmd.contains(<span class="kw-2">&amp;</span>EthApiCmd::Debug) || ethapi_cmd.contains(<span class="kw-2">&amp;</span>EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
                 <span class="kw-2">&amp;</span>evm_tracing_config,
-                config.prometheus_registry().cloned(),
                 tracing::SpawnTasksParams {
                     task_manager: <span class="kw-2">&amp;</span>task_manager,
                     client: client.clone(),
@@ -872,8 +846,8 @@
     <span class="comment">// Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
     </span>task_manager.spawn_essential_handle().spawn(
-        <span class="string">"frontier-mapping-sync-worker"</span>,
-        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
+        <span class="string">&quot;frontier-mapping-sync-worker&quot;</span>,
+        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
         fc_mapping_sync::kv::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(<span class="number">6</span>, <span class="number">0</span>),
@@ -894,8 +868,8 @@
     // Each filter is allowed to stay in the pool for 100 blocks.
     </span><span class="kw">const </span>FILTER_RETAIN_THRESHOLD: u64 = <span class="number">100</span>;
     task_manager.spawn_essential_handle().spawn(
-        <span class="string">"frontier-filter-pool"</span>,
-        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
+        <span class="string">&quot;frontier-filter-pool&quot;</span>,
+        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
         fc_rpc::EthTask::filter_pool_task(
             client.clone(),
             filter_pool.clone(),
@@ -905,8 +879,8 @@
 
     <span class="kw">const </span>FEE_HISTORY_LIMIT: u64 = <span class="number">2048</span>;
     task_manager.spawn_essential_handle().spawn(
-        <span class="string">"frontier-fee-history"</span>,
-        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
+        <span class="string">&quot;frontier-fee-history&quot;</span>,
+        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
         fc_rpc::EthTask::fee_history_task(
             client.clone(),
             overrides.clone(),
@@ -915,9 +889,9 @@
         ),
     );
 
-    <span class="attr">#[cfg(not(feature = <span class="string">"manual-seal"</span>))]
+    <span class="attr">#[cfg(not(feature = <span class="string">&quot;manual-seal&quot;</span>))]
     </span><span class="kw">let </span>force_authoring = config.force_authoring;
-    <span class="attr">#[cfg(not(feature = <span class="string">"manual-seal"</span>))]
+    <span class="attr">#[cfg(not(feature = <span class="string">&quot;manual-seal&quot;</span>))]
     </span><span class="kw">let </span>backoff_authoring_blocks: <span class="prelude-ty">Option</span>&lt;()&gt; = <span class="prelude-val">None</span>;
 
     <span class="kw">let </span>role = config.role.clone();
@@ -935,7 +909,7 @@
     ));
 
     <span class="comment">// Channel for the rpc handler to communicate with the authorship task.
-    </span><span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
     </span><span class="kw">let </span>(command_sink, commands_stream) = futures::channel::mpsc::channel(<span class="number">1024</span>);
 
     <span class="kw">let </span>rpc_extensions_builder = {
@@ -961,7 +935,7 @@
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
                 enable_evm_rpc: <span class="bool-val">true</span>, <span class="comment">// enable EVM RPC for dev node by default
-                </span><span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
+                </span><span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
                 </span>command_sink: <span class="prelude-val">Some</span>(command_sink.clone()),
             };
 
@@ -969,7 +943,7 @@
                 deps,
                 subscription,
                 pubsub_notification_sinks.clone(),
-                <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+                <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
                 </span><span class="kw">crate</span>::rpc::EvmTracingConfig {
                     tracing_requesters: tracing_requesters.clone(),
                     trace_filter_max_count: evm_tracing_config.ethapi_trace_max_count,
@@ -1006,7 +980,7 @@
 
         <span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
 
-        <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
         </span><span class="kw">let </span>aura = sc_consensus_manual_seal::run_manual_seal(
             sc_consensus_manual_seal::ManualSealParams {
                 block_import,
@@ -1032,7 +1006,7 @@
             },
         );
 
-        <span class="attr">#[cfg(not(feature = <span class="string">"manual-seal"</span>))]
+        <span class="attr">#[cfg(not(feature = <span class="string">&quot;manual-seal&quot;</span>))]
         </span><span class="kw">let </span>aura = sc_consensus_aura::start_aura::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
             sc_consensus_aura::StartAuraParams {
                 slot_duration,
@@ -1067,10 +1041,10 @@
         // fails we take down the service with it.
         </span>task_manager
             .spawn_essential_handle()
-            .spawn_blocking(<span class="string">"aura"</span>, <span class="prelude-val">Some</span>(<span class="string">"block-authoring"</span>), aura);
+            .spawn_blocking(<span class="string">&quot;aura&quot;</span>, <span class="prelude-val">Some</span>(<span class="string">&quot;block-authoring&quot;</span>), aura);
     }
 
-    <span class="comment">// if the node isn't actively participating in consensus then it doesn't
+    <span class="comment">// if the node isn&#39;t actively participating in consensus then it doesn&#39;t
     // need a keystore, regardless of which protocol we use below.
     </span><span class="kw">let </span>keystore = <span class="kw">if </span>role.is_authority() {
         <span class="prelude-val">Some</span>(keystore_container.keystore())
@@ -1113,7 +1087,7 @@
         <span class="comment">// the GRANDPA voter task is considered infallible, i.e.
         // if it fails we take down the service with it.
         </span>task_manager.spawn_essential_handle().spawn_blocking(
-            <span class="string">"grandpa-voter"</span>,
+            <span class="string">&quot;grandpa-voter&quot;</span>,
             <span class="prelude-val">None</span>,
             sc_consensus_grandpa::run_grandpa_voter(grandpa_config)<span class="question-mark">?</span>,
         );

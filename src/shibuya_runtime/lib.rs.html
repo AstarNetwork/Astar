@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../shibuya_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../shibuya_runtime/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -2547,35 +2545,6 @@
 <a href="#2545" id="2545">2545</a>
 <a href="#2546" id="2546">2546</a>
 <a href="#2547" id="2547">2547</a>
-<a href="#2548" id="2548">2548</a>
-<a href="#2549" id="2549">2549</a>
-<a href="#2550" id="2550">2550</a>
-<a href="#2551" id="2551">2551</a>
-<a href="#2552" id="2552">2552</a>
-<a href="#2553" id="2553">2553</a>
-<a href="#2554" id="2554">2554</a>
-<a href="#2555" id="2555">2555</a>
-<a href="#2556" id="2556">2556</a>
-<a href="#2557" id="2557">2557</a>
-<a href="#2558" id="2558">2558</a>
-<a href="#2559" id="2559">2559</a>
-<a href="#2560" id="2560">2560</a>
-<a href="#2561" id="2561">2561</a>
-<a href="#2562" id="2562">2562</a>
-<a href="#2563" id="2563">2563</a>
-<a href="#2564" id="2564">2564</a>
-<a href="#2565" id="2565">2565</a>
-<a href="#2566" id="2566">2566</a>
-<a href="#2567" id="2567">2567</a>
-<a href="#2568" id="2568">2568</a>
-<a href="#2569" id="2569">2569</a>
-<a href="#2570" id="2570">2570</a>
-<a href="#2571" id="2571">2571</a>
-<a href="#2572" id="2572">2572</a>
-<a href="#2573" id="2573">2573</a>
-<a href="#2574" id="2574">2574</a>
-<a href="#2575" id="2575">2575</a>
-<a href="#2576" id="2576">2576</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2596,9 +2565,9 @@
 
 </span><span class="doccomment">//! The Shibuya Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 512.
-</span><span class="attr">#![recursion_limit = <span class="string">"512"</span>]
+</span><span class="attr">#![recursion_limit = <span class="string">&quot;512&quot;</span>]
 
 </span><span class="kw">use </span>cumulus_pallet_parachain_system::AnyRelayNumber;
 <span class="kw">use </span>cumulus_primitives_core::AggregateMessageOrigin;
@@ -2664,7 +2633,7 @@
         MainCouncilMembershipInst, MainTreasuryInst, OracleMembershipInst,
         TechnicalCommitteeCollectiveInst, TechnicalCommitteeMembershipInst,
     },
-    oracle::{CurrencyId, DummyCombineData, Price},
+    oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -2677,7 +2646,7 @@
 
 <span class="kw">use </span>pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
-<span class="attr">#[cfg(any(feature = <span class="string">"std"</span>, test))]
+<span class="attr">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, test))]
 </span><span class="kw">use </span>sp_version::NativeVersion;
 <span class="kw">use </span>sp_version::RuntimeVersion;
 
@@ -2685,7 +2654,7 @@
 <span class="kw">pub use </span>pallet_balances::Call <span class="kw">as </span>BalancesCall;
 <span class="kw">use </span>parachains_common::message_queue::NarrowOriginToSibling;
 <span class="kw">pub use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
-<span class="attr">#[cfg(any(feature = <span class="string">"std"</span>, test))]
+<span class="attr">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, test))]
 </span><span class="kw">pub use </span>sp_runtime::BuildStorage;
 
 <span class="kw">mod </span>chain_extensions;
@@ -2715,7 +2684,7 @@
 <span class="doccomment">/// Charge fee for stored bytes and items as part of `pallet-contracts`.
 ///
 /// The slight difference to general `deposit` function is because there is fixed bound on how large the DB
-/// key can grow so it doesn't make sense to have as high deposit per item as in the general approach.
+/// key can grow so it doesn&#39;t make sense to have as high deposit per item as in the general approach.
 </span><span class="kw">pub const fn </span>contracts_deposit(items: u32, bytes: u32) -&gt; Balance {
     items <span class="kw">as </span>Balance * <span class="number">40 </span>* MICROSBY + (bytes <span class="kw">as </span>Balance) * STORAGE_BYTE_FEE
 }
@@ -2748,24 +2717,24 @@
 }
 
 <span class="comment">// Make the WASM binary available.
-</span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
-</span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">"OUT_DIR"</span>), <span class="string">"/wasm_binary.rs"</span>));
+</span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
 
-<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="doccomment">/// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
-</span><span class="kw">pub fn </span>wasm_binary_unwrap() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[u8] {
+</span><span class="kw">pub fn </span>wasm_binary_unwrap() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[u8] {
     WASM_BINARY.expect(
-        <span class="string">"Development wasm binary is not available. This means the client is \
+        <span class="string">&quot;Development wasm binary is not available. This means the client is \
                         built with `BUILD_DUMMY_WASM_BINARY` flag and it is only usable for \
-                        production chains. Please rebuild with the flag disabled."</span>,
+                        production chains. Please rebuild with the flag disabled.&quot;</span>,
     )
 }
 
 <span class="doccomment">/// Runtime version.
 </span><span class="attr">#[sp_version::runtime_version]
 </span><span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">"shibuya"</span>),
-    impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">"shibuya"</span>),
+    spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
+    impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     authoring_version: <span class="number">1</span>,
     spec_version: <span class="number">132</span>,
     impl_version: <span class="number">0</span>,
@@ -2775,7 +2744,7 @@
 };
 
 <span class="doccomment">/// Native version.
-</span><span class="attr">#[cfg(any(feature = <span class="string">"std"</span>, test))]
+</span><span class="attr">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, test))]
 </span><span class="kw">pub fn </span>native_version() -&gt; NativeVersion {
     NativeVersion {
         runtime_version: VERSION,
@@ -2831,7 +2800,7 @@
     <span class="kw">fn </span>contains(call: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
         <span class="kw">match </span>call {
             <span class="comment">// Filter permission-less assets creation/destroying.
-            // Custom asset's `id` should fit in `u32` as not to mix with service assets.
+            // Custom asset&#39;s `id` should fit in `u32` as not to mix with service assets.
             </span>RuntimeCall::Assets(method) =&gt; <span class="kw">match </span>method {
                 pallet_assets::Call::create { id, .. } =&gt; <span class="kw-2">*</span>id &lt; (u32::MAX <span class="kw">as </span>AssetId).into(),
 
@@ -2869,8 +2838,6 @@
     </span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="doccomment">/// The ubiquitous origin type.
     </span><span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
-    <span class="doccomment">/// The aggregated RuntimeTask type.
-    </span><span class="kw">type </span>RuntimeTask = RuntimeTask;
     <span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     </span><span class="kw">type </span>BlockHashCount = BlockHashCount;
     <span class="doccomment">/// Runtime version.
@@ -2888,11 +2855,6 @@
     <span class="kw">type </span>SS58Prefix = SS58Prefix;
     <span class="kw">type </span>OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>MaxConsumers = frame_support::traits::ConstU32&lt;<span class="number">16</span>&gt;;
-    <span class="kw">type </span>SingleBlockMigrations = ();
-    <span class="kw">type </span>MultiBlockMigrator = ();
-    <span class="kw">type </span>PreInherents = ();
-    <span class="kw">type </span>PostInherents = ();
-    <span class="kw">type </span>PostTransactions = ();
 }
 
 <span class="macro">parameter_types! </span>{
@@ -2930,12 +2892,6 @@
     <span class="kw">type </span>Slashed = ();
     <span class="kw">type </span>ForceOrigin = EnsureRoot&lt;AccountId&gt;;
     <span class="kw">type </span>RegistrarOrigin = EnsureRoot&lt;AccountId&gt;;
-    <span class="kw">type </span>OffchainSignature = Signature;
-    <span class="kw">type </span>SigningPublicKey = &lt;Signature <span class="kw">as </span>sp_runtime::traits::Verify&gt;::Signer;
-    <span class="kw">type </span>UsernameAuthorityOrigin = EnsureRoot&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;;
-    <span class="kw">type </span>PendingUsernameExpiration = ConstU32&lt;{ <span class="number">7 </span>* DAYS }&gt;;
-    <span class="kw">type </span>MaxSuffixLength = ConstU32&lt;<span class="number">7</span>&gt;;
-    <span class="kw">type </span>MaxUsernameLength = ConstU32&lt;<span class="number">32</span>&gt;;
     <span class="kw">type </span>WeightInfo = pallet_identity::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
@@ -2992,11 +2948,11 @@
     &gt;;
 }
 
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">pub struct </span>DAppStakingBenchmarkHelper&lt;SC, ACC&gt;(sp_std::marker::PhantomData&lt;(SC, ACC)&gt;);
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">pub struct </span>BenchmarkHelper&lt;SC, ACC&gt;(sp_std::marker::PhantomData&lt;(SC, ACC)&gt;);
+<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">impl </span>pallet_dapp_staking_v3::BenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;
-    <span class="kw">for </span>DAppStakingBenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;
+    <span class="kw">for </span>BenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;
 {
     <span class="kw">fn </span>get_smart_contract(id: u32) -&gt; SmartContract&lt;AccountId&gt; {
         <span class="kw">let </span>id_bytes = id.to_le_bytes();
@@ -3009,7 +2965,7 @@
     <span class="kw">fn </span>set_balance(account: <span class="kw-2">&amp;</span>AccountId, amount: Balance) {
         <span class="kw">use </span>frame_support::traits::fungible::Unbalanced <span class="kw">as </span>FunUnbalanced;
         Balances::write_balance(account, amount)
-            .expect(<span class="string">"Must succeed in test/benchmark environment."</span>);
+            .expect(<span class="string">&quot;Must succeed in test/benchmark environment.&quot;</span>);
     }
 }
 
@@ -3051,8 +3007,8 @@
     <span class="kw">type </span>NumberOfTiers = ConstU32&lt;<span class="number">4</span>&gt;;
     <span class="kw">type </span>RankingEnabled = ConstBool&lt;<span class="bool-val">true</span>&gt;;
     <span class="kw">type </span>WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight&lt;Runtime&gt;;
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-    </span><span class="kw">type </span>BenchmarkHelper = DAppStakingBenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;;
+    <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+    </span><span class="kw">type </span>BenchmarkHelper = BenchmarkHelper&lt;SmartContract&lt;AccountId&gt;, AccountId&gt;;
 }
 
 <span class="kw">pub struct </span>InflationPayoutPerBlock;
@@ -3115,7 +3071,7 @@
     <span class="kw">type </span>ReservedDmpWeight = ReservedDmpWeight;
     <span class="kw">type </span>XcmpMessageHandler = XcmpQueue;
     <span class="kw">type </span>ReservedXcmpWeight = ReservedXcmpWeight;
-    <span class="comment">// Shibuya is subject to relay changes so we don't enforce increasing relay number
+    <span class="comment">// Shibuya is subject to relay changes so we don&#39;t enforce increasing relay number
     </span><span class="kw">type </span>CheckAssociatedRelayNumber = AnyRelayNumber;
     <span class="kw">type </span>WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight&lt;Runtime&gt;;
 }
@@ -3161,7 +3117,7 @@
 }
 
 <span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>PotId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b"PotStake"</span>);
+    <span class="kw">pub const </span>PotId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b&quot;PotStake&quot;</span>);
     <span class="kw">pub const </span>MaxCandidates: u32 = <span class="number">148</span>;
     <span class="kw">pub const </span>MinCandidates: u32 = <span class="number">5</span>;
     <span class="kw">pub const </span>MaxInvulnerables: u32 = <span class="number">48</span>;
@@ -3196,8 +3152,8 @@
 }
 
 <span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>TreasuryPalletId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b"py/trsry"</span>);
-    <span class="kw">pub const </span>DappsStakingPalletId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b"py/dpsst"</span>);
+    <span class="kw">pub const </span>TreasuryPalletId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b&quot;py/trsry&quot;</span>);
+    <span class="kw">pub const </span>DappsStakingPalletId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b&quot;py/dpsst&quot;</span>);
     <span class="kw">pub </span>TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
@@ -3230,6 +3186,7 @@
     <span class="kw">type </span>RuntimeHoldReason = RuntimeHoldReason;
     <span class="kw">type </span>RuntimeFreezeReason = RuntimeFreezeReason;
     <span class="kw">type </span>FreezeIdentifier = RuntimeFreezeReason;
+    <span class="kw">type </span>MaxHolds = ConstU32&lt;<span class="number">2</span>&gt;;
     <span class="kw">type </span>MaxFreezes = ConstU32&lt;<span class="number">1</span>&gt;;
 }
 
@@ -3262,7 +3219,7 @@
     <span class="kw">type </span>RemoveItemsLimit = ConstU32&lt;<span class="number">1000</span>&gt;;
     <span class="kw">type </span>AssetIdParameter = Compact&lt;AssetId&gt;;
     <span class="kw">type </span>CallbackHandle = EvmRevertCodeHandler&lt;<span class="self">Self</span>, <span class="self">Self</span>&gt;;
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">type </span>BenchmarkHelper = astar_primitives::benchmarks::AssetsBenchmarkHelper;
 }
 
@@ -3279,7 +3236,6 @@
     <span class="kw">type </span>MinVestedTransfer = MinVestedTransfer;
     <span class="kw">type </span>WeightInfo = pallet_vesting::weights::SubstrateWeight&lt;Runtime&gt;;
     <span class="kw">type </span>UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
-    <span class="kw">type </span>BlockNumberProvider = System;
     <span class="comment">// `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
     // highest number of schedules that encodes less than 2^10.
     </span><span class="kw">const </span>MAX_VESTING_SCHEDULES: u32 = <span class="number">28</span>;
@@ -3328,9 +3284,6 @@
     <span class="kw">type </span>Environment = ();
     <span class="kw">type </span>Migrations = ();
     <span class="kw">type </span>Xcm = ();
-    <span class="kw">type </span>UploadOrigin = EnsureSigned&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;;
-    <span class="kw">type </span>InstantiateOrigin = EnsureSigned&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;;
-    <span class="kw">type </span>ApiVersion = ();
 }
 
 <span class="comment">// These values are based on the Astar 2.0 Tokenomics Modeling report.
@@ -3345,7 +3298,7 @@
 </span>}
 
 <span class="doccomment">/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
-/// node's balance type.
+/// node&#39;s balance type.
 ///
 /// This should typically create a mapping between the following ranges:
 ///   - [0, MAXIMUM_BLOCK_WEIGHT]
@@ -3475,9 +3428,9 @@
 
 <span class="kw">pub struct </span>FindAuthorTruncated&lt;F&gt;(sp_std::marker::PhantomData&lt;F&gt;);
 <span class="kw">impl</span>&lt;F: FindAuthor&lt;u32&gt;&gt; FindAuthor&lt;H160&gt; <span class="kw">for </span>FindAuthorTruncated&lt;F&gt; {
-    <span class="kw">fn </span>find_author&lt;<span class="lifetime">'a</span>, I&gt;(digests: I) -&gt; <span class="prelude-ty">Option</span>&lt;H160&gt;
+    <span class="kw">fn </span>find_author&lt;<span class="lifetime">&#39;a</span>, I&gt;(digests: I) -&gt; <span class="prelude-ty">Option</span>&lt;H160&gt;
     <span class="kw">where
-        </span>I: <span class="lifetime">'a </span>+ IntoIterator&lt;Item = (ConsensusEngineId, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8])&gt;,
+        </span>I: <span class="lifetime">&#39;a </span>+ IntoIterator&lt;Item = (ConsensusEngineId, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8])&gt;,
     {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(author_index) = F::find_author(digests) {
             <span class="kw">let </span>authority_id = Aura::authorities()[author_index <span class="kw">as </span>usize].clone();
@@ -3725,11 +3678,11 @@
 <span class="kw">impl </span>pallet_message_queue::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>RuntimeEvent = RuntimeEvent;
     <span class="kw">type </span>WeightInfo = pallet_message_queue::weights::SubstrateWeight&lt;Runtime&gt;;
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">type </span>MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor&lt;
         cumulus_primitives_core::AggregateMessageOrigin,
     &gt;;
-    <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
+    <span class="attr">#[cfg(not(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
     </span><span class="kw">type </span>MessageProcessor = xcm_builder::ProcessXcmMessage&lt;
         AggregateMessageOrigin,
         xcm_executor::XcmExecutor&lt;xcm_config::XcmConfig&gt;,
@@ -3758,7 +3711,7 @@
 }
 
 <span class="macro">parameter_types! </span>{
-    <span class="comment">// Of course it's not true for Shibuya, but SBY is worthless, a test token.
+    <span class="comment">// Of course it&#39;s not true for Shibuya, but SBY is worthless, a test token.
     </span><span class="kw">pub const </span>NativeCurrencyId: CurrencyId = CurrencyId::ASTR;
     <span class="comment">// Aggregate values for one day.
     </span><span class="kw">pub const </span>AggregationDuration: BlockNumber = <span class="number">7200</span>;
@@ -3775,19 +3728,6 @@
     <span class="kw">type </span>WeightInfo = pallet_price_aggregator::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">pub struct </span>OracleBenchmarkHelper;
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">impl </span>orml_oracle::BenchmarkHelper&lt;CurrencyId, Price, ConstU32&lt;<span class="number">2</span>&gt;&gt; <span class="kw">for </span>OracleBenchmarkHelper {
-    <span class="kw">fn </span>get_currency_id_value_pairs() -&gt; sp_runtime::BoundedVec&lt;(CurrencyId, Price), ConstU32&lt;<span class="number">2</span>&gt;&gt; {
-        sp_runtime::BoundedVec::try_from(<span class="macro">vec!</span>[
-            (CurrencyId::ASTR, Price::from_rational(<span class="number">15</span>, <span class="number">100</span>)),
-            (CurrencyId::ASTR, Price::from_rational(<span class="number">15</span>, <span class="number">100</span>)),
-        ])
-        .expect(<span class="string">"out of bounds"</span>)
-    }
-}
-
 <span class="macro">parameter_types! </span>{
     <span class="comment">// Cannot specify `Root` so need to do it like this, unfortunately.
     </span><span class="kw">pub </span>RootOperatorAccountId: AccountId = AccountId::from([<span class="number">0xffu8</span>; <span class="number">32</span>]);
@@ -3799,20 +3739,15 @@
     <span class="kw">type </span>CombineData = DummyCombineData&lt;Runtime&gt;;
     <span class="kw">type </span>Time = Timestamp;
     <span class="kw">type </span>OracleKey = CurrencyId;
-    <span class="kw">type </span>OracleValue = Price;
+    <span class="kw">type </span>OracleValue = CurrencyAmount;
     <span class="kw">type </span>RootOperatorAccountId = RootOperatorAccountId;
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-    </span><span class="kw">type </span>Members = OracleMembershipWrapper;
-    <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
-    </span><span class="kw">type </span>Members = OracleMembership;
+    <span class="kw">type </span>Members = OracleMembership;
     <span class="kw">type </span>MaxHasDispatchedSize = ConstU32&lt;<span class="number">8</span>&gt;;
-    <span class="kw">type </span>WeightInfo = weights::orml_oracle::SubstrateWeight&lt;Runtime&gt;;
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+    <span class="kw">type </span>WeightInfo = oracle_benchmarks::weights::SubstrateWeight&lt;Runtime&gt;;
+    <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">type </span>MaxFeedValues = ConstU32&lt;<span class="number">2</span>&gt;;
-    <span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
+    <span class="attr">#[cfg(not(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
     </span><span class="kw">type </span>MaxFeedValues = ConstU32&lt;<span class="number">1</span>&gt;;
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-    </span><span class="kw">type </span>BenchmarkHelper = OracleBenchmarkHelper;
 }
 
 <span class="kw">impl </span>pallet_membership::Config&lt;OracleMembershipInst&gt; <span class="kw">for </span>Runtime {
@@ -3829,22 +3764,33 @@
     <span class="kw">type </span>WeightInfo = pallet_membership::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="doccomment">/// OracleMembership wrapper used by benchmarks
-</span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">pub struct </span>OracleMembershipWrapper;
-
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">impl </span>frame_support::traits::SortedMembers&lt;AccountId&gt; <span class="kw">for </span>OracleMembershipWrapper {
-    <span class="kw">fn </span>sorted_members() -&gt; Vec&lt;AccountId&gt; {
-        OracleMembership::sorted_members()
+<span class="comment">// The oracle-benchmarks pallet should be removed once we uplift to high enough version
+// (assumption is `polkadot-v1.10.0`) to have access to normal oracle pallet benchmarks).
+//
+// The pallet is stateless so in order to remove it, only code needs to be cleaned up.
+</span><span class="kw">pub struct </span>DummyKeyPairValue;
+<span class="kw">impl </span>Get&lt;(CurrencyId, CurrencyAmount)&gt; <span class="kw">for </span>DummyKeyPairValue {
+    <span class="kw">fn </span>get() -&gt; (CurrencyId, CurrencyAmount) {
+        (CurrencyId::ASTR, CurrencyAmount::from_rational(<span class="number">15</span>, <span class="number">100</span>))
     }
-
-    <span class="kw">fn </span>add(account: <span class="kw-2">&amp;</span>AccountId) {
-        <span class="macro">frame_support::assert_ok!</span>(OracleMembership::add_member(
-            frame_system::RawOrigin::Root.into(),
-            account.to_owned().into()
-        ));
+}
+<span class="kw">pub struct </span>AddMemberBenchmark;
+<span class="kw">impl </span>oracle_benchmarks::AddMember&lt;AccountId&gt; <span class="kw">for </span>AddMemberBenchmark {
+    <span class="kw">fn </span>add_member(account: AccountId) {
+        <span class="kw">use </span>frame_support::assert_ok;
+        <span class="kw">use </span>frame_system::RawOrigin;
+        <span class="macro">assert_ok!</span>(
+            pallet_membership::Pallet::&lt;Runtime, OracleMembershipInst&gt;::add_member(
+                RawOrigin::Root.into(),
+                account.into()
+            )
+        );
     }
+}
+
+<span class="kw">impl </span>oracle_benchmarks::Config <span class="kw">for </span>Runtime {
+    <span class="kw">type </span>BenchmarkCurrencyIdValuePair = DummyKeyPairValue;
+    <span class="kw">type </span>AddMember = AddMemberBenchmark;
 }
 
 <span class="macro">parameter_types! </span>{
@@ -3951,11 +3897,11 @@
     <span class="kw">type </span>MaxDeposits = ConstU32&lt;<span class="number">128</span>&gt;;
     <span class="kw">type </span>MaxBlacklisted = ConstU32&lt;<span class="number">128</span>&gt;;
 
-    <span class="doccomment">/// A two third majority of the Council can choose the next external "super majority approve" proposal.
+    <span class="doccomment">/// A two third majority of the Council can choose the next external &quot;super majority approve&quot; proposal.
     </span><span class="kw">type </span>ExternalOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="doccomment">/// A two third majority of the Council can choose the next external "majority approve" proposal. Also bypasses blacklist filter.
+    <span class="doccomment">/// A two third majority of the Council can choose the next external &quot;majority approve&quot; proposal. Also bypasses blacklist filter.
     </span><span class="kw">type </span>ExternalMajorityOrigin = EnsureRootOrTwoThirdsMainCouncil;
-    <span class="doccomment">/// Unanimous approval of the Council can choose the next external "super majority against" proposal.
+    <span class="doccomment">/// Unanimous approval of the Council can choose the next external &quot;super majority against&quot; proposal.
     </span><span class="kw">type </span>ExternalDefaultOrigin = EnsureRootOrAllMainCouncil;
     <span class="doccomment">/// A two third majority of the Technical Committee can have an external proposal tabled immediately
     /// for a _fast track_ vote, and a custom enactment period.
@@ -3971,7 +3917,7 @@
     </span><span class="kw">type </span>BlacklistOrigin = EnsureRoot&lt;AccountId&gt;;
     <span class="doccomment">/// An unanimous Technical Committee can cancel a public proposal, slashing the deposit(s).
     </span><span class="kw">type </span>CancelProposalOrigin = EnsureRootOrAllTechnicalCommittee;
-    <span class="doccomment">/// Any member of the Technical Committee can veto Council's proposal. This can be only done once per proposal, and _veto_ lasts for a _cooloff_ period.
+    <span class="doccomment">/// Any member of the Technical Committee can veto Council&#39;s proposal. This can be only done once per proposal, and _veto_ lasts for a _cooloff_ period.
     </span><span class="kw">type </span>VetoOrigin = pallet_collective::EnsureMember&lt;AccountId, TechnicalCommitteeCollectiveInst&gt;;
 
     <span class="kw">type </span>SubmitOrigin = EnsureSigned&lt;AccountId&gt;;
@@ -4002,7 +3948,7 @@
     <span class="kw">type </span>ProposalBondMaximum = ConstU128&lt;{ <span class="number">10000 </span>* SBY }&gt;;
     <span class="kw">type </span>SpendPeriod = ConstU32&lt;{ <span class="number">3 </span>* DAYS }&gt;;
 
-    <span class="comment">// We don't do periodic burns of the treasury
+    <span class="comment">// We don&#39;t do periodic burns of the treasury
     </span><span class="kw">type </span>Burn = ();
     <span class="kw">type </span>BurnDestination = ();
     <span class="kw">type </span>SpendFunds = ();
@@ -4016,15 +3962,15 @@
 
     <span class="comment">// New approach to using treasury, useful for OpenGov but not necessarily for us.
     </span><span class="kw">type </span>SpendOrigin = frame_support::traits::NeverEnsureOrigin&lt;Balance&gt;;
-    <span class="comment">// Only used by 'spend' approach which is disabled
+    <span class="comment">// Only used by &#39;spend&#39; approach which is disabled
     </span><span class="kw">type </span>PayoutPeriod = ConstU32&lt;<span class="number">0</span>&gt;;
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">type </span>BenchmarkHelper = ();
     <span class="kw">type </span>WeightInfo = pallet_treasury::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>CommunityTreasuryPalletId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b"py/comtr"</span>);
+    <span class="kw">pub const </span>CommunityTreasuryPalletId: PalletId = PalletId(<span class="kw-2">*</span><span class="string">b&quot;py/comtr&quot;</span>);
 }
 
 <span class="kw">impl </span>pallet_treasury::Config&lt;CommunityTreasuryInst&gt; <span class="kw">for </span>Runtime {
@@ -4042,7 +3988,7 @@
     <span class="kw">type </span>ProposalBondMaximum = ConstU128&lt;{ <span class="number">10000 </span>* SBY }&gt;;
     <span class="kw">type </span>SpendPeriod = ConstU32&lt;{ <span class="number">3 </span>* DAYS }&gt;;
 
-    <span class="comment">// We don't do periodic burns of the community treasury
+    <span class="comment">// We don&#39;t do periodic burns of the community treasury
     </span><span class="kw">type </span>Burn = ();
     <span class="kw">type </span>BurnDestination = ();
     <span class="kw">type </span>SpendFunds = ();
@@ -4056,9 +4002,9 @@
 
     <span class="comment">// New approach to using treasury, useful for OpenGov but not necessarily for us.
     </span><span class="kw">type </span>SpendOrigin = frame_support::traits::NeverEnsureOrigin&lt;Balance&gt;;
-    <span class="comment">// Only used by 'spend' approach which is disabled
+    <span class="comment">// Only used by &#39;spend&#39; approach which is disabled
     </span><span class="kw">type </span>PayoutPeriod = ConstU32&lt;<span class="number">0</span>&gt;;
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">type </span>BenchmarkHelper = ();
     <span class="kw">type </span>WeightInfo = pallet_treasury::weights::SubstrateWeight&lt;Runtime&gt;;
 }
@@ -4153,6 +4099,9 @@
         Treasury: pallet_treasury::&lt;Instance1&gt; = <span class="number">107</span>,
         CommunityTreasury: pallet_treasury::&lt;Instance2&gt; = <span class="number">108</span>,
         CollectiveProxy: pallet_collective_proxy = <span class="number">109</span>,
+
+        <span class="comment">// Remove after benchmarks are available in orml_oracle
+        </span>OracleBenchmarks: oracle_benchmarks = <span class="number">251</span>,
     }
 );
 
@@ -4171,7 +4120,6 @@
     frame_system::CheckNonce&lt;Runtime&gt;,
     frame_system::CheckWeight&lt;Runtime&gt;,
     pallet_transaction_payment::ChargeTransactionPayment&lt;Runtime&gt;,
-    frame_metadata_hash_extension::CheckMetadataHash&lt;Runtime&gt;,
 );
 <span class="doccomment">/// Unchecked extrinsic type as expected by this runtime.
 </span><span class="kw">pub type </span>UncheckedExtrinsic =
@@ -4195,14 +4143,48 @@
 ///
 /// Once done, migrations should be removed from the tuple.
 </span><span class="kw">pub type </span>Migrations = (
+    GovernancePalletsVersionSetting,
     cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4&lt;Runtime&gt;,
-    <span class="comment">// permanent migration, do not remove
-    </span>pallet_xcm::migration::MigrateToLatestXcmVersion&lt;Runtime&gt;,
-    <span class="comment">// XCM V3 -&gt; V4
-    </span>pallet_xc_asset_config::migrations::versioned::V2ToV3&lt;Runtime&gt;,
-    pallet_identity::migration::versioned::V0ToV1&lt;Runtime, <span class="number">250</span>&gt;,
-    pallet_unified_accounts::migration::ClearCorruptedUnifiedMappings&lt;Runtime&gt;,
 );
+
+<span class="kw">use </span>frame_support::traits::{GetStorageVersion, OnRuntimeUpgrade};
+<span class="kw">pub struct </span>GovernancePalletsVersionSetting;
+<span class="kw">impl </span>OnRuntimeUpgrade <span class="kw">for </span>GovernancePalletsVersionSetting {
+    <span class="kw">fn </span>on_runtime_upgrade() -&gt; Weight {
+        <span class="comment">// 1. Membership pallet instances
+        </span><span class="kw">let </span>membership_storage_version = pallet_membership::Pallet::&lt;
+            Runtime,
+            MainCouncilMembershipInst,
+        &gt;::current_storage_version();
+
+        membership_storage_version
+            .put::&lt;pallet_membership::Pallet&lt;Runtime, MainCouncilMembershipInst&gt;&gt;();
+        membership_storage_version
+            .put::&lt;pallet_membership::Pallet&lt;Runtime, TechnicalCommitteeCollectiveInst&gt;&gt;();
+        membership_storage_version
+            .put::&lt;pallet_membership::Pallet&lt;Runtime, CommunityCouncilMembershipInst&gt;&gt;();
+
+        <span class="comment">// 2. Collective pallet instances
+        </span><span class="kw">let </span>collective_storage_version = pallet_collective::Pallet::&lt;
+            Runtime,
+            MainCouncilCollectiveInst,
+        &gt;::current_storage_version();
+
+        collective_storage_version
+            .put::&lt;pallet_collective::Pallet&lt;Runtime, MainCouncilCollectiveInst&gt;&gt;();
+        collective_storage_version
+            .put::&lt;pallet_collective::Pallet&lt;Runtime, TechnicalCommitteeCollectiveInst&gt;&gt;();
+        collective_storage_version
+            .put::&lt;pallet_collective::Pallet&lt;Runtime, CommunityCouncilCollectiveInst&gt;&gt;();
+
+        <span class="comment">// 3. Democracy pallet
+        </span><span class="kw">let </span>democracy_storage_version =
+            pallet_democracy::Pallet::&lt;Runtime&gt;::current_storage_version();
+        democracy_storage_version.put::&lt;pallet_democracy::Pallet&lt;Runtime&gt;&gt;();
+
+        &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::DbWeight::get().writes(<span class="number">7</span>)
+    }
+}
 
 <span class="kw">type </span>EventRecord = frame_system::EventRecord&lt;
     &lt;Runtime <span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent,
@@ -4267,16 +4249,16 @@
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 #[macro_use]
 </span><span class="kw">extern crate </span>frame_benchmarking;
 
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">mod </span>benches {
     <span class="macro">define_benchmarks!</span>(
         [frame_benchmarking, BaselineBench::&lt;Runtime&gt;]
         [frame_system, SystemBench::&lt;Runtime&gt;]
-        [pallet_assets, pallet_assets::Pallet::&lt;Runtime&gt;]
+        [pallet_assets, Assets]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapp_staking_v3, DappStaking]
@@ -4292,8 +4274,8 @@
         [xcm_benchmarks_fungible, XcmFungible]
         [pallet_price_aggregator, PriceAggregator]
         [pallet_membership, OracleMembership]
+        [oracle_benchmarks, OracleBenchmarks]
         [pallet_collective_proxy, CollectiveProxy]
-        [orml_oracle, Oracle]
     );
 }
 
@@ -4307,7 +4289,7 @@
             Executive::execute_block(block)
         }
 
-        <span class="kw">fn </span>initialize_block(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) -&gt; sp_runtime::ExtrinsicInclusionMode {
+        <span class="kw">fn </span>initialize_block(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
             Executive::initialize_block(header)
         }
     }
@@ -4488,7 +4470,7 @@
             <span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
             <span class="kw">let </span>validate = <span class="bool-val">true</span>;
 
-            <span class="comment">// Reused approach from Moonbeam since Frontier implementation doesn't support this
+            <span class="comment">// Reused approach from Moonbeam since Frontier implementation doesn&#39;t support this
             </span><span class="kw">let </span><span class="kw-2">mut </span>estimated_transaction_len = data.len() +
                 <span class="comment">// to: 20
                 // from: 20
@@ -4566,7 +4548,7 @@
             <span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
             <span class="kw">let </span>validate = <span class="bool-val">true</span>;
 
-            <span class="comment">// Reused approach from Moonbeam since Frontier implementation doesn't support this
+            <span class="comment">// Reused approach from Moonbeam since Frontier implementation doesn&#39;t support this
             </span><span class="kw">let </span><span class="kw-2">mut </span>estimated_transaction_len = data.len() +
                 <span class="comment">// to: 20
                 // from: 20
@@ -4784,7 +4766,7 @@
         }
     }
 
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">impl </span>frame_benchmarking::Benchmark&lt;Block&gt; <span class="kw">for </span>Runtime {
         <span class="kw">fn </span>benchmark_metadata(extra: bool) -&gt; (
             Vec&lt;frame_benchmarking::BenchmarkList&gt;,
@@ -4823,56 +4805,27 @@
             <span class="kw">impl </span>frame_system_benchmarking::Config <span class="kw">for </span>Runtime {}
             <span class="kw">impl </span>baseline::Config <span class="kw">for </span>Runtime {}
             <span class="kw">use </span>pallet_xcm::benchmarking::Pallet <span class="kw">as </span>PalletXcmExtrinsicsBenchmark;
-
-            <span class="kw">pub struct </span>TestDeliveryHelper;
-            <span class="kw">impl </span>xcm_builder::EnsureDelivery <span class="kw">for </span>TestDeliveryHelper {
-                <span class="kw">fn </span>ensure_successful_delivery(
-                    origin_ref: <span class="kw-2">&amp;</span>Location,
-                    _dest: <span class="kw-2">&amp;</span>Location,
-                    _fee_reason: xcm_executor::traits::FeeReason,
-                ) -&gt; (<span class="prelude-ty">Option</span>&lt;xcm_executor::FeesMode&gt;, <span class="prelude-ty">Option</span>&lt;Assets&gt;) {
-                    <span class="kw">use </span>xcm_executor::traits::ConvertLocation;
-                    <span class="kw">let </span>account = xcm_config::LocationToAccountId::convert_location(origin_ref)
-                        .expect(<span class="string">"Invalid location"</span>);
-                    <span class="comment">// Give the existential deposit at least
-                    </span><span class="kw">let </span>balance = ExistentialDeposit::get();
-                    <span class="kw">let _ </span>= &lt;Balances <span class="kw">as </span>frame_support::traits::Currency&lt;<span class="kw">_</span>&gt;&gt;::
-                        make_free_balance_be(<span class="kw-2">&amp;</span>account.into(), balance);
-
-                    (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
-                }
-            }
-
             <span class="kw">impl </span>pallet_xcm::benchmarking::Config <span class="kw">for </span>Runtime {
-                <span class="kw">type </span>DeliveryHelper = TestDeliveryHelper;
-
-                <span class="kw">fn </span>reachable_dest() -&gt; <span class="prelude-ty">Option</span>&lt;Location&gt; {
+                <span class="kw">fn </span>reachable_dest() -&gt; <span class="prelude-ty">Option</span>&lt;MultiLocation&gt; {
                     <span class="prelude-val">Some</span>(Parent.into())
                 }
 
-                <span class="kw">fn </span>teleportable_asset_and_dest() -&gt; <span class="prelude-ty">Option</span>&lt;(Asset, Location)&gt; {
+                <span class="kw">fn </span>teleportable_asset_and_dest() -&gt; <span class="prelude-ty">Option</span>&lt;(MultiAsset, MultiLocation)&gt; {
                     <span class="prelude-val">None
                 </span>}
 
-                <span class="kw">fn </span>reserve_transferable_asset_and_dest() -&gt; <span class="prelude-ty">Option</span>&lt;(Asset, Location)&gt; {
+                <span class="kw">fn </span>reserve_transferable_asset_and_dest() -&gt; <span class="prelude-ty">Option</span>&lt;(MultiAsset, MultiLocation)&gt; {
                     <span class="kw">let </span>random_para_id = <span class="number">43211234</span>;
                     ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
                         random_para_id.into()
                     );
                     <span class="prelude-val">Some</span>((
-                        Asset {
+                        MultiAsset {
                             fun: Fungible(ExistentialDeposit::get()),
-                            id: AssetId(Here.into())
+                            id: Concrete(Here.into())
                         },
                         ParentThen(Parachain(random_para_id).into()).into(),
                     ))
-                }
-
-                <span class="kw">fn </span>get_asset() -&gt; Asset {
-                    Asset {
-                        id: AssetId(Here.into()),
-                        fun: Fungible(ExistentialDeposit::get()),
-                    }
                 }
             }
 
@@ -4886,10 +4839,10 @@
                 <span class="kw">type </span>AccountIdConverter = xcm_config::LocationToAccountId;
                 <span class="kw">type </span>DeliveryHelper = ();
                 <span class="comment">// destination location to be used in benchmarks
-                </span><span class="kw">fn </span>valid_destination() -&gt; <span class="prelude-ty">Result</span>&lt;Location, BenchmarkError&gt; {
-                    <span class="prelude-val">Ok</span>(Location::parent())
+                </span><span class="kw">fn </span>valid_destination() -&gt; <span class="prelude-ty">Result</span>&lt;MultiLocation, BenchmarkError&gt; {
+                    <span class="prelude-val">Ok</span>(MultiLocation::parent())
                 }
-                <span class="kw">fn </span>worst_case_holding(_depositable_count: u32) -&gt; Assets {
+                <span class="kw">fn </span>worst_case_holding(_depositable_count: u32) -&gt; MultiAssets {
                    XcmBenchmarkHelper::&lt;Runtime&gt;::worst_case_holding()
                 }
             }
@@ -4901,67 +4854,64 @@
                     (<span class="number">0u64</span>, Response::Version(Default::default()))
                 }
                 <span class="kw">fn </span>worst_case_asset_exchange()
-                    -&gt; <span class="prelude-ty">Result</span>&lt;(Assets, Assets), BenchmarkError&gt; {
+                    -&gt; <span class="prelude-ty">Result</span>&lt;(MultiAssets, MultiAssets), BenchmarkError&gt; {
                     <span class="prelude-val">Err</span>(BenchmarkError::Skip)
                 }
 
-                <span class="kw">fn </span>universal_alias() -&gt; <span class="prelude-ty">Result</span>&lt;(Location, Junction), BenchmarkError&gt; {
+                <span class="kw">fn </span>universal_alias() -&gt; <span class="prelude-ty">Result</span>&lt;(MultiLocation, Junction), BenchmarkError&gt; {
                     <span class="prelude-val">Err</span>(BenchmarkError::Skip)
                 }
                 <span class="kw">fn </span>transact_origin_and_runtime_call()
-                    -&gt; <span class="prelude-ty">Result</span>&lt;(Location, RuntimeCall), BenchmarkError&gt; {
-                    <span class="prelude-val">Ok</span>((Location::parent(), frame_system::Call::remark_with_event {
+                    -&gt; <span class="prelude-ty">Result</span>&lt;(MultiLocation, RuntimeCall), BenchmarkError&gt; {
+                    <span class="prelude-val">Ok</span>((MultiLocation::parent(), frame_system::Call::remark_with_event {
                         remark: <span class="macro">vec!</span>[]
                     }.into()))
                 }
-                <span class="kw">fn </span>subscribe_origin() -&gt; <span class="prelude-ty">Result</span>&lt;Location, BenchmarkError&gt; {
-                    <span class="prelude-val">Ok</span>(Location::parent())
+                <span class="kw">fn </span>subscribe_origin() -&gt; <span class="prelude-ty">Result</span>&lt;MultiLocation, BenchmarkError&gt; {
+                    <span class="prelude-val">Ok</span>(MultiLocation::parent())
                 }
                 <span class="kw">fn </span>claimable_asset()
-                    -&gt; <span class="prelude-ty">Result</span>&lt;(Location, Location, Assets), BenchmarkError&gt; {
-                    <span class="kw">let </span>origin = Location::parent();
-                    <span class="kw">let </span>assets: Assets = (AssetId(Location::parent()), <span class="number">1_000u128</span>)
+                    -&gt; <span class="prelude-ty">Result</span>&lt;(MultiLocation, MultiLocation, MultiAssets), BenchmarkError&gt; {
+                    <span class="kw">let </span>origin = MultiLocation::parent();
+                    <span class="kw">let </span>assets: MultiAssets = (Concrete(MultiLocation::parent()), <span class="number">1_000u128</span>)
                         .into();
-                    <span class="kw">let </span>ticket = Location { parents: <span class="number">0</span>, interior: Here };
+                    <span class="kw">let </span>ticket = MultiLocation { parents: <span class="number">0</span>, interior: Here };
                     <span class="prelude-val">Ok</span>((origin, ticket, assets))
                 }
                 <span class="kw">fn </span>unlockable_asset()
-                    -&gt; <span class="prelude-ty">Result</span>&lt;(Location, Location, Asset), BenchmarkError&gt; {
+                    -&gt; <span class="prelude-ty">Result</span>&lt;(MultiLocation, MultiLocation, MultiAsset), BenchmarkError&gt; {
                     <span class="prelude-val">Err</span>(BenchmarkError::Skip)
                 }
                 <span class="kw">fn </span>export_message_origin_and_destination(
-                ) -&gt; <span class="prelude-ty">Result</span>&lt;(Location, NetworkId, InteriorLocation), BenchmarkError&gt; {
+                ) -&gt; <span class="prelude-ty">Result</span>&lt;(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError&gt; {
                     <span class="prelude-val">Err</span>(BenchmarkError::Skip)
                 }
-                <span class="kw">fn </span>alias_origin() -&gt; <span class="prelude-ty">Result</span>&lt;(Location, Location), BenchmarkError&gt; {
+                <span class="kw">fn </span>alias_origin() -&gt; <span class="prelude-ty">Result</span>&lt;(MultiLocation, MultiLocation), BenchmarkError&gt; {
                     <span class="prelude-val">Err</span>(BenchmarkError::Skip)
-                }
-                <span class="kw">fn </span>fee_asset() -&gt; <span class="prelude-ty">Result</span>&lt;Asset, BenchmarkError&gt; {
-                    <span class="prelude-val">Ok</span>((AssetId(Here.into()), <span class="number">100</span>).into())
                 }
             }
 
             <span class="macro">parameter_types! </span>{
                 <span class="kw">pub const </span>NoCheckingAccount: <span class="prelude-ty">Option</span>&lt;(AccountId, MintLocation)&gt; = <span class="prelude-val">None</span>;
-                <span class="kw">pub const </span>NoTeleporter: <span class="prelude-ty">Option</span>&lt;(Location, Asset)&gt; = <span class="prelude-val">None</span>;
+                <span class="kw">pub const </span>NoTeleporter: <span class="prelude-ty">Option</span>&lt;(MultiLocation, MultiAsset)&gt; = <span class="prelude-val">None</span>;
                 <span class="kw">pub const </span>TransactAssetId: u128 = <span class="number">1001</span>;
-                <span class="kw">pub </span>TransactAssetLocation: Location = Location { parents: <span class="number">0</span>, interior: [GeneralIndex(TransactAssetId::get())].into() };
+                <span class="kw">pub const </span>TransactAssetLocation: MultiLocation = MultiLocation { parents: <span class="number">0</span>, interior: X1(GeneralIndex(TransactAssetId::get())) };
 
-                <span class="kw">pub </span>TrustedReserveLocation: Location = Parent.into();
-                <span class="kw">pub </span>TrustedReserveAsset: Asset = Asset { id: AssetId(TrustedReserveLocation::get()), fun: Fungible(<span class="number">1_000_000</span>) };
-                <span class="kw">pub </span>TrustedReserve: <span class="prelude-ty">Option</span>&lt;(Location, Asset)&gt; = <span class="prelude-val">Some</span>((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
+                <span class="kw">pub </span>TrustedReserveLocation: MultiLocation = Parent.into();
+                <span class="kw">pub </span>TrustedReserveAsset: MultiAsset = MultiAsset { id: Concrete(TrustedReserveLocation::get()), fun: Fungible(<span class="number">1_000_000</span>) };
+                <span class="kw">pub </span>TrustedReserve: <span class="prelude-ty">Option</span>&lt;(MultiLocation, MultiAsset)&gt; = <span class="prelude-val">Some</span>((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
             }
 
             <span class="kw">impl </span>pallet_xcm_benchmarks::fungible::Config <span class="kw">for </span>Runtime {
-                <span class="kw">type </span>TransactAsset = ItemOf&lt;pallet_assets::Pallet&lt;Runtime&gt;, TransactAssetId, AccountId&gt;;
+                <span class="kw">type </span>TransactAsset = ItemOf&lt;Assets, TransactAssetId, AccountId&gt;;
                 <span class="kw">type </span>CheckedAccount = NoCheckingAccount;
                 <span class="kw">type </span>TrustedTeleporter = NoTeleporter;
                 <span class="kw">type </span>TrustedReserve = TrustedReserve;
 
-                <span class="kw">fn </span>get_asset() -&gt; Asset {
+                <span class="kw">fn </span>get_multi_asset() -&gt; MultiAsset {
                     <span class="kw">let </span>min_balance = <span class="number">100u128</span>;
                     <span class="comment">// create the transact asset and make it sufficient
-                    </span><span class="macro">assert_ok!</span>(pallet_assets::Pallet::&lt;Runtime&gt;::force_create(
+                    </span><span class="macro">assert_ok!</span>(Assets::force_create(
                         RuntimeOrigin::root(),
                         TransactAssetId::get().into(),
                         Address::Id([<span class="number">0u8</span>; <span class="number">32</span>].into()),
@@ -4979,8 +4929,8 @@
                         )
                     );
 
-                    Asset {
-                        id: AssetId(TransactAssetLocation::get()),
+                    MultiAsset {
+                        id: Concrete(TransactAssetLocation::get()),
                         fun: Fungible(min_balance * <span class="number">100</span>),
                     }
                 }
@@ -4995,26 +4945,21 @@
             <span class="kw">let </span>params = (<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>whitelist);
             <span class="macro">add_benchmarks!</span>(params, batches);
 
-            <span class="kw">if </span>batches.is_empty() { <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"Benchmark not found for this pallet."</span>.into()) }
+            <span class="kw">if </span>batches.is_empty() { <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Benchmark not found for this pallet.&quot;</span>.into()) }
             <span class="prelude-val">Ok</span>(batches)
         }
     }
 
-    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
     </span><span class="kw">impl </span>moonbeam_rpc_primitives_debug::DebugRuntimeApi&lt;Block&gt; <span class="kw">for </span>Runtime {
         <span class="kw">fn </span>trace_transaction(
             extrinsics: Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;,
             traced_transaction: <span class="kw-2">&amp;</span>pallet_ethereum::Transaction,
-            header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;
             (),
             sp_runtime::DispatchError,
         &gt; {
             <span class="kw">use </span>moonbeam_evm_tracer::tracer::EvmTracer;
-
-            <span class="comment">// We need to follow the order when replaying the transactions.
-            // Block initialize happens first then apply_extrinsic.
-            </span>Executive::initialize_block(header);
 
             <span class="comment">// Apply the a subset of extrinsics: all the substrate-specific or ethereum
             // transactions that preceded the requested transaction.
@@ -5032,14 +4977,13 @@
                 };
             }
             <span class="prelude-val">Err</span>(sp_runtime::DispatchError::Other(
-                <span class="string">"Failed to find Ethereum transaction among the extrinsics."</span>,
+                <span class="string">&quot;Failed to find Ethereum transaction among the extrinsics.&quot;</span>,
             ))
         }
 
         <span class="kw">fn </span>trace_block(
             extrinsics: Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;,
             known_transactions: Vec&lt;H256&gt;,
-            header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;
             (),
             sp_runtime::DispatchError,
@@ -5048,10 +4992,6 @@
 
             <span class="kw">let </span><span class="kw-2">mut </span>config = &lt;Runtime <span class="kw">as </span>pallet_evm::Config&gt;::config().clone();
             config.estimate = <span class="bool-val">true</span>;
-
-            <span class="comment">// We need to follow the order when replaying the transactions.
-            // Block initialize happens first then apply_extrinsic.
-            </span>Executive::initialize_block(header);
 
             <span class="comment">// Apply all extrinsics. Ethereum extrinsics are traced.
             </span><span class="kw">for </span>ext <span class="kw">in </span>extrinsics.into_iter() {
@@ -5075,7 +5015,7 @@
         }
     }
 
-    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
     </span><span class="kw">impl </span>moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi&lt;Block&gt; <span class="kw">for </span>Runtime {
         <span class="kw">fn </span>extrinsic_filter(
             xts_ready: Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;,
@@ -5100,10 +5040,10 @@
         }
     }
 
-    <span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
     </span><span class="kw">impl </span>frame_try_runtime::TryRuntime&lt;Block&gt; <span class="kw">for </span>Runtime {
         <span class="kw">fn </span>on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -&gt; (Weight, Weight) {
-            <span class="macro">log::info!</span>(<span class="string">"try-runtime::on_runtime_upgrade"</span>);
+            <span class="macro">log::info!</span>(<span class="string">&quot;try-runtime::on_runtime_upgrade&quot;</span>);
             <span class="kw">let </span>weight = Executive::try_runtime_upgrade(checks).unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
@@ -5115,13 +5055,13 @@
             select: frame_try_runtime::TryStateSelect
         ) -&gt; Weight {
             <span class="macro">log::info!</span>(
-                <span class="string">"try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}"</span>,
+                <span class="string">&quot;try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}&quot;</span>,
                 block.header.number,
                 block.header.hash(),
                 state_root_check,
                 select,
             );
-            Executive::try_execute_block(block, state_root_check, signature_check, select).expect(<span class="string">"execute-block failed"</span>)
+            Executive::try_execute_block(block, state_root_check, signature_check, select).expect(<span class="string">&quot;execute-block failed&quot;</span>)
         }
     }
 }
@@ -5135,14 +5075,14 @@
     ) -&gt; sp_inherents::CheckInherentsResult {
         <span class="kw">let </span>relay_chain_slot = relay_state_proof
             .read_slot()
-            .expect(<span class="string">"Could not read the relay chain slot from the proof"</span>);
+            .expect(<span class="string">&quot;Could not read the relay chain slot from the proof&quot;</span>);
         <span class="kw">let </span>inherent_data =
             cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
                 relay_chain_slot,
                 sp_std::time::Duration::from_secs(<span class="number">6</span>),
             )
             .create_inherent_data()
-            .expect(<span class="string">"Could not create the timestamp inherent data"</span>);
+            .expect(<span class="string">&quot;Could not create the timestamp inherent data&quot;</span>);
         inherent_data.check_extrinsics(block)
     }
 }

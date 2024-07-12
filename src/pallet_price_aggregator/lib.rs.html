@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/price-aggregator/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_price_aggregator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_price_aggregator/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/price-aggregator/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_price_aggregator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../pallet_price_aggregator/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -536,8 +534,8 @@
 //!
 //! ### Block Aggregation
 //!
-//! During each block, the native currency price data is accumulated. This is done 'outside' the pallet, and it's only expected
-//! that 'something' will push this data to the price aggregator pallet. The pallet itself doesn't care about the source of the data, nor who submitted it.
+//! During each block, the native currency price data is accumulated. This is done &#39;outside&#39; the pallet, and it&#39;s only expected
+//! that &#39;something&#39; will push this data to the price aggregator pallet. The pallet itself doesn&#39;t care about the source of the data, nor who submitted it.
 //!
 //! At the end of each block, accumulated data is processed according to the specified algorithm (e.g. can be average, median, or something else).
 //! In case processing was successful, the result is stored in the intermediate value aggregator.
@@ -546,15 +544,15 @@
 //! ### Intermediate Value Aggregation
 //!
 //! After a predetermined amount of time (blocks) has passed, the average value is calculated from the intermediate value aggregator.
-//! In case it's a valid value (non-zero), it's pushed into the circular buffer used to calculate the moving average.
+//! In case it&#39;s a valid value (non-zero), it&#39;s pushed into the circular buffer used to calculate the moving average.
 //! In case of an error, the value is simply ignored.
 //!
 //! ### Moving Average Calculation
 //!
-//! The moving average is calculated from the circular buffer, and is used to provide the 'average' price of the native currency, over some time period.
-//! It's important to note that the moving average is not a 'real-time' value, but rather a 'lagging' indicator.
+//! The moving average is calculated from the circular buffer, and is used to provide the &#39;average&#39; price of the native currency, over some time period.
+//! It&#39;s important to note that the moving average is not a &#39;real-time&#39; value, but rather a &#39;lagging&#39; indicator.
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 </span><span class="kw">use </span>frame_support::{pallet_prelude::<span class="kw-2">*</span>, traits::OnRuntimeUpgrade, DefaultNoBound};
 <span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
@@ -580,7 +578,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">mod </span>benchmarking;
 
 <span class="doccomment">/// Trait for processing accumulated currency values within a single block.
@@ -590,15 +588,15 @@
     <span class="doccomment">/// Process the accumulated values and return the result.
     ///
     /// In case of an error, return an error message.
-    </span><span class="kw">fn </span>process(values: <span class="kw-2">&amp;</span>[CurrencyAmount]) -&gt; <span class="prelude-ty">Result</span>&lt;CurrencyAmount, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;;
+    </span><span class="kw">fn </span>process(values: <span class="kw-2">&amp;</span>[CurrencyAmount]) -&gt; <span class="prelude-ty">Result</span>&lt;CurrencyAmount, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;;
 }
 
 <span class="doccomment">/// Used to calculate the simple average of the accumulated values.
 </span><span class="kw">pub struct </span>AverageBlockValue;
 <span class="kw">impl </span>ProcessBlockValues <span class="kw">for </span>AverageBlockValue {
-    <span class="kw">fn </span>process(values: <span class="kw-2">&amp;</span>[CurrencyAmount]) -&gt; <span class="prelude-ty">Result</span>&lt;CurrencyAmount, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; {
+    <span class="kw">fn </span>process(values: <span class="kw-2">&amp;</span>[CurrencyAmount]) -&gt; <span class="prelude-ty">Result</span>&lt;CurrencyAmount, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
         <span class="kw">if </span>values.is_empty() {
-            <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"No values exist for the current block."</span>);
+            <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;No values exist for the current block.&quot;</span>);
         }
 
         <span class="kw">let </span>sum = values.iter().fold(CurrencyAmount::zero(), |acc, <span class="kw-2">&amp;</span>value| {
@@ -612,9 +610,9 @@
 <span class="doccomment">/// Used to calculate the median of the accumulated values.
 </span><span class="kw">pub struct </span>MedianBlockValue;
 <span class="kw">impl </span>ProcessBlockValues <span class="kw">for </span>MedianBlockValue {
-    <span class="kw">fn </span>process(values: <span class="kw-2">&amp;</span>[CurrencyAmount]) -&gt; <span class="prelude-ty">Result</span>&lt;CurrencyAmount, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; {
+    <span class="kw">fn </span>process(values: <span class="kw-2">&amp;</span>[CurrencyAmount]) -&gt; <span class="prelude-ty">Result</span>&lt;CurrencyAmount, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
         <span class="kw">if </span>values.is_empty() {
-            <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"No values exist for the current block."</span>);
+            <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;No values exist for the current block.&quot;</span>);
         }
 
         <span class="kw">let </span><span class="kw-2">mut </span>sorted_values = values.to_vec();
@@ -662,16 +660,16 @@
     ///
     /// Returns an error if the addition would cause an overflow in the accumulator or the counter.
     /// Otherwise returns the updated aggregator.
-    </span><span class="kw">pub fn </span>try_add(<span class="kw-2">mut </span><span class="self">self</span>, value: CurrencyAmount) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; {
+    </span><span class="kw">pub fn </span>try_add(<span class="kw-2">mut </span><span class="self">self</span>, value: CurrencyAmount) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
         <span class="self">self</span>.total = <span class="self">self
             </span>.total
             .checked_add(<span class="kw-2">&amp;</span>value)
-            .ok_or(<span class="string">"Failed to add value to the aggregator due to overflow."</span>)<span class="question-mark">?</span>;
+            .ok_or(<span class="string">&quot;Failed to add value to the aggregator due to overflow.&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="self">self</span>.count = <span class="self">self
             </span>.count
             .checked_add(<span class="number">1</span>)
-            .ok_or(<span class="string">"Failed to increment count in the aggregator due to overflow."</span>)<span class="question-mark">?</span>;
+            .ok_or(<span class="string">&quot;Failed to increment count in the aggregator due to overflow.&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="self">self</span>)
     }
@@ -719,8 +717,8 @@
         </span><span class="kw">if </span><span class="self">self</span>.head &gt;= L::get() || <span class="self">self</span>.head <span class="kw">as </span>usize &gt; <span class="self">self</span>.buffer.len() {
             <span class="macro">log::error!</span>(
                 target: LOG_TARGET,
-                <span class="string">"Failed to push value to the circular buffer due to invalid next index. \
-                Next index: {:?}, Buffer length: {:?}, Buffer capacity: {:?}"</span>,
+                <span class="string">&quot;Failed to push value to the circular buffer due to invalid next index. \
+                Next index: {:?}, Buffer length: {:?}, Buffer capacity: {:?}&quot;</span>,
                 <span class="self">self</span>.head,
                 <span class="self">self</span>.buffer.len(),
                 L::get()
@@ -729,7 +727,7 @@
         }
 
         <span class="kw">if </span><span class="self">self</span>.buffer.len() &gt; <span class="self">self</span>.head <span class="kw">as </span>usize {
-            <span class="comment">// Vec has been filled out, so we need to override the 'head' value
+            <span class="comment">// Vec has been filled out, so we need to override the &#39;head&#39; value
             </span><span class="self">self</span>.buffer[<span class="self">self</span>.head <span class="kw">as </span>usize] = value;
         } <span class="kw">else </span>{
             <span class="comment">// Vec is not full yet, so we can just push the value
@@ -756,7 +754,7 @@
     }
 }
 
-<span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">"price-aggregator"</span>;
+<span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;price-aggregator&quot;</span>;
 
 <span class="attr">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
@@ -893,8 +891,8 @@
                 <span class="prelude-val">Err</span>(message) =&gt; {
                     <span class="macro">log::trace!</span>(
                         target: LOG_TARGET,
-                        <span class="string">"Failed to process the accumulated native currency values in the current block. \
-                        Reason: {:?}"</span>,
+                        <span class="string">&quot;Failed to process the accumulated native currency values in the current block. \
+                        Reason: {:?}&quot;</span>,
                         message
                     );
 
@@ -913,8 +911,8 @@
                 <span class="prelude-val">Err</span>(message) =&gt; {
                     <span class="macro">log::error!</span>(
                         target: LOG_TARGET,
-                        <span class="string">"Failed to add the processed native currency value to the intermediate storage. \
-                        Reason: {:?}"</span>,
+                        <span class="string">&quot;Failed to add the processed native currency value to the intermediate storage. \
+                        Reason: {:?}&quot;</span>,
                         message
                     );
                 }
@@ -932,18 +930,18 @@
                     .saturated_into(),
             ));
 
-            <span class="comment">// 3. In case aggregated value equals 0, it means something has gone wrong since it's extremely unlikely
-            // that price goes to absolute zero. The much more likely case is that there's a problem with the oracle data feed.
+            <span class="comment">// 3. In case aggregated value equals 0, it means something has gone wrong since it&#39;s extremely unlikely
+            // that price goes to absolute zero. The much more likely case is that there&#39;s a problem with the oracle data feed.
             </span><span class="kw">if </span>average_value.is_zero() {
                 <span class="macro">log::error!</span>(
                     target: LOG_TARGET,
-                    <span class="string">"The average aggregated price equals zero, which most likely means that oracle data feed is faulty. \
-                    Not pushing the 'zero' value to the moving average storage."
+                    <span class="string">&quot;The average aggregated price equals zero, which most likely means that oracle data feed is faulty. \
+                    Not pushing the &#39;zero&#39; value to the moving average storage.&quot;
                 </span>);
                 <span class="kw">return</span>;
             }
 
-            <span class="comment">// 4. Push the 'valid' average aggregated value to the circular buffer.
+            <span class="comment">// 4. Push the &#39;valid&#39; average aggregated value to the circular buffer.
             </span>ValuesCircularBuffer::&lt;T&gt;::mutate(|buffer| buffer.add(average_value));
             <span class="self">Self</span>::deposit_event(Event::AverageAggregatedValue {
                 value: average_value,
@@ -951,7 +949,7 @@
         }
     }
 
-    <span class="comment">// Make this pallet an 'observer' ('listener') of the new oracle data feed.
+    <span class="comment">// Make this pallet an &#39;observer&#39; (&#39;listener&#39;) of the new oracle data feed.
     </span><span class="kw">impl</span>&lt;T: Config&gt; OnNewData&lt;T::AccountId, CurrencyId, CurrencyAmount&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
         <span class="kw">fn </span>on_new_data(who: <span class="kw-2">&amp;</span>T::AccountId, key: <span class="kw-2">&amp;</span>CurrencyId, value: <span class="kw-2">&amp;</span>CurrencyAmount) {
             <span class="comment">// Ignore any currency that is not native currency.
@@ -964,8 +962,8 @@
                 <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
                     <span class="macro">log::error!</span>(
                     target: LOG_TARGET,
-                        <span class="string">"Failed to push native currency value into the ongoing block due to exceeded capacity. \
-                        Value was submitted by: {:?}"</span>,
+                        <span class="string">&quot;Failed to push native currency value into the ongoing block due to exceeded capacity. \
+                        Value was submitted by: {:?}&quot;</span>,
                         who
                     );
                 }
@@ -996,11 +994,11 @@
         <span class="kw">let </span>limit_block = now.saturating_add(T::AggregationDuration::get().saturated_into());
         IntermediateValueAggregator::&lt;T&gt;::put(ValueAggregator::new(limit_block.saturated_into()));
 
-        <span class="comment">// 2. Put the initial value into the circular buffer so it's not empty.
+        <span class="comment">// 2. Put the initial value into the circular buffer so it&#39;s not empty.
         </span><span class="kw">use </span>sp_arithmetic::FixedPointNumber;
         <span class="kw">let </span>init_price = P::get().max(FixedU128::from_rational(<span class="number">1</span>, FixedU128::DIV.into()));
         <span class="macro">log::info!</span>(
-            <span class="string">"Pushing initial price value into moving average buffer: {}"</span>,
+            <span class="string">&quot;Pushing initial price value into moving average buffer: {}&quot;</span>,
             init_price
         );
         ValuesCircularBuffer::&lt;T&gt;::mutate(|buffer| buffer.add(init_price));
@@ -1008,7 +1006,7 @@
         <span class="comment">// 3. Set the initial storage version.
         </span>STORAGE_VERSION.put::&lt;Pallet&lt;T&gt;&gt;();
 
-        <span class="comment">// Reading block number is 'free' in the terms of weight.
+        <span class="comment">// Reading block number is &#39;free&#39; in the terms of weight.
         </span>T::DbWeight::get().writes(<span class="number">3</span>)
     }
 }

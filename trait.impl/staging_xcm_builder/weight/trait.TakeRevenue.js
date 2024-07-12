@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"astar_primitives":[["impl&lt;AccountId: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.77.0/core/cmp/trait.Eq.html\" title=\"trait core::cmp::Eq\">Eq</a>, Assets: Mutate&lt;AccountId&gt;, Matcher: MatchesFungibles&lt;Assets::AssetId, Assets::Balance&gt;, FeeDestination: Get&lt;AccountId&gt;&gt; TakeRevenue for <a class=\"struct\" href=\"astar_primitives/xcm/struct.XcmFungibleFeeHandler.html\" title=\"struct astar_primitives::xcm::XcmFungibleFeeHandler\">XcmFungibleFeeHandler</a>&lt;AccountId, Matcher, Assets, FeeDestination&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

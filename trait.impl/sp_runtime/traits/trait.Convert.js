@@ -1,4 +1,0 @@
-(function() {var implementors = {
-"astar_primitives":[["impl Convert&lt;&lt;&lt;MultiSignature as Verify&gt;::Signer as IdentifyAccount&gt;::AccountId, Location&gt; for <a class=\"struct\" href=\"astar_primitives/xcm/struct.AccountIdToMultiLocation.html\" title=\"struct astar_primitives::xcm::AccountIdToMultiLocation\">AccountIdToMultiLocation</a>"]],
-"pallet_collator_selection":[["impl&lt;T&gt; Convert&lt;T, <a class=\"enum\" href=\"https://doc.rust-lang.org/1.77.0/core/option/enum.Option.html\" title=\"enum core::option::Option\">Option</a>&lt;T&gt;&gt; for <a class=\"struct\" href=\"pallet_collator_selection/pallet/struct.IdentityCollator.html\" title=\"struct pallet_collator_selection::pallet::IdentityCollator\">IdentityCollator</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

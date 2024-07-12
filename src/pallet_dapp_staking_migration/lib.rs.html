@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking-migration/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking_migration" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_dapp_staking_migration/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking-migration/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking_migration" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../pallet_dapp_staking_migration/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -463,7 +461,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 </span><span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 
@@ -481,18 +479,18 @@
 
 <span class="kw">use </span>pallet_dapp_staking_v3::{SingularStakingInfo, StakeAmount, StakerInfo};
 
-<span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 </span><span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="kw">pub use </span><span class="kw">crate</span>::pallet::SingularStakingInfoTranslationUpgrade;
 
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">mod </span>benchmarking;
 
 <span class="kw">pub mod </span>weights;
 <span class="kw">pub use </span>weights::WeightInfo;
 
-<span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">"dapp-staking-migration"</span>;
+<span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;dapp-staking-migration&quot;</span>;
 
 <span class="kw">mod </span>v5 {
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -532,7 +530,7 @@
 
     <span class="attr">#[pallet::config]
     </span><span class="kw">pub trait </span>Config:
-        <span class="comment">// Tight coupling, but it's fine since pallet is supposed to be just temporary and will be removed after migration.
+        <span class="comment">// Tight coupling, but it&#39;s fine since pallet is supposed to be just temporary and will be removed after migration.
         </span>frame_system::Config + pallet_dapp_staking_v3::Config
     {
         <span class="doccomment">/// The overarching event type.
@@ -613,7 +611,7 @@
             <span class="kw">if </span>init_migration_state == MigrationState::Finished {
                 <span class="macro">log::trace!</span>(
                     target: LOG_TARGET,
-                    <span class="string">"Migration has been finished, skipping any action."
+                    <span class="string">&quot;Migration has been finished, skipping any action.&quot;
                 </span>);
                 <span class="kw">return </span><span class="prelude-val">Err</span>(consumed_weight);
             }
@@ -671,7 +669,7 @@
 
             <span class="comment">// Once migration has been finished, disable the maintenance mode and set correct storage version.
             </span><span class="kw">if </span>migration_state == MigrationState::Finished {
-                <span class="macro">log::trace!</span>(target: LOG_TARGET, <span class="string">"Migration has been finished."</span>);
+                <span class="macro">log::trace!</span>(target: LOG_TARGET, <span class="string">&quot;Migration has been finished.&quot;</span>);
 
                 pallet_dapp_staking_v3::ActiveProtocolState::&lt;T&gt;::mutate(|state| {
                     state.maintenance = <span class="bool-val">false</span>;
@@ -705,10 +703,10 @@
 
                 <span class="kw">let </span>hashed_key = StakerInfo::&lt;T&gt;::hashed_key_for(<span class="kw-2">&amp;</span>account_id, <span class="kw-2">&amp;</span>smart_contract_id);
 
-                <span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">"try-runtime"</span>) {
+                <span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;try-runtime&quot;</span>) {
                     <span class="macro">assert!</span>(
                         hashed_key.len() &lt; MAX_KEY_SIZE <span class="kw">as </span>usize,
-                        <span class="string">"Key size exceeded max limit!"
+                        <span class="string">&quot;Key size exceeded max limit!&quot;
                     </span>);
                 }
 
@@ -749,7 +747,7 @@
 
         <span class="doccomment">/// Returns the least amount of weight which should be remaining for migration in order to attempt another step.
         ///
-        /// This is used to ensure we don't go over the limit.
+        /// This is used to ensure we don&#39;t go over the limit.
         </span><span class="kw">fn </span>migration_weight_margin() -&gt; Weight {
             <span class="comment">// Consider the weight of all steps
             </span>&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::translate_staking_info_success()
@@ -788,7 +786,7 @@
 
             <span class="comment">// In case of try-runtime, we want to execute the whole logic, to ensure it works
             // with on-chain data.
-            </span><span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">"try-runtime"</span>) {
+            </span><span class="kw">if </span><span class="macro">cfg!</span>(feature = <span class="string">&quot;try-runtime&quot;</span>) {
                 <span class="kw">let </span><span class="kw-2">mut </span>steps = <span class="number">0_u32</span>;
                 <span class="kw">while </span>MigrationStateStorage::&lt;T&gt;::get() != MigrationState::Finished {
                     <span class="kw">match </span>Pallet::&lt;T&gt;::do_migrate(<span class="kw">crate</span>::Pallet::&lt;T&gt;::max_call_weight()) {
@@ -797,14 +795,14 @@
                             steps.saturating_inc();
                         }
                         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-                            <span class="macro">panic!</span>(<span class="string">"Must never happen since we check whether state is `Finished` before calling `do_migrate`."</span>);
+                            <span class="macro">panic!</span>(<span class="string">&quot;Must never happen since we check whether state is `Finished` before calling `do_migrate`.&quot;</span>);
                         }
                     }
                 }
 
                 <span class="macro">log::trace!</span>(
                     target: LOG_TARGET,
-                    <span class="string">"dApp Staking migration finished after {} steps with total weight of {}."</span>,
+                    <span class="string">&quot;dApp Staking migration finished after {} steps with total weight of {}.&quot;</span>,
                     steps,
                     consumed_weight,
                 );
@@ -815,7 +813,7 @@
             }
         }
 
-        <span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
         </span><span class="kw">fn </span>pre_upgrade() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, sp_runtime::TryRuntimeError&gt; {
             <span class="comment">// Get all staker info entries to be used later for verification
             </span><span class="kw">let </span>staker_info: Vec&lt;<span class="kw">_</span>&gt; = v5::StakerInfo::&lt;T&gt;::iter()
@@ -834,22 +832,22 @@
             <span class="prelude-val">Ok</span>(helper.encode())
         }
 
-        <span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
         </span><span class="kw">fn </span>post_upgrade(state: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_runtime::TryRuntimeError&gt; {
             <span class="kw">use </span>sp_runtime::traits::TrailingZeroInput;
 
             <span class="comment">// 0. Verify that migration state is `Finished`
             </span><span class="kw">if </span>MigrationStateStorage::&lt;T&gt;::get() != MigrationState::Finished {
-                <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"Migration state is not `Finished`"</span>.into());
+                <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Migration state is not `Finished`&quot;</span>.into());
             }
 
             <span class="kw">let </span>helper = Helper::&lt;T&gt;::decode(<span class="kw-2">&amp;mut </span>TrailingZeroInput::new(state.as_ref()))
-                .map_err(|<span class="kw">_</span>| <span class="string">"Cannot decode data from pre_upgrade"</span>)<span class="question-mark">?</span>;
+                .map_err(|<span class="kw">_</span>| <span class="string">&quot;Cannot decode data from pre_upgrade&quot;</span>)<span class="question-mark">?</span>;
 
             <span class="comment">// 1. Verify that staker info is essentially same as before
             </span><span class="kw">for </span>(account_id, smart_contract, staked, loyal_staker) <span class="kw">in </span>helper.staker_info {
                 <span class="kw">let </span>staking_info = StakerInfo::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account_id, <span class="kw-2">&amp;</span>smart_contract)
-                    .ok_or(<span class="string">"Staking info not found but it must exist!"</span>)<span class="question-mark">?</span>;
+                    .ok_or(<span class="string">&quot;Staking info not found but it must exist!&quot;</span>)<span class="question-mark">?</span>;
 
                 <span class="kw">let </span>expected_staking_info = SingularStakingInfo::new_migration(
                     StakeAmount::default(),
@@ -859,32 +857,32 @@
 
                 <span class="kw">if </span>staking_info != expected_staking_info {
                     <span class="macro">log::error!</span>(target: LOG_TARGET,
-                        <span class="string">"Staking info mismatch for account {:?} and smart contract {:?}. Expected: {:?}, got: {:?}"</span>,
+                        <span class="string">&quot;Staking info mismatch for account {:?} and smart contract {:?}. Expected: {:?}, got: {:?}&quot;</span>,
                         account_id, smart_contract, expected_staking_info, staking_info
                     );
 
-                    <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"Failed to verify staking info"</span>.into());
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to verify staking info&quot;</span>.into());
                 }
             }
 
             <span class="comment">// 2. Verify pallet is no longer in maintenance mode
             </span><span class="kw">if </span>pallet_dapp_staking_v3::ActiveProtocolState::&lt;T&gt;::get().maintenance {
-                <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"Pallet is still in maintenance mode"</span>.into());
+                <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Pallet is still in maintenance mode&quot;</span>.into());
             }
 
             <span class="comment">// 3. Verify on-chain storage version is correct
             </span><span class="kw">if </span>StorageVersion::get::&lt;pallet_dapp_staking_v3::Pallet&lt;T&gt;&gt;() != <span class="number">6 </span>{
-                <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"Storage version is not correct"</span>.into());
+                <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Storage version is not correct&quot;</span>.into());
             }
 
-            <span class="macro">log::trace!</span>(target: LOG_TARGET, <span class="string">"Post-upgrade checks successful."</span>);
+            <span class="macro">log::trace!</span>(target: LOG_TARGET, <span class="string">&quot;Post-upgrade checks successful.&quot;</span>);
 
             <span class="prelude-val">Ok</span>(())
         }
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 </span><span class="doccomment">/// Used to help with `try-runtime` testing.
 </span><span class="attr">#[derive(Encode, Decode)]
 </span><span class="kw">struct </span>Helper&lt;T: Config&gt; {

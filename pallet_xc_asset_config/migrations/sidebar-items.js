@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["versioned"],"struct":["MigrationXcmV3","MigrationXcmV4"]};
+window.SIDEBAR_ITEMS = {"struct":["MigrationXcmV3"]};

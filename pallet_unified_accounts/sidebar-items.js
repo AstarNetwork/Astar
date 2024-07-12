@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["migration","pallet","weights"],"struct":["KillAccountMapping"]};
+window.SIDEBAR_ITEMS = {"mod":["pallet","weights"],"struct":["KillAccountMapping"]};

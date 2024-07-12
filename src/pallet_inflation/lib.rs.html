@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/inflation/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_inflation" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_inflation/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/inflation/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_inflation" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../pallet_inflation/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -686,7 +684,7 @@
 //!
 //! ## Overview
 //!
-//! This pallet's main responsibility is handling inflation calculation &amp; distribution.
+//! This pallet&#39;s main responsibility is handling inflation calculation &amp; distribution.
 //!
 //! Inflation configuration is calculated periodically, according to the inflation parameters.
 //! Based on this configuration, rewards are paid out - either per block or on demand.
@@ -695,9 +693,9 @@
 //!
 //! At the start of each cycle, the inflation configuration is recalculated.
 //!
-//! Cycle can be considered as a 'year' in the Astar network.
+//! Cycle can be considered as a &#39;year&#39; in the Astar network.
 //! When cycle starts, inflation is calculated according to the total issuance at that point in time.
-//! E.g. if 'yearly' inflation is set to be 7%, and total issuance is 200 ASTR, then the max inflation for that cycle will be 14 ASTR.
+//! E.g. if &#39;yearly&#39; inflation is set to be 7%, and total issuance is 200 ASTR, then the max inflation for that cycle will be 14 ASTR.
 //!
 //! Each cycle consists of one or more `periods`.
 //! Periods are integral part of dApp staking protocol, allowing dApps to promote themselves, attract stakers and earn rewards.
@@ -707,7 +705,7 @@
 //! Length of these subperiods is expressed in eras. An `era` is the core _time unit_ in dApp staking protocol.
 //! When an era ends, in `Build&amp;Earn` subperiod, rewards for dApps are calculated &amp; assigned.
 //!
-//! Era's length is expressed in blocks. E.g. an era can last for 7200 blocks, which is approximately 1 day for 12 second block time.
+//! Era&#39;s length is expressed in blocks. E.g. an era can last for 7200 blocks, which is approximately 1 day for 12 second block time.
 //!
 //! `Build&amp;Earn` subperiod length is expressed in eras. E.g. if `Build&amp;Earn` subperiod lasts for 5 eras, it means that during that subperiod,
 //! dApp rewards will be calculated &amp; assigned 5 times in total. Also, 5 distinct eras will change during that subperiod. If e.g. `Build&amp;Earn` started at era 100,
@@ -716,7 +714,7 @@
 //! `Voting` subperiod always comes before `Build&amp;Earn` subperiod. Its length is also expressed in eras, although it has to be interpreted a bit differently.
 //! Even though `Voting` can last for more than 1 era in respect of length, it always takes exactly 1 era.
 //! What this means is that if `Voting` lasts for 3 eras, and each era lasts 7200 blocks, then `Voting` will last for 21600 blocks.
-//! But unlike `Build&amp;Earn` subperiod, `Voting` will only take up one 'numerical' era. So if `Voting` starts at era 110, it will end at era 11.
+//! But unlike `Build&amp;Earn` subperiod, `Voting` will only take up one &#39;numerical&#39; era. So if `Voting` starts at era 110, it will end at era 11.
 //!
 //! #### Example
 //! * Cycle length: 4 periods
@@ -760,7 +758,7 @@
 //! This pallet implements `StakingRewardHandler` trait, which is used by the dApp staking protocol to get reward pools &amp; distribute rewards.
 //!
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 </span><span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 
@@ -786,7 +784,7 @@
 <span class="kw">pub mod </span>weights;
 <span class="kw">pub use </span>weights::WeightInfo;
 
-<span class="attr">#[cfg(any(feature = <span class="string">"runtime-benchmarks"</span>))]
+<span class="attr">#[cfg(any(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
 </span><span class="kw">pub mod </span>benchmarking;
 
 <span class="attr">#[cfg(test)]
@@ -817,10 +815,10 @@
         /// which is defined in the currency trait.
         </span><span class="kw">type </span>Currency: Currency&lt;<span class="self">Self</span>::AccountId, Balance = Balance&gt;;
 
-        <span class="doccomment">/// Handler for 'per-block' payouts.
+        <span class="doccomment">/// Handler for &#39;per-block&#39; payouts.
         </span><span class="kw">type </span>PayoutPerBlock: PayoutPerBlock&lt;NegativeImbalanceOf&lt;<span class="self">Self</span>&gt;&gt;;
 
-        <span class="doccomment">/// Cycle ('year') configuration - covers periods, subperiods, eras &amp; blocks.
+        <span class="doccomment">/// Cycle (&#39;year&#39;) configuration - covers periods, subperiods, eras &amp; blocks.
         </span><span class="kw">type </span>CycleConfiguration: CycleConfiguration;
 
         <span class="doccomment">/// The overarching event type.
@@ -890,7 +888,7 @@
         <span class="kw">fn </span>on_initialize(_now: BlockNumberFor&lt;T&gt;) -&gt; Weight {
             <span class="self">Self</span>::payout_block_rewards();
 
-            <span class="comment">// Benchmarks won't account for the whitelisted storage access so this needs to be added manually.
+            <span class="comment">// Benchmarks won&#39;t account for the whitelisted storage access so this needs to be added manually.
             //
             // ActiveInflationConfig - 1 DB read
             // DoRecalculation - 1 DB read
@@ -1008,7 +1006,7 @@
 
             <span class="comment">// 3. Calculate concrete rewards per block, era or period
 
-            // 3.0 Convert all 'per cycle' values to the correct type (Balance).
+            // 3.0 Convert all &#39;per cycle&#39; values to the correct type (Balance).
             // Also include a safety check that none of the values is zero since this would cause a division by zero.
             // The configuration &amp; integration tests must ensure this never happens, so the following code is just an additional safety measure.
             </span><span class="kw">let </span>blocks_per_cycle = Balance::from(T::CycleConfiguration::blocks_per_cycle().max(<span class="number">1</span>));
@@ -1063,7 +1061,7 @@
             <span class="kw">let </span>new_issuance = total_issuance.saturating_add(payout);
 
             <span class="kw">if </span>new_issuance &gt; config.issuance_safety_cap {
-                <span class="macro">log::error!</span>(<span class="string">"Issuance cap has been exceeded. Please report this issue ASAP!"</span>);
+                <span class="macro">log::error!</span>(<span class="string">&quot;Issuance cap has been exceeded. Please report this issue ASAP!&quot;</span>);
             }
 
             <span class="comment">// Allow for 1% safety cap overflow, to prevent bad UX for users in case of rounding errors.
@@ -1119,11 +1117,11 @@
             <span class="comment">// This is a safety measure to prevent excessive minting.
             </span><span class="macro">ensure!</span>(!<span class="self">Self</span>::is_payout_cap_limit_exceeded(reward), ());
 
-            <span class="comment">// This can fail only if the amount is below existential deposit &amp; the account doesn't exist,
+            <span class="comment">// This can fail only if the amount is below existential deposit &amp; the account doesn&#39;t exist,
             // or if the account has no provider references.
-            // In both cases, the reward is lost but this can be ignored since it's extremely unlikely
-            // to appear and doesn't bring any real harm.
-            </span><span class="kw">let _ </span>= T::Currency::deposit_creating(account, reward);
+            // In both cases, the reward is lost but this can be ignored since it&#39;s extremely unlikely
+            // to appear and doesn&#39;t bring any real harm.
+            </span>T::Currency::deposit_creating(account, reward);
             <span class="prelude-val">Ok</span>(())
         }
     }
@@ -1132,7 +1130,7 @@
 <span class="doccomment">/// Configuration of the inflation.
 /// Contains information about rewards, when inflation is recalculated, etc.
 </span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, Default, Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[cfg_attr(feature = <span class="string">"std"</span>, derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(serde::Serialize, serde::Deserialize))]
 </span><span class="kw">pub struct </span>InflationConfiguration {
     <span class="doccomment">/// Era number at which the inflation configuration must be recalculated, based on the total issuance at that block.
     </span><span class="attr">#[codec(compact)]
@@ -1147,14 +1145,14 @@
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>treasury_reward_per_block: Balance,
     <span class="doccomment">/// dApp reward pool per era - based on this the tier rewards are calculated.
-    /// There's no guarantee that this whole amount will be minted &amp; distributed.
+    /// There&#39;s no guarantee that this whole amount will be minted &amp; distributed.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>dapp_reward_pool_per_era: Balance,
     <span class="doccomment">/// Base staker reward pool per era - this is always provided to stakers, regardless of the total value staked.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>base_staker_reward_pool_per_era: Balance,
     <span class="doccomment">/// Adjustable staker rewards, based on the total value staked.
-    /// This is provided to the stakers according to formula: 'pool * min(1, total_staked / ideal_staked)'.
+    /// This is provided to the stakers according to formula: &#39;pool * min(1, total_staked / ideal_staked)&#39;.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>adjustable_staker_reward_pool_per_era: Balance,
     <span class="doccomment">/// Bonus reward pool per period, for loyal stakers.
@@ -1169,25 +1167,25 @@
 <span class="kw">impl </span>InflationConfiguration {
     <span class="doccomment">/// Sanity check that does rudimentary checks on the configuration and prints warnings if something is unexpected.
     ///
-    /// There are no strict checks, since the configuration values aren't strictly bounded like those of the parameters.
+    /// There are no strict checks, since the configuration values aren&#39;t strictly bounded like those of the parameters.
     </span><span class="kw">pub fn </span>sanity_check(<span class="kw-2">&amp;</span><span class="self">self</span>) {
         <span class="kw">if </span><span class="self">self</span>.collator_reward_per_block.is_zero() {
-            <span class="macro">log::warn!</span>(<span class="string">"Collator reward per block is zero. If this is not expected, please report this to Astar team."</span>);
+            <span class="macro">log::warn!</span>(<span class="string">&quot;Collator reward per block is zero. If this is not expected, please report this to Astar team.&quot;</span>);
         }
         <span class="kw">if </span><span class="self">self</span>.treasury_reward_per_block.is_zero() {
-            <span class="macro">log::warn!</span>(<span class="string">"Treasury reward per block is zero. If this is not expected, please report this to Astar team."</span>);
+            <span class="macro">log::warn!</span>(<span class="string">&quot;Treasury reward per block is zero. If this is not expected, please report this to Astar team.&quot;</span>);
         }
         <span class="kw">if </span><span class="self">self</span>.dapp_reward_pool_per_era.is_zero() {
-            <span class="macro">log::warn!</span>(<span class="string">"dApp reward pool per era is zero. If this is not expected, please report this to Astar team."</span>);
+            <span class="macro">log::warn!</span>(<span class="string">&quot;dApp reward pool per era is zero. If this is not expected, please report this to Astar team.&quot;</span>);
         }
         <span class="kw">if </span><span class="self">self</span>.base_staker_reward_pool_per_era.is_zero() {
-            <span class="macro">log::warn!</span>(<span class="string">"Base staker reward pool per era is zero.  If this is not expected, please report this to Astar team."</span>);
+            <span class="macro">log::warn!</span>(<span class="string">&quot;Base staker reward pool per era is zero.  If this is not expected, please report this to Astar team.&quot;</span>);
         }
         <span class="kw">if </span><span class="self">self</span>.adjustable_staker_reward_pool_per_era.is_zero() {
-            <span class="macro">log::warn!</span>(<span class="string">"Adjustable staker reward pool per era is zero.  If this is not expected, please report this to Astar team."</span>);
+            <span class="macro">log::warn!</span>(<span class="string">&quot;Adjustable staker reward pool per era is zero.  If this is not expected, please report this to Astar team.&quot;</span>);
         }
         <span class="kw">if </span><span class="self">self</span>.bonus_reward_pool_per_period.is_zero() {
-            <span class="macro">log::warn!</span>(<span class="string">"Bonus reward pool per period is zero.  If this is not expected, please report this to Astar team."</span>);
+            <span class="macro">log::warn!</span>(<span class="string">&quot;Bonus reward pool per period is zero.  If this is not expected, please report this to Astar team.&quot;</span>);
         }
     }
 }
@@ -1289,7 +1287,7 @@
 }
 
 <span class="doccomment">/// `OnRuntimeUpgrade` logic for integrating this pallet into the live network.
-</span><span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 </span><span class="kw">use </span>sp_std::vec::Vec;
 <span class="kw">pub struct </span>PalletInflationInitConfig&lt;T, P&gt;(PhantomData&lt;(T, P, Weight)&gt;);
 <span class="kw">impl</span>&lt;T: Config, P: Get&lt;(InflationParameters, EraNumber, Weight)&gt;&gt; OnRuntimeUpgrade
@@ -1313,14 +1311,14 @@
         <span class="comment">// 3. Set version
         </span>STORAGE_VERSION.put::&lt;Pallet&lt;T&gt;&gt;();
 
-        <span class="macro">log::info!</span>(<span class="string">"Inflation pallet storage initialized."</span>);
+        <span class="macro">log::info!</span>(<span class="string">&quot;Inflation pallet storage initialized.&quot;</span>);
 
         T::WeightInfo::recalculation()
             .saturating_add(T::DbWeight::get().reads_writes(<span class="number">1</span>, <span class="number">2</span>))
             .saturating_add(extra_weight)
     }
 
-    <span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
     </span><span class="kw">fn </span>post_upgrade(_state: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_runtime::TryRuntimeError&gt; {
         <span class="macro">assert_eq!</span>(Pallet::&lt;T&gt;::on_chain_storage_version(), STORAGE_VERSION);
         <span class="macro">assert!</span>(InflationParams::&lt;T&gt;::get().is_valid());

@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/rpc.rs`."><title>rpc.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../astar_collator/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/rpc.rs`."><title>rpc.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../astar_collator/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -423,20 +421,20 @@
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>substrate_frame_rpc_system::{System, SystemApiServer};
 
-<span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
 </span><span class="kw">use </span>moonbeam_rpc_debug::{Debug, DebugServer};
-<span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
 </span><span class="kw">use </span>moonbeam_rpc_trace::{Trace, TraceServer};
-<span class="comment">// TODO: get rid of this completely now that it's part of frontier?
-</span><span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+<span class="comment">// TODO: get rid of this completely now that it&#39;s part of frontier?
+</span><span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
 </span><span class="kw">use </span>moonbeam_rpc_txpool::{TxPool <span class="kw">as </span>MoonbeamTxPool, TxPoolServer};
 
 <span class="kw">use </span>astar_primitives::<span class="kw-2">*</span>;
 
-<span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
 </span><span class="kw">pub mod </span>tracing;
 
-<span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
 #[derive(Clone)]
 </span><span class="kw">pub struct </span>EvmTracingConfig {
     <span class="kw">pub </span>tracing_requesters: tracing::RpcRequesters,
@@ -454,7 +452,7 @@
     </span>C: sp_blockchain::HeaderBackend&lt;Block&gt;,
 {
     <span class="kw">let </span>config_dir = config.base_path.config_dir(config.chain_spec.id());
-    <span class="kw">let </span>path = config_dir.join(<span class="string">"frontier"</span>).join(<span class="string">"db"</span>);
+    <span class="kw">let </span>path = config_dir.join(<span class="string">&quot;frontier&quot;</span>).join(<span class="string">&quot;db&quot;</span>);
 
     <span class="prelude-val">Ok</span>(Arc::new(fc_db::kv::Backend::&lt;Block&gt;::new(
         client,
@@ -471,8 +469,8 @@
 
 <span class="kw">impl</span>&lt;C, BE&gt; fc_rpc::EthConfig&lt;Block, C&gt; <span class="kw">for </span>AstarEthConfig&lt;C, BE&gt;
 <span class="kw">where
-    </span>C: sc_client_api::StorageProvider&lt;Block, BE&gt; + Sync + Send + <span class="lifetime">'static</span>,
-    BE: Backend&lt;Block&gt; + <span class="lifetime">'static</span>,
+    </span>C: sc_client_api::StorageProvider&lt;Block, BE&gt; + Sync + Send + <span class="lifetime">&#39;static</span>,
+    BE: Backend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 {
     <span class="comment">// Use to override (adapt) evm call to precompiles for proper gas estimation.
     // We are not aware of any of our precompile that require this.
@@ -513,13 +511,13 @@
     <span class="doccomment">/// Enable EVM RPC servers
     </span><span class="kw">pub </span>enable_evm_rpc: bool,
     <span class="doccomment">/// Command sink for manual sealing
-    </span><span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
     </span><span class="kw">pub </span>command_sink:
         <span class="prelude-ty">Option</span>&lt;futures::channel::mpsc::Sender&lt;sc_consensus_manual_seal::EngineCommand&lt;Hash&gt;&gt;&gt;,
 }
 
 <span class="doccomment">/// Instantiate all RPC extensions and Tracing RPC.
-</span><span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
 </span><span class="kw">pub fn </span>create_full&lt;C, P, BE, A&gt;(
     deps: FullDeps&lt;C, P, A&gt;,
     subscription_task_executor: SubscriptionTaskExecutor,
@@ -541,7 +539,7 @@
         + BlockchainEvents&lt;Block&gt;
         + Send
         + Sync
-        + <span class="lifetime">'static</span>,
+        + <span class="lifetime">&#39;static</span>,
     C: sc_client_api::BlockBackend&lt;Block&gt;,
     C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;
@@ -551,11 +549,11 @@
         + AuraApi&lt;Block, AuraId&gt;
         + moonbeam_rpc_primitives_debug::DebugRuntimeApi&lt;Block&gt;
         + moonbeam_rpc_primitives_txpool::TxPoolRuntimeApi&lt;Block&gt;,
-    P: TransactionPool&lt;Block = Block&gt; + Sync + Send + <span class="lifetime">'static</span>,
-    BE: Backend&lt;Block&gt; + <span class="lifetime">'static</span>,
+    P: TransactionPool&lt;Block = Block&gt; + Sync + Send + <span class="lifetime">&#39;static</span>,
+    BE: Backend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
     BE::State: StateBackend&lt;BlakeTwo256&gt;,
     BE::Blockchain: BlockchainBackend&lt;Block&gt;,
-    A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">'static</span>,
+    A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">&#39;static</span>,
 {
     <span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span>deps.client);
     <span class="kw">let </span>graph = Arc::clone(<span class="kw-2">&amp;</span>deps.graph);
@@ -585,7 +583,7 @@
 }
 
 <span class="doccomment">/// Instantiate all RPC extensions.
-</span><span class="attr">#[cfg(not(feature = <span class="string">"evm-tracing"</span>))]
+</span><span class="attr">#[cfg(not(feature = <span class="string">&quot;evm-tracing&quot;</span>))]
 </span><span class="kw">pub fn </span>create_full&lt;C, P, BE, A&gt;(
     deps: FullDeps&lt;C, P, A&gt;,
     subscription_task_executor: SubscriptionTaskExecutor,
@@ -606,7 +604,7 @@
         + BlockchainEvents&lt;Block&gt;
         + Send
         + Sync
-        + <span class="lifetime">'static</span>,
+        + <span class="lifetime">&#39;static</span>,
     C: sc_client_api::BlockBackend&lt;Block&gt;,
     C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;
@@ -614,11 +612,11 @@
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
         + BlockBuilder&lt;Block&gt;
         + AuraApi&lt;Block, AuraId&gt;,
-    P: TransactionPool&lt;Block = Block&gt; + Sync + Send + <span class="lifetime">'static</span>,
-    BE: Backend&lt;Block&gt; + <span class="lifetime">'static</span>,
+    P: TransactionPool&lt;Block = Block&gt; + Sync + Send + <span class="lifetime">&#39;static</span>,
+    BE: Backend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
     BE::State: StateBackend&lt;BlakeTwo256&gt;,
     BE::Blockchain: BlockchainBackend&lt;Block&gt;,
-    A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">'static</span>,
+    A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">&#39;static</span>,
 {
     create_full_rpc(deps, subscription_task_executor, pubsub_notification_sinks)
 }
@@ -643,7 +641,7 @@
         + BlockchainEvents&lt;Block&gt;
         + Send
         + Sync
-        + <span class="lifetime">'static</span>,
+        + <span class="lifetime">&#39;static</span>,
     C: sc_client_api::BlockBackend&lt;Block&gt;,
     C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;
@@ -651,11 +649,11 @@
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
         + BlockBuilder&lt;Block&gt;
         + AuraApi&lt;Block, AuraId&gt;,
-    P: TransactionPool&lt;Block = Block&gt; + Sync + Send + <span class="lifetime">'static</span>,
-    BE: Backend&lt;Block&gt; + <span class="lifetime">'static</span>,
+    P: TransactionPool&lt;Block = Block&gt; + Sync + Send + <span class="lifetime">&#39;static</span>,
+    BE: Backend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
     BE::State: StateBackend&lt;BlakeTwo256&gt;,
     BE::Blockchain: BlockchainBackend&lt;Block&gt;,
-    A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">'static</span>,
+    A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">&#39;static</span>,
 {
     <span class="kw">let </span><span class="kw-2">mut </span>io = RpcModule::new(());
     <span class="kw">let </span>FullDeps {
@@ -673,7 +671,7 @@
         overrides,
         block_data_cache,
         enable_evm_rpc,
-        <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
         </span>command_sink,
     } = deps;
 
@@ -681,7 +679,7 @@
     io.merge(TransactionPayment::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
     io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())<span class="question-mark">?</span>;
 
-    <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
     </span><span class="kw">if let </span><span class="prelude-val">Some</span>(command_sink) = command_sink {
         <span class="kw">use </span>sc_consensus_manual_seal::rpc::ManualSealApiServer;
         io.merge(sc_consensus_manual_seal::rpc::ManualSeal::new(command_sink).into_rpc())<span class="question-mark">?</span>;

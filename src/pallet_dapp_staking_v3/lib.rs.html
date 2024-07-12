@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking-v3/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking_v3" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_dapp_staking_v3/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking-v3/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking_v3" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../pallet_dapp_staking_v3/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -2218,24 +2216,6 @@
 <a href="#2216" id="2216">2216</a>
 <a href="#2217" id="2217">2217</a>
 <a href="#2218" id="2218">2218</a>
-<a href="#2219" id="2219">2219</a>
-<a href="#2220" id="2220">2220</a>
-<a href="#2221" id="2221">2221</a>
-<a href="#2222" id="2222">2222</a>
-<a href="#2223" id="2223">2223</a>
-<a href="#2224" id="2224">2224</a>
-<a href="#2225" id="2225">2225</a>
-<a href="#2226" id="2226">2226</a>
-<a href="#2227" id="2227">2227</a>
-<a href="#2228" id="2228">2228</a>
-<a href="#2229" id="2229">2229</a>
-<a href="#2230" id="2230">2230</a>
-<a href="#2231" id="2231">2231</a>
-<a href="#2232" id="2232">2232</a>
-<a href="#2233" id="2233">2233</a>
-<a href="#2234" id="2234">2234</a>
-<a href="#2235" id="2235">2235</a>
-<a href="#2236" id="2236">2236</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2271,7 +2251,7 @@
 //! This logic is tested in the `tests` module, with the help of extensive `testing_utils`.
 //!
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 </span><span class="kw">use </span>frame_support::{
     pallet_prelude::<span class="kw-2">*</span>,
@@ -2304,7 +2284,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test;
 
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">mod </span>benchmarking;
 
 <span class="kw">mod </span>types;
@@ -2315,18 +2295,18 @@
 
 <span class="kw">pub use </span>weights::WeightInfo;
 
-<span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">"dapp-staking"</span>;
+<span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;dapp-staking&quot;</span>;
 
 <span class="doccomment">/// Helper enum for benchmarking.
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">enum </span>TierAssignment {
     <span class="doccomment">/// Real tier assignment calculation should be done.
     </span>Real,
     <span class="doccomment">/// Dummy tier assignment calculation should be done, e.g. default value should be returned.
-    </span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span>Dummy,
 }
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../README.md"</span>)]
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../README.md&quot;</span>)]
 #[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -2338,7 +2318,7 @@
     #[pallet::storage_version(STORAGE_VERSION)]
     </span><span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
 
-    <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
     </span><span class="kw">pub trait </span>BenchmarkHelper&lt;SmartContract, AccountId&gt; {
         <span class="kw">fn </span>get_smart_contract(id: u32) -&gt; SmartContract;
 
@@ -2403,7 +2383,7 @@
         /// E.g. for a price of 0.05$, we get 100 slots, and certain tier thresholds.
         /// Using these values as the base, we can adjust the configuration based on the current price.
         ///
-        /// This is connected with the `TierSlots` associated type, since it's used to calculate the total number of slots for the given price.
+        /// This is connected with the `TierSlots` associated type, since it&#39;s used to calculate the total number of slots for the given price.
         </span><span class="attr">#[pallet::constant]
         </span><span class="kw">type </span>BaseNativeCurrencyPrice: Get&lt;FixedU128&gt;;
 
@@ -2429,7 +2409,7 @@
         </span><span class="kw">type </span>MinimumLockedAmount: Get&lt;Balance&gt;;
 
         <span class="doccomment">/// Number of standard eras that need to pass before unlocking chunk can be claimed.
-        /// Even though it's expressed in 'eras', it's actually measured in number of blocks.
+        /// Even though it&#39;s expressed in &#39;eras&#39;, it&#39;s actually measured in number of blocks.
         </span><span class="attr">#[pallet::constant]
         </span><span class="kw">type </span>UnlockingPeriod: Get&lt;EraNumber&gt;;
 
@@ -2453,7 +2433,7 @@
         </span><span class="kw">type </span>WeightInfo: WeightInfo;
 
         <span class="doccomment">/// Helper trait for benchmarks.
-        </span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
         </span><span class="kw">type </span>BenchmarkHelper: BenchmarkHelper&lt;<span class="self">Self</span>::SmartContract, <span class="self">Self</span>::AccountId&gt;;
     }
 
@@ -2585,7 +2565,7 @@
         </span>NoUnlockedChunksToClaim,
         <span class="doccomment">/// There are no unlocking chunks available to relock.
         </span>NoUnlockingChunks,
-        <span class="doccomment">/// The amount being staked is too large compared to what's available for staking.
+        <span class="doccomment">/// The amount being staked is too large compared to what&#39;s available for staking.
         </span>UnavailableStakeFunds,
         <span class="doccomment">/// There are unclaimed rewards remaining from past eras or periods. They should be claimed before attempting any stake modification again.
         </span>UnclaimedRewards,
@@ -2618,7 +2598,7 @@
         <span class="doccomment">/// Claim era is invalid - it must be in history, and rewards must exist for it.
         </span>InvalidClaimEra,
         <span class="doccomment">/// No dApp tier info exists for the specified era. This can be because era has expired
-        /// or because during the specified era there were no eligible rewards or protocol wasn't active.
+        /// or because during the specified era there were no eligible rewards or protocol wasn&#39;t active.
         </span>NoDAppTierInfo,
         <span class="doccomment">/// An unexpected error occurred while trying to claim dApp reward.
         </span>InternalClaimDAppError,
@@ -2630,7 +2610,7 @@
         </span>NoExpiredEntries,
         <span class="doccomment">/// Force call is not allowed in production.
         </span>ForceNotAllowed,
-        <span class="doccomment">/// Account doesn't have the freeze inconsistency
+        <span class="doccomment">/// Account doesn&#39;t have the freeze inconsistency
         </span>AccountNotInconsistent, <span class="comment">// TODO: can be removed after call `fix_account` is removed
     </span>}
 
@@ -2645,7 +2625,7 @@
 
     <span class="doccomment">/// Map of all dApps integrated into dApp staking protocol.
     ///
-    /// Even though dApp is integrated, it does not mean it's still actively participating in dApp staking.
+    /// Even though dApp is integrated, it does not mean it&#39;s still actively participating in dApp staking.
     /// It might have been unregistered at some point in history.
     </span><span class="attr">#[pallet::storage]
     </span><span class="kw">pub type </span>IntegratedDApps&lt;T: Config&gt; = CountedStorageMap&lt;
@@ -2689,7 +2669,7 @@
 
     <span class="doccomment">/// Information about rewards for each era.
     ///
-    /// Since each entry is a 'span', covering up to `T::EraRewardSpanLength` entries, only certain era value keys can exist in storage.
+    /// Since each entry is a &#39;span&#39;, covering up to `T::EraRewardSpanLength` entries, only certain era value keys can exist in storage.
     /// For the sake of simplicity, valid `era` keys are calculated as:
     ///
     /// era_key = era - (era % T::EraRewardSpanLength)
@@ -2700,7 +2680,7 @@
     </span><span class="kw">pub type </span>EraRewards&lt;T: Config&gt; =
         StorageMap&lt;<span class="kw">_</span>, Twox64Concat, EraNumber, EraRewardSpan&lt;T::EraRewardSpanLength&gt;, OptionQuery&gt;;
 
-    <span class="doccomment">/// Information about period's end.
+    <span class="doccomment">/// Information about period&#39;s end.
     </span><span class="attr">#[pallet::storage]
     </span><span class="kw">pub type </span>PeriodEnd&lt;T: Config&gt; =
         StorageMap&lt;<span class="kw">_</span>, Twox64Concat, PeriodNumber, PeriodEndInfo, OptionQuery&gt;;
@@ -2741,6 +2721,7 @@
     </span><span class="kw">pub type </span>Safeguard&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, bool, ValueQuery, DefaultSafeguard&lt;T&gt;&gt;;
 
     <span class="attr">#[pallet::genesis_config]
+    #[derive(frame_support::DefaultNoBound)]
     </span><span class="kw">pub struct </span>GenesisConfig&lt;T&gt; {
         <span class="kw">pub </span>reward_portion: Vec&lt;Permill&gt;,
         <span class="kw">pub </span>slot_distribution: Vec&lt;Permill&gt;,
@@ -2748,25 +2729,6 @@
         <span class="kw">pub </span>slots_per_tier: Vec&lt;u16&gt;,
         <span class="kw">pub </span>safeguard: <span class="prelude-ty">Option</span>&lt;bool&gt;,
         <span class="kw">pub </span>_config: PhantomData&lt;T&gt;,
-    }
-
-    <span class="kw">impl</span>&lt;T: Config&gt; Default <span class="kw">for </span>GenesisConfig&lt;T&gt; {
-        <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
-            <span class="kw">use </span>sp_std::vec;
-            <span class="kw">let </span>num_tiers = T::NumberOfTiers::get();
-            <span class="self">Self </span>{
-                reward_portion: <span class="macro">vec!</span>[Permill::from_percent(<span class="number">100 </span>/ num_tiers); num_tiers <span class="kw">as </span>usize],
-                slot_distribution: <span class="macro">vec!</span>[Permill::from_percent(<span class="number">100 </span>/ num_tiers); num_tiers <span class="kw">as </span>usize],
-                tier_thresholds: (<span class="number">0</span>..num_tiers)
-                    .map(|i| TierThreshold::FixedTvlAmount {
-                        amount: (<span class="number">10 </span>* i).into(),
-                    })
-                    .collect(),
-                slots_per_tier: <span class="macro">vec!</span>[<span class="number">100</span>; num_tiers <span class="kw">as </span>usize],
-                safeguard: <span class="prelude-val">None</span>,
-                _config: Default::default(),
-            }
-        }
     }
 
     <span class="attr">#[pallet::genesis_build]
@@ -2777,24 +2739,24 @@
                 reward_portion: BoundedVec::&lt;Permill, T::NumberOfTiers&gt;::try_from(
                     <span class="self">self</span>.reward_portion.clone(),
                 )
-                .expect(<span class="string">"Invalid number of reward portions provided."</span>),
+                .expect(<span class="string">&quot;Invalid number of reward portions provided.&quot;</span>),
                 slot_distribution: BoundedVec::&lt;Permill, T::NumberOfTiers&gt;::try_from(
                     <span class="self">self</span>.slot_distribution.clone(),
                 )
-                .expect(<span class="string">"Invalid number of slot distributions provided."</span>),
+                .expect(<span class="string">&quot;Invalid number of slot distributions provided.&quot;</span>),
                 tier_thresholds: BoundedVec::&lt;TierThreshold, T::NumberOfTiers&gt;::try_from(
                     <span class="self">self</span>.tier_thresholds.clone(),
                 )
-                .expect(<span class="string">"Invalid number of tier thresholds provided."</span>),
+                .expect(<span class="string">&quot;Invalid number of tier thresholds provided.&quot;</span>),
             };
             <span class="macro">assert!</span>(
                 tier_params.is_valid(),
-                <span class="string">"Invalid tier parameters values provided."
+                <span class="string">&quot;Invalid tier parameters values provided.&quot;
             </span>);
 
             <span class="comment">// Prepare tier configuration and verify its correctness
             </span><span class="kw">let </span>number_of_slots = <span class="self">self</span>.slots_per_tier.iter().fold(<span class="number">0_u16</span>, |acc, <span class="kw-2">&amp;</span>slots| {
-                acc.checked_add(slots).expect(<span class="string">"Overflow"</span>)
+                acc.checked_add(slots).expect(<span class="string">&quot;Overflow&quot;</span>)
             });
             <span class="kw">let </span>tier_config =
                 TiersConfiguration::&lt;T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice&gt; {
@@ -2802,14 +2764,14 @@
                     slots_per_tier: BoundedVec::&lt;u16, T::NumberOfTiers&gt;::try_from(
                         <span class="self">self</span>.slots_per_tier.clone(),
                     )
-                    .expect(<span class="string">"Invalid number of slots per tier entries provided."</span>),
+                    .expect(<span class="string">&quot;Invalid number of slots per tier entries provided.&quot;</span>),
                     reward_portion: tier_params.reward_portion.clone(),
                     tier_thresholds: tier_params.tier_thresholds.clone(),
                     _phantom: Default::default(),
                 };
             <span class="macro">assert!</span>(
                 tier_params.is_valid(),
-                <span class="string">"Invalid tier config values provided."
+                <span class="string">&quot;Invalid tier config values provided.&quot;
             </span>);
 
             <span class="comment">// Prepare initial protocol state
@@ -2817,7 +2779,7 @@
                 era: <span class="number">1</span>,
                 next_era_start: Pallet::&lt;T&gt;::blocks_per_voting_period()
                     .checked_add(<span class="number">1</span>)
-                    .expect(<span class="string">"Must not overflow - especially not at genesis."</span>),
+                    .expect(<span class="string">&quot;Must not overflow - especially not at genesis.&quot;</span>),
                 period_info: PeriodInfo {
                     number: <span class="number">1</span>,
                     subperiod: Subperiod::Voting,
@@ -3045,7 +3007,7 @@
         }
 
         <span class="doccomment">/// Unregister dApp from dApp staking protocol, making it ineligible for future rewards.
-        /// This doesn't remove the dApp completely from the system just yet, but it can no longer be used for staking.
+        /// This doesn&#39;t remove the dApp completely from the system just yet, but it can no longer be used for staking.
         ///
         /// Can be called by dApp staking manager origin.
         </span><span class="attr">#[pallet::call_index(<span class="number">6</span>)]
@@ -3074,7 +3036,7 @@
 
         <span class="doccomment">/// Locks additional funds into dApp staking.
         ///
-        /// In case caller account doesn't have sufficient balance to cover the specified amount, everything is locked.
+        /// In case caller account doesn&#39;t have sufficient balance to cover the specified amount, everything is locked.
         /// After adjustment, lock amount must be greater than zero and in total must be equal or greater than the minimum locked amount.
         ///
         /// Locked amount can immediately be used for staking.
@@ -3090,8 +3052,8 @@
             <span class="kw">let </span><span class="kw-2">mut </span>ledger = Ledger::&lt;T&gt;::get(<span class="kw-2">&amp;</span>account);
 
             <span class="comment">// Only do the check for new accounts.
-            // External logic should ensure that accounts which are already participating in dApp staking aren't
-            // allowed to participate elsewhere where they shouldn't.
+            // External logic should ensure that accounts which are already participating in dApp staking aren&#39;t
+            // allowed to participate elsewhere where they shouldn&#39;t.
             </span><span class="kw">let </span>is_new_account = ledger.is_empty();
             <span class="kw">if </span>is_new_account {
                 <span class="macro">ensure!</span>(
@@ -3133,7 +3095,7 @@
 
         <span class="doccomment">/// Attempts to start the unlocking process for the specified amount.
         ///
-        /// Only the amount that isn't actively used for staking can be unlocked.
+        /// Only the amount that isn&#39;t actively used for staking can be unlocked.
         /// If the amount is greater than the available amount for unlocking, everything is unlocked.
         /// If the remaining locked amount would take the account below the minimum locked amount, everything is unlocked.
         </span><span class="attr">#[pallet::call_index(<span class="number">8</span>)]
@@ -3266,7 +3228,7 @@
             <span class="kw">let </span>_ignore = ledger.maybe_cleanup_expired(threshold_period);
 
             <span class="comment">// 1.
-            // Increase stake amount for the next era &amp; current period in staker's ledger
+            // Increase stake amount for the next era &amp; current period in staker&#39;s ledger
             </span>ledger
                 .add_stake_amount(amount, current_era, protocol_state.period_info)
                 .map_err(|err| <span class="kw">match </span>err {
@@ -3283,7 +3245,7 @@
             //
             // There are two distinct scenarios:
             // 1. Existing entry matches the current period number - just update it.
-            // 2. Entry doesn't exist or it's for an older period - create a new one.
+            // 2. Entry doesn&#39;t exist or it&#39;s for an older period - create a new one.
             //
             // This is ok since we only use this storage entry to keep track of how much each staker
             // has staked on each contract in the current period. We only ever need the latest information.
@@ -3296,7 +3258,7 @@
                     {
                         (staking_info, <span class="bool-val">false</span>)
                     }
-                    <span class="comment">// Entry exists but period doesn't match. Bonus reward might still be claimable.
+                    <span class="comment">// Entry exists but period doesn&#39;t match. Bonus reward might still be claimable.
                     </span><span class="prelude-val">Some</span>(staking_info)
                         <span class="kw">if </span>staking_info.period_number() &gt;= threshold_period
                             &amp;&amp; staking_info.is_loyal() =&gt;
@@ -3353,7 +3315,7 @@
         }
 
         <span class="doccomment">/// Unstake the specified amount from a smart contract.
-        /// The `amount` specified **must** not exceed what's staked, otherwise the call will fail.
+        /// The `amount` specified **must** not exceed what&#39;s staked, otherwise the call will fail.
         ///
         /// If unstaking the specified `amount` would take staker below the minimum stake threshold, everything is unstaked.
         ///
@@ -3515,7 +3477,7 @@
             </span><span class="kw">let </span>protocol_state = ActiveProtocolState::&lt;T&gt;::get();
             <span class="macro">ensure!</span>(era &lt; protocol_state.era, Error::&lt;T&gt;::InvalidClaimEra);
 
-            <span class="comment">// 'Consume' dApp reward for the specified era, if possible.
+            <span class="comment">// &#39;Consume&#39; dApp reward for the specified era, if possible.
             </span><span class="kw">let </span><span class="kw-2">mut </span>dapp_tiers = DAppTiers::&lt;T&gt;::get(<span class="kw-2">&amp;</span>era).ok_or(Error::&lt;T&gt;::NoDAppTierInfo)<span class="question-mark">?</span>;
             <span class="macro">ensure!</span>(
                 dapp_tiers.period &gt;= <span class="self">Self</span>::oldest_claimable_period(protocol_state.period_number()),
@@ -3599,8 +3561,8 @@
                 })<span class="question-mark">?</span>;
 
             <span class="comment">// Update total staked amount for the next era.
-            // This means 'fake' stake total amount has been kept until now, even though contract was unregistered.
-            // Although strange, it's been requested to keep it like this from the team.
+            // This means &#39;fake&#39; stake total amount has been kept until now, even though contract was unregistered.
+            // Although strange, it&#39;s been requested to keep it like this from the team.
             </span>CurrentEraInfo::&lt;T&gt;::mutate(|era_info| {
                 era_info.unstake_amount(amount);
             });
@@ -3621,8 +3583,8 @@
         <span class="doccomment">/// Cleanup expired stake entries for the contract.
         ///
         /// Entry is considered to be expired if:
-        /// 1. It's from a past period &amp; the account wasn't a loyal staker, meaning there's no claimable bonus reward.
-        /// 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
+        /// 1. It&#39;s from a past period &amp; the account wasn&#39;t a loyal staker, meaning there&#39;s no claimable bonus reward.
+        /// 2. It&#39;s from a period older than the oldest claimable period, regardless whether the account was loyal or not.
         </span><span class="attr">#[pallet::call_index(<span class="number">17</span>)]
         #[pallet::weight(T::WeightInfo::cleanup_expired_entries(
             T::MaxNumberOfStakedContracts::get()
@@ -3635,7 +3597,7 @@
             <span class="kw">let </span>current_period = protocol_state.period_number();
             <span class="kw">let </span>threshold_period = <span class="self">Self</span>::oldest_claimable_period(current_period);
 
-            <span class="comment">// Find all entries which are from past periods &amp; don't have claimable bonus rewards.
+            <span class="comment">// Find all entries which are from past periods &amp; don&#39;t have claimable bonus rewards.
             // This is bounded by max allowed number of stake entries per account.
             </span><span class="kw">let </span>to_be_deleted: Vec&lt;T::SmartContract&gt; = StakerInfo::&lt;T&gt;::iter_prefix(<span class="kw-2">&amp;</span>account)
                 .filter_map(|(smart_contract, stake_info)| {
@@ -3677,7 +3639,7 @@
         }
 
         <span class="doccomment">/// Used to force a change of era or subperiod.
-        /// The effect isn't immediate but will happen on the next block.
+        /// The effect isn&#39;t immediate but will happen on the next block.
         ///
         /// Used for testing purposes, when we want to force an era change, or a subperiod change.
         /// Not intended to be used in production, except in case of unforeseen circumstances.
@@ -3691,7 +3653,7 @@
 
             <span class="macro">ensure!</span>(!Safeguard::&lt;T&gt;::get(), Error::&lt;T&gt;::ForceNotAllowed);
 
-            <span class="comment">// Ensure a 'change' happens on the next block
+            <span class="comment">// Ensure a &#39;change&#39; happens on the next block
             </span>ActiveProtocolState::&lt;T&gt;::mutate(|state| {
                 <span class="kw">let </span>current_block = frame_system::Pallet::&lt;T&gt;::block_number();
                 state.next_era_start = current_block.saturating_add(One::one()).saturated_into();
@@ -3703,10 +3665,10 @@
                     }
                 }
 
-                <span class="comment">//       Right now it won't account for the full weight incurred by calling this notification.
-                //       It's not a big problem since this call is not expected to be called ever in production.
+                <span class="comment">//       Right now it won&#39;t account for the full weight incurred by calling this notification.
+                //       It&#39;s not a big problem since this call is not expected to be called ever in production.
                 //       Also, in case of subperiod forcing, the alignment will be broken but since this is only call for testing,
-                //       we don't need to concern ourselves with it.
+                //       we don&#39;t need to concern ourselves with it.
                 </span><span class="self">Self</span>::notify_block_before_new_era(<span class="kw-2">&amp;</span>state);
             });
 
@@ -3747,7 +3709,7 @@
             <span class="self">Self</span>::internal_claim_bonus_reward_for(account, smart_contract)
         }
 
-        <span class="doccomment">/// A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what's available.
+        <span class="doccomment">/// A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what&#39;s available.
         ///
         /// The approach is as simple as possible:
         /// 1. Caller provides an account to fix.
@@ -3756,7 +3718,7 @@
         /// 4. All states are updated accordingly, and the account is no longer in an inconsistent state.
         ///
         /// The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
-        /// Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
+        /// Call doesn&#39;t touch any storage items that aren&#39;t already touched by the `claim_unlocked` call, hence the simplified approach.
         </span><span class="attr">#[pallet::call_index(<span class="number">100</span>)]
         #[pallet::weight(T::DbWeight::get().reads_writes(<span class="number">4</span>, <span class="number">1</span>))]
         </span><span class="kw">pub fn </span>fix_account(
@@ -3872,7 +3834,7 @@
         /// ### Algorithm
         ///
         /// 1. Read in over all contract stake entries. In case staked amount is zero for the current era, ignore it.
-        ///    This information is used to calculate 'score' per dApp, which is used to determine the tier.
+        ///    This information is used to calculate &#39;score&#39; per dApp, which is used to determine the tier.
         ///
         /// 2. Sort the entries by the score, in descending order - the top score dApp comes first.
         ///
@@ -3910,7 +3872,7 @@
             <span class="kw">for </span>(dapp_id, stake_amount) <span class="kw">in </span>ContractStake::&lt;T&gt;::iter() {
                 counter.saturating_inc();
 
-                <span class="comment">// Skip dApps which don't have ANY amount staked
+                <span class="comment">// Skip dApps which don&#39;t have ANY amount staked
                 </span><span class="kw">if let </span><span class="prelude-val">Some</span>(stake_amount) = stake_amount.get(era, period) {
                     <span class="kw">if </span>!stake_amount.total().is_zero() {
                         dapp_stakes.push((dapp_id, stake_amount.total()));
@@ -3928,7 +3890,7 @@
             // one of them will be assigned to the tier, and the other one will be assigned to the lower tier, if it exists.
             //
             // In the current implementation, the dApp with the lower dApp Id has the advantage.
-            // There is no guarantee this will persist in the future, so it's best for dApps to do their
+            // There is no guarantee this will persist in the future, so it&#39;s best for dApps to do their
             // best to avoid getting themselves into such situations.
 
             // 3. Calculate rewards.
@@ -3948,7 +3910,7 @@
             <span class="comment">// 4.
             // Iterate over configured tier and potential dApps.
             // Each dApp will be assigned to the best possible tier if it satisfies the required condition,
-            // and tier capacity hasn't been filled yet.
+            // and tier capacity hasn&#39;t been filled yet.
             </span><span class="kw">let </span><span class="kw-2">mut </span>dapp_tiers = BTreeMap::new();
             <span class="kw">let </span><span class="kw-2">mut </span>tier_slots = BTreeMap::new();
 
@@ -3965,7 +3927,7 @@
 
                 <span class="comment">// Iterate over dApps until one of two conditions has been met:
                 // 1. Tier has no more capacity
-                // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
+                // 2. dApp doesn&#39;t satisfy the tier threshold (since they&#39;re sorted, none of the following dApps will satisfy the condition either)
                 </span><span class="kw">for </span>(dapp_id, staked_amount) <span class="kw">in </span>dapp_stakes
                     .iter()
                     .skip(dapp_tiers.len())
@@ -3992,7 +3954,7 @@
                     </span><span class="kw">let </span>tier_reward = tier_rewards.get(tier_id).copied().unwrap_or_default();
                     <span class="kw">let </span>empty_slots = tier_capacity.saturating_sub(tier_slots.len() <span class="kw">as </span>u16);
                     <span class="kw">let </span>remaining_reward = tier_reward.saturating_mul(empty_slots.into());
-                    <span class="comment">// make sure required reward doesn't exceed remaining reward
+                    <span class="comment">// make sure required reward doesn&#39;t exceed remaining reward
                     </span><span class="kw">let </span>reward_per_rank = tier_reward.saturating_div(RankedTier::MAX_RANK.into());
                     <span class="kw">let </span>expected_reward_for_ranks =
                         reward_per_rank.saturating_mul(ranks_sum.into());
@@ -4038,24 +4000,24 @@
                 <span class="kw">return </span>consumed_weight;
             }
 
-            <span class="comment">// Inform observers about the upcoming new era, if it's the case.
+            <span class="comment">// Inform observers about the upcoming new era, if it&#39;s the case.
             </span><span class="kw">if </span>protocol_state.next_era_start == now.saturating_add(<span class="number">1</span>) {
                 consumed_weight
                     .saturating_accrue(<span class="self">Self</span>::notify_block_before_new_era(<span class="kw-2">&amp;</span>protocol_state));
             }
 
-            <span class="comment">// Nothing to do if it's not new era
+            <span class="comment">// Nothing to do if it&#39;s not new era
             </span><span class="kw">if </span>!protocol_state.is_new_era(now) {
                 <span class="kw">return </span>consumed_weight;
             }
 
-            <span class="comment">// At this point it's clear that an era change will happen
+            <span class="comment">// At this point it&#39;s clear that an era change will happen
             </span><span class="kw">let </span><span class="kw-2">mut </span>era_info = CurrentEraInfo::&lt;T&gt;::get();
 
             <span class="kw">let </span>current_era = protocol_state.era;
             <span class="kw">let </span>next_era = current_era.saturating_add(<span class="number">1</span>);
             <span class="kw">let </span>(maybe_period_event, era_reward) = <span class="kw">match </span>protocol_state.subperiod() {
-                <span class="comment">// Voting subperiod only lasts for one 'prolonged' era
+                <span class="comment">// Voting subperiod only lasts for one &#39;prolonged&#39; era
                 </span>Subperiod::Voting =&gt; {
                     <span class="comment">// For the sake of consistency, we put zero reward into storage. There are no rewards for the voting subperiod.
                     </span><span class="kw">let </span>era_reward = EraReward {
@@ -4098,7 +4060,7 @@
 
                     <span class="comment">// Distribute dapps into tiers, write it into storage
                     //
-                    // To help with benchmarking, it's possible to omit real tier calculation using the `Dummy` approach.
+                    // To help with benchmarking, it&#39;s possible to omit real tier calculation using the `Dummy` approach.
                     // This must never be used in production code, obviously.
                     </span><span class="kw">let </span>(dapp_tier_rewards, counter) = <span class="kw">match </span>tier_assignment {
                         TierAssignment::Real =&gt; <span class="self">Self</span>::get_dapp_tier_assignment_and_rewards(
@@ -4106,7 +4068,7 @@
                             protocol_state.period_number(),
                             dapp_reward_pool,
                         ),
-                        <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+                        <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
                         </span>TierAssignment::Dummy =&gt; (DAppTierRewardsFor::&lt;T&gt;::default(), <span class="number">0</span>),
                     };
                     DAppTiers::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>current_era, dapp_tier_rewards);
@@ -4183,7 +4145,7 @@
                 <span class="comment">// This must never happen but we log the error just in case.
                 </span><span class="macro">log::error!</span>(
                     target: LOG_TARGET,
-                    <span class="string">"Failed to push era {} into the era reward span."</span>,
+                    <span class="string">&quot;Failed to push era {} into the era reward span.&quot;</span>,
                     current_era
                 );
             }
@@ -4211,28 +4173,28 @@
 
         <span class="doccomment">/// Updates the cleanup marker with the new oldest valid era if possible.
         ///
-        /// It's possible that the call will be a no-op since we haven't advanced enough periods yet.
+        /// It&#39;s possible that the call will be a no-op since we haven&#39;t advanced enough periods yet.
         </span><span class="kw">fn </span>update_cleanup_marker(new_period_number: PeriodNumber) {
             <span class="comment">// 1. Find out the latest expired period; rewards can no longer be claimed for it or any older period.
             </span><span class="kw">let </span>latest_expired_period = <span class="kw">match </span>new_period_number
                 .checked_sub(T::RewardRetentionInPeriods::get().saturating_add(<span class="number">1</span>))
             {
                 <span class="prelude-val">Some</span>(period) <span class="kw">if </span>!period.is_zero() =&gt; period,
-                <span class="comment">// Haven't advanced enough periods to have any expired entries.
+                <span class="comment">// Haven&#39;t advanced enough periods to have any expired entries.
                 </span><span class="kw">_ </span>=&gt; <span class="kw">return</span>,
             };
 
             <span class="comment">// 2. Find the oldest valid era for which rewards can still be claimed.
-            //    Technically, this will be `Voting` subperiod era but it doesn't matter.
+            //    Technically, this will be `Voting` subperiod era but it doesn&#39;t matter.
             //
-            //    Also, remove the expired `PeriodEnd` entry since it's no longer needed.
+            //    Also, remove the expired `PeriodEnd` entry since it&#39;s no longer needed.
             </span><span class="kw">let </span>oldest_valid_era = <span class="kw">match </span>PeriodEnd::&lt;T&gt;::take(latest_expired_period) {
                 <span class="prelude-val">Some</span>(period_end_info) =&gt; period_end_info.final_era.saturating_add(<span class="number">1</span>),
                 <span class="prelude-val">None </span>=&gt; {
                     <span class="comment">// Should never happen but nothing we can do if it does.
                     </span><span class="macro">log::error!</span>(
                         target: LOG_TARGET,
-                        <span class="string">"No `PeriodEnd` entry for the expired period: {}"</span>,
+                        <span class="string">&quot;No `PeriodEnd` entry for the expired period: {}&quot;</span>,
                         latest_expired_period
                     );
                     <span class="kw">return</span>;
@@ -4263,7 +4225,7 @@
             <span class="comment">// 1. Attempt to cleanup one expired `EraRewards` entry.
             </span><span class="kw">if </span>cleanup_marker.era_reward_index &lt; cleanup_marker.oldest_valid_era {
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(era_reward) = EraRewards::&lt;T&gt;::get(cleanup_marker.era_reward_index) {
-                    <span class="comment">// If oldest valid era comes AFTER this span, it's safe to delete it.
+                    <span class="comment">// If oldest valid era comes AFTER this span, it&#39;s safe to delete it.
                     </span><span class="kw">if </span>era_reward.last_era() &lt; cleanup_marker.oldest_valid_era {
                         EraRewards::&lt;T&gt;::remove(cleanup_marker.era_reward_index);
                         cleanup_marker
@@ -4274,7 +4236,7 @@
                     <span class="comment">// Can happen if the entry is part of history before dApp staking v3
                     </span><span class="macro">log::warn!</span>(
                         target: LOG_TARGET,
-                        <span class="string">"Era rewards span for era {} is missing, but cleanup marker is set."</span>,
+                        <span class="string">&quot;Era rewards span for era {} is missing, but cleanup marker is set.&quot;</span>,
                         cleanup_marker.era_reward_index
                     );
                     cleanup_marker
@@ -4292,11 +4254,11 @@
             <span class="comment">// Store the updated cleanup marker
             </span>HistoryCleanupMarker::&lt;T&gt;::put(cleanup_marker);
 
-            <span class="comment">// We could try &amp; cleanup more entries, but since it's not a critical operation and can happen whenever,
+            <span class="comment">// We could try &amp; cleanup more entries, but since it&#39;s not a critical operation and can happen whenever,
             // we opt for the simpler solution where only 1 entry per block is cleaned up.
             // It can be changed though.
 
-            // It could end up being less than this weight, but this won't occur often enough to be important.
+            // It could end up being less than this weight, but this won&#39;t occur often enough to be important.
             </span>T::WeightInfo::on_idle_cleanup()
         }
 
@@ -4308,7 +4270,7 @@
             <span class="kw">let </span>amount = ledger.claim_unlocked(current_block.saturated_into());
             <span class="macro">ensure!</span>(amount &gt; Zero::zero(), Error::&lt;T&gt;::NoUnlockedChunksToClaim);
 
-            <span class="comment">// In case it's full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
+            <span class="comment">// In case it&#39;s full unlock, account is exiting dApp staking, ensure all storage is cleaned up.
             </span><span class="kw">let </span>removed_entries = <span class="kw">if </span>ledger.is_empty() {
                 <span class="kw">let _ </span>= StakerInfo::&lt;T&gt;::clear_prefix(<span class="kw-2">&amp;</span>account, ledger.contract_stake_count, <span class="prelude-val">None</span>);
                 ledger.contract_stake_count
@@ -4349,7 +4311,7 @@
                     .ok_or(Error::&lt;T&gt;::NoClaimableRewards)<span class="question-mark">?</span>;
 
             <span class="comment">// The last era for which we can theoretically claim rewards.
-            // And indicator if we know the period's ending era.
+            // And indicator if we know the period&#39;s ending era.
             </span><span class="kw">let </span>(last_period_era, period_end) = <span class="kw">if </span>staked_period == protocol_state.period_number() {
                 (protocol_state.era.saturating_sub(<span class="number">1</span>), <span class="prelude-val">None</span>)
             } <span class="kw">else </span>{
@@ -4423,7 +4385,7 @@
             <span class="comment">// Ensure:
             // 1. Period for which rewards are being claimed has ended.
             // 2. Account has been a loyal staker.
-            // 3. Rewards haven't expired.
+            // 3. Rewards haven&#39;t expired.
             </span><span class="kw">let </span>staked_period = staker_info.period_number();
             <span class="macro">ensure!</span>(
                 staked_period &lt; protocol_state.period_number(),
