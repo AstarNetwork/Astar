@@ -45,7 +45,6 @@ pallet-aura = { workspace = true }
 pallet-authorship = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
@@ -58,6 +57,7 @@ pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-identity = { workspace = true }
 pallet-membership = { workspace = true }
+pallet-message-queue = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-proxy = { workspace = true }
 pallet-session = { workspace = true, features = ["historical"] }
@@ -79,6 +79,7 @@ cumulus-primitives-core = { workspace = true }
 cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-utility = { workspace = true }
 parachain-info = { workspace = true }
+parachains-common = { workspace = true }
 
 # polkadot dependencies
 polkadot-parachain = { workspace = true }
@@ -211,8 +212,9 @@ std = [
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-dmp-queue/std",
 	"cumulus-pallet-xcmp-queue/std",
+	"pallet-message-queue/std",
+	"parachains-common/std",
 	"pallet-contracts/std",
-	"pallet-contracts-primitives/std",
 	"cumulus-pallet-xcm/std",
 	"pallet-collator-selection/std",
 	"frame-benchmarking/std",
@@ -262,6 +264,7 @@ runtime-benchmarks = [
 	"cumulus-primitives-utility/runtime-benchmarks",
 	"astar-xcm-benchmarks/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
+	"pallet-message-queue/runtime-benchmarks",
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
@@ -281,6 +284,9 @@ runtime-benchmarks = [
 	"polkadot-primitives/runtime-benchmarks",
 	"polkadot-runtime-common/runtime-benchmarks",
 	"xcm-executor/runtime-benchmarks",
+	"cumulus-pallet-dmp-queue/runtime-benchmarks",
+	"cumulus-primitives-core/runtime-benchmarks",
+	"parachains-common/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -323,6 +329,7 @@ try-runtime = [
 	"pallet-contracts/try-runtime",
 	"pallet-evm/try-runtime",
 	"orml-xtokens/try-runtime",
+	"pallet-message-queue/try-runtime",
 	"astar-primitives/try-runtime",
 	"astar-xcm-benchmarks?/try-runtime",
 	"pallet-chain-extension-assets/try-runtime",

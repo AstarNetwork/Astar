@@ -24,7 +24,6 @@ pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-ethereum-checked = { workspace = true }
@@ -125,7 +124,6 @@ std = [
 	"pallet-membership/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
-	"pallet-contracts-primitives/std",
 	"pallet-chain-extension-xvm/std",
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dapp-staking-v3/std",

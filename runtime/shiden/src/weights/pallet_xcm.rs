@@ -90,6 +90,11 @@ impl<T: frame_system::Config> pallet_xcm::WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(31_324_000, 3593)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 	}
+
+	fn transfer_assets() -> Weight {
+		todo!()
+	}
+
 	/// Storage: Benchmark Override (r:0 w:0)
 	/// Proof Skipped: Benchmark Override (max_values: None, max_size: None, mode: Measured)
 	fn execute() -> Weight {
@@ -271,5 +276,13 @@ impl<T: frame_system::Config> pallet_xcm::WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(35_686_000, 11075)
 			.saturating_add(T::DbWeight::get().reads(9_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
+	}
+
+	fn new_query() -> Weight {
+		Weight::MAX
+	}
+
+	fn take_response() -> Weight {
+		Weight::MAX
 	}
 }

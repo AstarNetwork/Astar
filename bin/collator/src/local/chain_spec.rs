@@ -22,8 +22,8 @@ use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig,
     CommunityCouncilMembershipConfig, CommunityTreasuryPalletId, CouncilMembershipConfig,
     DappStakingConfig, EVMConfig, GrandpaConfig, GrandpaId, InflationConfig, InflationParameters,
-    Precompiles, RuntimeGenesisConfig, Signature, SudoConfig, SystemConfig,
-    TechnicalCommitteeMembershipConfig, TierThreshold, TreasuryPalletId, VestingConfig, AST,
+    Precompiles, RuntimeGenesisConfig, Signature, SudoConfig, TechnicalCommitteeMembershipConfig,
+    TierThreshold, TreasuryPalletId, VestingConfig, AST,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -62,46 +62,39 @@ pub fn development_config() -> ChainSpec {
     let mut properties = serde_json::map::Map::new();
     properties.insert("tokenSymbol".into(), "LOC".into());
     properties.insert("tokenDecimals".into(), 18.into());
-    ChainSpec::from_genesis(
-        "Development",
-        "dev",
-        ChainType::Development,
-        move || {
-            testnet_genesis(
-                vec![authority_keys_from_seed("Alice")],
+    ChainSpec::builder(wasm_binary_unwrap(), None)
+        .with_name("Development")
+        .with_id("dev")
+        .with_chain_type(ChainType::Development)
+        .with_properties(properties)
+        .with_genesis_config(testnet_genesis(
+            vec![authority_keys_from_seed("Alice")],
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
+            vec![
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                    TreasuryPalletId::get().into_account_truncating(),
-                    CommunityTreasuryPalletId::get().into_account_truncating(),
-                    // Arrakis.TEST account in MetaMask
-                    // Import known test account with private key
-                    // 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
-                    // H160 address: 0xaaafB3972B05630fCceE866eC69CdADd9baC2771
-                    AccountId::from_ss58check("5FQedkNQcF2fJPwkB6Z1ZcMgGti4vcJQNs6x85YPv3VhjBBT")
-                        .unwrap(),
-                ],
-            )
-        },
-        vec![],
-        None,
-        None,
-        None,
-        Some(properties),
-        None,
-    )
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+                get_account_id_from_seed::<sr25519::Public>("Dave"),
+                get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                get_account_id_from_seed::<sr25519::Public>("Eve"),
+                get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                TreasuryPalletId::get().into_account_truncating(),
+                CommunityTreasuryPalletId::get().into_account_truncating(),
+                // Arrakis.TEST account in MetaMask
+                // Import known test account with private key
+                // 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391
+                // H160 address: 0xaaafB3972B05630fCceE866eC69CdADd9baC2771
+                AccountId::from_ss58check("5FQedkNQcF2fJPwkB6Z1ZcMgGti4vcJQNs6x85YPv3VhjBBT")
+                    .unwrap(),
+            ],
+        ))
+        .build()
 }
 
 fn testnet_genesis(
     initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
-) -> RuntimeGenesisConfig {
+) -> serde_json::Value {
     let accounts: Vec<AccountId> = vec!["Alice", "Bob", "Charlie", "Dave", "Eve"]
         .iter()
         .map(|s| get_account_id_from_seed::<sr25519::Public>(s))
@@ -112,11 +105,8 @@ fn testnet_genesis(
     // within contracts.
     // (PUSH1 0x00 PUSH1 0x00 REVERT)
     let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
-    RuntimeGenesisConfig {
-        system: SystemConfig {
-            code: wasm_binary_unwrap().to_vec(),
-            ..Default::default()
-        },
+    let config = RuntimeGenesisConfig {
+        system: Default::default(),
         balances: BalancesConfig {
             balances: endowed_accounts
                 .iter()
@@ -221,7 +211,9 @@ fn testnet_genesis(
         democracy: Default::default(),
         treasury: Default::default(),
         community_treasury: Default::default(),
-    }
+    };
+
+    serde_json::to_value(&config).expect("Could not build genesis config.")
 }
 
 #[cfg(test)]

@@ -508,11 +508,6 @@ impl SendXcm for StoringRouter {
     }
 }
 
-#[cfg(feature = "runtime-benchmarks")]
-parameter_types! {
-    pub ReachableDest: Option<MultiLocation> = Some(Parachain(1000).into());
-}
-
 impl pallet_xcm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SendXcmOrigin = xcm_builder::EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -538,8 +533,6 @@ impl pallet_xcm::Config for Runtime {
     type RemoteLockConsumerIdentifier = ();
     type WeightInfo = pallet_xcm::TestWeightInfo;
     type AdminOrigin = frame_system::EnsureRoot<AccountId>;
-    #[cfg(feature = "runtime-benchmarks")]
-    type ReachableDest = ReachableDest;
 }
 
 impl orml_xtokens::Config for Runtime {

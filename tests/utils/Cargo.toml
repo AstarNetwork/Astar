@@ -15,7 +15,7 @@ scale-info = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-contracts = { workspace = true }
-pallet-contracts-primitives = { workspace = true }
+pallet-contracts-uapi = { workspace = true }
 sp-runtime = { workspace = true }
 
 [features]
@@ -25,7 +25,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-contracts/std",
-	"pallet-contracts-primitives/std",
 	"scale-info/std",
 	"sp-runtime/std",
 ]

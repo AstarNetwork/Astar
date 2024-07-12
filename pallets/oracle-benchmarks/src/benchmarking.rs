@@ -26,7 +26,6 @@ use frame_support::{
     BoundedVec,
 };
 use frame_system::RawOrigin;
-use sp_std::vec;
 
 #[benchmarks]
 mod benchmarks {

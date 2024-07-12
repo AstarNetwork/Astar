@@ -26,8 +26,9 @@ use astar_primitives::{
 };
 use fp_evm::{ExecutionInfoV2, ExitReason, ExitRevert};
 use frame_support::{dispatch::PostDispatchInfo, traits::Currency, weights::Weight};
+use pallet_contracts::ExecReturnValue;
 use pallet_contracts::{CollectEvents, DebugInfo, Determinism};
-use pallet_contracts_primitives::{ExecReturnValue, ReturnFlags};
+use pallet_contracts_uapi::ReturnFlags;
 use parity_scale_codec::Encode;
 use precompile_utils::{prelude::*, solidity};
 use sp_runtime::MultiAddress;
@@ -703,7 +704,7 @@ fn wasm_call_via_xvm_fails_if_storage_deposit_limit_exhausted() {
                 reason: FailureReason::Error(FailureError::VmError(data)),
                 ..
             }) => {
-                let error_string = "WASM call error: Module(ModuleError { index: 70, error: [23, 0, 0, 0], message: Some(\"StorageDepositLimitExhausted\") })";
+                let error_string = "WASM call error: Module(ModuleError { index: 70, error: [24, 0, 0, 0], message: Some(\"StorageDepositLimitExhausted\") })";
                 assert_eq!(data, error_string.as_bytes());
             },
             _ => panic!("unexpected wasm call result"),
