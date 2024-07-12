@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/collator-selection/src/weights.rs`."><title>weights.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_collator_selection" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../pallet_collator_selection/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/collator-selection/src/weights.rs`."><title>weights.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_collator_selection" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_collator_selection/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -305,31 +307,80 @@
 <a href="#305" id="305">305</a>
 <a href="#306" id="306">306</a>
 <a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
 </pre></div><pre class="rust"><code>
 <span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 
-// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// 	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Astar is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Astar is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
 </span><span class="doccomment">//! Autogenerated weights for pallet_collator_selection
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2024-02-06, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! DATE: 2024-06-26, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
 //! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
-//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some(&quot;shiden-dev&quot;), DB CACHE: 1024
+//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("shiden-dev"), DB CACHE: 1024
 
 </span><span class="comment">// Executed Command:
 // ./target/release/astar-collator
@@ -338,12 +389,12 @@
 // --chain=shiden-dev
 // --steps=50
 // --repeat=20
-// --pallet=pallet_collator_selection
+// --pallet=pallet-collator-selection
 // --extrinsic=*
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --output=./benchmark-results/shiden-dev/collator_selection_weights.rs
+// --output=./benchmark-results/shiden-dev/pallet-collator-selection_weights.rs
 // --template=./scripts/templates/weight-template.hbs
 
 </span><span class="attr">#![cfg_attr(rustfmt, rustfmt_skip)]
@@ -360,6 +411,7 @@
 	<span class="kw">fn </span>set_candidacy_bond() -&gt; Weight;
 	<span class="kw">fn </span>register_as_candidate(c: u32, ) -&gt; Weight;
 	<span class="kw">fn </span>leave_intent(c: u32, ) -&gt; Weight;
+	<span class="kw">fn </span>withdraw_bond() -&gt; Weight;
 	<span class="kw">fn </span>note_author() -&gt; Weight;
 	<span class="kw">fn </span>new_session(r: u32, c: u32, ) -&gt; Weight;
 }
@@ -367,248 +419,294 @@
 <span class="doccomment">/// Weights for pallet_collator_selection using the Substrate node and recommended hardware.
 </span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
 <span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
-	<span class="doccomment">/// Storage: Session NextKeys (r:48 w:0)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: CollatorSelection Invulnerables (r:0 w:1)
-	/// Proof Skipped: CollatorSelection Invulnerables (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `Session::NextKeys` (r:48 w:0)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::Invulnerables` (r:0 w:1)
+	/// Proof: `CollatorSelection::Invulnerables` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// The range of component `b` is `[1, 48]`.
 	</span><span class="kw">fn </span>set_invulnerables(b: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `204 + b * (79 ±0)`
 		//  Estimated: `1194 + b * (2554 ±0)`
-		// Minimum execution time: 13_733_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">14_576_858</span>, <span class="number">1194</span>)
-			<span class="comment">// Standard Error: 4_742
-			</span>.saturating_add(Weight::from_parts(<span class="number">2_507_115</span>, <span class="number">0</span>).saturating_mul(b.into()))
+		// Minimum execution time: 11_169_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">11_917_783</span>, <span class="number">1194</span>)
+			<span class="comment">// Standard Error: 4_757
+			</span>.saturating_add(Weight::from_parts(<span class="number">2_433_455</span>, <span class="number">0</span>).saturating_mul(b.into()))
 			.saturating_add(T::DbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(b.into())))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2554</span>).saturating_mul(b.into()))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection DesiredCandidates (r:0 w:1)
-	/// Proof Skipped: CollatorSelection DesiredCandidates (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::DesiredCandidates` (r:0 w:1)
+	/// Proof: `CollatorSelection::DesiredCandidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>set_desired_candidates() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 7_143_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">7_357_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 5_229_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">5_400_000</span>, <span class="number">0</span>)
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection CandidacyBond (r:0 w:1)
-	/// Proof Skipped: CollatorSelection CandidacyBond (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::CandidacyBond` (r:0 w:1)
+	/// Proof: `CollatorSelection::CandidacyBond` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>set_candidacy_bond() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 7_292_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">7_433_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 5_266_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">5_521_000</span>, <span class="number">0</span>)
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection Candidates (r:1 w:1)
-	/// Proof Skipped: CollatorSelection Candidates (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection DesiredCandidates (r:1 w:0)
-	/// Proof Skipped: CollatorSelection DesiredCandidates (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection Invulnerables (r:1 w:0)
-	/// Proof Skipped: CollatorSelection Invulnerables (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: DappStaking Ledger (r:1 w:0)
-	/// Proof: DappStaking Ledger (max_values: None, max_size: Some(310), added: 2785, mode: MaxEncodedLen)
-	/// Storage: Session NextKeys (r:1 w:0)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: CollatorSelection CandidacyBond (r:1 w:0)
-	/// Proof Skipped: CollatorSelection CandidacyBond (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::Candidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::Candidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::DesiredCandidates` (r:1 w:0)
+	/// Proof: `CollatorSelection::DesiredCandidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::Invulnerables` (r:1 w:0)
+	/// Proof: `CollatorSelection::Invulnerables` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `DappStaking::Ledger` (r:1 w:0)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
+	/// Storage: `Session::NextKeys` (r:1 w:0)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::NonCandidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::NonCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::CandidacyBond` (r:1 w:0)
+	/// Proof: `CollatorSelection::CandidacyBond` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `c` is `[1, 148]`.
 	</span><span class="kw">fn </span>register_as_candidate(c: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `962 + c * (50 ±0)`
 		//  Estimated: `4307 + c * (51 ±0)`
-		// Minimum execution time: 44_695_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">46_834_255</span>, <span class="number">4307</span>)
-			<span class="comment">// Standard Error: 586
-			</span>.saturating_add(Weight::from_parts(<span class="number">44_873</span>, <span class="number">0</span>).saturating_mul(c.into()))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">6_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		// Minimum execution time: 38_433_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">40_514_505</span>, <span class="number">4307</span>)
+			<span class="comment">// Standard Error: 539
+			</span>.saturating_add(Weight::from_parts(<span class="number">48_079</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">7_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">51</span>).saturating_mul(c.into()))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection Candidates (r:1 w:1)
-	/// Proof Skipped: CollatorSelection Candidates (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::Candidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::Candidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::NonCandidates` (r:0 w:1)
+	/// Proof: `CollatorSelection::NonCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `c` is `[6, 148]`.
 	</span><span class="kw">fn </span>leave_intent(c: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `342 + c * (49 ±0)`
-		//  Estimated: `1845 + c * (49 ±0)`
-		// Minimum execution time: 30_579_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">34_125_189</span>, <span class="number">1845</span>)
-			<span class="comment">// Standard Error: 1_048
-			</span>.saturating_add(Weight::from_parts(<span class="number">45_625</span>, <span class="number">0</span>).saturating_mul(c.into()))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
+		//  Measured:  `734 + c * (48 ±0)`
+		//  Estimated: `2178 + c * (49 ±0)`
+		// Minimum execution time: 16_910_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">17_595_269</span>, <span class="number">2178</span>)
+			<span class="comment">// Standard Error: 442
+			</span>.saturating_add(Weight::from_parts(<span class="number">38_279</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">49</span>).saturating_mul(c.into()))
 	}
-	<span class="doccomment">/// Storage: System Account (r:2 w:2)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::NonCandidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::NonCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">fn </span>withdraw_bond() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `725`
+		//  Estimated: `4190`
+		// Minimum execution time: 28_804_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">29_066_000</span>, <span class="number">4190</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+	}
+	<span class="doccomment">/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>note_author() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `226`
 		//  Estimated: `6196`
-		// Minimum execution time: 43_377_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">43_827_000</span>, <span class="number">6196</span>)
+		// Minimum execution time: 35_307_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">35_803_000</span>, <span class="number">6196</span>)
 			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection Candidates (r:1 w:0)
-	/// Proof Skipped: CollatorSelection Candidates (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:148 w:0)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
-	/// Storage: CollatorSelection Invulnerables (r:1 w:0)
-	/// Proof Skipped: CollatorSelection Invulnerables (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: System Account (r:143 w:143)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: CollatorSelection SlashDestination (r:1 w:0)
-	/// Proof Skipped: CollatorSelection SlashDestination (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::Candidates` (r:1 w:0)
+	/// Proof: `CollatorSelection::Candidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:149 w:0)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::Invulnerables` (r:1 w:0)
+	/// Proof: `CollatorSelection::Invulnerables` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `System::Account` (r:143 w:143)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `CollatorSelection::SlashDestination` (r:1 w:0)
+	/// Proof: `CollatorSelection::SlashDestination` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::NonCandidates` (r:0 w:143)
+	/// Proof: `CollatorSelection::NonCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `r` is `[1, 148]`.
 	/// The range of component `c` is `[1, 148]`.
 	</span><span class="kw">fn </span>new_session(r: u32, c: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `3902 + c * (97 ±0) + r * (112 ±0)`
-		//  Estimated: `3818 + c * (2632 ±2) + r * (2599 ±0)`
-		// Minimum execution time: 17_957_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">18_201_000</span>, <span class="number">3818</span>)
-			<span class="comment">// Standard Error: 564_328
-			</span>.saturating_add(Weight::from_parts(<span class="number">18_024_338</span>, <span class="number">0</span>).saturating_mul(c.into()))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3_u64</span>))
+		//  Measured:  `4554 + c * (97 ±0) + r * (112 ±0)`
+		//  Estimated: `6296 + c * (2637 ±0) + r * (2599 ±0)`
+		// Minimum execution time: 20_506_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">20_755_000</span>, <span class="number">6296</span>)
+			<span class="comment">// Standard Error: 503_081
+			</span>.saturating_add(Weight::from_parts(<span class="number">16_868_215</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
 			.saturating_add(T::DbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(c.into())))
 			.saturating_add(T::DbWeight::get().writes((<span class="number">1_u64</span>).saturating_mul(c.into())))
-			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2632</span>).saturating_mul(c.into()))
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2637</span>).saturating_mul(c.into()))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2599</span>).saturating_mul(r.into()))
 	}
 }
 
 <span class="comment">// For backwards compatibility and tests
 </span><span class="kw">impl </span>WeightInfo <span class="kw">for </span>() {
-	<span class="doccomment">/// Storage: Session NextKeys (r:48 w:0)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: CollatorSelection Invulnerables (r:0 w:1)
-	/// Proof Skipped: CollatorSelection Invulnerables (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `Session::NextKeys` (r:48 w:0)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::Invulnerables` (r:0 w:1)
+	/// Proof: `CollatorSelection::Invulnerables` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// The range of component `b` is `[1, 48]`.
 	</span><span class="kw">fn </span>set_invulnerables(b: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `204 + b * (79 ±0)`
 		//  Estimated: `1194 + b * (2554 ±0)`
-		// Minimum execution time: 13_733_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">14_576_858</span>, <span class="number">1194</span>)
-			<span class="comment">// Standard Error: 4_742
-			</span>.saturating_add(Weight::from_parts(<span class="number">2_507_115</span>, <span class="number">0</span>).saturating_mul(b.into()))
+		// Minimum execution time: 11_169_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">11_917_783</span>, <span class="number">1194</span>)
+			<span class="comment">// Standard Error: 4_757
+			</span>.saturating_add(Weight::from_parts(<span class="number">2_433_455</span>, <span class="number">0</span>).saturating_mul(b.into()))
 			.saturating_add(RocksDbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(b.into())))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1_u64</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2554</span>).saturating_mul(b.into()))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection DesiredCandidates (r:0 w:1)
-	/// Proof Skipped: CollatorSelection DesiredCandidates (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::DesiredCandidates` (r:0 w:1)
+	/// Proof: `CollatorSelection::DesiredCandidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>set_desired_candidates() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 7_143_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">7_357_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 5_229_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">5_400_000</span>, <span class="number">0</span>)
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection CandidacyBond (r:0 w:1)
-	/// Proof Skipped: CollatorSelection CandidacyBond (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::CandidacyBond` (r:0 w:1)
+	/// Proof: `CollatorSelection::CandidacyBond` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>set_candidacy_bond() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 7_292_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">7_433_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 5_266_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">5_521_000</span>, <span class="number">0</span>)
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection Candidates (r:1 w:1)
-	/// Proof Skipped: CollatorSelection Candidates (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection DesiredCandidates (r:1 w:0)
-	/// Proof Skipped: CollatorSelection DesiredCandidates (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection Invulnerables (r:1 w:0)
-	/// Proof Skipped: CollatorSelection Invulnerables (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: DappStaking Ledger (r:1 w:0)
-	/// Proof: DappStaking Ledger (max_values: None, max_size: Some(310), added: 2785, mode: MaxEncodedLen)
-	/// Storage: Session NextKeys (r:1 w:0)
-	/// Proof Skipped: Session NextKeys (max_values: None, max_size: None, mode: Measured)
-	/// Storage: CollatorSelection CandidacyBond (r:1 w:0)
-	/// Proof Skipped: CollatorSelection CandidacyBond (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::Candidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::Candidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::DesiredCandidates` (r:1 w:0)
+	/// Proof: `CollatorSelection::DesiredCandidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::Invulnerables` (r:1 w:0)
+	/// Proof: `CollatorSelection::Invulnerables` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `DappStaking::Ledger` (r:1 w:0)
+	/// Proof: `DappStaking::Ledger` (`max_values`: None, `max_size`: Some(310), added: 2785, mode: `MaxEncodedLen`)
+	/// Storage: `Session::NextKeys` (r:1 w:0)
+	/// Proof: `Session::NextKeys` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::NonCandidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::NonCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::CandidacyBond` (r:1 w:0)
+	/// Proof: `CollatorSelection::CandidacyBond` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `c` is `[1, 148]`.
 	</span><span class="kw">fn </span>register_as_candidate(c: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `962 + c * (50 ±0)`
 		//  Estimated: `4307 + c * (51 ±0)`
-		// Minimum execution time: 44_695_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">46_834_255</span>, <span class="number">4307</span>)
-			<span class="comment">// Standard Error: 586
-			</span>.saturating_add(Weight::from_parts(<span class="number">44_873</span>, <span class="number">0</span>).saturating_mul(c.into()))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">6_u64</span>))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">2_u64</span>))
+		// Minimum execution time: 38_433_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">40_514_505</span>, <span class="number">4307</span>)
+			<span class="comment">// Standard Error: 539
+			</span>.saturating_add(Weight::from_parts(<span class="number">48_079</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">7_u64</span>))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">3_u64</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">51</span>).saturating_mul(c.into()))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection Candidates (r:1 w:1)
-	/// Proof Skipped: CollatorSelection Candidates (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::Candidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::Candidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::NonCandidates` (r:0 w:1)
+	/// Proof: `CollatorSelection::NonCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `c` is `[6, 148]`.
 	</span><span class="kw">fn </span>leave_intent(c: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `342 + c * (49 ±0)`
-		//  Estimated: `1845 + c * (49 ±0)`
-		// Minimum execution time: 30_579_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">34_125_189</span>, <span class="number">1845</span>)
-			<span class="comment">// Standard Error: 1_048
-			</span>.saturating_add(Weight::from_parts(<span class="number">45_625</span>, <span class="number">0</span>).saturating_mul(c.into()))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1_u64</span>))
+		//  Measured:  `734 + c * (48 ±0)`
+		//  Estimated: `2178 + c * (49 ±0)`
+		// Minimum execution time: 16_910_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">17_595_269</span>, <span class="number">2178</span>)
+			<span class="comment">// Standard Error: 442
+			</span>.saturating_add(Weight::from_parts(<span class="number">38_279</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">2_u64</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">2_u64</span>))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">49</span>).saturating_mul(c.into()))
 	}
-	<span class="doccomment">/// Storage: System Account (r:2 w:2)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::NonCandidates` (r:1 w:1)
+	/// Proof: `CollatorSelection::NonCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">fn </span>withdraw_bond() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `725`
+		//  Estimated: `4190`
+		// Minimum execution time: 28_804_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">29_066_000</span>, <span class="number">4190</span>)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">2_u64</span>))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">2_u64</span>))
+	}
+	<span class="doccomment">/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:0 w:1)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>note_author() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `226`
 		//  Estimated: `6196`
-		// Minimum execution time: 43_377_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">43_827_000</span>, <span class="number">6196</span>)
+		// Minimum execution time: 35_307_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">35_803_000</span>, <span class="number">6196</span>)
 			.saturating_add(RocksDbWeight::get().reads(<span class="number">2_u64</span>))
 			.saturating_add(RocksDbWeight::get().writes(<span class="number">3_u64</span>))
 	}
-	<span class="doccomment">/// Storage: CollatorSelection Candidates (r:1 w:0)
-	/// Proof Skipped: CollatorSelection Candidates (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: CollatorSelection LastAuthoredBlock (r:148 w:0)
-	/// Proof Skipped: CollatorSelection LastAuthoredBlock (max_values: None, max_size: None, mode: Measured)
-	/// Storage: CollatorSelection Invulnerables (r:1 w:0)
-	/// Proof Skipped: CollatorSelection Invulnerables (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: System Account (r:143 w:143)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
-	/// Storage: CollatorSelection SlashDestination (r:1 w:0)
-	/// Proof Skipped: CollatorSelection SlashDestination (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `CollatorSelection::Candidates` (r:1 w:0)
+	/// Proof: `CollatorSelection::Candidates` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::LastAuthoredBlock` (r:149 w:0)
+	/// Proof: `CollatorSelection::LastAuthoredBlock` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::Invulnerables` (r:1 w:0)
+	/// Proof: `CollatorSelection::Invulnerables` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Session::CurrentIndex` (r:1 w:0)
+	/// Proof: `Session::CurrentIndex` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `System::Account` (r:143 w:143)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `CollatorSelection::SlashDestination` (r:1 w:0)
+	/// Proof: `CollatorSelection::SlashDestination` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `CollatorSelection::NonCandidates` (r:0 w:143)
+	/// Proof: `CollatorSelection::NonCandidates` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `r` is `[1, 148]`.
 	/// The range of component `c` is `[1, 148]`.
 	</span><span class="kw">fn </span>new_session(r: u32, c: u32, ) -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `3902 + c * (97 ±0) + r * (112 ±0)`
-		//  Estimated: `3818 + c * (2632 ±2) + r * (2599 ±0)`
-		// Minimum execution time: 17_957_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">18_201_000</span>, <span class="number">3818</span>)
-			<span class="comment">// Standard Error: 564_328
-			</span>.saturating_add(Weight::from_parts(<span class="number">18_024_338</span>, <span class="number">0</span>).saturating_mul(c.into()))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">3_u64</span>))
+		//  Measured:  `4554 + c * (97 ±0) + r * (112 ±0)`
+		//  Estimated: `6296 + c * (2637 ±0) + r * (2599 ±0)`
+		// Minimum execution time: 20_506_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">20_755_000</span>, <span class="number">6296</span>)
+			<span class="comment">// Standard Error: 503_081
+			</span>.saturating_add(Weight::from_parts(<span class="number">16_868_215</span>, <span class="number">0</span>).saturating_mul(c.into()))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">4_u64</span>))
 			.saturating_add(RocksDbWeight::get().reads((<span class="number">1_u64</span>).saturating_mul(c.into())))
 			.saturating_add(RocksDbWeight::get().writes((<span class="number">1_u64</span>).saturating_mul(c.into())))
-			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2632</span>).saturating_mul(c.into()))
+			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2637</span>).saturating_mul(c.into()))
 			.saturating_add(Weight::from_parts(<span class="number">0</span>, <span class="number">2599</span>).saturating_mul(r.into()))
 	}
 }

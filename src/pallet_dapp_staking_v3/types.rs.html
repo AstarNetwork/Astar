@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking-v3/src/types.rs`."><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking_v3" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../pallet_dapp_staking_v3/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/dapp-staking-v3/src/types.rs`."><title>types.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_dapp_staking_v3" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_dapp_staking_v3/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1892,7 +1894,7 @@
 //! * `UnlockingChunk` - describes some amount undergoing the unlocking process.
 //! * `StakeAmount` - contains information about the staked amount in a particular era, and period.
 //! * `AccountLedger` - keeps track of total locked &amp; staked balance, unlocking chunks and number of stake entries.
-//! * `SingularStakingInfo` - contains information about a particular staker&#39;s stake on a specific smart contract. Used to track loyalty.
+//! * `SingularStakingInfo` - contains information about a particular staker's stake on a specific smart contract. Used to track loyalty.
 //!
 //! ## Era Information
 //!
@@ -1905,7 +1907,7 @@
 //! * `TierThreshold` - an enum describing tier entry thresholds.
 //! * `TierParameters` - contains static information about tiers, like init thresholds, reward &amp; slot distribution.
 //! * `TiersConfiguration` - contains dynamic information about tiers, derived from `TierParameters` and onchain data.
-//! * `DAppTier` - a compact struct describing a dApp&#39;s tier.
+//! * `DAppTier` - a compact struct describing a dApp's tier.
 //! * `DAppTierRewards` - composite of `DAppTier` objects, describing the entire reward distribution for a particular era.
 //!
 
@@ -1948,9 +1950,9 @@
     </span>NoCapacity,
     <span class="doccomment">/// Invalid period specified.
     </span>InvalidPeriod,
-    <span class="doccomment">/// Stake amount is to large in respect to what&#39;s available.
+    <span class="doccomment">/// Stake amount is to large in respect to what's available.
     </span>UnavailableStakeFunds,
-    <span class="doccomment">/// Unstake amount is to large in respect to what&#39;s staked.
+    <span class="doccomment">/// Unstake amount is to large in respect to what's staked.
     </span>UnstakeAmountLargerThanStake,
     <span class="doccomment">/// Nothing to claim.
     </span>NothingToClaim,
@@ -1992,7 +1994,7 @@
 
 <span class="kw">impl </span>PeriodInfo {
     <span class="doccomment">/// `true` if the provided era belongs to the next period, `false` otherwise.
-    /// It&#39;s only possible to provide this information correctly for the ongoing `BuildAndEarn` subperiod.
+    /// It's only possible to provide this information correctly for the ongoing `BuildAndEarn` subperiod.
     </span><span class="kw">pub fn </span>is_next_period(<span class="kw-2">&amp;</span><span class="self">self</span>, era: EraNumber) -&gt; bool {
         <span class="self">self</span>.subperiod == Subperiod::BuildAndEarn &amp;&amp; <span class="self">self</span>.next_subperiod_start_era &lt;= era
     }
@@ -2001,7 +2003,7 @@
 <span class="doccomment">/// Struct with relevant information for a finished period.
 </span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
 </span><span class="kw">pub struct </span>PeriodEndInfo {
-    <span class="doccomment">/// Bonus reward pool allocated for &#39;loyal&#39; stakers
+    <span class="doccomment">/// Bonus reward pool allocated for 'loyal' stakers
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>bonus_reward_pool: Balance,
     <span class="doccomment">/// Total amount staked (remaining) from the voting subperiod.
@@ -2098,7 +2100,7 @@
 </span><span class="kw">pub struct </span>DAppInfo&lt;AccountId&gt; {
     <span class="doccomment">/// Owner of the dApp, default reward beneficiary.
     </span><span class="kw">pub </span>owner: AccountId,
-    <span class="doccomment">/// dApp&#39;s unique identifier in dApp staking.
+    <span class="doccomment">/// dApp's unique identifier in dApp staking.
     </span><span class="attr">#[codec(compact)]
     </span><span class="kw">pub </span>id: DAppId,
     <span class="comment">// If `None`, rewards goes to the developer account, otherwise to the account Id in `Some`.
@@ -2126,19 +2128,19 @@
     </span><span class="kw">pub </span>unlock_block: BlockNumber,
 }
 
-<span class="doccomment">/// General info about an account&#39;s lock &amp; stakes.
+<span class="doccomment">/// General info about an account's lock &amp; stakes.
 ///
 /// ## Overview
 ///
 /// The most complex part about this type are the `staked` and `staked_future` fields.
-/// To understand why the two fields exist and how they are used, it&#39;s important to consider some facts:
+/// To understand why the two fields exist and how they are used, it's important to consider some facts:
 /// * when an account _stakes_, the staked amount is only eligible for rewards from the next era
-/// * all stakes are reset when a period ends - but this is done in a lazy fashion, account ledgers aren&#39;t directly updated
+/// * all stakes are reset when a period ends - but this is done in a lazy fashion, account ledgers aren't directly updated
 /// * `stake` and `unstake` operations are allowed only if the account has claimed all pending rewards
 ///
 /// In order to keep track of current era stake, and _next era_ stake, two fields are needed.
-/// Since it&#39;s not allowed to stake/unstake if there are pending rewards, it&#39;s guaranteed that the `staked` and `staked_future` eras are **always consecutive**.
-/// In order to understand if _stake_ is still valid, it&#39;s enough to check the `period` field of either `staked` or `staked_future`.
+/// Since it's not allowed to stake/unstake if there are pending rewards, it's guaranteed that the `staked` and `staked_future` eras are **always consecutive**.
+/// In order to understand if _stake_ is still valid, it's enough to check the `period` field of either `staked` or `staked_future`.
 ///
 /// ## Example
 ///
@@ -2151,8 +2153,8 @@
 /// The correct way to interpret this is:
 /// * account had staked **150** in total in era 5
 /// * account had increased their stake to **200** in total in era 6
-/// * since then, era 6, account hadn&#39;t staked or unstaked anything or hasn&#39;t claimed any rewards
-/// * since we&#39;re in era **20** and period is still **1**, the account&#39;s stake for eras **7** to **20** is still **200**
+/// * since then, era 6, account hadn't staked or unstaked anything or hasn't claimed any rewards
+/// * since we're in era **20** and period is still **1**, the account's stake for eras **7** to **20** is still **200**
 ///
 /// ### Scenario 2
 ///
@@ -2163,8 +2165,8 @@
 /// The correct way to interpret this is:
 /// * `staked` entry is _empty_
 /// * account had called `stake` during era 12, and staked **350** for the next era
-/// * account hadn&#39;t staked, unstaked or claimed rewards since then
-/// * since we&#39;re in era **20** and period is still **1**, the account&#39;s stake for eras **13** to **20** is still **350**
+/// * account hadn't staked, unstaked or claimed rewards since then
+/// * since we're in era **20** and period is still **1**, the account's stake for eras **13** to **20** is still **350**
 ///
 /// ### Scenario 3
 ///
@@ -2175,10 +2177,10 @@
 ///
 /// The correct way to interpret this is:
 /// * in era **20**, account had claimed rewards for the past eras, so only the `staked` entry remained
-/// * since then, account hadn&#39;t staked, unstaked or claimed rewards
+/// * since then, account hadn't staked, unstaked or claimed rewards
 /// * period 1 ended in era **24**, which means that after that era, the `staked` entry is no longer valid
 /// * account had staked **400** in total from era **20** up to era **24** (inclusive)
-/// * account&#39;s stake in era **25** is **zero**
+/// * account's stake in era **25** is **zero**
 ///
 </span><span class="attr">#[derive(
     Encode,
@@ -2199,8 +2201,8 @@
     </span><span class="kw">pub </span>unlocking: BoundedVec&lt;UnlockingChunk, UnlockingLen&gt;,
     <span class="doccomment">/// Primary field used to store how much was staked in a particular era.
     </span><span class="kw">pub </span>staked: StakeAmount,
-    <span class="doccomment">/// Secondary field used to store &#39;stake&#39; information for the &#39;next era&#39;.
-    /// This is needed since stake amount is only applicable from the next era after it&#39;s been staked.
+    <span class="doccomment">/// Secondary field used to store 'stake' information for the 'next era'.
+    /// This is needed since stake amount is only applicable from the next era after it's been staked.
     ///
     /// Both `stake` and `staked_future` must ALWAYS refer to the same period.
     /// If `staked_future` is `Some`, it will always be **EXACTLY** one era after the `staked` field era.
@@ -2238,15 +2240,15 @@
     }
 
     <span class="doccomment">/// Returns active locked amount.
-    /// If `zero`, means that associated account hasn&#39;t got any active locked funds.
+    /// If `zero`, means that associated account hasn't got any active locked funds.
     ///
-    /// It is possible that some funds are undergoing the unlocking period, but they aren&#39;t considered active in that case.
+    /// It is possible that some funds are undergoing the unlocking period, but they aren't considered active in that case.
     </span><span class="kw">pub fn </span>active_locked_amount(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Balance {
         <span class="self">self</span>.locked
     }
 
     <span class="doccomment">/// Returns unlocking amount.
-    /// If `zero`, means that associated account hasn&#39;t got any unlocking chunks.
+    /// If `zero`, means that associated account hasn't got any unlocking chunks.
     </span><span class="kw">pub fn </span>unlocking_amount(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Balance {
         <span class="self">self</span>.unlocking.iter().fold(Balance::zero(), |sum, chunk| {
             sum.saturating_add(chunk.amount)
@@ -2272,9 +2274,9 @@
 
     <span class="doccomment">/// Adds the specified amount to the unlocking chunks.
     ///
-    /// If entry for the specified block already exists, it&#39;s updated.
+    /// If entry for the specified block already exists, it's updated.
     ///
-    /// If entry for the specified block doesn&#39;t exist, it&#39;s created and insertion is attempted.
+    /// If entry for the specified block doesn't exist, it's created and insertion is attempted.
     /// In case vector has no more capacity, error is returned, and whole operation is a noop.
     </span><span class="kw">pub fn </span>add_unlocking_chunk(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -2349,7 +2351,7 @@
 
     <span class="doccomment">/// Amount that is staked, in respect to the currently active period.
     </span><span class="kw">pub fn </span>staked_amount(<span class="kw-2">&amp;</span><span class="self">self</span>, active_period: PeriodNumber) -&gt; Balance {
-        <span class="comment">// First check the &#39;future&#39; entry, afterwards check the &#39;first&#39; entry
+        <span class="comment">// First check the 'future' entry, afterwards check the 'first' entry
         </span><span class="kw">match </span><span class="self">self</span>.staked_future {
             <span class="prelude-val">Some</span>(stake_amount) <span class="kw">if </span>stake_amount.period == active_period =&gt; stake_amount.total(),
             <span class="kw">_ </span>=&gt; <span class="kw">match </span><span class="self">self</span>.staked {
@@ -2361,7 +2363,7 @@
 
     <span class="doccomment">/// How much is staked for the specified subperiod, in respect to the specified era.
     </span><span class="kw">pub fn </span>staked_amount_for_type(<span class="kw-2">&amp;</span><span class="self">self</span>, subperiod: Subperiod, period: PeriodNumber) -&gt; Balance {
-        <span class="comment">// First check the &#39;future&#39; entry, afterwards check the &#39;first&#39; entry
+        <span class="comment">// First check the 'future' entry, afterwards check the 'first' entry
         </span><span class="kw">match </span><span class="self">self</span>.staked_future {
             <span class="prelude-val">Some</span>(stake_amount) <span class="kw">if </span>stake_amount.period == period =&gt; stake_amount.for_type(subperiod),
             <span class="kw">_ </span>=&gt; <span class="kw">match </span><span class="self">self</span>.staked {
@@ -2388,9 +2390,9 @@
             <span class="kw">if </span><span class="self">self</span>.staked.period != current_period_info.number {
                 <span class="kw">return </span><span class="prelude-val">Err</span>(AccountLedgerError::InvalidPeriod);
             }
-            <span class="comment">// In case only the &#39;future&#39; entry exists, then the future era must either be the current or the next era.
-            // &#39;Next era&#39; covers the simple scenario where stake is only valid from the next era.
-            // &#39;Current era&#39; covers the scenario where stake was made in previous era, and we&#39;ve moved to the next era.
+            <span class="comment">// In case only the 'future' entry exists, then the future era must either be the current or the next era.
+            // 'Next era' covers the simple scenario where stake is only valid from the next era.
+            // 'Current era' covers the scenario where stake was made in previous era, and we've moved to the next era.
         </span>} <span class="kw">else if let </span><span class="prelude-val">Some</span>(stake_amount) = <span class="self">self</span>.staked_future {
             <span class="kw">if </span>stake_amount.era != current_era.saturating_add(<span class="number">1</span>) &amp;&amp; stake_amount.era != current_era
             {
@@ -2413,7 +2415,7 @@
     /// without claiming the rewards. So if a historic era exists as an entry, stakers will first need to claim
     /// the pending rewards, before they can stake again.
     ///
-    /// Additionally, the staked amount must not exceed what&#39;s available for staking.
+    /// Additionally, the staked amount must not exceed what's available for staking.
     </span><span class="kw">pub fn </span>add_stake_amount(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         amount: Balance,
@@ -2433,7 +2435,7 @@
         <span class="comment">// Update existing entry if it exists, otherwise create it.
         </span><span class="kw">match </span><span class="self">self</span>.staked_future.as_mut() {
             <span class="prelude-val">Some</span>(stake_amount) =&gt; {
-                <span class="comment">// In case future entry exists, check if it should be moved over to the &#39;current&#39; entry.
+                <span class="comment">// In case future entry exists, check if it should be moved over to the 'current' entry.
                 </span><span class="kw">if </span>stake_amount.era == current_era {
                     <span class="self">self</span>.staked = <span class="kw-2">*</span>stake_amount;
                 }
@@ -2530,21 +2532,21 @@
         }
     }
 
-    <span class="doccomment">/// &#39;Claim&#39; rewards up to the specified era.
+    <span class="doccomment">/// 'Claim' rewards up to the specified era.
     /// Returns an iterator over the `(era, amount)` pairs, where `amount`
     /// describes the staked amount eligible for reward in the appropriate era.
     ///
-    /// If `period_end` is provided, it&#39;s used to determine whether all applicable chunks have been claimed.
+    /// If `period_end` is provided, it's used to determine whether all applicable chunks have been claimed.
     </span><span class="kw">pub fn </span>claim_up_to_era(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         era: EraNumber,
         period_end: <span class="prelude-ty">Option</span>&lt;EraNumber&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;EraStakePairIter, AccountLedgerError&gt; {
-        <span class="comment">// Main entry exists, but era isn&#39;t &#39;in history&#39;
+        <span class="comment">// Main entry exists, but era isn't 'in history'
         </span><span class="kw">if </span>!<span class="self">self</span>.staked.is_empty() {
             <span class="macro">ensure!</span>(era &gt;= <span class="self">self</span>.staked.era, AccountLedgerError::NothingToClaim);
         } <span class="kw">else if let </span><span class="prelude-val">Some</span>(stake_amount) = <span class="self">self</span>.staked_future {
-            <span class="comment">// Future entry exists, but era isn&#39;t &#39;in history&#39;
+            <span class="comment">// Future entry exists, but era isn't 'in history'
             </span><span class="macro">ensure!</span>(era &gt;= stake_amount.era, AccountLedgerError::NothingToClaim);
         }
 
@@ -2571,7 +2573,7 @@
         <span class="kw">let </span>result = EraStakePairIter::new(span, maybe_first)
             .map_err(|<span class="kw">_</span>| AccountLedgerError::InvalidIterator)<span class="question-mark">?</span>;
 
-        <span class="comment">// Rollover future to &#39;current&#39; stake amount
+        <span class="comment">// Rollover future to 'current' stake amount
         </span><span class="kw">if let </span><span class="prelude-val">Some</span>(stake_amount) = <span class="self">self</span>.staked_future.take() {
             <span class="self">self</span>.staked = stake_amount;
         }
@@ -2622,7 +2624,7 @@
         </span><span class="kw">if </span>span.<span class="number">0 </span>&gt; span.<span class="number">1 </span>{
             <span class="kw">return </span><span class="prelude-val">Err</span>(());
         }
-        <span class="comment">// If &#39;maybe_first&#39; is defined, it must exactly match the `span.0 - 1` era value.
+        <span class="comment">// If 'maybe_first' is defined, it must exactly match the `span.0 - 1` era value.
         </span><span class="kw">match </span>maybe_first {
             <span class="prelude-val">Some</span>((era, <span class="kw">_</span>)) <span class="kw">if </span>span.<span class="number">0</span>.saturating_sub(era) != <span class="number">1 </span>=&gt; {
                 <span class="kw">return </span><span class="prelude-val">Err</span>(());
@@ -2794,7 +2796,7 @@
     /// `next_subperiod` - `None` if no subperiod change, `Some(type)` if `type` is starting from the next era.
     </span><span class="kw">pub fn </span>migrate_to_next_era(<span class="kw-2">&amp;mut </span><span class="self">self</span>, next_subperiod: <span class="prelude-ty">Option</span>&lt;Subperiod&gt;) {
         <span class="kw">match </span>next_subperiod {
-            <span class="comment">// If next era marks start of new voting subperiod period, it means we&#39;re entering a new period
+            <span class="comment">// If next era marks start of new voting subperiod period, it means we're entering a new period
             </span><span class="prelude-val">Some</span>(Subperiod::Voting) =&gt; {
                 <span class="kw">for </span>stake_amount <span class="kw">in </span>[<span class="kw-2">&amp;mut </span><span class="self">self</span>.current_stake_amount, <span class="kw-2">&amp;mut </span><span class="self">self</span>.next_stake_amount] {
                     stake_amount.voting = Zero::zero();
@@ -2813,7 +2815,7 @@
 
 <span class="doccomment">/// Information about how much a particular staker staked on a particular smart contract.
 ///
-/// Keeps track of amount staked in the &#39;voting subperiod&#39;, as well as &#39;build&amp;earn subperiod&#39;.
+/// Keeps track of amount staked in the 'voting subperiod', as well as 'build&amp;earn subperiod'.
 </span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, Copy, Clone, Debug, PartialEq, Eq, TypeInfo, Default)]
 </span><span class="kw">pub struct </span>SingularStakingInfo {
     <span class="doccomment">/// Amount staked before, if anything.
@@ -2892,7 +2894,7 @@
         <span class="kw">let </span><span class="kw-2">mut </span>result = Vec::new();
         <span class="kw">let </span>staked_snapshot = <span class="self">self</span>.staked;
 
-        <span class="comment">// 1. Modify &#39;current&#39; staked amount, and update the result.
+        <span class="comment">// 1. Modify 'current' staked amount, and update the result.
         </span><span class="self">self</span>.staked.subtract(amount);
         <span class="kw">let </span>unstaked_amount = staked_snapshot.total().saturating_sub(<span class="self">self</span>.staked.total());
         <span class="self">self</span>.staked.era = <span class="self">self</span>.staked.era.max(current_era);
@@ -2924,7 +2926,7 @@
         <span class="comment">// 4. Calculate how much is being unstaked from the previous staked era entry, in case its era equals the current era.
         //
         // Simples way to explain this is via an example.
-        // Let&#39;s assume a simplification where stake amount entries are in `(era, amount)` format.
+        // Let's assume a simplification where stake amount entries are in `(era, amount)` format.
         //
         // a. Values: previous_staked: **(2, 10)**, staked: **(3, 15)**
         // b. User calls unstake during **era 2**, and unstakes amount **6**.
@@ -2936,7 +2938,7 @@
         // An alternative scenario, where user calls unstake during **era 2**, and unstakes amount **4**.
         // c. Values: previous_staked: **(2, 10)**, staked: **(3, 11)**
         //
-        // Note that the unstake operation didn&#39;t chip away from the current era, only the next one.
+        // Note that the unstake operation didn't chip away from the current era, only the next one.
         </span><span class="kw">if </span><span class="self">self</span>.previous_staked.era == current_era {
             <span class="kw">let </span>maybe_stake_delta = staked_snapshot
                 .total()
@@ -2951,7 +2953,7 @@
                 <span class="kw">_ </span>=&gt; {}
             }
         } <span class="kw">else if </span><span class="self">self</span>.staked.era == current_era {
-            <span class="comment">// In case the `staked` era was already the current era, it also means we&#39;re chipping away from the future era.
+            <span class="comment">// In case the `staked` era was already the current era, it also means we're chipping away from the future era.
             </span>result.push((<span class="self">self</span>.staked.era.saturating_add(<span class="number">1</span>), unstaked_amount));
         }
 
@@ -3001,17 +3003,17 @@
 
 <span class="doccomment">/// Composite type that holds information about how much was staked on a contract in up to two distinct eras.
 ///
-/// This is needed since &#39;stake&#39; operation only makes the staked amount valid from the next era.
-/// In a situation when `stake` is called in era `N`, the staked amount is valid from era `N+1`, hence the need for &#39;future&#39; entry.
+/// This is needed since 'stake' operation only makes the staked amount valid from the next era.
+/// In a situation when `stake` is called in era `N`, the staked amount is valid from era `N+1`, hence the need for 'future' entry.
 ///
-/// **NOTE:** The &#39;future&#39; entry term is only valid in the era when `stake` is called. It&#39;s possible contract stake isn&#39;t changed in consecutive eras,
+/// **NOTE:** The 'future' entry term is only valid in the era when `stake` is called. It's possible contract stake isn't changed in consecutive eras,
 /// so we might end up in a situation where era is `N + 10` but `staked` entry refers to era `N` and `staked_future` entry refers to era `N+1`.
 /// This is still valid since these values are expected to be updated lazily.
 </span><span class="attr">#[derive(Encode, Decode, MaxEncodedLen, RuntimeDebug, PartialEq, Eq, Clone, TypeInfo, Default)]
 </span><span class="kw">pub struct </span>ContractStakeAmount {
-    <span class="doccomment">/// Staked amount in the &#39;current&#39; era.
+    <span class="doccomment">/// Staked amount in the 'current' era.
     </span><span class="kw">pub </span>staked: StakeAmount,
-    <span class="doccomment">/// Staked amount in the next or &#39;future&#39; era.
+    <span class="doccomment">/// Staked amount in the next or 'future' era.
     </span><span class="kw">pub </span>staked_future: <span class="prelude-ty">Option</span>&lt;StakeAmount&gt;,
 }
 
@@ -3096,7 +3098,7 @@
                 stake_amount.add(amount, period_info.subperiod);
                 <span class="kw">return</span>;
             }
-            <span class="comment">// Future entry has an older era, but periods match so overwrite the &#39;current&#39; entry with it
+            <span class="comment">// Future entry has an older era, but periods match so overwrite the 'current' entry with it
             </span><span class="prelude-val">Some</span>(stake_amount) <span class="kw">if </span>stake_amount.period == period_info.number =&gt; {
                 <span class="self">self</span>.staked = <span class="kw-2">*</span>stake_amount;
                 <span class="comment">// Align the eras to keep it simple
@@ -3108,7 +3110,7 @@
 
         <span class="comment">// Prepare new entry
         </span><span class="kw">let </span><span class="kw-2">mut </span>new_entry = <span class="kw">match </span><span class="self">self</span>.staked {
-            <span class="comment">// &#39;current&#39; entry period matches so we use it as base for the new entry
+            <span class="comment">// 'current' entry period matches so we use it as base for the new entry
             </span>stake_amount <span class="kw">if </span>stake_amount.period == period_info.number =&gt; stake_amount,
             <span class="comment">// otherwise just create a dummy new entry
             </span><span class="kw">_ </span>=&gt; Default::default(),
@@ -3271,7 +3273,7 @@
             <span class="self">self</span>.last_era = era;
             <span class="self">self</span>.span
                 .try_push(era_reward)
-                <span class="comment">// Defensive check, should never happen since it means capacity is &#39;zero&#39;.
+                <span class="comment">// Defensive check, should never happen since it means capacity is 'zero'.
                 </span>.map_err(|<span class="kw">_</span>| EraRewardSpanError::NoCapacity)
         } <span class="kw">else </span>{
             <span class="comment">// Defensive check to ensure next era rewards refers to era after the last one in the span.
@@ -3462,8 +3464,8 @@
 
 <span class="comment">// Some TODOs:
 // Some parts regarding tiers should be refactored.
-// * There&#39;s no need to keep thresholds in two separate storage items since the calculation can always be done compared to the
-//    anchor value of 5 cents. This still needs to be checked &amp; investigated, but it&#39;s worth a try.
+// * There's no need to keep thresholds in two separate storage items since the calculation can always be done compared to the
+//    anchor value of 5 cents. This still needs to be checked &amp; investigated, but it's worth a try.
 
 </span><span class="kw">impl</span>&lt;NT: Get&lt;u32&gt;, T: TierSlotsFunc, P: Get&lt;FixedU128&gt;&gt; TiersConfiguration&lt;NT, T, P&gt; {
     <span class="doccomment">/// Check if parameters are valid.
@@ -3523,7 +3525,7 @@
         //
         </span><span class="kw">let </span>base_number_of_slots = T::number_of_slots(P::get()).max(<span class="number">1</span>);
 
-        <span class="comment">// NOTE: even though we could ignore the situation when the new &amp; base slot numbers are equal, it&#39;s necessary to re-calculate it since
+        <span class="comment">// NOTE: even though we could ignore the situation when the new &amp; base slot numbers are equal, it's necessary to re-calculate it since
         // other params related to calculation might have changed.
         </span><span class="kw">let </span>new_tier_thresholds = <span class="kw">if </span>new_number_of_slots &gt;= base_number_of_slots {
             <span class="kw">let </span>delta_threshold_decrease = FixedU128::from_rational(
@@ -3633,7 +3635,7 @@
     }
 
     <span class="doccomment">/// Consume reward for the specified dapp id, returning its amount and tier Id.
-    /// In case dapp isn&#39;t applicable for rewards, or they have already been consumed, returns `None`.
+    /// In case dapp isn't applicable for rewards, or they have already been consumed, returns `None`.
     </span><span class="kw">pub fn </span>try_claim(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dapp_id: DAppId) -&gt; <span class="prelude-ty">Result</span>&lt;(Balance, RankedTier), DAppTierError&gt; {
         <span class="comment">// Check if dApp Id exists.
         </span><span class="kw">let </span>ranked_tier = <span class="self">self
@@ -3661,7 +3663,7 @@
 
 <span class="attr">#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 </span><span class="kw">pub enum </span>DAppTierError {
-    <span class="doccomment">/// Specified dApp Id doesn&#39;t exist in any tier.
+    <span class="doccomment">/// Specified dApp Id doesn't exist in any tier.
     </span>NoDAppInTiers,
     <span class="doccomment">/// Internal, unexpected error occurred.
     </span>InternalError,

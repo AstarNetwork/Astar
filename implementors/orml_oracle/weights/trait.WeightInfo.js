@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"oracle_benchmarks":[["impl&lt;T: Config&gt; WeightInfo for <a class=\"struct\" href=\"oracle_benchmarks/weights/struct.SubstrateWeight.html\" title=\"struct oracle_benchmarks::weights::SubstrateWeight\">SubstrateWeight</a>&lt;T&gt;"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

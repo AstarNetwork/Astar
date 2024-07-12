@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/weights/xcm/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../shibuya_runtime/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/weights/xcm/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../shibuya_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -242,22 +244,6 @@
 <a href="#242" id="242">242</a>
 <a href="#243" id="243">243</a>
 <a href="#244" id="244">244</a>
-<a href="#245" id="245">245</a>
-<a href="#246" id="246">246</a>
-<a href="#247" id="247">247</a>
-<a href="#248" id="248">248</a>
-<a href="#249" id="249">249</a>
-<a href="#250" id="250">250</a>
-<a href="#251" id="251">251</a>
-<a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -298,7 +284,7 @@
     <span class="kw">fn </span>weigh_multi_assets_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, weight: Weight) -&gt; XCMWeight;
 }
 
-<span class="kw">impl </span>WeighMultiAssetsFilter <span class="kw">for </span>MultiAssetFilter {
+<span class="kw">impl </span>WeighMultiAssetsFilter <span class="kw">for </span>AssetFilter {
     <span class="kw">fn </span>weigh_multi_assets_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, weight: Weight) -&gt; XCMWeight {
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::Definite(assets) =&gt; {
@@ -312,7 +298,7 @@
     }
 }
 
-<span class="kw">impl </span>WeighMultiAssets <span class="kw">for </span>MultiAssets {
+<span class="kw">impl </span>WeighMultiAssets <span class="kw">for </span>Assets {
     <span class="kw">fn </span>weigh_multi_assets(<span class="kw-2">&amp;</span><span class="self">self</span>, weight: Weight) -&gt; XCMWeight {
         weight.saturating_mul(<span class="self">self</span>.inner().into_iter().count() <span class="kw">as </span>u64)
     }
@@ -323,34 +309,30 @@
 <span class="kw">where
     </span>Runtime: frame_system::Config,
 {
-    <span class="kw">fn </span>withdraw_asset(assets: <span class="kw-2">&amp;</span>MultiAssets) -&gt; XCMWeight {
+    <span class="kw">fn </span>withdraw_asset(assets: <span class="kw-2">&amp;</span>Assets) -&gt; XCMWeight {
         XcmFungibleWeight::&lt;Runtime&gt;::withdraw_asset()
             .saturating_mul(assets.inner().into_iter().count() <span class="kw">as </span>u64)
     }
 
-    <span class="kw">fn </span>reserve_asset_deposited(_assets: <span class="kw-2">&amp;</span>MultiAssets) -&gt; XCMWeight {
+    <span class="kw">fn </span>reserve_asset_deposited(_assets: <span class="kw-2">&amp;</span>Assets) -&gt; XCMWeight {
         XcmFungibleWeight::&lt;Runtime&gt;::reserve_asset_deposited()
     }
-    <span class="kw">fn </span>receive_teleported_asset(assets: <span class="kw-2">&amp;</span>MultiAssets) -&gt; XCMWeight {
+    <span class="kw">fn </span>receive_teleported_asset(assets: <span class="kw-2">&amp;</span>Assets) -&gt; XCMWeight {
         assets.weigh_multi_assets(XcmFungibleWeight::&lt;Runtime&gt;::receive_teleported_asset())
     }
     <span class="kw">fn </span>query_response(
         _query_id: <span class="kw-2">&amp;</span>u64,
         _response: <span class="kw-2">&amp;</span>Response,
         _max_weight: <span class="kw-2">&amp;</span>Weight,
-        _querier: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;MultiLocation&gt;,
+        _querier: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Location&gt;,
     ) -&gt; XCMWeight {
         XcmGeneric::&lt;Runtime&gt;::query_response()
     }
-    <span class="kw">fn </span>transfer_asset(assets: <span class="kw-2">&amp;</span>MultiAssets, _dest: <span class="kw-2">&amp;</span>MultiLocation) -&gt; XCMWeight {
+    <span class="kw">fn </span>transfer_asset(assets: <span class="kw-2">&amp;</span>Assets, _dest: <span class="kw-2">&amp;</span>Location) -&gt; XCMWeight {
         XcmFungibleWeight::&lt;Runtime&gt;::transfer_asset()
             .saturating_mul(assets.inner().into_iter().count() <span class="kw">as </span>u64)
     }
-    <span class="kw">fn </span>transfer_reserve_asset(
-        assets: <span class="kw-2">&amp;</span>MultiAssets,
-        _dest: <span class="kw-2">&amp;</span>MultiLocation,
-        _xcm: <span class="kw-2">&amp;</span>Xcm&lt;()&gt;,
-    ) -&gt; XCMWeight {
+    <span class="kw">fn </span>transfer_reserve_asset(assets: <span class="kw-2">&amp;</span>Assets, _dest: <span class="kw-2">&amp;</span>Location, _xcm: <span class="kw-2">&amp;</span>Xcm&lt;()&gt;) -&gt; XCMWeight {
         XcmFungibleWeight::&lt;Runtime&gt;::transfer_reserve_asset()
             .saturating_mul(assets.inner().into_iter().count() <span class="kw">as </span>u64)
     }
@@ -380,32 +362,24 @@
     <span class="kw">fn </span>clear_origin() -&gt; XCMWeight {
         XcmGeneric::&lt;Runtime&gt;::clear_origin()
     }
-    <span class="kw">fn </span>descend_origin(_who: <span class="kw-2">&amp;</span>InteriorMultiLocation) -&gt; XCMWeight {
+    <span class="kw">fn </span>descend_origin(_who: <span class="kw-2">&amp;</span>InteriorLocation) -&gt; XCMWeight {
         XcmGeneric::&lt;Runtime&gt;::descend_origin()
     }
     <span class="kw">fn </span>report_error(_query_response_info: <span class="kw-2">&amp;</span>QueryResponseInfo) -&gt; XCMWeight {
         XcmGeneric::&lt;Runtime&gt;::report_error()
     }
-    <span class="kw">fn </span>deposit_asset(assets: <span class="kw-2">&amp;</span>MultiAssetFilter, _dest: <span class="kw-2">&amp;</span>MultiLocation) -&gt; XCMWeight {
+    <span class="kw">fn </span>deposit_asset(assets: <span class="kw-2">&amp;</span>AssetFilter, _dest: <span class="kw-2">&amp;</span>Location) -&gt; XCMWeight {
         assets.weigh_multi_assets_filter(XcmFungibleWeight::&lt;Runtime&gt;::deposit_asset())
     }
-    <span class="kw">fn </span>deposit_reserve_asset(
-        assets: <span class="kw-2">&amp;</span>MultiAssetFilter,
-        _dest: <span class="kw-2">&amp;</span>MultiLocation,
-        _xcm: <span class="kw-2">&amp;</span>Xcm&lt;()&gt;,
-    ) -&gt; XCMWeight {
+    <span class="kw">fn </span>deposit_reserve_asset(assets: <span class="kw-2">&amp;</span>AssetFilter, _dest: <span class="kw-2">&amp;</span>Location, _xcm: <span class="kw-2">&amp;</span>Xcm&lt;()&gt;) -&gt; XCMWeight {
         assets.weigh_multi_assets_filter(XcmFungibleWeight::&lt;Runtime&gt;::deposit_reserve_asset())
     }
-    <span class="kw">fn </span>exchange_asset(
-        _give: <span class="kw-2">&amp;</span>MultiAssetFilter,
-        _receive: <span class="kw-2">&amp;</span>MultiAssets,
-        _maximal: <span class="kw-2">&amp;</span>bool,
-    ) -&gt; XCMWeight {
+    <span class="kw">fn </span>exchange_asset(_give: <span class="kw-2">&amp;</span>AssetFilter, _receive: <span class="kw-2">&amp;</span>Assets, _maximal: <span class="kw-2">&amp;</span>bool) -&gt; XCMWeight {
         Weight::MAX
     }
     <span class="kw">fn </span>initiate_reserve_withdraw(
-        _assets: <span class="kw-2">&amp;</span>MultiAssetFilter,
-        _reserve: <span class="kw-2">&amp;</span>MultiLocation,
+        _assets: <span class="kw-2">&amp;</span>AssetFilter,
+        _reserve: <span class="kw-2">&amp;</span>Location,
         _xcm: <span class="kw-2">&amp;</span>Xcm&lt;()&gt;,
     ) -&gt; XCMWeight {
         <span class="comment">// This is not correct. initiate reserve withdraw does not to that many db reads
@@ -413,17 +387,13 @@
         //assets.weigh_multi_assets(XcmGeneric::&lt;Runtime&gt;::initiate_reserve_withdraw())
         </span>XcmFungibleWeight::&lt;Runtime&gt;::initiate_reserve_withdraw()
     }
-    <span class="kw">fn </span>initiate_teleport(
-        _assets: <span class="kw-2">&amp;</span>MultiAssetFilter,
-        _dest: <span class="kw-2">&amp;</span>MultiLocation,
-        _xcm: <span class="kw-2">&amp;</span>Xcm&lt;()&gt;,
-    ) -&gt; XCMWeight {
+    <span class="kw">fn </span>initiate_teleport(_assets: <span class="kw-2">&amp;</span>AssetFilter, _dest: <span class="kw-2">&amp;</span>Location, _xcm: <span class="kw-2">&amp;</span>Xcm&lt;()&gt;) -&gt; XCMWeight {
         XcmFungibleWeight::&lt;Runtime&gt;::initiate_teleport()
     }
-    <span class="kw">fn </span>report_holding(_response_info: <span class="kw-2">&amp;</span>QueryResponseInfo, _assets: <span class="kw-2">&amp;</span>MultiAssetFilter) -&gt; Weight {
+    <span class="kw">fn </span>report_holding(_response_info: <span class="kw-2">&amp;</span>QueryResponseInfo, _assets: <span class="kw-2">&amp;</span>AssetFilter) -&gt; Weight {
         XcmGeneric::&lt;Runtime&gt;::report_holding()
     }
-    <span class="kw">fn </span>buy_execution(_fees: <span class="kw-2">&amp;</span>MultiAsset, _weight_limit: <span class="kw-2">&amp;</span>WeightLimit) -&gt; XCMWeight {
+    <span class="kw">fn </span>buy_execution(_fees: <span class="kw-2">&amp;</span>Asset, _weight_limit: <span class="kw-2">&amp;</span>WeightLimit) -&gt; XCMWeight {
         XcmGeneric::&lt;Runtime&gt;::buy_execution()
     }
     <span class="kw">fn </span>refund_surplus() -&gt; XCMWeight {
@@ -438,7 +408,7 @@
     <span class="kw">fn </span>clear_error() -&gt; XCMWeight {
         XcmGeneric::&lt;Runtime&gt;::clear_error()
     }
-    <span class="kw">fn </span>claim_asset(_assets: <span class="kw-2">&amp;</span>MultiAssets, _ticket: <span class="kw-2">&amp;</span>MultiLocation) -&gt; XCMWeight {
+    <span class="kw">fn </span>claim_asset(_assets: <span class="kw-2">&amp;</span>Assets, _ticket: <span class="kw-2">&amp;</span>Location) -&gt; XCMWeight {
         XcmGeneric::&lt;Runtime&gt;::claim_asset()
     }
     <span class="kw">fn </span>trap(_code: <span class="kw-2">&amp;</span>u64) -&gt; XCMWeight {
@@ -450,13 +420,13 @@
     <span class="kw">fn </span>unsubscribe_version() -&gt; XCMWeight {
         XcmGeneric::&lt;Runtime&gt;::unsubscribe_version()
     }
-    <span class="kw">fn </span>burn_asset(assets: <span class="kw-2">&amp;</span>MultiAssets) -&gt; Weight {
+    <span class="kw">fn </span>burn_asset(assets: <span class="kw-2">&amp;</span>Assets) -&gt; Weight {
         assets.weigh_multi_assets(XcmGeneric::&lt;Runtime&gt;::burn_asset())
     }
-    <span class="kw">fn </span>expect_asset(assets: <span class="kw-2">&amp;</span>MultiAssets) -&gt; Weight {
+    <span class="kw">fn </span>expect_asset(assets: <span class="kw-2">&amp;</span>Assets) -&gt; Weight {
         assets.weigh_multi_assets(XcmGeneric::&lt;Runtime&gt;::expect_asset())
     }
-    <span class="kw">fn </span>expect_origin(_origin: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;MultiLocation&gt;) -&gt; Weight {
+    <span class="kw">fn </span>expect_origin(_origin: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Location&gt;) -&gt; Weight {
         XcmGeneric::&lt;Runtime&gt;::expect_origin()
     }
     <span class="kw">fn </span>expect_error(_error: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;(u32, XcmError)&gt;) -&gt; Weight {
@@ -489,16 +459,16 @@
     <span class="kw">fn </span>export_message(<span class="kw">_</span>: <span class="kw-2">&amp;</span>NetworkId, <span class="kw">_</span>: <span class="kw-2">&amp;</span>Junctions, <span class="kw">_</span>: <span class="kw-2">&amp;</span>Xcm&lt;()&gt;) -&gt; Weight {
         Weight::MAX
     }
-    <span class="kw">fn </span>lock_asset(<span class="kw">_</span>: <span class="kw-2">&amp;</span>MultiAsset, <span class="kw">_</span>: <span class="kw-2">&amp;</span>MultiLocation) -&gt; Weight {
+    <span class="kw">fn </span>lock_asset(<span class="kw">_</span>: <span class="kw-2">&amp;</span>Asset, <span class="kw">_</span>: <span class="kw-2">&amp;</span>Location) -&gt; Weight {
         Weight::MAX
     }
-    <span class="kw">fn </span>unlock_asset(<span class="kw">_</span>: <span class="kw-2">&amp;</span>MultiAsset, <span class="kw">_</span>: <span class="kw-2">&amp;</span>MultiLocation) -&gt; Weight {
+    <span class="kw">fn </span>unlock_asset(<span class="kw">_</span>: <span class="kw-2">&amp;</span>Asset, <span class="kw">_</span>: <span class="kw-2">&amp;</span>Location) -&gt; Weight {
         Weight::MAX
     }
-    <span class="kw">fn </span>note_unlockable(<span class="kw">_</span>: <span class="kw-2">&amp;</span>MultiAsset, <span class="kw">_</span>: <span class="kw-2">&amp;</span>MultiLocation) -&gt; Weight {
+    <span class="kw">fn </span>note_unlockable(<span class="kw">_</span>: <span class="kw-2">&amp;</span>Asset, <span class="kw">_</span>: <span class="kw-2">&amp;</span>Location) -&gt; Weight {
         Weight::MAX
     }
-    <span class="kw">fn </span>request_unlock(<span class="kw">_</span>: <span class="kw-2">&amp;</span>MultiAsset, <span class="kw">_</span>: <span class="kw-2">&amp;</span>MultiLocation) -&gt; Weight {
+    <span class="kw">fn </span>request_unlock(<span class="kw">_</span>: <span class="kw-2">&amp;</span>Asset, <span class="kw">_</span>: <span class="kw-2">&amp;</span>Location) -&gt; Weight {
         Weight::MAX
     }
     <span class="kw">fn </span>set_fees_mode(<span class="kw">_</span>: <span class="kw-2">&amp;</span>bool) -&gt; Weight {
@@ -510,11 +480,11 @@
     <span class="kw">fn </span>clear_topic() -&gt; Weight {
         XcmGeneric::&lt;Runtime&gt;::clear_topic()
     }
-    <span class="kw">fn </span>alias_origin(<span class="kw">_</span>: <span class="kw-2">&amp;</span>MultiLocation) -&gt; Weight {
+    <span class="kw">fn </span>alias_origin(<span class="kw">_</span>: <span class="kw-2">&amp;</span>Location) -&gt; Weight {
         <span class="comment">// XCM Executor does not currently support alias origin operations
         </span>Weight::MAX
     }
-    <span class="kw">fn </span>unpaid_execution(<span class="kw">_</span>: <span class="kw-2">&amp;</span>WeightLimit, <span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;MultiLocation&gt;) -&gt; Weight {
+    <span class="kw">fn </span>unpaid_execution(<span class="kw">_</span>: <span class="kw-2">&amp;</span>WeightLimit, <span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Location&gt;) -&gt; Weight {
         XcmGeneric::&lt;Runtime&gt;::unpaid_execution()
     }
 }

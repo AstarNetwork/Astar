@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `precompiles/xcm/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_xcm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../pallet_evm_precompile_xcm/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `precompiles/xcm/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_xcm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_evm_precompile_xcm/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -876,7 +878,6 @@
 <a href="#876" id="876">876</a>
 <a href="#877" id="877">877</a>
 <a href="#878" id="878">878</a>
-<a href="#879" id="879">879</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -895,7 +896,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see &lt;http://www.gnu.org/licenses/&gt;.
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>astar_primitives::xcm::XCM_SIZE_LIMIT;
 <span class="kw">use </span>fp_evm::PrecompileHandle;
@@ -914,7 +915,7 @@
 <span class="kw">use </span>sp_std::marker::PhantomData;
 <span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
 
-<span class="kw">use </span>xcm::{latest::prelude::<span class="kw-2">*</span>, VersionedMultiAsset, VersionedMultiAssets, VersionedMultiLocation};
+<span class="kw">use </span>xcm::{latest::prelude::<span class="kw-2">*</span>, VersionedAsset, VersionedAssets, VersionedLocation};
 
 <span class="kw">use </span>pallet_evm_precompile_assets_erc20::AddressToAssetId;
 <span class="kw">use </span>precompile_utils::prelude::<span class="kw-2">*</span>;
@@ -964,9 +965,9 @@
     XBalanceOf&lt;Runtime&gt;: TryFrom&lt;U256&gt; + Into&lt;U256&gt; + From&lt;u128&gt;,
     &lt;Runtime <span class="kw">as </span>orml_xtokens::Config&gt;::CurrencyId:
         From&lt;&lt;Runtime <span class="kw">as </span>pallet_assets::Config&gt;::AssetId&gt;,
-    C: MaybeEquivalence&lt;MultiLocation, &lt;Runtime <span class="kw">as </span>pallet_assets::Config&gt;::AssetId&gt;,
+    C: MaybeEquivalence&lt;Location, &lt;Runtime <span class="kw">as </span>pallet_assets::Config&gt;::AssetId&gt;,
 {
-    <span class="attr">#[precompile::public(<span class="string">&quot;assets_withdraw(address[],uint256[],bytes32,bool,uint256,uint256)&quot;</span>)]
+    <span class="attr">#[precompile::public(<span class="string">"assets_withdraw(address[],uint256[],bytes32,bool,uint256,uint256)"</span>)]
     </span><span class="kw">fn </span>assets_withdraw_native_v1(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         assets: BoundedVec&lt;Address, GetMaxAssets&lt;Runtime&gt;&gt;,
@@ -992,7 +993,7 @@
         )
     }
 
-    <span class="attr">#[precompile::public(<span class="string">&quot;assets_withdraw(address[],uint256[],address,bool,uint256,uint256)&quot;</span>)]
+    <span class="attr">#[precompile::public(<span class="string">"assets_withdraw(address[],uint256[],address,bool,uint256,uint256)"</span>)]
     </span><span class="kw">fn </span>assets_withdraw_evm_v1(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         assets: BoundedVec&lt;Address, GetMaxAssets&lt;Runtime&gt;&gt;,
@@ -1034,47 +1035,47 @@
             .filter_map(|address| {
                 Runtime::address_to_asset_id(address.into()).and_then(|x| C::convert_back(<span class="kw-2">&amp;</span>x))
             })
-            .collect::&lt;Vec&lt;MultiLocation&gt;&gt;();
+            .collect::&lt;Vec&lt;Location&gt;&gt;();
 
         <span class="kw">let </span>amounts = amounts
             .into_iter()
             .map(|x| x.try_into())
             .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;u128&gt;, <span class="kw">_</span>&gt;&gt;()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting amounts, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting amounts, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// Check that assets list is valid:
         // * all assets resolved to multi-location
         // * all assets has corresponded amount
         </span><span class="kw">if </span>assets.len() != amounts.len() || assets.is_empty() {
-            <span class="kw">return </span><span class="prelude-val">Err</span>(revert(<span class="string">&quot;Assets resolution failure.&quot;</span>));
+            <span class="kw">return </span><span class="prelude-val">Err</span>(revert(<span class="string">"Assets resolution failure."</span>));
         }
 
         <span class="kw">let </span>parachain_id: u32 = parachain_id
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting parachain_id, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting parachain_id, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>fee_item: u32 = fee_index
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting fee_index, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting fee_index, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>destination = <span class="kw">if </span>is_relay {
-            MultiLocation::parent()
+            Location::parent()
         } <span class="kw">else </span>{
-            X1(Junction::Parachain(parachain_id)).into_exterior(<span class="number">1</span>)
+            Junctions::from(Junction::Parachain(parachain_id)).into_exterior(<span class="number">1</span>)
         };
 
         destination
             .push_interior(beneficiary)
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error building destination multilocation&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error building destination multilocation"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>assets = assets
             .iter()
             .cloned()
             .zip(amounts.iter().cloned())
             .map(Into::into)
-            .collect::&lt;Vec&lt;MultiAsset&gt;&gt;();
+            .collect::&lt;Vec&lt;Asset&gt;&gt;();
 
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile:assets_withdraw&quot;</span>, <span class="string">&quot;Processed arguments: assets {:?}, destination: {:?}&quot;</span>, assets, destination);
+        <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile:assets_withdraw"</span>, <span class="string">"Processed arguments: assets {:?}, destination: {:?}"</span>, assets, destination);
 
         <span class="comment">// Build call with origin.
         </span><span class="kw">let </span>origin = <span class="prelude-val">Some</span>(Runtime::AddressMapping::into_account_id(
@@ -1083,9 +1084,9 @@
         .into();
 
         <span class="kw">let </span>call = orml_xtokens::Call::&lt;Runtime&gt;::transfer_multiassets {
-            assets: Box::new(VersionedMultiAssets::V3(assets.into())),
+            assets: Box::new(VersionedAssets::V4(assets.into())),
             fee_item,
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit: WeightLimit::Unlimited,
         };
 
@@ -1094,7 +1095,7 @@
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
 
-    <span class="attr">#[precompile::public(<span class="string">&quot;remote_transact(uint256,bool,address,uint256,bytes,uint64)&quot;</span>)]
+    <span class="attr">#[precompile::public(<span class="string">"remote_transact(uint256,bool,address,uint256,bytes,uint64)"</span>)]
     </span><span class="kw">fn </span>remote_transact_v1(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         para_id: U256,
@@ -1107,23 +1108,23 @@
         <span class="comment">// Raw call arguments
         </span><span class="kw">let </span>para_id: u32 = para_id
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting para_id, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting para_id, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>fee_amount: u128 = fee_amount
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting fee_amount, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting fee_amount, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>remote_call: Vec&lt;u8&gt; = remote_call.into();
 
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile:remote_transact&quot;</span>, <span class="string">&quot;Raw arguments: para_id: {}, is_relay: {}, fee_asset_addr: {:?}, \
-         fee_amount: {:?}, remote_call: {:?}, transact_weight: {}&quot;</span>,
+        <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile:remote_transact"</span>, <span class="string">"Raw arguments: para_id: {}, is_relay: {}, fee_asset_addr: {:?}, \
+         fee_amount: {:?}, remote_call: {:?}, transact_weight: {}"</span>,
          para_id, is_relay, fee_asset_addr, fee_amount, remote_call, transact_weight);
 
         <span class="comment">// Process arguments
         </span><span class="kw">let </span>dest = <span class="kw">if </span>is_relay {
-            MultiLocation::parent()
+            Location::parent()
         } <span class="kw">else </span>{
-            X1(Junction::Parachain(para_id)).into_exterior(<span class="number">1</span>)
+            Junctions::from(Junction::Parachain(para_id)).into_exterior(<span class="number">1</span>)
         };
 
         <span class="kw">let </span>fee_asset = {
@@ -1134,18 +1135,18 @@
                 Here.into()
             } <span class="kw">else </span>{
                 <span class="kw">let </span>fee_asset_id = Runtime::address_to_asset_id(address)
-                    .ok_or(revert(<span class="string">&quot;Failed to resolve fee asset id from address&quot;</span>))<span class="question-mark">?</span>;
+                    .ok_or(revert(<span class="string">"Failed to resolve fee asset id from address"</span>))<span class="question-mark">?</span>;
                 C::convert_back(<span class="kw-2">&amp;</span>fee_asset_id).ok_or(revert(
-                    <span class="string">&quot;Failed to resolve fee asset multilocation from local id&quot;</span>,
+                    <span class="string">"Failed to resolve fee asset multilocation from local id"</span>,
                 ))<span class="question-mark">?
             </span>}
         };
 
         <span class="kw">let </span>context = &lt;Runtime <span class="kw">as </span>pallet_xcm::Config&gt;::UniversalLocation::get();
-        <span class="kw">let </span>fee_multilocation: MultiAsset = (fee_asset, fee_amount).into();
+        <span class="kw">let </span>fee_multilocation: Asset = (fee_asset, fee_amount).into();
         <span class="kw">let </span>fee_multilocation = fee_multilocation
-            .reanchored(<span class="kw-2">&amp;</span>dest, context)
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;Failed to reanchor fee asset&quot;</span>))<span class="question-mark">?</span>;
+            .reanchored(<span class="kw-2">&amp;</span>dest, <span class="kw-2">&amp;</span>context)
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"Failed to reanchor fee asset"</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// Prepare XCM
         </span><span class="kw">let </span>xcm = Xcm(<span class="macro">vec!</span>[
@@ -1161,7 +1162,7 @@
             },
         ]);
 
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile:remote_transact&quot;</span>, <span class="string">&quot;Processed arguments: dest: {:?}, fee asset: {:?}, XCM: {:?}&quot;</span>, dest, fee_multilocation, xcm);
+        <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile:remote_transact"</span>, <span class="string">"Processed arguments: dest: {:?}, fee asset: {:?}, XCM: {:?}"</span>, dest, fee_multilocation, xcm);
 
         <span class="comment">// Build call with origin.
         </span><span class="kw">let </span>origin = <span class="prelude-val">Some</span>(Runtime::AddressMapping::into_account_id(
@@ -1170,7 +1171,7 @@
         .into();
         <span class="kw">let </span>call = pallet_xcm::Call::&lt;Runtime&gt;::send {
             dest: Box::new(dest.into()),
-            message: Box::new(xcm::VersionedXcm::V3(xcm)),
+            message: Box::new(xcm::VersionedXcm::V4(xcm)),
         };
 
         <span class="comment">// Dispatch a call.
@@ -1188,7 +1189,7 @@
         parachain_id: U256,
         fee_item: U256,
     ) -&gt; EvmResult&lt;bool&gt; {
-        <span class="kw">let </span>assets: Vec&lt;MultiLocation&gt; = assets
+        <span class="kw">let </span>assets: Vec&lt;Location&gt; = assets
             .iter()
             .cloned()
             .filter_map(|address| {
@@ -1206,42 +1207,42 @@
             .into_iter()
             .map(|x| x.try_into())
             .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;u128&gt;, <span class="kw">_</span>&gt;&gt;()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting amounts, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting amounts, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// Check that assets list is valid:
         // * all assets resolved to multi-location
         // * all assets has corresponded amount
         </span><span class="kw">if </span>assets.len() != amounts.len() || assets.is_empty() {
-            <span class="kw">return </span><span class="prelude-val">Err</span>(revert(<span class="string">&quot;Assets resolution failure.&quot;</span>));
+            <span class="kw">return </span><span class="prelude-val">Err</span>(revert(<span class="string">"Assets resolution failure."</span>));
         }
 
         <span class="kw">let </span>parachain_id: u32 = parachain_id
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting parachain_id, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting parachain_id, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>fee_item: u32 = fee_item
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting fee_index, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting fee_index, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// Prepare pallet-xcm call arguments
         </span><span class="kw">let </span><span class="kw-2">mut </span>destination = <span class="kw">if </span>is_relay {
-            MultiLocation::parent()
+            Location::parent()
         } <span class="kw">else </span>{
-            X1(Junction::Parachain(parachain_id)).into_exterior(<span class="number">1</span>)
+            Junctions::from(Junction::Parachain(parachain_id)).into_exterior(<span class="number">1</span>)
         };
 
         destination
             .push_interior(beneficiary)
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error building destination multilocation&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error building destination multilocation"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>assets = assets
             .iter()
             .cloned()
             .zip(amounts.iter().cloned())
             .map(Into::into)
-            .collect::&lt;Vec&lt;MultiAsset&gt;&gt;();
+            .collect::&lt;Vec&lt;Asset&gt;&gt;();
 
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile:assets_reserve_transfer&quot;</span>, <span class="string">&quot;Processed arguments: assets {:?}, destination: {:?}&quot;</span>, assets, destination);
+        <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile:assets_reserve_transfer"</span>, <span class="string">"Processed arguments: assets {:?}, destination: {:?}"</span>, assets, destination);
 
         <span class="comment">// Build call with origin.
         </span><span class="kw">let </span>origin = <span class="prelude-val">Some</span>(Runtime::AddressMapping::into_account_id(
@@ -1250,9 +1251,9 @@
         .into();
 
         <span class="kw">let </span>call = orml_xtokens::Call::&lt;Runtime&gt;::transfer_multiassets {
-            assets: Box::new(VersionedMultiAssets::V3(assets.into())),
+            assets: Box::new(VersionedAssets::V4(assets.into())),
             fee_item,
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit: WeightLimit::Unlimited,
         };
 
@@ -1263,7 +1264,7 @@
     }
 
     <span class="attr">#[precompile::public(
-        <span class="string">&quot;assets_reserve_transfer(address[],uint256[],bytes32,bool,uint256,uint256)&quot;
+        <span class="string">"assets_reserve_transfer(address[],uint256[],bytes32,bool,uint256,uint256)"
     </span>)]
     </span><span class="kw">fn </span>assets_reserve_transfer_native_v1(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
@@ -1291,7 +1292,7 @@
     }
 
     <span class="attr">#[precompile::public(
-        <span class="string">&quot;assets_reserve_transfer(address[],uint256[],address,bool,uint256,uint256)&quot;
+        <span class="string">"assets_reserve_transfer(address[],uint256[],address,bool,uint256,uint256)"
     </span>)]
     </span><span class="kw">fn </span>assets_reserve_transfer_evm_v1(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
@@ -1318,23 +1319,23 @@
         )
     }
 
-    <span class="attr">#[precompile::public(<span class="string">&quot;send_xcm((uint8,bytes[]),bytes)&quot;</span>)]
+    <span class="attr">#[precompile::public(<span class="string">"send_xcm((uint8,bytes[]),bytes)"</span>)]
     </span><span class="kw">fn </span>send_xcm(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
-        dest: MultiLocation,
+        dest: Location,
         xcm_call: BoundedBytes&lt;GetXcmSizeLimit&gt;,
     ) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Raw call arguments
-        </span><span class="kw">let </span>dest: MultiLocation = dest.into();
+        </span><span class="kw">let </span>dest: Location = dest.into();
         <span class="kw">let </span>xcm_call: Vec&lt;u8&gt; = xcm_call.into();
 
-        <span class="macro">log::trace!</span>(target:<span class="string">&quot;xcm-precompile::send_xcm&quot;</span>, <span class="string">&quot;Raw arguments: dest: {:?}, xcm_call: {:?}&quot;</span>, dest, xcm_call);
+        <span class="macro">log::trace!</span>(target:<span class="string">"xcm-precompile::send_xcm"</span>, <span class="string">"Raw arguments: dest: {:?}, xcm_call: {:?}"</span>, dest, xcm_call);
 
         <span class="kw">let </span>xcm = xcm::VersionedXcm::&lt;()&gt;::decode_all_with_depth_limit(
             xcm::MAX_XCM_DECODE_DEPTH,
             <span class="kw-2">&amp;mut </span>xcm_call.as_slice(),
         )
-        .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;Failed to decode xcm instructions&quot;</span>))<span class="question-mark">?</span>;
+        .map_err(|<span class="kw">_</span>| revert(<span class="string">"Failed to decode xcm instructions"</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// Build call with origin.
         </span><span class="kw">let </span>origin = <span class="prelude-val">Some</span>(Runtime::AddressMapping::into_account_id(
@@ -1345,25 +1346,25 @@
             dest: Box::new(dest.into()),
             message: Box::new(xcm),
         };
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-send_xcm&quot;</span>, <span class="string">&quot;Processed arguments:  XCM call: {:?}&quot;</span>, call);
+        <span class="macro">log::trace!</span>(target: <span class="string">"xcm-send_xcm"</span>, <span class="string">"Processed arguments:  XCM call: {:?}"</span>, call);
         <span class="comment">// Dispatch a call.
         </span>RuntimeHelper::&lt;Runtime&gt;::try_dispatch(handle, origin, call)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
 
-    <span class="attr">#[precompile::public(<span class="string">&quot;transfer(address,uint256,(uint8,bytes[]),(uint64,uint64))&quot;</span>)]
+    <span class="attr">#[precompile::public(<span class="string">"transfer(address,uint256,(uint8,bytes[]),(uint64,uint64))"</span>)]
     </span><span class="kw">fn </span>transfer(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         currency_address: Address,
         amount_of_tokens: U256,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Read call arguments
         </span><span class="kw">let </span>amount_of_tokens: u128 = amount_of_tokens
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting amount_of_tokens, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting amount_of_tokens, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>dest_weight_limit = <span class="kw">if </span>weight.is_zero() {
             WeightLimit::Unlimited
@@ -1373,29 +1374,29 @@
 
         <span class="kw">let </span>call = {
             <span class="kw">if </span>currency_address == Address::from(NATIVE_ADDRESS) {
-                <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile::transfer&quot;</span>, <span class="string">&quot;Raw arguments: currency_address: {:?} (this is native token), amount_of_tokens: {:?}, destination: {:?}, \
-                weight: {:?}&quot;</span>,
+                <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile::transfer"</span>, <span class="string">"Raw arguments: currency_address: {:?} (this is native token), amount_of_tokens: {:?}, destination: {:?}, \
+                weight: {:?}"</span>,
                 currency_address, amount_of_tokens, destination, weight );
 
                 orml_xtokens::Call::&lt;Runtime&gt;::transfer_multiasset {
-                    asset: Box::new(VersionedMultiAsset::V3(
-                        (MultiLocation::here(), amount_of_tokens).into(),
+                    asset: Box::new(VersionedAsset::V4(
+                        (Location::here(), amount_of_tokens).into(),
                     )),
-                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    dest: Box::new(VersionedLocation::V4(destination)),
                     dest_weight_limit,
                 }
             } <span class="kw">else </span>{
                 <span class="kw">let </span>asset_id = Runtime::address_to_asset_id(currency_address.into())
-                    .ok_or(revert(<span class="string">&quot;Failed to resolve fee asset id from address&quot;</span>))<span class="question-mark">?</span>;
+                    .ok_or(revert(<span class="string">"Failed to resolve fee asset id from address"</span>))<span class="question-mark">?</span>;
 
-                <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile::transfer&quot;</span>, <span class="string">&quot;Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
-                weight: {:?}, calculated asset_id: {:?}&quot;</span>,
+                <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile::transfer"</span>, <span class="string">"Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
+                weight: {:?}, calculated asset_id: {:?}"</span>,
                 currency_address, amount_of_tokens, destination, weight, asset_id);
 
                 orml_xtokens::Call::&lt;Runtime&gt;::transfer {
                     currency_id: asset_id.into(),
                     amount: amount_of_tokens.into(),
-                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    dest: Box::new(VersionedLocation::V4(destination)),
                     dest_weight_limit,
                 }
             }
@@ -1413,21 +1414,21 @@
     }
 
     <span class="attr">#[precompile::public(
-        <span class="string">&quot;transfer_with_fee(address,uint256,uint256,(uint8,bytes[]),(uint64,uint64))&quot;
+        <span class="string">"transfer_with_fee(address,uint256,uint256,(uint8,bytes[]),(uint64,uint64))"
     </span>)]
     </span><span class="kw">fn </span>transfer_with_fee(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         currency_address: Address,
         amount_of_tokens: U256,
         fee: U256,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Read call arguments
         </span><span class="kw">let </span>amount_of_tokens: u128 = amount_of_tokens
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting amount_of_tokens, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
-        <span class="kw">let </span>fee: u128 = fee.try_into().map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;can&#39;t convert fee&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting amount_of_tokens, maybe value too large"</span>))<span class="question-mark">?</span>;
+        <span class="kw">let </span>fee: u128 = fee.try_into().map_err(|<span class="kw">_</span>| revert(<span class="string">"can't convert fee"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>dest_weight_limit = <span class="kw">if </span>weight.is_zero() {
             WeightLimit::Unlimited
@@ -1437,31 +1438,31 @@
 
         <span class="kw">let </span>call = {
             <span class="kw">if </span>currency_address == Address::from(NATIVE_ADDRESS) {
-                <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile::transfer_with_fee&quot;</span>, <span class="string">&quot;Raw arguments: currency_address: {:?} (this is native token), amount_of_tokens: {:?}, destination: {:?}, \
-                weight: {:?}, fee {:?}&quot;</span>,
+                <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile::transfer_with_fee"</span>, <span class="string">"Raw arguments: currency_address: {:?} (this is native token), amount_of_tokens: {:?}, destination: {:?}, \
+                weight: {:?}, fee {:?}"</span>,
                 currency_address, amount_of_tokens, destination, weight, fee );
 
                 orml_xtokens::Call::&lt;Runtime&gt;::transfer_multiasset_with_fee {
-                    asset: Box::new(VersionedMultiAsset::V3(
-                        (MultiLocation::here(), amount_of_tokens).into(),
+                    asset: Box::new(VersionedAsset::V4(
+                        (Location::here(), amount_of_tokens).into(),
                     )),
-                    fee: Box::new(VersionedMultiAsset::V3((MultiLocation::here(), fee).into())),
-                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    fee: Box::new(VersionedAsset::V4((Location::here(), fee).into())),
+                    dest: Box::new(VersionedLocation::V4(destination)),
                     dest_weight_limit,
                 }
             } <span class="kw">else </span>{
                 <span class="kw">let </span>asset_id = Runtime::address_to_asset_id(currency_address.into())
-                    .ok_or(revert(<span class="string">&quot;Failed to resolve fee asset id from address&quot;</span>))<span class="question-mark">?</span>;
+                    .ok_or(revert(<span class="string">"Failed to resolve fee asset id from address"</span>))<span class="question-mark">?</span>;
 
-                <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile::transfer_with_fee&quot;</span>, <span class="string">&quot;Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
-                weight: {:?}, calculated asset_id: {:?}, fee: {:?}&quot;</span>,
+                <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile::transfer_with_fee"</span>, <span class="string">"Raw arguments: currency_address: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
+                weight: {:?}, calculated asset_id: {:?}, fee: {:?}"</span>,
                 currency_address, amount_of_tokens, destination, weight, asset_id, fee);
 
                 orml_xtokens::Call::&lt;Runtime&gt;::transfer_with_fee {
                     currency_id: asset_id.into(),
                     amount: amount_of_tokens.into(),
                     fee: fee.into(),
-                    dest: Box::new(VersionedMultiLocation::V3(destination)),
+                    dest: Box::new(VersionedLocation::V4(destination)),
                     dest_weight_limit,
                 }
             }
@@ -1479,19 +1480,19 @@
     }
 
     <span class="attr">#[precompile::public(
-        <span class="string">&quot;transfer_multiasset((uint8,bytes[]),uint256,(uint8,bytes[]),(uint64,uint64))&quot;
+        <span class="string">"transfer_multiasset((uint8,bytes[]),uint256,(uint8,bytes[]),(uint64,uint64))"
     </span>)]
     </span><span class="kw">fn </span>transfer_multiasset(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
-        asset_location: MultiLocation,
+        asset_location: Location,
         amount_of_tokens: U256,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Read call arguments
         </span><span class="kw">let </span>amount_of_tokens: u128 = amount_of_tokens
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting amount_of_tokens, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting amount_of_tokens, maybe value too large"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>dest_weight_limit = <span class="kw">if </span>weight.is_zero() {
             WeightLimit::Unlimited
@@ -1499,15 +1500,15 @@
             WeightLimit::Limited(weight.get_weight())
         };
 
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile::transfer_multiasset&quot;</span>, <span class="string">&quot;Raw arguments: asset_location: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
-        weight: {:?}&quot;</span>,
+        <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile::transfer_multiasset"</span>, <span class="string">"Raw arguments: asset_location: {:?}, amount_of_tokens: {:?}, destination: {:?}, \
+        weight: {:?}"</span>,
         asset_location, amount_of_tokens, destination, weight);
 
         <span class="kw">let </span>call = orml_xtokens::Call::&lt;Runtime&gt;::transfer_multiasset {
-            asset: Box::new(VersionedMultiAsset::V3(
+            asset: Box::new(VersionedAsset::V4(
                 (asset_location, amount_of_tokens).into(),
             )),
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit,
         };
 
@@ -1523,21 +1524,21 @@
     }
 
     <span class="attr">#[precompile::public(
-        <span class="string">&quot;transfer_multiasset_with_fee((uint8,bytes[]),uint256,uint256,(uint8,bytes[]),(uint64,uint64))&quot;
+        <span class="string">"transfer_multiasset_with_fee((uint8,bytes[]),uint256,uint256,(uint8,bytes[]),(uint64,uint64))"
     </span>)]
     </span><span class="kw">fn </span>transfer_multiasset_with_fee(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
-        asset_location: MultiLocation,
+        asset_location: Location,
         amount_of_tokens: U256,
         fee: U256,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Read call arguments
         </span><span class="kw">let </span>amount_of_tokens: u128 = amount_of_tokens
             .try_into()
-            .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;error converting amount_of_tokens, maybe value too large&quot;</span>))<span class="question-mark">?</span>;
-        <span class="kw">let </span>fee: u128 = fee.try_into().map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;can&#39;t convert fee&quot;</span>))<span class="question-mark">?</span>;
+            .map_err(|<span class="kw">_</span>| revert(<span class="string">"error converting amount_of_tokens, maybe value too large"</span>))<span class="question-mark">?</span>;
+        <span class="kw">let </span>fee: u128 = fee.try_into().map_err(|<span class="kw">_</span>| revert(<span class="string">"can't convert fee"</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let </span>dest_weight_limit = <span class="kw">if </span>weight.is_zero() {
             WeightLimit::Unlimited
@@ -1545,16 +1546,16 @@
             WeightLimit::Limited(weight.get_weight())
         };
 
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile::transfer_multiasset_with_fee&quot;</span>, <span class="string">&quot;Raw arguments: asset_location: {:?}, amount_of_tokens: {:?}, fee{:?}, destination: {:?}, \
-        weight: {:?}&quot;</span>,
+        <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile::transfer_multiasset_with_fee"</span>, <span class="string">"Raw arguments: asset_location: {:?}, amount_of_tokens: {:?}, fee{:?}, destination: {:?}, \
+        weight: {:?}"</span>,
         asset_location, amount_of_tokens, fee, destination, weight);
 
         <span class="kw">let </span>call = orml_xtokens::Call::&lt;Runtime&gt;::transfer_multiasset_with_fee {
-            asset: Box::new(VersionedMultiAsset::V3(
-                (asset_location, amount_of_tokens).into(),
+            asset: Box::new(VersionedAsset::V4(
+                (asset_location.clone(), amount_of_tokens).into(),
             )),
-            fee: Box::new(VersionedMultiAsset::V3((asset_location, fee).into())),
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            fee: Box::new(VersionedAsset::V4((asset_location, fee).into())),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit,
         };
 
@@ -1570,13 +1571,13 @@
     }
 
     <span class="attr">#[precompile::public(
-        <span class="string">&quot;transfer_multi_currencies((address,uint256)[],uint32,(uint8,bytes[]),(uint64,uint64))&quot;
+        <span class="string">"transfer_multi_currencies((address,uint256)[],uint32,(uint8,bytes[]),(uint64,uint64))"
     </span>)]
     </span><span class="kw">fn </span>transfer_multi_currencies(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         currencies: BoundedVec&lt;Currency, GetMaxAssets&lt;Runtime&gt;&gt;,
         fee_item: u32,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -&gt; EvmResult&lt;bool&gt; {
         <span class="kw">let </span>currencies: Vec&lt;<span class="kw">_</span>&gt; = currencies.into();
@@ -1587,11 +1588,11 @@
                 <span class="kw">let </span>amount = currency
                     .get_amount()
                     .try_into()
-                    .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;value too large: in currency&quot;</span>))<span class="question-mark">?</span>;
+                    .map_err(|<span class="kw">_</span>| revert(<span class="string">"value too large: in currency"</span>))<span class="question-mark">?</span>;
 
                 <span class="prelude-val">Ok</span>((
                     Runtime::address_to_asset_id(currency_address.into())
-                        .ok_or(revert(<span class="string">&quot;can&#39;t convert into currency id&quot;</span>))<span class="question-mark">?
+                        .ok_or(revert(<span class="string">"can't convert into currency id"</span>))<span class="question-mark">?
                         </span>.into(),
                     amount,
                 ))
@@ -1603,14 +1604,14 @@
             WeightLimit::Limited(weight.get_weight())
         };
 
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile::transfer_multi_currencies&quot;</span>, <span class="string">&quot;Raw arguments: currencies: {:?}, fee_item{:?}, destination: {:?}, \
-        weight: {:?}&quot;</span>,
+        <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile::transfer_multi_currencies"</span>, <span class="string">"Raw arguments: currencies: {:?}, fee_item{:?}, destination: {:?}, \
+        weight: {:?}"</span>,
         currencies, fee_item, destination, weight);
 
         <span class="kw">let </span>call = orml_xtokens::Call::&lt;Runtime&gt;::transfer_multicurrencies {
             currencies,
             fee_item,
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit,
         };
 
@@ -1626,13 +1627,13 @@
     }
 
     <span class="attr">#[precompile::public(
-        <span class="string">&quot;transfet_multi_assets(((uint8,bytes[]),uint256)[],uint32,(uint8,bytes[]),(uint64,uint64))&quot;
+        <span class="string">"transfet_multi_assets(((uint8,bytes[]),uint256)[],uint32,(uint8,bytes[]),(uint64,uint64))"
     </span>)]
     </span><span class="kw">fn </span>transfer_multi_assets(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         assets: BoundedVec&lt;EvmMultiAsset, GetMaxAssets&lt;Runtime&gt;&gt;,
         fee_item: u32,
-        destination: MultiLocation,
+        destination: Location,
         weight: WeightV2,
     ) -&gt; EvmResult&lt;bool&gt; {
         <span class="kw">let </span>assets: Vec&lt;<span class="kw">_</span>&gt; = assets.into();
@@ -1643,32 +1644,31 @@
             WeightLimit::Limited(weight.get_weight())
         };
 
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;xcm-precompile::transfer_multi_assets&quot;</span>, <span class="string">&quot;Raw arguments: assets: {:?}, fee_item{:?}, destination: {:?}, \
-        weight: {:?}&quot;</span>,
+        <span class="macro">log::trace!</span>(target: <span class="string">"xcm-precompile::transfer_multi_assets"</span>, <span class="string">"Raw arguments: assets: {:?}, fee_item{:?}, destination: {:?}, \
+        weight: {:?}"</span>,
         assets, fee_item, destination, weight);
 
-        <span class="kw">let </span>multiasset_vec: EvmResult&lt;Vec&lt;MultiAsset&gt;&gt; = assets
+        <span class="kw">let </span>multiasset_vec: EvmResult&lt;Vec&lt;Asset&gt;&gt; = assets
             .into_iter()
             .map(|evm_multiasset| {
                 <span class="kw">let </span>to_balance: u128 = evm_multiasset
                     .get_amount()
                     .try_into()
-                    .map_err(|<span class="kw">_</span>| revert(<span class="string">&quot;value too large in assets&quot;</span>))<span class="question-mark">?</span>;
+                    .map_err(|<span class="kw">_</span>| revert(<span class="string">"value too large in assets"</span>))<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>((evm_multiasset.get_location(), to_balance).into())
             })
             .collect();
 
         <span class="comment">// Since multiassets sorts them, we need to check whether the index is still correct,
         // and error otherwise as there is not much we can do other than that
-        </span><span class="kw">let </span>multiassets =
-            MultiAssets::from_sorted_and_deduplicated(multiasset_vec<span class="question-mark">?</span>).map_err(|<span class="kw">_</span>| {
-                revert(<span class="string">&quot;In field Assets, Provided assets either not sorted nor deduplicated&quot;</span>)
-            })<span class="question-mark">?</span>;
+        </span><span class="kw">let </span>multiassets = Assets::from_sorted_and_deduplicated(multiasset_vec<span class="question-mark">?</span>).map_err(|<span class="kw">_</span>| {
+            revert(<span class="string">"In field Assets, Provided assets either not sorted nor deduplicated"</span>)
+        })<span class="question-mark">?</span>;
 
         <span class="kw">let </span>call = orml_xtokens::Call::&lt;Runtime&gt;::transfer_multiassets {
-            assets: Box::new(VersionedMultiAssets::V3(multiassets)),
+            assets: Box::new(VersionedAssets::V4(multiassets)),
             fee_item,
-            dest: Box::new(VersionedMultiLocation::V3(destination)),
+            dest: Box::new(VersionedLocation::V4(destination)),
             dest_weight_limit,
         };
 
@@ -1734,12 +1734,12 @@
 
 <span class="attr">#[derive(Debug, Clone, solidity::Codec)]
 </span><span class="kw">pub struct </span>EvmMultiAsset {
-    location: MultiLocation,
+    location: Location,
     amount: U256,
 }
 
-<span class="kw">impl </span>From&lt;(MultiLocation, U256)&gt; <span class="kw">for </span>EvmMultiAsset {
-    <span class="kw">fn </span>from(tuple: (MultiLocation, U256)) -&gt; <span class="self">Self </span>{
+<span class="kw">impl </span>From&lt;(Location, U256)&gt; <span class="kw">for </span>EvmMultiAsset {
+    <span class="kw">fn </span>from(tuple: (Location, U256)) -&gt; <span class="self">Self </span>{
         EvmMultiAsset {
             location: tuple.<span class="number">0</span>,
             amount: tuple.<span class="number">1</span>,
@@ -1748,8 +1748,8 @@
 }
 
 <span class="kw">impl </span>EvmMultiAsset {
-    <span class="kw">pub fn </span>get_location(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; MultiLocation {
-        <span class="self">self</span>.location
+    <span class="kw">pub fn </span>get_location(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Location {
+        <span class="self">self</span>.location.clone()
     }
 
     <span class="kw">pub fn </span>get_amount(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
