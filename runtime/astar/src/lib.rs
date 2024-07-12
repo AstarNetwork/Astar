@@ -1130,7 +1130,7 @@ impl orml_oracle::Config for Runtime {
     #[cfg(not(feature = "runtime-benchmarks"))]
     type Members = OracleMembership;
     type MaxHasDispatchedSize = ConstU32<8>;
-    type WeightInfo = oracle_benchmarks::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::orml_oracle::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type MaxFeedValues = ConstU32<2>;
     #[cfg(not(feature = "runtime-benchmarks"))]
