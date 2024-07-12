@@ -37,6 +37,7 @@ sp-version = { workspace = true }
 
 # frame dependencies
 frame-executive = { workspace = true }
+frame-metadata-hash-extension = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-rpc-runtime-api = { workspace = true }
@@ -119,9 +120,6 @@ pallet-price-aggregator = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 
-# Get rid of this after uplifting to high enough version of ORML so we get access to benchmark support for the pallet
-oracle-benchmarks = { workspace = true }
-
 dapp-staking-v3-runtime-api = { workspace = true }
 
 # Moonbeam tracing
@@ -146,7 +144,6 @@ std = [
 	"sp-std/std",
 	"sp-api/std",
 	"sp-core/std",
-	"oracle-benchmarks/std",
 	"pallet-membership/std",
 	"pallet-price-aggregator/std",
 	"orml-oracle/std",
@@ -164,6 +161,7 @@ std = [
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",
 	"frame-try-runtime/std",
+	"frame-metadata-hash-extension/std",
 	"pallet-assets/std",
 	"pallet-authorship/std",
 	"pallet-aura/std",
@@ -268,7 +266,6 @@ runtime-benchmarks = [
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
-	"oracle-benchmarks/runtime-benchmarks",
 	"pallet-chain-extension-assets/runtime-benchmarks",
 	"pallet-contracts/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
@@ -287,6 +284,7 @@ runtime-benchmarks = [
 	"cumulus-pallet-dmp-queue/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
+	"orml-oracle/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -311,7 +309,6 @@ try-runtime = [
 	"orml-oracle/try-runtime",
 	"pallet-price-aggregator/try-runtime",
 	"pallet-membership/try-runtime",
-	"oracle-benchmarks/try-runtime",
 	"pallet-assets/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-collator-selection/try-runtime",
@@ -341,3 +338,10 @@ evm-tracing = [
 	"moonbeam-rpc-primitives-debug",
 	"moonbeam-rpc-primitives-txpool",
 ]
+
+# Enable metadata hash generation at compile time for the `CheckMetadataHash` extension.
+metadata-hash = ["substrate-wasm-builder?/metadata-hash"]
+
+# A feature that should be enabled when the runtime should be built for on-chain
+# deployment. This will disable stuff that shouldn't be part of the on-chain wasm
+on-chain-release-build = ["metadata-hash"]

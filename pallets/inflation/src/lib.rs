@@ -457,7 +457,7 @@ pub mod pallet {
             // or if the account has no provider references.
             // In both cases, the reward is lost but this can be ignored since it's extremely unlikely
             // to appear and doesn't bring any real harm.
-            T::Currency::deposit_creating(account, reward);
+            let _ = T::Currency::deposit_creating(account, reward);
             Ok(())
         }
     }

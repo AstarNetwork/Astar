@@ -44,11 +44,21 @@ use astar_primitives::*;
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
 /// Extra host functions
+#[cfg(feature = "runtime-benchmarks")]
 pub type HostFunctions = (
     // benchmarking host functions
     frame_benchmarking::benchmarking::HostFunctions,
     // evm tracing host functions
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+    cumulus_client_service::storage_proof_size::HostFunctions,
+);
+
+/// Extra host functions
+#[cfg(not(feature = "runtime-benchmarks"))]
+pub type HostFunctions = (
+    // evm tracing host functions
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+    cumulus_client_service::storage_proof_size::HostFunctions,
 );
 
 /// Local runtime native executor.
@@ -112,10 +122,11 @@ pub fn new_partial(
     let executor = sc_service::new_native_or_wasm_executor(&config);
 
     let (client, backend, keystore_container, task_manager) =
-        sc_service::new_full_parts::<Block, RuntimeApi, _>(
+        sc_service::new_full_parts_record_import::<Block, RuntimeApi, _>(
             config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
+            true,
         )?;
     let client = Arc::new(client);
     let telemetry = telemetry.map(|(worker, telemetry)| {
@@ -278,6 +289,7 @@ pub fn start_node(
         if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
                 &evm_tracing_config,
+                config.prometheus_registry().cloned(),
                 tracing::SpawnTasksParams {
                     task_manager: &task_manager,
                     client: client.clone(),

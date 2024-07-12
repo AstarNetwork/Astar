@@ -22,7 +22,22 @@ use frame_support::{
     traits::{Get, OnRuntimeUpgrade},
 };
 use sp_std::{marker::PhantomData, vec::Vec};
-use xcm::IntoVersion;
+use xcm::{IntoVersion, VersionedLocation};
+
+/// Exports for versioned migration `type`s for this pallet.
+pub mod versioned {
+    use super::*;
+
+    /// Migration storage V2 to V3 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
+    /// the migration is only performed when on-chain version is 2.
+    pub type V2ToV3<T> = frame_support::migrations::VersionedMigration<
+        2,
+        3,
+        MigrationXcmV4<T>,
+        Pallet<T>,
+        <T as frame_system::Config>::DbWeight,
+    >;
+}
 
 pub struct MigrationXcmV3<T: Config>(PhantomData<T>);
 impl<T: Config> OnRuntimeUpgrade for MigrationXcmV3<T> {
@@ -99,8 +114,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrationXcmV3<T> {
     fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
         assert_eq!(Pallet::<T>::on_chain_storage_version(), 2);
 
-        use xcm::VersionedMultiLocation;
-        let legacy_id_to_location_entries: Vec<(T::AssetId, VersionedMultiLocation)> =
+        let legacy_id_to_location_entries: Vec<(T::AssetId, VersionedLocation)> =
             Decode::decode(&mut state.as_ref())
                 .map_err(|_| "Cannot decode data from pre_upgrade")?;
 
@@ -121,6 +135,86 @@ impl<T: Config> OnRuntimeUpgrade for MigrationXcmV3<T> {
             ));
         }
 
+        Ok(())
+    }
+}
+
+pub struct MigrationXcmV4<T: Config>(PhantomData<T>);
+impl<T: Config> OnRuntimeUpgrade for MigrationXcmV4<T> {
+    #[allow(deprecated)]
+    fn on_runtime_upgrade() -> Weight {
+        let mut consumed_weight = Weight::zero();
+
+        // 1st map
+        AssetIdToLocation::<T>::translate::<xcm::VersionedMultiLocation, _>(
+            |asset_id, multi_location| {
+                consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
+                VersionedLocation::try_from(multi_location)
+                    .map_err(|_| {
+                        log::error!(
+                            "Failed to convert AssetIdToLocation value for asset Id: {asset_id:?}",
+                        );
+                    })
+                    .ok()
+            },
+        );
+
+        // 2rd map
+        let location_to_id_entries: Vec<_> = AssetLocationToId::<T>::drain().collect();
+        for (multi_location, asset_id) in location_to_id_entries {
+            consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
+
+            if let Ok(new_location) = multi_location.into_version(4) {
+                AssetLocationToId::<T>::insert(new_location, asset_id);
+            } else {
+                log::error!("Failed to convert AssetLocationToId value for asset Id: {asset_id:?}",);
+            }
+        }
+
+        // 3rd map
+        let location_to_price_entries: Vec<_> = AssetLocationUnitsPerSecond::<T>::drain().collect();
+        for (multi_location, price) in location_to_price_entries {
+            consumed_weight.saturating_accrue(T::DbWeight::get().reads_writes(1, 1));
+
+            if let Ok(new_location) = multi_location.into_version(4) {
+                AssetLocationUnitsPerSecond::<T>::insert(new_location, price);
+            } else {
+                log::error!("Failed to convert AssetLocationUnitsPerSecond value failed!");
+            }
+        }
+
+        StorageVersion::new(3).put::<Pallet<T>>();
+        consumed_weight.saturating_accrue(T::DbWeight::get().writes(1));
+
+        consumed_weight
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
+        assert!(Pallet::<T>::on_chain_storage_version() < 3);
+        let mut count = AssetIdToLocation::<T>::iter().collect::<Vec<_>>().len();
+        count += AssetLocationToId::<T>::iter().collect::<Vec<_>>().len();
+        count += AssetLocationUnitsPerSecond::<T>::iter()
+            .collect::<Vec<_>>()
+            .len();
+
+        Ok((count as u32).encode())
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+        assert_eq!(Pallet::<T>::on_chain_storage_version(), 3);
+
+        let old_count: u32 = Decode::decode(&mut state.as_ref())
+            .map_err(|_| "Cannot decode data from pre_upgrade")?;
+
+        let mut count = AssetIdToLocation::<T>::iter().collect::<Vec<_>>().len();
+        count += AssetLocationToId::<T>::iter().collect::<Vec<_>>().len();
+        count += AssetLocationUnitsPerSecond::<T>::iter()
+            .collect::<Vec<_>>()
+            .len();
+
+        assert_eq!(old_count, count as u32);
         Ok(())
     }
 }

@@ -34,9 +34,9 @@ use polkadot_runtime_parachains::{
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowUnpaidExecutionFrom, ChildParachainAsNative,
-    ChildParachainConvertsVia, ChildSystemParachainAsSuperuser,
-    CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds, IsConcrete,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
+    ChildParachainConvertsVia, ChildSystemParachainAsSuperuser, FixedRateOfFungible,
+    FixedWeightBounds, FungibleAdapter, IsConcrete, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation,
 };
 use xcm_executor::XcmExecutor;
 
@@ -71,6 +71,12 @@ impl frame_system::Config for Runtime {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type RuntimeTask = RuntimeTask;
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 parameter_types! {
@@ -92,20 +98,21 @@ impl pallet_balances::Config for Runtime {
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type RuntimeFreezeReason = ();
-    type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
 }
 
-impl shared::Config for Runtime {}
+impl shared::Config for Runtime {
+    type DisabledValidators = ();
+}
 
 impl configuration::Config for Runtime {
     type WeightInfo = configuration::TestWeightInfo;
 }
 
 parameter_types! {
-    pub const KsmLocation: MultiLocation = Here.into_location();
+    pub const KsmLocation: Location = Here.into_location();
     pub const KusamaNetwork: NetworkId = NetworkId::Kusama;
-    pub UniversalLocation: InteriorMultiLocation = Here;
+    pub UniversalLocation: InteriorLocation = Here;
 }
 
 pub type SovereignAccountOf = (
@@ -114,7 +121,7 @@ pub type SovereignAccountOf = (
 );
 
 pub type LocalAssetTransactor =
-    XcmCurrencyAdapter<Balances, IsConcrete<KsmLocation>, SovereignAccountOf, AccountId, ()>;
+    FungibleAdapter<Balances, IsConcrete<KsmLocation>, SovereignAccountOf, AccountId, ()>;
 
 type LocalOriginConverter = (
     SovereignSignedViaLocation<SovereignAccountOf, RuntimeOrigin>,
@@ -125,7 +132,7 @@ type LocalOriginConverter = (
 
 parameter_types! {
     pub const BaseXcmWeight: Weight = Weight::from_parts(1_000, 0);
-    pub KsmPerSecond: (AssetId, u128, u128) = (Concrete(KsmLocation::get()), 1, 1024 * 1024);
+    pub KsmPerSecond: (AssetId, u128, u128) = (AssetId(KsmLocation::get()), 1, 1024 * 1024);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -159,6 +166,7 @@ impl xcm_executor::Config for XcmConfig {
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
     type Aliasers = Nothing;
+    type TransactionalProcessor = ();
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, KusamaNetwork>;

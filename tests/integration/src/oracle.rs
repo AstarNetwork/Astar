@@ -18,7 +18,7 @@
 
 use crate::setup::*;
 
-use astar_primitives::oracle::{CurrencyAmount, PriceProvider};
+use astar_primitives::oracle::{Price, PriceProvider};
 use pallet_price_aggregator::{IntermediateValueAggregator, ValueAggregator};
 
 #[test]
@@ -33,13 +33,13 @@ fn price_submission_works() {
         IntermediateValueAggregator::<Runtime>::put(ValueAggregator::new(limit_block));
 
         // 1. Submit a price for a valid asset - the native currency
-        let price_1 = CurrencyAmount::from_rational(15, 100);
+        let price_1 = Price::from_rational(15, 100);
         assert_ok!(Oracle::feed_values(
             RuntimeOrigin::signed(ALICE.clone()),
             vec![(native_currency_id, price_1)].try_into().unwrap()
         ));
 
-        let price_2 = CurrencyAmount::from_rational(17, 100);
+        let price_2 = Price::from_rational(17, 100);
         assert_ok!(Oracle::feed_values(
             RuntimeOrigin::signed(BOB.clone()),
             vec![(native_currency_id, price_2)].try_into().unwrap()
@@ -48,7 +48,7 @@ fn price_submission_works() {
         // 2. Advance a block, and check price aggregator intermediate state is as expected
         // (perhaps a bit detailed, but still good to check whether it's integrated)
         run_for_blocks(1);
-        let expected_average = (price_1 + price_2) * CurrencyAmount::from_rational(1, 2);
+        let expected_average = (price_1 + price_2) * Price::from_rational(1, 2);
         assert_eq!(
             IntermediateValueAggregator::<Runtime>::get().average(),
             expected_average
@@ -57,7 +57,7 @@ fn price_submission_works() {
         // 3. Keep advancing blocks, adding new values only each other block, and verify the average is as expected at the end
         for i in System::block_number() + 1..limit_block {
             if i % 2 == 0 {
-                let step = CurrencyAmount::from_rational(i as u128 % 5, 100);
+                let step = Price::from_rational(i as u128 % 5, 100);
 
                 assert_ok!(Oracle::feed_values(
                     RuntimeOrigin::signed(ALICE.clone()),
@@ -77,8 +77,7 @@ fn price_submission_works() {
 
         // 4. Execute limit block and verify state is updated as expected
         run_for_blocks(2); // Need to run on_finalize of the limit block
-        let expected_moving_average =
-            (expected_average + INIT_PRICE) * CurrencyAmount::from_rational(1, 2);
+        let expected_moving_average = (expected_average + INIT_PRICE) * Price::from_rational(1, 2);
         assert_eq!(PriceAggregator::average_price(), expected_moving_average);
 
         // 5. Run until next limit block without any transactions, don't expect any changes

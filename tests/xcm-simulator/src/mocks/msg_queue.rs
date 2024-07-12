@@ -101,27 +101,28 @@ pub mod mock_msg_queue {
             max_weight: Weight,
         ) -> Result<Weight, XcmError> {
             let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
-            let message_hash = Encode::using_encoded(&xcm, sp_io::hashing::blake2_256);
+            let mut message_hash = Encode::using_encoded(&xcm, sp_io::hashing::blake2_256);
             let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
                 Ok(xcm) => {
                     let location = (Parent, Parachain(sender.into()));
                     <ReceivedXcmp<T>>::append(xcm.clone());
-                    match T::XcmExecutor::execute_xcm(
+                    match T::XcmExecutor::prepare_and_execute(
                         location,
                         xcm.clone(),
-                        message_hash,
+                        &mut message_hash,
                         max_weight,
+                        Weight::zero(),
                     ) {
-                        Outcome::Error(e) => {
-                            println!("Error in XCMP handling: {:?}, sender=Parachain({sender}), xcm={xcm:?}", e);
-                            (Err(e.clone()), Event::Fail(Some(hash), e))
+                        Outcome::Error { error } => {
+                            println!("Error in XCMP handling: {:?}, sender=Parachain({sender}), xcm={xcm:?}", error);
+                            (Err(error.clone()), Event::Fail(Some(hash), error))
                         }
-                        Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
+                        Outcome::Complete { used } => (Ok(used), Event::Success(Some(hash))),
                         // As far as the caller is concerned, this was dispatched without error, so
                         // we just report the weight used.
-                        Outcome::Incomplete(w, e) => {
-                            println!("Incomplete XCMP handling: {:?}, {sender}", e);
-                            (Ok(w), Event::Fail(Some(hash), e))
+                        Outcome::Incomplete { used, error } => {
+                            println!("Incomplete XCMP handling: {:?}, {sender}", error);
+                            (Ok(used), Event::Fail(Some(hash), error))
                         }
                     }
                 }
@@ -166,7 +167,7 @@ pub mod mock_msg_queue {
             limit: Weight,
         ) -> Weight {
             for (_i, (_sent_at, data)) in iter.enumerate() {
-                let id = sp_io::hashing::blake2_256(&data[..]);
+                let mut id = sp_io::hashing::blake2_256(&data[..]);
                 let maybe_versioned = VersionedXcm::<T::RuntimeCall>::decode(&mut &data[..]);
                 match maybe_versioned {
                     Err(_) => {
@@ -175,7 +176,13 @@ pub mod mock_msg_queue {
                     Ok(versioned) => match Xcm::try_from(versioned) {
                         Err(()) => Self::deposit_event(Event::UnsupportedVersion(id)),
                         Ok(x) => {
-                            let outcome = T::XcmExecutor::execute_xcm(Parent, x.clone(), id, limit);
+                            let outcome = T::XcmExecutor::prepare_and_execute(
+                                Parent,
+                                x.clone(),
+                                &mut id,
+                                limit,
+                                Weight::zero(),
+                            );
                             <ReceivedDmp<T>>::append(x);
                             Self::deposit_event(Event::ExecutedDownward(id, outcome));
                         }

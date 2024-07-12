@@ -75,7 +75,7 @@ use astar_primitives::{
     },
     evm::EvmRevertCodeHandler,
     governance::OracleMembershipInst,
-    oracle::{CurrencyAmount, CurrencyId, DummyCombineData},
+    oracle::{CurrencyId, DummyCombineData, Price},
     xcm::AssetLocationIdConverter,
     Address, AssetId, BlockNumber, Hash, Header, Nonce,
 };
@@ -255,6 +255,8 @@ impl frame_system::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     /// The ubiquitous origin type.
     type RuntimeOrigin = RuntimeOrigin;
+    /// The aggregated RuntimeTask type.
+    type RuntimeTask = RuntimeTask;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// Runtime version.
@@ -272,6 +274,11 @@ impl frame_system::Config for Runtime {
     type SS58Prefix = SS58Prefix;
     type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 parameter_types! {
@@ -335,6 +342,12 @@ impl pallet_identity::Config for Runtime {
     type Slashed = ();
     type ForceOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
     type RegistrarOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type OffchainSignature = Signature;
+    type SigningPublicKey = <Signature as sp_runtime::traits::Verify>::Signer;
+    type UsernameAuthorityOrigin = EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type PendingUsernameExpiration = ConstU32<{ 7 * DAYS }>;
+    type MaxSuffixLength = ConstU32<7>;
+    type MaxUsernameLength = ConstU32<32>;
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
@@ -356,10 +369,10 @@ impl pallet_multisig::Config for Runtime {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-pub struct BenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
+pub struct DAppStakingBenchmarkHelper<SC, ACC>(sp_std::marker::PhantomData<(SC, ACC)>);
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_dapp_staking_v3::BenchmarkHelper<SmartContract<AccountId>, AccountId>
-    for BenchmarkHelper<SmartContract<AccountId>, AccountId>
+    for DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>
 {
     fn get_smart_contract(id: u32) -> SmartContract<AccountId> {
         let id_bytes = id.to_le_bytes();
@@ -385,7 +398,7 @@ impl DappStakingAccountCheck<AccountId> for AccountCheck {
 
 pub struct ShidenTierSlots;
 impl TierSlotsFunc for ShidenTierSlots {
-    fn number_of_slots(price: CurrencyAmount) -> u16 {
+    fn number_of_slots(price: Price) -> u16 {
         // According to the forum proposal, the original formula's factor is reduced from 1000x to 100x.
         let result: u64 = price.saturating_mul_int(100_u64).saturating_add(50);
         result.unique_saturated_into()
@@ -424,7 +437,7 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type RankingEnabled = ConstBool<true>;
     type WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = BenchmarkHelper<SmartContract<AccountId>, AccountId>;
+    type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
 }
 
 pub struct InflationPayoutPerBlock;
@@ -600,7 +613,6 @@ impl pallet_balances::Config for Runtime {
     type RuntimeHoldReason = RuntimeHoldReason;
     type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = RuntimeFreezeReason;
-    type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<1>;
 }
 
@@ -670,6 +682,7 @@ impl pallet_vesting::Config for Runtime {
     type MinVestedTransfer = MinVestedTransfer;
     type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
     type UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
+    type BlockNumberProvider = System;
     // `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
     // highest number of schedules that encodes less than 2^10.
     const MAX_VESTING_SCHEDULES: u32 = 28;
@@ -718,6 +731,9 @@ impl pallet_contracts::Config for Runtime {
     type Environment = ();
     type Migrations = ();
     type Xcm = ();
+    type UploadOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
+    type InstantiateOrigin = EnsureSigned<<Self as frame_system::Config>::AccountId>;
+    type ApiVersion = ();
 }
 
 parameter_types! {
@@ -1084,6 +1100,19 @@ impl pallet_price_aggregator::Config for Runtime {
     type WeightInfo = pallet_price_aggregator::weights::SubstrateWeight<Runtime>;
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct OracleBenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+impl orml_oracle::BenchmarkHelper<CurrencyId, Price, ConstU32<2>> for OracleBenchmarkHelper {
+    fn get_currency_id_value_pairs() -> sp_runtime::BoundedVec<(CurrencyId, Price), ConstU32<2>> {
+        sp_runtime::BoundedVec::try_from(vec![
+            (CurrencyId::ASTR, Price::from_rational(15, 100)),
+            (CurrencyId::ASTR, Price::from_rational(15, 100)),
+        ])
+        .expect("out of bounds")
+    }
+}
+
 parameter_types! {
     // Cannot specify `Root` so need to do it like this, unfortunately.
     pub RootOperatorAccountId: AccountId = AccountId::from([0xffu8; 32]);
@@ -1095,15 +1124,20 @@ impl orml_oracle::Config for Runtime {
     type CombineData = DummyCombineData<Runtime>;
     type Time = Timestamp;
     type OracleKey = CurrencyId;
-    type OracleValue = CurrencyAmount;
+    type OracleValue = Price;
     type RootOperatorAccountId = RootOperatorAccountId;
+    #[cfg(feature = "runtime-benchmarks")]
+    type Members = OracleMembershipWrapper;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type Members = OracleMembership;
     type MaxHasDispatchedSize = ConstU32<8>;
-    type WeightInfo = oracle_benchmarks::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::orml_oracle::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type MaxFeedValues = ConstU32<2>;
     #[cfg(not(feature = "runtime-benchmarks"))]
     type MaxFeedValues = ConstU32<1>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = OracleBenchmarkHelper;
 }
 
 impl pallet_membership::Config<OracleMembershipInst> for Runtime {
@@ -1118,6 +1152,24 @@ impl pallet_membership::Config<OracleMembershipInst> for Runtime {
     type MembershipChanged = ();
     type MaxMembers = ConstU32<16>;
     type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
+/// OracleMembership wrapper used by benchmarks
+#[cfg(feature = "runtime-benchmarks")]
+pub struct OracleMembershipWrapper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl frame_support::traits::SortedMembers<AccountId> for OracleMembershipWrapper {
+    fn sorted_members() -> Vec<AccountId> {
+        OracleMembership::sorted_members()
+    }
+
+    fn add(account: &AccountId) {
+        frame_support::assert_ok!(OracleMembership::add_member(
+            frame_system::RawOrigin::Root.into(),
+            account.to_owned().into()
+        ));
+    }
 }
 
 construct_runtime!(
@@ -1187,6 +1239,7 @@ pub type SignedExtra = (
     frame_system::CheckNonce<Runtime>,
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+    frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
@@ -1209,7 +1262,14 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,);
+pub type Migrations = (
+    cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
+    // permanent migration, do not remove
+    pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
+    // XCM V3 -> V4
+    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
+    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
+);
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -1283,7 +1343,7 @@ mod benches {
     define_benchmarks!(
         [frame_benchmarking, BaselineBench::<Runtime>]
         [frame_system, SystemBench::<Runtime>]
-        [pallet_assets, Assets]
+        [pallet_assets, pallet_assets::Pallet::<Runtime>]
         [pallet_balances, Balances]
         [pallet_timestamp, Timestamp]
         [pallet_dapp_staking_v3, DappStaking]
@@ -1296,6 +1356,7 @@ mod benches {
         [xcm_benchmarks_fungible, XcmFungible]
         [pallet_price_aggregator, PriceAggregator]
         [pallet_membership, OracleMembership]
+        [orml_oracle, Oracle]
     );
 }
 
@@ -1309,7 +1370,7 @@ impl_runtime_apis! {
             Executive::execute_block(block)
         }
 
-        fn initialize_block(header: &<Block as BlockT>::Header) {
+        fn initialize_block(header: &<Block as BlockT>::Header) -> sp_runtime::ExtrinsicInclusionMode {
             Executive::initialize_block(header)
         }
     }
@@ -1822,27 +1883,56 @@ impl_runtime_apis! {
             use xcm_builder::MintLocation;
             use astar_primitives::benchmarks::XcmBenchmarkHelper;
             use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
-                        impl pallet_xcm::benchmarking::Config for Runtime {
-                fn reachable_dest() -> Option<MultiLocation> {
+
+            pub struct TestDeliveryHelper;
+            impl xcm_builder::EnsureDelivery for TestDeliveryHelper {
+                fn ensure_successful_delivery(
+                    origin_ref: &Location,
+                    _dest: &Location,
+                    _fee_reason: xcm_executor::traits::FeeReason,
+                ) -> (Option<xcm_executor::FeesMode>, Option<Assets>) {
+                    use xcm_executor::traits::ConvertLocation;
+                    let account = xcm_config::LocationToAccountId::convert_location(origin_ref)
+                        .expect("Invalid location");
+                    // Give the existential deposit at least
+                    let balance = ExistentialDeposit::get();
+                    let _ = <Balances as frame_support::traits::Currency<_>>::
+                        make_free_balance_be(&account.into(), balance);
+
+                    (None, None)
+                }
+            }
+
+            impl pallet_xcm::benchmarking::Config for Runtime {
+                type DeliveryHelper = TestDeliveryHelper;
+
+                fn reachable_dest() -> Option<Location> {
                     Some(Parent.into())
                 }
 
-                fn teleportable_asset_and_dest() -> Option<(MultiAsset, MultiLocation)> {
+                fn teleportable_asset_and_dest() -> Option<(Asset, Location)> {
                     None
                 }
 
-                fn reserve_transferable_asset_and_dest() -> Option<(MultiAsset, MultiLocation)> {
+                fn reserve_transferable_asset_and_dest() -> Option<(Asset, Location)> {
                     let random_para_id = 43211234;
                     ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(
                         random_para_id.into()
                     );
                     Some((
-                        MultiAsset {
+                        Asset {
                             fun: Fungible(ExistentialDeposit::get()),
-                            id: Concrete(Here.into())
+                            id: AssetId(Here.into())
                         },
                         ParentThen(Parachain(random_para_id).into()).into(),
                     ))
+                }
+
+                fn get_asset() -> Asset {
+                    Asset {
+                        id: AssetId(Here.into()),
+                        fun: Fungible(ExistentialDeposit::get()),
+                    }
                 }
             }
 
@@ -1860,10 +1950,10 @@ impl_runtime_apis! {
                 type DeliveryHelper = ();
 
                 // destination location to be used in benchmarks
-                fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(MultiLocation::parent())
+                fn valid_destination() -> Result<Location, BenchmarkError> {
+                    Ok(Location::parent())
                 }
-                fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
+                fn worst_case_holding(_depositable_count: u32) -> Assets {
                     XcmBenchmarkHelper::<Runtime>::worst_case_holding()
                 }
             }
@@ -1876,63 +1966,66 @@ impl_runtime_apis! {
                     (0u64, Response::Version(Default::default()))
                 }
                 fn worst_case_asset_exchange()
-                    -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+                    -> Result<(Assets, Assets), BenchmarkError> {
                     Err(BenchmarkError::Skip)
                 }
-                fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
+                fn universal_alias() -> Result<(Location, Junction), BenchmarkError> {
                     Err(BenchmarkError::Skip)
                 }
                 fn transact_origin_and_runtime_call()
-                    -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
-                    Ok((MultiLocation::parent(), frame_system::Call::remark_with_event {
+                    -> Result<(Location, RuntimeCall), BenchmarkError> {
+                    Ok((Location::parent(), frame_system::Call::remark_with_event {
                         remark: vec![]
                     }.into()))
                 }
-                fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(MultiLocation::parent())
+                fn subscribe_origin() -> Result<Location, BenchmarkError> {
+                    Ok(Location::parent())
                 }
                 fn claimable_asset()
-                    -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let origin = MultiLocation::parent();
-                    let assets: MultiAssets = (Concrete(MultiLocation::parent()), 1_000u128)
+                    -> Result<(Location, Location, Assets), BenchmarkError> {
+                    let origin = Location::parent();
+                    let assets: Assets = (AssetId(Location::parent()), 1_000u128)
                         .into();
-                    let ticket = MultiLocation { parents: 0, interior: Here };
+                    let ticket = Location { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
                 }
                 fn unlockable_asset()
-                    -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+                    -> Result<(Location, Location, Asset), BenchmarkError> {
                     Err(BenchmarkError::Skip)
                 }
                 fn export_message_origin_and_destination(
-                ) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+                ) -> Result<(Location, NetworkId, InteriorLocation), BenchmarkError> {
                     Err(BenchmarkError::Skip)
                 }
-                fn alias_origin() -> Result<(MultiLocation, MultiLocation), BenchmarkError> {
+                fn alias_origin() -> Result<(Location, Location), BenchmarkError> {
                     Err(BenchmarkError::Skip)
+                }
+                fn fee_asset() -> Result<Asset, BenchmarkError> {
+                    Ok((AssetId(Here.into()), 100).into())
                 }
             }
 
             parameter_types! {
                 pub const NoCheckingAccount: Option<(AccountId, MintLocation)> = None;
-                pub const NoTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+                pub const NoTeleporter: Option<(Location, Asset)> = None;
                 pub const TransactAssetId: u128 = 1001;
-                pub const TransactAssetLocation: MultiLocation = MultiLocation { parents: 0, interior: X1(GeneralIndex(TransactAssetId::get())) };
+                pub TransactAssetLocation: Location = Location { parents: 0, interior: [GeneralIndex(TransactAssetId::get())].into() };
 
-                pub TrustedReserveLocation: MultiLocation = Parent.into();
-                pub TrustedReserveAsset: MultiAsset = MultiAsset { id: Concrete(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
-                pub TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
+                pub TrustedReserveLocation: Location = Parent.into();
+                pub TrustedReserveAsset: Asset = Asset { id: AssetId(TrustedReserveLocation::get()), fun: Fungible(1_000_000) };
+                pub TrustedReserve: Option<(Location, Asset)> = Some((TrustedReserveLocation::get(), TrustedReserveAsset::get()));
             }
 
             impl pallet_xcm_benchmarks::fungible::Config for Runtime {
-                type TransactAsset = ItemOf<Assets, TransactAssetId, AccountId>;
+                type TransactAsset = ItemOf<pallet_assets::Pallet<Runtime>, TransactAssetId, AccountId>;
                 type CheckedAccount = NoCheckingAccount;
                 type TrustedTeleporter = NoTeleporter;
                 type TrustedReserve = TrustedReserve;
 
-                fn get_multi_asset() -> MultiAsset {
+                fn get_asset() -> Asset {
                     let min_balance = 100u128;
                     // create the transact asset and make it sufficient
-                    assert_ok!(Assets::force_create(
+                    assert_ok!(pallet_assets::Pallet::<Runtime>::force_create(
                         RuntimeOrigin::root(),
                         TransactAssetId::get().into(),
                         Address::Id([0u8; 32].into()),
@@ -1950,8 +2043,8 @@ impl_runtime_apis! {
                         )
                     );
 
-                    MultiAsset {
-                        id: Concrete(TransactAssetLocation::get()),
+                    Asset {
+                        id: AssetId(TransactAssetLocation::get()),
                         fun: Fungible(min_balance * 100),
                     }
                 }
@@ -1977,11 +2070,16 @@ impl_runtime_apis! {
         fn trace_transaction(
             extrinsics: Vec<<Block as BlockT>::Extrinsic>,
             traced_transaction: &pallet_ethereum::Transaction,
+            header: &<Block as BlockT>::Header,
         ) -> Result<
             (),
             sp_runtime::DispatchError,
         > {
             use moonbeam_evm_tracer::tracer::EvmTracer;
+
+            // We need to follow the order when replaying the transactions.
+            // Block initialize happens first then apply_extrinsic.
+            Executive::initialize_block(header);
 
             // Apply the a subset of extrinsics: all the substrate-specific or ethereum
             // transactions that preceded the requested transaction.
@@ -2006,6 +2104,7 @@ impl_runtime_apis! {
         fn trace_block(
             extrinsics: Vec<<Block as BlockT>::Extrinsic>,
             known_transactions: Vec<H256>,
+            header: &<Block as BlockT>::Header,
         ) -> Result<
             (),
             sp_runtime::DispatchError,
@@ -2014,6 +2113,10 @@ impl_runtime_apis! {
 
             let mut config = <Runtime as pallet_evm::Config>::config().clone();
             config.estimate = true;
+
+            // We need to follow the order when replaying the transactions.
+            // Block initialize happens first then apply_extrinsic.
+            Executive::initialize_block(header);
 
             // Apply all extrinsics. Ethereum extrinsics are traced.
             for ext in extrinsics.into_iter() {

@@ -133,10 +133,10 @@ fn basic_xcmp() {
 fn error_when_not_paying_enough() {
     MockNet::reset();
 
-    let source_location: MultiLocation = (Parent,).into();
+    let source_location: Location = (Parent,).into();
     let source_id: parachain::AssetId = 123;
 
-    let dest: MultiLocation = Junction::AccountId32 {
+    let dest: Location = Junction::AccountId32 {
         network: None,
         id: ALICE.into(),
     }
@@ -162,7 +162,7 @@ fn error_when_not_paying_enough() {
         assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
-            Box::new(VersionedMultiLocation::V3(dest).clone().into()),
+            Box::new(VersionedLocation::V4(dest).clone().into()),
             Box::new((Here, 99).into()),
             0,
         ));
@@ -176,7 +176,10 @@ fn error_when_not_paying_enough() {
             r.event,
             RuntimeEvent::MsgQueue(mock_msg_queue::Event::ExecutedDownward(
                 _,
-                Outcome::Incomplete(_, XcmError::TooExpensive)
+                Outcome::Incomplete {
+                    error: XcmError::TooExpensive,
+                    ..
+                }
             ))
         )));
 
@@ -248,7 +251,7 @@ fn remote_dapps_staking_staker_claim() {
         // Send the remote transact operation
         assert_ok!(ParachainPalletXcm::send_xcm(
             Here,
-            MultiLocation::new(1, X1(Parachain(2))),
+            Location::new(1, Parachain(2)),
             Xcm(vec![
                 WithdrawAsset((Here, 100_000_000_000_u128).into()),
                 BuyExecution {
@@ -307,7 +310,7 @@ fn remote_dapps_staking_staker_claim() {
         // Send the remote transact operation
         assert_ok!(ParachainPalletXcm::send_xcm(
             Here,
-            MultiLocation::new(1, X1(Parachain(2))),
+            Location::new(1, Parachain(2)),
             Xcm(vec![
                 WithdrawAsset((Here, 100_000_000_000_u128).into()),
                 BuyExecution {

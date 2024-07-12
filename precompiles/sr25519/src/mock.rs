@@ -133,6 +133,12 @@ impl frame_system::Config for Runtime {
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type RuntimeTask = RuntimeTask;
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -186,7 +192,6 @@ impl pallet_balances::Config for Runtime {
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type RuntimeFreezeReason = ();
-    type MaxHolds = ConstU32<0>;
     type MaxFreezes = ConstU32<0>;
 }
 

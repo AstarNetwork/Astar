@@ -23,6 +23,7 @@ use frame_support::{
     traits::{ConstU32, ConstU64, Nothing},
     weights::Weight,
 };
+use frame_system::EnsureSigned;
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 use pallet_contracts::{Config, DefaultAddressGenerator, Frame};
 use sp_core::crypto::AccountId32;
@@ -70,6 +71,12 @@ impl frame_system::Config for Test {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type RuntimeTask = RuntimeTask;
+    type SingleBlockMigrations = ();
+    type MultiBlockMigrator = ();
+    type PreInherents = ();
+    type PostInherents = ();
+    type PostTransactions = ();
 }
 
 parameter_types! {
@@ -116,6 +123,9 @@ impl pallet_contracts::Config for Test {
     type Migrations = ();
     type RuntimeHoldReason = RuntimeHoldReason;
     type Xcm = ();
+    type UploadOrigin = EnsureSigned<AccountId32>;
+    type InstantiateOrigin = EnsureSigned<AccountId32>;
+    type ApiVersion = ();
 }
 
 impl RegisteredChainExtension<Test> for AssetsExtension<Test> {
@@ -139,7 +149,6 @@ impl pallet_balances::Config for Test {
     type RuntimeHoldReason = RuntimeHoldReason;
     type FreezeIdentifier = ();
     type RuntimeFreezeReason = ();
-    type MaxHolds = ConstU32<1>;
     type MaxFreezes = ConstU32<0>;
 }
 

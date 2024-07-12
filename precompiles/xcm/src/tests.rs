@@ -18,9 +18,6 @@
 
 use crate::mock::*;
 use crate::*;
-use xcm::latest::{
-    AssetId, Fungibility, Junction, Junctions, MultiAsset, MultiAssets, MultiLocation,
-};
 
 use orml_xtokens::Event as XtokensEvent;
 use parity_scale_codec::Encode;
@@ -247,15 +244,15 @@ mod xcm_old_interface_test {
             for (location, Xcm(instructions)) in take_sent_xcm() {
                 assert_eq!(
                     location,
-                    MultiLocation {
+                    Location {
                         parents: 1,
                         interior: Here
                     }
                 );
 
-                let non_native_asset = MultiAsset {
+                let non_native_asset = Asset {
                     fun: Fungible(42000),
-                    id: xcm::v3::AssetId::from(MultiLocation {
+                    id: xcm::v4::AssetId::from(Location {
                         parents: 0,
                         interior: Here,
                     }),
@@ -270,9 +267,9 @@ mod xcm_old_interface_test {
                             ..
                         },
                         DepositAsset {
-                            beneficiary: MultiLocation {
+                            beneficiary: Location {
                                 parents: 0,
-                                interior: X1(_),
+                                interior: Junctions::X1(_),
                             },
                             ..
                         }
@@ -322,17 +319,17 @@ mod xcm_old_interface_test {
             for (location, Xcm(instructions)) in take_sent_xcm() {
                 assert_eq!(
                     location,
-                    MultiLocation {
+                    Location {
                         parents: 1,
                         interior: Here
                     }
                 );
 
-                let native_asset = MultiAsset {
+                let native_asset = Asset {
                     fun: Fungible(42000),
-                    id: xcm::v3::AssetId::from(MultiLocation {
+                    id: xcm::v4::AssetId::from(Location {
                         parents: 0,
-                        interior: X1(Parachain(123)),
+                        interior: Parachain(123).into(),
                     }),
                 };
 
@@ -346,9 +343,9 @@ mod xcm_old_interface_test {
                             ..
                         },
                         DepositAsset {
-                            beneficiary: MultiLocation {
+                            beneficiary: Location {
                                 parents: 0,
-                                interior: X1(_),
+                                interior: Junctions::X1(_),
                             },
                             ..
                         }
@@ -362,14 +359,15 @@ mod xcm_old_interface_test {
     #[test]
     fn test_send_clear_origin() {
         ExtBuilder::default().build().execute_with(|| {
-            let dest: MultiLocation = MultiLocation {
+            let dest: Location = Location {
                 parents: 1,
-                interior: Junctions::X1(Junction::AccountId32 {
+                interior: AccountId32 {
                     network: None,
                     id: H256::repeat_byte(0xF1).into(),
-                }),
+                }
+                .into(),
             };
-            let xcm_to_send = VersionedXcm::<()>::V3(Xcm(vec![ClearOrigin])).encode();
+            let xcm_to_send = VersionedXcm::<()>::V4(Xcm(vec![ClearOrigin])).encode();
             precompiles()
                 .prepare_test(
                     TestAccount::Alice,
@@ -399,23 +397,23 @@ mod xcm_new_interface_test {
         let weight = WeightV2::from(3_000_000_000u64, 1024);
 
         ExtBuilder::default().build().execute_with(|| {
-            let parent_destination = MultiLocation {
+            let parent_destination = Location {
                 parents: 1,
-                interior: Junctions::X1(Junction::AccountId32 {
+                interior: Junctions::from(Junction::AccountId32 {
                     network: None,
                     id: [1u8; 32],
                 }),
             };
 
-            let sibling_parachain_location = MultiLocation {
+            let sibling_parachain_location = Location {
                 parents: 1,
-                interior: Junctions::X2(
+                interior: Junctions::from([
                     Junction::Parachain(10),
                     Junction::AccountId32 {
                         network: None,
                         id: [1u8; 32],
                     },
-                ),
+                ]),
             };
 
             // sending relay token back to relay chain
@@ -426,20 +424,20 @@ mod xcm_new_interface_test {
                     PrecompileCall::transfer {
                         currency_address: Address::from(Runtime::asset_id_to_address(1u128)),
                         amount_of_tokens: 42000u64.into(),
-                        destination: parent_destination,
+                        destination: parent_destination.clone(),
                         weight: weight.clone(),
                     },
                 )
                 .expect_no_logs()
                 .execute_returns(true);
 
-            let expected_asset: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(1).unwrap()),
+            let expected_asset: Asset = Asset {
+                id: AssetId(CurrencyIdToMultiLocation::convert(1).unwrap()),
                 fun: Fungibility::Fungible(42000),
             };
 
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: vec![expected_asset.clone()].into(),
                     fee: expected_asset,
@@ -456,20 +454,20 @@ mod xcm_new_interface_test {
                     PrecompileCall::transfer {
                         currency_address: Address::from(Runtime::asset_id_to_address(2u128)),
                         amount_of_tokens: 42000u64.into(),
-                        destination: sibling_parachain_location,
+                        destination: sibling_parachain_location.clone(),
                         weight,
                     },
                 )
                 .expect_no_logs()
                 .execute_returns(true);
 
-            let expected_asset: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(2).unwrap()),
+            let expected_asset: Asset = Asset {
+                id: AssetId(CurrencyIdToMultiLocation::convert(2).unwrap()),
                 fun: Fungibility::Fungible(42000),
             };
 
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: vec![expected_asset.clone()].into(),
                     fee: expected_asset,
@@ -483,9 +481,9 @@ mod xcm_new_interface_test {
     #[test]
     fn xtokens_transfer_works_for_native_asset() {
         let weight = WeightV2::from(3_000_000_000u64, 1024);
-        let parent_destination = MultiLocation {
+        let parent_destination = Location {
             parents: 1,
-            interior: Junctions::X1(Junction::AccountId32 {
+            interior: Junctions::from(Junction::AccountId32 {
                 network: None,
                 id: [1u8; 32],
             }),
@@ -500,20 +498,20 @@ mod xcm_new_interface_test {
                     PrecompileCall::transfer {
                         currency_address: Address::from(NATIVE_ADDRESS),
                         amount_of_tokens: 42000u64.into(),
-                        destination: parent_destination,
+                        destination: parent_destination.clone(),
                         weight: weight.clone(),
                     },
                 )
                 .expect_no_logs()
                 .execute_returns(true);
 
-            let expected_asset: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(Here.into()),
+            let expected_asset: Asset = Asset {
+                id: AssetId(Here.into()),
                 fun: Fungibility::Fungible(42000),
             };
 
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: vec![expected_asset.clone()].into(),
                     fee: expected_asset,
@@ -528,9 +526,9 @@ mod xcm_new_interface_test {
     fn xtokens_transfer_with_fee_works() {
         let weight = WeightV2::from(3_000_000_000u64, 1024);
         ExtBuilder::default().build().execute_with(|| {
-            let parent_destination = MultiLocation {
+            let parent_destination = Location {
                 parents: 1,
-                interior: Junctions::X1(Junction::AccountId32 {
+                interior: Junctions::from(Junction::AccountId32 {
                     network: None,
                     id: [1u8; 32],
                 }),
@@ -545,24 +543,24 @@ mod xcm_new_interface_test {
                         currency_address: Address::from(Runtime::asset_id_to_address(1u128)),
                         amount_of_tokens: 42000u64.into(),
                         fee: 50.into(),
-                        destination: parent_destination,
+                        destination: parent_destination.clone(),
                         weight,
                     },
                 )
                 .expect_no_logs()
                 .execute_returns(true);
 
-            let expected_asset: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(1).unwrap()),
+            let expected_asset: Asset = Asset {
+                id: AssetId(CurrencyIdToMultiLocation::convert(1).unwrap()),
                 fun: Fungibility::Fungible(42000),
             };
-            let expected_fee: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(1).unwrap()),
+            let expected_fee: Asset = Asset {
+                id: AssetId(CurrencyIdToMultiLocation::convert(1).unwrap()),
                 fun: Fungibility::Fungible(50),
             };
 
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: vec![expected_asset.clone(), expected_fee.clone()].into(),
                     fee: expected_fee,
@@ -576,9 +574,9 @@ mod xcm_new_interface_test {
     #[test]
     fn xtokens_transfer_with_fee_works_for_native_asset() {
         let weight = WeightV2::from(3_000_000_000u64, 1024);
-        let parent_destination = MultiLocation {
+        let parent_destination = Location {
             parents: 1,
-            interior: Junctions::X1(Junction::AccountId32 {
+            interior: Junctions::from(Junction::AccountId32 {
                 network: None,
                 id: [1u8; 32],
             }),
@@ -594,23 +592,23 @@ mod xcm_new_interface_test {
                         currency_address: Address::from(NATIVE_ADDRESS),
                         amount_of_tokens: 42000u64.into(),
                         fee: 50.into(),
-                        destination: parent_destination,
+                        destination: parent_destination.clone(),
                         weight,
                     },
                 )
                 .expect_no_logs()
                 .execute_returns(true);
 
-            let expected_asset: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(Here.into()),
+            let expected_asset: Asset = Asset {
+                id: AssetId(Here.into()),
                 fun: Fungibility::Fungible(42000),
             };
-            let expected_fee: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(Here.into()),
+            let expected_fee: Asset = Asset {
+                id: AssetId(Here.into()),
                 fun: Fungibility::Fungible(50),
             };
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: vec![expected_asset.clone(), expected_fee.clone()].into(),
                     fee: expected_fee,
@@ -625,28 +623,28 @@ mod xcm_new_interface_test {
     fn transfer_multiasset_works() {
         let weight = WeightV2::from(3_000_000_000u64, 1024);
         ExtBuilder::default().build().execute_with(|| {
-            let relay_token_location = MultiLocation {
+            let relay_token_location = Location {
                 parents: 1,
                 interior: Junctions::Here,
             };
-            let relay_destination = MultiLocation {
+            let relay_destination = Location {
                 parents: 1,
-                interior: Junctions::X1(Junction::AccountId32 {
+                interior: Junctions::from(Junction::AccountId32 {
                     network: None,
                     id: [1u8; 32],
                 }),
             };
-            let para_destination = MultiLocation {
+            let para_destination = Location {
                 parents: 1,
-                interior: Junctions::X2(
+                interior: Junctions::from([
                     Junction::Parachain(10),
                     Junction::AccountId32 {
                         network: None,
                         id: [1u8; 32],
                     },
-                ),
+                ]),
             };
-            let native_token_location: MultiLocation = (Here).into();
+            let native_token_location: Location = (Here).into();
 
             let amount = 4200u64;
             // relay token to relay
@@ -655,21 +653,21 @@ mod xcm_new_interface_test {
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
                     PrecompileCall::transfer_multiasset {
-                        asset_location: relay_token_location,
+                        asset_location: relay_token_location.clone(),
                         amount_of_tokens: amount.into(),
-                        destination: relay_destination,
+                        destination: relay_destination.clone(),
                         weight: weight.clone(),
                     },
                 )
                 .expect_no_logs()
                 .execute_returns(true);
 
-            let expected_asset: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(relay_token_location),
+            let expected_asset: Asset = Asset {
+                id: AssetId(relay_token_location.clone()),
                 fun: Fungibility::Fungible(amount.into()),
             };
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: vec![expected_asset.clone()].into(),
                     fee: expected_asset,
@@ -686,25 +684,25 @@ mod xcm_new_interface_test {
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
                     PrecompileCall::transfer_multiasset {
-                        asset_location: relay_token_location,
+                        asset_location: relay_token_location.clone(),
                         amount_of_tokens: amount.into(),
-                        destination: para_destination,
+                        destination: para_destination.clone(),
                         weight: weight.clone(),
                     },
                 )
                 .expect_no_logs()
                 .execute_returns(true);
 
-            let expected_asset: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(relay_token_location),
+            let expected_asset: Asset = Asset {
+                id: AssetId(relay_token_location),
                 fun: Fungibility::Fungible(amount.into()),
             };
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: vec![expected_asset.clone()].into(),
                     fee: expected_asset,
-                    dest: para_destination,
+                    dest: para_destination.clone(),
                 })
                 .into();
 
@@ -718,21 +716,21 @@ mod xcm_new_interface_test {
                     TestAccount::Alice,
                     PRECOMPILE_ADDRESS,
                     PrecompileCall::transfer_multiasset {
-                        asset_location: native_token_location, // zero address by convention
+                        asset_location: native_token_location.clone(), // zero address by convention
                         amount_of_tokens: amount.into(),
-                        destination: para_destination,
+                        destination: para_destination.clone(),
                         weight: weight.clone(),
                     },
                 )
                 .expect_no_logs()
                 .execute_returns(true);
 
-            let expected_asset: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(native_token_location),
+            let expected_asset: Asset = Asset {
+                id: AssetId(native_token_location),
                 fun: Fungibility::Fungible(amount.into()),
             };
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: vec![expected_asset.clone()].into(),
                     fee: expected_asset,
@@ -747,12 +745,12 @@ mod xcm_new_interface_test {
 
     #[test]
     fn transfer_multi_currencies_works() {
-        let destination = MultiLocation::new(
+        let destination = Location::new(
             1,
-            Junctions::X1(Junction::AccountId32 {
+            Junctions::from([Junction::AccountId32 {
                 network: None,
                 id: [1u8; 32],
-            }),
+            }]),
         );
 
         let weight = WeightV2::from(3_000_000_000u64, 1024);
@@ -781,24 +779,24 @@ mod xcm_new_interface_test {
                     PrecompileCall::transfer_multi_currencies {
                         currencies,
                         fee_item: 0u32,
-                        destination,
+                        destination: destination.clone(),
                         weight,
                     },
                 )
                 .expect_no_logs()
                 .execute_returns(true);
 
-            let expected_asset_1: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(2u128).unwrap()),
+            let expected_asset_1: Asset = Asset {
+                id: AssetId(CurrencyIdToMultiLocation::convert(2u128).unwrap()),
                 fun: Fungibility::Fungible(500),
             };
-            let expected_asset_2: MultiAsset = MultiAsset {
-                id: AssetId::Concrete(CurrencyIdToMultiLocation::convert(3u128).unwrap()),
+            let expected_asset_2: Asset = Asset {
+                id: AssetId(CurrencyIdToMultiLocation::convert(3u128).unwrap()),
                 fun: Fungibility::Fungible(500),
             };
 
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: vec![expected_asset_1.clone(), expected_asset_2].into(),
                     fee: expected_asset_1,
@@ -811,12 +809,12 @@ mod xcm_new_interface_test {
 
     #[test]
     fn transfer_multi_currencies_cannot_insert_more_than_max() {
-        let destination = MultiLocation::new(
+        let destination = Location::new(
             1,
-            Junctions::X1(Junction::AccountId32 {
+            Junctions::from([Junction::AccountId32 {
                 network: None,
                 id: [1u8; 32],
-            }),
+            }]),
         );
         let weight = WeightV2::from(3_000_000_000u64, 1024);
         // we only allow upto 2 currencies to be transfered
@@ -858,26 +856,24 @@ mod xcm_new_interface_test {
 
     #[test]
     fn transfer_multiassets_works() {
-        let destination = MultiLocation::new(
+        let destination = Location::new(
             1,
-            Junctions::X2(
+            Junctions::from([
                 Junction::Parachain(2),
                 Junction::AccountId32 {
                     network: None,
                     id: [1u8; 32],
                 },
-            ),
+            ]),
         );
         let weight = WeightV2::from(3_000_000_000u64, 1024);
 
-        let asset_1_location = MultiLocation::new(
+        let asset_1_location = Location::new(
             1,
-            Junctions::X2(Junction::Parachain(2), Junction::GeneralIndex(0u128)),
+            Junctions::from([Junction::Parachain(2), Junction::GeneralIndex(0u128)]),
         );
-        let asset_2_location = MultiLocation::new(
-            1,
-            Junctions::X2(Junction::Parachain(2), Junction::GeneralIndex(1u128)),
-        );
+        let asset_2_location =
+            Location::new(1, Junctions::from([Parachain(2), GeneralIndex(1u128)]));
 
         let assets = vec![
             (asset_1_location.clone(), U256::from(500)).into(),
@@ -885,7 +881,7 @@ mod xcm_new_interface_test {
         ]
         .into();
 
-        let multiassets = MultiAssets::from_sorted_and_deduplicated(vec![
+        let multiassets = Assets::from_sorted_and_deduplicated(vec![
             (asset_1_location.clone(), 500).into(),
             (asset_2_location, 500).into(),
         ])
@@ -899,7 +895,7 @@ mod xcm_new_interface_test {
                     PrecompileCall::transfer_multi_assets {
                         assets,
                         fee_item: 0u32,
-                        destination,
+                        destination: destination.clone(),
                         weight,
                     },
                 )
@@ -907,7 +903,7 @@ mod xcm_new_interface_test {
                 .execute_returns(true);
 
             let expected: crate::mock::RuntimeEvent =
-                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredMultiAssets {
+                mock::RuntimeEvent::Xtokens(XtokensEvent::TransferredAssets {
                     sender: TestAccount::Alice.into(),
                     assets: multiassets,
                     fee: (asset_1_location, 500).into(),
@@ -922,30 +918,24 @@ mod xcm_new_interface_test {
     fn transfer_multiassets_cannot_insert_more_than_max() {
         // We have definaed MaxAssetsForTransfer = 2,
         // so any number greater than MaxAssetsForTransfer will result in error
-        let destination = MultiLocation::new(
+        let destination = Location::new(
             1,
-            Junctions::X2(
-                Junction::Parachain(2),
-                Junction::AccountId32 {
+            Junctions::from([
+                Parachain(2),
+                AccountId32 {
                     network: None,
                     id: [1u8; 32],
                 },
-            ),
+            ]),
         );
         let weight = WeightV2::from(3_000_000_000u64, 1024);
 
-        let asset_1_location = MultiLocation::new(
-            1,
-            Junctions::X2(Junction::Parachain(2), Junction::GeneralIndex(0u128)),
-        );
-        let asset_2_location = MultiLocation::new(
-            1,
-            Junctions::X2(Junction::Parachain(2), Junction::GeneralIndex(1u128)),
-        );
-        let asset_3_location = MultiLocation::new(
-            1,
-            Junctions::X2(Junction::Parachain(2), Junction::GeneralIndex(3u128)),
-        );
+        let asset_1_location =
+            Location::new(1, Junctions::from([Parachain(2), GeneralIndex(0u128)]));
+        let asset_2_location =
+            Location::new(1, Junctions::from([Parachain(2), GeneralIndex(1u128)]));
+        let asset_3_location =
+            Location::new(1, Junctions::from([Parachain(2), GeneralIndex(3u128)]));
 
         let assets = vec![
             (asset_1_location.clone(), U256::from(500)).into(),

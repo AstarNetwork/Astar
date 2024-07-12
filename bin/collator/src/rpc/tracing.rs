@@ -34,6 +34,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderMetadata};
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, Header as HeaderT};
 use std::sync::Arc;
+use substrate_prometheus_endpoint::Registry as PrometheusRegistry;
 use tokio::sync::Semaphore;
 
 #[derive(Clone)]
@@ -46,7 +47,7 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
     pub task_manager: &'a TaskManager,
     pub client: Arc<C>,
     pub substrate_backend: Arc<BE>,
-    pub frontier_backend: Arc<dyn fc_api::Backend<B>>,
+    pub frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
     pub filter_pool: Option<FilterPool>,
     pub overrides: Arc<OverrideHandle<B>>,
 }
@@ -54,6 +55,7 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
 /// Spawn the tasks that are required to run a EVM tracing.
 pub fn spawn_tracing_tasks<B, C, BE>(
     rpc_config: &EvmTracingConfig,
+    prometheus: Option<PrometheusRegistry>,
     params: SpawnTasksParams<B, C, BE>,
 ) -> RpcRequesters
 where
@@ -79,6 +81,7 @@ where
                 core::time::Duration::from_secs(rpc_config.ethapi_trace_cache_duration),
                 Arc::clone(&permit_pool),
                 Arc::clone(&params.overrides),
+                prometheus,
             );
             (Some(trace_filter_task), Some(trace_filter_requester))
         } else {

@@ -50,6 +50,9 @@ pallet-evm-precompile-assets-erc20 = { workspace = true }
 pallet-evm-precompile-dispatch = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 
+[dev-dependencies]
+once_cell = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
@@ -96,6 +99,7 @@ runtime-benchmarks = [
 	"pallet-collective/runtime-benchmarks",
 	"pallet-membership/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
+	"orml-oracle/runtime-benchmarks",
 ]
 try-runtime = [
 	"pallet-contracts/try-runtime",

@@ -40,6 +40,9 @@ use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, Header as HeaderT};
+use substrate_prometheus_endpoint::{
+    register, Counter, PrometheusError, Registry as PrometheusRegistry, U64,
+};
 
 use ethereum_types::H256;
 use fc_rpc::OverrideHandle;
@@ -411,6 +414,7 @@ pub struct CacheTask<B, C, BE> {
     cached_blocks: BTreeMap<H256, CacheBlock>,
     batches: BTreeMap<u64, Vec<H256>>,
     next_batch_id: u64,
+    metrics: Option<Metrics>,
     _phantom: PhantomData<B>,
 }
 
@@ -439,6 +443,7 @@ where
         cache_duration: Duration,
         blocking_permits: Arc<Semaphore>,
         overrides: Arc<OverrideHandle<B>>,
+        prometheus: Option<PrometheusRegistry>,
     ) -> (impl Future<Output = ()>, CacheRequester) {
         // Communication with the outside world :
         let (requester_tx, mut requester_rx) =
@@ -451,7 +456,17 @@ where
 			let mut batch_expirations = FuturesUnordered::new();
 			let (blocking_tx, mut blocking_rx) =
 				mpsc::channel(blocking_permits.available_permits() * 2);
-
+			let metrics = if let Some(registry) = prometheus {
+				match Metrics::register(&registry) {
+					Ok(metrics) => Some(metrics),
+					Err(err) => {
+						log::error!(target: "tracing", "Failed to register metrics {err:?}");
+						None
+					}
+				}
+			} else {
+				None
+			};
 			// Contains the inner state of the cache task, excluding the pooled futures/channels.
 			// Having this object allow to refactor each event into its own function, simplifying
 			// the main loop.
@@ -462,6 +477,7 @@ where
 				cached_blocks: BTreeMap::new(),
 				batches: BTreeMap::new(),
 				next_batch_id: 0,
+				metrics,
 				_phantom: Default::default(),
 			};
 
@@ -637,6 +653,9 @@ where
                         block
                     );
                     waiting_requests.push(sender);
+                    if let Some(metrics) = &self.metrics {
+                        metrics.tracing_cache_misses.inc();
+                    }
                 }
                 CacheBlockState::Cached { traces, .. } => {
                     tracing::warn!(
@@ -644,6 +663,9 @@ where
                         block
                     );
                     let _ = sender.send(traces.clone());
+                    if let Some(metrics) = &self.metrics {
+                        metrics.tracing_cache_hits.inc();
+                    }
                 }
             }
         } else {
@@ -825,13 +847,36 @@ where
             })?
             .ok_or_else(|| format!("Could not find block {} when fetching extrinsics.", height))?;
 
+        // Get DebugRuntimeApi version
+        let trace_api_version = if let Ok(Some(api_version)) =
+            api.api_version::<dyn DebugRuntimeApi<B>>(substrate_parent_hash)
+        {
+            api_version
+        } else {
+            return Err("Runtime api version call failed (trace)".to_string());
+        };
+
         // Trace the block.
         let f = || -> Result<_, String> {
-            api.initialize_block(substrate_parent_hash, &block_header)
-                .map_err(|e| format!("Runtime api access error: {:?}", e))?;
+            let result = if trace_api_version >= 5 {
+                // The block is initialized inside "trace_transaction"
+                api.trace_block(
+                    substrate_parent_hash,
+                    extrinsics,
+                    eth_tx_hashes,
+                    &block_header,
+                )
+            } else {
+                // Old "trace_block" api did not initialize block before applying transactions,
+                // so we need to do it here before calling "trace_block".
+                api.initialize_block(substrate_parent_hash, &block_header)
+                    .map_err(|e| format!("Runtime api access error: {:?}", e))?;
 
-            let _result = api
-                .trace_block(substrate_parent_hash, extrinsics, eth_tx_hashes)
+                #[allow(deprecated)]
+                api.trace_block_before_version_5(substrate_parent_hash, extrinsics, eth_tx_hashes)
+            };
+
+            result
                 .map_err(|e| format!("Blockchain error when replaying block {} : {:?}", height, e))?
                 .map_err(|e| {
                     tracing::warn!(
@@ -844,6 +889,7 @@ where
                         height, e
                     )
                 })?;
+
             Ok(moonbeam_rpc_primitives_debug::Response::Block)
         };
 
@@ -879,5 +925,27 @@ where
             }
         }
         Ok(traces)
+    }
+}
+
+/// Prometheus metrics for tracing.
+#[derive(Clone)]
+pub(crate) struct Metrics {
+    tracing_cache_hits: Counter<U64>,
+    tracing_cache_misses: Counter<U64>,
+}
+
+impl Metrics {
+    pub(crate) fn register(registry: &PrometheusRegistry) -> Result<Self, PrometheusError> {
+        Ok(Self {
+            tracing_cache_hits: register(
+                Counter::new("tracing_cache_hits", "Number of tracing cache hits.")?,
+                registry,
+            )?,
+            tracing_cache_misses: register(
+                Counter::new("tracing_cache_misses", "Number of tracing cache misses.")?,
+                registry,
+            )?,
+        })
     }
 }

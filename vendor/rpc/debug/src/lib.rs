@@ -35,8 +35,10 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{
     Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
-use sp_runtime::generic::BlockId;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
+use sp_runtime::{
+    generic::BlockId,
+    traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
+};
 use std::{future::Future, marker::PhantomData, sync::Arc};
 
 pub enum RequesterInput {
@@ -143,7 +145,7 @@ where
     pub fn task(
         client: Arc<C>,
         backend: Arc<BE>,
-        frontier_backend: Arc<dyn fc_api::Backend<B>>,
+        frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
         permit_pool: Arc<Semaphore>,
         overrides: Arc<OverrideHandle<B>>,
         raw_max_memory_usage: usize,
@@ -283,7 +285,7 @@ where
     fn handle_block_request(
         client: Arc<C>,
         backend: Arc<BE>,
-        frontier_backend: Arc<dyn fc_api::Backend<B>>,
+        frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
         request_block_id: RequestBlockId,
         params: Option<TraceParams>,
         overrides: Arc<OverrideHandle<B>>,
@@ -360,13 +362,33 @@ where
             .map_err(|e| internal_err(format!("Fail to read blockchain db: {:?}", e)))?
             .unwrap_or_default();
 
+        // Get DebugRuntimeApi version
+        let trace_api_version = if let Ok(Some(api_version)) =
+            api.api_version::<dyn DebugRuntimeApi<B>>(parent_block_hash)
+        {
+            api_version
+        } else {
+            return Err(internal_err(
+                "Runtime api version call failed (trace)".to_string(),
+            ));
+        };
+
         // Trace the block.
         let f = || -> RpcResult<_> {
-            api.initialize_block(parent_block_hash, &header)
-                .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
+            let result = if trace_api_version >= 5 {
+                // The block is initialized inside "trace_block"
+                api.trace_block(parent_block_hash, exts, eth_tx_hashes, &header)
+            } else {
+                // Old "trace_block" api did not initialize block before applying transactions,
+                // so we need to do it here before calling "trace_block".
+                api.initialize_block(parent_block_hash, &header)
+                    .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
 
-            let _result = api
-                .trace_block(parent_block_hash, exts, eth_tx_hashes)
+                #[allow(deprecated)]
+                api.trace_block_before_version_5(parent_block_hash, exts, eth_tx_hashes)
+            };
+
+            result
                 .map_err(|e| {
                     internal_err(format!(
                         "Blockchain error when replaying block {} : {:?}",
@@ -379,6 +401,7 @@ where
                         reference_id, e
                     ))
                 })?;
+
             Ok(moonbeam_rpc_primitives_debug::Response::Block)
         };
 
@@ -418,7 +441,7 @@ where
     fn handle_transaction_request(
         client: Arc<C>,
         backend: Arc<BE>,
-        frontier_backend: Arc<dyn fc_api::Backend<B>>,
+        frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
         transaction_hash: H256,
         params: Option<TraceParams>,
         overrides: Arc<OverrideHandle<B>>,
@@ -500,42 +523,55 @@ where
             let transactions = block.transactions;
             if let Some(transaction) = transactions.get(index) {
                 let f = || -> RpcResult<_> {
-                    api.initialize_block(parent_block_hash, &header)
-                        .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
-
-                    if trace_api_version >= 4 {
-                        let _result = api
-                            .trace_transaction(parent_block_hash, exts, &transaction)
-                            .map_err(|e| {
-                                internal_err(format!(
-                                    "Runtime api access error (version {:?}): {:?}",
-                                    trace_api_version, e
-                                ))
-                            })?
-                            .map_err(|e| internal_err(format!("DispatchError: {:?}", e)))?;
+                    let result = if trace_api_version >= 5 {
+                        // The block is initialized inside "trace_transaction"
+                        api.trace_transaction(parent_block_hash, exts, &transaction, &header)
                     } else {
-                        // Pre-london update, legacy transactions.
-                        let _result = match transaction {
-                            ethereum::TransactionV2::Legacy(tx) =>
-                            {
-                                #[allow(deprecated)]
-                                api.trace_transaction_before_version_4(parent_block_hash, exts, &tx)
-                                    .map_err(|e| {
-                                        internal_err(format!(
-                                            "Runtime api access error (legacy): {:?}",
-                                            e
-                                        ))
-                                    })?
-                                    .map_err(|e| internal_err(format!("DispatchError: {:?}", e)))?
+                        // Old "trace_transaction" api did not initialize block before applying transactions,
+                        // so we need to do it here before calling "trace_transaction".
+                        api.initialize_block(parent_block_hash, &header)
+                            .map_err(|e| {
+                                internal_err(format!("Runtime api access error: {:?}", e))
+                            })?;
+
+                        if trace_api_version == 4 {
+                            // Pre pallet-message-queue
+                            #[allow(deprecated)]
+                            api.trace_transaction_before_version_5(
+                                parent_block_hash,
+                                exts,
+                                &transaction,
+                            )
+                        } else {
+                            // Pre-london update, legacy transactions.
+                            match transaction {
+                                ethereum::TransactionV2::Legacy(tx) =>
+                                {
+                                    #[allow(deprecated)]
+                                    api.trace_transaction_before_version_4(
+                                        parent_block_hash,
+                                        exts,
+                                        &tx,
+                                    )
+                                }
+                                _ => {
+                                    return Err(internal_err(
+                                        "Bug: pre-london runtime expects legacy transactions"
+                                            .to_string(),
+                                    ))
+                                }
                             }
-                            _ => {
-                                return Err(internal_err(
-                                    "Bug: pre-london runtime expects legacy transactions"
-                                        .to_string(),
-                                ))
-                            }
-                        };
-                    }
+                        }
+                    };
+
+                    result
+                        .map_err(|e| {
+                            internal_err(format!(
+                                "Runtime api access error (version {:?}): {:?}",
+                                trace_api_version, e
+                            ))
+                        })?
+                        .map_err(|e| internal_err(format!("DispatchError: {:?}", e)))?;
 
                     Ok(moonbeam_rpc_primitives_debug::Response::Single)
                 };

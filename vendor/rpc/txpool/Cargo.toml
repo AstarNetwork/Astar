@@ -10,12 +10,12 @@ version = "0.6.0"
 [dependencies]
 jsonrpsee = { workspace = true, features = ["macros", "server"] }
 rlp = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 sha3 = { workspace = true, features = ["std"] }
 
 # Moonbeam
 moonbeam-rpc-core-txpool = { workspace = true }
-moonbeam-rpc-primitives-txpool = { workspace = true }
+moonbeam-rpc-primitives-txpool = { workspace = true, features = ["std"] }
 
 # Substrate
 frame-system = { workspace = true, features = ["std"] }

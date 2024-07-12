@@ -92,7 +92,7 @@ pub fn child_para_account_id(para: u32) -> relay_chain::AccountId {
 
 /// Derive parachain sovereign account on a sibling parachain, from parachain Id
 pub fn sibling_para_account_id(para: u32) -> parachain::AccountId {
-    let location = (Parent, X1(Parachain(para)));
+    let location = (Parent, Parachain(para));
     parachain::LocationToAccountId::convert_location(&location.into()).unwrap()
 }
 
@@ -201,7 +201,7 @@ pub fn register_and_setup_xcm_asset<Runtime, AssetId>(
     // AssetId for the new asset
     asset_id: AssetId,
     // Asset multilocation
-    asset_location: impl Into<MultiLocation> + Clone,
+    asset_location: impl Into<Location> + Clone,
     // Asset controller
     asset_controller: <Runtime::Lookup as StaticLookup>::Source,
     // make asset payable, default true

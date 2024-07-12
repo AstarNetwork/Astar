@@ -61,9 +61,18 @@ use crate::{
 };
 
 /// Extra host functions
+#[cfg(feature = "runtime-benchmarks")]
 pub type HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+    cumulus_client_service::storage_proof_size::HostFunctions,
+);
+
+/// Extra host functions
+#[cfg(not(feature = "runtime-benchmarks"))]
+pub type HostFunctions = (
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+    cumulus_client_service::storage_proof_size::HostFunctions,
 );
 
 /// Astar network runtime executor.
@@ -205,10 +214,11 @@ where
     let executor = sc_service::new_native_or_wasm_executor(&config);
 
     let (client, backend, keystore_container, task_manager) =
-        sc_service::new_full_parts::<Block, RuntimeApi, _>(
+        sc_service::new_full_parts_record_import::<Block, RuntimeApi, _>(
             config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
+            true,
         )?;
     let client = Arc::new(client);
 
@@ -727,6 +737,7 @@ where
         if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
                 &additional_config.evm_tracing_config,
+                prometheus_registry.clone(),
                 tracing::SpawnTasksParams {
                     task_manager: &task_manager,
                     client: client.clone(),
@@ -936,7 +947,7 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + AuraApi<Block, AuraId>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
-        sc_client_api::backend::StateBackend<BlakeTwo256>,
+        sc_client_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
     let client2 = client.clone();

@@ -23,9 +23,10 @@ use sp_std::vec::Vec;
 /// Interface for fetching price of the native token.
 pub trait PriceProvider {
     /// Get the price of the native token.
-    fn average_price() -> CurrencyAmount;
+    fn average_price() -> Price;
 }
 
+pub type Price = FixedU128;
 pub type CurrencyAmount = FixedU128;
 
 #[derive(Encode, Decode, MaxEncodedLen, Clone, Copy, Debug, PartialEq, Eq, TypeInfo)]
@@ -34,10 +35,8 @@ pub enum CurrencyId {
     SDN,
 }
 
-type TimestampedValue<T, I = ()> = orml_oracle::TimestampedValue<
-    CurrencyAmount,
-    <<T as orml_oracle::Config<I>>::Time as Time>::Moment,
->;
+type TimestampedValue<T, I = ()> =
+    orml_oracle::TimestampedValue<Price, <<T as orml_oracle::Config<I>>::Time as Time>::Moment>;
 
 /// A dummy implementation of `CombineData` trait that does nothing.
 pub struct DummyCombineData<T, I = ()>(PhantomData<(T, I)>);

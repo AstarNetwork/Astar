@@ -48,11 +48,11 @@ mod benchmarks {
     #[benchmark]
     fn transfer_asset() -> Result<(), BenchmarkError> {
         let (sender_account, sender_location) = account_and_location::<T>(1);
-        let asset_to_deposit = T::get_multi_asset();
+        let asset_to_deposit = T::get_asset();
         // take out ED from given asset
         let (asset_to_send, min_balance) =
             take_minimum_balance::<T>(asset_to_deposit.clone()).unwrap();
-        let assets: MultiAssets = vec![asset_to_send.clone()].into();
+        let assets: Assets = vec![asset_to_send.clone()].into();
         // this xcm doesn't use holding
 
         let dest_location = T::valid_destination()?;
@@ -94,11 +94,11 @@ mod benchmarks {
         let dest_location = T::valid_destination()?;
         let dest_account = T::AccountIdConverter::convert_location(&dest_location).unwrap();
 
-        let asset_to_deposit = T::get_multi_asset();
+        let asset_to_deposit = T::get_asset();
         // take out ED from given asset
         let (asset_to_send, min_balance) =
             take_minimum_balance::<T>(asset_to_deposit.clone()).unwrap();
-        let assets: MultiAssets = vec![asset_to_send].into();
+        let assets: Assets = vec![asset_to_send].into();
 
         <AssetTransactorOf<T>>::deposit_asset(
             &asset_to_deposit,
@@ -154,16 +154,10 @@ mod benchmarks {
 // wrapper benchmarks
 pub type XcmFungibleBenchmarks<T> = WrappedBenchmark<AstarBenchmarks<T>, PalletXcmBenchmarks<T>>;
 
-/// Take out the ED from given MultiAsset (if fungible)
+/// Take out the ED from given Asset (if fungible)
 fn take_minimum_balance<T: Config>(
-    mut asset: MultiAsset,
-) -> Result<
-    (
-        MultiAsset,
-        <T::TransactAsset as Inspect<T::AccountId>>::Balance,
-    ),
-    (),
->
+    mut asset: Asset,
+) -> Result<(Asset, <T::TransactAsset as Inspect<T::AccountId>>::Balance), ()>
 where
     <<T::TransactAsset as Inspect<T::AccountId>>::Balance as TryInto<u128>>::Error:
         sp_std::fmt::Debug,

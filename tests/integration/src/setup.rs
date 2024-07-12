@@ -40,7 +40,7 @@ pub use astar_primitives::{
         CommunityCouncilMembershipInst, MainCouncilMembershipInst, OracleMembershipInst,
         TechnicalCommitteeMembershipInst,
     },
-    oracle::CurrencyAmount,
+    oracle::Price,
     BlockNumber,
 };
 
@@ -135,7 +135,7 @@ pub const CAT: AccountId32 = AccountId32::new([3_u8; 32]);
 
 pub const INITIAL_AMOUNT: u128 = 100_000 * UNIT;
 
-pub const INIT_PRICE: CurrencyAmount = CurrencyAmount::from_rational(1, 10);
+pub const INIT_PRICE: Price = Price::from_rational(1, 10);
 
 pub type SystemError = frame_system::Error<Runtime>;
 pub use pallet_balances::Call as BalancesCall;

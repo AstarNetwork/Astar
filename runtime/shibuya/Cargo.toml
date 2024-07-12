@@ -37,6 +37,7 @@ sp-version = { workspace = true }
 
 # frame dependencies
 frame-executive = { workspace = true }
+frame-metadata-hash-extension = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-rpc-runtime-api = { workspace = true }
@@ -125,9 +126,6 @@ pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
 pallet-xvm = { workspace = true }
 
-# Get rid of this after uplifting to high enough version of ORML so we get access to benchmark support for the pallet
-oracle-benchmarks = { workspace = true }
-
 dapp-staking-v3-runtime-api = { workspace = true }
 
 precompile-utils = { workspace = true }
@@ -169,7 +167,6 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-runtime-interface/std",
-	"oracle-benchmarks/std",
 	"pallet-membership/std",
 	"sp-version/std",
 	"sp-block-builder/std",
@@ -180,6 +177,7 @@ std = [
 	"frame-executive/std",
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",
+	"frame-metadata-hash-extension/std",
 	"pallet-authorship/std",
 	"pallet-aura/std",
 	"pallet-assets/std",
@@ -269,7 +267,6 @@ std = [
 ]
 runtime-benchmarks = [
 	"astar-xcm-benchmarks/runtime-benchmarks",
-	"oracle-benchmarks/runtime-benchmarks",
 	"pallet-xcm-benchmarks/runtime-benchmarks",
 	"pallet-collective-proxy/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
@@ -324,6 +321,7 @@ runtime-benchmarks = [
 	"cumulus-pallet-dmp-queue/runtime-benchmarks",
 	"cumulus-primitives-core/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
+	"orml-oracle/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -361,7 +359,6 @@ try-runtime = [
 	"pallet-scheduler/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-contracts/try-runtime",
-	"oracle-benchmarks/try-runtime",
 	"pallet-evm-chain-id/try-runtime",
 	"cumulus-pallet-aura-ext/try-runtime",
 	"cumulus-pallet-dmp-queue/try-runtime",
@@ -388,3 +385,10 @@ evm-tracing = [
 	"moonbeam-rpc-primitives-debug",
 	"moonbeam-rpc-primitives-txpool",
 ]
+
+# Enable metadata hash generation at compile time for the `CheckMetadataHash` extension.
+metadata-hash = ["substrate-wasm-builder?/metadata-hash"]
+
+# A feature that should be enabled when the runtime should be built for on-chain
+# deployment. This will disable stuff that shouldn't be part of the on-chain wasm
+on-chain-release-build = ["metadata-hash"]
