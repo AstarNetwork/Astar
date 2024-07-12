@@ -989,10 +989,10 @@ impl pallet_collective::Config<CommunityCouncilCollectiveInst> for Runtime {
 impl pallet_democracy::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
-    type EnactmentPeriod = ConstU32<{ 1 * MINUTES }>;
-    type LaunchPeriod = ConstU32<{ 1 * MINUTES }>;
-    type VotingPeriod = ConstU32<{ 3 * MINUTES }>;
-    type VoteLockingPeriod = ConstU32<{ 10 * MINUTES }>;
+    type EnactmentPeriod = ConstU32<{ 5 * MINUTES }>;
+    type LaunchPeriod = ConstU32<{ 5 * MINUTES }>;
+    type VotingPeriod = ConstU32<{ 5 * MINUTES }>;
+    type VoteLockingPeriod = ConstU32<{ 2 * MINUTES }>;
     type MinimumDeposit = ConstU128<{ 10 * AST }>;
     type FastTrackVotingPeriod = ConstU32<{ MINUTES / 2 }>;
     type CooloffPeriod = ConstU32<{ 2 * MINUTES }>;
