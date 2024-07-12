@@ -1,10 +1,10 @@
 [package]
 name = "moonbeam-rpc-primitives-txpool"
-authors = { workspace = true }
+authors = ["PureStake"]
 edition = "2021"
 homepage = "https://moonbeam.network"
 license = "GPL-3.0-only"
-repository = { workspace = true }
+repository = "https://github.com/PureStake/moonbeam/"
 version = "0.6.0"
 
 [dependencies]
