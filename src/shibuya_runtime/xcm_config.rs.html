@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/xcm_config.rs`."><title>xcm_config.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../shibuya_runtime/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/xcm_config.rs`."><title>xcm_config.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../shibuya_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -313,6 +315,9 @@
 <a href="#313" id="313">313</a>
 <a href="#314" id="314">314</a>
 <a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -339,8 +344,8 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::weights;
 <span class="kw">use </span>frame_support::{
-    match_types, parameter_types,
-    traits::{ConstU32, Everything, Nothing},
+    parameter_types,
+    traits::{ConstU32, Contains, Everything, Nothing},
     weights::Weight,
 };
 <span class="kw">use </span>frame_system::EnsureRoot;
@@ -354,11 +359,12 @@
 <span class="kw">use </span>xcm::latest::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
-    ConvertedConcreteId, CurrencyAdapter, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin,
-    FungiblesAdapter, HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents, WeightInfoBounds, WithComputedOrigin,
+    ConvertedConcreteId, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin,
+    FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, HashedDescription, IsConcrete,
+    NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+    WithComputedOrigin,
 };
 <span class="kw">use </span>xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -374,13 +380,13 @@
 <span class="macro">parameter_types! </span>{
     <span class="kw">pub </span>RelayNetwork: <span class="prelude-ty">Option</span>&lt;NetworkId&gt; = <span class="prelude-val">Some</span>(NetworkId::Rococo);
     <span class="kw">pub </span>RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-    <span class="kw">pub </span>UniversalLocation: InteriorMultiLocation =
-        X2(GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into()));
-    <span class="kw">pub const </span>ShibuyaLocation: MultiLocation = Here.into_location();
+    <span class="kw">pub </span>UniversalLocation: InteriorLocation =
+    [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into())].into();
+    <span class="kw">pub const </span>ShibuyaLocation: Location = Here.into_location();
     <span class="kw">pub </span>DummyCheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
-<span class="doccomment">/// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
+<span class="doccomment">/// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
 </span><span class="kw">pub type </span>LocationToAccountId = (
@@ -390,22 +396,22 @@
     </span>SiblingParachainConvertsVia&lt;polkadot_parachain::primitives::Sibling, AccountId&gt;,
     <span class="comment">// Straight up local `AccountId32` origins just alias directly to `AccountId`.
     </span>AccountId32Aliases&lt;RelayNetwork, AccountId&gt;,
-    <span class="comment">// Generates private `AccountId`s from `MultiLocation`s, in a stable &amp; safe way.
+    <span class="comment">// Generates private `AccountId`s from `Location`s, in a stable &amp; safe way.
     // Replaces the old `Account32Hash` approach.
     </span>HashedDescription&lt;AccountId, DescribeFamily&lt;DescribeAllTerminal&gt;&gt;,
 );
 
 <span class="doccomment">/// Means for transacting the native currency on this chain.
-</span><span class="kw">pub type </span>CurrencyTransactor = CurrencyAdapter&lt;
+</span><span class="kw">pub type </span>CurrencyTransactor = FungibleAdapter&lt;
     <span class="comment">// Use this currency:
     </span>Balances,
     <span class="comment">// Use this currency when it is a fungible asset matching the given location or name:
     </span>IsConcrete&lt;ShibuyaLocation&gt;,
-    <span class="comment">// Convert an XCM MultiLocation into a local account id:
+    <span class="comment">// Convert an XCM Location into a local account id:
     </span>LocationToAccountId,
-    <span class="comment">// Our chain&#39;s account ID type (we can&#39;t get away without mentioning it explicitly):
+    <span class="comment">// Our chain's account ID type (we can't get away without mentioning it explicitly):
     </span>AccountId,
-    <span class="comment">// We don&#39;t track any teleports of `Balances`.
+    <span class="comment">// We don't track any teleports of `Balances`.
     </span>(),
 &gt;;
 
@@ -415,13 +421,13 @@
     </span>Assets,
     <span class="comment">// Use this currency when it is a fungible asset matching the given location or name:
     </span>ConvertedConcreteId&lt;AssetId, Balance, ShibuyaAssetLocationIdConverter, JustTry&gt;,
-    <span class="comment">// Convert an XCM MultiLocation into a local account id:
+    <span class="comment">// Convert an XCM Location into a local account id:
     </span>LocationToAccountId,
-    <span class="comment">// Our chain&#39;s account ID type (we can&#39;t get away without mentioning it explicitly):
+    <span class="comment">// Our chain's account ID type (we can't get away without mentioning it explicitly):
     </span>AccountId,
-    <span class="comment">// We don&#39;t support teleport so no need to check any assets.
+    <span class="comment">// We don't support teleport so no need to check any assets.
     </span>NoChecking,
-    <span class="comment">// We don&#39;t support teleport so this is just a dummy account.
+    <span class="comment">// We don't support teleport so this is just a dummy account.
     </span>DummyCheckingAccount,
 &gt;;
 
@@ -429,7 +435,7 @@
 </span><span class="kw">pub type </span>AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
 <span class="doccomment">/// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
-/// ready for dispatching a transaction with Xcm&#39;s `Transact`. There is an `OriginKind` which can
+/// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
 /// biases the kind of local `Origin` it will become.
 </span><span class="kw">pub type </span>XcmOriginToTransactDispatchOrigin = (
     <span class="comment">// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
@@ -445,7 +451,7 @@
     <span class="comment">// Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
     // transaction from the Root origin.
     </span>ParentAsSuperuser&lt;RuntimeOrigin&gt;,
-    <span class="comment">// Xcm origins can be represented natively under the Xcm pallet&#39;s Xcm origin.
+    <span class="comment">// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
     </span>pallet_xcm::XcmPassthrough&lt;RuntimeOrigin&gt;,
     <span class="comment">// Native signed account converter; this just converts an `AccountId32` origin into a normal
     // `Origin::Signed` origin of the same 32-byte value.
@@ -460,11 +466,11 @@
     <span class="kw">pub const </span>MaxAssetsIntoHolding: u32 = MAX_ASSETS;
 }
 
-<span class="macro">match_types! </span>{
-    <span class="kw">pub type </span>ParentOrParentsPlurality: <span class="kw">impl </span>Contains&lt;MultiLocation&gt; = {
-        MultiLocation { parents: <span class="number">1</span>, interior: Here } |
-        MultiLocation { parents: <span class="number">1</span>, interior: X1(Plurality { .. }) }
-    };
+<span class="kw">pub struct </span>ParentOrParentsPlurality;
+<span class="kw">impl </span>Contains&lt;Location&gt; <span class="kw">for </span>ParentOrParentsPlurality {
+    <span class="kw">fn </span>contains(location: <span class="kw-2">&amp;</span>Location) -&gt; bool {
+        <span class="macro">matches!</span>(location.unpack(), (<span class="number">1</span>, []) | (<span class="number">1</span>, [Plurality { .. }]))
+    }
 }
 
 <span class="kw">pub type </span>XcmBarrier = (
@@ -521,6 +527,7 @@
     <span class="kw">type </span>CallDispatcher = RuntimeCall;
     <span class="kw">type </span>SafeCallFilter = Everything;
     <span class="kw">type </span>Aliasers = Nothing;
+    <span class="kw">type </span>TransactionalProcessor = FrameTransactionalProcessor;
 }
 
 <span class="doccomment">/// Local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -591,22 +598,21 @@
 
 <span class="macro">parameter_types! </span>{
     <span class="doccomment">/// The absolute location in perspective of the whole network.
-    </span><span class="kw">pub </span>ShibuyaLocationAbsolute: MultiLocation = MultiLocation {
+    </span><span class="kw">pub </span>ShibuyaLocationAbsolute: Location = Location {
         parents: <span class="number">1</span>,
-        interior: X1(
-            Parachain(ParachainInfo::parachain_id().into())
-        )
+        interior: Parachain(ParachainInfo::parachain_id().into()).into()
+
     };
     <span class="doccomment">/// Max asset types for one cross-chain transfer. `2` covers all current use cases.
     /// Can be updated with extra test cases in the future if needed.
     </span><span class="kw">pub const </span>MaxAssetsForTransfer: usize = <span class="number">2</span>;
 }
 
-<span class="doccomment">/// Convert `AssetId` to optional `MultiLocation`. The impl is a wrapper
+<span class="doccomment">/// Convert `AssetId` to optional `Location`. The impl is a wrapper
 /// on `ShibuyaAssetLocationIdConverter`.
 </span><span class="kw">pub struct </span>AssetIdConvert;
-<span class="kw">impl </span>Convert&lt;AssetId, <span class="prelude-ty">Option</span>&lt;MultiLocation&gt;&gt; <span class="kw">for </span>AssetIdConvert {
-    <span class="kw">fn </span>convert(asset_id: AssetId) -&gt; <span class="prelude-ty">Option</span>&lt;MultiLocation&gt; {
+<span class="kw">impl </span>Convert&lt;AssetId, <span class="prelude-ty">Option</span>&lt;Location&gt;&gt; <span class="kw">for </span>AssetIdConvert {
+    <span class="kw">fn </span>convert(asset_id: AssetId) -&gt; <span class="prelude-ty">Option</span>&lt;Location&gt; {
         ShibuyaAssetLocationIdConverter::convert_back(<span class="kw-2">&amp;</span>asset_id)
     }
 }
@@ -616,7 +622,7 @@
     <span class="kw">type </span>Balance = Balance;
     <span class="kw">type </span>CurrencyId = AssetId;
     <span class="kw">type </span>CurrencyIdConvert = AssetIdConvert;
-    <span class="kw">type </span>AccountIdToMultiLocation = AccountIdToMultiLocation;
+    <span class="kw">type </span>AccountIdToLocation = AccountIdToMultiLocation;
     <span class="kw">type </span>SelfLocation = ShibuyaLocation;
     <span class="kw">type </span>XcmExecutor = XcmExecutor&lt;XcmConfig&gt;;
     <span class="kw">type </span>Weigher = Weigher;
@@ -625,7 +631,9 @@
     <span class="kw">type </span>MaxAssetsForTransfer = MaxAssetsForTransfer;
     <span class="comment">// Default impl. Refer to `orml-xtokens` docs for more details.
     </span><span class="kw">type </span>MinXcmFee = DisabledParachainFee;
-    <span class="kw">type </span>MultiLocationsFilter = Everything;
+    <span class="kw">type </span>LocationsFilter = Everything;
     <span class="kw">type </span>ReserveProvider = AbsoluteAndRelativeReserveProvider&lt;ShibuyaLocationAbsolute&gt;;
+    <span class="kw">type </span>RateLimiter = ();
+    <span class="kw">type </span>RateLimiterId = ();
 }
 </code></pre></div></section></main></body></html>

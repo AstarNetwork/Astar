@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/command.rs`."><title>command.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../astar_collator/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/command.rs`."><title>command.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../astar_collator/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1000,6 +1002,15 @@
 <a href="#1000" id="1000">1000</a>
 <a href="#1001" id="1001">1001</a>
 <a href="#1002" id="1002">1002</a>
+<a href="#1003" id="1003">1003</a>
+<a href="#1004" id="1004">1004</a>
+<a href="#1005" id="1005">1005</a>
+<a href="#1006" id="1006">1006</a>
+<a href="#1007" id="1007">1007</a>
+<a href="#1008" id="1008">1008</a>
+<a href="#1009" id="1009">1009</a>
+<a href="#1010" id="1010">1010</a>
+<a href="#1011" id="1011">1011</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1040,7 +1051,7 @@
 <span class="kw">use </span>sp_runtime::traits::AccountIdConversion;
 <span class="kw">use </span>std::net::SocketAddr;
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 </span><span class="kw">use </span>frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
 
 <span class="kw">trait </span>IdentifyChain {
@@ -1052,20 +1063,20 @@
 
 <span class="kw">impl </span>IdentifyChain <span class="kw">for dyn </span>sc_service::ChainSpec {
     <span class="kw">fn </span>is_astar(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="self">self</span>.id().starts_with(<span class="string">&quot;astar&quot;</span>)
+        <span class="self">self</span>.id().starts_with(<span class="string">"astar"</span>)
     }
     <span class="kw">fn </span>is_dev(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="self">self</span>.id().starts_with(<span class="string">&quot;dev&quot;</span>)
+        <span class="self">self</span>.id().starts_with(<span class="string">"dev"</span>)
     }
     <span class="kw">fn </span>is_shiden(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="self">self</span>.id().starts_with(<span class="string">&quot;shiden&quot;</span>)
+        <span class="self">self</span>.id().starts_with(<span class="string">"shiden"</span>)
     }
     <span class="kw">fn </span>is_shibuya(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="self">self</span>.id().starts_with(<span class="string">&quot;shibuya&quot;</span>)
+        <span class="self">self</span>.id().starts_with(<span class="string">"shibuya"</span>)
     }
 }
 
-<span class="kw">impl</span>&lt;T: sc_service::ChainSpec + <span class="lifetime">&#39;static</span>&gt; IdentifyChain <span class="kw">for </span>T {
+<span class="kw">impl</span>&lt;T: sc_service::ChainSpec + <span class="lifetime">'static</span>&gt; IdentifyChain <span class="kw">for </span>T {
     <span class="kw">fn </span>is_astar(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         &lt;<span class="kw">dyn </span>sc_service::ChainSpec&gt;::is_astar(<span class="self">self</span>)
     }
@@ -1082,18 +1093,18 @@
 
 <span class="kw">fn </span>load_spec(id: <span class="kw-2">&amp;</span>str) -&gt; std::result::Result&lt;Box&lt;<span class="kw">dyn </span>sc_service::ChainSpec&gt;, String&gt; {
     <span class="prelude-val">Ok</span>(<span class="kw">match </span>id {
-        <span class="string">&quot;dev&quot; </span>=&gt; Box::new(development_config()),
-        <span class="string">&quot;astar-dev&quot; </span>=&gt; Box::new(chain_spec::astar::get_chain_spec()),
-        <span class="string">&quot;shibuya-dev&quot; </span>=&gt; Box::new(chain_spec::shibuya::get_chain_spec()),
-        <span class="string">&quot;shiden-dev&quot; </span>=&gt; Box::new(chain_spec::shiden::get_chain_spec()),
-        <span class="string">&quot;astar&quot; </span>=&gt; Box::new(chain_spec::AstarChainSpec::from_json_bytes(
-            <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">&quot;../res/astar.raw.json&quot;</span>)[..],
+        <span class="string">"dev" </span>=&gt; Box::new(development_config()),
+        <span class="string">"astar-dev" </span>=&gt; Box::new(chain_spec::astar::get_chain_spec()),
+        <span class="string">"shibuya-dev" </span>=&gt; Box::new(chain_spec::shibuya::get_chain_spec()),
+        <span class="string">"shiden-dev" </span>=&gt; Box::new(chain_spec::shiden::get_chain_spec()),
+        <span class="string">"astar" </span>=&gt; Box::new(chain_spec::AstarChainSpec::from_json_bytes(
+            <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">"../res/astar.raw.json"</span>)[..],
         )<span class="question-mark">?</span>),
-        <span class="string">&quot;shiden&quot; </span>=&gt; Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
-            <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">&quot;../res/shiden.raw.json&quot;</span>)[..],
+        <span class="string">"shiden" </span>=&gt; Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
+            <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">"../res/shiden.raw.json"</span>)[..],
         )<span class="question-mark">?</span>),
-        <span class="string">&quot;shibuya&quot; </span>=&gt; Box::new(chain_spec::ShibuyaChainSpec::from_json_bytes(
-            <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">&quot;../res/shibuya.raw.json&quot;</span>)[..],
+        <span class="string">"shibuya" </span>=&gt; Box::new(chain_spec::ShibuyaChainSpec::from_json_bytes(
+            <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">"../res/shibuya.raw.json"</span>)[..],
         )<span class="question-mark">?</span>),
         path =&gt; {
             <span class="kw">let </span>chain_spec = chain_spec::ShibuyaChainSpec::from_json_file(path.into())<span class="question-mark">?</span>;
@@ -1104,7 +1115,7 @@
             } <span class="kw">else if </span>chain_spec.is_shibuya() {
                 Box::new(chain_spec)
             } <span class="kw">else </span>{
-                <span class="prelude-val">Err</span>(<span class="string">&quot;Unclear which chain spec to base this chain on. Name should start with astar, shiden or shibuya if custom name is used&quot;</span>)<span class="question-mark">?
+                <span class="prelude-val">Err</span>(<span class="string">"Unclear which chain spec to base this chain on. Name should start with astar, shiden or shibuya if custom name is used"</span>)<span class="question-mark">?
             </span>}
         }
     })
@@ -1112,29 +1123,29 @@
 
 <span class="kw">impl </span>SubstrateCli <span class="kw">for </span>Cli {
     <span class="kw">fn </span>impl_name() -&gt; String {
-        <span class="string">&quot;Astar Collator&quot;</span>.into()
+        <span class="string">"Astar Collator"</span>.into()
     }
 
     <span class="kw">fn </span>impl_version() -&gt; String {
-        <span class="macro">env!</span>(<span class="string">&quot;SUBSTRATE_CLI_IMPL_VERSION&quot;</span>).into()
+        <span class="macro">env!</span>(<span class="string">"SUBSTRATE_CLI_IMPL_VERSION"</span>).into()
     }
 
     <span class="kw">fn </span>description() -&gt; String {
         <span class="macro">format!</span>(
-            <span class="string">&quot;Astar Collator\n\nThe command-line arguments provided first will be \
+            <span class="string">"Astar Collator\n\nThe command-line arguments provided first will be \
         passed to the parachain node, while the arguments provided after -- will be passed \
         to the relaychain node.\n\n\
-        {} [parachain-args] -- [relaychain-args]&quot;</span>,
+        {} [parachain-args] -- [relaychain-args]"</span>,
             <span class="self">Self</span>::executable_name()
         )
     }
 
     <span class="kw">fn </span>author() -&gt; String {
-        <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_AUTHORS&quot;</span>).into()
+        <span class="macro">env!</span>(<span class="string">"CARGO_PKG_AUTHORS"</span>).into()
     }
 
     <span class="kw">fn </span>support_url() -&gt; String {
-        <span class="string">&quot;https://github.com/AstarNetwork/Astar/issues/new&quot;</span>.into()
+        <span class="string">"https://github.com/AstarNetwork/Astar/issues/new"</span>.into()
     }
 
     <span class="kw">fn </span>copyright_start_year() -&gt; i32 {
@@ -1148,27 +1159,27 @@
 
 <span class="kw">impl </span>SubstrateCli <span class="kw">for </span>RelayChainCli {
     <span class="kw">fn </span>impl_name() -&gt; String {
-        <span class="string">&quot;Astar Collator&quot;</span>.into()
+        <span class="string">"Astar Collator"</span>.into()
     }
 
     <span class="kw">fn </span>impl_version() -&gt; String {
-        <span class="macro">env!</span>(<span class="string">&quot;SUBSTRATE_CLI_IMPL_VERSION&quot;</span>).into()
+        <span class="macro">env!</span>(<span class="string">"SUBSTRATE_CLI_IMPL_VERSION"</span>).into()
     }
 
     <span class="kw">fn </span>description() -&gt; String {
-        <span class="string">&quot;Astar Collator\n\nThe command-line arguments provided first will be \
+        <span class="string">"Astar Collator\n\nThe command-line arguments provided first will be \
         passed to the parachain node, while the arguments provided after -- will be passed \
         to the relaychain node.\n\n\
-        astar-collator [parachain-args] -- [relaychain-args]&quot;
+        astar-collator [parachain-args] -- [relaychain-args]"
             </span>.into()
     }
 
     <span class="kw">fn </span>author() -&gt; String {
-        <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_AUTHORS&quot;</span>).into()
+        <span class="macro">env!</span>(<span class="string">"CARGO_PKG_AUTHORS"</span>).into()
     }
 
     <span class="kw">fn </span>support_url() -&gt; String {
-        <span class="string">&quot;https://github.com/AstarNetwork/Astar/issues/new&quot;</span>.into()
+        <span class="string">"https://github.com/AstarNetwork/Astar/issues/new"</span>.into()
     }
 
     <span class="kw">fn </span>copyright_start_year() -&gt; i32 {
@@ -1176,10 +1187,10 @@
     </span>}
 
     <span class="kw">fn </span>load_spec(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="kw-2">&amp;</span>str) -&gt; std::result::Result&lt;Box&lt;<span class="kw">dyn </span>sc_service::ChainSpec&gt;, String&gt; {
-        <span class="kw">if </span>id == <span class="string">&quot;tokyo&quot; </span>{
+        <span class="kw">if </span>id == <span class="string">"tokyo" </span>{
             <span class="prelude-val">Ok</span>(Box::new(
                 polkadot_service::WestendChainSpec::from_json_bytes(
-                    <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">&quot;../res/tokyo.raw.json&quot;</span>)[..],
+                    <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">"../res/tokyo.raw.json"</span>)[..],
                 )
                 .unwrap(),
             ))
@@ -1378,7 +1389,7 @@
                     <span class="kw-2">&amp;</span>polkadot_cli,
                     config.tokio_handle.clone(),
                 )
-                .map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;Relay chain argument error: {}&quot;</span>, err))<span class="question-mark">?</span>;
+                .map_err(|err| <span class="macro">format!</span>(<span class="string">"Relay chain argument error: {}"</span>, err))<span class="question-mark">?</span>;
 
                 cmd.run(config, polkadot_config)
             })
@@ -1447,7 +1458,7 @@
                             <span class="kw-2">&amp;</span>config,
                             parachain::build_import_queue,
                         )<span class="question-mark">?</span>;
-                    cmd.run(config.chain_spec.as_ref(), client.as_ref())
+                    cmd.run(client)
                 })
             } <span class="kw">else if </span>runner.config().chain_spec.is_shiden() {
                 runner.sync_run(|config| {
@@ -1456,7 +1467,7 @@
                             <span class="kw-2">&amp;</span>config,
                             parachain::build_import_queue_fallback,
                         )<span class="question-mark">?</span>;
-                    cmd.run(config.chain_spec.as_ref(), client.as_ref())
+                    cmd.run(client)
                 })
             } <span class="kw">else </span>{
                 runner.sync_run(|config| {
@@ -1465,7 +1476,7 @@
                             <span class="kw-2">&amp;</span>config,
                             parachain::build_import_queue,
                         )<span class="question-mark">?</span>;
-                    cmd.run(config.chain_spec.as_ref(), client.as_ref())
+                    cmd.run(client)
                 })
             }
         }
@@ -1481,10 +1492,11 @@
         <span class="prelude-val">Some</span>(Subcommand::Sign(cmd)) =&gt; cmd.run(),
         <span class="prelude-val">Some</span>(Subcommand::Verify(cmd)) =&gt; cmd.run(),
         <span class="prelude-val">Some</span>(Subcommand::Vanity(cmd)) =&gt; cmd.run(),
-        <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
         </span><span class="prelude-val">Some</span>(Subcommand::Benchmark(cmd)) =&gt; {
             <span class="kw">use </span><span class="kw">crate</span>::benchmarking::<span class="kw-2">*</span>;
             <span class="kw">use </span>sp_keyring::Sr25519Keyring;
+            <span class="kw">use </span>sp_runtime::traits::HashingFor;
 
             <span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
             <span class="kw">let </span>chain_spec = <span class="kw-2">&amp;</span>runner.config().chain_spec;
@@ -1493,19 +1505,27 @@
                 BenchmarkCmd::Pallet(cmd) =&gt; {
                     <span class="kw">if </span>chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            cmd.run::&lt;astar_runtime::Block, parachain::HostFunctions&gt;(config)
+                            cmd.run::&lt;HashingFor&lt;astar_runtime::Block&gt;, parachain::HostFunctions&gt;(
+                                config,
+                            )
                         })
                     } <span class="kw">else if </span>chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            cmd.run::&lt;shiden_runtime::Block, parachain::HostFunctions&gt;(config)
+                            cmd.run::&lt;HashingFor&lt;shiden_runtime::Block&gt;, parachain::HostFunctions&gt;(
+                                config,
+                            )
                         })
                     } <span class="kw">else if </span>chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            cmd.run::&lt;shibuya_runtime::Block, parachain::HostFunctions&gt;(config)
+                            cmd.run::&lt;HashingFor&lt;shibuya_runtime::Block&gt;, parachain::HostFunctions&gt;(
+                                config,
+                            )
                         })
                     } <span class="kw">else </span>{
                         runner.sync_run(|config| {
-                            cmd.run::&lt;local_runtime::Block, local::HostFunctions&gt;(config)
+                            cmd.run::&lt;HashingFor&lt;local_runtime::Block&gt;, local::HostFunctions&gt;(
+                                config,
+                            )
                         })
                     }
                 }
@@ -1605,7 +1625,7 @@
                                 )<span class="question-mark">?</span>;
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;generating inherent data: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+                                .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(
                                 config,
@@ -1625,7 +1645,7 @@
 
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;generating inherent data: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+                                .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(
                                 config,
@@ -1647,7 +1667,7 @@
 
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;generating inherent data: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+                                .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(
                                 config,
@@ -1662,7 +1682,7 @@
                             <span class="kw">let </span>params = local::new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
                             <span class="kw">let </span>ext_builder = RemarkBuilder::new(params.client.clone());
                             <span class="kw">let </span>inherent_data = local_benchmark_inherent_data()
-                                .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;generating inherent data: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+                                .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(
                                 config,
@@ -1693,7 +1713,7 @@
                                 Box::new(tka_builder),
                             ]);
                             <span class="kw">let </span>inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;generating inherent data: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+                                .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(params.client, inherent_data, Vec::new(), <span class="kw-2">&amp;</span>ext_factory)
                         })
@@ -1715,7 +1735,7 @@
                                 Box::new(tka_builder),
                             ]);
                             <span class="kw">let </span>inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;generating inherent data: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+                                .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(params.client, inherent_data, Vec::new(), <span class="kw-2">&amp;</span>ext_factory)
                         })
@@ -1739,7 +1759,7 @@
                                 Box::new(tka_builder),
                             ]);
                             <span class="kw">let </span>inherent_data = para_benchmark_inherent_data()
-                                .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;generating inherent data: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+                                .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(params.client, inherent_data, Vec::new(), <span class="kw-2">&amp;</span>ext_factory)
                         })
@@ -1757,7 +1777,7 @@
                                 Box::new(tka_builder),
                             ]);
                             <span class="kw">let </span>inherent_data = local_benchmark_inherent_data()
-                                .map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;generating inherent data: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
+                                .map_err(|e| <span class="macro">format!</span>(<span class="string">"generating inherent data: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                             cmd.run(params.client, inherent_data, Vec::new(), <span class="kw-2">&amp;</span>ext_factory)
                         })
@@ -1768,16 +1788,16 @@
                 }
             }
         }
-        <span class="prelude-val">Some</span>(Subcommand::TryRuntime) =&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;The `try-runtime` subcommand has been migrated to a \
+        <span class="prelude-val">Some</span>(Subcommand::TryRuntime) =&gt; <span class="prelude-val">Err</span>(<span class="string">"The `try-runtime` subcommand has been migrated to a \
         standalone CLI (https://github.com/paritytech/try-runtime-cli). It is no longer \
         being maintained here and will be removed entirely some time after January 2024. \
-        Please remove this subcommand from your runtime and use the standalone CLI.&quot;
+        Please remove this subcommand from your runtime and use the standalone CLI."
             </span>.into()),
         <span class="prelude-val">None </span>=&gt; {
             <span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run.normalize())<span class="question-mark">?</span>;
             <span class="kw">let </span>collator_options = cli.run.collator_options();
 
-            <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
+            <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
             </span><span class="kw">let </span>evm_tracing_config = <span class="kw">crate</span>::evm_tracing_types::EvmTracingConfig {
                 ethapi: cli.eth_api_options.ethapi,
                 ethapi_max_permits: cli.eth_api_options.ethapi_max_permits,
@@ -1791,7 +1811,7 @@
 
             runner.run_node_until_exit(|config| <span class="kw">async move </span>{
                 <span class="kw">if </span>config.chain_spec.is_dev() {
-                    <span class="kw">return </span>local::start_node(config, <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)] </span>evm_tracing_config).map_err(Into::into);
+                    <span class="kw">return </span>local::start_node(config, <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)] </span>evm_tracing_config).map_err(Into::into);
                 }
 
                 <span class="kw">let </span>polkadot_cli = RelayChainCli::new(
@@ -1804,7 +1824,7 @@
                 <span class="kw">let </span>para_id = ParaId::from(
                     chain_spec::Extensions::try_get(<span class="kw-2">&amp;*</span>config.chain_spec)
                         .map(|e| e.para_id)
-                        .ok_or(<span class="string">&quot;ParaId not found in chain spec extension&quot;</span>)<span class="question-mark">?
+                        .ok_or(<span class="string">"ParaId not found in chain spec extension"</span>)<span class="question-mark">?
                 </span>);
 
                 <span class="kw">let </span>parachain_account =
@@ -1815,21 +1835,21 @@
                     <span class="kw-2">&amp;</span>polkadot_cli,
                     config.tokio_handle.clone(),
                 )
-                .map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;Relay chain argument error: {}&quot;</span>, err))<span class="question-mark">?</span>;
+                .map_err(|err| <span class="macro">format!</span>(<span class="string">"Relay chain argument error: {}"</span>, err))<span class="question-mark">?</span>;
 
-                <span class="macro">info!</span>(<span class="string">&quot;Parachain id: {:?}&quot;</span>, para_id);
-                <span class="macro">info!</span>(<span class="string">&quot;Parachain Account: {}&quot;</span>, parachain_account);
+                <span class="macro">info!</span>(<span class="string">"Parachain id: {:?}"</span>, para_id);
+                <span class="macro">info!</span>(<span class="string">"Parachain Account: {}"</span>, parachain_account);
                 <span class="macro">info!</span>(
-                    <span class="string">&quot;Is collating: {}&quot;</span>,
+                    <span class="string">"Is collating: {}"</span>,
                     <span class="kw">if </span>config.role.is_authority() {
-                        <span class="string">&quot;yes&quot;
+                        <span class="string">"yes"
                     </span>} <span class="kw">else </span>{
-                        <span class="string">&quot;no&quot;
+                        <span class="string">"no"
                     </span>}
                 );
 
                 <span class="kw">let </span>additional_config = AdditionalConfig {
-                    <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
+                    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
                     </span>evm_tracing_config: evm_tracing_config,
                     enable_evm_rpc: cli.enable_evm_rpc,
                     proposer_block_size_limit: cli.proposer_block_size_limit,
@@ -1867,8 +1887,8 @@
                         </span>.map(|r| r.<span class="number">0</span>)
                         .map_err(Into::into)
                 } <span class="kw">else </span>{
-                    <span class="kw">let </span>err_msg = <span class="string">&quot;Unrecognized chain spec - name should start with one of: astar or shiden or shibuya&quot;</span>;
-                    <span class="macro">error!</span>(<span class="string">&quot;{}&quot;</span>, err_msg);
+                    <span class="kw">let </span>err_msg = <span class="string">"Unrecognized chain spec - name should start with one of: astar or shiden or shibuya"</span>;
+                    <span class="macro">error!</span>(<span class="string">"{}"</span>, err_msg);
                     <span class="prelude-val">Err</span>(err_msg.into())
                 }
             })
@@ -1938,7 +1958,7 @@
     <span class="kw">where
         </span>F: FnOnce(<span class="kw-2">&amp;mut </span>sc_cli::LoggerBuilder, <span class="kw-2">&amp;</span>sc_service::Configuration),
     {
-        <span class="macro">unreachable!</span>(<span class="string">&quot;PolkadotCli is never initialized; qed&quot;</span>);
+        <span class="macro">unreachable!</span>(<span class="string">"PolkadotCli is never initialized; qed"</span>);
     }
 
     <span class="kw">fn </span>chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>, is_dev: bool) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {

@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/weights/pallet_xcm.rs`."><title>pallet_xcm.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../shibuya_runtime/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/shibuya/src/weights/pallet_xcm.rs`."><title>pallet_xcm.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="shibuya_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../shibuya_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -286,6 +288,23 @@
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
 <a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
 </pre></div><pre class="rust"><code>
 <span class="comment">// This file is part of Astar.
 
@@ -307,17 +326,17 @@
 
 </span><span class="doccomment">//! Autogenerated weights for pallet_xcm
 //!
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2023-10-09, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
+//! DATE: 2024-07-09, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `devserver-01`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
-//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some(&quot;astar-dev&quot;), DB CACHE: 1024
+//! HOSTNAME: `gh-runner-01-ovh`, CPU: `Intel(R) Xeon(R) E-2236 CPU @ 3.40GHz`
+//! EXECUTION: , WASM-EXECUTION: Compiled, CHAIN: Some("shibuya-dev"), DB CACHE: 1024
 
 </span><span class="comment">// Executed Command:
 // ./target/release/astar-collator
 // benchmark
 // pallet
-// --chain=astar-dev
+// --chain=shibuya-dev
 // --steps=50
 // --repeat=20
 // --pallet=pallet_xcm
@@ -325,7 +344,7 @@
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --output=./benchmark-results/xcm_weights.rs
+// --output=./benchmark-results/shibuya-dev/xcm_weights.rs
 // --template=./scripts/templates/weight-template.hbs
 
 </span><span class="attr">#![cfg_attr(rustfmt, rustfmt_skip)]
@@ -338,27 +357,23 @@
 <span class="doccomment">/// Weights for pallet_xcm using the Substrate node and recommended hardware.
 </span><span class="kw">pub struct </span>SubstrateWeight&lt;T&gt;(PhantomData&lt;T&gt;);
 <span class="kw">impl</span>&lt;T: frame_system::Config&gt; pallet_xcm::WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
-	<span class="doccomment">/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
-	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
+	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::HostConfiguration` (r:1 w:0)
+	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
+	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>send() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `74`
-		//  Estimated: `3539`
-		// Minimum execution time: 28_095_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">28_511_000</span>, <span class="number">3539</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+		//  Measured:  `109`
+		//  Estimated: `3574`
+		// Minimum execution time: 16_607_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">17_088_000</span>, <span class="number">3574</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: Benchmark Override (r:0 w:0)
-	/// Proof Skipped: Benchmark Override (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
+	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>teleport_assets() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -366,25 +381,38 @@
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
 	}
-	<span class="doccomment">/// Storage: ParachainInfo ParachainId (r:1 w:0)
-	/// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
-	/// Storage: System Account (r:1 w:0)
-	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	<span class="doccomment">/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
+	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
+	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::RelevantMessagingState` (r:1 w:0)
+	/// Proof: `ParachainSystem::RelevantMessagingState` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `XcmpQueue::OutboundXcmpStatus` (r:1 w:1)
+	/// Proof: `XcmpQueue::OutboundXcmpStatus` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `XcmpQueue::OutboundXcmpMessages` (r:0 w:1)
+	/// Proof: `XcmpQueue::OutboundXcmpMessages` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>reserve_transfer_assets() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `71`
-		//  Estimated: `3593`
-		// Minimum execution time: 30_849_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">31_324_000</span>, <span class="number">3593</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2_u64</span>))
+		//  Measured:  `382`
+		//  Estimated: `3847`
+		// Minimum execution time: 76_020_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">77_852_000</span>, <span class="number">3847</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
 	}
-
-	<span class="kw">fn </span>transfer_assets() -&gt; Weight {
-		<span class="macro">todo!</span>()
+	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
+	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">fn </span>transfer_assets() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
 	}
-
-	<span class="doccomment">/// Storage: Benchmark Override (r:0 w:0)
-	/// Proof Skipped: Benchmark Override (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `Benchmark::Override` (r:0 w:0)
+	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>execute() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -392,186 +420,194 @@
 		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
 		</span>Weight::from_parts(<span class="number">18_446_744_073_709_551_000</span>, <span class="number">0</span>)
 	}
-	<span class="doccomment">/// Storage: PolkadotXcm SupportedVersion (r:0 w:1)
-	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `PolkadotXcm::SupportedVersion` (r:0 w:1)
+	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>force_xcm_version() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 9_619_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">9_881_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 7_506_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">7_791_000</span>, <span class="number">0</span>)
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: PolkadotXcm SafeXcmVersion (r:0 w:1)
-	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
-	</span><span class="kw">fn </span>force_default_xcm_version() -&gt; Weight {
+	<span class="kw">fn </span>force_default_xcm_version() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_109_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">3_261_000</span>, <span class="number">0</span>)
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+		// Minimum execution time: 2_287_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">2_423_000</span>, <span class="number">0</span>)
 	}
-	<span class="doccomment">/// Storage: PolkadotXcm VersionNotifiers (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm VersionNotifiers (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm QueryCounter (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm QueryCounter (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
-	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm Queries (r:0 w:1)
-	/// Proof Skipped: PolkadotXcm Queries (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifiers` (r:1 w:1)
+	/// Proof: `PolkadotXcm::VersionNotifiers` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `PolkadotXcm::QueryCounter` (r:1 w:1)
+	/// Proof: `PolkadotXcm::QueryCounter` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
+	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::HostConfiguration` (r:1 w:0)
+	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
+	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `PolkadotXcm::Queries` (r:0 w:1)
+	/// Proof: `PolkadotXcm::Queries` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>force_subscribe_version_notify() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `74`
-		//  Estimated: `3539`
-		// Minimum execution time: 31_620_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">32_143_000</span>, <span class="number">3539</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">7_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">5_u64</span>))
-	}
-	<span class="doccomment">/// Storage: PolkadotXcm VersionNotifiers (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm VersionNotifiers (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
-	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm Queries (r:0 w:1)
-	/// Proof Skipped: PolkadotXcm Queries (max_values: None, max_size: None, mode: Measured)
-	</span><span class="kw">fn </span>force_unsubscribe_version_notify() -&gt; Weight {
-		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `257`
-		//  Estimated: `3722`
-		// Minimum execution time: 32_263_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">32_775_000</span>, <span class="number">3722</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">6_u64</span>))
+		//  Measured:  `109`
+		//  Estimated: `3574`
+		// Minimum execution time: 20_432_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">21_217_000</span>, <span class="number">3574</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">4_u64</span>))
 	}
-	<span class="doccomment">/// Storage: PolkadotXcm XcmExecutionSuspended (r:0 w:1)
-	/// Proof Skipped: PolkadotXcm XcmExecutionSuspended (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifiers` (r:1 w:1)
+	/// Proof: `PolkadotXcm::VersionNotifiers` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
+	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::HostConfiguration` (r:1 w:0)
+	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
+	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `PolkadotXcm::Queries` (r:0 w:1)
+	/// Proof: `PolkadotXcm::Queries` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">fn </span>force_unsubscribe_version_notify() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `168`
+		//  Estimated: `3633`
+		// Minimum execution time: 21_477_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">21_811_000</span>, <span class="number">3633</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
+	}
+	<span class="doccomment">/// Storage: `PolkadotXcm::XcmExecutionSuspended` (r:0 w:1)
+	/// Proof: `PolkadotXcm::XcmExecutionSuspended` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>force_suspension() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_067_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">3_211_000</span>, <span class="number">0</span>)
+		// Minimum execution time: 2_284_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">2_499_000</span>, <span class="number">0</span>)
 			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 	}
-	<span class="doccomment">/// Storage: PolkadotXcm SupportedVersion (r:4 w:2)
-	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `PolkadotXcm::SupportedVersion` (r:5 w:2)
+	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>migrate_supported_version() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `132`
-		//  Estimated: `11022`
-		// Minimum execution time: 15_935_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">16_441_000</span>, <span class="number">11022</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
+		//  Measured:  `22`
+		//  Estimated: `13387`
+		// Minimum execution time: 14_915_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">15_133_000</span>, <span class="number">13387</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
 	}
-	<span class="doccomment">/// Storage: PolkadotXcm VersionNotifiers (r:4 w:2)
-	/// Proof Skipped: PolkadotXcm VersionNotifiers (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifiers` (r:5 w:2)
+	/// Proof: `PolkadotXcm::VersionNotifiers` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>migrate_version_notifiers() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `136`
-		//  Estimated: `11026`
-		// Minimum execution time: 16_005_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">16_385_000</span>, <span class="number">11026</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
+		//  Measured:  `26`
+		//  Estimated: `13391`
+		// Minimum execution time: 14_764_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">14_997_000</span>, <span class="number">13391</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
 	}
-	<span class="doccomment">/// Storage: PolkadotXcm VersionNotifyTargets (r:5 w:0)
-	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:6 w:0)
+	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>already_notified_target() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `143`
-		//  Estimated: `13508`
-		// Minimum execution time: 16_238_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">16_875_000</span>, <span class="number">13508</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
+		//  Measured:  `75`
+		//  Estimated: `15915`
+		// Minimum execution time: 16_328_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">16_751_000</span>, <span class="number">15915</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">6_u64</span>))
 	}
-	<span class="doccomment">/// Storage: PolkadotXcm VersionNotifyTargets (r:2 w:1)
-	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
-	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:2 w:1)
+	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
+	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::HostConfiguration` (r:1 w:0)
+	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
+	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>notify_current_targets() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
 		//  Measured:  `142`
 		//  Estimated: `6082`
-		// Minimum execution time: 28_995_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">29_401_000</span>, <span class="number">6082</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">7_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
-	}
-	<span class="doccomment">/// Storage: PolkadotXcm VersionNotifyTargets (r:3 w:0)
-	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
-	</span><span class="kw">fn </span>notify_target_migration_fail() -&gt; Weight {
-		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `136`
-		//  Estimated: `8551`
-		// Minimum execution time: 7_907_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">8_304_000</span>, <span class="number">8551</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3_u64</span>))
-	}
-	<span class="doccomment">/// Storage: PolkadotXcm VersionNotifyTargets (r:4 w:2)
-	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
-	</span><span class="kw">fn </span>migrate_version_notify_targets() -&gt; Weight {
-		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `143`
-		//  Estimated: `11033`
-		// Minimum execution time: 16_487_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">16_957_000</span>, <span class="number">11033</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
+		// Minimum execution time: 20_408_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">21_085_000</span>, <span class="number">6082</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
 			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
 	}
-	<span class="doccomment">/// Storage: PolkadotXcm VersionNotifyTargets (r:4 w:2)
-	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
-	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
-	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
-	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
-	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:4 w:0)
+	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">fn </span>notify_target_migration_fail() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `69`
+		//  Estimated: `10959`
+		// Minimum execution time: 11_110_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">11_401_000</span>, <span class="number">10959</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4_u64</span>))
+	}
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:5 w:2)
+	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">fn </span>migrate_version_notify_targets() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `33`
+		//  Estimated: `13398`
+		// Minimum execution time: 15_421_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">15_759_000</span>, <span class="number">13398</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
+	}
+	<span class="doccomment">/// Storage: `PolkadotXcm::VersionNotifyTargets` (r:5 w:2)
+	/// Proof: `PolkadotXcm::VersionNotifyTargets` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `PolkadotXcm::SupportedVersion` (r:1 w:0)
+	/// Proof: `PolkadotXcm::SupportedVersion` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::HostConfiguration` (r:1 w:0)
+	/// Proof: `ParachainSystem::HostConfiguration` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `ParachainSystem::PendingUpwardMessages` (r:1 w:1)
+	/// Proof: `ParachainSystem::PendingUpwardMessages` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	</span><span class="kw">fn </span>migrate_and_notify_old_targets() -&gt; Weight {
 		<span class="comment">// Proof Size summary in bytes:
-		//  Measured:  `185`
-		//  Estimated: `11075`
-		// Minimum execution time: 34_975_000 picoseconds.
-		</span>Weight::from_parts(<span class="number">35_686_000</span>, <span class="number">11075</span>)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">9_u64</span>))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4_u64</span>))
+		//  Measured:  `142`
+		//  Estimated: `13507`
+		// Minimum execution time: 28_581_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">29_076_000</span>, <span class="number">13507</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">8_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3_u64</span>))
 	}
-
-	<span class="kw">fn </span>new_query() -&gt; Weight {
-		Weight::MAX
+	<span class="doccomment">/// Storage: `PolkadotXcm::QueryCounter` (r:1 w:1)
+	/// Proof: `PolkadotXcm::QueryCounter` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `PolkadotXcm::Queries` (r:0 w:1)
+	/// Proof: `PolkadotXcm::Queries` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">fn </span>new_query() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `1485`
+		// Minimum execution time: 2_278_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">2_325_000</span>, <span class="number">1485</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2_u64</span>))
 	}
-
-	<span class="kw">fn </span>take_response() -&gt; Weight {
-		Weight::MAX
+	<span class="doccomment">/// Storage: `PolkadotXcm::Queries` (r:1 w:1)
+	/// Proof: `PolkadotXcm::Queries` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">fn </span>take_response() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `7576`
+		//  Estimated: `11041`
+		// Minimum execution time: 22_435_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">22_641_000</span>, <span class="number">11041</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
+	}
+	<span class="doccomment">/// Storage: `PolkadotXcm::AssetTraps` (r:1 w:1)
+	/// Proof: `PolkadotXcm::AssetTraps` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	</span><span class="kw">fn </span>claim_assets() -&gt; Weight {
+		<span class="comment">// Proof Size summary in bytes:
+		//  Measured:  `23`
+		//  Estimated: `3488`
+		// Minimum execution time: 31_984_000 picoseconds.
+		</span>Weight::from_parts(<span class="number">32_565_000</span>, <span class="number">3488</span>)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1_u64</span>))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1_u64</span>))
 	}
 }
 </code></pre></div></section></main></body></html>

@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/parachain/service.rs`."><title>service.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../astar_collator/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/collator/src/parachain/service.rs`."><title>service.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="astar_collator" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../astar_collator/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1370,6 +1372,17 @@
 <a href="#1370" id="1370">1370</a>
 <a href="#1371" id="1371">1371</a>
 <a href="#1372" id="1372">1372</a>
+<a href="#1373" id="1373">1373</a>
+<a href="#1374" id="1374">1374</a>
+<a href="#1375" id="1375">1375</a>
+<a href="#1376" id="1376">1376</a>
+<a href="#1377" id="1377">1377</a>
+<a href="#1378" id="1378">1378</a>
+<a href="#1379" id="1379">1379</a>
+<a href="#1380" id="1380">1380</a>
+<a href="#1381" id="1381">1381</a>
+<a href="#1382" id="1382">1382</a>
+<a href="#1383" id="1383">1383</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1426,16 +1439,25 @@
 
 <span class="kw">use </span><span class="kw">super</span>::shell_upgrade::<span class="kw-2">*</span>;
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
 </span><span class="kw">use crate</span>::{
     evm_tracing_types::{EthApi <span class="kw">as </span>EthApiCmd, EvmTracingConfig},
     rpc::tracing,
 };
 
 <span class="doccomment">/// Extra host functions
+</span><span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 </span><span class="kw">pub type </span>HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+    cumulus_client_service::storage_proof_size::HostFunctions,
+);
+
+<span class="doccomment">/// Extra host functions
+</span><span class="attr">#[cfg(not(feature = <span class="string">"runtime-benchmarks"</span>))]
+</span><span class="kw">pub type </span>HostFunctions = (
+    moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
+    cumulus_client_service::storage_proof_size::HostFunctions,
 );
 
 <span class="doccomment">/// Astar network runtime executor.
@@ -1500,7 +1522,7 @@
 
 <span class="doccomment">/// Starts a `ServiceBuilder` for a full service.
 ///
-/// Use this macro if you don&#39;t actually need the full service, but just the builder in order to
+/// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
 </span><span class="kw">pub fn </span>new_partial&lt;RuntimeApi, Executor, BIQ&gt;(
     config: <span class="kw-2">&amp;</span>Configuration,
@@ -1536,7 +1558,7 @@
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
         + Sync
-        + <span class="lifetime">&#39;static</span>,
+        + <span class="lifetime">'static</span>,
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
@@ -1546,7 +1568,7 @@
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::backend::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
     BIQ: FnOnce(
         Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
         ParachainBlockImport&lt;
@@ -1577,10 +1599,11 @@
     <span class="kw">let </span>executor = sc_service::new_native_or_wasm_executor(<span class="kw-2">&amp;</span>config);
 
     <span class="kw">let </span>(client, backend, keystore_container, task_manager) =
-        sc_service::new_full_parts::&lt;Block, RuntimeApi, <span class="kw">_</span>&gt;(
+        sc_service::new_full_parts_record_import::&lt;Block, RuntimeApi, <span class="kw">_</span>&gt;(
             config,
             telemetry.as_ref().map(|(<span class="kw">_</span>, telemetry)| telemetry.handle()),
             executor,
+            <span class="bool-val">true</span>,
         )<span class="question-mark">?</span>;
     <span class="kw">let </span>client = Arc::new(client);
 
@@ -1589,7 +1612,7 @@
     <span class="kw">let </span>telemetry = telemetry.map(|(worker, telemetry)| {
         task_manager
             .spawn_handle()
-            .spawn(<span class="string">&quot;telemetry&quot;</span>, <span class="prelude-val">None</span>, worker.run());
+            .spawn(<span class="string">"telemetry"</span>, <span class="prelude-val">None</span>, worker.run());
         telemetry
     });
 
@@ -1641,7 +1664,7 @@
     task_manager: <span class="kw-2">&amp;mut </span>TaskManager,
     collator_options: CollatorOptions,
 ) -&gt; RelayChainResult&lt;(
-    Arc&lt;(<span class="kw">dyn </span>RelayChainInterface + <span class="lifetime">&#39;static</span>)&gt;,
+    Arc&lt;(<span class="kw">dyn </span>RelayChainInterface + <span class="lifetime">'static</span>)&gt;,
     <span class="prelude-ty">Option</span>&lt;CollatorPair&gt;,
 )&gt; {
     <span class="kw">if let </span>cumulus_client_cli::RelayChainMode::ExternalRpc(rpc_target_urls) =
@@ -1662,8 +1685,8 @@
 <span class="doccomment">/// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
-</span><span class="attr">#[cfg(not(feature = <span class="string">&quot;evm-tracing&quot;</span>))]
-#[sc_tracing::logging::prefix_logs_with(<span class="string">&quot;Parachain&quot;</span>)]
+</span><span class="attr">#[cfg(not(feature = <span class="string">"evm-tracing"</span>))]
+#[sc_tracing::logging::prefix_logs_with(<span class="string">"Parachain"</span>)]
 </span><span class="kw">async fn </span>start_node_impl&lt;RuntimeApi, Executor, BIQ, SC&gt;(
     parachain_config: Configuration,
     polkadot_config: Configuration,
@@ -1680,7 +1703,7 @@
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
         + Sync
-        + <span class="lifetime">&#39;static</span>,
+        + <span class="lifetime">'static</span>,
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
@@ -1695,7 +1718,7 @@
         + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::backend::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
     BIQ: FnOnce(
         Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
         ParachainBlockImport&lt;
@@ -1794,8 +1817,8 @@
     <span class="comment">// Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
     </span>task_manager.spawn_essential_handle().spawn(
-        <span class="string">&quot;frontier-mapping-sync-worker&quot;</span>,
-        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+        <span class="string">"frontier-mapping-sync-worker"</span>,
+        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
         fc_mapping_sync::kv::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(<span class="number">6</span>, <span class="number">0</span>),
@@ -1816,8 +1839,8 @@
     // Each filter is allowed to stay in the pool for 100 blocks.
     </span><span class="kw">const </span>FILTER_RETAIN_THRESHOLD: u64 = <span class="number">100</span>;
     task_manager.spawn_essential_handle().spawn(
-        <span class="string">&quot;frontier-filter-pool&quot;</span>,
-        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+        <span class="string">"frontier-filter-pool"</span>,
+        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
         fc_rpc::EthTask::filter_pool_task(
             client.clone(),
             filter_pool.clone(),
@@ -1827,8 +1850,8 @@
 
     <span class="kw">const </span>FEE_HISTORY_LIMIT: u64 = <span class="number">2048</span>;
     task_manager.spawn_essential_handle().spawn(
-        <span class="string">&quot;frontier-fee-history&quot;</span>,
-        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+        <span class="string">"frontier-fee-history"</span>,
+        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
         fc_rpc::EthTask::fee_history_task(
             client.clone(),
             overrides.clone(),
@@ -1868,7 +1891,7 @@
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
                 enable_evm_rpc: additional_config.enable_evm_rpc,
-                <span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
+                <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
                 </span>command_sink: <span class="prelude-val">None</span>,
             };
 
@@ -1933,7 +1956,7 @@
             sync_service,
             params.keystore_container.keystore(),
             id,
-            collator_key.expect(<span class="string">&quot;Command line arguments do not allow this. qed&quot;</span>),
+            collator_key.expect(<span class="string">"Command line arguments do not allow this. qed"</span>),
             additional_config,
         )<span class="question-mark">?</span>;
     }
@@ -1946,7 +1969,7 @@
 <span class="attr">#[derive(Clone)]
 </span><span class="doccomment">/// To add additional config to start_xyz_node functions
 </span><span class="kw">pub struct </span>AdditionalConfig {
-    <span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
     </span><span class="doccomment">/// EVM tracing configuration
     </span><span class="kw">pub </span>evm_tracing_config: EvmTracingConfig,
 
@@ -1963,8 +1986,8 @@
 <span class="doccomment">/// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;evm-tracing&quot;</span>)]
-#[sc_tracing::logging::prefix_logs_with(<span class="string">&quot;Parachain&quot;</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
+#[sc_tracing::logging::prefix_logs_with(<span class="string">"Parachain"</span>)]
 </span><span class="kw">async fn </span>start_node_impl&lt;RuntimeApi, Executor, BIQ, SC&gt;(
     parachain_config: Configuration,
     polkadot_config: Configuration,
@@ -1981,7 +2004,7 @@
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
         + Sync
-        + <span class="lifetime">&#39;static</span>,
+        + <span class="lifetime">'static</span>,
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
@@ -1998,7 +2021,7 @@
         + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::backend::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
     BIQ: FnOnce(
         Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
         ParachainBlockImport&lt;
@@ -2099,6 +2122,7 @@
         <span class="kw">if </span>ethapi_cmd.contains(<span class="kw-2">&amp;</span>EthApiCmd::Debug) || ethapi_cmd.contains(<span class="kw-2">&amp;</span>EthApiCmd::Trace) {
             tracing::spawn_tracing_tasks(
                 <span class="kw-2">&amp;</span>additional_config.evm_tracing_config,
+                prometheus_registry.clone(),
                 tracing::SpawnTasksParams {
                     task_manager: <span class="kw-2">&amp;</span>task_manager,
                     client: client.clone(),
@@ -2118,8 +2142,8 @@
     <span class="comment">// Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
     </span>task_manager.spawn_essential_handle().spawn(
-        <span class="string">&quot;frontier-mapping-sync-worker&quot;</span>,
-        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+        <span class="string">"frontier-mapping-sync-worker"</span>,
+        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
         fc_mapping_sync::kv::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(<span class="number">6</span>, <span class="number">0</span>),
@@ -2140,8 +2164,8 @@
     // Each filter is allowed to stay in the pool for 100 blocks.
     </span><span class="kw">const </span>FILTER_RETAIN_THRESHOLD: u64 = <span class="number">100</span>;
     task_manager.spawn_essential_handle().spawn(
-        <span class="string">&quot;frontier-filter-pool&quot;</span>,
-        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+        <span class="string">"frontier-filter-pool"</span>,
+        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
         fc_rpc::EthTask::filter_pool_task(
             client.clone(),
             filter_pool.clone(),
@@ -2151,8 +2175,8 @@
 
     <span class="kw">const </span>FEE_HISTORY_LIMIT: u64 = <span class="number">2048</span>;
     task_manager.spawn_essential_handle().spawn(
-        <span class="string">&quot;frontier-fee-history&quot;</span>,
-        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+        <span class="string">"frontier-fee-history"</span>,
+        <span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
         fc_rpc::EthTask::fee_history_task(
             client.clone(),
             overrides.clone(),
@@ -2197,7 +2221,7 @@
                 block_data_cache: block_data_cache.clone(),
                 overrides: overrides.clone(),
                 enable_evm_rpc: additional_config.enable_evm_rpc,
-                <span class="attr">#[cfg(feature = <span class="string">&quot;manual-seal&quot;</span>)]
+                <span class="attr">#[cfg(feature = <span class="string">"manual-seal"</span>)]
                 </span>command_sink: <span class="prelude-val">None</span>,
             };
 
@@ -2267,7 +2291,7 @@
             sync_service,
             params.keystore_container.keystore(),
             id,
-            collator_key.expect(<span class="string">&quot;Command line arguments do not allow this. qed&quot;</span>),
+            collator_key.expect(<span class="string">"Command line arguments do not allow this. qed"</span>),
             additional_config,
         )<span class="question-mark">?</span>;
     }
@@ -2298,7 +2322,7 @@
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
         + Sync
-        + <span class="lifetime">&#39;static</span>,
+        + <span class="lifetime">'static</span>,
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
@@ -2308,8 +2332,8 @@
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
         + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
-        sc_client_api::backend::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+        sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
+    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span>client2 = client.clone();
 
@@ -2382,7 +2406,7 @@
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
         + Sync
-        + <span class="lifetime">&#39;static</span>,
+        + <span class="lifetime">'static</span>,
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
@@ -2393,7 +2417,7 @@
         + AuraApi&lt;Block, AuraId&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span>slot_duration = cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
 
@@ -2456,7 +2480,7 @@
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
         + Sync
-        + <span class="lifetime">&#39;static</span>,
+        + <span class="lifetime">'static</span>,
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
@@ -2468,7 +2492,7 @@
         + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span><span class="kw-2">mut </span>proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
         task_manager.spawn_handle(),
@@ -2512,7 +2536,7 @@
                 <span class="kw">match </span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header::decode(<span class="kw-2">&amp;mut &amp;</span>pvd.parent_head.<span class="number">0</span>[..]) {
                     <span class="prelude-val">Ok</span>(header) =&gt; header.hash(),
                     <span class="prelude-val">Err</span>(e) =&gt; {
-                        <span class="macro">log::error!</span>(<span class="string">&quot;Could not decode the head data: {e}&quot;</span>);
+                        <span class="macro">log::error!</span>(<span class="string">"Could not decode the head data: {e}"</span>);
                         request.complete(<span class="prelude-val">None</span>);
                         <span class="kw">continue</span>;
                     }
@@ -2533,7 +2557,7 @@
 
         <span class="comment">// Move to Aura consensus.
         </span><span class="kw">let </span>slot_duration =
-            cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client).expect(<span class="string">&quot;aura is present; qed&quot;</span>);
+            cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client).expect(<span class="string">"aura is present; qed"</span>);
 
         <span class="kw">let </span>announce_block = {
             <span class="kw">let </span>sync_service = sync_oracle.clone();
@@ -2570,7 +2594,7 @@
 
     task_manager
         .spawn_essential_handle()
-        .spawn(<span class="string">&quot;aura&quot;</span>, <span class="prelude-val">None</span>, collation_future);
+        .spawn(<span class="string">"aura"</span>, <span class="prelude-val">None</span>, collation_future);
     <span class="prelude-val">Ok</span>(())
 }
 
@@ -2605,7 +2629,7 @@
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
         + Sync
-        + <span class="lifetime">&#39;static</span>,
+        + <span class="lifetime">'static</span>,
     RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
         + sp_api::Metadata&lt;Block&gt;
         + sp_session::SessionKeys&lt;Block&gt;
@@ -2617,7 +2641,7 @@
         + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
-    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+    Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span><span class="kw-2">mut </span>proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
         task_manager.spawn_handle(),
@@ -2669,7 +2693,7 @@
 
     task_manager
         .spawn_essential_handle()
-        .spawn(<span class="string">&quot;aura&quot;</span>, <span class="prelude-val">None</span>, fut);
+        .spawn(<span class="string">"aura"</span>, <span class="prelude-val">None</span>, fut);
 
     <span class="prelude-val">Ok</span>(())
 }

@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `precompiles/dapp-staking-v3/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_dapp_staking_v3" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../pallet_evm_precompile_dapp_staking_v3/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `precompiles/dapp-staking-v3/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_dapp_staking_v3" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_evm_precompile_dapp_staking_v3/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -852,7 +854,7 @@
 
 </span><span class="doccomment">//! Astar dApp staking interface.
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>fp_evm::PrecompileHandle;
 <span class="kw">use </span>frame_system::pallet_prelude::BlockNumberFor;
@@ -928,7 +930,7 @@
 
         value_as_u8
             .try_into()
-            .map_err(|<span class="kw">_</span>| RevertReason::custom(<span class="string">&quot;Unknown smart contract type&quot;</span>).into())
+            .map_err(|<span class="kw">_</span>| RevertReason::custom(<span class="string">"Unknown smart contract type"</span>).into())
     }
 
     <span class="kw">fn </span>write(writer: <span class="kw-2">&amp;mut </span>Writer, value: <span class="self">Self</span>) {
@@ -941,7 +943,7 @@
     </span>}
 
     <span class="kw">fn </span>signature() -&gt; String {
-        <span class="string">&quot;uint8&quot;</span>.into()
+        <span class="string">"uint8"</span>.into()
     }
 }
 
@@ -960,7 +962,7 @@
     <span class="comment">// v1 functions
 
     </span><span class="doccomment">/// Read the ongoing `era` number.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;read_current_era()&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"read_current_era()"</span>)]
     #[precompile::view]
     </span><span class="kw">fn </span>read_current_era(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult&lt;U256&gt; {
         <span class="comment">// TODO: benchmark this function so we can measure ref time &amp; PoV correctly
@@ -974,7 +976,7 @@
     }
 
     <span class="doccomment">/// Read the `unbonding period` or `unlocking period` expressed in the number of eras.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;read_unbonding_period()&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"read_unbonding_period()"</span>)]
     #[precompile::view]
     </span><span class="kw">fn </span>read_unbonding_period(<span class="kw">_</span>: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult&lt;U256&gt; {
         <span class="comment">// constant, no DB read
@@ -984,7 +986,7 @@
     <span class="doccomment">/// Read the total assigned reward pool for the given era.
     ///
     /// Total amount is sum of staker &amp; dApp rewards.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;read_era_reward(uint32)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"read_era_reward(uint32)"</span>)]
     #[precompile::view]
     </span><span class="kw">fn </span>read_era_reward(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle, era: u32) -&gt; EvmResult&lt;u128&gt; {
         <span class="comment">// TODO: benchmark this function so we can measure ref time &amp; PoV correctly
@@ -1007,11 +1009,11 @@
 
     <span class="doccomment">/// Read the total staked amount for the given era.
     ///
-    /// In case era is very far away in history, it&#39;s possible that the information is not available.
+    /// In case era is very far away in history, it's possible that the information is not available.
     /// In that case, zero is returned.
     ///
     /// This is safe to use for current era and the next one.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;read_era_staked(uint32)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"read_era_staked(uint32)"</span>)]
     #[precompile::view]
     </span><span class="kw">fn </span>read_era_staked(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle, era: u32) -&gt; EvmResult&lt;u128&gt; {
         <span class="comment">// TODO: benchmark this function so we can measure ref time &amp; PoV correctly
@@ -1024,7 +1026,7 @@
         <span class="comment">// There are few distinct scenenarios:
         // 1. Era is in the past so the value might exist.
         // 2. Era is current or the next one, in which case we definitely have that information.
-        // 3. Era is from the future (more than the next era), in which case we don&#39;t have that information.
+        // 3. Era is from the future (more than the next era), in which case we don't have that information.
         </span><span class="kw">if </span>era &lt; current_era {
             <span class="comment">// TODO: benchmark this function so we can measure ref time &amp; PoV correctly
             // Storage item: EraRewards:
@@ -1052,12 +1054,12 @@
                 <span class="prelude-val">Ok</span>(current_era_info.next_stake_amount.total())
             }
         } <span class="kw">else </span>{
-            <span class="prelude-val">Err</span>(RevertReason::custom(<span class="string">&quot;Era is in the future&quot;</span>).into())
+            <span class="prelude-val">Err</span>(RevertReason::custom(<span class="string">"Era is in the future"</span>).into())
         }
     }
 
     <span class="doccomment">/// Read the total staked amount by the given account.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;read_staked_amount(bytes)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"read_staked_amount(bytes)"</span>)]
     #[precompile::view]
     </span><span class="kw">fn </span>read_staked_amount(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
@@ -1076,9 +1078,9 @@
 
         <span class="kw">let </span>staker = <span class="self">Self</span>::parse_input_address(staker.into())<span class="question-mark">?</span>;
 
-        <span class="comment">// read the account&#39;s ledger
+        <span class="comment">// read the account's ledger
         </span><span class="kw">let </span>ledger = Ledger::&lt;R&gt;::get(<span class="kw-2">&amp;</span>staker);
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;ds-precompile&quot;</span>, <span class="string">&quot;read_staked_amount for account: {:?}, ledger: {:?}&quot;</span>, staker, ledger);
+        <span class="macro">log::trace!</span>(target: <span class="string">"ds-precompile"</span>, <span class="string">"read_staked_amount for account: {:?}, ledger: {:?}"</span>, staker, ledger);
 
         <span class="comment">// Make sure to check staked amount against the ongoing period (past period stakes are reset to zero).
         </span><span class="kw">let </span>current_period_number = ActiveProtocolState::&lt;R&gt;::get().period_number();
@@ -1087,7 +1089,7 @@
     }
 
     <span class="doccomment">/// Read the total staked amount by the given staker on the given contract.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;read_staked_amount_on_contract(address,bytes)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"read_staked_amount_on_contract(address,bytes)"</span>)]
     #[precompile::view]
     </span><span class="kw">fn </span>read_staked_amount_on_contract(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
@@ -1113,7 +1115,7 @@
 
         <span class="comment">// Get staking info for the staker/contract combination
         </span><span class="kw">let </span>staking_info = StakerInfo::&lt;R&gt;::get(<span class="kw-2">&amp;</span>staker, <span class="kw-2">&amp;</span>smart_contract).unwrap_or_default();
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;ds-precompile&quot;</span>, <span class="string">&quot;read_staked_amount_on_contract for account:{:?}, staking_info: {:?}&quot;</span>, staker, staking_info);
+        <span class="macro">log::trace!</span>(target: <span class="string">"ds-precompile"</span>, <span class="string">"read_staked_amount_on_contract for account:{:?}, staking_info: {:?}"</span>, staker, staking_info);
 
         <span class="comment">// Ensure that the staking info is checked against the current period (stakes from past periods are reset)
         </span><span class="kw">let </span>current_period_number = ActiveProtocolState::&lt;R&gt;::get().period_number();
@@ -1126,7 +1128,7 @@
     }
 
     <span class="doccomment">/// Read the total amount staked on the given contract right now.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;read_contract_stake(address)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"read_contract_stake(address)"</span>)]
     #[precompile::view]
     </span><span class="kw">fn </span>read_contract_stake(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
@@ -1166,17 +1168,17 @@
 
     <span class="doccomment">/// Register contract with the dapp-staking pallet
     /// Register is root origin only. This should always fail when called via evm precompile.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;register(address)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"register(address)"</span>)]
     </span><span class="kw">fn </span>register(<span class="kw">_</span>: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle, _address: Address) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// register is root-origin call. it should always fail when called via evm precompiles.
-        </span><span class="prelude-val">Err</span>(RevertReason::custom(<span class="string">&quot;register via evm precompile is not allowed&quot;</span>).into())
+        </span><span class="prelude-val">Err</span>(RevertReason::custom(<span class="string">"register via evm precompile is not allowed"</span>).into())
     }
 
     <span class="doccomment">/// Lock &amp; stake some amount on the specified contract.
     ///
     /// In case existing `stakeable` is sufficient to cover the given `amount`, only the `stake` operation is performed.
     /// Otherwise, best effort is done to lock the additional amount so `stakeable` amount can cover the given `amount`.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;bond_and_stake(address,uint128)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"bond_and_stake(address,uint128)"</span>)]
     </span><span class="kw">fn </span>bond_and_stake(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         contract_h160: Address,
@@ -1195,7 +1197,7 @@
 
         <span class="kw">let </span>smart_contract =
             &lt;R <span class="kw">as </span>pallet_dapp_staking_v3::Config&gt;::SmartContract::evm(contract_h160.into());
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;ds-precompile&quot;</span>, <span class="string">&quot;bond_and_stake {:?}, {:?}&quot;</span>, smart_contract, amount);
+        <span class="macro">log::trace!</span>(target: <span class="string">"ds-precompile"</span>, <span class="string">"bond_and_stake {:?}, {:?}"</span>, smart_contract, amount);
 
         <span class="comment">// Read total locked &amp; staked amounts
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
@@ -1205,7 +1207,7 @@
         <span class="comment">// Check if stakeable amount is enough to cover the given `amount`
         </span><span class="kw">let </span>stakeable_amount = ledger.stakeable_amount(protocol_state.period_number());
 
-        <span class="comment">// If it isn&#39;t, we need to first lock the additional amount.
+        <span class="comment">// If it isn't, we need to first lock the additional amount.
         </span><span class="kw">if </span>stakeable_amount &lt; amount {
             <span class="kw">let </span>delta = amount.saturating_sub(stakeable_amount);
 
@@ -1224,7 +1226,7 @@
     }
 
     <span class="doccomment">/// Start unbonding process and unstake balance from the contract.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;unbond_and_unstake(address,uint128)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"unbond_and_unstake(address,uint128)"</span>)]
     </span><span class="kw">fn </span>unbond_and_unstake(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         contract_h160: Address,
@@ -1244,7 +1246,7 @@
         <span class="kw">let </span>smart_contract =
             &lt;R <span class="kw">as </span>pallet_dapp_staking_v3::Config&gt;::SmartContract::evm(contract_h160.into());
         <span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;ds-precompile&quot;</span>, <span class="string">&quot;unbond_and_unstake {:?}, {:?}&quot;</span>, smart_contract, amount);
+        <span class="macro">log::trace!</span>(target: <span class="string">"ds-precompile"</span>, <span class="string">"unbond_and_unstake {:?}, {:?}"</span>, smart_contract, amount);
 
         <span class="comment">// Find out if there is something staked on the contract
         </span><span class="kw">let </span>protocol_state = ActiveProtocolState::&lt;R&gt;::get();
@@ -1267,7 +1269,7 @@
     }
 
     <span class="doccomment">/// Claim back the unbonded (or unlocked) funds.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;withdraw_unbonded()&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"withdraw_unbonded()"</span>)]
     </span><span class="kw">fn </span>withdraw_unbonded(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult&lt;bool&gt; {
         <span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>call = pallet_dapp_staking_v3::Call::&lt;R&gt;::claim_unlocked {};
@@ -1278,7 +1280,7 @@
     }
 
     <span class="doccomment">/// Claim dApp rewards for the given era
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;claim_dapp(address,uint128)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"claim_dapp(address,uint128)"</span>)]
     </span><span class="kw">fn </span>claim_dapp(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         contract_h160: Address,
@@ -1290,10 +1292,10 @@
         <span class="comment">// parse era
         </span><span class="kw">let </span>era = era
             .try_into()
-            .map_err::&lt;Revert, <span class="kw">_</span>&gt;(|<span class="kw">_</span>| RevertReason::value_is_too_large(<span class="string">&quot;era type&quot;</span>).into())
-            .in_field(<span class="string">&quot;era&quot;</span>)<span class="question-mark">?</span>;
+            .map_err::&lt;Revert, <span class="kw">_</span>&gt;(|<span class="kw">_</span>| RevertReason::value_is_too_large(<span class="string">"era type"</span>).into())
+            .in_field(<span class="string">"era"</span>)<span class="question-mark">?</span>;
 
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;ds-precompile&quot;</span>, <span class="string">&quot;claim_dapp {:?}, era {:?}&quot;</span>, smart_contract, era);
+        <span class="macro">log::trace!</span>(target: <span class="string">"ds-precompile"</span>, <span class="string">"claim_dapp {:?}, era {:?}"</span>, smart_contract, era);
 
         <span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>call = pallet_dapp_staking_v3::Call::&lt;R&gt;::claim_dapp_reward {
@@ -1309,7 +1311,7 @@
     <span class="doccomment">/// Claim staker rewards.
     ///
     /// Smart contract argument is legacy &amp; is ignored in the new implementation.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;claim_staker(address)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"claim_staker(address)"</span>)]
     </span><span class="kw">fn </span>claim_staker(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         _contract_h160: Address,
@@ -1325,20 +1327,20 @@
     <span class="doccomment">/// Set claim reward destination for the caller.
     ///
     /// This call has been deprecated by dApp staking v3.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;set_reward_destination(uint8)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"set_reward_destination(uint8)"</span>)]
     </span><span class="kw">fn </span>set_reward_destination(<span class="kw">_</span>: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle, _destination: u8) -&gt; EvmResult&lt;bool&gt; {
-        <span class="prelude-val">Err</span>(RevertReason::custom(<span class="string">&quot;Setting reward destination is no longer supported.&quot;</span>).into())
+        <span class="prelude-val">Err</span>(RevertReason::custom(<span class="string">"Setting reward destination is no longer supported."</span>).into())
     }
 
     <span class="doccomment">/// Withdraw staked funds from the unregistered contract
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;withdraw_from_unregistered(address)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"withdraw_from_unregistered(address)"</span>)]
     </span><span class="kw">fn </span>withdraw_from_unregistered(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         contract_h160: Address,
     ) -&gt; EvmResult&lt;bool&gt; {
         <span class="kw">let </span>smart_contract =
             &lt;R <span class="kw">as </span>pallet_dapp_staking_v3::Config&gt;::SmartContract::evm(contract_h160.into());
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;ds-precompile&quot;</span>, <span class="string">&quot;withdraw_from_unregistered {:?}&quot;</span>, smart_contract);
+        <span class="macro">log::trace!</span>(target: <span class="string">"ds-precompile"</span>, <span class="string">"withdraw_from_unregistered {:?}"</span>, smart_contract);
 
         <span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>call = pallet_dapp_staking_v3::Call::&lt;R&gt;::unstake_from_unregistered { smart_contract };
@@ -1351,7 +1353,7 @@
     <span class="doccomment">/// Transfers stake from one contract to another.
     /// This is a legacy functionality that is no longer supported via direct call to dApp staking v3.
     /// However, it can be achieved by chaining `unstake` and `stake` calls.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;nomination_transfer(address,uint128,address)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"nomination_transfer(address,uint128,address)"</span>)]
     </span><span class="kw">fn </span>nomination_transfer(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         origin_contract_h160: Address,
@@ -1370,13 +1372,13 @@
             &lt;R <span class="kw">as </span>pallet_dapp_staking_v3::Config&gt;::SmartContract::evm(origin_contract_h160.into());
         <span class="kw">let </span>target_smart_contract =
             &lt;R <span class="kw">as </span>pallet_dapp_staking_v3::Config&gt;::SmartContract::evm(target_contract_h160.into());
-        <span class="macro">log::trace!</span>(target: <span class="string">&quot;ds-precompile&quot;</span>, <span class="string">&quot;nomination_transfer {:?} {:?} {:?}&quot;</span>, origin_smart_contract, amount, target_smart_contract);
+        <span class="macro">log::trace!</span>(target: <span class="string">"ds-precompile"</span>, <span class="string">"nomination_transfer {:?} {:?} {:?}"</span>, origin_smart_contract, amount, target_smart_contract);
 
         <span class="comment">// Find out how much staker has staked on the origin contract
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
         <span class="kw">let </span>staker_info = StakerInfo::&lt;R&gt;::get(<span class="kw-2">&amp;</span>origin, <span class="kw-2">&amp;</span>origin_smart_contract).unwrap_or_default();
 
-        <span class="comment">// We don&#39;t care from which period the staked amount is, the logic takes care of the situation
+        <span class="comment">// We don't care from which period the staked amount is, the logic takes care of the situation
         // if value comes from the past period.
         </span><span class="kw">let </span>staked_amount = staker_info.total_staked_amount();
         <span class="kw">let </span>minimum_allowed_stake_amount =
@@ -1386,7 +1388,7 @@
         // everything will be unstaked. To keep in line with legacy `nomination_transfer` behavior, we should transfer
         // the entire amount from the origin to target contract.
         //
-        // In case value comes from the past period, we don&#39;t care, since the `unstake` call will fall apart.
+        // In case value comes from the past period, we don't care, since the `unstake` call will fall apart.
         </span><span class="kw">let </span>stake_amount = <span class="kw">if </span>staked_amount &gt; <span class="number">0
             </span>&amp;&amp; staked_amount.saturating_sub(amount) &lt; minimum_allowed_stake_amount
         {
@@ -1415,7 +1417,7 @@
     <span class="comment">// v2 functions
 
     </span><span class="doccomment">/// Read the current protocol state.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;protocol_state()&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"protocol_state()"</span>)]
     #[precompile::view]
     </span><span class="kw">fn </span>protocol_state(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult&lt;PrecompileProtocolState&gt; {
         <span class="comment">// TODO: benchmark this function so we can measure ref time &amp; PoV correctly
@@ -1433,7 +1435,7 @@
     }
 
     <span class="doccomment">/// Read the `unbonding period` or `unlocking period` expressed in the number of eras.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;unlocking_period()&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"unlocking_period()"</span>)]
     #[precompile::view]
     </span><span class="kw">fn </span>unlocking_period(<span class="kw">_</span>: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult&lt;U256&gt; {
         <span class="comment">// constant, no DB read
@@ -1441,7 +1443,7 @@
     }
 
     <span class="doccomment">/// Attempt to lock the given amount into the dApp staking protocol.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;lock(uint128)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"lock(uint128)"</span>)]
     </span><span class="kw">fn </span>lock(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle, amount: u128) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
@@ -1452,7 +1454,7 @@
     }
 
     <span class="doccomment">/// Attempt to unlock the given amount from the dApp staking protocol.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;unlock(uint128)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"unlock(uint128)"</span>)]
     </span><span class="kw">fn </span>unlock(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle, amount: u128) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
@@ -1463,7 +1465,7 @@
     }
 
     <span class="doccomment">/// Attempts to claim unlocking chunks which have undergone the entire unlocking period.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;claim_unlocked()&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"claim_unlocked()"</span>)]
     </span><span class="kw">fn </span>claim_unlocked(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
@@ -1474,7 +1476,7 @@
     }
 
     <span class="doccomment">/// Attempts to stake the given amount on the given smart contract.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;stake((uint8,bytes),uint128)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"stake((uint8,bytes),uint128)"</span>)]
     </span><span class="kw">fn </span>stake(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         smart_contract: SmartContractV2,
@@ -1494,7 +1496,7 @@
     }
 
     <span class="doccomment">/// Attempts to unstake the given amount from the given smart contract.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;unstake((uint8,bytes),uint128)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"unstake((uint8,bytes),uint128)"</span>)]
     </span><span class="kw">fn </span>unstake(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         smart_contract: SmartContractV2,
@@ -1514,7 +1516,7 @@
     }
 
     <span class="doccomment">/// Attempts to claim one or more pending staker rewards.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;claim_staker_rewards()&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"claim_staker_rewards()"</span>)]
     </span><span class="kw">fn </span>claim_staker_rewards(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
@@ -1525,7 +1527,7 @@
     }
 
     <span class="doccomment">/// Attempts to claim bonus reward for being a loyal staker of the given dApp.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;claim_bonus_reward((uint8,bytes))&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"claim_bonus_reward((uint8,bytes))"</span>)]
     </span><span class="kw">fn </span>claim_bonus_reward(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         smart_contract: SmartContractV2,
@@ -1542,7 +1544,7 @@
     }
 
     <span class="doccomment">/// Attempts to claim dApp reward for the given dApp in the given era.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;claim_bonus_reward((uint8,bytes),uint256)&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"claim_bonus_reward((uint8,bytes),uint256)"</span>)]
     </span><span class="kw">fn </span>claim_dapp_reward(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         smart_contract: SmartContractV2,
@@ -1551,8 +1553,8 @@
         <span class="kw">let </span>smart_contract = <span class="self">Self</span>::decode_smart_contract(smart_contract)<span class="question-mark">?</span>;
         <span class="kw">let </span>era = era
             .try_into()
-            .map_err::&lt;Revert, <span class="kw">_</span>&gt;(|<span class="kw">_</span>| RevertReason::value_is_too_large(<span class="string">&quot;Era number.&quot;</span>).into())
-            .in_field(<span class="string">&quot;era&quot;</span>)<span class="question-mark">?</span>;
+            .map_err::&lt;Revert, <span class="kw">_</span>&gt;(|<span class="kw">_</span>| RevertReason::value_is_too_large(<span class="string">"Era number."</span>).into())
+            .in_field(<span class="string">"era"</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
@@ -1566,7 +1568,7 @@
     }
 
     <span class="doccomment">/// Attempts to unstake everything from an unregistered contract.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;unstake_from_unregistered((uint8,bytes))&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"unstake_from_unregistered((uint8,bytes))"</span>)]
     </span><span class="kw">fn </span>unstake_from_unregistered(
         handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle,
         smart_contract: SmartContractV2,
@@ -1587,7 +1589,7 @@
     }
 
     <span class="doccomment">/// Attempts to cleanup expired entries for the staker.
-    </span><span class="attr">#[precompile::public(<span class="string">&quot;cleanup_expired_entries()&quot;</span>)]
+    </span><span class="attr">#[precompile::public(<span class="string">"cleanup_expired_entries()"</span>)]
     </span><span class="kw">fn </span>cleanup_expired_entries(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult&lt;bool&gt; {
         <span class="comment">// Prepare call &amp; dispatch it
         </span><span class="kw">let </span>origin = R::AddressMapping::into_account_id(handle.context().caller);
@@ -1612,7 +1614,7 @@
             SmartContractTypes::Evm =&gt; {
                 <span class="macro">ensure!</span>(
                     smart_contract.address.as_bytes().len() == <span class="number">20</span>,
-                    revert(<span class="string">&quot;Invalid address length for Astar EVM smart contract.&quot;</span>)
+                    revert(<span class="string">"Invalid address length for Astar EVM smart contract."</span>)
                 );
                 <span class="kw">let </span>h160_address = H160::from_slice(smart_contract.address.as_bytes());
                 &lt;R <span class="kw">as </span>pallet_dapp_staking_v3::Config&gt;::SmartContract::evm(h160_address)
@@ -1620,7 +1622,7 @@
             SmartContractTypes::Wasm =&gt; {
                 <span class="macro">ensure!</span>(
                     smart_contract.address.as_bytes().len() == <span class="number">32</span>,
-                    revert(<span class="string">&quot;Invalid address length for Astar WASM smart contract.&quot;</span>)
+                    revert(<span class="string">"Invalid address length for Astar WASM smart contract."</span>)
                 );
                 <span class="kw">let </span><span class="kw-2">mut </span>staker_bytes = [<span class="number">0_u8</span>; <span class="number">32</span>];
                 staker_bytes[..].clone_from_slice(<span class="kw-2">&amp;</span>smart_contract.address.as_bytes());
@@ -1651,7 +1653,7 @@
             }
             <span class="kw">_ </span>=&gt; {
                 <span class="comment">// Return err if account length is wrong
-                </span><span class="kw">return </span><span class="prelude-val">Err</span>(revert(<span class="string">&quot;Error while parsing staker&#39;s address&quot;</span>));
+                </span><span class="kw">return </span><span class="prelude-val">Err</span>(revert(<span class="string">"Error while parsing staker's address"</span>));
             }
         };
 
