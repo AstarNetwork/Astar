@@ -781,7 +781,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum 0.5.11",
- "oracle-benchmarks",
  "orml-oracle",
  "orml-xcm-support",
  "orml-xtokens",
@@ -7745,25 +7744,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
-name = "oracle-benchmarks"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "orml-oracle",
- "orml-traits",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.9.0)",
-]
-
-[[package]]
 name = "orchestra"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14264,7 +14244,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum 0.5.11",
- "oracle-benchmarks",
  "orml-oracle",
  "orml-xcm-support",
  "orml-xtokens",
@@ -14386,7 +14365,6 @@ dependencies = [
  "moonbeam-rpc-primitives-debug",
  "moonbeam-rpc-primitives-txpool",
  "num_enum 0.5.11",
- "oracle-benchmarks",
  "orml-oracle",
  "orml-xcm-support",
  "orml-xtokens",

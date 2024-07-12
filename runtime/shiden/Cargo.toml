@@ -122,9 +122,6 @@ pallet-price-aggregator = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 
-# Get rid of this after uplifting to high enough version of ORML so we get access to benchmark support for the pallet
-oracle-benchmarks = { workspace = true }
-
 dapp-staking-v3-runtime-api = { workspace = true }
 
 precompile-utils = { workspace = true }
@@ -168,7 +165,6 @@ std = [
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
-	"oracle-benchmarks/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
@@ -271,7 +267,6 @@ runtime-benchmarks = [
 	"cumulus-pallet-parachain-system/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
-	"oracle-benchmarks/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"pallet-chain-extension-assets/runtime-benchmarks",
 	"pallet-contracts/runtime-benchmarks",
@@ -337,7 +332,6 @@ try-runtime = [
 	"pallet-dynamic-evm-base-fee/try-runtime",
 	"pallet-evm/try-runtime",
 	"orml-xtokens/try-runtime",
-	"oracle-benchmarks/try-runtime",
 	"pallet-message-queue/try-runtime",
 	"astar-xcm-benchmarks?/try-runtime",
 	"pallet-chain-extension-assets/try-runtime",
