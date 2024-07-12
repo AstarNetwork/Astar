@@ -39,8 +39,8 @@ use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowUnpaidExecutionFrom, ConvertedConcreteId, EnsureXcmOrigin, FungibleAdapter,
-    FungiblesAdapter, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
+    AllowUnpaidExecutionFrom, ConvertedConcreteId, EnsureXcmOrigin, FrameTransactionalProcessor,
+    FungibleAdapter, FungiblesAdapter, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     UsingComponents, WeightInfoBounds,
@@ -274,7 +274,7 @@ impl xcm_executor::Config for XcmConfig {
     type CallDispatcher = WithOriginFilter<SafeCallFilter>;
     type SafeCallFilter = SafeCallFilter;
     type Aliasers = Nothing;
-    type TransactionalProcessor = ();
+    type TransactionalProcessor = FrameTransactionalProcessor;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.

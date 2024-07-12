@@ -39,11 +39,12 @@ use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
-    ConvertedConcreteId, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin, FungibleAdapter,
-    FungiblesAdapter, HashedDescription, IsConcrete, NoChecking, ParentAsSuperuser, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents, WeightInfoBounds, WithComputedOrigin,
+    ConvertedConcreteId, DescribeAllTerminal, DescribeFamily, EnsureXcmOrigin,
+    FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, HashedDescription, IsConcrete,
+    NoChecking, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WeightInfoBounds,
+    WithComputedOrigin,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -206,7 +207,7 @@ impl xcm_executor::Config for XcmConfig {
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
     type Aliasers = Nothing;
-    type TransactionalProcessor = ();
+    type TransactionalProcessor = FrameTransactionalProcessor;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
