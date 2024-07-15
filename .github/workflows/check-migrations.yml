@@ -2,7 +2,7 @@ name: Check Migrations
 
 on:
   push:
-    branches: ["master"]
+    branches: [ "master" ]
     tags:
       - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
@@ -18,9 +18,9 @@ jobs:
     strategy:
       matrix:
         runtime:
-          - astar
-          - shiden
-          - shibuya
+          - { name: astar, endpoint: ASTAR_RUNTIME_ENDPOINT }
+          - { name: shiden, endpoint: SHIDEN_RUNTIME_ENDPOINT }
+          - { name: shibuya, endpoint: SHIBUYA_RUNTIME_ENDPOINT }
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -47,13 +47,16 @@ jobs:
           echo "Flags: $EXTRA_FLAGS"
           echo "EXTRA_ARGS=$EXTRA_FLAGS" >> $GITHUB_ENV
 
-      - name: Build ${{ matrix.runtime }} runtime
-        run: cargo build --release --locked --package ${{ matrix.runtime }}-runtime --features try-runtime
+      - name: Build ${{ matrix.runtime.name }} runtime
+        run: cargo build --release --locked --package ${{ matrix.runtime.name }}-runtime --features try-runtime
 
-      - name: Run ${{ matrix.runtime }} runtime checks
+      - name: Run ${{ matrix.runtime.name }} runtime checks
+        timeout-minutes: 60
+        env:
+          ENDPOINT: ${{ secrets[matrix.runtime.endpoint] }}
         run: |
-          PACKAGE_NAME=${{ matrix.runtime }}-runtime
+          PACKAGE_NAME=${{ matrix.runtime.name }}-runtime
           RUNTIME_BLOB_NAME=$(echo $PACKAGE_NAME | sed 's/-/_/g').compact.compressed.wasm
           RUNTIME_BLOB_PATH=./target/release/wbuild/$PACKAGE_NAME/$RUNTIME_BLOB_NAME
 
-          npx @acala-network/chopsticks try-runtime -c ${{ matrix.runtime }} --import-storage .github/try-runtime-storage.yml --checks All --runtime $RUNTIME_BLOB_PATH ${{ env.EXTRA_ARGS }}
+          npx @acala-network/chopsticks try-runtime -c ${{ matrix.runtime.name }} -e ${{ env.ENDPOINT }} --import-storage .github/try-runtime-storage.yml --checks All --runtime $RUNTIME_BLOB_PATH ${{ env.EXTRA_ARGS }}
