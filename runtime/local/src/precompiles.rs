@@ -35,7 +35,6 @@ use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripe
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
 use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
 use pallet_evm_precompile_unified_accounts::UnifiedAccountsPrecompile;
-use pallet_evm_precompile_xvm::XvmPrecompile;
 use precompile_utils::precompile_set::*;
 use sp_std::fmt::Debug;
 
@@ -133,11 +132,7 @@ pub type LocalPrecompilesSetAt<R> = (
         (CallableByContract, CallableByPrecompile),
     >,
     // skip 20484 for xcm precompile
-    PrecompileAt<
-        AddressU64<20485>,
-        XvmPrecompile<R, pallet_xvm::Pallet<R>>,
-        (CallableByContract, CallableByPrecompile),
-    >,
+    // Skipping 20485 to make sure all network have consistent precompiles address
     PrecompileAt<
         AddressU64<20486>,
         UnifiedAccountsPrecompile<R, UnifiedAccounts>,

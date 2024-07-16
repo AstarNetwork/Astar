@@ -206,7 +206,6 @@ parameter_types! {
 
 impl pallet_ethereum_checked::Config for TestRuntime {
     type ReservedXcmpWeight = TxWeightLimit;
-    type XvmTxWeightLimit = TxWeightLimit;
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
     type AddressMapper = MockAddressMapper;

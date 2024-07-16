@@ -558,26 +558,16 @@ impl pallet_unified_accounts::Config for Runtime {
 }
 
 parameter_types! {
-    /// Equal to normal class dispatch weight limit.
-    pub XvmTxWeightLimit: Weight = NORMAL_DISPATCH_RATIO * Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND, u64::MAX);
     pub ReservedXcmpWeight: Weight = Weight::zero();
 }
 
 impl pallet_ethereum_checked::Config for Runtime {
     type ReservedXcmpWeight = ReservedXcmpWeight;
-    type XvmTxWeightLimit = XvmTxWeightLimit;
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
     type AddressMapper = UnifiedAccounts;
     type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
     type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_xvm::Config for Runtime {
-    type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
-    type AddressMapper = UnifiedAccounts;
-    type EthereumTransact = EthereumChecked;
-    type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -747,7 +737,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = LocalChainExtensions<Self, UnifiedAccounts, Xvm>;
+    type ChainExtension = LocalChainExtensions<Self, UnifiedAccounts>;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
@@ -1167,7 +1157,6 @@ construct_runtime!(
 
         Contracts: pallet_contracts = 70,
         Preimage: pallet_preimage = 84,
-        Xvm: pallet_xvm = 90,
 
         // Governance
         Sudo: pallet_sudo = 99,

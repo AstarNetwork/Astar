@@ -23,7 +23,6 @@ use mock::*;
 
 use astar_primitives::ethereum_checked::EthereumTxInput;
 use ethereum::{ReceiptV3 as Receipt, TransactionV2 as Transaction};
-pub use fp_rpc::TransactionStatus;
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::DispatchError;
 
@@ -73,18 +72,6 @@ fn transact_works() {
             _ => panic!("unexpected transaction type"),
         }
         assert_eq!(Nonce::<TestRuntime>::get(), U256::from(2));
-
-        let retrieve_tx = CheckedEthereumTx {
-            gas_limit: U256::from(1_000_000),
-            target: contract_address(),
-            value: U256::zero(),
-            // Calling `retrieve`
-            input: bounded_input("2e64cec1"),
-            maybe_access_list: None,
-        };
-        let (_, call_info) =
-            EthereumChecked::xvm_transact(ALICE_H160, retrieve_tx).expect("failed to retrieve");
-        assert_eq!(U256::from_big_endian(&(call_info.value)), 3.into());
     });
 }
 
@@ -134,14 +121,6 @@ fn no_hash_collision() {
                 RawOrigin::XcmEthereumTx(ALICE).into(),
                 store_tx.clone()
             ));
-            assert_ok!(<EthereumChecked as CheckedEthereumTransact>::xvm_transact(
-                BOB_H160,
-                store_tx.clone()
-            ));
-            assert_ok!(<EthereumChecked as CheckedEthereumTransact>::xvm_transact(
-                CHARLIE_H160,
-                store_tx.clone()
-            ));
         }
 
         let mut tx_hashes = pallet_ethereum::Pending::<TestRuntime>::get()
@@ -149,6 +128,6 @@ fn no_hash_collision() {
             .map(|(tx, _, _)| tx.hash())
             .collect::<Vec<_>>();
         tx_hashes.dedup();
-        assert_eq!(tx_hashes.len(), 15);
+        assert_eq!(tx_hashes.len(), 5);
     });
 }

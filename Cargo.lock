@@ -6508,7 +6508,6 @@ dependencies = [
  "pallet-balances",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-unified-accounts",
- "pallet-chain-extension-xvm",
  "pallet-collective",
  "pallet-collective-proxy",
  "pallet-contracts",
@@ -6531,7 +6530,6 @@ dependencies = [
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-evm-precompile-unified-accounts",
- "pallet-evm-precompile-xvm",
  "pallet-grandpa",
  "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
@@ -6548,7 +6546,6 @@ dependencies = [
  "pallet-unified-accounts",
  "pallet-utility",
  "pallet-vesting",
- "pallet-xvm",
  "parity-scale-codec",
  "precompile-utils",
  "scale-info",
@@ -8179,25 +8176,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-chain-extension-xvm"
-version = "0.1.1"
-dependencies = [
- "astar-primitives",
- "frame-support",
- "frame-system",
- "log",
- "num-traits",
- "pallet-contracts",
- "pallet-unified-accounts",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.9.0)",
- "xvm-chain-extension-types",
-]
-
-[[package]]
 name = "pallet-child-bounties"
 version = "27.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.9.0#feeec7b9030027847ff21da18bf0bb9df6b15dd9"
@@ -8849,32 +8827,6 @@ dependencies = [
  "staging-xcm",
  "staging-xcm-builder",
  "staging-xcm-executor",
-]
-
-[[package]]
-name = "pallet-evm-precompile-xvm"
-version = "0.1.1"
-dependencies = [
- "astar-primitives",
- "derive_more",
- "fp-evm",
- "frame-support",
- "frame-system",
- "hex",
- "hex-literal",
- "log",
- "num_enum 0.5.11",
- "pallet-balances",
- "pallet-evm",
- "pallet-timestamp",
- "parity-scale-codec",
- "precompile-utils",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.9.0)",
 ]
 
 [[package]]
@@ -9720,33 +9672,6 @@ dependencies = [
  "staging-xcm",
  "staging-xcm-builder",
  "staging-xcm-executor",
-]
-
-[[package]]
-name = "pallet-xvm"
-version = "0.2.2"
-dependencies = [
- "astar-primitives",
- "environmental",
- "fp-evm",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "log",
- "pallet-balances",
- "pallet-contracts",
- "pallet-contracts-uapi",
- "pallet-evm",
- "pallet-insecure-randomness-collective-flip",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.9.0)",
 ]
 
 [[package]]
@@ -14253,7 +14178,6 @@ dependencies = [
  "pallet-balances",
  "pallet-chain-extension-assets",
  "pallet-chain-extension-unified-accounts",
- "pallet-chain-extension-xvm",
  "pallet-collator-selection 3.3.2",
  "pallet-collective",
  "pallet-collective-proxy",
@@ -14279,7 +14203,6 @@ dependencies = [
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-evm-precompile-unified-accounts",
  "pallet-evm-precompile-xcm",
- "pallet-evm-precompile-xvm",
  "pallet-identity",
  "pallet-inflation",
  "pallet-insecure-randomness-collective-flip",
@@ -14302,7 +14225,6 @@ dependencies = [
  "pallet-xc-asset-config",
  "pallet-xcm",
  "pallet-xcm-benchmarks",
- "pallet-xvm",
  "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain-primitives",
@@ -17985,17 +17907,6 @@ dependencies = [
  "staging-xcm-builder",
  "staging-xcm-executor",
  "substrate-build-script-utils",
-]
-
-[[package]]
-name = "xvm-chain-extension-types"
-version = "0.1.0"
-dependencies = [
- "astar-primitives",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime",
- "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.9.0)",
 ]
 
 [[package]]

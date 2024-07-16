@@ -29,9 +29,6 @@ mod proxy;
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod assets;
 
-#[cfg(feature = "shibuya")]
-mod xvm;
-
 #[cfg(any(feature = "shibuya", feature = "shiden", feature = "astar"))]
 mod dispatch_precompile_filter;
 

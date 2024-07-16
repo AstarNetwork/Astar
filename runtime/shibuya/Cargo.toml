@@ -105,7 +105,6 @@ orml-xtokens = { workspace = true }
 astar-primitives = { workspace = true }
 astar-xcm-benchmarks = { workspace = true, optional = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
-pallet-chain-extension-xvm = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
@@ -117,14 +116,12 @@ pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-unified-accounts = { workspace = true }
 pallet-evm-precompile-xcm = { workspace = true }
-pallet-evm-precompile-xvm = { workspace = true }
 pallet-inflation = { workspace = true }
 pallet-price-aggregator = { workspace = true }
 pallet-unified-accounts = { workspace = true }
 pallet-xc-asset-config = { workspace = true }
 pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
-pallet-xvm = { workspace = true }
 
 dapp-staking-v3-runtime-api = { workspace = true }
 
@@ -183,7 +180,6 @@ std = [
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
-	"pallet-chain-extension-xvm/std",
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dynamic-evm-base-fee/std",
 	"pallet-ethereum/std",
@@ -202,7 +198,6 @@ std = [
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-xcm/std",
-	"pallet-evm-precompile-xvm/std",
 	"pallet-evm-precompile-unified-accounts/std",
 	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-dapp-staking-v3/std",
@@ -225,7 +220,6 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-xcm/std",
 	"pallet-xc-asset-config/std",
-	"pallet-xvm/std",
 	"pallet-unified-accounts/std",
 	"pallet-ethereum-checked/std",
 	"pallet-scheduler/std",
@@ -291,7 +285,6 @@ runtime-benchmarks = [
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-ethereum-checked/runtime-benchmarks",
 	"pallet-unified-accounts/runtime-benchmarks",
-	"pallet-xvm/runtime-benchmarks",
 	"orml-xtokens/runtime-benchmarks",
 	"astar-primitives/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
@@ -366,7 +359,6 @@ try-runtime = [
 	"cumulus-pallet-xcm/try-runtime",
 	"cumulus-pallet-xcmp-queue/try-runtime",
 	"parachain-info/try-runtime",
-	"pallet-xvm/try-runtime",
 	"pallet-preimage/try-runtime",
 	"pallet-dynamic-evm-base-fee/try-runtime",
 	"pallet-evm/try-runtime",

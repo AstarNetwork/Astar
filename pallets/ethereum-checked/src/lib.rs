@@ -21,7 +21,7 @@
 //! ## Overview
 //!
 //! A `pallet-ethereum like pallet that execute transactions from checked source,
-//! like XCM remote call, cross-VM call, etc. Only `Call` transactions are supported
+//! like XCM remote call. Only `Call` transactions are supported
 //! (no `Create`).
 //!
 //! The checked source guarantees that transactions are valid with prior checks, so these
@@ -35,10 +35,6 @@
 //!
 //! - `transact`: transact an Ethereum transaction. Similar to `pallet_ethereum::Transact`,
 //! but is only for XCM remote call.
-//!
-//! ### Implementation
-//!
-//! - Implements `CheckedEthereumTransact` trait.
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -64,10 +60,7 @@ use sp_runtime::traits::TrailingZeroInput;
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{marker::PhantomData, result::Result};
 
-use astar_primitives::{
-    ethereum_checked::{CheckedEthereumTransact, CheckedEthereumTx},
-    evm::UnifiedAddressMapper,
-};
+use astar_primitives::{ethereum_checked::CheckedEthereumTx, evm::UnifiedAddressMapper};
 
 pub use pallet::*;
 
@@ -116,8 +109,6 @@ impl<O: Into<Result<RawOrigin<AccountId>, O>> + From<RawOrigin<AccountId>>, Acco
 pub enum CheckedEthereumTxKind {
     /// The tx is from XCM remote call.
     Xcm,
-    /// The tx is from cross-VM call.
-    Xvm,
 }
 
 #[frame_support::pallet]
@@ -131,9 +122,6 @@ pub mod pallet {
     pub trait Config: frame_system::Config + pallet_evm::Config {
         /// Reserved Xcmp weight for block gas limit calculation.
         type ReservedXcmpWeight: Get<Weight>;
-
-        /// Xcm transaction weight limit, for block gas limit calculation.
-        type XvmTxWeightLimit: Get<Weight>;
 
         /// Invalid tx error.
         type InvalidEvmTransactionError: From<TransactionValidationError>;
@@ -270,7 +258,6 @@ impl<T: Config> Pallet<T> {
     fn block_gas_limit(tx_kind: &CheckedEthereumTxKind) -> u64 {
         let weight_limit = match tx_kind {
             CheckedEthereumTxKind::Xcm => T::ReservedXcmpWeight::get(),
-            CheckedEthereumTxKind::Xvm => T::XvmTxWeightLimit::get(),
         };
         T::GasWeightMapping::weight_to_gas(weight_limit)
     }
@@ -290,14 +277,5 @@ impl<T: Config> Pallet<T> {
             true,
         )
         .map(|(post_info, _)| post_info)
-    }
-}
-
-impl<T: Config> CheckedEthereumTransact for Pallet<T> {
-    fn xvm_transact(
-        source: H160,
-        checked_tx: CheckedEthereumTx,
-    ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo> {
-        Self::do_transact(source, checked_tx, CheckedEthereumTxKind::Xvm, false)
     }
 }

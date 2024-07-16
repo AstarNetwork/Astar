@@ -737,7 +737,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 5];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ShibuyaChainExtensions<Self, UnifiedAccounts, Xvm>;
+    type ChainExtension = ShibuyaChainExtensions<Self, UnifiedAccounts>;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
@@ -863,26 +863,13 @@ impl pallet_dynamic_evm_base_fee::Config for Runtime {
     type WeightInfo = pallet_dynamic_evm_base_fee::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    /// Equal to normal class dispatch weight limit.
-    pub XvmTxWeightLimit: Weight = NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT;
-}
-
 impl pallet_ethereum_checked::Config for Runtime {
     type ReservedXcmpWeight = ReservedXcmpWeight;
-    type XvmTxWeightLimit = XvmTxWeightLimit;
     type InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     type ValidatedTransaction = pallet_ethereum::ValidatedTransaction<Self>;
     type AddressMapper = UnifiedAccounts;
     type XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx<AccountId>;
     type WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight<Runtime>;
-}
-
-impl pallet_xvm::Config for Runtime {
-    type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
-    type AddressMapper = UnifiedAccounts;
-    type EthereumTransact = EthereumChecked;
-    type WeightInfo = pallet_xvm::weights::SubstrateWeight<Runtime>;
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -1560,8 +1547,6 @@ construct_runtime!(
 
         Preimage: pallet_preimage = 84,
 
-        Xvm: pallet_xvm = 90,
-
         // Governance
         Sudo: pallet_sudo = 99,
         CouncilMembership: pallet_membership::<Instance2> = 100,
@@ -1706,7 +1691,6 @@ mod benches {
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]
         [pallet_ethereum_checked, EthereumChecked]
-        [pallet_xvm, Xvm]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [pallet_unified_accounts, UnifiedAccounts]
         [xcm_benchmarks_generic, XcmGeneric]

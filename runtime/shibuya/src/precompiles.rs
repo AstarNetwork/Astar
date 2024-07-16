@@ -18,7 +18,7 @@
 
 //! The Astar Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-use crate::{RuntimeCall, UnifiedAccounts, Xvm};
+use crate::{RuntimeCall, UnifiedAccounts};
 use astar_primitives::precompiles::DispatchFilterValidate;
 use frame_support::traits::ConstU32;
 use frame_support::{parameter_types, traits::Contains};
@@ -36,7 +36,6 @@ use pallet_evm_precompile_sr25519::Sr25519Precompile;
 use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
 use pallet_evm_precompile_unified_accounts::UnifiedAccountsPrecompile;
 use pallet_evm_precompile_xcm::XcmPrecompile;
-use pallet_evm_precompile_xvm::XvmPrecompile;
 use precompile_utils::precompile_set::*;
 use sp_std::fmt::Debug;
 
@@ -143,11 +142,6 @@ pub type ShibuyaPrecompilesSetAt<R, C> = (
             CallableByContract,
             CallableByPrecompile,
         ),
-    >,
-    PrecompileAt<
-        AddressU64<20485>,
-        XvmPrecompile<R, Xvm>,
-        (CallableByContract, CallableByPrecompile),
     >,
     PrecompileAt<
         AddressU64<20486>,

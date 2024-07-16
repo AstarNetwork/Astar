@@ -16,20 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use super::{Runtime, UnifiedAccounts, Xvm};
+use super::{Runtime, UnifiedAccounts};
 
 /// Registered WASM contracts chain extensions.
 pub use pallet_chain_extension_assets::AssetsExtension;
 use pallet_contracts::chain_extension::RegisteredChainExtension;
 
 pub use pallet_chain_extension_unified_accounts::UnifiedAccountsExtension;
-pub use pallet_chain_extension_xvm::XvmExtension;
 
 // Following impls defines chain extension IDs.
-
-impl RegisteredChainExtension<Runtime> for XvmExtension<Runtime, Xvm, UnifiedAccounts> {
-    const ID: u16 = 01;
-}
 
 impl RegisteredChainExtension<Runtime> for AssetsExtension<Runtime> {
     const ID: u16 = 02;
@@ -39,8 +34,7 @@ impl RegisteredChainExtension<Runtime> for UnifiedAccountsExtension<Runtime, Uni
     const ID: u16 = 03;
 }
 
-pub type ShibuyaChainExtensions<Runtime, UnifiedAccounts, Xvm> = (
+pub type ShibuyaChainExtensions<Runtime, UnifiedAccounts> = (
     AssetsExtension<Runtime>,
     UnifiedAccountsExtension<Runtime, UnifiedAccounts>,
-    XvmExtension<Runtime, Xvm, UnifiedAccounts>,
 );
