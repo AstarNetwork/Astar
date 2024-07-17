@@ -566,7 +566,7 @@ where
     if is_authority {
         start_consensus(
             client.clone(),
-            backend.clone(),
+            backend,
             parachain_block_import,
             prometheus_registry.as_ref(),
             telemetry.map(|t| t.handle()),
@@ -659,6 +659,7 @@ where
     ) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>,
     SC: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        Arc<TFullBackend<Block>>,
         ParachainBlockImport<
             Block,
             FrontierBlockImport<
@@ -902,6 +903,7 @@ where
     if is_authority {
         start_consensus(
             client.clone(),
+            backend,
             parachain_block_import,
             prometheus_registry.as_ref(),
             telemetry.map(|t| t.handle()),
