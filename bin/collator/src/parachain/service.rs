@@ -20,21 +20,24 @@
 
 use astar_primitives::*;
 use cumulus_client_cli::CollatorOptions;
-use cumulus_client_consensus_aura::collators::basic as basic_aura;
+use cumulus_client_consensus_aura::collators::lookahead::{self as aura, Params as AuraParams};
 use cumulus_client_consensus_common::ParachainBlockImport;
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use cumulus_client_service::{
     prepare_node_config, start_relay_chain_tasks, BuildNetworkParams, DARecoveryProfile,
     StartRelayChainTasksParams,
 };
-use cumulus_primitives_core::ParaId;
+use cumulus_primitives_aura::AuraUnincludedSegmentApi;
+use cumulus_primitives_core::{
+    relay_chain::{CollatorPair, ValidationCode},
+    ParaId,
+};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::StreamExt;
-use polkadot_service::CollatorPair;
 use sc_client_api::BlockchainEvents;
 use sc_consensus::{import_queue::BasicQueue, ImportQueue};
 use sc_executor::NativeElseWasmExecutor;
@@ -351,6 +354,7 @@ where
     ) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>,
     SC: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        Arc<TFullBackend<Block>>,
         ParachainBlockImport<
             Block,
             FrontierBlockImport<
@@ -562,6 +566,7 @@ where
     if is_authority {
         start_consensus(
             client.clone(),
+            backend.clone(),
             parachain_block_import,
             prometheus_registry.as_ref(),
             telemetry.map(|t| t.handle()),
@@ -1066,6 +1071,7 @@ where
 /// Start collating with the `shell` runtime while waiting for an upgrade to an Aura compatible runtime.
 fn start_aura_consensus_fallback<RuntimeApi, Executor>(
     client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+    backend: Arc<TFullBackend<Block>>,
     parachain_block_import: ParachainBlockImport<
         Block,
         FrontierBlockImport<
@@ -1104,6 +1110,7 @@ where
         + sp_block_builder::BlockBuilder<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + AuraApi<Block, AuraId>
+        + AuraUnincludedSegmentApi<Block>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
         sc_client_api::StateBackend<BlakeTwo256>,
@@ -1171,9 +1178,6 @@ where
         }
 
         // Move to Aura consensus.
-        let slot_duration =
-            cumulus_client_consensus_aura::slot_duration(&*client).expect("aura is present; qed");
-
         let announce_block = {
             let sync_service = sync_oracle.clone();
             Arc::new(move |hash, data| sync_service.announce_block(hash, data))
@@ -1186,23 +1190,28 @@ where
             client.clone(),
         );
 
-        basic_aura::run::<Block, AuraPair, _, _, _, _, _, _, _>(basic_aura::Params {
+        aura::run::<Block, AuraPair, _, _, _, _, _, _, _, _, _>(AuraParams {
             create_inherent_data_providers: move |_, ()| async move { Ok(()) },
             block_import: parachain_block_import.clone(),
             para_client: client.clone(),
+            para_backend: backend,
             relay_client: relay_chain_interface.clone(),
+            code_hash_provider: move |block_hash| {
+                client
+                    .code_at(block_hash)
+                    .ok()
+                    .map(|c| ValidationCode::from(c).hash())
+            },
             sync_oracle: sync_oracle.clone(),
             keystore,
             collator_key,
             para_id,
             overseer_handle,
-            slot_duration,
             relay_chain_slot_duration: Duration::from_secs(6),
             proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
             collator_service,
-            // We got around 500ms for proposing
-            authoring_duration: Duration::from_millis(500),
-            collation_request_receiver: Some(request_stream),
+            authoring_duration: Duration::from_millis(2000),
+            reinitialize: true,
         })
         .await
     });
@@ -1215,6 +1224,7 @@ where
 
 fn start_aura_consensus<RuntimeApi, Executor>(
     client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+    backend: Arc<TFullBackend<Block>>,
     parachain_block_import: ParachainBlockImport<
         Block,
         FrontierBlockImport<
@@ -1253,6 +1263,7 @@ where
         + sp_block_builder::BlockBuilder<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + AuraApi<Block, AuraId>
+        + AuraUnincludedSegmentApi<Block>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>:
         sc_client_api::StateBackend<BlakeTwo256>,
@@ -1287,23 +1298,28 @@ where
         client.clone(),
     );
 
-    let fut = basic_aura::run::<Block, AuraPair, _, _, _, _, _, _, _>(basic_aura::Params {
+    let fut = aura::run::<Block, AuraPair, _, _, _, _, _, _, _, _, _>(AuraParams {
         create_inherent_data_providers: move |_, ()| async move { Ok(()) },
         block_import: parachain_block_import.clone(),
         para_client: client.clone(),
+        para_backend: backend,
         relay_client: relay_chain_interface.clone(),
+        code_hash_provider: move |block_hash| {
+            client
+                .code_at(block_hash)
+                .ok()
+                .map(|c| ValidationCode::from(c).hash())
+        },
         sync_oracle: sync_oracle.clone(),
         keystore,
         collator_key,
         para_id,
         overseer_handle,
-        slot_duration: cumulus_client_consensus_aura::slot_duration(&*client)?,
         relay_chain_slot_duration: Duration::from_secs(6),
         proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
         collator_service,
-        // We got around 500ms for proposing
-        authoring_duration: Duration::from_millis(500),
-        collation_request_receiver: None,
+        authoring_duration: Duration::from_millis(2000),
+        reinitialize: false,
     });
 
     task_manager
