@@ -1149,7 +1149,7 @@ construct_runtime!(
 
         Aura: pallet_aura = 43,
         Grandpa: pallet_grandpa = 44,
-        
+
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
         DynamicEvmBaseFee: pallet_dynamic_evm_base_fee = 62,
@@ -1157,7 +1157,7 @@ construct_runtime!(
         UnifiedAccounts: pallet_unified_accounts = 65,
 
         Contracts: pallet_contracts = 70,
-        
+
         Preimage: pallet_preimage = 84,
 
         // skip 90 - for runtimes consistency (pallet_xvm previously)
