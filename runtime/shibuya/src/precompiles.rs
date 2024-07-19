@@ -143,6 +143,7 @@ pub type ShibuyaPrecompilesSetAt<R, C> = (
             CallableByPrecompile,
         ),
     >,
+    // Skipping 20485 to make sure all network have consistent precompiles address
     PrecompileAt<
         AddressU64<20486>,
         UnifiedAccountsPrecompile<R, UnifiedAccounts>,

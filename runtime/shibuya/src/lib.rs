@@ -1547,6 +1547,8 @@ construct_runtime!(
 
         Preimage: pallet_preimage = 84,
 
+        // skip 90 - pallet_xvm previously
+
         // Governance
         Sudo: pallet_sudo = 99,
         CouncilMembership: pallet_membership::<Instance2> = 100,
