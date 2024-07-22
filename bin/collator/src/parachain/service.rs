@@ -950,19 +950,15 @@ where
         sc_client_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-    let client2 = client.clone();
+    let client_for_aura = client.clone();
 
     let aura_verifier = move || {
-        let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
+        let slot_duration =
+            cumulus_client_consensus_aura::slot_duration(&*client_for_aura).unwrap();
 
-        Box::new(cumulus_client_consensus_aura::build_verifier::<
-            AuraPair,
-            _,
-            _,
-            _,
-        >(
-            cumulus_client_consensus_aura::BuildVerifierParams {
-                client: client2.clone(),
+        Box::new(sc_consensus_aura::build_verifier::<AuraPair, _, _, _>(
+            sc_consensus_aura::BuildVerifierParams {
+                client: client_for_aura.clone(),
                 create_inherent_data_providers: move |_, _| async move {
                     let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -975,6 +971,8 @@ where
                     Ok((slot, timestamp))
                 },
                 telemetry: telemetry_handle,
+                check_for_equivocation: sc_consensus_aura::CheckForEquivocation::Yes,
+                compatibility_mode: sc_consensus_aura::CompatibilityMode::None,
             },
         )) as Box<_>
     };
