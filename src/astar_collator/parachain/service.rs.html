@@ -1376,13 +1376,6 @@
 <a href="#1374" id="1374">1374</a>
 <a href="#1375" id="1375">1375</a>
 <a href="#1376" id="1376">1376</a>
-<a href="#1377" id="1377">1377</a>
-<a href="#1378" id="1378">1378</a>
-<a href="#1379" id="1379">1379</a>
-<a href="#1380" id="1380">1380</a>
-<a href="#1381" id="1381">1381</a>
-<a href="#1382" id="1382">1382</a>
-<a href="#1383" id="1383">1383</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1583,7 +1576,7 @@
         <span class="kw-2">&amp;</span>Configuration,
         <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
         <span class="kw-2">&amp;</span>TaskManager,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::DefaultImportQueue&lt;Block&gt;, sc_service::Error&gt;,
+    ) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;,
 {
     <span class="kw">let </span>telemetry = config
         .telemetry_endpoints
@@ -1636,7 +1629,7 @@
         config,
         telemetry.as_ref().map(|telemetry| telemetry.handle()),
         <span class="kw-2">&amp;</span>task_manager,
-    )<span class="question-mark">?</span>;
+    );
 
     <span class="kw">let </span>params = PartialComponents {
         backend,
@@ -1733,7 +1726,7 @@
         <span class="kw-2">&amp;</span>Configuration,
         <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
         <span class="kw-2">&amp;</span>TaskManager,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::DefaultImportQueue&lt;Block&gt;, sc_service::Error&gt;,
+    ) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;,
     SC: FnOnce(
         Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
         ParachainBlockImport&lt;
@@ -2036,7 +2029,7 @@
         <span class="kw-2">&amp;</span>Configuration,
         <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
         <span class="kw-2">&amp;</span>TaskManager,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::DefaultImportQueue&lt;Block&gt;, sc_service::Error&gt;,
+    ) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;,
     SC: FnOnce(
         Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
         ParachainBlockImport&lt;
@@ -2317,7 +2310,7 @@
     config: <span class="kw-2">&amp;</span>Configuration,
     telemetry_handle: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
     task_manager: <span class="kw-2">&amp;</span>TaskManager,
-) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::DefaultImportQueue&lt;Block&gt;, sc_service::Error&gt;
+) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;
 <span class="kw">where
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
@@ -2335,19 +2328,15 @@
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
     Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
-    <span class="kw">let </span>client2 = client.clone();
+    <span class="kw">let </span>client_for_aura = client.clone();
 
     <span class="kw">let </span>aura_verifier = <span class="kw">move </span>|| {
-        <span class="kw">let </span>slot_duration = cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client2).unwrap();
+        <span class="kw">let </span>slot_duration =
+            cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client_for_aura).unwrap();
 
-        Box::new(cumulus_client_consensus_aura::build_verifier::&lt;
-            AuraPair,
-            <span class="kw">_</span>,
-            <span class="kw">_</span>,
-            <span class="kw">_</span>,
-        &gt;(
-            cumulus_client_consensus_aura::BuildVerifierParams {
-                client: client2.clone(),
+        Box::new(sc_consensus_aura::build_verifier::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+            sc_consensus_aura::BuildVerifierParams {
+                client: client_for_aura.clone(),
                 create_inherent_data_providers: <span class="kw">move </span>|<span class="kw">_</span>, <span class="kw">_</span>| <span class="kw">async move </span>{
                     <span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -2360,6 +2349,8 @@
                     <span class="prelude-val">Ok</span>((slot, timestamp))
                 },
                 telemetry: telemetry_handle,
+                check_for_equivocation: sc_consensus_aura::CheckForEquivocation::Yes,
+                compatibility_mode: sc_consensus_aura::CompatibilityMode::None,
             },
         )) <span class="kw">as </span>Box&lt;<span class="kw">_</span>&gt;
     };
@@ -2377,13 +2368,7 @@
     <span class="kw">let </span>registry = config.prometheus_registry();
     <span class="kw">let </span>spawner = task_manager.spawn_essential_handle();
 
-    <span class="prelude-val">Ok</span>(BasicQueue::new(
-        verifier,
-        Box::new(block_import),
-        <span class="prelude-val">None</span>,
-        <span class="kw-2">&amp;</span>spawner,
-        registry,
-    ))
+    BasicQueue::new(verifier, Box::new(block_import), <span class="prelude-val">None</span>, <span class="kw-2">&amp;</span>spawner, registry)
 }
 
 <span class="doccomment">/// Build aura only import queue.
@@ -2401,7 +2386,7 @@
     config: <span class="kw-2">&amp;</span>Configuration,
     telemetry_handle: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
     task_manager: <span class="kw-2">&amp;</span>TaskManager,
-) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::DefaultImportQueue&lt;Block&gt;, sc_service::Error&gt;
+) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;
 <span class="kw">where
     </span>RuntimeApi: ConstructRuntimeApi&lt;Block, TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;
         + Send
@@ -2419,19 +2404,19 @@
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
     Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
-    <span class="kw">let </span>slot_duration = cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
+    <span class="kw">let </span>slot_duration = cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)
+        .expect(<span class="string">"AuraApi slot_duration failed!"</span>);
 
-    cumulus_client_consensus_aura::import_queue::&lt;
+    cumulus_client_consensus_aura::equivocation_import_queue::fully_verifying_import_queue::&lt;
         AuraPair,
         <span class="kw">_</span>,
         <span class="kw">_</span>,
         <span class="kw">_</span>,
         <span class="kw">_</span>,
-        <span class="kw">_</span>,
-    &gt;(cumulus_client_consensus_aura::ImportQueueParams {
-        block_import,
+    &gt;(
         client,
-        create_inherent_data_providers: <span class="kw">move </span>|<span class="kw">_</span>, <span class="kw">_</span>| <span class="kw">async move </span>{
+        block_import,
+        <span class="kw">move </span>|<span class="kw">_</span>, <span class="kw">_</span>| <span class="kw">async move </span>{
             <span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
             <span class="kw">let </span>slot =
@@ -2442,10 +2427,11 @@
 
             <span class="prelude-val">Ok</span>((slot, timestamp))
         },
-        registry: config.prometheus_registry(),
-        spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
-        telemetry: telemetry_handle,
-    }).map_err(Into::into)
+        slot_duration,
+        <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
+        config.prometheus_registry(),
+        telemetry_handle,
+    )
 }
 
 <span class="doccomment">/// Start collating with the `shell` runtime while waiting for an upgrade to an Aura compatible runtime.
