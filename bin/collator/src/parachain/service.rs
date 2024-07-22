@@ -198,7 +198,7 @@ where
         &Configuration,
         Option<TelemetryHandle>,
         &TaskManager,
-    ) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>,
+    ) -> sc_consensus::DefaultImportQueue<Block>,
 {
     let telemetry = config
         .telemetry_endpoints
@@ -251,7 +251,7 @@ where
         config,
         telemetry.as_ref().map(|telemetry| telemetry.handle()),
         &task_manager,
-    )?;
+    );
 
     let params = PartialComponents {
         backend,
@@ -348,7 +348,7 @@ where
         &Configuration,
         Option<TelemetryHandle>,
         &TaskManager,
-    ) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>,
+    ) -> sc_consensus::DefaultImportQueue<Block>,
     SC: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         ParachainBlockImport<
@@ -651,7 +651,7 @@ where
         &Configuration,
         Option<TelemetryHandle>,
         &TaskManager,
-    ) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>,
+    ) -> sc_consensus::DefaultImportQueue<Block>,
     SC: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         ParachainBlockImport<
@@ -932,7 +932,7 @@ pub fn build_import_queue_fallback<RuntimeApi, Executor>(
     config: &Configuration,
     telemetry_handle: Option<TelemetryHandle>,
     task_manager: &TaskManager,
-) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>
+) -> sc_consensus::DefaultImportQueue<Block>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -950,19 +950,15 @@ where
         sc_client_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-    let client2 = client.clone();
+    let client_for_aura = client.clone();
 
     let aura_verifier = move || {
-        let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
+        let slot_duration =
+            cumulus_client_consensus_aura::slot_duration(&*client_for_aura).unwrap();
 
-        Box::new(cumulus_client_consensus_aura::build_verifier::<
-            AuraPair,
-            _,
-            _,
-            _,
-        >(
-            cumulus_client_consensus_aura::BuildVerifierParams {
-                client: client2.clone(),
+        Box::new(sc_consensus_aura::build_verifier::<AuraPair, _, _, _>(
+            sc_consensus_aura::BuildVerifierParams {
+                client: client_for_aura.clone(),
                 create_inherent_data_providers: move |_, _| async move {
                     let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -975,6 +971,8 @@ where
                     Ok((slot, timestamp))
                 },
                 telemetry: telemetry_handle,
+                check_for_equivocation: sc_consensus_aura::CheckForEquivocation::Yes,
+                compatibility_mode: sc_consensus_aura::CompatibilityMode::None,
             },
         )) as Box<_>
     };
@@ -992,13 +990,7 @@ where
     let registry = config.prometheus_registry();
     let spawner = task_manager.spawn_essential_handle();
 
-    Ok(BasicQueue::new(
-        verifier,
-        Box::new(block_import),
-        None,
-        &spawner,
-        registry,
-    ))
+    BasicQueue::new(verifier, Box::new(block_import), None, &spawner, registry)
 }
 
 /// Build aura only import queue.
@@ -1016,7 +1008,7 @@ pub fn build_import_queue<RuntimeApi, Executor>(
     config: &Configuration,
     telemetry_handle: Option<TelemetryHandle>,
     task_manager: &TaskManager,
-) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error>
+) -> sc_consensus::DefaultImportQueue<Block>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -1034,19 +1026,19 @@ where
         sc_client_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-    let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+    let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)
+        .expect("AuraApi slot_duration failed!");
 
-    cumulus_client_consensus_aura::import_queue::<
+    cumulus_client_consensus_aura::equivocation_import_queue::fully_verifying_import_queue::<
         AuraPair,
         _,
         _,
         _,
         _,
-        _,
-    >(cumulus_client_consensus_aura::ImportQueueParams {
-        block_import,
+    >(
         client,
-        create_inherent_data_providers: move |_, _| async move {
+        block_import,
+        move |_, _| async move {
             let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
             let slot =
@@ -1057,10 +1049,11 @@ where
 
             Ok((slot, timestamp))
         },
-        registry: config.prometheus_registry(),
-        spawner: &task_manager.spawn_essential_handle(),
-        telemetry: telemetry_handle,
-    }).map_err(Into::into)
+        slot_duration,
+        &task_manager.spawn_essential_handle(),
+        config.prometheus_registry(),
+        telemetry_handle,
+    )
 }
 
 /// Start collating with the `shell` runtime while waiting for an upgrade to an Aura compatible runtime.
