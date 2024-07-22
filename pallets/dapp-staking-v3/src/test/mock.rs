@@ -341,7 +341,6 @@ impl ExtBuilder {
                 <Test as Config>::TierSlots,
                 <Test as Config>::BaseNativeCurrencyPrice,
             > {
-                number_of_slots: 40,
                 slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_thresholds: tier_params.tier_thresholds.clone(),

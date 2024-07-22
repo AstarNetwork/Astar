@@ -2407,7 +2407,7 @@ fn tier_config_recalculation_works() {
 
         let new_tier_config = TierConfig::<Test>::get();
         assert!(
-            new_tier_config.number_of_slots > init_tier_config.number_of_slots,
+            new_tier_config.total_number_of_slots() > init_tier_config.total_number_of_slots(),
             "Price has increased, therefore number of slots must increase."
         );
         assert_eq!(
@@ -2427,7 +2427,7 @@ fn tier_config_recalculation_works() {
 
         let new_tier_config = TierConfig::<Test>::get();
         assert!(
-            new_tier_config.number_of_slots < init_tier_config.number_of_slots,
+            new_tier_config.total_number_of_slots() < init_tier_config.total_number_of_slots(),
             "Price has decreased, therefore number of slots must decrease."
         );
         assert_eq!(
@@ -2446,7 +2446,6 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
     ExtBuilder::build().execute_with(|| {
         // Tier config is specially adapted for this test.
         TierConfig::<Test>::mutate(|config| {
-            config.number_of_slots = 40;
             config.slots_per_tier = BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap();
         });
 
@@ -2590,8 +2589,6 @@ fn get_dapp_tier_assignment_and_rewards_zero_slots_per_tier_works() {
 
         // Ensure that first tier has 0 slots.
         TierConfig::<Test>::mutate(|config| {
-            let slots_in_first_tier = config.slots_per_tier[0];
-            config.number_of_slots = config.number_of_slots - slots_in_first_tier;
             config.slots_per_tier[0] = 0;
         });
 
@@ -3101,7 +3098,7 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             base_number_of_slots,
             "Base number of slots is expected for base native currency price."
         );
@@ -3115,11 +3112,11 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert!(
-            TierConfig::<Test>::get().number_of_slots > base_number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots() > base_number_of_slots,
             "Price has increased, therefore number of slots must increase."
         );
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             <Test as Config>::TierSlots::number_of_slots(higher_price),
         );
 
@@ -3140,7 +3137,7 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             base_number_of_slots,
             "Base number of slots is expected for base native currency price."
         );
@@ -3158,11 +3155,11 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert!(
-            TierConfig::<Test>::get().number_of_slots < base_number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots() < base_number_of_slots,
             "Price has decreased, therefore number of slots must decrease."
         );
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             <Test as Config>::TierSlots::number_of_slots(lower_price),
         );
 
@@ -3173,7 +3170,7 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             base_number_of_slots,
             "Base number of slots is expected for base native currency price."
         );

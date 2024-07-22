@@ -2948,7 +2948,6 @@ fn tier_configuration_basic_tests() {
         pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
     }
     let init_config = TiersConfiguration::<TiersNum, StandardTierSlots, BaseNativeCurrencyPrice> {
-        number_of_slots: 100,
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),
         tier_thresholds: params.tier_thresholds.clone(),

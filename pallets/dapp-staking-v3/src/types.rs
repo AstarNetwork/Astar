@@ -1585,9 +1585,6 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
 )]
 #[scale_info(skip_type_params(NT, T, P))]
 pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> {
-    /// Total number of slots.
-    #[codec(compact)]
-    pub number_of_slots: u16,
     /// Number of slots per tier.
     /// First entry refers to the first tier, and so on.
     pub slots_per_tier: BoundedVec<u16, NT>,
@@ -1606,7 +1603,6 @@ pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>>
 impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> Default for TiersConfiguration<NT, T, P> {
     fn default() -> Self {
         Self {
-            number_of_slots: 0,
             slots_per_tier: BoundedVec::default(),
             reward_portion: BoundedVec::default(),
             tier_thresholds: BoundedVec::default(),
@@ -1628,8 +1624,11 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
             // All vector length must match number of tiers.
             && number_of_tiers == self.reward_portion.len()
             && number_of_tiers == self.tier_thresholds.len()
-            // Total number of slots must match the sum of slots per tier.
-            && self.slots_per_tier.iter().fold(0, |acc, x| acc + x) == self.number_of_slots
+    }
+
+    /// Calculate the total number of slots.
+    pub fn total_number_of_slots(&self) -> u16 {
+        self.slots_per_tier.iter().copied().sum()
     }
 
     /// Calculate new `TiersConfiguration`, based on the old settings, current native currency price and tier configuration.
@@ -1723,7 +1722,6 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         };
 
         Self {
-            number_of_slots: new_number_of_slots,
             slots_per_tier: new_slots_per_tier,
             reward_portion: params.reward_portion.clone(),
             tier_thresholds: new_tier_thresholds,

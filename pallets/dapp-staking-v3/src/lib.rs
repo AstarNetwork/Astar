@@ -554,13 +554,8 @@ pub mod pallet {
                 "Invalid tier parameters values provided."
             );
 
-            // Prepare tier configuration and verify its correctness
-            let number_of_slots = self.slots_per_tier.iter().fold(0_u16, |acc, &slots| {
-                acc.checked_add(slots).expect("Overflow")
-            });
             let tier_config =
                 TiersConfiguration::<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice> {
-                    number_of_slots,
                     slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
                         self.slots_per_tier.clone(),
                     )

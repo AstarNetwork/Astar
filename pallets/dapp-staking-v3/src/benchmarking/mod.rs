@@ -704,7 +704,6 @@ mod benchmarks {
         // This is a hacky part to ensure we accommodate max number of contracts.
         TierConfig::<T>::mutate(|config| {
             let max_number_of_contracts: u16 = T::MaxNumberOfContracts::get().try_into().unwrap();
-            config.number_of_slots = max_number_of_contracts;
             config.slots_per_tier[0] = max_number_of_contracts;
             config.slots_per_tier[1..].iter_mut().for_each(|x| *x = 0);
             config.tier_thresholds[0] = TierThreshold::FixedTvlAmount { amount: 1 };
