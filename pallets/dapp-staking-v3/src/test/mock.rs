@@ -343,7 +343,9 @@ impl ExtBuilder {
             > {
                 slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),
-                tier_thresholds: tier_params.tier_thresholds.clone(),
+                tier_threshold_values: extract_threshold_values(
+                    tier_params.tier_thresholds.clone(),
+                ),
                 _phantom: Default::default(),
             }
             .calculate_new(NATIVE_PRICE.with(|v| v.borrow().clone()), &tier_params);

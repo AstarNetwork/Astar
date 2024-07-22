@@ -2950,7 +2950,7 @@ fn tier_configuration_basic_tests() {
     let init_config = TiersConfiguration::<TiersNum, StandardTierSlots, BaseNativeCurrencyPrice> {
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),
-        tier_thresholds: params.tier_thresholds.clone(),
+        tier_threshold_values: extract_threshold_values(params.tier_thresholds.clone()),
         _phantom: Default::default(),
     };
     assert!(init_config.is_valid(), "Init config must be valid!");

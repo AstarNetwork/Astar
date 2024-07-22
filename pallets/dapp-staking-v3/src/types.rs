@@ -1572,6 +1572,17 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
     }
 }
 
+pub fn extract_threshold_values<NT: Get<u32>>(
+    thresholds: BoundedVec<TierThreshold, NT>,
+) -> BoundedVec<Balance, NT> {
+    thresholds
+        .into_iter()
+        .map(|t| t.threshold())
+        .collect::<Vec<Balance>>()
+        .try_into()
+        .expect("Invalid number of tier thresholds provided.")
+}
+
 /// Configuration of dApp tiers.
 #[derive(
     Encode,
@@ -1594,7 +1605,7 @@ pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>>
     pub reward_portion: BoundedVec<Permill, NT>,
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
-    pub tier_thresholds: BoundedVec<TierThreshold, NT>,
+    pub tier_threshold_values: BoundedVec<Balance, NT>,
     /// Phantom data to keep track of the tier slots function.
     #[codec(skip)]
     pub(crate) _phantom: PhantomData<(T, P)>,
@@ -1605,7 +1616,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> Default for TiersConfigu
         Self {
             slots_per_tier: BoundedVec::default(),
             reward_portion: BoundedVec::default(),
-            tier_thresholds: BoundedVec::default(),
+            tier_threshold_values: BoundedVec::default(),
             _phantom: Default::default(),
         }
     }
@@ -1623,7 +1634,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         number_of_tiers == self.slots_per_tier.len()
             // All vector length must match number of tiers.
             && number_of_tiers == self.reward_portion.len()
-            && number_of_tiers == self.tier_thresholds.len()
+            && number_of_tiers == self.tier_threshold_values.len()
     }
 
     /// Calculate the total number of slots.
@@ -1724,7 +1735,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         Self {
             slots_per_tier: new_slots_per_tier,
             reward_portion: params.reward_portion.clone(),
-            tier_thresholds: new_tier_thresholds,
+            tier_threshold_values: extract_threshold_values(new_tier_thresholds),
             _phantom: Default::default(),
         }
     }

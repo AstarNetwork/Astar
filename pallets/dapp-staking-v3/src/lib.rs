@@ -561,7 +561,9 @@ pub mod pallet {
                     )
                     .expect("Invalid number of slots per tier entries provided."),
                     reward_portion: tier_params.reward_portion.clone(),
-                    tier_thresholds: tier_params.tier_thresholds.clone(),
+                    tier_threshold_values: extract_threshold_values(
+                        tier_params.tier_thresholds.clone(),
+                    ),
                     _phantom: Default::default(),
                 };
             assert!(
@@ -1712,25 +1714,23 @@ pub mod pallet {
             let mut upper_bound = Balance::zero();
             let mut rank_rewards = Vec::new();
 
-            for (tier_id, (tier_capacity, tier_threshold)) in tier_config
+            for (tier_id, (tier_capacity, lower_bound)) in tier_config
                 .slots_per_tier
                 .iter()
-                .zip(tier_config.tier_thresholds.iter())
+                .zip(tier_config.tier_threshold_values.iter())
                 .enumerate()
             {
-                let lower_bound = tier_threshold.threshold();
-
                 // Iterate over dApps until one of two conditions has been met:
                 // 1. Tier has no more capacity
                 // 2. dApp doesn't satisfy the tier threshold (since they're sorted, none of the following dApps will satisfy the condition either)
                 for (dapp_id, staked_amount) in dapp_stakes
                     .iter()
                     .skip(dapp_tiers.len())
-                    .take_while(|(_, amount)| tier_threshold.is_satisfied(*amount))
+                    .take_while(|(_, amount)| amount.ge(lower_bound))
                     .take(*tier_capacity as usize)
                 {
                     let rank = if T::RankingEnabled::get() {
-                        RankedTier::find_rank(lower_bound, upper_bound, *staked_amount)
+                        RankedTier::find_rank(*lower_bound, upper_bound, *staked_amount)
                     } else {
                         0
                     };
@@ -1760,7 +1760,7 @@ pub mod pallet {
 
                 rank_rewards.push(reward_per_rank);
                 dapp_tiers.append(&mut tier_slots);
-                upper_bound = lower_bound; // current threshold becomes upper bound for next tier
+                upper_bound = *lower_bound; // current threshold becomes upper bound for next tier
             }
 
             // 5.

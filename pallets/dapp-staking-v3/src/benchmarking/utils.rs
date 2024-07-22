@@ -201,7 +201,7 @@ pub(super) fn init_tier_settings<T: Config>() {
         TiersConfiguration::<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice> {
             slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
             reward_portion: tier_params.reward_portion.clone(),
-            tier_thresholds: tier_params.tier_thresholds.clone(),
+            tier_threshold_values: extract_threshold_values(tier_params.tier_thresholds.clone()),
             _phantom: Default::default(),
         };
 

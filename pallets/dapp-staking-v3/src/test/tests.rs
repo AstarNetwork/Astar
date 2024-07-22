@@ -20,7 +20,8 @@ use crate::test::{mock::*, testing_utils::*};
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
     EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId,
-    PeriodNumber, Permill, Safeguard, StakerInfo, Subperiod, TierConfig, TierThreshold,
+    PeriodNumber, Permill, Safeguard, StakerInfo, StaticTierParams, Subperiod, TierConfig,
+    TierThreshold,
 };
 
 use frame_support::{
@@ -2480,7 +2481,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             lock_and_stake(
                 dapp_index,
                 &smart_contracts[dapp_index],
-                tier_config.tier_thresholds[0].threshold() + x + 1,
+                tier_config.tier_threshold_values[0] + x + 1,
             );
             dapp_index += 1;
         }
@@ -2488,7 +2489,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         lock_and_stake(
             dapp_index,
             &smart_contracts[dapp_index],
-            tier_config.tier_thresholds[0].threshold(),
+            tier_config.tier_threshold_values[0],
         );
         dapp_index += 1;
 
@@ -2496,7 +2497,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         lock_and_stake(
             dapp_index,
             &smart_contracts[dapp_index],
-            tier_config.tier_thresholds[0].threshold() - 1,
+            tier_config.tier_threshold_values[0] - 1,
         );
         dapp_index += 1;
 
@@ -2506,7 +2507,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             lock_and_stake(
                 dapp_index,
                 &smart_contracts[dapp_index],
-                tier_config.tier_thresholds[3].threshold() + x,
+                tier_config.tier_threshold_values[3] + x,
             );
             dapp_index += 1;
         }
@@ -2515,7 +2516,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         lock_and_stake(
             dapp_index,
             &smart_contracts[dapp_index],
-            tier_config.tier_thresholds[3].threshold() - 1,
+            tier_config.tier_threshold_values[3] - 1,
         );
 
         // Finally, the actual test
@@ -3103,7 +3104,7 @@ fn base_number_of_slots_is_respected() {
             "Base number of slots is expected for base native currency price."
         );
 
-        let base_thresholds = TierConfig::<Test>::get().tier_thresholds;
+        let base_thresholds = TierConfig::<Test>::get().tier_threshold_values;
 
         // 2. Increase the price significantly, and ensure number of slots has increased, and thresholds have been saturated.
         let higher_price = base_native_price * FixedU128::from(1000);
@@ -3120,12 +3121,12 @@ fn base_number_of_slots_is_respected() {
             <Test as Config>::TierSlots::number_of_slots(higher_price),
         );
 
-        for tier_threshold in TierConfig::<Test>::get().tier_thresholds.iter() {
-            if let TierThreshold::DynamicTvlAmount {
-                amount,
-                minimum_amount,
-            } = tier_threshold
-            {
+        for (amount, static_tier_threshold) in TierConfig::<Test>::get()
+            .tier_threshold_values
+            .iter()
+            .zip(StaticTierParams::<Test>::get().tier_thresholds.iter())
+        {
+            if let TierThreshold::DynamicTvlAmount { minimum_amount, .. } = static_tier_threshold {
                 assert_eq!(*amount, *minimum_amount, "Thresholds must be saturated.");
             }
         }
@@ -3143,7 +3144,7 @@ fn base_number_of_slots_is_respected() {
         );
 
         assert_eq!(
-            TierConfig::<Test>::get().tier_thresholds,
+            TierConfig::<Test>::get().tier_threshold_values,
             base_thresholds,
             "Thresholds must be the same as the base thresholds."
         );
@@ -3176,7 +3177,7 @@ fn base_number_of_slots_is_respected() {
         );
 
         assert_eq!(
-            TierConfig::<Test>::get().tier_thresholds,
+            TierConfig::<Test>::get().tier_threshold_values,
             base_thresholds,
             "Thresholds must be the same as the base thresholds."
         );
