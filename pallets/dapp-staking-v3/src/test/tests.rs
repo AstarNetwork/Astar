@@ -16,11 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
+use crate::extract_threshold_values;
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
     EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId,
-    PeriodNumber, Permill, Safeguard, StakerInfo, StaticTierParams, Subperiod, TierConfig,
+    Perbill, PeriodNumber, Permill, Safeguard, StakerInfo, StaticTierParams, Subperiod, TierConfig,
     TierThreshold,
 };
 
@@ -2387,6 +2388,32 @@ fn force_with_safeguard_on_fails() {
 #[test]
 fn tier_config_recalculation_works() {
     ExtBuilder::build().execute_with(|| {
+        let total_issuance = <Test as Config>::Currency::total_issuance();
+        let tier_thresholds = BoundedVec::try_from(vec![
+            TierThreshold::DynamicTvlAmount {
+                amount: 100,
+                minimum_amount: 80,
+            },
+            TierThreshold::DynamicPercentage {
+                current_percentage: Perbill::from_percent(10),
+                minimum_required_percentage: Perbill::from_percent(5),
+            },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(2),
+            },
+            TierThreshold::FixedTvlAmount { amount: 15 },
+        ])
+        .unwrap();
+        let tier_threshold_values =
+            extract_threshold_values(tier_thresholds.clone(), total_issuance);
+
+        StaticTierParams::<Test>::mutate(|config| {
+            config.tier_thresholds = tier_thresholds;
+        });
+        TierConfig::<Test>::mutate(|config| {
+            config.tier_threshold_values = tier_threshold_values;
+        });
+
         let init_price = NATIVE_PRICE.with(|v| v.borrow().clone());
         let init_tier_config = TierConfig::<Test>::get();
 
@@ -2416,9 +2443,22 @@ fn tier_config_recalculation_works() {
             new_tier_config.slots_per_tier.len(),
             "Sanity check."
         );
-        for idx in 0..init_tier_config.slots_per_tier.len() {
-            assert!(init_tier_config.slots_per_tier[idx] < new_tier_config.slots_per_tier[idx]);
-        }
+        assert!(
+            new_tier_config
+                .slots_per_tier
+                .iter()
+                .zip(init_tier_config.slots_per_tier.iter())
+                .all(|(new, init)| new > init),
+            "Number of slots per tier should increase with higher price"
+        );
+        assert!(
+            new_tier_config
+                .tier_threshold_values
+                .iter()
+                .zip(init_tier_config.tier_threshold_values.iter())
+                .all(|(new, init)| new <= init),
+            "Tier threshold values should decrease with higher price"
+        );
 
         // 3. Decrease the native price, and expect slots in tiers to be decreased.
         NATIVE_PRICE.with(|v| *v.borrow_mut() = init_price * FixedU128::from_rational(1, 2));
@@ -2436,9 +2476,22 @@ fn tier_config_recalculation_works() {
             new_tier_config.slots_per_tier.len(),
             "Sanity check."
         );
-        for idx in 0..init_tier_config.slots_per_tier.len() {
-            assert!(init_tier_config.slots_per_tier[idx] > new_tier_config.slots_per_tier[idx]);
-        }
+        assert!(
+            new_tier_config
+                .slots_per_tier
+                .iter()
+                .zip(init_tier_config.slots_per_tier.iter())
+                .all(|(new, init)| new < init),
+            "Number of slots per tier should decrease with lower price"
+        );
+        assert!(
+            new_tier_config
+                .tier_threshold_values
+                .iter()
+                .zip(init_tier_config.tier_threshold_values.iter())
+                .all(|(new, init)| new >= init),
+            "Tier threshold values should increase with lower price"
+        );
     })
 }
 

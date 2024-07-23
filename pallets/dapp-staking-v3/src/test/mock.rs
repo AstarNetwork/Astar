@@ -345,10 +345,15 @@ impl ExtBuilder {
                 reward_portion: tier_params.reward_portion.clone(),
                 tier_threshold_values: extract_threshold_values(
                     tier_params.tier_thresholds.clone(),
+                    <Test as Config>::Currency::total_issuance(),
                 ),
                 _phantom: Default::default(),
             }
-            .calculate_new(NATIVE_PRICE.with(|v| v.borrow().clone()), &tier_params);
+            .calculate_new(
+                &tier_params,
+                NATIVE_PRICE.with(|v| v.borrow().clone()),
+                <Test as Config>::Currency::total_issuance(),
+            );
 
             pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);
             pallet_dapp_staking::TierConfig::<Test>::put(init_tier_config.clone());

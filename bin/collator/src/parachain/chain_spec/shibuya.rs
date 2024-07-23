@@ -33,7 +33,7 @@ use sp_core::{sr25519, Pair, Public};
 use astar_primitives::oracle::CurrencyAmount;
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
-    Permill,
+    Perbill, Permill,
 };
 
 use super::{get_from_seed, Extensions};
@@ -180,19 +180,21 @@ fn make_genesis(
                 Permill::from_percent(40),
             ],
             tier_thresholds: vec![
-                TierThreshold::DynamicTvlAmount {
-                    amount: 100 * SBY,
-                    minimum_amount: 80 * SBY,
+                TierThreshold::DynamicPercentage {
+                    current_percentage: Perbill::from_parts(4_400_000),
+                    minimum_required_percentage: Perbill::from_parts(3_500_000),
                 },
-                TierThreshold::DynamicTvlAmount {
-                    amount: 50 * SBY,
-                    minimum_amount: 40 * SBY,
+                TierThreshold::DynamicPercentage {
+                    current_percentage: Perbill::from_parts(2_200_000),
+                    minimum_required_percentage: Perbill::from_parts(1_800_000),
                 },
-                TierThreshold::DynamicTvlAmount {
-                    amount: 20 * SBY,
-                    minimum_amount: 20 * SBY,
+                TierThreshold::DynamicPercentage {
+                    current_percentage: Perbill::from_parts(900_000),
+                    minimum_required_percentage: Perbill::from_parts(900_000),
                 },
-                TierThreshold::FixedTvlAmount { amount: 10 * SBY },
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(400_000),
+                },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
             safeguard: Some(false),

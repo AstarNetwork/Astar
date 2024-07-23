@@ -563,6 +563,7 @@ pub mod pallet {
                     reward_portion: tier_params.reward_portion.clone(),
                     tier_threshold_values: extract_threshold_values(
                         tier_params.tier_thresholds.clone(),
+                        T::Currency::total_issuance(),
                     ),
                     _phantom: Default::default(),
                 };
@@ -1949,7 +1950,9 @@ pub mod pallet {
             // Re-calculate tier configuration for the upcoming new era
             let tier_params = StaticTierParams::<T>::get();
             let average_price = T::NativePriceProvider::average_price();
-            let new_tier_config = TierConfig::<T>::get().calculate_new(average_price, &tier_params);
+            let total_issuance = T::Currency::total_issuance();
+            let new_tier_config =
+                TierConfig::<T>::get().calculate_new(&tier_params, average_price, total_issuance);
             TierConfig::<T>::put(new_tier_config);
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
