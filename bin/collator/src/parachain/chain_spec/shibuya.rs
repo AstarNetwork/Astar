@@ -179,21 +179,22 @@ fn make_genesis(
                 Permill::from_percent(30),
                 Permill::from_percent(40),
             ],
+            // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (147M)
             tier_thresholds: vec![
                 TierThreshold::DynamicPercentage {
-                    current_percentage: Perbill::from_parts(4_400_000),
-                    minimum_required_percentage: Perbill::from_parts(3_500_000),
+                    current_percentage: Perbill::from_parts(20_000), // 0.0020%
+                    minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
                 },
                 TierThreshold::DynamicPercentage {
-                    current_percentage: Perbill::from_parts(2_200_000),
-                    minimum_required_percentage: Perbill::from_parts(1_800_000),
+                    current_percentage: Perbill::from_parts(10_000), // 0.0010%
+                    minimum_required_percentage: Perbill::from_parts(6_800), // 0.00068%
                 },
                 TierThreshold::DynamicPercentage {
-                    current_percentage: Perbill::from_parts(900_000),
-                    minimum_required_percentage: Perbill::from_parts(900_000),
+                    current_percentage: Perbill::from_parts(5_400), // 0.00054%
+                    minimum_required_percentage: Perbill::from_parts(3_400), // 0.00034%
                 },
                 TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(400_000),
+                    required_percentage: Perbill::from_parts(1_400), // 0.00014%
                 },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
