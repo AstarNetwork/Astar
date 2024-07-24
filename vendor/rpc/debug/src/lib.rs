@@ -381,7 +381,8 @@ where
             } else {
                 // Old "trace_block" api did not initialize block before applying transactions,
                 // so we need to do it here before calling "trace_block".
-                api.initialize_block(parent_block_hash, &header)
+                #[allow(deprecated)]
+                api.initialize_block_before_version_5(parent_block_hash, &header)
                     .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
 
                 #[allow(deprecated)]
@@ -529,13 +530,13 @@ where
                     } else {
                         // Old "trace_transaction" api did not initialize block before applying transactions,
                         // so we need to do it here before calling "trace_transaction".
-                        api.initialize_block(parent_block_hash, &header)
+                        #[allow(deprecated)]
+                        api.initialize_block_before_version_5(parent_block_hash, &header)
                             .map_err(|e| {
                                 internal_err(format!("Runtime api access error: {:?}", e))
                             })?;
 
                         if trace_api_version == 4 {
-                            // Pre pallet-message-queue
                             #[allow(deprecated)]
                             api.trace_transaction_before_version_5(
                                 parent_block_hash,
