@@ -38,12 +38,102 @@ pub mod versioned_migrations {
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
+
+    /// Migration V7 to V8 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
+    /// the migration is only performed when on-chain version is 7.
+    pub type V7ToV8<T> = frame_support::migrations::VersionedMigration<
+        7,
+        8,
+        v8::VersionMigrateV7ToV8<T>,
+        Pallet<T>,
+        <T as frame_system::Config>::DbWeight,
+    >;
+}
+
+// TierThreshold as percentage of the total issuance
+mod v8 {
+    use super::*;
+    use crate::migration::v7::TiersConfiguration as TiersConfigurationV7;
+
+    pub struct VersionMigrateV7ToV8<T>(PhantomData<T>);
+
+    impl<T: Config> OnRuntimeUpgrade for VersionMigrateV7ToV8<T> {
+        fn on_runtime_upgrade() -> Weight {
+            let _ = TierConfig::<T>::translate::<
+                TiersConfigurationV7<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice>,
+                _,
+            >(|maybe_old_config| match maybe_old_config {
+                Some(old_config) => {
+                    let new_tier_threshold_values = extract_threshold_values(
+                        old_config.tier_thresholds,
+                        T::Currency::total_issuance(),
+                    );
+
+                    Some(TiersConfiguration {
+                        slots_per_tier: old_config.slots_per_tier,
+                        reward_portion: old_config.reward_portion,
+                        tier_threshold_values: new_tier_threshold_values,
+                        _phantom: Default::default(),
+                    })
+                }
+                _ => None,
+            });
+
+            T::DbWeight::get().reads_writes(1, 1)
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
+            Ok(Vec::new())
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn post_upgrade(_data: Vec<u8>) -> Result<(), TryRuntimeError> {
+            ensure!(
+                Pallet::<T>::on_chain_storage_version() >= 8,
+                "dapp-staking-v3::migration::v8: wrong storage version"
+            );
+            Ok(())
+        }
+    }
 }
 
 /// Translate DAppTiers to include rank rewards.
 mod v7 {
     use super::*;
     use crate::migration::v6::DAppTierRewards as DAppTierRewardsV6;
+    use astar_primitives::dapp_staking::TierSlots as TierSlotsFunc;
+
+    /// Configuration of dApp tiers.
+    #[derive(
+        Encode,
+        Decode,
+        MaxEncodedLen,
+        RuntimeDebugNoBound,
+        PartialEqNoBound,
+        EqNoBound,
+        CloneNoBound,
+        TypeInfo,
+    )]
+    #[scale_info(skip_type_params(NT, T, P))]
+    pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> {
+        /// Total number of slots.
+        #[codec(compact)]
+        pub number_of_slots: u16,
+        /// Number of slots per tier.
+        /// First entry refers to the first tier, and so on.
+        pub slots_per_tier: BoundedVec<u16, NT>,
+        /// Reward distribution per tier, in percentage.
+        /// First entry refers to the first tier, and so on.
+        /// The sum of all values must be exactly equal to 1.
+        pub reward_portion: BoundedVec<Permill, NT>,
+        /// Requirements for entry into each tier.
+        /// First entry refers to the first tier, and so on.
+        pub tier_thresholds: BoundedVec<TierThreshold, NT>,
+        /// Phantom data to keep track of the tier slots function.
+        #[codec(skip)]
+        pub(crate) _phantom: PhantomData<(T, P)>,
+    }
 
     pub struct VersionMigrateV6ToV7<T>(PhantomData<T>);
 

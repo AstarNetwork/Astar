@@ -31,7 +31,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
-        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
+        InstanceFilter, Nothing, OnFinalize, OnRuntimeUpgrade, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -40,7 +40,7 @@ use frame_support::{
         ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
-    ConsensusEngineId, PalletId,
+    BoundedVec, ConsensusEngineId, PalletId,
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
@@ -1263,6 +1263,36 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+pub struct StaticTierParamsMigration;
+impl OnRuntimeUpgrade for StaticTierParamsMigration {
+    fn on_runtime_upgrade() -> Weight {
+        let tier_thresholds = BoundedVec::try_from(vec![
+            TierThreshold::DynamicPercentage {
+                current_percentage: Perbill::from_parts(35_700_000), // 3.57%
+                minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
+            },
+            TierThreshold::DynamicPercentage {
+                current_percentage: Perbill::from_parts(8_900_000), // 0.89%
+                minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+            },
+            TierThreshold::DynamicPercentage {
+                current_percentage: Perbill::from_parts(23_800_000), // 2.38%
+                minimum_required_percentage: Perbill::from_parts(17_900_000), // 1.79%
+            },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+            },
+        ])
+        .unwrap();
+
+        pallet_dapp_staking_v3::StaticTierParams::<Runtime>::mutate(|config| {
+            config.tier_thresholds = tier_thresholds;
+        });
+
+        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+    }
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
@@ -1270,9 +1300,9 @@ pub type Migrations = (
     cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
-    // XCM V3 -> V4
-    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
-    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
+    // dapp-staking dyn tier threshold migrations
+    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime>,
+    StaticTierParamsMigration, // runtime specific
 );
 
 type EventRecord = frame_system::EventRecord<
