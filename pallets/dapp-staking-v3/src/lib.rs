@@ -211,6 +211,14 @@ pub mod pallet {
         #[pallet::constant]
         type RankingEnabled: Get<bool>;
 
+        /// Minimum acceptable percent of total issuance for dynamic tier thresholds.
+        #[pallet::constant]
+        type MinTotalIssuancePercent: Get<Perbill>;
+
+        /// Maximum acceptable percent of total issuance for dynamic tier thresholds.
+        #[pallet::constant]
+        type MaxTotalIssuancePercent: Get<Perbill>;
+
         /// Weight info for various calls & operations in the pallet.
         type WeightInfo: WeightInfo;
 
@@ -568,7 +576,7 @@ pub mod pallet {
                     _phantom: Default::default(),
                 };
             assert!(
-                tier_params.is_valid(),
+                tier_config.is_valid(),
                 "Invalid tier config values provided."
             );
 
@@ -1951,9 +1959,26 @@ pub mod pallet {
             let tier_params = StaticTierParams::<T>::get();
             let average_price = T::NativePriceProvider::average_price();
             let total_issuance = T::Currency::total_issuance();
+            let tier_percent_range = (
+                T::MinTotalIssuancePercent::get(),
+                T::MaxTotalIssuancePercent::get(),
+            );
+
             let new_tier_config =
                 TierConfig::<T>::get().calculate_new(&tier_params, average_price, total_issuance);
-            TierConfig::<T>::put(new_tier_config);
+
+            // Validate new tier configuration
+            if new_tier_config.is_valid()
+                && new_tier_config.is_valid_dyn_tier_values(total_issuance, tier_percent_range)
+            {
+                TierConfig::<T>::put(new_tier_config);
+            } else {
+                log::warn!(
+                    target: LOG_TARGET,
+                    "New tier configuration is invalid for era {}, preserving old one.",
+                    next_era
+                );
+            }
 
             Self::deposit_event(Event::<T>::NewEra { era: next_era });
             if let Some(period_event) = maybe_period_event {
