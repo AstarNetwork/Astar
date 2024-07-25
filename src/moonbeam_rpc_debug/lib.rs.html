@@ -635,6 +635,7 @@
 <a href="#633" id="633">633</a>
 <a href="#634" id="634">634</a>
 <a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
 </pre></div><pre class="rust"><code><span class="comment">// Copyright 2019-2022 PureStake Inc.
 // This file is part of Moonbeam.
 
@@ -1018,7 +1019,8 @@
             } <span class="kw">else </span>{
                 <span class="comment">// Old "trace_block" api did not initialize block before applying transactions,
                 // so we need to do it here before calling "trace_block".
-                </span>api.initialize_block(parent_block_hash, <span class="kw-2">&amp;</span>header)
+                </span><span class="attr">#[allow(deprecated)]
+                </span>api.initialize_block_before_version_5(parent_block_hash, <span class="kw-2">&amp;</span>header)
                     .map_err(|e| internal_err(<span class="macro">format!</span>(<span class="string">"Runtime api access error: {:?}"</span>, e)))<span class="question-mark">?</span>;
 
                 <span class="attr">#[allow(deprecated)]
@@ -1166,14 +1168,14 @@
                     } <span class="kw">else </span>{
                         <span class="comment">// Old "trace_transaction" api did not initialize block before applying transactions,
                         // so we need to do it here before calling "trace_transaction".
-                        </span>api.initialize_block(parent_block_hash, <span class="kw-2">&amp;</span>header)
+                        </span><span class="attr">#[allow(deprecated)]
+                        </span>api.initialize_block_before_version_5(parent_block_hash, <span class="kw-2">&amp;</span>header)
                             .map_err(|e| {
                                 internal_err(<span class="macro">format!</span>(<span class="string">"Runtime api access error: {:?}"</span>, e))
                             })<span class="question-mark">?</span>;
 
                         <span class="kw">if </span>trace_api_version == <span class="number">4 </span>{
-                            <span class="comment">// Pre pallet-message-queue
-                            </span><span class="attr">#[allow(deprecated)]
+                            <span class="attr">#[allow(deprecated)]
                             </span>api.trace_transaction_before_version_5(
                                 parent_block_hash,
                                 exts,

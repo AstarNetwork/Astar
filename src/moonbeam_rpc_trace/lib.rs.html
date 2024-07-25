@@ -951,6 +951,7 @@
 <a href="#949" id="949">949</a>
 <a href="#950" id="950">950</a>
 <a href="#951" id="951">951</a>
+<a href="#952" id="952">952</a>
 </pre></div><pre class="rust"><code><span class="comment">// Copyright 2019-2022 PureStake Inc.
 // This file is part of Moonbeam.
 
@@ -1812,7 +1813,7 @@
         <span class="comment">// Trace the block.
         </span><span class="kw">let </span>f = || -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw">_</span>, String&gt; {
             <span class="kw">let </span>result = <span class="kw">if </span>trace_api_version &gt;= <span class="number">5 </span>{
-                <span class="comment">// The block is initialized inside "trace_transaction"
+                <span class="comment">// The block is initialized inside "trace_block"
                 </span>api.trace_block(
                     substrate_parent_hash,
                     extrinsics,
@@ -1822,7 +1823,8 @@
             } <span class="kw">else </span>{
                 <span class="comment">// Old "trace_block" api did not initialize block before applying transactions,
                 // so we need to do it here before calling "trace_block".
-                </span>api.initialize_block(substrate_parent_hash, <span class="kw-2">&amp;</span>block_header)
+                </span><span class="attr">#[allow(deprecated)]
+                </span>api.initialize_block_before_version_5(substrate_parent_hash, <span class="kw-2">&amp;</span>block_header)
                     .map_err(|e| <span class="macro">format!</span>(<span class="string">"Runtime api access error: {:?}"</span>, e))<span class="question-mark">?</span>;
 
                 <span class="attr">#[allow(deprecated)]
