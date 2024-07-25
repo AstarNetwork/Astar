@@ -30,8 +30,9 @@ use frame_support::{
     genesis_builder_helper::{build_config, create_default_config},
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
-        InstanceFilter, Nothing, OnFinalize, OnRuntimeUpgrade, OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU32, Contains, Currency, FindAuthor, Get, GetStorageVersion,
+        Imbalance, InstanceFilter, Nothing, OnFinalize, OnRuntimeUpgrade, OnUnbalanced,
+        WithdrawReasons,
     },
     weights::{
         constants::{
@@ -1266,30 +1267,37 @@ pub type Executive = frame_executive::Executive<
 pub struct StaticTierParamsMigration;
 impl OnRuntimeUpgrade for StaticTierParamsMigration {
     fn on_runtime_upgrade() -> Weight {
-        let tier_thresholds = BoundedVec::try_from(vec![
-            TierThreshold::DynamicPercentage {
-                current_percentage: Perbill::from_parts(35_700_000), // 3.57%
-                minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
-            },
-            TierThreshold::DynamicPercentage {
-                current_percentage: Perbill::from_parts(8_900_000), // 0.89%
-                minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
-            },
-            TierThreshold::DynamicPercentage {
-                current_percentage: Perbill::from_parts(23_800_000), // 2.38%
-                minimum_required_percentage: Perbill::from_parts(17_900_000), // 1.79%
-            },
-            TierThreshold::FixedPercentage {
-                required_percentage: Perbill::from_parts(6_000_000), // 0.6%
-            },
-        ])
-        .unwrap();
+        let onchain_storage_version =
+            pallet_dapp_staking_v3::Pallet::<Runtime>::on_chain_storage_version();
 
-        pallet_dapp_staking_v3::StaticTierParams::<Runtime>::mutate(|config| {
-            config.tier_thresholds = tier_thresholds;
-        });
+        if onchain_storage_version < 8 {
+            let tier_thresholds = BoundedVec::try_from(vec![
+                TierThreshold::DynamicPercentage {
+                    current_percentage: Perbill::from_parts(35_700_000), // 3.57%
+                    minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
+                },
+                TierThreshold::DynamicPercentage {
+                    current_percentage: Perbill::from_parts(8_900_000), // 0.89%
+                    minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+                },
+                TierThreshold::DynamicPercentage {
+                    current_percentage: Perbill::from_parts(23_800_000), // 2.38%
+                    minimum_required_percentage: Perbill::from_parts(17_900_000), // 1.79%
+                },
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+                },
+            ])
+            .unwrap();
 
-        <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+            pallet_dapp_staking_v3::StaticTierParams::<Runtime>::mutate(|config| {
+                config.tier_thresholds = tier_thresholds;
+            });
+
+            <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
+        } else {
+            Weight::zero()
+        }
     }
 }
 
