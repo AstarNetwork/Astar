@@ -1268,7 +1268,7 @@ impl OnRuntimeUpgrade for StaticTierParamsMigration {
         let onchain_storage_version =
             pallet_dapp_staking_v3::Pallet::<Runtime>::on_chain_storage_version();
 
-        if onchain_storage_version < 8 {
+        if onchain_storage_version == 8 {
             let tier_thresholds = BoundedVec::try_from(vec![
                 TierThreshold::DynamicPercentage {
                     current_percentage: Perbill::from_parts(35_700_000), // 3.57%
