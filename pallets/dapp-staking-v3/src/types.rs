@@ -1674,6 +1674,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         total_issuance: Balance,
     ) -> Self {
         // It must always be at least 1 slot.
+        let base_number_of_slots = T::number_of_slots(P::get()).max(1);
         let new_number_of_slots = T::number_of_slots(native_price).max(1);
 
         // Calculate how much each tier gets slots.
@@ -1688,105 +1689,106 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         let new_slots_per_tier =
             BoundedVec::<u16, NT>::try_from(new_slots_per_tier).unwrap_or_default();
 
-        // Update tier thresholds.
-        // In case number of slots increase, we decrease thresholds required to enter the tier.
-        // In case number of slots decrease, we increase the threshold required to enter the tier.
-        //
-        // According to formula: %_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
-        //
-        // where delta_%_slots is simply: (base_num_slots - new_num_slots) / base_num_slots
-        //
-        // `base_num_slots` is the number of slots at the base native currency price.
-        //
-        // When these entries are put into the threshold formula, we get:
-        // = 1 / ( 1 - (base_num_slots - new_num_slots) / base_num_slots ) - 1
-        // = 1 / ( new / base) - 1
-        // = base / new - 1
-        // = (base - new) / new
-        //
-        // This number can be negative. In order to keep all operations in unsigned integer domain,
-        // formulas are adjusted like:
-        //
-        // 1. Number of slots has increased, threshold is expected to decrease
-        // %_threshold = (new_num_slots - base_num_slots) / new_num_slots
-        // new_threshold = base_threshold * (1 - %_threshold)
-        //
-        // 2. Number of slots has decreased, threshold is expected to increase
-        // %_threshold = (base_num_slots - new_num_slots) / new_num_slots
-        // new_threshold = base_threshold * (1 + %_threshold)
-        //
-        let base_number_of_slots = T::number_of_slots(P::get()).max(1);
-
         // NOTE: even though we could ignore the situation when the new & base slot numbers are equal, it's necessary to re-calculate it since
         // other params related to calculation might have changed.
-        let new_tier_thresholds = if new_number_of_slots >= base_number_of_slots {
-            let delta_threshold_decrease = FixedU128::from_rational(
+        let delta_threshold = if new_number_of_slots >= base_number_of_slots {
+            FixedU128::from_rational(
                 (new_number_of_slots - base_number_of_slots).into(),
                 new_number_of_slots.into(),
-            );
-
-            let mut new_tier_thresholds = params.tier_thresholds.clone();
-            new_tier_thresholds
-                .iter_mut()
-                .for_each(|threshold| match threshold {
-                    TierThreshold::DynamicTvlAmount {
-                        amount,
-                        minimum_amount,
-                    } => {
-                        *amount = amount
-                            .saturating_sub(delta_threshold_decrease.saturating_mul_int(*amount));
-                        *amount = *amount.max(minimum_amount);
-                    }
-                    TierThreshold::DynamicPercentage {
-                        current_percentage,
-                        minimum_required_percentage,
-                    } => {
-                        let threshold_value = *current_percentage * total_issuance;
-                        let adjusted_value = threshold_value.saturating_sub(
-                            delta_threshold_decrease.saturating_mul_int(threshold_value),
-                        );
-                        let new_percentage = Perbill::from_rational(adjusted_value, total_issuance);
-                        *current_percentage = new_percentage.max(*minimum_required_percentage);
-                    }
-                    _ => (),
-                });
-
-            new_tier_thresholds
+            )
         } else {
-            let delta_threshold_increase = FixedU128::from_rational(
+            FixedU128::from_rational(
                 (base_number_of_slots - new_number_of_slots).into(),
                 new_number_of_slots.into(),
-            );
-
-            let mut new_tier_thresholds = params.tier_thresholds.clone();
-            new_tier_thresholds
-                .iter_mut()
-                .for_each(|threshold| match threshold {
-                    TierThreshold::DynamicTvlAmount { amount, .. } => {
-                        *amount = amount
-                            .saturating_add(delta_threshold_increase.saturating_mul_int(*amount));
-                    }
-                    TierThreshold::DynamicPercentage {
-                        current_percentage, ..
-                    } => {
-                        let threshold_value = *current_percentage * total_issuance;
-                        let adjusted_value = threshold_value.saturating_add(
-                            delta_threshold_increase.saturating_mul_int(threshold_value),
-                        );
-                        let new_percentage = Perbill::from_rational(adjusted_value, total_issuance);
-                        *current_percentage = new_percentage;
-                    }
-                    _ => (),
-                });
-
-            new_tier_thresholds
+            )
         };
+
+        let new_tier_threshold_values: BoundedVec<Balance, NT> = params
+            .tier_thresholds
+            .clone()
+            .iter()
+            .map(|threshold| {
+                Self::adjust_threshold(
+                    threshold,
+                    delta_threshold,
+                    total_issuance,
+                    new_number_of_slots >= base_number_of_slots,
+                )
+            })
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap_or_default();
 
         Self {
             slots_per_tier: new_slots_per_tier,
             reward_portion: params.reward_portion.clone(),
-            tier_threshold_values: extract_threshold_values(new_tier_thresholds, total_issuance),
+            tier_threshold_values: new_tier_threshold_values,
             _phantom: Default::default(),
+        }
+    }
+
+    // Update tier thresholds.
+    // In case number of slots increase, we decrease thresholds required to enter the tier.
+    // In case number of slots decrease, we increase the threshold required to enter the tier.
+    //
+    // According to formula: %_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
+    //
+    // where delta_%_slots is simply: (base_num_slots - new_num_slots) / base_num_slots
+    //
+    // `base_num_slots` is the number of slots at the base native currency price.
+    //
+    // When these entries are put into the threshold formula, we get:
+    // = 1 / ( 1 - (base_num_slots - new_num_slots) / base_num_slots ) - 1
+    // = 1 / ( new / base) - 1
+    // = base / new - 1
+    // = (base - new) / new
+    //
+    // This number can be negative. In order to keep all operations in unsigned integer domain,
+    // formulas are adjusted like:
+    //
+    // 1. Number of slots has increased, threshold is expected to decrease
+    // %_threshold = (new_num_slots - base_num_slots) / new_num_slots
+    // new_threshold = base_threshold * (1 - %_threshold)
+    //
+    // 2. Number of slots has decreased, threshold is expected to increase
+    // %_threshold = (base_num_slots - new_num_slots) / new_num_slots
+    // new_threshold = base_threshold * (1 + %_threshold)
+    //
+    fn adjust_threshold(
+        threshold: &TierThreshold,
+        delta_threshold: FixedU128,
+        total_issuance: Balance,
+        slots_increased: bool,
+    ) -> Balance {
+        match threshold {
+            TierThreshold::DynamicTvlAmount {
+                amount,
+                minimum_amount,
+            } => {
+                let adjusted_amount = if slots_increased {
+                    amount.saturating_sub(delta_threshold.saturating_mul_int(*amount))
+                } else {
+                    amount.saturating_add(delta_threshold.saturating_mul_int(*amount))
+                };
+                adjusted_amount.max(*minimum_amount)
+            }
+            TierThreshold::DynamicPercentage {
+                current_percentage,
+                minimum_required_percentage,
+            } => {
+                let amount = *current_percentage * total_issuance;
+                let adjusted_amount = if slots_increased {
+                    amount.saturating_sub(delta_threshold.saturating_mul_int(amount))
+                } else {
+                    amount.saturating_add(delta_threshold.saturating_mul_int(amount))
+                };
+                let minimum_amount = *minimum_required_percentage * total_issuance;
+                adjusted_amount.max(minimum_amount)
+            }
+            TierThreshold::FixedTvlAmount { amount } => *amount,
+            TierThreshold::FixedPercentage {
+                required_percentage,
+            } => *required_percentage * total_issuance,
         }
     }
 }
