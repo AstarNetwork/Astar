@@ -17,7 +17,10 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use frame_support::traits::OnRuntimeUpgrade;
+use frame_support::{
+    storage_alias,
+    traits::{GetStorageVersion, OnRuntimeUpgrade},
+};
 
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
@@ -84,14 +87,31 @@ mod v8 {
 
         #[cfg(feature = "try-runtime")]
         fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
-            Ok(Vec::new())
+            let old_config = v7::TierConfig::<T>::get().ok_or_else(|| {
+                TryRuntimeError::Other(
+                    "dapp-staking-v3::migration::v8: No old configuration found for TierConfig",
+                )
+            })?;
+            Ok(old_config.number_of_slots.encode())
         }
 
         #[cfg(feature = "try-runtime")]
-        fn post_upgrade(_data: Vec<u8>) -> Result<(), TryRuntimeError> {
+        fn post_upgrade(data: Vec<u8>) -> Result<(), TryRuntimeError> {
+            let old_number_of_slots = u16::decode(&mut &data[..]).map_err(|_| {
+                TryRuntimeError::Other("dapp-staking-v3::migration::v8: Failed to decode old value for number of slots")
+            })?;
+
+            let actual_config = TierConfig::<T>::get();
+            let actual_number_of_slots = actual_config.total_number_of_slots();
+            ensure!(
+                old_number_of_slots == actual_number_of_slots,
+                "dapp-staking-v3::migration::v8: New TiersConfiguration format not set correctly, number of slots has derived."
+            );
+
+            assert!(actual_config.is_valid());
             ensure!(
                 Pallet::<T>::on_chain_storage_version() >= 8,
-                "dapp-staking-v3::migration::v8: wrong storage version"
+                "dapp-staking-v3::migration::v8: Wrong storage version."
             );
             Ok(())
         }
@@ -104,7 +124,7 @@ mod v7 {
     use crate::migration::v6::DAppTierRewards as DAppTierRewardsV6;
     use astar_primitives::dapp_staking::TierSlots as TierSlotsFunc;
 
-    /// Configuration of dApp tiers.
+    /// v7 type for configuration of dApp tiers.
     #[derive(
         Encode,
         Decode,
@@ -134,6 +154,18 @@ mod v7 {
         #[codec(skip)]
         pub(crate) _phantom: PhantomData<(T, P)>,
     }
+
+    /// v7 type for [`crate::TierConfig`]
+    #[storage_alias]
+    pub type TierConfig<T: Config> = StorageValue<
+        Pallet<T>,
+        TiersConfiguration<
+            <T as Config>::NumberOfTiers,
+            <T as Config>::TierSlots,
+            <T as Config>::BaseNativeCurrencyPrice,
+        >,
+        OptionQuery,
+    >;
 
     pub struct VersionMigrateV6ToV7<T>(PhantomData<T>);
 
