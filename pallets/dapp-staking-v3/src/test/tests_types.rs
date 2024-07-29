@@ -2914,7 +2914,7 @@ fn tier_configuration_basic_tests() {
                 minimum_amount: 350,
             },
             TierThreshold::DynamicPercentage {
-                current_percentage: Perbill::from_percent(5),
+                percentage: Perbill::from_percent(5),
                 minimum_required_percentage: Perbill::from_percent(3),
             },
             TierThreshold::FixedTvlAmount { amount: 50 },
@@ -2966,7 +2966,7 @@ fn extract_threshold_values_tests() {
             required_percentage: Perbill::from_percent(10),
         },
         TierThreshold::DynamicPercentage {
-            current_percentage: Perbill::from_percent(5),
+            percentage: Perbill::from_percent(5),
             minimum_required_percentage: Perbill::from_percent(2),
         },
     ])

@@ -1481,10 +1481,10 @@ pub enum TierThreshold {
     /// This value is constant and does not change between periods.
     FixedPercentage { required_percentage: Perbill },
     /// Entry into the tier is mandated by a percentage of the total issuance as staked funds.
-    /// The `current_percentage` is the amount required, which can change in-between periods, while `minimum_required_percentage`
+    /// The `percentage` is the amount required, which can change in-between periods, while `minimum_required_percentage`
     /// is the minimum percentage that should not be reduced below.
     DynamicPercentage {
-        current_percentage: Perbill,
+        percentage: Perbill,
         minimum_required_percentage: Perbill,
     },
 }
@@ -1579,9 +1579,7 @@ pub fn extract_threshold_values<NT: Get<u32>>(
             TierThreshold::FixedPercentage {
                 required_percentage,
             } => required_percentage * total_issuance,
-            TierThreshold::DynamicPercentage {
-                current_percentage, ..
-            } => current_percentage * total_issuance,
+            TierThreshold::DynamicPercentage { percentage, .. } => percentage * total_issuance,
         })
         .collect::<Vec<Balance>>()
         .try_into()
@@ -1773,10 +1771,10 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
                 adjusted_amount.max(*minimum_amount)
             }
             TierThreshold::DynamicPercentage {
-                current_percentage,
+                percentage,
                 minimum_required_percentage,
             } => {
-                let amount = *current_percentage * total_issuance;
+                let amount = *percentage * total_issuance;
                 let adjusted_amount = if slots_increased {
                     amount.saturating_sub(delta_threshold.saturating_mul_int(amount))
                 } else {

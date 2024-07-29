@@ -1625,15 +1625,15 @@ impl OnRuntimeUpgrade for StaticTierParamsMigration {
         if onchain_storage_version == 8 {
             let tier_thresholds = BoundedVec::try_from(vec![
                 TierThreshold::DynamicPercentage {
-                    current_percentage: Perbill::from_parts(20_000), // 0.0020%
+                    percentage: Perbill::from_parts(20_000), // 0.0020%
                     minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
                 },
                 TierThreshold::DynamicPercentage {
-                    current_percentage: Perbill::from_parts(10_000), // 0.0010%
+                    percentage: Perbill::from_parts(10_000), // 0.0010%
                     minimum_required_percentage: Perbill::from_parts(6_800), // 0.00068%
                 },
                 TierThreshold::DynamicPercentage {
-                    current_percentage: Perbill::from_parts(5_400), // 0.00054%
+                    percentage: Perbill::from_parts(5_400), // 0.00054%
                     minimum_required_percentage: Perbill::from_parts(3_400), // 0.00034%
                 },
                 TierThreshold::FixedPercentage {

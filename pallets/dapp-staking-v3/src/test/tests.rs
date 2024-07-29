@@ -2395,7 +2395,7 @@ fn tier_config_recalculation_works() {
                 minimum_amount: 80,
             },
             TierThreshold::DynamicPercentage {
-                current_percentage: Perbill::from_percent(10),
+                percentage: Perbill::from_percent(10),
                 minimum_required_percentage: Perbill::from_percent(5),
             },
             TierThreshold::FixedPercentage {
