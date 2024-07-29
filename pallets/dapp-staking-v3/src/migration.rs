@@ -102,10 +102,15 @@ mod v8 {
             })?;
 
             let actual_config = TierConfig::<T>::get();
+
+            // Calculated based on "slots_per_tier", which might have slight variations due to the nature of saturating permill distribution.
             let actual_number_of_slots = actual_config.total_number_of_slots();
-            ensure!(
-                old_number_of_slots == actual_number_of_slots,
-                "dapp-staking-v3::migration::v8: New TiersConfiguration format not set correctly, number of slots has derived."
+            let within_tolerance = (old_number_of_slots - 1)..=old_number_of_slots;
+            assert!(
+                within_tolerance.contains(&actual_number_of_slots),
+                "dapp-staking-v3::migration::v8: New TiersConfiguration format not set correctly, number of slots has derived. Old: {}. Actual: {}.",
+                old_number_of_slots,
+                actual_number_of_slots
             );
 
             assert!(actual_config.is_valid());
