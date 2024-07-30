@@ -130,17 +130,7 @@ mod v7 {
     use astar_primitives::dapp_staking::TierSlots as TierSlotsFunc;
 
     /// v7 type for configuration of dApp tiers.
-    #[derive(
-        Encode,
-        Decode,
-        MaxEncodedLen,
-        RuntimeDebugNoBound,
-        PartialEqNoBound,
-        EqNoBound,
-        CloneNoBound,
-        TypeInfo,
-    )]
-    #[scale_info(skip_type_params(NT, T, P))]
+    #[derive(Encode, Decode)]
     pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> {
         /// Total number of slots.
         #[codec(compact)]
