@@ -2828,15 +2828,15 @@ fn tier_params_check_is_ok() {
         ])
         .unwrap(),
         tier_thresholds: BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: 1000,
-                minimum_amount: 100,
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(3),
             },
-            TierThreshold::DynamicTvlAmount {
-                amount: 100,
-                minimum_amount: 10,
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(2),
             },
-            TierThreshold::FixedTvlAmount { amount: 10 },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(1),
+            },
         ])
         .unwrap(),
     };
@@ -2880,8 +2880,10 @@ fn tier_params_check_is_ok() {
 
     // 4th scenario - incorrect vector length
     let mut new_params = params.clone();
-    new_params.tier_thresholds =
-        BoundedVec::try_from(vec![TierThreshold::FixedTvlAmount { amount: 10 }]).unwrap();
+    new_params.tier_thresholds = BoundedVec::try_from(vec![TierThreshold::FixedPercentage {
+        required_percentage: Perbill::from_percent(1),
+    }])
+    .unwrap();
     assert!(!new_params.is_valid());
 }
 
@@ -2905,21 +2907,24 @@ fn tier_configuration_basic_tests() {
         ])
         .unwrap(),
         tier_thresholds: BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: 1000,
-                minimum_amount: 800,
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: 500,
-                minimum_amount: 350,
+            TierThreshold::DynamicPercentage {
+                percentage: Perbill::from_percent(12),
+                minimum_required_percentage: Perbill::from_percent(8),
             },
             TierThreshold::DynamicPercentage {
-                percentage: Perbill::from_percent(5),
+                percentage: Perbill::from_percent(7),
+                minimum_required_percentage: Perbill::from_percent(5),
+            },
+            TierThreshold::DynamicPercentage {
+                percentage: Perbill::from_percent(4),
                 minimum_required_percentage: Perbill::from_percent(3),
             },
-            TierThreshold::FixedTvlAmount { amount: 50 },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(3),
+            },
         ])
         .unwrap(),
+        ..TierParameters::default()
     };
     assert!(params.is_valid(), "Example params must be valid!");
 
@@ -2949,35 +2954,6 @@ fn tier_configuration_basic_tests() {
     assert!(new_config.is_valid());
 
     // TODO: expand tests, add more sanity checks (e.g. tier 3 requirement should never be lower than tier 4, etc.)
-}
-
-#[test]
-fn extract_threshold_values_tests() {
-    get_u32_type!(TiersNum, 4);
-    let total_issuance: Balance = 1_000_000;
-
-    let thresholds: BoundedVec<TierThreshold, TiersNum> = BoundedVec::try_from(vec![
-        TierThreshold::FixedTvlAmount { amount: 1_000 },
-        TierThreshold::DynamicTvlAmount {
-            amount: 500,
-            minimum_amount: 300,
-        },
-        TierThreshold::FixedPercentage {
-            required_percentage: Perbill::from_percent(10),
-        },
-        TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_percent(5),
-            minimum_required_percentage: Perbill::from_percent(2),
-        },
-    ])
-    .unwrap();
-
-    let extracted_values = extract_threshold_values(thresholds, total_issuance);
-
-    assert_eq!(extracted_values[0], 1_000);
-    assert_eq!(extracted_values[1], 500);
-    assert_eq!(extracted_values[2], 100_000); // 10% of total issuance
-    assert_eq!(extracted_values[3], 50_000); // 5% of total issuance
 }
 
 #[test]

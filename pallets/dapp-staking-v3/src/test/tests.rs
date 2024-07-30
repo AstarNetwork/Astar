@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
-use crate::extract_threshold_values;
 use crate::test::{mock::*, testing_utils::*};
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
@@ -2388,32 +2387,6 @@ fn force_with_safeguard_on_fails() {
 #[test]
 fn tier_config_recalculation_works() {
     ExtBuilder::build().execute_with(|| {
-        let total_issuance = <Test as Config>::Currency::total_issuance();
-        let tier_thresholds = BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: 100,
-                minimum_amount: 80,
-            },
-            TierThreshold::DynamicPercentage {
-                percentage: Perbill::from_percent(10),
-                minimum_required_percentage: Perbill::from_percent(5),
-            },
-            TierThreshold::FixedPercentage {
-                required_percentage: Perbill::from_percent(2),
-            },
-            TierThreshold::FixedTvlAmount { amount: 15 },
-        ])
-        .unwrap();
-        let tier_threshold_values =
-            extract_threshold_values(tier_thresholds.clone(), total_issuance);
-
-        StaticTierParams::<Test>::mutate(|config| {
-            config.tier_thresholds = tier_thresholds;
-        });
-        TierConfig::<Test>::mutate(|config| {
-            config.tier_threshold_values = tier_threshold_values;
-        });
-
         let init_price = NATIVE_PRICE.with(|v| v.borrow().clone());
         let init_tier_config = TierConfig::<Test>::get();
 
@@ -3095,21 +3068,6 @@ fn safeguard_configurable_by_genesis_config() {
             Permill::from_percent(30),
             Permill::from_percent(40),
         ],
-        tier_thresholds: vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: 30000,
-                minimum_amount: 20000,
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: 7500,
-                minimum_amount: 5000,
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: 20000,
-                minimum_amount: 15000,
-            },
-            TierThreshold::FixedTvlAmount { amount: 5000 },
-        ],
         slots_per_tier: vec![10, 20, 30, 40],
         ..Default::default()
     };
@@ -3143,6 +3101,7 @@ fn safeguard_configurable_by_genesis_config() {
 fn base_number_of_slots_is_respected() {
     ExtBuilder::build().execute_with(|| {
         // 0. Get expected number of slots for the base price
+        let total_issuance = <Test as Config>::Currency::total_issuance();
         let base_native_price = <Test as Config>::BaseNativeCurrencyPrice::get();
         let base_number_of_slots = <Test as Config>::TierSlots::number_of_slots(base_native_price);
 
@@ -3179,8 +3138,13 @@ fn base_number_of_slots_is_respected() {
             .iter()
             .zip(StaticTierParams::<Test>::get().tier_thresholds.iter())
         {
-            if let TierThreshold::DynamicTvlAmount { minimum_amount, .. } = static_tier_threshold {
-                assert_eq!(*amount, *minimum_amount, "Thresholds must be saturated.");
+            if let TierThreshold::DynamicPercentage {
+                minimum_required_percentage,
+                ..
+            } = static_tier_threshold
+            {
+                let minimum_amount = *minimum_required_percentage * total_issuance;
+                assert_eq!(*amount, minimum_amount, "Thresholds must be saturated.");
             }
         }
 
@@ -3305,12 +3269,14 @@ fn ranking_will_calc_reward_correctly() {
 #[test]
 fn claim_dapp_reward_with_rank() {
     ExtBuilder::build().execute_with(|| {
+        let total_issuance = <Test as Config>::Currency::total_issuance();
+
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
 
         let alice = 2;
-        let amount = 99; // very close to tier 0 so will enter tier 1 with rank 9
+        let amount = Perbill::from_parts(11_000_000) * total_issuance; // very close to tier 0 so will enter tier 1 with rank 9
         assert_lock(alice, amount);
         assert_stake(alice, &smart_contract, amount);
 

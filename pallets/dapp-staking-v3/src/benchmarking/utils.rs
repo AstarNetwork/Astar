@@ -177,20 +177,20 @@ pub(super) fn init_tier_settings<T: Config>() {
         ])
         .unwrap(),
         tier_thresholds: BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: 100 * UNIT,
-                minimum_amount: 80 * UNIT,
+            TierThreshold::DynamicPercentage {
+                percentage: Perbill::from_parts(11_112_000), // 1.1112%
+                minimum_required_percentage: Perbill::from_parts(8_889_000), // 0.8889%
             },
-            TierThreshold::DynamicTvlAmount {
-                amount: 50 * UNIT,
-                minimum_amount: 40 * UNIT,
+            TierThreshold::DynamicPercentage {
+                percentage: Perbill::from_parts(5_556_000), // 0.5556%
+                minimum_required_percentage: Perbill::from_parts(4_400_000), // 0.44%
             },
-            TierThreshold::DynamicTvlAmount {
-                amount: 20 * UNIT,
-                minimum_amount: 20 * UNIT,
+            TierThreshold::DynamicPercentage {
+                percentage: Perbill::from_parts(2_223_000), // 0.2223%
+                minimum_required_percentage: Perbill::from_parts(2_223_000), // 0.2223%
             },
-            TierThreshold::FixedTvlAmount {
-                amount: MIN_TIER_THRESHOLD,
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_parts(1_667_000), // 0.1667%
             },
         ])
         .unwrap(),

@@ -29,7 +29,7 @@ use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_runtime::{
     traits::{AccountIdConversion, IdentifyAccount, Verify},
-    Permill,
+    Perbill, Permill,
 };
 
 type AccountPublic = <Signature as Verify>::Signer;
@@ -163,19 +163,21 @@ fn testnet_genesis(
                 Permill::from_percent(40),
             ],
             tier_thresholds: vec![
-                TierThreshold::DynamicTvlAmount {
-                    amount: 100 * AST,
-                    minimum_amount: 80 * AST,
+                TierThreshold::DynamicPercentage {
+                    percentage: Perbill::from_parts(35_700_000), // 3.57%
+                    minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
                 },
-                TierThreshold::DynamicTvlAmount {
-                    amount: 50 * AST,
-                    minimum_amount: 40 * AST,
+                TierThreshold::DynamicPercentage {
+                    percentage: Perbill::from_parts(8_900_000), // 0.89%
+                    minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
                 },
-                TierThreshold::DynamicTvlAmount {
-                    amount: 20 * AST,
-                    minimum_amount: 20 * AST,
+                TierThreshold::DynamicPercentage {
+                    percentage: Perbill::from_parts(23_800_000), // 2.38%
+                    minimum_required_percentage: Perbill::from_parts(17_900_000), // 1.79%
                 },
-                TierThreshold::FixedTvlAmount { amount: 10 * AST },
+                TierThreshold::FixedPercentage {
+                    required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+                },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
             safeguard: Some(false),

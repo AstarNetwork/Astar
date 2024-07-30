@@ -1467,16 +1467,6 @@ where
     Deserialize,
 )]
 pub enum TierThreshold {
-    /// Entry into tier is mandated by minimum amount of staked funds.
-    /// Value is fixed, and is not expected to change in between periods.
-    FixedTvlAmount { amount: Balance },
-    /// Entry into tier is mandated by minimum amount of staked funds.
-    /// Value is expected to dynamically change in-between periods, depending on the system parameters.
-    /// The `amount` should never go below the `minimum_amount`.
-    DynamicTvlAmount {
-        amount: Balance,
-        minimum_amount: Balance,
-    },
     /// Entry into the tier is mandated by a fixed percentage of the total issuance as staked funds.
     /// This value is constant and does not change between periods.
     FixedPercentage { required_percentage: Perbill },
@@ -1574,8 +1564,6 @@ pub fn extract_threshold_values<NT: Get<u32>>(
     thresholds
         .into_iter()
         .map(|t| match t {
-            TierThreshold::FixedTvlAmount { amount } => amount,
-            TierThreshold::DynamicTvlAmount { amount, .. } => amount,
             TierThreshold::FixedPercentage {
                 required_percentage,
             } => required_percentage * total_issuance,
@@ -1710,7 +1698,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
     // In case number of slots increase, we decrease thresholds required to enter the tier.
     // In case number of slots decrease, we increase the threshold required to enter the tier.
     //
-    // According to formula: %_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
+    // According to formula: %delta_threshold = (100% / (100% - delta_%_slots) - 1) * 100%
     //
     // where delta_%_slots is simply: (base_num_slots - new_num_slots) / base_num_slots
     //
@@ -1726,12 +1714,12 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
     // formulas are adjusted like:
     //
     // 1. Number of slots has increased, threshold is expected to decrease
-    // %_threshold = (new_num_slots - base_num_slots) / new_num_slots
-    // new_threshold = base_threshold * (1 - %_threshold)
+    // %delta_threshold = (new_num_slots - base_num_slots) / new_num_slots
+    // new_threshold = base_threshold * (1 - %delta_threshold)
     //
     // 2. Number of slots has decreased, threshold is expected to increase
-    // %_threshold = (base_num_slots - new_num_slots) / new_num_slots
-    // new_threshold = base_threshold * (1 + %_threshold)
+    // %delta_threshold = (base_num_slots - new_num_slots) / new_num_slots
+    // new_threshold = base_threshold * (1 + %delta_threshold)
     //
     fn adjust_threshold(
         threshold: &TierThreshold,
@@ -1740,17 +1728,6 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         slots_increased: bool,
     ) -> Balance {
         match threshold {
-            TierThreshold::DynamicTvlAmount {
-                amount,
-                minimum_amount,
-            } => {
-                let adjusted_amount = if slots_increased {
-                    amount.saturating_sub(delta_threshold.saturating_mul_int(*amount))
-                } else {
-                    amount.saturating_add(delta_threshold.saturating_mul_int(*amount))
-                };
-                adjusted_amount.max(*minimum_amount)
-            }
             TierThreshold::DynamicPercentage {
                 percentage,
                 minimum_required_percentage,
@@ -1764,7 +1741,6 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
                 let minimum_amount = *minimum_required_percentage * total_issuance;
                 adjusted_amount.max(minimum_amount)
             }
-            TierThreshold::FixedTvlAmount { amount } => *amount,
             TierThreshold::FixedPercentage {
                 required_percentage,
             } => *required_percentage * total_issuance,
