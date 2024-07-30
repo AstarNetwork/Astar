@@ -1640,25 +1640,6 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
             && number_of_tiers == self.tier_threshold_values.len()
     }
 
-    /// Check if acceptable range for the total issuance percentages
-    pub fn is_valid_dyn_tier_values(
-        &self,
-        total_issuance: Balance,
-        tier_percent_range: (Perbill, Perbill),
-    ) -> bool {
-        let (min_percent, max_percent) = tier_percent_range;
-
-        // Skip validation if both percentages are zero
-        if min_percent.is_zero() && max_percent.is_zero() {
-            return true;
-        }
-
-        self.tier_threshold_values.iter().all(|&value| {
-            let percent = Perbill::from_rational(value, total_issuance);
-            percent >= min_percent && percent <= max_percent
-        })
-    }
-
     /// Calculate the total number of slots.
     pub fn total_number_of_slots(&self) -> u16 {
         self.slots_per_tier.iter().copied().sum()

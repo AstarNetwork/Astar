@@ -739,8 +739,6 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MinimumStakeAmount = ConstU128<3>;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
-    type MinTotalIssuancePercent = ();
-    type MaxTotalIssuancePercent = ();
     type WeightInfo = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = BenchmarkHelper<MockSmartContract, AccountId>;

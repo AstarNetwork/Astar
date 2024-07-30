@@ -211,14 +211,6 @@ pub mod pallet {
         #[pallet::constant]
         type RankingEnabled: Get<bool>;
 
-        /// Minimum acceptable percent of total issuance for dynamic tier thresholds.
-        #[pallet::constant]
-        type MinTotalIssuancePercent: Get<Perbill>;
-
-        /// Maximum acceptable percent of total issuance for dynamic tier thresholds.
-        #[pallet::constant]
-        type MaxTotalIssuancePercent: Get<Perbill>;
-
         /// Weight info for various calls & operations in the pallet.
         type WeightInfo: WeightInfo;
 
@@ -1959,18 +1951,12 @@ pub mod pallet {
             let tier_params = StaticTierParams::<T>::get();
             let average_price = T::NativePriceProvider::average_price();
             let total_issuance = T::Currency::total_issuance();
-            let tier_percent_range = (
-                T::MinTotalIssuancePercent::get(),
-                T::MaxTotalIssuancePercent::get(),
-            );
 
             let new_tier_config =
                 TierConfig::<T>::get().calculate_new(&tier_params, average_price, total_issuance);
 
             // Validate new tier configuration
-            if new_tier_config.is_valid()
-                && new_tier_config.is_valid_dyn_tier_values(total_issuance, tier_percent_range)
-            {
+            if new_tier_config.is_valid() {
                 TierConfig::<T>::put(new_tier_config);
             } else {
                 log::warn!(

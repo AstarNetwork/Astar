@@ -409,8 +409,6 @@ impl TierSlotsFunc for ShidenTierSlots {
 parameter_types! {
     pub const MinimumStakingAmount: Balance = 50 * SDN;
     pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
-    pub const MinimumDynamicTierPercent: Perbill = Perbill::from_parts(1_000_000); // 0.1%
-    pub const MaximumDynamicTierPercent: Perbill = Perbill::from_parts(100_000_000); // 10%
 }
 
 impl pallet_dapp_staking_v3::Config for Runtime {
@@ -438,8 +436,6 @@ impl pallet_dapp_staking_v3::Config for Runtime {
     type MinimumStakeAmount = MinimumStakingAmount;
     type NumberOfTiers = ConstU32<4>;
     type RankingEnabled = ConstBool<true>;
-    type MinTotalIssuancePercent = MinimumDynamicTierPercent;
-    type MaxTotalIssuancePercent = MaximumDynamicTierPercent;
     type WeightInfo = weights::pallet_dapp_staking_v3::SubstrateWeight<Runtime>;
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = DAppStakingBenchmarkHelper<SmartContract<AccountId>, AccountId>;
