@@ -1304,6 +1304,9 @@ pub type Migrations = (
     cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
+    // XCM V3 -> V4
+    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
+    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,    
     // dapp-staking dyn tier threshold migrations
     pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime>,
     StaticTierParamsMigration, // runtime specific
