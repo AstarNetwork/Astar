@@ -859,7 +859,7 @@ where
         // Trace the block.
         let f = || -> Result<_, String> {
             let result = if trace_api_version >= 5 {
-                // The block is initialized inside "trace_transaction"
+                // The block is initialized inside "trace_block"
                 api.trace_block(
                     substrate_parent_hash,
                     extrinsics,
@@ -869,7 +869,8 @@ where
             } else {
                 // Old "trace_block" api did not initialize block before applying transactions,
                 // so we need to do it here before calling "trace_block".
-                api.initialize_block(substrate_parent_hash, &block_header)
+                #[allow(deprecated)]
+                api.initialize_block_before_version_5(substrate_parent_hash, &block_header)
                     .map_err(|e| format!("Runtime api access error: {:?}", e))?;
 
                 #[allow(deprecated)]
