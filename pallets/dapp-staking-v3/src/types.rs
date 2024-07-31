@@ -1554,26 +1554,6 @@ impl<NT: Get<u32>> Default for TierParameters<NT> {
     }
 }
 
-/// Extracts the threshold values from a list of `TierThreshold` and calculates
-/// the corresponding balance values for each tier.
-/// The total issuance of the native currency is used to calculate percentage-based thresholds.
-pub fn extract_threshold_values<NT: Get<u32>>(
-    thresholds: BoundedVec<TierThreshold, NT>,
-    total_issuance: Balance,
-) -> BoundedVec<Balance, NT> {
-    thresholds
-        .into_iter()
-        .map(|t| match t {
-            TierThreshold::FixedPercentage {
-                required_percentage,
-            } => required_percentage * total_issuance,
-            TierThreshold::DynamicPercentage { percentage, .. } => percentage * total_issuance,
-        })
-        .collect::<Vec<Balance>>()
-        .try_into()
-        .expect("Invalid number of tier thresholds provided.")
-}
-
 /// Configuration of dApp tiers.
 #[derive(
     Encode,
@@ -1859,3 +1839,32 @@ impl CleanupMarker {
             || self.dapp_tiers_index != self.oldest_valid_era
     }
 }
+
+// Wrap the total issuance value with tier percentages.
+pub struct ThresholdsWithIssuance<NT: Get<u32>> {
+    pub thresholds: BoundedVec<TierThreshold, NT>,
+    pub total_issuance: Balance,
+}
+
+impl<NT: Get<u32>> From<ThresholdsWithIssuance<NT>> for BoundedVec<Balance, NT> {
+    fn from(wrapper: ThresholdsWithIssuance<NT>) -> Self {
+        wrapper
+            .thresholds
+            .iter()
+            .map(|t| match t {
+                TierThreshold::DynamicPercentage { percentage, .. } => {
+                    *percentage * wrapper.total_issuance
+                }
+                TierThreshold::FixedPercentage {
+                    required_percentage,
+                } => *required_percentage * wrapper.total_issuance,
+            })
+            .collect::<Vec<Balance>>()
+            .try_into()
+            .expect("Invalid number of tier thresholds provided.")
+    }
+}
+
+// Implremt from TierParams to BoundedVec<Balance, NT>??
+
+// test it

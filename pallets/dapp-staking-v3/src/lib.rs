@@ -554,6 +554,11 @@ pub mod pallet {
                 "Invalid tier parameters values provided."
             );
 
+            let tier_thresholds_with_issuance = ThresholdsWithIssuance {
+                thresholds: tier_params.tier_thresholds.clone(),
+                total_issuance: T::Currency::total_issuance(),
+            };
+
             let tier_config =
                 TiersConfiguration::<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice> {
                     slots_per_tier: BoundedVec::<u16, T::NumberOfTiers>::try_from(
@@ -561,10 +566,7 @@ pub mod pallet {
                     )
                     .expect("Invalid number of slots per tier entries provided."),
                     reward_portion: tier_params.reward_portion.clone(),
-                    tier_threshold_values: extract_threshold_values(
-                        tier_params.tier_thresholds.clone(),
-                        T::Currency::total_issuance(),
-                    ),
+                    tier_threshold_values: BoundedVec::from(tier_thresholds_with_issuance),
                     _phantom: Default::default(),
                 };
             assert!(

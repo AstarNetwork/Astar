@@ -2932,14 +2932,15 @@ fn tier_configuration_basic_tests() {
     parameter_types! {
         pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
     }
-    let total_issuance: Balance = 400_000;
+    let total_issuance: Balance = 9_000_000_000;
+    let tier_thresholds_with_issuance = ThresholdsWithIssuance {
+        thresholds: params.tier_thresholds.clone(),
+        total_issuance,
+    };
     let init_config = TiersConfiguration::<TiersNum, StandardTierSlots, BaseNativeCurrencyPrice> {
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),
-        tier_threshold_values: extract_threshold_values(
-            params.tier_thresholds.clone(),
-            total_issuance,
-        ),
+        tier_threshold_values: BoundedVec::from(tier_thresholds_with_issuance),
         _phantom: Default::default(),
     };
     assert!(init_config.is_valid(), "Init config must be valid!");
@@ -3094,4 +3095,32 @@ fn dapp_tier_rewards_with_rank() {
             ranked_tier
         ))
     );
+}
+
+#[test]
+fn tier_thresholds_from_conversion_test() {
+    get_u32_type!(TiersNum, 2);
+    let total_issuance: Balance = 1_000_000;
+
+    let thresholds: BoundedVec<TierThreshold, TiersNum> = BoundedVec::try_from(vec![
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_percent(10),
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_percent(5),
+            minimum_required_percentage: Perbill::from_percent(2),
+        },
+    ])
+    .unwrap();
+
+    let tier_thresholds_with_issuance = ThresholdsWithIssuance {
+        thresholds,
+        total_issuance,
+    };
+
+    let thresholds_values: BoundedVec<Balance, TiersNum> =
+        BoundedVec::from(tier_thresholds_with_issuance);
+
+    assert_eq!(thresholds_values[0], 100_000); // 10% of total issuance
+    assert_eq!(thresholds_values[1], 50_000); // 5% of total issuance
 }

@@ -67,15 +67,15 @@ mod v8 {
                 _,
             >(|maybe_old_config| match maybe_old_config {
                 Some(old_config) => {
-                    let new_tier_threshold_values = extract_threshold_values(
-                        old_config.tier_thresholds,
-                        T::Currency::total_issuance(),
-                    );
+                    let new_tier_thresholds = BoundedVec::from(ThresholdsWithIssuance {
+                        thresholds: old_config.tier_thresholds,
+                        total_issuance: T::Currency::total_issuance(),
+                    });
 
                     Some(TiersConfiguration {
                         slots_per_tier: old_config.slots_per_tier,
                         reward_portion: old_config.reward_portion,
-                        tier_threshold_values: new_tier_threshold_values,
+                        tier_threshold_values: new_tier_thresholds,
                         _phantom: Default::default(),
                     })
                 }

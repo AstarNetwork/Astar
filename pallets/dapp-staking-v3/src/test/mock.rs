@@ -337,6 +337,11 @@ impl ExtBuilder {
                 .unwrap(),
             };
 
+            let total_issuance = <Test as Config>::Currency::total_issuance();
+            let tier_thresholds_with_issuance = ThresholdsWithIssuance {
+                thresholds: tier_params.tier_thresholds.clone(),
+                total_issuance,
+            };
             // Init tier config, based on the initial params. Needs to be adjusted to the init price.
             let init_tier_config = TiersConfiguration::<
                 <Test as Config>::NumberOfTiers,
@@ -345,16 +350,13 @@ impl ExtBuilder {
             > {
                 slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),
-                tier_threshold_values: extract_threshold_values(
-                    tier_params.tier_thresholds.clone(),
-                    <Test as Config>::Currency::total_issuance(),
-                ),
+                tier_threshold_values: BoundedVec::from(tier_thresholds_with_issuance),
                 _phantom: Default::default(),
             }
             .calculate_new(
                 &tier_params,
                 NATIVE_PRICE.with(|v| v.borrow().clone()),
-                <Test as Config>::Currency::total_issuance(),
+                total_issuance,
             );
 
             pallet_dapp_staking::StaticTierParams::<Test>::put(tier_params);
