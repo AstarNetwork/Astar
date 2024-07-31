@@ -75,7 +75,7 @@ mod v8 {
                     Some(TiersConfiguration {
                         slots_per_tier: old_config.slots_per_tier,
                         reward_portion: old_config.reward_portion,
-                        tier_threshold_values: new_tier_thresholds,
+                        tier_thresholds: new_tier_thresholds,
                         _phantom: Default::default(),
                     })
                 }

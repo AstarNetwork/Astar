@@ -350,7 +350,7 @@ impl ExtBuilder {
             > {
                 slots_per_tier: BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap(),
                 reward_portion: tier_params.reward_portion.clone(),
-                tier_threshold_values: BoundedVec::from(tier_thresholds_with_issuance),
+                tier_thresholds: BoundedVec::from(tier_thresholds_with_issuance),
                 _phantom: Default::default(),
             }
             .calculate_new(

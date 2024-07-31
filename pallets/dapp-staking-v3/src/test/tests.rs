@@ -2426,9 +2426,9 @@ fn tier_config_recalculation_works() {
         );
         assert!(
             new_tier_config
-                .tier_threshold_values
+                .tier_thresholds
                 .iter()
-                .zip(init_tier_config.tier_threshold_values.iter())
+                .zip(init_tier_config.tier_thresholds.iter())
                 .all(|(new, init)| new <= init),
             "Tier threshold values should decrease with higher price"
         );
@@ -2459,9 +2459,9 @@ fn tier_config_recalculation_works() {
         );
         assert!(
             new_tier_config
-                .tier_threshold_values
+                .tier_thresholds
                 .iter()
-                .zip(init_tier_config.tier_threshold_values.iter())
+                .zip(init_tier_config.tier_thresholds.iter())
                 .all(|(new, init)| new >= init),
             "Tier threshold values should increase with lower price"
         );
@@ -2507,7 +2507,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             lock_and_stake(
                 dapp_index,
                 &smart_contracts[dapp_index],
-                tier_config.tier_threshold_values[0] + x + 1,
+                tier_config.tier_thresholds[0] + x + 1,
             );
             dapp_index += 1;
         }
@@ -2515,7 +2515,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         lock_and_stake(
             dapp_index,
             &smart_contracts[dapp_index],
-            tier_config.tier_threshold_values[0],
+            tier_config.tier_thresholds[0],
         );
         dapp_index += 1;
 
@@ -2523,7 +2523,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         lock_and_stake(
             dapp_index,
             &smart_contracts[dapp_index],
-            tier_config.tier_threshold_values[0] - 1,
+            tier_config.tier_thresholds[0] - 1,
         );
         dapp_index += 1;
 
@@ -2533,7 +2533,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             lock_and_stake(
                 dapp_index,
                 &smart_contracts[dapp_index],
-                tier_config.tier_threshold_values[3] + x,
+                tier_config.tier_thresholds[3] + x,
             );
             dapp_index += 1;
         }
@@ -2542,7 +2542,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         lock_and_stake(
             dapp_index,
             &smart_contracts[dapp_index],
-            tier_config.tier_threshold_values[3] - 1,
+            tier_config.tier_thresholds[3] - 1,
         );
 
         // Finally, the actual test
@@ -3116,7 +3116,7 @@ fn base_number_of_slots_is_respected() {
             "Base number of slots is expected for base native currency price."
         );
 
-        let base_thresholds = TierConfig::<Test>::get().tier_threshold_values;
+        let base_thresholds = TierConfig::<Test>::get().tier_thresholds;
 
         // 2. Increase the price significantly, and ensure number of slots has increased, and thresholds have been saturated.
         let higher_price = base_native_price * FixedU128::from(1000);
@@ -3134,7 +3134,7 @@ fn base_number_of_slots_is_respected() {
         );
 
         for (amount, static_tier_threshold) in TierConfig::<Test>::get()
-            .tier_threshold_values
+            .tier_thresholds
             .iter()
             .zip(StaticTierParams::<Test>::get().tier_thresholds.iter())
         {
@@ -3161,7 +3161,7 @@ fn base_number_of_slots_is_respected() {
         );
 
         assert_eq!(
-            TierConfig::<Test>::get().tier_threshold_values,
+            TierConfig::<Test>::get().tier_thresholds,
             base_thresholds,
             "Thresholds must be the same as the base thresholds."
         );
@@ -3194,7 +3194,7 @@ fn base_number_of_slots_is_respected() {
         );
 
         assert_eq!(
-            TierConfig::<Test>::get().tier_threshold_values,
+            TierConfig::<Test>::get().tier_thresholds,
             base_thresholds,
             "Thresholds must be the same as the base thresholds."
         );

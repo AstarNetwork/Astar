@@ -1576,7 +1576,7 @@ pub struct TiersConfiguration<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>>
     pub reward_portion: BoundedVec<Permill, NT>,
     /// Requirements for entry into each tier.
     /// First entry refers to the first tier, and so on.
-    pub tier_threshold_values: BoundedVec<Balance, NT>,
+    pub tier_thresholds: BoundedVec<Balance, NT>,
     /// Phantom data to keep track of the tier slots function.
     #[codec(skip)]
     pub(crate) _phantom: PhantomData<(T, P)>,
@@ -1587,7 +1587,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> Default for TiersConfigu
         Self {
             slots_per_tier: BoundedVec::default(),
             reward_portion: BoundedVec::default(),
-            tier_threshold_values: BoundedVec::default(),
+            tier_thresholds: BoundedVec::default(),
             _phantom: Default::default(),
         }
     }
@@ -1605,7 +1605,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         number_of_tiers == self.slots_per_tier.len()
             // All vector length must match number of tiers.
             && number_of_tiers == self.reward_portion.len()
-            && number_of_tiers == self.tier_threshold_values.len()
+            && number_of_tiers == self.tier_thresholds.len()
     }
 
     /// Calculate the total number of slots.
@@ -1650,7 +1650,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
             )
         };
 
-        let new_tier_threshold_values: BoundedVec<Balance, NT> = params
+        let new_tier_thresholds: BoundedVec<Balance, NT> = params
             .tier_thresholds
             .clone()
             .iter()
@@ -1669,7 +1669,7 @@ impl<NT: Get<u32>, T: TierSlotsFunc, P: Get<FixedU128>> TiersConfiguration<NT, T
         Self {
             slots_per_tier: new_slots_per_tier,
             reward_portion: params.reward_portion.clone(),
-            tier_threshold_values: new_tier_threshold_values,
+            tier_thresholds: new_tier_thresholds,
             _phantom: Default::default(),
         }
     }

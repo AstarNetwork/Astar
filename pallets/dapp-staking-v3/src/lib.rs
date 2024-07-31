@@ -566,7 +566,7 @@ pub mod pallet {
                     )
                     .expect("Invalid number of slots per tier entries provided."),
                     reward_portion: tier_params.reward_portion.clone(),
-                    tier_threshold_values: BoundedVec::from(tier_thresholds_with_issuance),
+                    tier_thresholds: BoundedVec::from(tier_thresholds_with_issuance),
                     _phantom: Default::default(),
                 };
             assert!(
@@ -1720,7 +1720,7 @@ pub mod pallet {
             for (tier_id, (tier_capacity, lower_bound)) in tier_config
                 .slots_per_tier
                 .iter()
-                .zip(tier_config.tier_threshold_values.iter())
+                .zip(tier_config.tier_thresholds.iter())
                 .enumerate()
             {
                 // Iterate over dApps until one of two conditions has been met:
