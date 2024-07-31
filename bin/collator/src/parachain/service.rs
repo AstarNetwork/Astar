@@ -959,34 +959,30 @@ where
 {
     let verifier_client = client.clone();
 
-    let aura_verifier = move || {
-        Box::new(sc_consensus_aura::build_verifier::<AuraPair, _, _, _>(
-            sc_consensus_aura::BuildVerifierParams {
-                client: verifier_client.clone(),
-                create_inherent_data_providers: move |parent_hash, _| {
-                    let cidp_client = verifier_client.clone();
-                    async move {
-                        let slot_duration = cumulus_client_consensus_aura::slot_duration_at(
-                            &*cidp_client,
-                            parent_hash,
-                        )?;
-                        let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+    let aura_verifier = cumulus_client_consensus_aura::build_verifier::<AuraPair, _, _, _>(
+        cumulus_client_consensus_aura::BuildVerifierParams {
+            client: verifier_client.clone(),
+            create_inherent_data_providers: move |parent_hash, _| {
+                let cidp_client = verifier_client.clone();
+                async move {
+                    let slot_duration = cumulus_client_consensus_aura::slot_duration_at(
+                        &*cidp_client,
+                        parent_hash,
+                    )?;
+                    let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-                        let slot =
+                    let slot =
                             sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
                                 *timestamp,
                                 slot_duration,
                             );
 
-                        Ok((slot, timestamp))
-                    }
-                },
-                telemetry: telemetry_handle,
-                check_for_equivocation: sc_consensus_aura::CheckForEquivocation::Yes,
-                compatibility_mode: sc_consensus_aura::CompatibilityMode::None,
+                    Ok((slot, timestamp))
+                }
             },
-        )) as Box<_>
-    };
+            telemetry: telemetry_handle,
+        },
+    );
 
     let relay_chain_verifier = Box::new(RelayChainVerifier::new(client.clone(), |_, _| async {
         Ok(())
@@ -995,7 +991,7 @@ where
     let verifier = Verifier {
         client,
         relay_chain_verifier,
-        aura_verifier: BuildOnAccess::Uninitialized(Some(Box::new(aura_verifier))),
+        aura_verifier: Box::new(aura_verifier),
     };
 
     let registry = config.prometheus_registry();
