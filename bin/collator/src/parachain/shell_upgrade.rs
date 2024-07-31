@@ -22,7 +22,7 @@ use cumulus_primitives_core::relay_chain::PersistedValidationData;
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use fc_rpc::pending::ConsensusDataProvider;
 use sc_client_api::{AuxStore, UsageProvider};
-use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams, ForkChoiceStrategy};
+use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_consensus_aura::{
     digests::CompatibleDigestItem,
@@ -37,27 +37,9 @@ use sp_runtime::{
 use sp_timestamp::TimestampInherentData;
 use std::{marker::PhantomData, sync::Arc};
 
-pub enum BuildOnAccess<R> {
-    Uninitialized(Option<Box<dyn FnOnce() -> R + Send + Sync>>),
-    Initialized(R),
-}
-
-impl<R> BuildOnAccess<R> {
-    fn get_mut(&mut self) -> &mut R {
-        loop {
-            match self {
-                Self::Uninitialized(f) => {
-                    *self = Self::Initialized((f.take().unwrap())());
-                }
-                Self::Initialized(ref mut r) => return r,
-            }
-        }
-    }
-}
-
 pub struct Verifier<Client> {
     pub client: Arc<Client>,
-    pub aura_verifier: BuildOnAccess<Box<dyn VerifierT<Block>>>,
+    pub aura_verifier: Box<dyn VerifierT<Block>>,
     pub relay_chain_verifier: Box<dyn VerifierT<Block>>,
 }
 
@@ -69,28 +51,15 @@ where
 {
     async fn verify(
         &mut self,
-        mut block_import: BlockImportParams<Block>,
+        block_import: BlockImportParams<Block>,
     ) -> Result<BlockImportParams<Block>, String> {
-        // Skip checks that include execution, if being told so or when importing only state.
-        //
-        // This is done for example when gap syncing and it is expected that the block after the gap
-        // was checked/chosen properly, e.g. by warp syncing to this block using a finality proof.
-        // Or when we are importing state only and can not verify the seal.
-        if block_import.with_state() || block_import.state_action.skip_execution_checks() {
-            // When we are importing only the state of a block, it will be the best block.
-            block_import.fork_choice = Some(ForkChoiceStrategy::Custom(block_import.with_state()));
-            return Ok(block_import);
-        }
-
-        let block_hash = *block_import.header.parent_hash();
-
         if self
             .client
             .runtime_api()
-            .has_api::<dyn AuraApi<Block, AuraId>>(block_hash)
+            .has_api::<dyn AuraApi<Block, AuraId>>(*block_import.header.parent_hash())
             .unwrap_or(false)
         {
-            self.aura_verifier.get_mut().verify(block_import).await
+            self.aura_verifier.verify(block_import).await
         } else {
             self.relay_chain_verifier.verify(block_import).await
         }
