@@ -26,9 +26,6 @@ pub mod xcm;
 /// Checked Ethereum transaction primitives.
 pub mod ethereum_checked;
 
-/// XVM primitives.
-pub mod xvm;
-
 /// EVM primitives.
 pub mod evm;
 

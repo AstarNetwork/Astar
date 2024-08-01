@@ -23,14 +23,8 @@ use ethereum::{
     AccessListItem, EIP1559Transaction, TransactionAction, TransactionV2 as Transaction,
 };
 use ethereum_types::{H160, H256, U256};
-use fp_evm::CallInfo;
-use frame_support::{
-    dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
-    pallet_prelude::*,
-    traits::ConstU32,
-    BoundedVec,
-};
-use sp_std::{prelude::*, result::Result};
+use frame_support::{pallet_prelude::*, traits::ConstU32, BoundedVec};
+use sp_std::prelude::*;
 
 /// Max Ethereum tx input size: 65_536 bytes
 pub const MAX_ETHEREUM_TX_INPUT_SIZE: u32 = 2u32.pow(16);
@@ -85,14 +79,4 @@ impl CheckedEthereumTx {
 /// Dummy signature for all transactions.
 fn dummy_rs() -> H256 {
     H256::from_low_u64_be(1u64)
-}
-
-/// Transact an checked Ethereum transaction. Similar to `pallet_ethereum::Transact` but
-/// doesn't require tx signature.
-pub trait CheckedEthereumTransact {
-    /// Transact an checked Ethereum transaction in XVM.
-    fn xvm_transact(
-        source: H160,
-        checked_tx: CheckedEthereumTx,
-    ) -> Result<(PostDispatchInfo, CallInfo), DispatchErrorWithPostInfo>;
 }

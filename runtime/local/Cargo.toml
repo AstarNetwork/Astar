@@ -70,7 +70,6 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 # Astar pallets
 astar-primitives = { workspace = true }
 pallet-chain-extension-unified-accounts = { workspace = true }
-pallet-chain-extension-xvm = { workspace = true }
 pallet-collective-proxy = { workspace = true }
 pallet-dapp-staking-v3 = { workspace = true }
 pallet-dynamic-evm-base-fee = { workspace = true }
@@ -80,11 +79,9 @@ pallet-evm-precompile-dispatch-lockdrop = { workspace = true }
 pallet-evm-precompile-sr25519 = { workspace = true }
 pallet-evm-precompile-substrate-ecdsa = { workspace = true }
 pallet-evm-precompile-unified-accounts = { workspace = true }
-pallet-evm-precompile-xvm = { workspace = true }
 pallet-inflation = { workspace = true }
 pallet-static-price-provider = { workspace = true }
 pallet-unified-accounts = { workspace = true }
-pallet-xvm = { workspace = true }
 
 dapp-staking-v3-runtime-api = { workspace = true }
 
@@ -125,7 +122,6 @@ std = [
 	"pallet-membership/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
-	"pallet-chain-extension-xvm/std",
 	"pallet-chain-extension-unified-accounts/std",
 	"pallet-dapp-staking-v3/std",
 	"dapp-staking-v3-runtime-api/std",
@@ -146,7 +142,6 @@ std = [
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-unified-accounts/std",
-	"pallet-evm-precompile-xvm/std",
 	"pallet-evm-precompile-dispatch-lockdrop/std",
 	"pallet-grandpa/std",
 	"pallet-insecure-randomness-collective-flip/std",
@@ -178,7 +173,6 @@ std = [
 	"frame-try-runtime/std",
 	"frame-metadata-hash-extension/std",
 	"pallet-scheduler/std",
-	"pallet-xvm/std",
 	"pallet-unified-accounts/std",
 	"pallet-ethereum-checked/std",
 	"moonbeam-evm-tracer/std",
@@ -229,7 +223,6 @@ runtime-benchmarks = [
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
-	"pallet-xvm/runtime-benchmarks",
 ]
 try-runtime = [
 	"fp-self-contained/try-runtime",
@@ -253,7 +246,6 @@ try-runtime = [
 	"pallet-transaction-payment/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-vesting/try-runtime",
-	"pallet-xvm/try-runtime",
 	"pallet-unified-accounts/try-runtime",
 	"pallet-ethereum/try-runtime",
 	"pallet-assets/try-runtime",
