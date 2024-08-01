@@ -2328,32 +2328,32 @@
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
     Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
-    <span class="kw">let </span>client_for_aura = client.clone();
+    <span class="kw">let </span>verifier_client = client.clone();
 
-    <span class="kw">let </span>aura_verifier = <span class="kw">move </span>|| {
-        <span class="kw">let </span>slot_duration =
-            cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client_for_aura).unwrap();
-
-        Box::new(sc_consensus_aura::build_verifier::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
-            sc_consensus_aura::BuildVerifierParams {
-                client: client_for_aura.clone(),
-                create_inherent_data_providers: <span class="kw">move </span>|<span class="kw">_</span>, <span class="kw">_</span>| <span class="kw">async move </span>{
+    <span class="kw">let </span>aura_verifier = cumulus_client_consensus_aura::build_verifier::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+        cumulus_client_consensus_aura::BuildVerifierParams {
+            client: verifier_client.clone(),
+            create_inherent_data_providers: <span class="kw">move </span>|parent_hash, <span class="kw">_</span>| {
+                <span class="kw">let </span>cidp_client = verifier_client.clone();
+                <span class="kw">async move </span>{
+                    <span class="kw">let </span>slot_duration = cumulus_client_consensus_aura::slot_duration_at(
+                        <span class="kw-2">&amp;*</span>cidp_client,
+                        parent_hash,
+                    )<span class="question-mark">?</span>;
                     <span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                     <span class="kw">let </span>slot =
-                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                        <span class="kw-2">*</span>timestamp,
-                        slot_duration,
-                    );
+                            sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                                <span class="kw-2">*</span>timestamp,
+                                slot_duration,
+                            );
 
                     <span class="prelude-val">Ok</span>((slot, timestamp))
-                },
-                telemetry: telemetry_handle,
-                check_for_equivocation: sc_consensus_aura::CheckForEquivocation::Yes,
-                compatibility_mode: sc_consensus_aura::CompatibilityMode::None,
+                }
             },
-        )) <span class="kw">as </span>Box&lt;<span class="kw">_</span>&gt;
-    };
+            telemetry: telemetry_handle,
+        },
+    );
 
     <span class="kw">let </span>relay_chain_verifier = Box::new(RelayChainVerifier::new(client.clone(), |<span class="kw">_</span>, <span class="kw">_</span>| <span class="kw">async </span>{
         <span class="prelude-val">Ok</span>(())
@@ -2362,7 +2362,7 @@
     <span class="kw">let </span>verifier = Verifier {
         client,
         relay_chain_verifier,
-        aura_verifier: BuildOnAccess::Uninitialized(<span class="prelude-val">Some</span>(Box::new(aura_verifier))),
+        aura_verifier: Box::new(aura_verifier),
     };
 
     <span class="kw">let </span>registry = config.prometheus_registry();

@@ -204,37 +204,6 @@
 <a href="#202" id="202">202</a>
 <a href="#203" id="203">203</a>
 <a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
-<a href="#216" id="216">216</a>
-<a href="#217" id="217">217</a>
-<a href="#218" id="218">218</a>
-<a href="#219" id="219">219</a>
-<a href="#220" id="220">220</a>
-<a href="#221" id="221">221</a>
-<a href="#222" id="222">222</a>
-<a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a>
-<a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -259,7 +228,7 @@
 <span class="kw">use </span>cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 <span class="kw">use </span>fc_rpc::pending::ConsensusDataProvider;
 <span class="kw">use </span>sc_client_api::{AuxStore, UsageProvider};
-<span class="kw">use </span>sc_consensus::{import_queue::Verifier <span class="kw">as </span>VerifierT, BlockImportParams, ForkChoiceStrategy};
+<span class="kw">use </span>sc_consensus::{import_queue::Verifier <span class="kw">as </span>VerifierT, BlockImportParams};
 <span class="kw">use </span>sp_api::{ApiExt, ProvideRuntimeApi};
 <span class="kw">use </span>sp_consensus_aura::{
     digests::CompatibleDigestItem,
@@ -274,27 +243,9 @@
 <span class="kw">use </span>sp_timestamp::TimestampInherentData;
 <span class="kw">use </span>std::{marker::PhantomData, sync::Arc};
 
-<span class="kw">pub enum </span>BuildOnAccess&lt;R&gt; {
-    Uninitialized(<span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span>FnOnce() -&gt; R + Send + Sync&gt;&gt;),
-    Initialized(R),
-}
-
-<span class="kw">impl</span>&lt;R&gt; BuildOnAccess&lt;R&gt; {
-    <span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>R {
-        <span class="kw">loop </span>{
-            <span class="kw">match </span><span class="self">self </span>{
-                <span class="self">Self</span>::Uninitialized(f) =&gt; {
-                    <span class="kw-2">*</span><span class="self">self </span>= <span class="self">Self</span>::Initialized((f.take().unwrap())());
-                }
-                <span class="self">Self</span>::Initialized(<span class="kw-2">ref mut </span>r) =&gt; <span class="kw">return </span>r,
-            }
-        }
-    }
-}
-
 <span class="kw">pub struct </span>Verifier&lt;Client&gt; {
     <span class="kw">pub </span>client: Arc&lt;Client&gt;,
-    <span class="kw">pub </span>aura_verifier: BuildOnAccess&lt;Box&lt;<span class="kw">dyn </span>VerifierT&lt;Block&gt;&gt;&gt;,
+    <span class="kw">pub </span>aura_verifier: Box&lt;<span class="kw">dyn </span>VerifierT&lt;Block&gt;&gt;,
     <span class="kw">pub </span>relay_chain_verifier: Box&lt;<span class="kw">dyn </span>VerifierT&lt;Block&gt;&gt;,
 }
 
@@ -306,28 +257,15 @@
 {
     <span class="kw">async fn </span>verify(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-        <span class="kw-2">mut </span>block_import: BlockImportParams&lt;Block&gt;,
+        block_import: BlockImportParams&lt;Block&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;Block&gt;, String&gt; {
-        <span class="comment">// Skip checks that include execution, if being told so or when importing only state.
-        //
-        // This is done for example when gap syncing and it is expected that the block after the gap
-        // was checked/chosen properly, e.g. by warp syncing to this block using a finality proof.
-        // Or when we are importing state only and can not verify the seal.
-        </span><span class="kw">if </span>block_import.with_state() || block_import.state_action.skip_execution_checks() {
-            <span class="comment">// When we are importing only the state of a block, it will be the best block.
-            </span>block_import.fork_choice = <span class="prelude-val">Some</span>(ForkChoiceStrategy::Custom(block_import.with_state()));
-            <span class="kw">return </span><span class="prelude-val">Ok</span>(block_import);
-        }
-
-        <span class="kw">let </span>block_hash = <span class="kw-2">*</span>block_import.header.parent_hash();
-
         <span class="kw">if </span><span class="self">self
             </span>.client
             .runtime_api()
-            .has_api::&lt;<span class="kw">dyn </span>AuraApi&lt;Block, AuraId&gt;&gt;(block_hash)
+            .has_api::&lt;<span class="kw">dyn </span>AuraApi&lt;Block, AuraId&gt;&gt;(<span class="kw-2">*</span>block_import.header.parent_hash())
             .unwrap_or(<span class="bool-val">false</span>)
         {
-            <span class="self">self</span>.aura_verifier.get_mut().verify(block_import).<span class="kw">await
+            <span class="self">self</span>.aura_verifier.verify(block_import).<span class="kw">await
         </span>} <span class="kw">else </span>{
             <span class="self">self</span>.relay_chain_verifier.verify(block_import).<span class="kw">await
         </span>}
