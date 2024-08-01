@@ -33,8 +33,8 @@ use frame_support::{
         fungible::HoldConsideration,
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
         AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EqualPrivilegeOnly,
-        FindAuthor, Get, GetStorageVersion, Imbalance, InstanceFilter, LinearStoragePrice, Nothing,
-        OnFinalize, OnRuntimeUpgrade, OnUnbalanced, WithdrawReasons,
+        FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize,
+        OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -43,7 +43,7 @@ use frame_support::{
         ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
-    BoundedVec, ConsensusEngineId, PalletId,
+    ConsensusEngineId, PalletId,
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
@@ -1612,41 +1612,24 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-pub struct StaticTierParamsMigration;
-impl OnRuntimeUpgrade for StaticTierParamsMigration {
-    fn on_runtime_upgrade() -> Weight {
-        let onchain_storage_version =
-            pallet_dapp_staking_v3::Pallet::<Runtime>::on_chain_storage_version();
-
-        if onchain_storage_version == 8 {
-            let tier_thresholds = BoundedVec::try_from(vec![
-                TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(20_000), // 0.0020%
-                    minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
-                },
-                TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(10_000), // 0.0010%
-                    minimum_required_percentage: Perbill::from_parts(6_800), // 0.00068%
-                },
-                TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(5_400), // 0.00054%
-                    minimum_required_percentage: Perbill::from_parts(3_400), // 0.00034%
-                },
-                TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(1_400), // 0.00014%
-                },
-            ])
-            .unwrap();
-
-            pallet_dapp_staking_v3::StaticTierParams::<Runtime>::mutate(|config| {
-                config.tier_thresholds = tier_thresholds;
-            });
-
-            <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
-        } else {
-            Weight::zero()
-        }
-    }
+parameter_types! {
+    pub const TierThresholds: [TierThreshold; 4] = [
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(20_000), // 0.0020%
+            minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(10_000), // 0.0010%
+            minimum_required_percentage: Perbill::from_parts(6_800), // 0.00068%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(5_400), // 0.00054%
+            minimum_required_percentage: Perbill::from_parts(3_400), // 0.00034%
+        },
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_parts(1_400), // 0.00014%
+        },
+    ];
 }
 
 /// All migrations that will run on the next runtime upgrade.
@@ -1657,8 +1640,7 @@ pub type Migrations = (
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
     // dapp-staking dyn tier threshold migrations
-    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime>,
-    StaticTierParamsMigration, // runtime specific
+    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
 );
 
 type EventRecord = frame_system::EventRecord<

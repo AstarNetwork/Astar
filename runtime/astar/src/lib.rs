@@ -30,9 +30,8 @@ use frame_support::{
     genesis_builder_helper::{build_config, create_default_config},
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get,
-        GetStorageVersion, Imbalance, InstanceFilter, Nothing, OnFinalize, OnRuntimeUpgrade,
-        OnUnbalanced, Randomness, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -41,7 +40,7 @@ use frame_support::{
         ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
-    BoundedVec, ConsensusEngineId, PalletId,
+    ConsensusEngineId, PalletId,
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
@@ -1258,41 +1257,24 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
-pub struct StaticTierParamsMigration;
-impl OnRuntimeUpgrade for StaticTierParamsMigration {
-    fn on_runtime_upgrade() -> Weight {
-        let onchain_storage_version =
-            pallet_dapp_staking_v3::Pallet::<Runtime>::on_chain_storage_version();
-
-        if onchain_storage_version == 8 {
-            let tier_thresholds = BoundedVec::try_from(vec![
-                TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(35_700_000), // 3.57%
-                    minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
-                },
-                TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(8_900_000), // 0.89%
-                    minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
-                },
-                TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(23_800_000), // 2.38%
-                    minimum_required_percentage: Perbill::from_parts(17_900_000), // 1.79%
-                },
-                TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(6_000_000), // 0.6%
-                },
-            ])
-            .unwrap();
-
-            pallet_dapp_staking_v3::StaticTierParams::<Runtime>::mutate(|config| {
-                config.tier_thresholds = tier_thresholds;
-            });
-
-            <Runtime as frame_system::Config>::DbWeight::get().reads_writes(1, 1)
-        } else {
-            Weight::zero()
-        }
-    }
+parameter_types! {
+    pub const TierThresholds: [TierThreshold; 4] = [
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(35_700_000), // 3.57%
+            minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(8_900_000), // 0.89%
+            minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(23_800_000), // 2.38%
+            minimum_required_percentage: Perbill::from_parts(17_900_000), // 1.79%
+        },
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+        },
+    ];
 }
 
 /// All migrations that will run on the next runtime upgrade.
@@ -1303,10 +1285,9 @@ pub type Migrations = (
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
     // XCM V3 -> V4
     pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
-    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,    
+    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
     // dapp-staking dyn tier threshold migrations
-    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime>,
-    StaticTierParamsMigration, // runtime specific
+    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
 );
 
 type EventRecord = frame_system::EventRecord<

@@ -44,10 +44,10 @@ pub mod versioned_migrations {
 
     /// Migration V7 to V8 wrapped in a [`frame_support::migrations::VersionedMigration`], ensuring
     /// the migration is only performed when on-chain version is 7.
-    pub type V7ToV8<T> = frame_support::migrations::VersionedMigration<
+    pub type V7ToV8<T, TierThresholds> = frame_support::migrations::VersionedMigration<
         7,
         8,
-        v8::VersionMigrateV7ToV8<T>,
+        v8::VersionMigrateV7ToV8<T, TierThresholds>,
         Pallet<T>,
         <T as frame_system::Config>::DbWeight,
     >;
@@ -56,21 +56,48 @@ pub mod versioned_migrations {
 // TierThreshold as percentage of the total issuance
 mod v8 {
     use super::*;
+    use crate::migration::v7::TierParameters as TierParametersV7;
     use crate::migration::v7::TiersConfiguration as TiersConfigurationV7;
 
-    pub struct VersionMigrateV7ToV8<T>(PhantomData<T>);
+    pub struct VersionMigrateV7ToV8<T, TierThresholds>(PhantomData<(T, TierThresholds)>);
 
-    impl<T: Config> OnRuntimeUpgrade for VersionMigrateV7ToV8<T> {
+    impl<T: Config, TierThresholds: Get<[TierThreshold; 4]>> OnRuntimeUpgrade
+        for VersionMigrateV7ToV8<T, TierThresholds>
+    {
         fn on_runtime_upgrade() -> Weight {
+            // 1. Update static tier parameters with new thresholds from the runtime configurable param TierThresholds
+            let _ = StaticTierParams::<T>::translate::<TierParametersV7<T::NumberOfTiers>, _>(
+                |maybe_old_params| match maybe_old_params {
+                    Some(old_params) => {
+                        let tier_thresholds: BoundedVec<TierThreshold, T::NumberOfTiers> =
+                            BoundedVec::try_from(TierThresholds::get().to_vec()).unwrap();
+
+                        Some(TierParameters {
+                            slot_distribution: old_params.slot_distribution,
+                            reward_portion: old_params.reward_portion,
+                            tier_thresholds,
+                        })
+                    }
+                    _ => None,
+                },
+            );
+
+            // 2. Translate tier thresholds from V7 TierThresholds to Balance
             let _ = TierConfig::<T>::translate::<
                 TiersConfigurationV7<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice>,
                 _,
             >(|maybe_old_config| match maybe_old_config {
                 Some(old_config) => {
-                    let new_tier_thresholds = BoundedVec::from(ThresholdsWithIssuance {
-                        thresholds: old_config.tier_thresholds,
-                        total_issuance: T::Currency::total_issuance(),
-                    });
+                    let new_tier_thresholds = old_config
+                        .tier_thresholds
+                        .iter()
+                        .map(|t| match t {
+                            v7::TierThreshold::DynamicTvlAmount { amount, .. } => *amount,
+                            v7::TierThreshold::FixedTvlAmount { amount } => *amount,
+                        })
+                        .collect::<Vec<Balance>>()
+                        .try_into()
+                        .expect("Invalid number of tier thresholds provided.");
 
                     Some(TiersConfiguration {
                         slots_per_tier: old_config.slots_per_tier,
@@ -82,7 +109,7 @@ mod v8 {
                 _ => None,
             });
 
-            T::DbWeight::get().reads_writes(1, 1)
+            T::DbWeight::get().reads_writes(2, 2)
         }
 
         #[cfg(feature = "try-runtime")]
@@ -114,6 +141,15 @@ mod v8 {
             );
 
             assert!(actual_config.is_valid());
+
+            let actual_tier_params = StaticTierParams::<T>::get();
+            assert!(actual_tier_params.is_valid());
+
+            let expected_tier_thresholds: BoundedVec<TierThreshold, T::NumberOfTiers> =
+                BoundedVec::try_from(TierThresholds::get().to_vec()).unwrap();
+            let actual_tier_thresholds = actual_tier_params.tier_thresholds;
+            assert_eq!(expected_tier_thresholds, actual_tier_thresholds);
+
             ensure!(
                 Pallet::<T>::on_chain_storage_version() >= 8,
                 "dapp-staking-v3::migration::v8: Wrong storage version."
@@ -128,6 +164,36 @@ mod v7 {
     use super::*;
     use crate::migration::v6::DAppTierRewards as DAppTierRewardsV6;
     use astar_primitives::dapp_staking::TierSlots as TierSlotsFunc;
+
+    /// Description of tier entry requirement.
+    #[derive(Encode, Decode)]
+    pub enum TierThreshold {
+        FixedTvlAmount {
+            amount: Balance,
+        },
+        DynamicTvlAmount {
+            amount: Balance,
+            minimum_amount: Balance,
+        },
+    }
+
+    /// Top level description of tier slot parameters used to calculate tier configuration.
+    #[derive(Encode, Decode)]
+    pub struct TierParameters<NT: Get<u32>> {
+        /// Reward distribution per tier, in percentage.
+        /// First entry refers to the first tier, and so on.
+        /// The sum of all values must not exceed 100%.
+        /// In case it is less, portion of rewards will never be distributed.
+        pub reward_portion: BoundedVec<Permill, NT>,
+        /// Distribution of number of slots per tier, in percentage.
+        /// First entry refers to the first tier, and so on.
+        /// The sum of all values must not exceed 100%.
+        /// In case it is less, slot capacity will never be fully filled.
+        pub slot_distribution: BoundedVec<Permill, NT>,
+        /// Requirements for entry into each tier.
+        /// First entry refers to the first tier, and so on.
+        pub tier_thresholds: BoundedVec<v7::TierThreshold, NT>,
+    }
 
     /// v7 type for configuration of dApp tiers.
     #[derive(Encode, Decode)]
@@ -144,11 +210,16 @@ mod v7 {
         pub reward_portion: BoundedVec<Permill, NT>,
         /// Requirements for entry into each tier.
         /// First entry refers to the first tier, and so on.
-        pub tier_thresholds: BoundedVec<TierThreshold, NT>,
+        pub tier_thresholds: BoundedVec<v7::TierThreshold, NT>,
         /// Phantom data to keep track of the tier slots function.
         #[codec(skip)]
         pub(crate) _phantom: PhantomData<(T, P)>,
     }
+
+    /// v7 type for [`crate::StaticTierParams`]
+    #[storage_alias]
+    pub type StaticTierParams<T: Config> =
+        StorageValue<Pallet<T>, TierParameters<<T as Config>::NumberOfTiers>, ValueQuery>;
 
     /// v7 type for [`crate::TierConfig`]
     #[storage_alias]
