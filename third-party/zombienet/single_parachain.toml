@@ -55,13 +55,3 @@ ws_port = 9945
 name = "collator3"
 command = "./astar-collator"
 ws_port = 9946
-
-[[parachains.collators]]
-name = "collator4"
-command = "./astar-collator"
-ws_port = 9947
-
-[[parachains.collators]]
-name = "collator5"
-command = "./astar-collator"
-ws_port = 9948
