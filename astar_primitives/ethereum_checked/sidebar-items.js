@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["MAX_ETHEREUM_TX_INPUT_SIZE"],"struct":["CheckedEthereumTx"],"trait":["CheckedEthereumTransact"],"type":["EthereumTxInput"]};
+window.SIDEBAR_ITEMS = {"constant":["MAX_ETHEREUM_TX_INPUT_SIZE"],"struct":["CheckedEthereumTx"],"type":["EthereumTxInput"]};

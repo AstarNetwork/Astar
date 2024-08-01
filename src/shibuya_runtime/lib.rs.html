@@ -2561,20 +2561,6 @@
 <a href="#2559" id="2559">2559</a>
 <a href="#2560" id="2560">2560</a>
 <a href="#2561" id="2561">2561</a>
-<a href="#2562" id="2562">2562</a>
-<a href="#2563" id="2563">2563</a>
-<a href="#2564" id="2564">2564</a>
-<a href="#2565" id="2565">2565</a>
-<a href="#2566" id="2566">2566</a>
-<a href="#2567" id="2567">2567</a>
-<a href="#2568" id="2568">2568</a>
-<a href="#2569" id="2569">2569</a>
-<a href="#2570" id="2570">2570</a>
-<a href="#2571" id="2571">2571</a>
-<a href="#2572" id="2572">2572</a>
-<a href="#2573" id="2573">2573</a>
-<a href="#2574" id="2574">2574</a>
-<a href="#2575" id="2575">2575</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -3314,7 +3300,7 @@
     <span class="kw">type </span>CallStack = [pallet_contracts::Frame&lt;<span class="self">Self</span>&gt;; <span class="number">5</span>];
     <span class="kw">type </span>WeightPrice = pallet_transaction_payment::Pallet&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>WeightInfo = pallet_contracts::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
-    <span class="kw">type </span>ChainExtension = ShibuyaChainExtensions&lt;<span class="self">Self</span>, UnifiedAccounts, Xvm&gt;;
+    <span class="kw">type </span>ChainExtension = ShibuyaChainExtensions&lt;<span class="self">Self</span>, UnifiedAccounts&gt;;
     <span class="kw">type </span>Schedule = Schedule;
     <span class="kw">type </span>AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     <span class="kw">type </span>MaxCodeLen = ConstU32&lt;{ <span class="number">123 </span>* <span class="number">1024 </span>}&gt;;
@@ -3440,26 +3426,13 @@
     <span class="kw">type </span>WeightInfo = pallet_dynamic_evm_base_fee::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="macro">parameter_types! </span>{
-    <span class="doccomment">/// Equal to normal class dispatch weight limit.
-    </span><span class="kw">pub </span>XvmTxWeightLimit: Weight = NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT;
-}
-
 <span class="kw">impl </span>pallet_ethereum_checked::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>ReservedXcmpWeight = ReservedXcmpWeight;
-    <span class="kw">type </span>XvmTxWeightLimit = XvmTxWeightLimit;
     <span class="kw">type </span>InvalidEvmTransactionError = pallet_ethereum::InvalidTransactionWrapper;
     <span class="kw">type </span>ValidatedTransaction = pallet_ethereum::ValidatedTransaction&lt;<span class="self">Self</span>&gt;;
     <span class="kw">type </span>AddressMapper = UnifiedAccounts;
     <span class="kw">type </span>XcmTransactOrigin = pallet_ethereum_checked::EnsureXcmEthereumTx&lt;AccountId&gt;;
     <span class="kw">type </span>WeightInfo = pallet_ethereum_checked::weights::SubstrateWeight&lt;Runtime&gt;;
-}
-
-<span class="kw">impl </span>pallet_xvm::Config <span class="kw">for </span>Runtime {
-    <span class="kw">type </span>GasWeightMapping = pallet_evm::FixedGasWeightMapping&lt;<span class="self">Self</span>&gt;;
-    <span class="kw">type </span>AddressMapper = UnifiedAccounts;
-    <span class="kw">type </span>EthereumTransact = EthereumChecked;
-    <span class="kw">type </span>WeightInfo = pallet_xvm::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="doccomment">/// Current approximation of the gas/s consumption considering
@@ -4137,9 +4110,9 @@
 
         Preimage: pallet_preimage = <span class="number">84</span>,
 
-        Xvm: pallet_xvm = <span class="number">90</span>,
+        <span class="comment">// skip 90 - pallet_xvm previously
 
-        <span class="comment">// Governance
+        // Governance
         </span>Sudo: pallet_sudo = <span class="number">99</span>,
         CouncilMembership: pallet_membership::&lt;Instance2&gt; = <span class="number">100</span>,
         TechnicalCommitteeMembership: pallet_membership::&lt;Instance3&gt; = <span class="number">101</span>,
@@ -4283,7 +4256,6 @@
         [pallet_collator_selection, CollatorSelection]
         [pallet_xcm, PalletXcmExtrinsicsBenchmark::&lt;Runtime&gt;]
         [pallet_ethereum_checked, EthereumChecked]
-        [pallet_xvm, Xvm]
         [pallet_dynamic_evm_base_fee, DynamicEvmBaseFee]
         [pallet_unified_accounts, UnifiedAccounts]
         [xcm_benchmarks_generic, XcmGeneric]
