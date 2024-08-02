@@ -32,9 +32,9 @@ use frame_support::{
     traits::{
         fungible::HoldConsideration,
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, Currency, EqualPrivilegeOnly,
-        FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize,
-        OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, Currency,
+        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
+        Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -71,11 +71,11 @@ use sp_runtime::{
     ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
-use xcm_fee_payment_runtime_api::Error as XcmPaymentApiError;
 use xcm::{
-	latest::prelude::*, IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation,
-	VersionedXcm,
+    latest::prelude::*, IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation,
+    VersionedXcm,
 };
+use xcm_fee_payment_runtime_api::Error as XcmPaymentApiError;
 
 use astar_primitives::{
     dapp_staking::{
@@ -889,7 +889,8 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
         if let Some(author_index) = F::find_author(digests) {
-            let authority_id = pallet_aura::Authorities::<Runtime>::get()[author_index as usize].clone();
+            let authority_id =
+                pallet_aura::Authorities::<Runtime>::get()[author_index as usize].clone();
             return Some(H160::from_slice(&authority_id.encode()[4..24]));
         }
 
