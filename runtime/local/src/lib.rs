@@ -26,7 +26,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
     construct_runtime,
-    genesis_builder_helper::{build_config, create_default_config},
+    genesis_builder_helper::{build_state, get_preset},
     parameter_types,
     traits::{
         fungible::HoldConsideration,
@@ -49,7 +49,7 @@ use pallet_ethereum::PostLogContent;
 use pallet_evm::{FeeCalculator, GasWeightMapping, Runner};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
-use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
+use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 use parity_scale_codec::{Compact, Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, ConstBool, OpaqueMetadata, H160, H256, U256};
@@ -275,6 +275,7 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<50>;
     type AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
+    type SlotDuration = pallet_aura::MinimumPeriodTimesTwo<Runtime>;
 }
 
 impl pallet_grandpa::Config for Runtime {
@@ -397,7 +398,7 @@ impl WeightToFeePolynomial for WeightToFee {
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+    type OnChargeTransaction = FungibleAdapter<Balances, ()>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate = TargetedFeeAdjustment<
@@ -587,7 +588,8 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
         if let Some(author_index) = F::find_author(digests) {
-            let authority_id = Aura::authorities()[author_index as usize].clone();
+            let authority_id =
+                pallet_aura::Authorities::<Runtime>::get()[author_index as usize].clone();
             return Some(H160::from_slice(&authority_id.encode()[4..24]));
         }
 
@@ -631,7 +633,7 @@ impl pallet_evm::Config for Runtime {
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
-    type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ()>;
+    type OnChargeTransaction = pallet_evm::EVMFungibleAdapter<Balances, ()>;
     type BlockGasLimit = BlockGasLimit;
     type Timestamp = Timestamp;
     type OnCreate = ();
@@ -1368,7 +1370,7 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            pallet_aura::Authorities::<Runtime>::get().into_inner()
         }
     }
 
@@ -1804,12 +1806,17 @@ impl_runtime_apis! {
 
 
     impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
-        fn create_default_config() -> Vec<u8> {
-            create_default_config::<RuntimeGenesisConfig>()
+
+        fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+            build_state::<RuntimeGenesisConfig>(config)
         }
 
-        fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
-            build_config::<RuntimeGenesisConfig>(config)
+        fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+        }
+
+        fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
+            vec![]
         }
     }
 

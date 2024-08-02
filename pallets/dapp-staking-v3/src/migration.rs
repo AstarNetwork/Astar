@@ -17,7 +17,7 @@
 // along with Astar. If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use frame_support::traits::OnRuntimeUpgrade;
+use frame_support::traits::UncheckedOnRuntimeUpgrade;
 
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
@@ -47,7 +47,7 @@ mod v7 {
 
     pub struct VersionMigrateV6ToV7<T>(PhantomData<T>);
 
-    impl<T: Config> OnRuntimeUpgrade for VersionMigrateV6ToV7<T> {
+    impl<T: Config> UncheckedOnRuntimeUpgrade for VersionMigrateV6ToV7<T> {
         fn on_runtime_upgrade() -> Weight {
             let current = Pallet::<T>::in_code_storage_version();
 

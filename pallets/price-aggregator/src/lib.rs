@@ -48,7 +48,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, DefaultNoBound};
+use frame_support::{pallet_prelude::*, DefaultNoBound};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
 use sp_arithmetic::{
@@ -472,35 +472,5 @@ pub mod pallet {
         fn average_price() -> FixedU128 {
             ValuesCircularBuffer::<T>::get().average()
         }
-    }
-}
-
-/// Used to update static price due to storage schema change.
-pub struct PriceAggregatorInitializer<T, P>(PhantomData<(T, P)>);
-impl<T: Config, P: Get<CurrencyAmount>> OnRuntimeUpgrade for PriceAggregatorInitializer<T, P> {
-    fn on_runtime_upgrade() -> Weight {
-        if Pallet::<T>::on_chain_storage_version() > 0 {
-            return Weight::zero();
-        }
-
-        // 1. Prepare price aggregator storage.
-        let now = frame_system::Pallet::<T>::block_number();
-        let limit_block = now.saturating_add(T::AggregationDuration::get().saturated_into());
-        IntermediateValueAggregator::<T>::put(ValueAggregator::new(limit_block.saturated_into()));
-
-        // 2. Put the initial value into the circular buffer so it's not empty.
-        use sp_arithmetic::FixedPointNumber;
-        let init_price = P::get().max(FixedU128::from_rational(1, FixedU128::DIV.into()));
-        log::info!(
-            "Pushing initial price value into moving average buffer: {}",
-            init_price
-        );
-        ValuesCircularBuffer::<T>::mutate(|buffer| buffer.add(init_price));
-
-        // 3. Set the initial storage version.
-        STORAGE_VERSION.put::<Pallet<T>>();
-
-        // Reading block number is 'free' in the terms of weight.
-        T::DbWeight::get().writes(3)
     }
 }

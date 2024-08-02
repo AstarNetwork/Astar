@@ -27,7 +27,7 @@ use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
-    genesis_builder_helper::{build_config, create_default_config},
+    genesis_builder_helper::{build_state, get_preset},
     parameter_types,
     traits::{
         fungible::HoldConsideration,
@@ -71,6 +71,7 @@ use sp_runtime::{
     ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
+use xcm_fee_payment_runtime_api::Error as XcmPaymentApiError;
 
 use astar_primitives::{
     dapp_staking::{
@@ -1602,15 +1603,7 @@ pub type Executive = frame_executive::Executive<
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
-pub type Migrations = (
-    cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
-    // permanent migration, do not remove
-    pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
-    // XCM V3 -> V4
-    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
-    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
-    pallet_unified_accounts::migration::ClearCorruptedUnifiedMappings<Runtime>,
-);
+pub type Migrations = ();
 
 type EventRecord = frame_system::EventRecord<
     <Runtime as frame_system::Config>::RuntimeEvent,
@@ -2180,14 +2173,73 @@ impl_runtime_apis! {
         }
     }
 
+    // TODO: add this to SHiden & AStar as well
+    impl xcm_fee_payment_runtime_api::XcmPaymentApi<Block> for Runtime {
+        fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
+            if !matches!(xcm_version, 3 | 4) {
+                return Err(XcmPaymentApiError::UnhandledXcmVersion);
+            }
 
-    impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
-        fn create_default_config() -> Vec<u8> {
-            create_default_config::<RuntimeGenesisConfig>()
+            // Native asset is always supported
+            let native_asset_location: Location = Location::try_from(xcm_config::ShibuyaLocation::get())
+            .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+
+        Ok([VersionedAssetId::V4(native_asset_location).into()]
+            .into_iter()
+            // Acquire foreign assets which have 'units per second' configured
+            .chain(
+                pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::iter_keys().map(|asset_location| {
+                    VersionedAssetId::V3(asset_location.into())
+                })
+
+            ).filter_map(|asset| asset.into_version(xcm_version).ok()))
         }
 
-        fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
-            build_config::<RuntimeGenesisConfig>(config)
+        // TODO: improve this function, reduce code duplication, especially on a such functional level
+        fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
+            let native_asset_location: Location = Location::try_from(xcm_config::ShibuyaLocation::get())
+            .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+            let native_asset = VersionedAssetId::V4(native_asset_location.into());
+
+            let asset = asset
+                .into_version(4)
+                .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+
+                if native_asset == asset {
+                    Ok(XcmWeightToFee::weight_to_fee(weight))
+                }else {
+
+                    match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(asset.into()) {
+                        Some(units_per_sec) => {
+                            Ok(units_per_sec.saturating_mul(weight.ref_time() as u128)
+                                / (WEIGHT_REF_TIME_PER_SECOND as u128))
+                        }
+                        None => Err(XcmPaymentApiError::AssetNotFound),
+                    }
+                }
+        }
+
+        fn query_xcm_weight(message: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
+            PolkadotXcm::query_xcm_weight(message)
+        }
+
+        fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
+            PolkadotXcm::query_delivery_fees(destination, message)
+        }
+    }
+
+    impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+
+        fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+            build_state::<RuntimeGenesisConfig>(config)
+        }
+
+        fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+            get_preset::<RuntimeGenesisConfig>(id, |_| None)
+        }
+
+        fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
+            vec![]
         }
     }
 

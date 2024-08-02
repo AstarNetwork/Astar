@@ -104,11 +104,7 @@ use astar_primitives::{
     },
     Balance,
 };
-use frame_support::{
-    pallet_prelude::*,
-    traits::{Currency, GetStorageVersion, OnRuntimeUpgrade},
-    DefaultNoBound,
-};
+use frame_support::{pallet_prelude::*, traits::Currency, DefaultNoBound};
 use frame_system::{ensure_root, pallet_prelude::*};
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
@@ -620,45 +616,4 @@ pub trait PayoutPerBlock<Imbalance> {
 
     /// Payout reward to the collator responsible for producing the block.
     fn collators(reward: Imbalance);
-}
-
-/// `OnRuntimeUpgrade` logic for integrating this pallet into the live network.
-#[cfg(feature = "try-runtime")]
-use sp_std::vec::Vec;
-pub struct PalletInflationInitConfig<T, P>(PhantomData<(T, P, Weight)>);
-impl<T: Config, P: Get<(InflationParameters, EraNumber, Weight)>> OnRuntimeUpgrade
-    for PalletInflationInitConfig<T, P>
-{
-    fn on_runtime_upgrade() -> Weight {
-        if Pallet::<T>::on_chain_storage_version() >= STORAGE_VERSION {
-            return T::DbWeight::get().reads(1);
-        }
-
-        // 1. Get & set inflation parameters
-        let (inflation_params, next_era, extra_weight) = P::get();
-        InflationParams::<T>::put(inflation_params.clone());
-
-        // 2. Calculation inflation config, set it & deposit event
-        let config = Pallet::<T>::recalculate_inflation(next_era);
-        ActiveInflationConfig::<T>::put(config.clone());
-
-        Pallet::<T>::deposit_event(Event::<T>::NewInflationConfiguration { config });
-
-        // 3. Set version
-        STORAGE_VERSION.put::<Pallet<T>>();
-
-        log::info!("Inflation pallet storage initialized.");
-
-        T::WeightInfo::recalculation()
-            .saturating_add(T::DbWeight::get().reads_writes(1, 2))
-            .saturating_add(extra_weight)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-        assert_eq!(Pallet::<T>::on_chain_storage_version(), STORAGE_VERSION);
-        assert!(InflationParams::<T>::get().is_valid());
-
-        Ok(())
-    }
 }

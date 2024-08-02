@@ -46,11 +46,9 @@ const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 /// Extra host functions
 #[cfg(feature = "runtime-benchmarks")]
 pub type HostFunctions = (
-    // benchmarking host functions
     frame_benchmarking::benchmarking::HostFunctions,
     // evm tracing host functions
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-    cumulus_client_service::storage_proof_size::HostFunctions,
 );
 
 /// Extra host functions
@@ -58,7 +56,6 @@ pub type HostFunctions = (
 pub type HostFunctions = (
     // evm tracing host functions
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
-    cumulus_client_service::storage_proof_size::HostFunctions,
 );
 
 /// Local runtime native executor.

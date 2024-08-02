@@ -328,7 +328,7 @@ pub mod pallet {
     }
 
     pub struct SingularStakingInfoTranslationUpgrade<T: Config>(PhantomData<T>);
-    impl<T: Config> frame_support::traits::OnRuntimeUpgrade
+    impl<T: Config> frame_support::traits::UncheckedOnRuntimeUpgrade
         for SingularStakingInfoTranslationUpgrade<T>
     {
         fn on_runtime_upgrade() -> Weight {

@@ -30,10 +30,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
+use frame_support::pallet_prelude::*;
 use frame_system::{ensure_root, pallet_prelude::*};
 pub use pallet::*;
-use sp_arithmetic::{fixed_point::FixedU128, traits::Zero, FixedPointNumber};
+use sp_arithmetic::{fixed_point::FixedU128, traits::Zero};
 use sp_std::marker::PhantomData;
 
 use astar_primitives::oracle::PriceProvider;
@@ -111,23 +111,5 @@ pub mod pallet {
         fn average_price() -> FixedU128 {
             ActivePrice::<T>::get()
         }
-    }
-}
-
-/// Used to update static price due to storage schema change.
-pub struct ActivePriceUpdate<T, P>(PhantomData<(T, P)>);
-impl<T: Config, P: Get<FixedU128>> OnRuntimeUpgrade for ActivePriceUpdate<T, P> {
-    fn on_runtime_upgrade() -> Weight {
-        if Pallet::<T>::on_chain_storage_version() != 1 {
-            return T::DbWeight::get().reads(1);
-        }
-
-        let init_price = P::get().max(FixedU128::from_rational(1, FixedU128::DIV.into()));
-        log::info!("Setting initial active price to {}", init_price);
-        ActivePrice::<T>::put(init_price);
-
-        StorageVersion::new(2).put::<Pallet<T>>();
-
-        T::DbWeight::get().reads_writes(1, 2)
     }
 }
