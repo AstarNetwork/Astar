@@ -29,7 +29,7 @@ use frame_support::{
     genesis_builder_helper::{build_state, get_preset},
     parameter_types,
     traits::{
-        fungible::HoldConsideration,
+        fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
         AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Currency, EqualPrivilegeOnly,
         FindAuthor, Get, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize, WithdrawReasons,
@@ -500,12 +500,12 @@ impl pallet_dapp_staking_v3::Config for Runtime {
 }
 
 pub struct InflationPayoutPerBlock;
-impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerBlock {
-    fn treasury(reward: NegativeImbalance) {
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
+impl pallet_inflation::PayoutPerBlock<Credit<AccountId, Balances>> for InflationPayoutPerBlock {
+    fn treasury(reward: Credit<AccountId, Balances>) {
+        let _ = Balances::resolve(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
 
-    fn collators(_reward: NegativeImbalance) {
+    fn collators(_reward: Credit<AccountId, Balances>) {
         // no collators for local dev node
     }
 }

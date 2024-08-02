@@ -19,6 +19,7 @@
 use super::*;
 
 use frame_benchmarking::v2::*;
+use frame_support::traits::tokens::Precision;
 use frame_system::{Pallet as System, RawOrigin};
 use sp_std::prelude::*;
 
@@ -65,7 +66,12 @@ fn initial_config<T: Config>() {
 
     // Create some issuance so it's not zero
     let dummy_account = whitelisted_caller();
-    T::Currency::make_free_balance_be(&dummy_account, 1_000_000_000_000_000_000_000);
+    let _debt = T::Currency::deposit(
+        &dummy_account,
+        1_000_000_000_000_000_000_000,
+        Precision::Exact,
+    )
+    .expect("Must succeed for benchmarking");
 }
 
 #[benchmarks]

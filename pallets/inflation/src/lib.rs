@@ -104,7 +104,14 @@ use astar_primitives::{
     },
     Balance,
 };
-use frame_support::{pallet_prelude::*, traits::Currency, DefaultNoBound};
+use frame_support::{
+    pallet_prelude::*,
+    traits::{
+        fungible::{Balanced, Credit, Inspect},
+        tokens::Precision,
+    },
+    DefaultNoBound,
+};
 use frame_system::{ensure_root, pallet_prelude::*};
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
@@ -136,19 +143,15 @@ pub mod pallet {
     pub struct Pallet<T>(PhantomData<T>);
 
     // Negative imbalance type of this pallet.
-    pub(crate) type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
-        <T as frame_system::Config>::AccountId,
-    >>::NegativeImbalance;
+    pub(crate) type CreditOf<T> =
+        Credit<<T as frame_system::Config>::AccountId, <T as Config>::Currency>;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// The currency trait.
-        /// This has been soft-deprecated but it still needs to be used here in order to access `NegativeImbalance`
-        /// which is defined in the currency trait.
-        type Currency: Currency<Self::AccountId, Balance = Balance>;
+        type Currency: Balanced<Self::AccountId, Balance = Balance>;
 
         /// Handler for 'per-block' payouts.
-        type PayoutPerBlock: PayoutPerBlock<NegativeImbalanceOf<Self>>;
+        type PayoutPerBlock: PayoutPerBlock<CreditOf<Self>>;
 
         /// Cycle ('year') configuration - covers periods, subperiods, eras & blocks.
         type CycleConfiguration: CycleConfiguration;
@@ -451,9 +454,11 @@ pub mod pallet {
 
             // This can fail only if the amount is below existential deposit & the account doesn't exist,
             // or if the account has no provider references.
+            // Another possibility is overflow, but if that happens, we already have a huge problem.
+            //
             // In both cases, the reward is lost but this can be ignored since it's extremely unlikely
             // to appear and doesn't bring any real harm.
-            let _ = T::Currency::deposit_creating(account, reward);
+            let _ = T::Currency::deposit(account, reward, Precision::Exact);
             Ok(())
         }
     }

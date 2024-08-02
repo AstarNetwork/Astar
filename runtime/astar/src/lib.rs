@@ -30,6 +30,7 @@ use frame_support::{
     genesis_builder_helper::{build_state, get_preset},
     parameter_types,
     traits::{
+        fungible::{Balanced, Credit, HoldConsideration},
         AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
         InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
@@ -402,12 +403,12 @@ impl pallet_dapp_staking_v3::Config for Runtime {
 }
 
 pub struct InflationPayoutPerBlock;
-impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerBlock {
-    fn treasury(reward: NegativeImbalance) {
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
+impl pallet_inflation::PayoutPerBlock<Credit<AccountId, Balances>> for InflationPayoutPerBlock {
+    fn treasury(reward: Credit<AccountId, Balances>) {
+        let _ = Balances::resolve(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
 
-    fn collators(reward: NegativeImbalance) {
+    fn collators(reward: Credit<AccountId, Balances>) {
         ToStakingPot::on_unbalanced(reward);
     }
 }
@@ -548,7 +549,7 @@ pub struct ToStakingPot;
 impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
         let staking_pot = PotId::get().into_account_truncating();
-        Balances::resolve_creating(&staking_pot, amount);
+        Balances::resolve(&staking_pot, amount);
     }
 }
 

@@ -30,18 +30,18 @@ use frame_support::{
     genesis_builder_helper::{build_state, get_preset},
     parameter_types,
     traits::{
-        fungible::HoldConsideration,
+        fungible::{Balanced, Credit, HoldConsideration},
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, Currency,
-        EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
-        Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, EqualPrivilegeOnly,
+        FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize,
+        OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
             BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
         },
-        ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
+        ConstantMultiplier, Weight, WeightToFee as WeightToFeeT, WeightToFeeCoefficient,
+        WeightToFeeCoefficients, WeightToFeePolynomial,
     },
     ConsensusEngineId, PalletId,
 };
@@ -72,8 +72,8 @@ use sp_runtime::{
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use xcm::{
-    latest::prelude::*, IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation,
-    VersionedXcm,
+    v4::{AssetId as XcmAssetId, Location as XcmLocation},
+    IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
 };
 use xcm_fee_payment_runtime_api::Error as XcmPaymentApiError;
 
@@ -483,12 +483,12 @@ impl pallet_dapp_staking_v3::Config for Runtime {
 }
 
 pub struct InflationPayoutPerBlock;
-impl pallet_inflation::PayoutPerBlock<NegativeImbalance> for InflationPayoutPerBlock {
-    fn treasury(reward: NegativeImbalance) {
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
+impl pallet_inflation::PayoutPerBlock<Credit<AccountId, Balances>> for InflationPayoutPerBlock {
+    fn treasury(reward: Credit<AccountId, Balances>) {
+        let _ = Balances::resolve(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
 
-    fn collators(reward: NegativeImbalance) {
+    fn collators(reward: Credit<AccountId, Balances>) {
         ToStakingPot::on_unbalanced(reward);
     }
 }
@@ -623,13 +623,11 @@ parameter_types! {
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
-type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
-
 pub struct ToStakingPot;
-impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
-    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+impl OnUnbalanced<Credit<AccountId, Balances>> for ToStakingPot {
+    fn on_nonzero_unbalanced(amount: Credit<AccountId, Balances>) {
         let staking_pot = PotId::get().into_account_truncating();
-        Balances::resolve_creating(&staking_pot, amount);
+        let _ = Balances::resolve(&staking_pot, amount);
     }
 }
 
@@ -795,7 +793,7 @@ impl WeightToFeePolynomial for WeightToFee {
 ///
 /// Similar to standard `WeightToFee` handler, but force uses the minimum multiplier.
 pub struct XcmWeightToFee;
-impl frame_support::weights::WeightToFee for XcmWeightToFee {
+impl WeightToFeeT for XcmWeightToFee {
     type Balance = Balance;
 
     fn weight_to_fee(n: &Weight) -> Self::Balance {
@@ -804,8 +802,8 @@ impl frame_support::weights::WeightToFee for XcmWeightToFee {
 }
 
 pub struct DealWithFees;
-impl OnUnbalanced<NegativeImbalance> for DealWithFees {
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+impl OnUnbalanced<Credit<AccountId, Balances>> for DealWithFees {
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = Credit<AccountId, Balances>>) {
         if let Some(fees) = fees_then_tips.next() {
             // Burn 80% of fees, rest goes to collator, including 100% of the tips.
             let (to_burn, mut collator) = fees.ration(80, 20);
@@ -824,7 +822,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
+    type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, DealWithFees>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate = TargetedFeeAdjustment<
@@ -930,7 +928,7 @@ impl pallet_evm::Config for Runtime {
     // Ethereum-compatible chain_id:
     // * Shibuya: 81
     type ChainId = EVMChainId;
-    type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
+    type OnChargeTransaction = pallet_evm::EVMFungibleAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
     type Timestamp = Timestamp;
     type OnCreate = ();
@@ -2182,23 +2180,26 @@ impl_runtime_apis! {
             }
 
             // Native asset is always supported
-            let native_asset_location: Location = Location::try_from(xcm_config::ShibuyaLocation::get())
+            let native_asset_location: XcmLocation = XcmLocation::try_from(xcm_config::ShibuyaLocation::get())
             .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
 
-        Ok([VersionedAssetId::V4(native_asset_location).into()]
-            .into_iter()
-            // Acquire foreign assets which have 'units per second' configured
-            .chain(
-                pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::iter_keys().map(|asset_location| {
-                    VersionedAssetId::V3(asset_location.into())
-                })
+            Ok([VersionedAssetId::V4(native_asset_location.into())]
+                .into_iter()
+                // Acquire foreign assets which have 'units per second' configured
+                .chain(
+                    pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::iter_keys().filter_map(|asset_location| {
 
-            ).filter_map(|asset| asset.into_version(xcm_version).ok()))
+                        match XcmLocation::try_from(asset_location) {
+                            Ok(asset) => Some(VersionedAssetId::V4(asset.into())),
+                            Err(_) => None,
+                        }
+                    })
+            ).filter_map(|asset| asset.into_version(xcm_version).ok()).collect())
         }
 
-        // TODO: improve this function, reduce code duplication, especially on a such functional level
+        // TODO: improve this function, reduce code duplication, especially on a such a functional level
         fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
-            let native_asset_location: Location = Location::try_from(xcm_config::ShibuyaLocation::get())
+            let native_asset_location: XcmLocation = XcmLocation::try_from(xcm_config::ShibuyaLocation::get())
             .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
             let native_asset = VersionedAssetId::V4(native_asset_location.into());
 
@@ -2206,18 +2207,21 @@ impl_runtime_apis! {
                 .into_version(4)
                 .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
 
-                if native_asset == asset {
-                    Ok(XcmWeightToFee::weight_to_fee(weight))
-                }else {
 
-                    match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(asset.into()) {
-                        Some(units_per_sec) => {
-                            Ok(units_per_sec.saturating_mul(weight.ref_time() as u128)
-                                / (WEIGHT_REF_TIME_PER_SECOND as u128))
-                        }
-                        None => Err(XcmPaymentApiError::AssetNotFound),
+            if native_asset == asset {
+                Ok(XcmWeightToFee::weight_to_fee(&weight))
+            } else {
+                let asset_id: XcmAssetId = asset.try_into().map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+                let versioned_location = VersionedLocation::V4(asset_id.0);
+
+                match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(versioned_location) {
+                    Some(units_per_sec) => {
+                        Ok(units_per_sec.saturating_mul(weight.ref_time() as u128)
+                            / (WEIGHT_REF_TIME_PER_SECOND as u128))
                     }
+                    None => Err(XcmPaymentApiError::WeightNotComputable),
                 }
+            }
         }
 
         fn query_xcm_weight(message: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
