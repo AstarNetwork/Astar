@@ -467,17 +467,14 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
-parameter_types! {
-    pub const MaxAuthorities: u32 = 250;
-}
-
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
-    type MaxAuthorities = MaxAuthorities;
+    type MaxAuthorities = ConstU32<250>;
     // Should be only enabled (`true`) when async backing is enabled
     // otherwise set to `false`
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
+    type SlotDuration = ConstU64<MILLISECS_PER_BLOCK>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -777,7 +774,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
+    type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, DealWithFees>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate = TargetedFeeAdjustment<
@@ -833,7 +830,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
         if let Some(author_index) = F::find_author(digests) {
-            let authority_id = Aura::authorities()[author_index as usize].clone();
+            let authority_id = pallet_aura::Authorities::<Runtime>::get()[author_index as usize].clone();
             return Some(H160::from_slice(&authority_id.encode()[4..24]));
         }
 
@@ -877,7 +874,7 @@ impl pallet_evm::Config for Runtime {
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
-    type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
+    type OnChargeTransaction = pallet_evm::EVMFungibleAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
     type Timestamp = Timestamp;
     type OnCreate = ();
@@ -936,6 +933,7 @@ impl pallet_message_queue::Config for Runtime {
     type HeapSize = ConstU32<{ 128 * 1048 }>;
     type MaxStale = ConstU32<8>;
     type ServiceWeight = MessageQueueServiceWeight;
+    type IdleMaxServiceWeight = MessageQueueServiceWeight;
 }
 
 /// The type used to represent the kinds of proxying allowed.
@@ -1391,7 +1389,7 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            pallet_aura::Authorities::<Runtime>::get().into_inner()
         }
     }
 

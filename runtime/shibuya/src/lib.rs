@@ -32,7 +32,7 @@ use frame_support::{
     traits::{
         fungible::HoldConsideration,
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EqualPrivilegeOnly,
+        AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, Contains, Currency, EqualPrivilegeOnly,
         FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice, Nothing, OnFinalize,
         OnUnbalanced, WithdrawReasons,
     },
@@ -72,6 +72,10 @@ use sp_runtime::{
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use xcm_fee_payment_runtime_api::Error as XcmPaymentApiError;
+use xcm::{
+	latest::prelude::*, IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation,
+	VersionedXcm,
+};
 
 use astar_primitives::{
     dapp_staking::{
@@ -545,18 +549,13 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
-parameter_types! {
-    pub const MaxAuthorities: u32 = 250;
-    // Should be only enabled (`true`) when async backing is enabled
-    // otherwise set to `false`
-    pub const AllowMultipleBlocksPerSlot: bool = false;
-}
-
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
-    type MaxAuthorities = MaxAuthorities;
-    type AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
+    type MaxAuthorities = ConstU32<250>;
+    // Set to `true` once async backing is enabled.
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
+    type SlotDuration = ConstU64<MILLISECS_PER_BLOCK>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -890,7 +889,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
         if let Some(author_index) = F::find_author(digests) {
-            let authority_id = Aura::authorities()[author_index as usize].clone();
+            let authority_id = pallet_aura::Authorities::<Runtime>::get()[author_index as usize].clone();
             return Some(H160::from_slice(&authority_id.encode()[4..24]));
         }
 
@@ -1151,6 +1150,7 @@ impl pallet_message_queue::Config for Runtime {
     type HeapSize = ConstU32<{ 128 * 1048 }>;
     type MaxStale = ConstU32<8>;
     type ServiceWeight = MessageQueueServiceWeight;
+    type IdleMaxServiceWeight = MessageQueueServiceWeight;
 }
 
 parameter_types! {
@@ -1732,7 +1732,7 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            pallet_aura::Authorities::<Runtime>::get().into_inner()
         }
     }
 
