@@ -29,8 +29,8 @@ use frame_support::{
     genesis_builder_helper::{build_config, create_default_config},
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, Contains, Currency, FindAuthor, Get,
-        Imbalance, InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
+        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        InstanceFilter, Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
     weights::{
         constants::{
@@ -529,8 +529,6 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<250>;
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
-    #[cfg(feature = "experimental")]
-    type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}

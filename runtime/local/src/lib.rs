@@ -270,8 +270,6 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<50>;
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
-    #[cfg(feature = "experimental")]
-    type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
 impl pallet_grandpa::Config for Runtime {

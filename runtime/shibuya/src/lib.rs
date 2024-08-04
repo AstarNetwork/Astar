@@ -31,7 +31,7 @@ use frame_support::{
     traits::{
         fungible::HoldConsideration,
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, ConstU64, Contains, Currency,
+        AsEnsureOriginWithArg, ConstBool, ConstU128, ConstU32, Contains, Currency,
         EqualPrivilegeOnly, FindAuthor, Get, Imbalance, InstanceFilter, LinearStoragePrice,
         Nothing, OnFinalize, OnUnbalanced, WithdrawReasons,
     },
@@ -566,8 +566,6 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<250>;
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
-    #[cfg(feature = "experimental")]
-    type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}

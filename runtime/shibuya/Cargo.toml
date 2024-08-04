@@ -388,8 +388,6 @@ evm-tracing = [
 	"moonbeam-rpc-primitives-txpool",
 ]
 
-experimental = ["pallet-aura/experimental"]
-
 # Enable metadata hash generation at compile time for the `CheckMetadataHash` extension.
 metadata-hash = ["substrate-wasm-builder?/metadata-hash"]
 
