@@ -159,12 +159,13 @@ fn error_when_not_paying_enough() {
     // We are sending 99 tokens from relay.
     // we know the buy_execution will spend 4 * 25 = 100
     Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
             Box::new(VersionedLocation::V4(dest).clone().into()),
             Box::new((Here, 99).into()),
             0,
+            WeightLimit::Unlimited,
         ));
     });
 

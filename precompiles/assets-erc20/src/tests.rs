@@ -258,7 +258,7 @@ fn mint_is_ok() {
                     value: mint_amount.into(),
                 },
             )
-            .expect_cost(27261756) // 1 weight => 1 gas in mock
+            .expect_cost(23274756) // 1 weight => 1 gas in mock
             .expect_log(log3(
                 LocalAssetId(0u128),
                 SELECTOR_LOG_TRANSFER,
@@ -347,7 +347,7 @@ fn burn_is_ok() {
                     value: burn_amount.into(),
                 },
             )
-            .expect_cost(34475756) // 1 weight => 1 gas in mock
+            .expect_cost(31801756)
             .expect_log(log3(
                 LocalAssetId(0u128),
                 SELECTOR_LOG_TRANSFER,

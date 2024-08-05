@@ -440,12 +440,13 @@ fn receive_relay_asset_from_relay_and_send_them_back_via_xtokens() {
     // Next step is to send some of relay native asset to parachain A.
     let withdraw_amount = 567;
     Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
             Box::new(alice.into()),
             Box::new((Here, withdraw_amount).into()),
             0,
+            WeightLimit::Unlimited,
         ));
 
         // Parachain A sovereign account should have it's balance increased, while Alice balance should be decreased.
@@ -538,12 +539,13 @@ fn receive_relay_asset_from_relay_and_send_them_back() {
     // Next step is to send some of relay native asset to parachain A.
     let withdraw_amount = 567;
     Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
             Box::new(alice.into()),
             Box::new((Here, withdraw_amount).into()),
             0,
+            WeightLimit::Unlimited,
         ));
 
         // Parachain A sovereign account should have it's balance increased, while Alice balance should be decreased.
@@ -647,12 +649,13 @@ fn para_a_send_relay_asset_to_para_b() {
     // same as previous test
     let withdraw_amount = 54321;
     Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
             Box::new(alice.into_location().into_versioned()),
             Box::new((Here, withdraw_amount).into()),
             0,
+            WeightLimit::Unlimited,
         ));
     });
 
@@ -748,12 +751,13 @@ fn send_relay_asset_to_para_b_with_extra_native() {
     // same as previous test
     let withdraw_amount = 54321;
     Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
             Box::new(alice.into_location().into_versioned()),
             Box::new((Here, withdraw_amount).into()),
             0,
+            WeightLimit::Unlimited,
         ));
     });
 
@@ -829,7 +833,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
     // Next step is to send some of relay native asset to parachain A.
     let withdraw_amount = 123;
     Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
             Box::new(
@@ -841,6 +845,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
             ),
             Box::new((Here, withdraw_amount).into()),
             0,
+            WeightLimit::Unlimited,
         ));
     });
 
@@ -863,7 +868,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
 
     // Re-send tokens
     Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
             Box::new(
@@ -875,6 +880,7 @@ fn receive_asset_with_no_sufficients_not_possible_if_non_existent_account() {
             ),
             Box::new((Here, withdraw_amount).into()),
             0,
+            WeightLimit::Unlimited,
         ));
     });
 
@@ -914,7 +920,7 @@ fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_ass
     // Since min balance is configured to 1, 123 should be fine
     let withdraw_amount = 123;
     Relay::execute_with(|| {
-        assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+        assert_ok!(RelayChainPalletXcm::limited_reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(Parachain(1).into()),
             Box::new(
@@ -926,6 +932,7 @@ fn receive_assets_with_sufficients_true_allows_non_funded_account_to_receive_ass
             ),
             Box::new((Here, withdraw_amount).into()),
             0,
+            WeightLimit::Unlimited,
         ));
     });
 

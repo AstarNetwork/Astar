@@ -20,9 +20,7 @@ use super::*;
 
 use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{construct_runtime, parameter_types, traits::ConstU64, weights::Weight};
-pub use pallet_evm::{
-    AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet,
-};
+pub use pallet_evm::{EnsureAddressNever, EnsureAddressRoot, PrecompileResult, PrecompileSet};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
