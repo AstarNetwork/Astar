@@ -867,7 +867,8 @@ where
                 // This was fine before pallet-message-queue because the XCM messages
                 // were processed by the "setValidationData" inherent call and not on an
                 // "on_initialize" hook, which runs before enabling XCM tracing
-                api.initialize_block(substrate_parent_hash, &block_header)
+                #[allow(deprecated)]
+                api.initialize_block_before_version_5(substrate_parent_hash, &block_header)
                     .map_err(|e| format!("Runtime api access error: {:?}", e))?;
 
                 #[allow(deprecated)]

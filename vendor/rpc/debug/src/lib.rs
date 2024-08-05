@@ -440,7 +440,8 @@ where
                 // This was fine before pallet-message-queue because the XCM messages
                 // were processed by the "setValidationData" inherent call and not on an
                 // "on_initialize" hook, which runs before enabling XCM tracing
-                api.initialize_block(parent_block_hash, &header)
+                #[allow(deprecated)]
+                api.initialize_block_before_version_5(parent_block_hash, &header)
                     .map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
 
                 #[allow(deprecated)]
@@ -578,7 +579,8 @@ where
                         // This was fine before pallet-message-queue because the XCM messages
                         // were processed by the "setValidationData" inherent call and not on an
                         // "on_initialize" hook, which runs before enabling XCM tracing
-                        api.initialize_block(parent_block_hash, &header)
+                        #[allow(deprecated)]
+                        api.initialize_block_before_version_5(parent_block_hash, &header)
                             .map_err(|e| {
                                 internal_err(format!("Runtime api access error: {:?}", e))
                             })?;
