@@ -174,7 +174,6 @@ pub mod pallet {
     /// Can be used when receiving transaction specifying an asset directly,
     /// like transferring an asset from this chain to another.
     #[pallet::storage]
-    #[pallet::getter(fn asset_id_to_location)]
     pub type AssetIdToLocation<T: Config> =
         StorageMap<_, Twox64Concat, T::AssetId, VersionedLocation>;
 
@@ -182,7 +181,6 @@ pub mod pallet {
     /// Can be used when receiving a multilocation XCM message to retrieve
     /// the corresponding asset in which tokens should me minted.
     #[pallet::storage]
-    #[pallet::getter(fn asset_location_to_id)]
     pub type AssetLocationToId<T: Config> =
         StorageMap<_, Twox64Concat, VersionedLocation, T::AssetId>;
 
@@ -191,7 +189,6 @@ pub mod pallet {
     ///
     /// Not all asset types are supported for payment. If value exists here, it means it is supported.
     #[pallet::storage]
-    #[pallet::getter(fn asset_location_units_per_second)]
     pub type AssetLocationUnitsPerSecond<T: Config> =
         StorageMap<_, Twox64Concat, VersionedLocation, u128>;
 

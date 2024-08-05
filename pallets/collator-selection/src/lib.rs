@@ -188,12 +188,10 @@ pub mod pallet {
 
     /// The invulnerable, fixed collators.
     #[pallet::storage]
-    #[pallet::getter(fn invulnerables)]
     pub type Invulnerables<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     /// The (community, limited) collation candidates.
     #[pallet::storage]
-    #[pallet::getter(fn candidates)]
     pub type Candidates<T: Config> =
         StorageValue<_, Vec<CandidateInfo<T::AccountId, BalanceOf<T>>>, ValueQuery>;
 
@@ -204,7 +202,6 @@ pub mod pallet {
 
     /// Last block authored by collator.
     #[pallet::storage]
-    #[pallet::getter(fn last_authored_block)]
     pub type LastAuthoredBlock<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, BlockNumberFor<T>, ValueQuery>;
 
@@ -212,19 +209,16 @@ pub mod pallet {
     ///
     /// This should ideally always be less than [`Config::MaxCandidates`] for weights to be correct.
     #[pallet::storage]
-    #[pallet::getter(fn desired_candidates)]
     pub type DesiredCandidates<T> = StorageValue<_, u32, ValueQuery>;
 
     /// Fixed amount to deposit to become a collator.
     ///
     /// When a collator calls `leave_intent` they immediately receive the deposit back.
     #[pallet::storage]
-    #[pallet::getter(fn candidacy_bond)]
     pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// Destination account for slashed amount.
     #[pallet::storage]
-    #[pallet::getter(fn slash_destination)]
     pub type SlashDestination<T> = StorageValue<_, <T as frame_system::Config>::AccountId>;
 
     #[pallet::genesis_config]
@@ -387,11 +381,11 @@ pub mod pallet {
             // ensure we are below limit.
             let length = <Candidates<T>>::decode_len().unwrap_or_default();
             ensure!(
-                (length as u32) < Self::desired_candidates(),
+                (length as u32) < DesiredCandidates::<T>::get(),
                 Error::<T>::TooManyCandidates
             );
             ensure!(
-                !Self::invulnerables().contains(&who),
+                !Invulnerables::<T>::get().contains(&who),
                 Error::<T>::AlreadyInvulnerable
             );
             ensure!(
@@ -419,7 +413,7 @@ pub mod pallet {
                 Ok(())
             })?;
 
-            let deposit = Self::candidacy_bond();
+            let deposit = CandidacyBond::<T>::get();
             // First authored block is current block plus kick threshold to handle session delay
             let incoming = CandidateInfo {
                 who: who.clone(),
@@ -456,7 +450,7 @@ pub mod pallet {
         pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
             ensure!(
-                Self::candidates().len() as u32 > T::MinCandidates::get(),
+                Candidates::<T>::get().len() as u32 > T::MinCandidates::get(),
                 Error::<T>::TooFewCandidates
             );
             let current_count = Self::try_remove_candidate(&who)?;
@@ -522,7 +516,7 @@ pub mod pallet {
                     let (imbalance, _) = T::Currency::slash_reserved(who, slash);
                     T::Currency::unreserve(who, remain);
 
-                    if let Some(dest) = Self::slash_destination() {
+                    if let Some(dest) = SlashDestination::<T>::get() {
                         T::Currency::resolve_creating(&dest, imbalance);
                     }
 
@@ -537,7 +531,7 @@ pub mod pallet {
         ///
         /// This is done on the fly, as frequent as we are told to do so, as the session manager.
         pub fn assemble_collators(candidates: Vec<T::AccountId>) -> Vec<T::AccountId> {
-            let mut collators = Self::invulnerables();
+            let mut collators = Invulnerables::<T>::get();
             collators.extend(candidates.into_iter());
             collators
         }
@@ -546,14 +540,14 @@ pub mod pallet {
         pub fn kick_stale_candidates() -> (u32, u32) {
             let now = frame_system::Pallet::<T>::block_number();
             let kick_threshold = T::KickThreshold::get();
-            let count = Self::candidates().len() as u32;
+            let count = Candidates::<T>::get().len() as u32;
             for (who, last_authored) in LastAuthoredBlock::<T>::iter() {
                 if now.saturating_sub(last_authored) < kick_threshold {
                     continue;
                 }
                 // still candidate, kick and slash
                 if Self::is_account_candidate(&who) {
-                    if Self::candidates().len() > T::MinCandidates::get() as usize {
+                    if Candidates::<T>::get().len() > T::MinCandidates::get() as usize {
                         // no error, who is a candidate
                         let _ = Self::try_remove_candidate(&who);
                         Self::slash_non_candidate(&who);
@@ -563,12 +557,15 @@ pub mod pallet {
                     Self::slash_non_candidate(&who);
                 }
             }
-            (count, count.saturating_sub(Self::candidates().len() as u32))
+            (
+                count,
+                count.saturating_sub(Candidates::<T>::get().len() as u32),
+            )
         }
 
         /// Check whether an account is a candidate.
         pub fn is_account_candidate(account: &T::AccountId) -> bool {
-            Self::candidates().iter().any(|c| &c.who == account)
+            Candidates::<T>::get().iter().any(|c| &c.who == account)
         }
     }
 
@@ -611,7 +608,7 @@ pub mod pallet {
                 DispatchClass::Mandatory,
             );
 
-            let active_candidates = Self::candidates()
+            let active_candidates = Candidates::<T>::get()
                 .into_iter()
                 .map(|x| x.who)
                 .collect::<Vec<_>>();

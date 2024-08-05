@@ -16,7 +16,10 @@
 // limitations under the License.
 
 use crate as collator_selection;
-use crate::{mock::*, CandidateInfo, Error, LastAuthoredBlock, NonCandidates};
+use crate::{
+    mock::*, CandidacyBond, CandidateInfo, Candidates, DesiredCandidates, Error, Invulnerables,
+    LastAuthoredBlock, NonCandidates,
+};
 use frame_support::{
     assert_noop, assert_ok,
     traits::{Currency, OnInitialize},
@@ -27,11 +30,11 @@ use sp_runtime::{traits::BadOrigin, BuildStorage};
 #[test]
 fn basic_setup_works() {
     new_test_ext().execute_with(|| {
-        assert_eq!(CollatorSelection::desired_candidates(), 2);
-        assert_eq!(CollatorSelection::candidacy_bond(), 10);
+        assert_eq!(DesiredCandidates::<Test>::get(), 2);
+        assert_eq!(CandidacyBond::<Test>::get(), 10);
 
-        assert!(CollatorSelection::candidates().is_empty());
-        assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+        assert!(Candidates::<Test>::get().is_empty());
+        assert_eq!(Invulnerables::<Test>::get(), vec![1, 2]);
     });
 }
 
@@ -43,7 +46,7 @@ fn it_should_set_invulnerables() {
             RuntimeOrigin::signed(RootAccount::get()),
             new_set.clone()
         ));
-        assert_eq!(CollatorSelection::invulnerables(), new_set);
+        assert_eq!(Invulnerables::<Test>::get(), new_set);
 
         // cannot set with non-root.
         assert_noop!(
@@ -67,14 +70,14 @@ fn it_should_set_invulnerables() {
 fn set_desired_candidates_works() {
     new_test_ext().execute_with(|| {
         // given
-        assert_eq!(CollatorSelection::desired_candidates(), 2);
+        assert_eq!(DesiredCandidates::<Test>::get(), 2);
 
         // can set
         assert_ok!(CollatorSelection::set_desired_candidates(
             RuntimeOrigin::signed(RootAccount::get()),
             7
         ));
-        assert_eq!(CollatorSelection::desired_candidates(), 7);
+        assert_eq!(DesiredCandidates::<Test>::get(), 7);
 
         // rejects bad origin
         assert_noop!(
@@ -88,14 +91,14 @@ fn set_desired_candidates_works() {
 fn set_candidacy_bond() {
     new_test_ext().execute_with(|| {
         // given
-        assert_eq!(CollatorSelection::candidacy_bond(), 10);
+        assert_eq!(CandidacyBond::<Test>::get(), 10);
 
         // can set
         assert_ok!(CollatorSelection::set_candidacy_bond(
             RuntimeOrigin::signed(RootAccount::get()),
             7
         ));
-        assert_eq!(CollatorSelection::candidacy_bond(), 7);
+        assert_eq!(CandidacyBond::<Test>::get(), 7);
 
         // rejects bad origin.
         assert_noop!(
@@ -151,7 +154,7 @@ fn cannot_unregister_candidate_if_too_few() {
 #[test]
 fn cannot_register_as_candidate_if_invulnerable() {
     new_test_ext().execute_with(|| {
-        assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+        assert_eq!(Invulnerables::<Test>::get(), vec![1, 2]);
 
         // can't 1 because it is invulnerable.
         assert_noop!(
@@ -183,8 +186,8 @@ fn cannot_register_dupe_candidate() {
             who: 3,
             deposit: 10,
         };
-        assert_eq!(CollatorSelection::candidates(), vec![addition]);
-        assert_eq!(CollatorSelection::last_authored_block(3), 10);
+        assert_eq!(Candidates::<Test>::get(), vec![addition]);
+        assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
         assert_eq!(Balances::free_balance(3), 90);
 
         // but no more
@@ -228,10 +231,10 @@ fn cannot_register_candidate_if_externally_blacklisted() {
 fn register_as_candidate_works() {
     new_test_ext().execute_with(|| {
         // given
-        assert_eq!(CollatorSelection::desired_candidates(), 2);
-        assert_eq!(CollatorSelection::candidacy_bond(), 10);
-        assert_eq!(CollatorSelection::candidates(), Vec::new());
-        assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
+        assert_eq!(DesiredCandidates::<Test>::get(), 2);
+        assert_eq!(CandidacyBond::<Test>::get(), 10);
+        assert_eq!(Candidates::<Test>::get(), Vec::new());
+        assert_eq!(Invulnerables::<Test>::get(), vec![1, 2]);
 
         // take two endowed, non-invulnerables accounts.
         assert_eq!(Balances::free_balance(&3), 100);
@@ -247,7 +250,7 @@ fn register_as_candidate_works() {
         assert_eq!(Balances::free_balance(&3), 90);
         assert_eq!(Balances::free_balance(&4), 90);
 
-        assert_eq!(CollatorSelection::candidates().len(), 2);
+        assert_eq!(Candidates::<Test>::get().len(), 2);
     });
 }
 
@@ -277,7 +280,7 @@ fn leave_intent() {
         assert_ok!(CollatorSelection::leave_intent(RuntimeOrigin::signed(3)));
         assert_eq!(Balances::free_balance(3), 90);
         assert_eq!(Balances::reserved_balance(3), 10);
-        assert_eq!(CollatorSelection::last_authored_block(3), 10);
+        assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
         // 10 unbonding from session 1
         assert_eq!(NonCandidates::<Test>::get(3), (1, 10));
     });
@@ -375,8 +378,8 @@ fn authorship_event_handler() {
             deposit: 10,
         };
 
-        assert_eq!(CollatorSelection::candidates(), vec![collator]);
-        assert_eq!(CollatorSelection::last_authored_block(4), 0);
+        assert_eq!(Candidates::<Test>::get(), vec![collator]);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 0);
 
         // half of the pot goes to the collator who's the author (4 in tests).
         assert_eq!(Balances::free_balance(4), 140);
@@ -405,8 +408,8 @@ fn fees_edgecases() {
             deposit: 10,
         };
 
-        assert_eq!(CollatorSelection::candidates(), vec![collator]);
-        assert_eq!(CollatorSelection::last_authored_block(4), 0);
+        assert_eq!(Candidates::<Test>::get(), vec![collator]);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 0);
         // Nothing received
         assert_eq!(Balances::free_balance(4), 90);
         // all fee stays
@@ -435,7 +438,7 @@ fn session_management_works() {
         // session won't see this.
         assert_eq!(SessionCollators::get(), vec![1, 2]);
         // but we have a new candidate.
-        assert_eq!(CollatorSelection::candidates().len(), 1);
+        assert_eq!(Candidates::<Test>::get().len(), 1);
 
         initialize_to_block(10);
         assert_eq!(SessionChangeBlock::get(), 10);
@@ -466,11 +469,11 @@ fn kick_and_slash_mechanism() {
             RuntimeOrigin::signed(4)
         ));
         initialize_to_block(10);
-        assert_eq!(CollatorSelection::candidates().len(), 2);
+        assert_eq!(Candidates::<Test>::get().len(), 2);
         initialize_to_block(20);
         assert_eq!(SessionChangeBlock::get(), 20);
         // 4 authored this block, gets to stay. 3 was kicked
-        assert_eq!(CollatorSelection::candidates().len(), 1);
+        assert_eq!(Candidates::<Test>::get().len(), 1);
         // 3 will be kicked after 1 session delay
         assert_eq!(SessionCollators::get(), vec![1, 2, 3, 4]);
         assert_eq!(NextSessionCollators::get(), vec![1, 2, 4]);
@@ -478,8 +481,8 @@ fn kick_and_slash_mechanism() {
             who: 4,
             deposit: 10,
         };
-        assert_eq!(CollatorSelection::candidates(), vec![collator]);
-        assert_eq!(CollatorSelection::last_authored_block(4), 20);
+        assert_eq!(Candidates::<Test>::get(), vec![collator]);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 20);
         initialize_to_block(30);
         // 3 gets kicked after 1 session delay
         assert_eq!(SessionCollators::get(), vec![1, 2, 4]);
@@ -501,8 +504,8 @@ fn slash_mechanism_for_unbonding_candidates() {
         assert_ok!(CollatorSelection::register_as_candidate(
             RuntimeOrigin::signed(4)
         ));
-        assert_eq!(CollatorSelection::last_authored_block(3), 10);
-        assert_eq!(CollatorSelection::last_authored_block(4), 10);
+        assert_eq!(LastAuthoredBlock::<Test>::get(3), 10);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 10);
 
         initialize_to_block(10);
         // gets included into next session, expected to build blocks
@@ -518,10 +521,10 @@ fn slash_mechanism_for_unbonding_candidates() {
         );
         // new session, candidate gets slashed
         initialize_to_block(20);
-        assert_eq!(CollatorSelection::candidates().len(), 1);
+        assert_eq!(Candidates::<Test>::get().len(), 1);
         assert_eq!(SessionChangeBlock::get(), 20);
         assert_eq!(LastAuthoredBlock::<Test>::contains_key(3), false);
-        assert_eq!(CollatorSelection::last_authored_block(4), 20);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 20);
 
         // slashed, remaining bond was refunded
         assert_noop!(
@@ -546,21 +549,21 @@ fn should_not_kick_mechanism_too_few() {
             RuntimeOrigin::signed(5)
         ));
         initialize_to_block(10);
-        assert_eq!(CollatorSelection::candidates().len(), 2);
+        assert_eq!(Candidates::<Test>::get().len(), 2);
         initialize_to_block(20);
         assert_eq!(SessionChangeBlock::get(), 20);
         // 4 authored this block, 3 gets to stay too few, 5 was kicked
-        assert_eq!(CollatorSelection::candidates().len(), 1);
+        assert_eq!(Candidates::<Test>::get().len(), 1);
         // 5 will be kicked for next session
         assert_eq!(NextSessionCollators::get(), vec![1, 2, 3]);
         assert_eq!(
-            CollatorSelection::candidates(),
+            Candidates::<Test>::get(),
             vec![CandidateInfo {
                 who: 3,
                 deposit: 10,
             }]
         );
-        assert_eq!(CollatorSelection::last_authored_block(4), 20);
+        assert_eq!(LastAuthoredBlock::<Test>::get(4), 20);
         // kicked collator gets funds back (but slashed)
         assert_eq!(Balances::free_balance(5), 99);
         initialize_to_block(30);
