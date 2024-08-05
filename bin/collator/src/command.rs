@@ -479,6 +479,7 @@ pub fn run() -> Result<()> {
         Some(Subcommand::Sign(cmd)) => cmd.run(),
         Some(Subcommand::Verify(cmd)) => cmd.run(),
         Some(Subcommand::Vanity(cmd)) => cmd.run(),
+        // TODO: Remove this and replace it with benchmarks CLI
         #[cfg(feature = "runtime-benchmarks")]
         Some(Subcommand::Benchmark(cmd)) => {
             use crate::benchmarking::*;
@@ -492,26 +493,26 @@ pub fn run() -> Result<()> {
                 BenchmarkCmd::Pallet(cmd) => {
                     if chain_spec.is_astar() {
                         runner.sync_run(|config| {
-                            cmd.run::<HashingFor<astar_runtime::Block>, parachain::HostFunctions>(
-                                config,
+                            cmd.run_with_spec::<HashingFor<astar_runtime::Block>, parachain::HostFunctions>(
+                                Some(config.chain_spec),
                             )
                         })
                     } else if chain_spec.is_shiden() {
                         runner.sync_run(|config| {
-                            cmd.run::<HashingFor<shiden_runtime::Block>, parachain::HostFunctions>(
-                                config,
+                            cmd.run_with_spec::<HashingFor<shiden_runtime::Block>, parachain::HostFunctions>(
+                                Some(config.chain_spec),
                             )
                         })
                     } else if chain_spec.is_shibuya() {
                         runner.sync_run(|config| {
-                            cmd.run::<HashingFor<shibuya_runtime::Block>, parachain::HostFunctions>(
-                                config,
+                            cmd.run_with_spec::<HashingFor<shibuya_runtime::Block>, parachain::HostFunctions>(
+                                Some(config.chain_spec),
                             )
                         })
                     } else {
                         runner.sync_run(|config| {
-                            cmd.run::<HashingFor<local_runtime::Block>, local::HostFunctions>(
-                                config,
+                            cmd.run_with_spec::<HashingFor<local_runtime::Block>, local::HostFunctions>(
+                                Some(config.chain_spec),
                             )
                         })
                     }

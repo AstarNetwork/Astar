@@ -7,36 +7,35 @@ license = "GPL-3.0-only"
 repository = "https://github.com/PureStake/moonbeam/"
 version = "0.1.0"
 
-
 [dependencies]
-futures = { workspace = true, features = [ "compat" ] }
+futures = { workspace = true, features = ["compat"] }
 hex-literal = { workspace = true }
-jsonrpsee = { workspace = true, features = [ "macros", "server" ] }
-tokio = { workspace = true, features = [ "sync", "time" ] }
+jsonrpsee = { workspace = true, features = ["macros", "server"] }
+tokio = { workspace = true, features = ["sync", "time"] }
 
 # Moonbeam
 moonbeam-client-evm-tracing = { workspace = true }
 moonbeam-rpc-core-debug = { workspace = true }
 moonbeam-rpc-core-types = { workspace = true }
-moonbeam-rpc-primitives-debug = { workspace = true, features = [ "std" ] }
+moonbeam-rpc-primitives-debug = { workspace = true, features = ["std"] }
 
 # Substrate
 sc-client-api = { workspace = true }
 sc-utils = { workspace = true }
-sp-api = { workspace = true, features = [ "std" ] }
-sp-block-builder = { workspace = true, features = [ "std" ] }
+sp-api = { workspace = true, features = ["std"] }
+sp-block-builder = { workspace = true, features = ["std"] }
 sp-blockchain = { workspace = true }
-sp-core = { workspace = true, features = [ "std" ] }
-sp-io = { workspace = true, features = [ "std" ] }
-sp-runtime = { workspace = true, features = [ "std" ] }
+sp-core = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }
 
 # Frontier
-ethereum = { workspace = true, features = [ "std", "with-codec" ] }
-ethereum-types = { workspace = true, features = [ "std" ] }
+ethereum = { workspace = true, features = ["std", "with-codec"] }
+ethereum-types = { workspace = true, features = ["std"] }
+fc-api = { workspace = true }
 fc-consensus = { workspace = true }
 fc-db = { workspace = true }
-fc-api = { workspace = true }
-fc-rpc = { workspace = true, features = [ "rpc-binary-search-estimate" ] }
+fc-rpc = { workspace = true, features = ["rpc-binary-search-estimate"] }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
-fp-rpc = { workspace = true, features = [ "std" ] }
+fp-rpc = { workspace = true, features = ["std"] }

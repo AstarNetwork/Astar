@@ -126,10 +126,10 @@ cumulus-test-relay-sproof-builder = { workspace = true }
 
 # polkadot dependencies
 polkadot-cli = { workspace = true, optional = true }
+polkadot-core-primitives = { workspace = true }
 polkadot-parachain = { workspace = true, features = ["std"] }
 polkadot-primitives = { workspace = true, features = ["std"] }
 polkadot-service = { workspace = true }
-polkadot-core-primitives = { workspace = true }
 
 # benchmark dependencies
 frame-benchmarking = { workspace = true, features = ["std"] }

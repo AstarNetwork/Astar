@@ -608,7 +608,7 @@ pub struct AdditionalConfig {
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[cfg(feature = "evm-tracing")]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, Executor, BIQ, SC>(
+async fn start_node_impl<RuntimeApi, Executor, BIQ, SC, N>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
@@ -684,13 +684,15 @@ where
         CollatorPair,
         AdditionalConfig,
     ) -> Result<(), sc_service::Error>,
+    N: NetworkBackend<Block, <Block as BlockT>::Hash>,
 {
     let parachain_config = prepare_node_config(parachain_config);
 
     let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
     let (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend) =
         params.other;
-    let net_config = sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
+    let net_config =
+        sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&parachain_config.network);
 
     let client = params.client.clone();
     let backend = params.backend.clone();
@@ -726,7 +728,7 @@ where
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
-    let overrides = fc_storage::overrides_handle(client.clone());
+    let storage_override = Arc::new(StorageOverrideHandler::new(client.clone()));
 
     // Sinks for pubsub notifications.
     // Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
