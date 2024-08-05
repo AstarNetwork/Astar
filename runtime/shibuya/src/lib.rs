@@ -2199,14 +2199,13 @@ impl_runtime_apis! {
 
         // TODO: improve this function, reduce code duplication, especially on a such a functional level
         fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
-            let native_asset_location: XcmLocation = XcmLocation::try_from(xcm_config::ShibuyaLocation::get())
-            .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+            let native_asset_location = XcmLocation::try_from(xcm_config::ShibuyaLocation::get())
+                .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
             let native_asset = VersionedAssetId::V4(native_asset_location.into());
 
             let asset = asset
                 .into_version(4)
                 .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
-
 
             if native_asset == asset {
                 Ok(XcmWeightToFee::weight_to_fee(&weight))
@@ -2219,7 +2218,7 @@ impl_runtime_apis! {
                         Ok(units_per_sec.saturating_mul(weight.ref_time() as u128)
                             / (WEIGHT_REF_TIME_PER_SECOND as u128))
                     }
-                    None => Err(XcmPaymentApiError::WeightNotComputable),
+                    None => Err(XcmPaymentApiError::AssetNotFound),
                 }
             }
         }
