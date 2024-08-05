@@ -278,6 +278,7 @@ async fn build_relay_chain_interface(
     telemetry_worker_handle: Option<TelemetryWorkerHandle>,
     task_manager: &mut TaskManager,
     collator_options: CollatorOptions,
+    hwbench: Option<sc_sysinfo::HwBench>,
 ) -> RelayChainResult<(
     Arc<(dyn RelayChainInterface + 'static)>,
     Option<CollatorPair>,
@@ -293,7 +294,7 @@ async fn build_relay_chain_interface(
             parachain_config,
             telemetry_worker_handle,
             task_manager,
-            None,
+            hwbench,
         )
     }
 }
@@ -394,6 +395,7 @@ where
         telemetry_worker_handle,
         &mut task_manager,
         collator_options.clone(),
+        additional_config.hwbench.clone(),
     )
     .await
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
@@ -531,6 +533,22 @@ where
         telemetry: telemetry.as_mut(),
     })?;
 
+    if let Some(hwbench) = additional_config.hwbench.clone() {
+        sc_sysinfo::print_hwbench(&hwbench);
+        if is_authority {
+            warn_if_slow_hardware(&hwbench);
+        }
+
+        if let Some(ref mut telemetry) = telemetry {
+            let telemetry_handle = telemetry.handle();
+            task_manager.spawn_handle().spawn(
+                "telemetry_hwbench",
+                None,
+                sc_sysinfo::initialize_hwbench_telemetry(telemetry_handle, hwbench),
+            );
+        }
+    }
+
     let announce_block = {
         let sync_service = sync_service.clone();
         Arc::new(move |hash, data| sync_service.announce_block(hash, data))
@@ -596,6 +614,9 @@ pub struct AdditionalConfig {
 
     /// Soft deadline limit used by `Proposer`
     pub proposer_soft_deadline_percent: u8,
+
+    /// Hardware benchmarks score
+    pub hwbench: Option<sc_sysinfo::HwBench>,
 }
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
@@ -697,6 +718,7 @@ where
         telemetry_worker_handle,
         &mut task_manager,
         collator_options.clone(),
+        additional_config.hwbench.clone(),
     )
     .await
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
@@ -865,6 +887,22 @@ where
         tx_handler_controller,
         telemetry: telemetry.as_mut(),
     })?;
+
+    if let Some(hwbench) = additional_config.hwbench.clone() {
+        sc_sysinfo::print_hwbench(&hwbench);
+        if is_authority {
+            warn_if_slow_hardware(&hwbench);
+        }
+
+        if let Some(ref mut telemetry) = telemetry {
+            let telemetry_handle = telemetry.handle();
+            task_manager.spawn_handle().spawn(
+                "telemetry_hwbench",
+                None,
+                sc_sysinfo::initialize_hwbench_telemetry(telemetry_handle, hwbench),
+            );
+        }
+    }
 
     let announce_block = {
         let sync_service = sync_service.clone();
@@ -1373,4 +1411,17 @@ pub async fn start_shibuya_node(
         start_aura_consensus,
     )
     .await
+}
+
+/// Checks that the hardware meets the requirements and print a warning otherwise.
+fn warn_if_slow_hardware(hwbench: &sc_sysinfo::HwBench) {
+    // Polkadot para-chains should generally use these requirements to ensure that the relay-chain
+    // will not take longer than expected to import its blocks.
+    if let Err(err) = frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.check_hardware(hwbench) {
+        log::warn!(
+            "⚠️  The hardware does not meet the minimal requirements {} for role 'Authority' find out more at:\n\
+            https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware",
+            err
+        );
+    }
 }
