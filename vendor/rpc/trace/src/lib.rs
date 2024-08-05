@@ -442,7 +442,7 @@ where
         backend: Arc<BE>,
         cache_duration: Duration,
         blocking_permits: Arc<Semaphore>,
-        overrides: Arc<dyn StorageOverride<B>>,
+        storage_override: Arc<dyn StorageOverride<B>>,
         prometheus: Option<PrometheusRegistry>,
     ) -> (impl Future<Output = ()>, CacheRequester) {
         // Communication with the outside world :
@@ -489,7 +489,7 @@ where
 						match request {
 							None => break,
 							Some(CacheRequest::StartBatch {sender, blocks})
-								=> inner.request_start_batch(&blocking_tx, sender, blocks, overrides.clone()),
+								=> inner.request_start_batch(&blocking_tx, sender, blocks, storage_override.clone()),
 							Some(CacheRequest::GetTraces {sender, block})
 								=> inner.request_get_traces(sender, block),
 							Some(CacheRequest::StopBatch {batch_id}) => {
@@ -529,13 +529,13 @@ where
 
     /// Handle the creation of a batch.
     /// Will start the tracing process for blocks that are not already in the cache.
-    #[instrument(skip(self, blocking_tx, sender, blocks, overrides))]
+    #[instrument(skip(self, blocking_tx, sender, blocks, storage_override))]
     fn request_start_batch(
         &mut self,
         blocking_tx: &mpsc::Sender<BlockingTaskMessage>,
         sender: oneshot::Sender<CacheBatchId>,
         blocks: Vec<H256>,
-        overrides: Arc<dyn StorageOverride<B>>,
+        storage_override: Arc<dyn StorageOverride<B>>,
     ) {
         tracing::trace!("Starting batch {}", self.next_batch_id);
         self.batches.insert(self.next_batch_id, blocks.clone());
@@ -559,7 +559,7 @@ where
                 let client = Arc::clone(&self.client);
                 let backend = Arc::clone(&self.backend);
                 let blocking_tx = blocking_tx.clone();
-                let overrides = overrides.clone();
+                let storage_override = storage_override.clone();
 
                 // Spawn all block caching asynchronously.
                 // It will wait to obtain a permit, then spawn a blocking task.
@@ -587,7 +587,7 @@ where
                         // Perform block tracing in a tokio blocking task.
                         let result = async {
                             tokio::task::spawn_blocking(move || {
-                                Self::cache_block(client, backend, block, overrides.clone())
+                                Self::cache_block(client, backend, block, storage_override.clone())
                             })
                             .await
                             .map_err(|e| {
@@ -787,12 +787,12 @@ where
     }
 
     /// (In blocking task) Use the Runtime API to trace the block.
-    #[instrument(skip(client, backend, overrides))]
+    #[instrument(skip(client, backend, storage_override))]
     fn cache_block(
         client: Arc<C>,
         backend: Arc<BE>,
         substrate_hash: H256,
-        overrides: Arc<dyn StorageOverride<B>>,
+        storage_override: Arc<dyn StorageOverride<B>>,
     ) -> TxsTraceRes {
         // Get Subtrate block data.
         let api = client.runtime_api();
@@ -811,8 +811,8 @@ where
 
         // Get Ethereum block data.
         let (eth_block, eth_transactions) = match (
-            overrides.current_block(substrate_hash),
-            overrides.current_transaction_statuses(substrate_hash),
+            storage_override.current_block(substrate_hash),
+            storage_override.current_transaction_statuses(substrate_hash),
         ) {
             (Some(a), Some(b)) => (a, b),
             _ => {

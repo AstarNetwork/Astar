@@ -129,8 +129,8 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub fee_history_limit: u64,
     /// Fee history cache.
     pub fee_history_cache: FeeHistoryCache,
-    /// Ethereum data access overrides.
-    pub overrides: Arc<dyn StorageOverride<Block>>,
+    /// Ethereum data access storage_override.
+    pub storage_override: Arc<dyn StorageOverride<Block>>,
     /// Cache for Ethereum block data.
     pub block_data_cache: Arc<EthBlockDataCacheTask<Block>>,
     /// Enable EVM RPC servers
@@ -293,7 +293,7 @@ where
         filter_pool,
         fee_history_limit,
         fee_history_cache,
-        overrides,
+        storage_override,
         block_data_cache,
         enable_evm_rpc,
         #[cfg(feature = "manual-seal")]
@@ -324,7 +324,7 @@ where
             no_tx_converter,
             sync.clone(),
             Default::default(),
-            overrides.clone(),
+            storage_override.clone(),
             frontier_backend.clone(),
             is_authority,
             block_data_cache.clone(),
@@ -367,7 +367,7 @@ where
             client.clone(),
             sync,
             subscription_task_executor,
-            overrides,
+            storage_override,
             pubsub_notification_sinks,
         )
         .into_rpc(),

@@ -179,7 +179,7 @@ where
         backend: Arc<BE>,
         frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
         permit_pool: Arc<Semaphore>,
-        overrides: Arc<dyn StorageOverride<B>>,
+        storage_override: Arc<dyn StorageOverride<B>>,
         raw_max_memory_usage: usize,
     ) -> (impl Future<Output = ()>, DebugRequester) {
         let (tx, mut rx): (DebugRequester, _) =
@@ -196,7 +196,7 @@ where
                         let backend = backend.clone();
                         let frontier_backend = frontier_backend.clone();
                         let permit_pool = permit_pool.clone();
-                        let overrides = overrides.clone();
+                        let storage_override = storage_override.clone();
 
                         tokio::task::spawn(async move {
                             let _ = response_tx.send(
@@ -209,7 +209,7 @@ where
                                             frontier_backend.clone(),
                                             transaction_hash,
                                             params,
-                                            overrides.clone(),
+                                            storage_override.clone(),
                                             raw_max_memory_usage,
                                         )
                                     })
@@ -264,7 +264,7 @@ where
                         let backend = backend.clone();
                         let frontier_backend = frontier_backend.clone();
                         let permit_pool = permit_pool.clone();
-                        let overrides = overrides.clone();
+                        let storage_override = storage_override.clone();
 
                         tokio::task::spawn(async move {
                             let _ = response_tx.send(
@@ -278,7 +278,7 @@ where
                                             frontier_backend.clone(),
                                             request_block_id,
                                             params,
-                                            overrides.clone(),
+                                            storage_override.clone(),
                                         )
                                     })
                                     .await
@@ -354,7 +354,7 @@ where
         frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
         request_block_id: RequestBlockId,
         params: Option<TraceParams>,
-        overrides: Arc<dyn StorageOverride<B>>,
+        storage_override: Arc<dyn StorageOverride<B>>,
     ) -> RpcResult<Response> {
         let (tracer_input, trace_type) = Self::handle_params(params)?;
 
@@ -398,7 +398,7 @@ where
         // Get parent blockid.
         let parent_block_hash = *header.parent_hash();
 
-        let statuses = overrides
+        let statuses = storage_override
             .current_transaction_statuses(hash)
             .unwrap_or_default();
 
@@ -504,7 +504,7 @@ where
         frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
         transaction_hash: H256,
         params: Option<TraceParams>,
-        overrides: Arc<dyn StorageOverride<B>>,
+        storage_override: Arc<dyn StorageOverride<B>>,
         raw_max_memory_usage: usize,
     ) -> RpcResult<Response> {
         let (tracer_input, trace_type) = Self::handle_params(params)?;
@@ -563,7 +563,7 @@ where
             ));
         };
 
-        let reference_block = overrides.current_block(reference_hash);
+        let reference_block = storage_override.current_block(reference_hash);
 
         // Get the actual ethereum transaction.
         if let Some(block) = reference_block {
