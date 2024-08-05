@@ -85,7 +85,7 @@ fn lock_not_possible_for_collator_candidate_account() {
         // Hacky approach but it works
         let candidate_info = CandidateInfo {
             who: ALICE.clone(),
-            deposit: CollatorSelection::candidacy_bond(),
+            deposit: pallet_collator_selection::CandidacyBond::<Runtime>::get(),
         };
         Candidates::<Runtime>::mutate(|candidates| {
             candidates.push(candidate_info);
