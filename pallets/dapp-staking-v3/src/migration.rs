@@ -66,48 +66,75 @@ mod v8 {
     {
         fn on_runtime_upgrade() -> Weight {
             // 1. Update static tier parameters with new thresholds from the runtime configurable param TierThresholds
-            let _ = StaticTierParams::<T>::translate::<TierParametersV7<T::NumberOfTiers>, _>(
+            let result = StaticTierParams::<T>::translate::<TierParametersV7<T::NumberOfTiers>, _>(
                 |maybe_old_params| match maybe_old_params {
                     Some(old_params) => {
-                        let tier_thresholds: BoundedVec<TierThreshold, T::NumberOfTiers> =
-                            BoundedVec::try_from(TierThresholds::get().to_vec()).unwrap();
+                        let tier_thresholds: Result<
+                            BoundedVec<TierThreshold, T::NumberOfTiers>,
+                            _,
+                        > = BoundedVec::try_from(TierThresholds::get().to_vec());
 
-                        Some(TierParameters {
-                            slot_distribution: old_params.slot_distribution,
-                            reward_portion: old_params.reward_portion,
-                            tier_thresholds,
-                        })
+                        match tier_thresholds {
+                            Ok(tier_thresholds) => Some(TierParameters {
+                                slot_distribution: old_params.slot_distribution,
+                                reward_portion: old_params.reward_portion,
+                                tier_thresholds,
+                            }),
+                            Err(err) => {
+                                log::error!(
+                                    "Failed to convert TierThresholds parameters: {:?}",
+                                    err
+                                );
+                                None
+                            }
+                        }
                     }
                     _ => None,
                 },
             );
 
+            if result.is_err() {
+                log::error!("Failed to translate StaticTierParams from previous V7 type to current V8 type. Check TierParametersV7 decoding.");
+                return T::DbWeight::get().reads_writes(1, 0);
+            }
+
             // 2. Translate tier thresholds from V7 TierThresholds to Balance
-            let _ = TierConfig::<T>::translate::<
+            let result = TierConfig::<T>::translate::<
                 TiersConfigurationV7<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice>,
                 _,
             >(|maybe_old_config| match maybe_old_config {
                 Some(old_config) => {
-                    let new_tier_thresholds = old_config
-                        .tier_thresholds
-                        .iter()
-                        .map(|t| match t {
-                            v7::TierThreshold::DynamicTvlAmount { amount, .. } => *amount,
-                            v7::TierThreshold::FixedTvlAmount { amount } => *amount,
-                        })
-                        .collect::<Vec<Balance>>()
-                        .try_into()
-                        .expect("Invalid number of tier thresholds provided.");
+                    let new_tier_thresholds: Result<BoundedVec<Balance, T::NumberOfTiers>, _> =
+                        old_config
+                            .tier_thresholds
+                            .iter()
+                            .map(|t| match t {
+                                v7::TierThreshold::DynamicTvlAmount { amount, .. } => *amount,
+                                v7::TierThreshold::FixedTvlAmount { amount } => *amount,
+                            })
+                            .collect::<Vec<Balance>>()
+                            .try_into();
 
-                    Some(TiersConfiguration {
-                        slots_per_tier: old_config.slots_per_tier,
-                        reward_portion: old_config.reward_portion,
-                        tier_thresholds: new_tier_thresholds,
-                        _phantom: Default::default(),
-                    })
+                    match new_tier_thresholds {
+                        Ok(new_tier_thresholds) => Some(TiersConfiguration {
+                            slots_per_tier: old_config.slots_per_tier,
+                            reward_portion: old_config.reward_portion,
+                            tier_thresholds: new_tier_thresholds,
+                            _phantom: Default::default(),
+                        }),
+                        Err(err) => {
+                            log::error!("Failed to convert tier thresholds to balances: {:?}", err);
+                            None
+                        }
+                    }
                 }
                 _ => None,
             });
+
+            if result.is_err() {
+                log::error!("Failed to translate TierConfig from previous V7 type to current V8 type. Check TiersConfigurationV7 decoding.");
+                return T::DbWeight::get().reads_writes(2, 1);
+            }
 
             T::DbWeight::get().reads_writes(2, 2)
         }

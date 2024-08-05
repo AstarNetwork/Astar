@@ -2933,14 +2933,18 @@ fn tier_configuration_basic_tests() {
         pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
     }
     let total_issuance: Balance = 9_000_000_000;
-    let tier_thresholds_with_issuance = ThresholdsWithIssuance {
-        thresholds: params.tier_thresholds.clone(),
-        total_issuance,
-    };
+    let tier_thresholds = params
+        .tier_thresholds
+        .iter()
+        .map(|t| t.threshold(total_issuance))
+        .collect::<Vec<Balance>>()
+        .try_into()
+        .expect("Invalid number of tier thresholds provided.");
+
     let init_config = TiersConfiguration::<TiersNum, StandardTierSlots, BaseNativeCurrencyPrice> {
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),
-        tier_thresholds: BoundedVec::from(tier_thresholds_with_issuance),
+        tier_thresholds,
         _phantom: Default::default(),
     };
     assert!(init_config.is_valid(), "Init config must be valid!");
@@ -3098,7 +3102,7 @@ fn dapp_tier_rewards_with_rank() {
 }
 
 #[test]
-fn tier_thresholds_from_conversion_test() {
+fn tier_thresholds_conversion_test() {
     get_u32_type!(TiersNum, 2);
     let total_issuance: Balance = 1_000_000;
 
@@ -3113,14 +3117,13 @@ fn tier_thresholds_from_conversion_test() {
     ])
     .unwrap();
 
-    let tier_thresholds_with_issuance = ThresholdsWithIssuance {
-        thresholds,
-        total_issuance,
-    };
+    let tier_thresholds: BoundedVec<Balance, TiersNum> = thresholds
+        .iter()
+        .map(|t| t.threshold(total_issuance))
+        .collect::<Vec<Balance>>()
+        .try_into()
+        .expect("Invalid number of tier thresholds provided.");
 
-    let thresholds_values: BoundedVec<Balance, TiersNum> =
-        BoundedVec::from(tier_thresholds_with_issuance);
-
-    assert_eq!(thresholds_values[0], 100_000); // 10% of total issuance
-    assert_eq!(thresholds_values[1], 50_000); // 5% of total issuance
+    assert_eq!(tier_thresholds[0], 100_000); // 10% of total issuance
+    assert_eq!(tier_thresholds[1], 50_000); // 5% of total issuance
 }

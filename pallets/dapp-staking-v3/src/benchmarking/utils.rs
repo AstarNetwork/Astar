@@ -197,16 +197,20 @@ pub(super) fn init_tier_settings<T: Config>() {
     };
 
     let total_issuance = SEED as u128 * UNIT;
-    let tier_thresholds_with_issuance = ThresholdsWithIssuance {
-        thresholds: tier_params.tier_thresholds.clone(),
-        total_issuance,
-    };
+    let tier_thresholds = tier_params
+        .tier_thresholds
+        .iter()
+        .map(|t| t.threshold(total_issuance))
+        .collect::<Vec<Balance>>()
+        .try_into()
+        .expect("Invalid number of tier thresholds provided.");
+
     // Init tier config, based on the initial params
     let init_tier_config =
         TiersConfiguration::<T::NumberOfTiers, T::TierSlots, T::BaseNativeCurrencyPrice> {
             slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
             reward_portion: tier_params.reward_portion.clone(),
-            tier_thresholds: BoundedVec::from(tier_thresholds_with_issuance),
+            tier_thresholds,
             _phantom: Default::default(),
         };
 

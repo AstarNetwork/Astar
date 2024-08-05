@@ -1479,6 +1479,18 @@ pub enum TierThreshold {
     },
 }
 
+impl TierThreshold {
+    /// Return threshold amount for the tier.
+    pub fn threshold(&self, total_issuance: Balance) -> Balance {
+        match self {
+            Self::DynamicPercentage { percentage, .. } => *percentage * total_issuance,
+            Self::FixedPercentage {
+                required_percentage,
+            } => *required_percentage * total_issuance,
+        }
+    }
+}
+
 /// Top level description of tier slot parameters used to calculate tier configuration.
 #[derive(
     Encode,
@@ -1839,32 +1851,3 @@ impl CleanupMarker {
             || self.dapp_tiers_index != self.oldest_valid_era
     }
 }
-
-// Wrap the total issuance value with tier percentages.
-pub struct ThresholdsWithIssuance<NT: Get<u32>> {
-    pub thresholds: BoundedVec<TierThreshold, NT>,
-    pub total_issuance: Balance,
-}
-
-impl<NT: Get<u32>> From<ThresholdsWithIssuance<NT>> for BoundedVec<Balance, NT> {
-    fn from(wrapper: ThresholdsWithIssuance<NT>) -> Self {
-        wrapper
-            .thresholds
-            .iter()
-            .map(|t| match t {
-                TierThreshold::DynamicPercentage { percentage, .. } => {
-                    *percentage * wrapper.total_issuance
-                }
-                TierThreshold::FixedPercentage {
-                    required_percentage,
-                } => *required_percentage * wrapper.total_issuance,
-            })
-            .collect::<Vec<Balance>>()
-            .try_into()
-            .expect("Invalid number of tier thresholds provided.")
-    }
-}
-
-// Implremt from TierParams to BoundedVec<Balance, NT>??
-
-// test it
