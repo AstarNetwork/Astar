@@ -662,6 +662,7 @@ dependencies = [
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
+ "polkadot-core-primitives",
  "polkadot-parachain-primitives",
  "polkadot-primitives",
  "polkadot-runtime-common",
@@ -7109,7 +7110,9 @@ dependencies = [
 name = "moonbeam-rpc-core-debug"
 version = "0.1.0"
 dependencies = [
+ "ethereum",
  "ethereum-types",
+ "fc-rpc-core",
  "futures 0.3.30",
  "jsonrpsee",
  "moonbeam-client-evm-tracing",
@@ -7163,6 +7166,7 @@ dependencies = [
  "fc-consensus",
  "fc-db",
  "fc-rpc",
+ "fc-rpc-core",
  "fc-storage",
  "fp-rpc",
  "futures 0.3.30",

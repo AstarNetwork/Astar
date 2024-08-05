@@ -20,13 +20,16 @@
 
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+use fc_storage::StorageOverrideHandler;
 use futures::{FutureExt, StreamExt};
 use sc_client_api::{Backend, BlockBackend, BlockchainEvents};
 use sc_consensus_grandpa::SharedVoterState;
 use sc_executor::NativeElseWasmExecutor;
+use sc_network::NetworkBackend;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
+use sp_runtime::traits::Block as BlockT;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 #[cfg(not(feature = "manual-seal"))]
@@ -100,7 +103,7 @@ pub fn new_partial(
             >,
             sc_consensus_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
             Option<Telemetry>,
-            Arc<fc_db::kv::Backend<Block>>,
+            Arc<fc_db::kv::Backend<Block, FullClient>>,
         ),
     >,
     ServiceError,
@@ -202,10 +205,13 @@ pub fn new_partial(
 }
 
 /// Builds a new service.
-pub fn start_node(
+pub fn start_node<N>(
     config: Configuration,
     #[cfg(feature = "evm-tracing")] evm_tracing_config: crate::evm_tracing_types::EvmTracingConfig,
-) -> Result<TaskManager, ServiceError> {
+) -> Result<TaskManager, ServiceError>
+where
+    N: NetworkBackend<Block, <Block as BlockT>::Hash>,
+{
     let sc_service::PartialComponents {
         client,
         backend,
@@ -225,10 +231,20 @@ pub fn start_node(
             .expect("Genesis block exists; qed"),
         &config.chain_spec,
     );
-    let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+    let mut net_config =
+        sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&config.network);
+
+    let metrics = N::register_notification_metrics(
+        config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
+    );
+    let peer_store_handle = net_config.peer_store_handle();
 
     let (grandpa_protocol_config, grandpa_notification_service) =
-        sc_consensus_grandpa::grandpa_peers_set_config(protocol_name.clone());
+        sc_consensus_grandpa::grandpa_peers_set_config::<_, N>(
+            protocol_name.clone(),
+            metrics.clone(),
+            Arc::clone(&peer_store_handle),
+        );
     net_config.add_notification_protocol(grandpa_protocol_config);
 
     let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
@@ -242,6 +258,7 @@ pub fn start_node(
             block_announce_validator_builder: None,
             warp_sync_params: None,
             block_relay: None,
+            metrics,
         })?;
 
     if config.offchain_worker.enabled {
@@ -255,7 +272,7 @@ pub fn start_node(
                 transaction_pool: Some(OffchainTransactionPoolFactory::new(
                     transaction_pool.clone(),
                 )),
-                network_provider: network.clone(),
+                network_provider: Arc::new(network.clone()),
                 is_validator: config.role.is_authority(),
                 enable_http_requests: true,
                 custom_extensions: move |_| vec![],
@@ -267,7 +284,7 @@ pub fn start_node(
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
-    let overrides = fc_storage::overrides_handle(client.clone());
+    let storage_override = Arc::new(StorageOverrideHandler::new(client.clone()));
 
     // Sinks for pubsub notifications.
     // Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
@@ -293,7 +310,7 @@ pub fn start_node(
                     substrate_backend: backend.clone(),
                     frontier_backend: frontier_backend.clone(),
                     filter_pool: Some(filter_pool.clone()),
-                    overrides: overrides.clone(),
+                    overrides: storage_override.clone(),
                 },
             )
         } else {
@@ -313,7 +330,7 @@ pub fn start_node(
             Duration::new(6, 0),
             client.clone(),
             backend.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             frontier_backend.clone(),
             3,
             0,
@@ -343,7 +360,7 @@ pub fn start_node(
         Some("frontier"),
         fc_rpc::EthTask::fee_history_task(
             client.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             fee_history_cache.clone(),
             FEE_HISTORY_LIMIT,
         ),
@@ -362,7 +379,7 @@ pub fn start_node(
 
     let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
         task_manager.spawn_handle(),
-        overrides.clone(),
+        storage_override.clone(),
         50,
         50,
         prometheus_registry.clone(),
@@ -393,7 +410,7 @@ pub fn start_node(
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
-                overrides: overrides.clone(),
+                overrides: storage_override.clone(),
                 enable_evm_rpc: true, // enable EVM RPC for dev node by default
                 #[cfg(feature = "manual-seal")]
                 command_sink: Some(command_sink.clone()),

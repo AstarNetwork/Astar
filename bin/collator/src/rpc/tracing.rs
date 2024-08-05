@@ -19,8 +19,8 @@
 ///! EVM tracing RPC support.
 use crate::evm_tracing_types::{EthApi as EthApiCmd, EvmTracingConfig};
 
-use fc_rpc::OverrideHandle;
 use fc_rpc_core::types::FilterPool;
+use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 use moonbeam_rpc_debug::{DebugHandler, DebugRequester};
 use moonbeam_rpc_trace::{CacheRequester as TraceFilterCacheRequester, CacheTask};
@@ -49,7 +49,7 @@ pub struct SpawnTasksParams<'a, B: BlockT, C, BE> {
     pub substrate_backend: Arc<BE>,
     pub frontier_backend: Arc<dyn fc_api::Backend<B> + Send + Sync>,
     pub filter_pool: Option<FilterPool>,
-    pub overrides: Arc<OverrideHandle<B>>,
+    pub overrides: Arc<dyn StorageOverride<B>>,
 }
 
 /// Spawn the tasks that are required to run a EVM tracing.

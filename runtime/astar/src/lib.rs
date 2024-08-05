@@ -30,16 +30,16 @@ use frame_support::{
     genesis_builder_helper::{build_state, get_preset},
     parameter_types,
     traits::{
-        fungible::{Balanced, Credit, HoldConsideration},
-        AsEnsureOriginWithArg, ConstBool, ConstU32, Contains, Currency, FindAuthor, Get, Imbalance,
+        fungible::{Balanced, Credit},
+        AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, Contains, FindAuthor, Get, Imbalance,
         InstanceFilter, Nothing, OnFinalize, OnUnbalanced, Randomness, WithdrawReasons,
     },
     weights::{
         constants::{
             BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
         },
-        ConstantMultiplier, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial,
+        ConstantMultiplier, Weight, WeightToFee as WeightToFeeT, WeightToFeeCoefficient,
+        WeightToFeeCoefficients, WeightToFeePolynomial,
     },
     ConsensusEngineId, PalletId,
 };
@@ -69,6 +69,11 @@ use sp_runtime::{
     ApplyExtrinsicResult, FixedPointNumber, FixedU128, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
+use xcm::{
+    v4::{AssetId as XcmAssetId, Location as XcmLocation},
+    IntoVersion, VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
+};
+use xcm_fee_payment_runtime_api::Error as XcmPaymentApiError;
 
 use astar_primitives::{
     dapp_staking::{
@@ -543,13 +548,11 @@ parameter_types! {
     pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
-type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
-
 pub struct ToStakingPot;
-impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
-    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+impl OnUnbalanced<Credit<AccountId, Balances>> for ToStakingPot {
+    fn on_nonzero_unbalanced(amount: Credit<AccountId, Balances>) {
         let staking_pot = PotId::get().into_account_truncating();
-        Balances::resolve(&staking_pot, amount);
+        let _ = Balances::resolve(&staking_pot, amount);
     }
 }
 
@@ -746,7 +749,7 @@ impl WeightToFeePolynomial for WeightToFee {
 ///
 /// Similar to standard `WeightToFee` handler, but force uses the minimum multiplier.
 pub struct XcmWeightToFee;
-impl frame_support::weights::WeightToFee for XcmWeightToFee {
+impl WeightToFeeT for XcmWeightToFee {
     type Balance = Balance;
 
     fn weight_to_fee(n: &Weight) -> Self::Balance {
@@ -755,20 +758,20 @@ impl frame_support::weights::WeightToFee for XcmWeightToFee {
 }
 
 pub struct DealWithFees;
-impl OnUnbalanced<NegativeImbalance> for DealWithFees {
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+impl OnUnbalanced<Credit<AccountId, Balances>> for DealWithFees {
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = Credit<AccountId, Balances>>) {
         if let Some(fees) = fees_then_tips.next() {
-            // Burn 80% of fees, rest goes to collators, including 100% of the tips.
-            let (to_burn, mut collators) = fees.ration(80, 20);
+            // Burn 80% of fees, rest goes to collator, including 100% of the tips.
+            let (to_burn, mut collator) = fees.ration(80, 20);
             if let Some(tips) = fees_then_tips.next() {
-                tips.merge_into(&mut collators);
+                tips.merge_into(&mut collator);
             }
 
-            // burn part of fees
+            // burn part of the fees
             drop(to_burn);
 
-            // pay fees to collators
-            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);
+            // pay fees to collator
+            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collator);
         }
     }
 }
@@ -1832,7 +1835,63 @@ impl_runtime_apis! {
         }
     }
 
+    impl xcm_fee_payment_runtime_api::XcmPaymentApi<Block> for Runtime {
+        fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
+            if !matches!(xcm_version, 3 | 4) {
+                return Err(XcmPaymentApiError::UnhandledXcmVersion);
+            }
 
+            // Native asset is always supported
+            let native_asset_location: XcmLocation = XcmLocation::try_from(xcm_config::AstarLocation::get())
+            .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+
+            Ok([VersionedAssetId::V4(native_asset_location.into())]
+                .into_iter()
+                // Acquire foreign assets which have 'units per second' configured
+                .chain(
+                    pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::iter_keys().filter_map(|asset_location| {
+
+                        match XcmLocation::try_from(asset_location) {
+                            Ok(asset) => Some(VersionedAssetId::V4(asset.into())),
+                            Err(_) => None,
+                        }
+                    })
+            ).filter_map(|asset| asset.into_version(xcm_version).ok()).collect())
+        }
+
+        fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
+            let native_asset_location = XcmLocation::try_from(xcm_config::AstarLocation::get())
+                .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+            let native_asset = VersionedAssetId::V4(native_asset_location.into());
+
+            let asset = asset
+                .into_version(4)
+                .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+
+            if native_asset == asset {
+                Ok(XcmWeightToFee::weight_to_fee(&weight))
+            } else {
+                let asset_id: XcmAssetId = asset.try_into().map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
+                let versioned_location = VersionedLocation::V4(asset_id.0);
+
+                match pallet_xc_asset_config::AssetLocationUnitsPerSecond::<Runtime>::get(versioned_location) {
+                    Some(units_per_sec) => {
+                        Ok(units_per_sec.saturating_mul(weight.ref_time() as u128)
+                            / (WEIGHT_REF_TIME_PER_SECOND as u128))
+                    }
+                    None => Err(XcmPaymentApiError::AssetNotFound),
+                }
+            }
+        }
+
+        fn query_xcm_weight(message: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
+            PolkadotXcm::query_xcm_weight(message)
+        }
+
+        fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
+            PolkadotXcm::query_delivery_fees(destination, message)
+        }
+    }
 
     impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
 

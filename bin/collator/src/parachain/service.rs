@@ -33,12 +33,13 @@ use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+use fc_storage::StorageOverrideHandler;
 use futures::StreamExt;
 use polkadot_service::CollatorPair;
 use sc_client_api::BlockchainEvents;
 use sc_consensus::{import_queue::BasicQueue, ImportQueue};
 use sc_executor::NativeElseWasmExecutor;
-use sc_network::NetworkBlock;
+use sc_network::{NetworkBackend, NetworkBlock};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -47,8 +48,10 @@ use sp_consensus_aura::{
     sr25519::AuthorityId as AuraId, sr25519::AuthorityPair as AuraPair, AuraApi,
 };
 use sp_keystore::KeystorePtr;
-use sp_runtime::traits::BlakeTwo256;
-use sp_runtime::Percent;
+use sp_runtime::{
+    traits::{BlakeTwo256, Block as BlockT},
+    Percent,
+};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
@@ -159,7 +162,12 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
             >,
             Option<Telemetry>,
             Option<TelemetryWorkerHandle>,
-            Arc<fc_db::kv::Backend<Block>>,
+            Arc<
+                fc_db::kv::Backend<
+                    Block,
+                    TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+                >,
+            >,
         ),
     >,
     sc_service::Error,
@@ -297,7 +305,7 @@ async fn build_relay_chain_interface(
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[cfg(not(feature = "evm-tracing"))]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, Executor, BIQ, SC>(
+async fn start_node_impl<RuntimeApi, Executor, BIQ, SC, N>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
@@ -371,13 +379,15 @@ where
         CollatorPair,
         AdditionalConfig,
     ) -> Result<(), sc_service::Error>,
+    N: NetworkBackend<Block, <Block as BlockT>::Hash>,
 {
     let parachain_config = prepare_node_config(parachain_config);
 
     let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
     let (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend) =
         params.other;
-    let net_config = sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
+    let net_config =
+        sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&parachain_config.network);
 
     let client = params.client.clone();
     let backend = params.backend.clone();
@@ -413,7 +423,7 @@ where
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
     let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
-    let overrides = fc_storage::overrides_handle(client.clone());
+    let storage_override = Arc::new(StorageOverrideHandler::new(client.clone()));
 
     // Sinks for pubsub notifications.
     // Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
@@ -434,7 +444,7 @@ where
             Duration::new(6, 0),
             client.clone(),
             backend.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             frontier_backend.clone(),
             3,
             0,
@@ -464,7 +474,7 @@ where
         Some("frontier"),
         fc_rpc::EthTask::fee_history_task(
             client.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             fee_history_cache.clone(),
             FEE_HISTORY_LIMIT,
         ),
@@ -472,7 +482,7 @@ where
 
     let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
         task_manager.spawn_handle(),
-        overrides.clone(),
+        storage_override.clone(),
         50,
         50,
         prometheus_registry.clone(),
@@ -499,7 +509,7 @@ where
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
-                overrides: overrides.clone(),
+                overrides: storage_override.clone(),
                 enable_evm_rpc: additional_config.enable_evm_rpc,
                 #[cfg(feature = "manual-seal")]
                 command_sink: None,
@@ -739,7 +749,7 @@ where
                     substrate_backend: backend.clone(),
                     frontier_backend: frontier_backend.clone(),
                     filter_pool: Some(filter_pool.clone()),
-                    overrides: overrides.clone(),
+                    overrides: storage_override.clone(),
                 },
             )
         } else {
@@ -759,7 +769,7 @@ where
             Duration::new(6, 0),
             client.clone(),
             backend.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             frontier_backend.clone(),
             3,
             0,
@@ -789,7 +799,7 @@ where
         Some("frontier"),
         fc_rpc::EthTask::fee_history_task(
             client.clone(),
-            overrides.clone(),
+            storage_override.clone(),
             fee_history_cache.clone(),
             FEE_HISTORY_LIMIT,
         ),
@@ -797,7 +807,7 @@ where
 
     let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
         task_manager.spawn_handle(),
-        overrides.clone(),
+        storage_override.clone(),
         50,
         50,
         prometheus_registry.clone(),
@@ -829,7 +839,7 @@ where
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),
                 block_data_cache: block_data_cache.clone(),
-                overrides: overrides.clone(),
+                overrides: storage_override.clone(),
                 enable_evm_rpc: additional_config.enable_evm_rpc,
                 #[cfg(feature = "manual-seal")]
                 command_sink: None,
@@ -1044,7 +1054,6 @@ where
 
             Ok((slot, timestamp))
         },
-        slot_duration,
         &task_manager.spawn_essential_handle(),
         config.prometheus_registry(),
         telemetry_handle,
@@ -1120,7 +1129,6 @@ where
     let collation_future = Box::pin(async move {
         use parity_scale_codec::Decode;
         use sp_api::ApiExt;
-        use sp_runtime::traits::Block as BlockT;
 
         let client = client_.clone();
 
@@ -1158,10 +1166,6 @@ where
             }
         }
 
-        // Move to Aura consensus.
-        let slot_duration =
-            cumulus_client_consensus_aura::slot_duration(&*client).expect("aura is present; qed");
-
         let announce_block = {
             let sync_service = sync_oracle.clone();
             Arc::new(move |hash, data| sync_service.announce_block(hash, data))
@@ -1184,7 +1188,6 @@ where
             collator_key,
             para_id,
             overseer_handle,
-            slot_duration,
             relay_chain_slot_duration: Duration::from_secs(6),
             proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
             collator_service,
@@ -1285,7 +1288,6 @@ where
         collator_key,
         para_id,
         overseer_handle,
-        slot_duration: cumulus_client_consensus_aura::slot_duration(&*client)?,
         relay_chain_slot_duration: Duration::from_secs(6),
         proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
         collator_service,
@@ -1312,7 +1314,8 @@ pub async fn start_astar_node(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
 )> {
-    start_node_impl::<astar::RuntimeApi, astar::Executor, _, _>(
+    // TODO: add support for Litep2p?
+    start_node_impl::<astar::RuntimeApi, astar::Executor, _, _, sc_network::NetworkWorker<_, _>>(
         parachain_config,
         polkadot_config,
         collator_options,
@@ -1335,7 +1338,7 @@ pub async fn start_shiden_node(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
 )> {
-    start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
+    start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _, sc_network::NetworkWorker<_, _>>(
         parachain_config,
         polkadot_config,
         collator_options,
@@ -1358,7 +1361,7 @@ pub async fn start_shibuya_node(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
 )> {
-    start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
+    start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _, sc_network::NetworkWorker<_, _>>(
         parachain_config,
         polkadot_config,
         collator_options,
