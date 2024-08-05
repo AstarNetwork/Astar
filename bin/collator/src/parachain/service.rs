@@ -1316,7 +1316,6 @@ pub async fn start_astar_node(
     TaskManager,
     Arc<TFullClient<Block, astar::RuntimeApi, NativeElseWasmExecutor<astar::Executor>>>,
 )> {
-    // TODO: add support for Litep2p?
     start_node_impl::<astar::RuntimeApi, astar::Executor, _, _, sc_network::NetworkWorker<_, _>>(
         parachain_config,
         polkadot_config,
