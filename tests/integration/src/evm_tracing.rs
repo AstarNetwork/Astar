@@ -24,18 +24,13 @@ mod tests {
     use astar_primitives::Header;
     use fp_rpc::ConvertTransaction;
     use moonbeam_rpc_primitives_debug::runtime_decl_for_debug_runtime_api::DebugRuntimeApi;
+    use sp_core::U256;
 
     // A valid signed Alice transfer.
     pub const VALID_ETH_TX: &str =
         "02f869820501808085e8d4a51000825208943cd0a705a2dc65e5b1e1205896baa2be8a07c6e00180c\
 	001a061087911e877a5802142a89a40d231d50913db399eb50839bb2d04e612b22ec8a01aa313efdf2\
 	793bea76da6813bda611444af16a6207a8cfef2d9c8aa8f8012f7";
-
-    // An invalid signed Alice transfer with a gas limit artifically set to 0.
-    pub const INVALID_ETH_TX: &str =
-        "f8628085174876e800809412cb274aad8251c875c0bf6872b67d9983e53fdd01801ba011110796057\
-	0e2d49fcc2afbc582e1abd3eeb027242b92abcebcec7cdefab63ea001732f6fac84acdd5b096554230\
-	75003e7f07430652c3d6722e18f50b3d34e29";
 
     pub struct TransactionConverter;
 
@@ -84,6 +79,7 @@ mod tests {
             assert_ok!(Runtime::trace_transaction(
                 vec![non_eth_uxt.clone(), eth_uxt, non_eth_uxt.clone()],
                 &transaction,
+                &block
             ));
         });
     }
@@ -111,6 +107,33 @@ mod tests {
             assert_ok!(Runtime::trace_block(
                 vec![non_eth_uxt.clone(), eth_uxt.clone(), non_eth_uxt, eth_uxt],
                 vec![eth_extrinsic_hash, eth_extrinsic_hash],
+                &block
+            ));
+        });
+    }
+
+    #[test]
+    fn debug_runtime_api_trace_call() {
+        new_test_ext().execute_with(|| {
+            let block = Header {
+                digest: Default::default(),
+                extrinsics_root: Default::default(),
+                number: 1,
+                parent_hash: Default::default(),
+                state_root: Default::default(),
+            };
+
+            assert_ok!(Runtime::trace_call(
+                &block,
+                H160::repeat_byte(0x01),
+                H160::repeat_byte(0x02),
+                vec![0x03, 0x04],
+                U256::from(0x12345678),
+                U256::from(0x123),
+                Some(U256::from(0x456)),
+                Some(U256::from(0x789)),
+                Some(U256::from(1)),
+                Some(vec![]),
             ));
         });
     }
