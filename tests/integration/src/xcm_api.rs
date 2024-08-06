@@ -18,9 +18,13 @@
 
 use crate::setup::*;
 
+use sp_runtime::traits::Zero;
 use xcm::{
-    v4::{AssetId as XcmAssetId, Junction, Junctions::*, Location, VERSION as V_4},
-    VersionedLocation,
+    v4::{
+        Asset as XcmAsset, AssetId as XcmAssetId, Fungibility, Junction, Junctions::*, Location,
+        Xcm, VERSION as V_4,
+    },
+    VersionedLocation, VersionedXcm,
 };
 use xcm_fee_payment_runtime_api::runtime_decl_for_xcm_payment_api::XcmPaymentApi;
 
@@ -59,8 +63,7 @@ fn query_acceptable_payment_assets_is_ok() {
     new_test_ext().execute_with(|| {
         // 0. Sanity check for unsupported version
         {
-            let result = Runtime::query_acceptable_payment_assets(2);
-            assert!(result.is_err());
+            assert!(Runtime::query_acceptable_payment_assets(2).is_err());
         }
 
         // 1. First check the return values without any foreign asset registered.
@@ -86,5 +89,102 @@ fn query_acceptable_payment_assets_is_ok() {
             assert!(assets.contains(&XcmAssetId(Location::here()).into()));
             assert!(assets.contains(&XcmAssetId(payable_location).into()));
         }
+    })
+}
+
+#[test]
+fn query_weight_to_asset_fee_is_ok() {
+    new_test_ext().execute_with(|| {
+        // 0. Sanity check for unsupported asset
+        {
+            let non_payable_location = Location::new(1, Here);
+            assert!(Runtime::query_weight_to_asset_fee(
+                Weight::from_parts(1000, 1000),
+                XcmAssetId(non_payable_location.clone()).into(),
+            )
+            .is_err());
+
+            prepare_asset(1, non_payable_location.clone().into_versioned(), None);
+            assert!(Runtime::query_weight_to_asset_fee(
+                Weight::from_parts(1000, 1000),
+                XcmAssetId(non_payable_location).into(),
+            )
+            .is_err());
+        }
+
+        // 1. Native asset payment
+        {
+            let weight = Weight::from_parts(1000, 1000);
+            let fee =
+                Runtime::query_weight_to_asset_fee(weight, XcmAssetId(Location::here()).into())
+                    .expect("Must return fee for native asset.");
+
+            // TODO: improve the check later once _weight-to-fee_ code is more accessible.
+            assert!(!fee.is_zero(), "Fee must be greater than zero.");
+        }
+
+        // 2. Foreign asset payment
+        {
+            let payable_location = Location::new(2, Here);
+            prepare_asset(
+                2,
+                payable_location.clone().into_versioned(),
+                Some(1_000_000_000_000),
+            );
+
+            let weight = Weight::from_parts(1_000_000_000, 1_000_000);
+            let fee =
+                Runtime::query_weight_to_asset_fee(weight, XcmAssetId(payable_location).into())
+                    .expect("Must return fee for payable asset.");
+
+            // TODO: improve the check later once _weight-to-fee_ code is more accessible.
+            assert!(!fee.is_zero(), "Fee must be greater than zero.");
+        }
+    })
+}
+
+#[test]
+fn query_xcm_weight_is_ok() {
+    new_test_ext().execute_with(|| {
+        let native_asset: XcmAsset =
+            XcmAssetId(Location::here()).into_asset(Fungibility::Fungible(1_000_000_000));
+
+        // Prepare an xcm sequence
+        let xcm_sequence = Xcm::<()>::builder_unsafe()
+            .withdraw_asset(native_asset.clone())
+            .deposit_asset(
+                native_asset,
+                Junction::AccountId32 {
+                    network: None,
+                    id: BOB.clone().into(),
+                },
+            )
+            .build();
+
+        let weight =
+            Runtime::query_xcm_weight(VersionedXcm::V4(xcm_sequence)).expect("Must return weight.");
+        assert!(
+            !weight.is_zero(),
+            "Weight must be non-zero since we're performing asset withdraw & deposit."
+        );
+    })
+}
+
+#[test]
+fn query_delivery_fees_is_ok() {
+    new_test_ext().execute_with(|| {
+        let location = Location::new(1, Here).into_versioned();
+
+        // Prepare a dummy xcm sequence
+        let xcm_sequence = Xcm::<()>::builder_unsafe()
+            .clear_error()
+            .unsubscribe_version()
+            .build();
+
+        // TODO: this is something we should revisit
+        assert!(
+            Runtime::query_delivery_fees(location, VersionedXcm::V4(xcm_sequence)).is_err(),
+            "At the moment, `PriceForMessageDelivery` is not implemented."
+        );
     })
 }

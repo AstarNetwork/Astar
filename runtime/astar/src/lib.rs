@@ -1839,7 +1839,7 @@ impl_runtime_apis! {
 
     impl xcm_fee_payment_runtime_api::XcmPaymentApi<Block> for Runtime {
         fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
-            if !matches!(xcm_version, 3 | 4) {
+            if !matches!(xcm_version, xcm::v3::VERSION | xcm::v4::VERSION) {
                 return Err(XcmPaymentApiError::UnhandledXcmVersion);
             }
 
@@ -1867,7 +1867,7 @@ impl_runtime_apis! {
             let native_asset = VersionedAssetId::V4(native_asset_location.into());
 
             let asset = asset
-                .into_version(4)
+                .into_version(xcm::v4::VERSION)
                 .map_err(|_| XcmPaymentApiError::VersionedConversionFailed)?;
 
             if native_asset == asset {
