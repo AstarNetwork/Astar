@@ -20,7 +20,8 @@ use crate::test::{mock::*, testing_utils::*};
 use crate::{
     pallet::Config, ActiveProtocolState, ContractStake, DAppId, DAppTierRewardsFor, DAppTiers,
     EraRewards, Error, Event, ForcingType, GenesisConfig, IntegratedDApps, Ledger, NextDAppId,
-    PeriodNumber, Permill, Safeguard, StakerInfo, Subperiod, TierConfig, TierThreshold,
+    Perbill, PeriodNumber, Permill, Safeguard, StakerInfo, StaticTierParams, Subperiod, TierConfig,
+    TierThreshold,
 };
 
 use frame_support::{
@@ -2407,7 +2408,7 @@ fn tier_config_recalculation_works() {
 
         let new_tier_config = TierConfig::<Test>::get();
         assert!(
-            new_tier_config.number_of_slots > init_tier_config.number_of_slots,
+            new_tier_config.total_number_of_slots() > init_tier_config.total_number_of_slots(),
             "Price has increased, therefore number of slots must increase."
         );
         assert_eq!(
@@ -2415,9 +2416,22 @@ fn tier_config_recalculation_works() {
             new_tier_config.slots_per_tier.len(),
             "Sanity check."
         );
-        for idx in 0..init_tier_config.slots_per_tier.len() {
-            assert!(init_tier_config.slots_per_tier[idx] < new_tier_config.slots_per_tier[idx]);
-        }
+        assert!(
+            new_tier_config
+                .slots_per_tier
+                .iter()
+                .zip(init_tier_config.slots_per_tier.iter())
+                .all(|(new, init)| new > init),
+            "Number of slots per tier should increase with higher price"
+        );
+        assert!(
+            new_tier_config
+                .tier_thresholds
+                .iter()
+                .zip(init_tier_config.tier_thresholds.iter())
+                .all(|(new, init)| new <= init),
+            "Tier threshold values should decrease with higher price"
+        );
 
         // 3. Decrease the native price, and expect slots in tiers to be decreased.
         NATIVE_PRICE.with(|v| *v.borrow_mut() = init_price * FixedU128::from_rational(1, 2));
@@ -2427,7 +2441,7 @@ fn tier_config_recalculation_works() {
 
         let new_tier_config = TierConfig::<Test>::get();
         assert!(
-            new_tier_config.number_of_slots < init_tier_config.number_of_slots,
+            new_tier_config.total_number_of_slots() < init_tier_config.total_number_of_slots(),
             "Price has decreased, therefore number of slots must decrease."
         );
         assert_eq!(
@@ -2435,9 +2449,22 @@ fn tier_config_recalculation_works() {
             new_tier_config.slots_per_tier.len(),
             "Sanity check."
         );
-        for idx in 0..init_tier_config.slots_per_tier.len() {
-            assert!(init_tier_config.slots_per_tier[idx] > new_tier_config.slots_per_tier[idx]);
-        }
+        assert!(
+            new_tier_config
+                .slots_per_tier
+                .iter()
+                .zip(init_tier_config.slots_per_tier.iter())
+                .all(|(new, init)| new < init),
+            "Number of slots per tier should decrease with lower price"
+        );
+        assert!(
+            new_tier_config
+                .tier_thresholds
+                .iter()
+                .zip(init_tier_config.tier_thresholds.iter())
+                .all(|(new, init)| new >= init),
+            "Tier threshold values should increase with lower price"
+        );
     })
 }
 
@@ -2446,7 +2473,6 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
     ExtBuilder::build().execute_with(|| {
         // Tier config is specially adapted for this test.
         TierConfig::<Test>::mutate(|config| {
-            config.number_of_slots = 40;
             config.slots_per_tier = BoundedVec::try_from(vec![2, 5, 13, 20]).unwrap();
         });
 
@@ -2481,7 +2507,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             lock_and_stake(
                 dapp_index,
                 &smart_contracts[dapp_index],
-                tier_config.tier_thresholds[0].threshold() + x + 1,
+                tier_config.tier_thresholds[0] + x + 1,
             );
             dapp_index += 1;
         }
@@ -2489,7 +2515,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         lock_and_stake(
             dapp_index,
             &smart_contracts[dapp_index],
-            tier_config.tier_thresholds[0].threshold(),
+            tier_config.tier_thresholds[0],
         );
         dapp_index += 1;
 
@@ -2497,7 +2523,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         lock_and_stake(
             dapp_index,
             &smart_contracts[dapp_index],
-            tier_config.tier_thresholds[0].threshold() - 1,
+            tier_config.tier_thresholds[0] - 1,
         );
         dapp_index += 1;
 
@@ -2507,7 +2533,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
             lock_and_stake(
                 dapp_index,
                 &smart_contracts[dapp_index],
-                tier_config.tier_thresholds[3].threshold() + x,
+                tier_config.tier_thresholds[3] + x,
             );
             dapp_index += 1;
         }
@@ -2516,7 +2542,7 @@ fn get_dapp_tier_assignment_and_rewards_basic_example_works() {
         lock_and_stake(
             dapp_index,
             &smart_contracts[dapp_index],
-            tier_config.tier_thresholds[3].threshold() - 1,
+            tier_config.tier_thresholds[3] - 1,
         );
 
         // Finally, the actual test
@@ -2590,8 +2616,6 @@ fn get_dapp_tier_assignment_and_rewards_zero_slots_per_tier_works() {
 
         // Ensure that first tier has 0 slots.
         TierConfig::<Test>::mutate(|config| {
-            let slots_in_first_tier = config.slots_per_tier[0];
-            config.number_of_slots = config.number_of_slots - slots_in_first_tier;
             config.slots_per_tier[0] = 0;
         });
 
@@ -3044,21 +3068,6 @@ fn safeguard_configurable_by_genesis_config() {
             Permill::from_percent(30),
             Permill::from_percent(40),
         ],
-        tier_thresholds: vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: 30000,
-                minimum_amount: 20000,
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: 7500,
-                minimum_amount: 5000,
-            },
-            TierThreshold::DynamicTvlAmount {
-                amount: 20000,
-                minimum_amount: 15000,
-            },
-            TierThreshold::FixedTvlAmount { amount: 5000 },
-        ],
         slots_per_tier: vec![10, 20, 30, 40],
         ..Default::default()
     };
@@ -3092,6 +3101,7 @@ fn safeguard_configurable_by_genesis_config() {
 fn base_number_of_slots_is_respected() {
     ExtBuilder::build().execute_with(|| {
         // 0. Get expected number of slots for the base price
+        let total_issuance = <Test as Config>::Currency::total_issuance();
         let base_native_price = <Test as Config>::BaseNativeCurrencyPrice::get();
         let base_number_of_slots = <Test as Config>::TierSlots::number_of_slots(base_native_price);
 
@@ -3101,7 +3111,7 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             base_number_of_slots,
             "Base number of slots is expected for base native currency price."
         );
@@ -3115,21 +3125,26 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert!(
-            TierConfig::<Test>::get().number_of_slots > base_number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots() > base_number_of_slots,
             "Price has increased, therefore number of slots must increase."
         );
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             <Test as Config>::TierSlots::number_of_slots(higher_price),
         );
 
-        for tier_threshold in TierConfig::<Test>::get().tier_thresholds.iter() {
-            if let TierThreshold::DynamicTvlAmount {
-                amount,
-                minimum_amount,
-            } = tier_threshold
+        for (amount, static_tier_threshold) in TierConfig::<Test>::get()
+            .tier_thresholds
+            .iter()
+            .zip(StaticTierParams::<Test>::get().tier_thresholds.iter())
+        {
+            if let TierThreshold::DynamicPercentage {
+                minimum_required_percentage,
+                ..
+            } = static_tier_threshold
             {
-                assert_eq!(*amount, *minimum_amount, "Thresholds must be saturated.");
+                let minimum_amount = *minimum_required_percentage * total_issuance;
+                assert_eq!(*amount, minimum_amount, "Thresholds must be saturated.");
             }
         }
 
@@ -3140,7 +3155,7 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             base_number_of_slots,
             "Base number of slots is expected for base native currency price."
         );
@@ -3158,11 +3173,11 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert!(
-            TierConfig::<Test>::get().number_of_slots < base_number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots() < base_number_of_slots,
             "Price has decreased, therefore number of slots must decrease."
         );
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             <Test as Config>::TierSlots::number_of_slots(lower_price),
         );
 
@@ -3173,7 +3188,7 @@ fn base_number_of_slots_is_respected() {
         run_for_blocks(1);
 
         assert_eq!(
-            TierConfig::<Test>::get().number_of_slots,
+            TierConfig::<Test>::get().total_number_of_slots(),
             base_number_of_slots,
             "Base number of slots is expected for base native currency price."
         );
@@ -3254,12 +3269,14 @@ fn ranking_will_calc_reward_correctly() {
 #[test]
 fn claim_dapp_reward_with_rank() {
     ExtBuilder::build().execute_with(|| {
+        let total_issuance = <Test as Config>::Currency::total_issuance();
+
         // Register smart contract, lock&stake some amount
         let smart_contract = MockSmartContract::wasm(1 as AccountId);
         assert_register(1, &smart_contract);
 
         let alice = 2;
-        let amount = 99; // very close to tier 0 so will enter tier 1 with rank 9
+        let amount = Perbill::from_parts(11_000_000) * total_issuance; // very close to tier 0 so will enter tier 1 with rank 9
         assert_lock(alice, amount);
         assert_stake(alice, &smart_contract, amount);
 

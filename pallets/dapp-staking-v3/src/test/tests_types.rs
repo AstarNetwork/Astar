@@ -2811,26 +2811,6 @@ fn era_reward_span_fails_when_expected() {
 }
 
 #[test]
-fn tier_threshold_is_ok() {
-    let amount = 100;
-
-    // Fixed TVL
-    let fixed_threshold = TierThreshold::FixedTvlAmount { amount };
-    assert!(fixed_threshold.is_satisfied(amount));
-    assert!(fixed_threshold.is_satisfied(amount + 1));
-    assert!(!fixed_threshold.is_satisfied(amount - 1));
-
-    // Dynamic TVL
-    let dynamic_threshold = TierThreshold::DynamicTvlAmount {
-        amount,
-        minimum_amount: amount / 2, // not important
-    };
-    assert!(dynamic_threshold.is_satisfied(amount));
-    assert!(dynamic_threshold.is_satisfied(amount + 1));
-    assert!(!dynamic_threshold.is_satisfied(amount - 1));
-}
-
-#[test]
 fn tier_params_check_is_ok() {
     // Prepare valid params
     get_u32_type!(TiersNum, 3);
@@ -2848,15 +2828,15 @@ fn tier_params_check_is_ok() {
         ])
         .unwrap(),
         tier_thresholds: BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: 1000,
-                minimum_amount: 100,
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(3),
             },
-            TierThreshold::DynamicTvlAmount {
-                amount: 100,
-                minimum_amount: 10,
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(2),
             },
-            TierThreshold::FixedTvlAmount { amount: 10 },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(1),
+            },
         ])
         .unwrap(),
     };
@@ -2900,8 +2880,10 @@ fn tier_params_check_is_ok() {
 
     // 4th scenario - incorrect vector length
     let mut new_params = params.clone();
-    new_params.tier_thresholds =
-        BoundedVec::try_from(vec![TierThreshold::FixedTvlAmount { amount: 10 }]).unwrap();
+    new_params.tier_thresholds = BoundedVec::try_from(vec![TierThreshold::FixedPercentage {
+        required_percentage: Perbill::from_percent(1),
+    }])
+    .unwrap();
     assert!(!new_params.is_valid());
 }
 
@@ -2925,21 +2907,24 @@ fn tier_configuration_basic_tests() {
         ])
         .unwrap(),
         tier_thresholds: BoundedVec::try_from(vec![
-            TierThreshold::DynamicTvlAmount {
-                amount: 1000,
-                minimum_amount: 800,
+            TierThreshold::DynamicPercentage {
+                percentage: Perbill::from_percent(12),
+                minimum_required_percentage: Perbill::from_percent(8),
             },
-            TierThreshold::DynamicTvlAmount {
-                amount: 500,
-                minimum_amount: 350,
+            TierThreshold::DynamicPercentage {
+                percentage: Perbill::from_percent(7),
+                minimum_required_percentage: Perbill::from_percent(5),
             },
-            TierThreshold::DynamicTvlAmount {
-                amount: 100,
-                minimum_amount: 70,
+            TierThreshold::DynamicPercentage {
+                percentage: Perbill::from_percent(4),
+                minimum_required_percentage: Perbill::from_percent(3),
             },
-            TierThreshold::FixedTvlAmount { amount: 50 },
+            TierThreshold::FixedPercentage {
+                required_percentage: Perbill::from_percent(3),
+            },
         ])
         .unwrap(),
+        ..TierParameters::default()
     };
     assert!(params.is_valid(), "Example params must be valid!");
 
@@ -2947,22 +2932,30 @@ fn tier_configuration_basic_tests() {
     parameter_types! {
         pub const BaseNativeCurrencyPrice: FixedU128 = FixedU128::from_rational(5, 100);
     }
+    let total_issuance: Balance = 9_000_000_000;
+    let tier_thresholds = params
+        .tier_thresholds
+        .iter()
+        .map(|t| t.threshold(total_issuance))
+        .collect::<Vec<Balance>>()
+        .try_into()
+        .expect("Invalid number of tier thresholds provided.");
+
     let init_config = TiersConfiguration::<TiersNum, StandardTierSlots, BaseNativeCurrencyPrice> {
-        number_of_slots: 100,
         slots_per_tier: BoundedVec::try_from(vec![10, 20, 30, 40]).unwrap(),
         reward_portion: params.reward_portion.clone(),
-        tier_thresholds: params.tier_thresholds.clone(),
+        tier_thresholds,
         _phantom: Default::default(),
     };
     assert!(init_config.is_valid(), "Init config must be valid!");
 
     // Create a new config, based on a new price
     let high_price = FixedU128::from_rational(20, 100); // in production will be expressed in USD
-    let new_config = init_config.calculate_new(high_price, &params);
+    let new_config = init_config.calculate_new(&params, high_price, total_issuance);
     assert!(new_config.is_valid());
 
     let low_price = FixedU128::from_rational(1, 100); // in production will be expressed in USD
-    let new_config = init_config.calculate_new(low_price, &params);
+    let new_config = init_config.calculate_new(&params, low_price, total_issuance);
     assert!(new_config.is_valid());
 
     // TODO: expand tests, add more sanity checks (e.g. tier 3 requirement should never be lower than tier 4, etc.)
@@ -3106,4 +3099,31 @@ fn dapp_tier_rewards_with_rank() {
             ranked_tier
         ))
     );
+}
+
+#[test]
+fn tier_thresholds_conversion_test() {
+    get_u32_type!(TiersNum, 2);
+    let total_issuance: Balance = 1_000_000;
+
+    let thresholds: BoundedVec<TierThreshold, TiersNum> = BoundedVec::try_from(vec![
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_percent(10),
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_percent(5),
+            minimum_required_percentage: Perbill::from_percent(2),
+        },
+    ])
+    .unwrap();
+
+    let tier_thresholds: BoundedVec<Balance, TiersNum> = thresholds
+        .iter()
+        .map(|t| t.threshold(total_issuance))
+        .collect::<Vec<Balance>>()
+        .try_into()
+        .expect("Invalid number of tier thresholds provided.");
+
+    assert_eq!(tier_thresholds[0], 100_000); // 10% of total issuance
+    assert_eq!(tier_thresholds[1], 50_000); // 5% of total issuance
 }

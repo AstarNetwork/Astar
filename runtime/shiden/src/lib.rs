@@ -1269,6 +1269,27 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+parameter_types! {
+    // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (84.3M)
+    pub const TierThresholds: [TierThreshold; 4] = [
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(35_700_000), // 3.57%
+            minimum_required_percentage: Perbill::from_parts(23_800_000), // 2.38%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(8_900_000), // 0.89%
+            minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(2_380_000), // 0.238%
+            minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
+        },
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_parts(600_000), // 0.06%
+        },
+    ];
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
@@ -1279,6 +1300,8 @@ pub type Migrations = (
     // XCM V3 -> V4
     pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
     pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
+    // dapp-staking dyn tier threshold migrations
+    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
 );
 
 type EventRecord = frame_system::EventRecord<

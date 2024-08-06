@@ -1609,6 +1609,27 @@ pub type Executive = frame_executive::Executive<
     Migrations,
 >;
 
+parameter_types! {
+    // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (147M)
+    pub const TierThresholds: [TierThreshold; 4] = [
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(20_000), // 0.0020%
+            minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(13_000), // 0.0013%
+            minimum_required_percentage: Perbill::from_parts(10_000), // 0.0010%
+        },
+        TierThreshold::DynamicPercentage {
+            percentage: Perbill::from_parts(5_400), // 0.00054%
+            minimum_required_percentage: Perbill::from_parts(3_400), // 0.00034%
+        },
+        TierThreshold::FixedPercentage {
+            required_percentage: Perbill::from_parts(1_400), // 0.00014%
+        },
+    ];
+}
+
 /// All migrations that will run on the next runtime upgrade.
 ///
 /// Once done, migrations should be removed from the tuple.
@@ -1616,10 +1637,8 @@ pub type Migrations = (
     cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
     // permanent migration, do not remove
     pallet_xcm::migration::MigrateToLatestXcmVersion<Runtime>,
-    // XCM V3 -> V4
-    pallet_xc_asset_config::migrations::versioned::V2ToV3<Runtime>,
-    pallet_identity::migration::versioned::V0ToV1<Runtime, 250>,
-    pallet_unified_accounts::migration::ClearCorruptedUnifiedMappings<Runtime>,
+    // dapp-staking dyn tier threshold migrations
+    pallet_dapp_staking_v3::migration::versioned_migrations::V7ToV8<Runtime, TierThresholds>,
 );
 
 type EventRecord = frame_system::EventRecord<

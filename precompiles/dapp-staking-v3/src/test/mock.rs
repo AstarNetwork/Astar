@@ -36,7 +36,7 @@ use sp_core::{H160, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
     traits::{BlakeTwo256, ConstU32, IdentityLookup},
-    BuildStorage,
+    BuildStorage, Perbill,
 };
 extern crate alloc;
 
@@ -316,19 +316,18 @@ impl ExternalityBuilder {
                     Permill::from_percent(40),
                 ],
                 tier_thresholds: vec![
-                    TierThreshold::DynamicTvlAmount {
-                        amount: 100,
-                        minimum_amount: 80,
+                    TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_percent(4),
                     },
-                    TierThreshold::DynamicTvlAmount {
-                        amount: 50,
-                        minimum_amount: 40,
+                    TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_percent(3),
                     },
-                    TierThreshold::DynamicTvlAmount {
-                        amount: 20,
-                        minimum_amount: 20,
+                    TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_percent(2),
                     },
-                    TierThreshold::FixedTvlAmount { amount: 10 },
+                    TierThreshold::FixedPercentage {
+                        required_percentage: Perbill::from_percent(1),
+                    },
                 ],
                 slots_per_tier: vec![10, 20, 30, 40],
                 safeguard: None,
