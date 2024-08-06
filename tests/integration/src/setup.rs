@@ -245,11 +245,9 @@ impl ExtBuilder {
             pallet_dapp_staking_v3::Safeguard::<Runtime>::put(false);
 
             // Ensure the initial state is set for the first block
-            assert_ok!(Timestamp::set(
-                RuntimeOrigin::none(),
-                <Runtime as pallet_timestamp::Config>::MinimumPeriod::get()
-            ));
             AllPalletsWithSystem::on_initialize(1);
+            set_timestamp();
+            set_validation_data();
         });
         ext
     }
@@ -265,15 +263,23 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .build()
 }
 
+fn set_timestamp() {
+    assert_ok!(Timestamp::set(
+        RuntimeOrigin::none(),
+        pallet_timestamp::Now::<Runtime>::get() + SLOT_DURATION
+    ));
+}
+
 fn set_validation_data() {
     let block_number = System::block_number();
     let para_id = <Runtime as cumulus_pallet_parachain_system::Config>::SelfParaId::get();
 
+    let parent_head = HeadData(b"deadbeef".into());
     let sproof_builder = RelayStateSproofBuilder {
         para_id,
+        included_para_head: Some(parent_head.clone()),
         ..Default::default()
     };
-    let parent_head = HeadData(System::parent_hash().encode());
     let (relay_parent_storage_root, relay_chain_state) = sproof_builder.into_state_root_and_proof();
     let para_inherent_data = ParachainInherentData {
         validation_data: PersistedValidationData {
@@ -295,21 +301,30 @@ fn set_validation_data() {
 
 pub fn run_to_block(n: BlockNumber) {
     while System::block_number() < n {
-        set_validation_data();
-
         let block_number = System::block_number();
+
+        // finalize block
+        AllPalletsWithSystem::on_idle(block_number, Weight::MAX.div(2));
         AllPalletsWithSystem::on_finalize(block_number);
-        System::set_block_number(block_number + 1);
 
-        assert_ok!(Timestamp::set(
-            RuntimeOrigin::none(),
-            pallet_timestamp::Now::<Runtime>::get()
-                + <Runtime as pallet_timestamp::Config>::MinimumPeriod::get()
-                + 1
+        // Mock some storage to make consensus hook happy
+        sp_io::storage::clear(&frame_support::storage::storage_prefix(
+            b"ParachainSystem",
+            b"UnincludedSegment",
         ));
+        if let Some((slot, _authored)) = AuraExt::slot_info() {
+            sp_io::storage::set(
+                &frame_support::storage::storage_prefix(b"AuraExt", b"SlotInfo"),
+                &(slot, 0u32).encode(),
+            );
+        }
 
+        // initialize block
+        System::set_block_number(block_number + 1);
         AllPalletsWithSystem::on_initialize(block_number + 1);
-        AllPalletsWithSystem::on_idle(block_number + 1, Weight::MAX);
+        // apply inherent
+        set_timestamp();
+        set_validation_data();
     }
 }
 
