@@ -47,7 +47,7 @@ fn transfer_to_h160_via_lookup() {
 #[test]
 fn unified_accounts_chain_extension_works() {
     use astar_primitives::evm::UnifiedAddressMapper;
-    
+
     const GET_H160: [u8; 4] = [0x00, 0x00, 0x00, 0x2a];
     const GET_H160_OR_DEFAULT: [u8; 4] = [0x00, 0x00, 0x00, 0x2b];
     const GET_NATIVE: [u8; 4] = [0x00, 0x00, 0x00, 0x2c];
