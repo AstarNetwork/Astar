@@ -63,6 +63,7 @@ sc-network-sync = { workspace = true }
 sc-offchain = { workspace = true }
 sc-rpc = { workspace = true }
 sc-service = { workspace = true }
+sc-sysinfo = { workspace = true }
 sc-telemetry = { workspace = true }
 sc-tracing = { workspace = true }
 sc-transaction-pool = { workspace = true }
@@ -132,7 +133,7 @@ polkadot-service = { workspace = true }
 
 # benchmark dependencies
 frame-benchmarking = { workspace = true, features = ["std"] }
-frame-benchmarking-cli = { workspace = true, optional = true }
+frame-benchmarking-cli = { workspace = true }
 polkadot-runtime-common = { workspace = true, features = ["std"], optional = true }
 
 # try-runtime
@@ -157,7 +158,6 @@ substrate-build-script-utils = { workspace = true }
 [features]
 default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/rocksdb"]
 runtime-benchmarks = [
-	"frame-benchmarking-cli",
 	"local-runtime/runtime-benchmarks",
 	"shibuya-runtime/runtime-benchmarks",
 	"shiden-runtime/runtime-benchmarks",
@@ -168,7 +168,7 @@ runtime-benchmarks = [
 	"polkadot-runtime-common",
 	"astar-primitives/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
-	"frame-benchmarking-cli?/runtime-benchmarks",
+	"frame-benchmarking-cli/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",

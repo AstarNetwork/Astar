@@ -835,12 +835,20 @@ pub fn run() -> Result<()> {
                     }
                 );
 
+                let hwbench = (!cli.no_hardware_benchmarks)
+                    .then_some(config.database.path().map(|database_path| {
+                        let _ = std::fs::create_dir_all(database_path);
+                        sc_sysinfo::gather_hwbench(Some(database_path))
+                    }))
+                    .flatten();
+
                 let additional_config = AdditionalConfig {
                     #[cfg(feature = "evm-tracing")]
                     evm_tracing_config: evm_tracing_config,
                     enable_evm_rpc: cli.enable_evm_rpc,
                     proposer_block_size_limit: cli.proposer_block_size_limit,
-                    proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent
+                    proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
+                    hwbench,
                 };
 
                 if config.chain_spec.is_astar() {
