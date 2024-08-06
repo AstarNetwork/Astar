@@ -69,10 +69,6 @@ pub type HostFunctions = (
     moonbeam_primitives_ext::moonbeam_ext::HostFunctions,
 );
 
-// OQ
-// TODO: do we want to remove native executor, to ensure it's always WASM?
-// https://github.com/paritytech/polkadot-sdk/pull/3854
-
 /// Astar network runtime executor.
 pub mod astar {
     use super::HostFunctions;

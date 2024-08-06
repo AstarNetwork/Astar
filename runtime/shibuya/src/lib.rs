@@ -149,6 +149,8 @@ pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
 
 /// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
+pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+
 // Time is measured by number of blocks.
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
@@ -555,7 +557,7 @@ impl pallet_aura::Config for Runtime {
     type MaxAuthorities = ConstU32<250>;
     // Set to `true` once async backing is enabled.
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
-    type SlotDuration = ConstU64<MILLISECS_PER_BLOCK>;
+    type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -2172,7 +2174,6 @@ impl_runtime_apis! {
         }
     }
 
-    // TODO: add this to SHiden & AStar as well
     impl xcm_fee_payment_runtime_api::XcmPaymentApi<Block> for Runtime {
         fn query_acceptable_payment_assets(xcm_version: xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
             if !matches!(xcm_version, 3 | 4) {

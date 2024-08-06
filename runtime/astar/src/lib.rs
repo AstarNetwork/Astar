@@ -137,6 +137,8 @@ pub const fn contracts_deposit(items: u32, bytes: u32) -> Balance {
 
 /// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
+pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+
 // Time is measured by number of blocks.
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
@@ -480,7 +482,7 @@ impl pallet_aura::Config for Runtime {
     // Should be only enabled (`true`) when async backing is enabled
     // otherwise set to `false`
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
-    type SlotDuration = ConstU64<MILLISECS_PER_BLOCK>;
+    type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
