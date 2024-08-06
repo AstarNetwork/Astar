@@ -1976,11 +1976,6 @@
 <a href="#1974" id="1974">1974</a>
 <a href="#1975" id="1975">1975</a>
 <a href="#1976" id="1976">1976</a>
-<a href="#1977" id="1977">1977</a>
-<a href="#1978" id="1978">1978</a>
-<a href="#1979" id="1979">1979</a>
-<a href="#1980" id="1980">1980</a>
-<a href="#1981" id="1981">1981</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -2248,16 +2243,11 @@
     <span class="kw">type </span>PostTransactions = ();
 }
 
-<span class="macro">parameter_types! </span>{
-    <span class="kw">pub const </span>MaxAuthorities: u32 = <span class="number">50</span>;
-    <span class="kw">pub const </span>AllowMultipleBlocksPerSlot: bool = <span class="bool-val">false</span>;
-}
-
 <span class="kw">impl </span>pallet_aura::Config <span class="kw">for </span>Runtime {
     <span class="kw">type </span>AuthorityId = AuraId;
     <span class="kw">type </span>DisabledValidators = ();
     <span class="kw">type </span>MaxAuthorities = ConstU32&lt;<span class="number">50</span>&gt;;
-    <span class="kw">type </span>AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
+    <span class="kw">type </span>AllowMultipleBlocksPerSlot = ConstBool&lt;<span class="bool-val">false</span>&gt;;
 }
 
 <span class="kw">impl </span>pallet_grandpa::Config <span class="kw">for </span>Runtime {
@@ -2267,7 +2257,7 @@
     <span class="kw">type </span>EquivocationReportSystem = ();
 
     <span class="kw">type </span>WeightInfo = ();
-    <span class="kw">type </span>MaxAuthorities = MaxAuthorities;
+    <span class="kw">type </span>MaxAuthorities = ConstU32&lt;<span class="number">50</span>&gt;;
     <span class="kw">type </span>MaxSetIdSessionEntries = ConstU64&lt;<span class="number">0</span>&gt;;
     <span class="kw">type </span>MaxNominators = ConstU32&lt;<span class="number">0</span>&gt;;
 }
@@ -3347,7 +3337,7 @@
 
     <span class="kw">impl </span>sp_consensus_aura::AuraApi&lt;Block, AuraId&gt; <span class="kw">for </span>Runtime {
         <span class="kw">fn </span>slot_duration() -&gt; sp_consensus_aura::SlotDuration {
-            sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
+            sp_consensus_aura::SlotDuration::from_millis(SLOT_DURATION)
         }
 
         <span class="kw">fn </span>authorities() -&gt; Vec&lt;AuraId&gt; {

@@ -1427,6 +1427,30 @@
 <a href="#1425" id="1425">1425</a>
 <a href="#1426" id="1426">1426</a>
 <a href="#1427" id="1427">1427</a>
+<a href="#1428" id="1428">1428</a>
+<a href="#1429" id="1429">1429</a>
+<a href="#1430" id="1430">1430</a>
+<a href="#1431" id="1431">1431</a>
+<a href="#1432" id="1432">1432</a>
+<a href="#1433" id="1433">1433</a>
+<a href="#1434" id="1434">1434</a>
+<a href="#1435" id="1435">1435</a>
+<a href="#1436" id="1436">1436</a>
+<a href="#1437" id="1437">1437</a>
+<a href="#1438" id="1438">1438</a>
+<a href="#1439" id="1439">1439</a>
+<a href="#1440" id="1440">1440</a>
+<a href="#1441" id="1441">1441</a>
+<a href="#1442" id="1442">1442</a>
+<a href="#1443" id="1443">1443</a>
+<a href="#1444" id="1444">1444</a>
+<a href="#1445" id="1445">1445</a>
+<a href="#1446" id="1446">1446</a>
+<a href="#1447" id="1447">1447</a>
+<a href="#1448" id="1448">1448</a>
+<a href="#1449" id="1449">1449</a>
+<a href="#1450" id="1450">1450</a>
+<a href="#1451" id="1451">1451</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1449,21 +1473,24 @@
 
 </span><span class="kw">use </span>astar_primitives::<span class="kw-2">*</span>;
 <span class="kw">use </span>cumulus_client_cli::CollatorOptions;
-<span class="kw">use </span>cumulus_client_consensus_aura::collators::basic <span class="kw">as </span>basic_aura;
+<span class="kw">use </span>cumulus_client_consensus_aura::collators::lookahead::{<span class="self">self </span><span class="kw">as </span>aura, Params <span class="kw">as </span>AuraParams};
 <span class="kw">use </span>cumulus_client_consensus_common::ParachainBlockImport;
 <span class="kw">use </span>cumulus_client_consensus_relay_chain::Verifier <span class="kw">as </span>RelayChainVerifier;
 <span class="kw">use </span>cumulus_client_service::{
     prepare_node_config, start_relay_chain_tasks, BuildNetworkParams, DARecoveryProfile,
     StartRelayChainTasksParams,
 };
-<span class="kw">use </span>cumulus_primitives_core::ParaId;
+<span class="kw">use </span>cumulus_primitives_aura::AuraUnincludedSegmentApi;
+<span class="kw">use </span>cumulus_primitives_core::{
+    relay_chain::{CollatorPair, ValidationCode},
+    ParaId,
+};
 <span class="kw">use </span>cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 <span class="kw">use </span>cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 <span class="kw">use </span>cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
 <span class="kw">use </span>fc_consensus::FrontierBlockImport;
 <span class="kw">use </span>fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 <span class="kw">use </span>futures::StreamExt;
-<span class="kw">use </span>polkadot_service::CollatorPair;
 <span class="kw">use </span>sc_client_api::BlockchainEvents;
 <span class="kw">use </span>sc_consensus::{import_queue::BasicQueue, ImportQueue};
 <span class="kw">use </span>sc_executor::NativeElseWasmExecutor;
@@ -1781,6 +1808,7 @@
     ) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;,
     SC: FnOnce(
         Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+        Arc&lt;TFullBackend&lt;Block&gt;&gt;,
         ParachainBlockImport&lt;
             Block,
             FrontierBlockImport&lt;
@@ -2009,6 +2037,7 @@
     <span class="kw">if </span>is_authority {
         start_consensus(
             client.clone(),
+            backend,
             parachain_block_import,
             prometheus_registry.as_ref(),
             telemetry.map(|t| t.handle()),
@@ -2104,6 +2133,7 @@
     ) -&gt; sc_consensus::DefaultImportQueue&lt;Block&gt;,
     SC: FnOnce(
         Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+        Arc&lt;TFullBackend&lt;Block&gt;&gt;,
         ParachainBlockImport&lt;
             Block,
             FrontierBlockImport&lt;
@@ -2364,6 +2394,7 @@
     <span class="kw">if </span>is_authority {
         start_consensus(
             client.clone(),
+            backend,
             parachain_block_import,
             prometheus_registry.as_ref(),
             telemetry.map(|t| t.handle()),
@@ -2493,6 +2524,7 @@
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
     Executor: sc_executor::NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
+    <span class="kw">let </span>cidp_client = client.clone();
     <span class="kw">let </span>slot_duration = cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)
         .expect(<span class="string">"AuraApi slot_duration failed!"</span>);
 
@@ -2505,16 +2537,21 @@
     &gt;(
         client,
         block_import,
-        <span class="kw">move </span>|<span class="kw">_</span>, <span class="kw">_</span>| <span class="kw">async move </span>{
-            <span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+        <span class="kw">move </span>|parent_hash, <span class="kw">_</span>| {
+            <span class="kw">let </span>cidp_client = cidp_client.clone();
+            <span class="kw">async move </span>{
+                <span class="kw">let </span>slot_duration =
+                    sc_consensus_aura::standalone::slot_duration_at(<span class="kw-2">&amp;*</span>cidp_client, parent_hash)<span class="question-mark">?</span>;
+                <span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-            <span class="kw">let </span>slot =
-                sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                    <span class="kw-2">*</span>timestamp,
-                    slot_duration,
-                );
+                <span class="kw">let </span>slot =
+                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                        <span class="kw-2">*</span>timestamp,
+                        slot_duration,
+                    );
 
-            <span class="prelude-val">Ok</span>((slot, timestamp))
+                <span class="prelude-val">Ok</span>((slot, timestamp))
+            }
         },
         slot_duration,
         <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
@@ -2526,6 +2563,7 @@
 <span class="doccomment">/// Start collating with the `shell` runtime while waiting for an upgrade to an Aura compatible runtime.
 </span><span class="kw">fn </span>start_aura_consensus_fallback&lt;RuntimeApi, Executor&gt;(
     client: Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+    backend: Arc&lt;TFullBackend&lt;Block&gt;&gt;,
     parachain_block_import: ParachainBlockImport&lt;
         Block,
         FrontierBlockImport&lt;
@@ -2564,6 +2602,7 @@
         + sp_block_builder::BlockBuilder&lt;Block&gt;
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
         + AuraApi&lt;Block, AuraId&gt;
+        + AuraUnincludedSegmentApi&lt;Block&gt;
         + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
@@ -2631,10 +2670,7 @@
         }
 
         <span class="comment">// Move to Aura consensus.
-        </span><span class="kw">let </span>slot_duration =
-            cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client).expect(<span class="string">"aura is present; qed"</span>);
-
-        <span class="kw">let </span>announce_block = {
+        </span><span class="kw">let </span>announce_block = {
             <span class="kw">let </span>sync_service = sync_oracle.clone();
             Arc::new(<span class="kw">move </span>|hash, data| sync_service.announce_block(hash, data))
         };
@@ -2646,23 +2682,28 @@
             client.clone(),
         );
 
-        basic_aura::run::&lt;Block, AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(basic_aura::Params {
+        aura::run::&lt;Block, AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(AuraParams {
             create_inherent_data_providers: <span class="kw">move </span>|<span class="kw">_</span>, ()| <span class="kw">async move </span>{ <span class="prelude-val">Ok</span>(()) },
             block_import: parachain_block_import.clone(),
             para_client: client.clone(),
+            para_backend: backend,
             relay_client: relay_chain_interface.clone(),
+            code_hash_provider: <span class="kw">move </span>|block_hash| {
+                client
+                    .code_at(block_hash)
+                    .ok()
+                    .map(|c| ValidationCode::from(c).hash())
+            },
             sync_oracle: sync_oracle.clone(),
             keystore,
             collator_key,
             para_id,
             overseer_handle,
-            slot_duration,
             relay_chain_slot_duration: Duration::from_secs(<span class="number">6</span>),
             proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
             collator_service,
-            <span class="comment">// We got around 500ms for proposing
-            </span>authoring_duration: Duration::from_millis(<span class="number">500</span>),
-            collation_request_receiver: <span class="prelude-val">Some</span>(request_stream),
+            authoring_duration: Duration::from_millis(<span class="number">1500</span>),
+            reinitialize: <span class="bool-val">true</span>,
         })
         .<span class="kw">await
     </span>});
@@ -2675,6 +2716,7 @@
 
 <span class="kw">fn </span>start_aura_consensus&lt;RuntimeApi, Executor&gt;(
     client: Arc&lt;TFullClient&lt;Block, RuntimeApi, NativeElseWasmExecutor&lt;Executor&gt;&gt;&gt;,
+    backend: Arc&lt;TFullBackend&lt;Block&gt;&gt;,
     parachain_block_import: ParachainBlockImport&lt;
         Block,
         FrontierBlockImport&lt;
@@ -2713,6 +2755,7 @@
         + sp_block_builder::BlockBuilder&lt;Block&gt;
         + fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
         + AuraApi&lt;Block, AuraId&gt;
+        + AuraUnincludedSegmentApi&lt;Block&gt;
         + cumulus_primitives_core::CollectCollationInfo&lt;Block&gt;,
     sc_client_api::StateBackendFor&lt;TFullBackend&lt;Block&gt;, Block&gt;:
         sc_client_api::StateBackend&lt;BlakeTwo256&gt;,
@@ -2747,23 +2790,28 @@
         client.clone(),
     );
 
-    <span class="kw">let </span>fut = basic_aura::run::&lt;Block, AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(basic_aura::Params {
+    <span class="kw">let </span>fut = aura::run::&lt;Block, AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(AuraParams {
         create_inherent_data_providers: <span class="kw">move </span>|<span class="kw">_</span>, ()| <span class="kw">async move </span>{ <span class="prelude-val">Ok</span>(()) },
         block_import: parachain_block_import.clone(),
         para_client: client.clone(),
+        para_backend: backend,
         relay_client: relay_chain_interface.clone(),
+        code_hash_provider: <span class="kw">move </span>|block_hash| {
+            client
+                .code_at(block_hash)
+                .ok()
+                .map(|c| ValidationCode::from(c).hash())
+        },
         sync_oracle: sync_oracle.clone(),
         keystore,
         collator_key,
         para_id,
         overseer_handle,
-        slot_duration: cumulus_client_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>,
         relay_chain_slot_duration: Duration::from_secs(<span class="number">6</span>),
         proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
         collator_service,
-        <span class="comment">// We got around 500ms for proposing
-        </span>authoring_duration: Duration::from_millis(<span class="number">500</span>),
-        collation_request_receiver: <span class="prelude-val">None</span>,
+        authoring_duration: Duration::from_millis(<span class="number">1500</span>),
+        reinitialize: <span class="bool-val">false</span>,
     });
 
     task_manager
