@@ -1011,6 +1011,14 @@
 <a href="#1009" id="1009">1009</a>
 <a href="#1010" id="1010">1010</a>
 <a href="#1011" id="1011">1011</a>
+<a href="#1012" id="1012">1012</a>
+<a href="#1013" id="1013">1013</a>
+<a href="#1014" id="1014">1014</a>
+<a href="#1015" id="1015">1015</a>
+<a href="#1016" id="1016">1016</a>
+<a href="#1017" id="1017">1017</a>
+<a href="#1018" id="1018">1018</a>
+<a href="#1019" id="1019">1019</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -1848,12 +1856,20 @@
                     </span>}
                 );
 
+                <span class="kw">let </span>hwbench = (!cli.no_hardware_benchmarks)
+                    .then_some(config.database.path().map(|database_path| {
+                        <span class="kw">let _ </span>= std::fs::create_dir_all(database_path);
+                        sc_sysinfo::gather_hwbench(<span class="prelude-val">Some</span>(database_path))
+                    }))
+                    .flatten();
+
                 <span class="kw">let </span>additional_config = AdditionalConfig {
                     <span class="attr">#[cfg(feature = <span class="string">"evm-tracing"</span>)]
                     </span>evm_tracing_config: evm_tracing_config,
                     enable_evm_rpc: cli.enable_evm_rpc,
                     proposer_block_size_limit: cli.proposer_block_size_limit,
-                    proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent
+                    proposer_soft_deadline_percent: cli.proposer_soft_deadline_percent,
+                    hwbench,
                 };
 
                 <span class="kw">if </span>config.chain_spec.is_astar() {

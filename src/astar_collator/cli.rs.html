@@ -140,6 +140,16 @@
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Astar.
 
 // Copyright (C) Stake Technologies Pte.Ltd.
@@ -195,6 +205,16 @@
     <span class="doccomment">/// Proposer's soft deadline in percents of block size
     </span><span class="attr">#[clap(long, default_value = <span class="string">"50"</span>)]
     </span><span class="kw">pub </span>proposer_soft_deadline_percent: u8,
+
+    <span class="doccomment">/// Disable automatic hardware benchmarks.
+    ///
+    /// By default these benchmarks are automatically ran at startup and measure
+    /// the CPU speed, the memory bandwidth and the disk speed.
+    ///
+    /// The results are then printed out in the logs, and also sent as part of
+    /// telemetry, if telemetry is enabled.
+    </span><span class="attr">#[arg(long)]
+    </span><span class="kw">pub </span>no_hardware_benchmarks: bool,
 }
 
 <span class="doccomment">/// Possible subcommands of the main binary.
