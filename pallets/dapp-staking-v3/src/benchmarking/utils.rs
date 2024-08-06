@@ -196,7 +196,7 @@ pub(super) fn init_tier_settings<T: Config>() {
         .unwrap(),
     };
 
-    let total_issuance = SEED as u128 * UNIT;
+    let total_issuance = 1000 * MIN_TIER_THRESHOLD;
     let tier_thresholds = tier_params
         .tier_thresholds
         .iter()

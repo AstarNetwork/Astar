@@ -95,6 +95,11 @@ mod v8 {
 
             if result.is_err() {
                 log::error!("Failed to translate StaticTierParams from previous V7 type to current V8 type. Check TierParametersV7 decoding.");
+                // Enable maintenance mode.
+                ActiveProtocolState::<T>::mutate(|state| {
+                    state.maintenance = true;
+                });
+                log::warn!("Maintenance mode enabled.");
                 return T::DbWeight::get().reads_writes(1, 0);
             }
 
@@ -133,6 +138,11 @@ mod v8 {
 
             if result.is_err() {
                 log::error!("Failed to translate TierConfig from previous V7 type to current V8 type. Check TiersConfigurationV7 decoding.");
+                // Enable maintenance mode.
+                ActiveProtocolState::<T>::mutate(|state| {
+                    state.maintenance = true;
+                });
+                log::warn!("Maintenance mode enabled.");
                 return T::DbWeight::get().reads_writes(2, 1);
             }
 

@@ -520,6 +520,7 @@ pub mod pallet {
                 reward_portion: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
                 slot_distribution: vec![Permill::from_percent(100 / num_tiers); num_tiers as usize],
                 tier_thresholds: (0..num_tiers)
+                    .rev()
                     .map(|i| TierThreshold::FixedPercentage {
                         required_percentage: Perbill::from_percent(i),
                     })
