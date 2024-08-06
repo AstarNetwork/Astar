@@ -1211,7 +1211,7 @@ where
             relay_chain_slot_duration: Duration::from_secs(6),
             proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
             collator_service,
-            authoring_duration: Duration::from_millis(2000),
+            authoring_duration: Duration::from_millis(1500),
             reinitialize: true,
         })
         .await
@@ -1319,7 +1319,7 @@ where
         relay_chain_slot_duration: Duration::from_secs(6),
         proposer: cumulus_client_consensus_proposer::Proposer::new(proposer_factory),
         collator_service,
-        authoring_duration: Duration::from_millis(2000),
+        authoring_duration: Duration::from_millis(1500),
         reinitialize: false,
     });
 
