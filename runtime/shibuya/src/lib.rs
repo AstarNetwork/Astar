@@ -1613,14 +1613,15 @@ pub type Executive = frame_executive::Executive<
 >;
 
 parameter_types! {
+    // percentages below are calulated based on a total issuance at the time when dApp staking v3 was launched (147M)
     pub const TierThresholds: [TierThreshold; 4] = [
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_parts(20_000), // 0.0020%
             minimum_required_percentage: Perbill::from_parts(17_000), // 0.0017%
         },
         TierThreshold::DynamicPercentage {
-            percentage: Perbill::from_parts(10_000), // 0.0010%
-            minimum_required_percentage: Perbill::from_parts(6_800), // 0.00068%
+            percentage: Perbill::from_parts(13_000), // 0.0013%
+            minimum_required_percentage: Perbill::from_parts(10_000), // 0.0010%
         },
         TierThreshold::DynamicPercentage {
             percentage: Perbill::from_parts(5_400), // 0.00054%

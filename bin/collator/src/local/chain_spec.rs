@@ -176,7 +176,7 @@ fn testnet_genesis(
                     minimum_required_percentage: Perbill::from_parts(17_900_000), // 1.79%
                 },
                 TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+                    required_percentage: Perbill::from_parts(600_000), // 0.06%
                 },
             ],
             slots_per_tier: vec![10, 20, 30, 40],

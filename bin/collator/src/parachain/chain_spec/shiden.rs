@@ -180,11 +180,11 @@ fn make_genesis(
                     minimum_required_percentage: Perbill::from_parts(6_000_000), // 0.6%
                 },
                 TierThreshold::DynamicPercentage {
-                    percentage: Perbill::from_parts(23_800_000), // 2.38%
-                    minimum_required_percentage: Perbill::from_parts(17_900_000), // 1.79%
+                    percentage: Perbill::from_parts(2_380_000), // 0.238%
+                    minimum_required_percentage: Perbill::from_parts(1_790_000), // 0.179%
                 },
                 TierThreshold::FixedPercentage {
-                    required_percentage: Perbill::from_parts(6_000_000), // 0.6%
+                    required_percentage: Perbill::from_parts(600_000), // 0.06%
                 },
             ],
             slots_per_tier: vec![10, 20, 30, 40],
